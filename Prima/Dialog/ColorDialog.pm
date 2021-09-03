@@ -709,7 +709,7 @@ sub InputLine_Paint
 		($_[0],$_[1],$_[2],$_[1]-> size, $_[1]-> focused);
 	my $back = $self-> enabled ? $self-> backColor : $self-> disabledBackColor;
 	my $clr  = $combo-> value;
-	$clr = $combo->prelight_color($clr) if $focused && $self->{prelight};
+	$clr = $combo->prelight_color($clr) if $self->{prelight};
 	$clr = $back if $clr == cl::Invalid;
 	$canvas-> rect3d( 0, 0, $w-1, $h-1, 1, $self-> light3DColor, $self-> dark3DColor);
 	$canvas-> color( $back);
@@ -718,7 +718,7 @@ sub InputLine_Paint
 	$canvas-> color( $clr);
 	$canvas-> fillPattern([(0xEE, 0xBB) x 4]) unless $self-> enabled;
 	$canvas-> bar( 3, 3, $w - 4, $h - 4);
-	$canvas-> rect_focus(2, 2, $w - 3, $h - 3) if $focused || $self->{prelight};
+	$canvas-> rect_focus(2, 2, $w - 3, $h - 3) if $focused;
 }
 
 sub InputLine_MouseDown
