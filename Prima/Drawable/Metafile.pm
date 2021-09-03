@@ -29,6 +29,7 @@ sub init
 }
 
 my @props = qw(
+	alpha antialias
 	color backColor fillMode fillPattern font lineEnd
 	lineJoin linePattern lineWidth rop rop2 miterLimit
 	textOpaque textOutBaseline 
@@ -47,7 +48,7 @@ for my $prop_name (@props) {
 }
 
 for my $prop_name (qw(
-	alpha arc bar bars chord ellipse fill_chord fill_ellipse
+	arc bar bar_alpha bars chord ellipse fill_chord fill_ellipse
 	fillpoly fill_sector flood_fill line lines polyline
 	put_image_indirect rectangle sector text_out text_shape_out
 )) {
@@ -61,7 +62,7 @@ for my $prop_name (qw(
 }
 
 for my $prop_name (qw(
-	translate 
+	translate
 )) {
 	no strict 'refs';
 	*{$prop_name} = sub {
