@@ -687,8 +687,8 @@ sub init
 	$self-> {value} = $profile{value};
 	$self-> {colors} = $profile{colors};
 	@{$profile{listDelegations}} = grep { $_ ne 'SelectItem' } @{$profile{listDelegations}};
-	push ( @{$profile{listDelegations}}, qw(Create Paint MouseDown));
-	push ( @{$profile{editDelegations}}, qw(Paint MouseDown Enter Leave Enable Disable KeyDown));
+	push ( @{$profile{listDelegations}}, qw(Create Paint MouseDown MouseMove MouseLeave));
+	push ( @{$profile{editDelegations}}, qw(Paint MouseDown Enter Leave Enable Disable KeyDown MouseEnter MouseLeave));
 	%profile = $self-> SUPER::init(%profile);
 	$self-> colors( $profile{colors});
 	$self-> value( $profile{value});
@@ -709,6 +709,7 @@ sub InputLine_Paint
 		($_[0],$_[1],$_[2],$_[1]-> size, $_[1]-> focused);
 	my $back = $self-> enabled ? $self-> backColor : $self-> disabledBackColor;
 	my $clr  = $combo-> value;
+	$clr = $combo->prelight_color($clr) if $focused && $self->{prelight};
 	$clr = $back if $clr == cl::Invalid;
 	$canvas-> rect3d( 0, 0, $w-1, $h-1, 1, $self-> light3DColor, $self-> dark3DColor);
 	$canvas-> color( $back);
@@ -717,7 +718,7 @@ sub InputLine_Paint
 	$canvas-> color( $clr);
 	$canvas-> fillPattern([(0xEE, 0xBB) x 4]) unless $self-> enabled;
 	$canvas-> bar( 3, 3, $w - 4, $h - 4);
-	$canvas-> rect_focus(2, 2, $w - 3, $h - 3) if $focused;
+	$canvas-> rect_focus(2, 2, $w - 3, $h - 3) if $focused || $self->{prelight};
 }
 
 sub InputLine_MouseDown
@@ -770,6 +771,24 @@ sub InputLine_MouseWheel
 	$widget-> clear_event;
 }
 
+sub InputLine_MouseEnter
+{
+	my ($self, $widget) = @_;
+	if ( !$widget->capture && $self->enabled) {
+		$widget->{prelight} = 1;
+		$widget->repaint;
+	}
+}
+
+sub InputLine_MouseLeave
+{
+	my ($self, $widget) = @_;
+	if ( !$widget->capture && $self->enabled) {
+		delete $widget->{prelight};
+		$widget->repaint;
+	}
+}
+
 sub List_Create
 {
 	my ($combo,$self) = @_;
@@ -808,23 +827,32 @@ sub List_Paint
 	$canvas-> rect3d( 0, 0, $w-1, $h-1, 1, @c3d, cl::Back)
 		unless exists $self-> {inScroll};
 	my $i;
-	my $pc = 18 * $self->{scaling};
+	my $sc = $self->{scaling};
+	my $pc = 18 * $sc;
 	my $dy = $combo-> {btn}-> height;
 
 	my $maxc = $combo-> colors;
 	my $shft = $combo-> {scr}-> value;
 	for ( $i = 0; $i < 20; $i++) {
 		next if $i >= $maxc;
-		my ( $x, $y) = (($i % 4) * $pc + 3 * $self->{scaling}, ( 4 - int( $i / 4)) * $pc + 9 * $self->{scaling} + $dy);
+		my $X = $i % 4;
+		my $Y = int($i / 4);
+		my ( $x, $y) = ($X * $pc + 3 * $sc, (4 - $Y) * $pc + 9 * $sc + $dy);
 		my $clr = 0;
 		$combo-> notify('Colorify', $i + $shft, \$clr);
-		$canvas-> rect3d( $x, $y, $x + $pc - 2 * $self->{scaling}, $y + $pc - 2 * $self->{scaling}, 1, @c3d, $clr);
+
+		my @c = @c3d;
+		@c = reverse @c if
+			$self->{prelight} &&
+			$self->{prelight}->[0] == $X &&
+			$self->{prelight}->[1] == $Y;
+		$canvas-> rect3d( $x, $y, $x + $pc - 2 * $sc, $y + $pc - 2 * $sc, 1, @c, $clr);
 	}
 }
 
-sub List_MouseDown
+sub list_pos2xy
 {
-	my ( $combo, $self, $btn, $mod, $x, $y) = @_;
+	my ( $combo, $self, $x, $y) = @_;
 	$x -= 3 * $self->{scaling};
 	$y -= $combo-> {btn}-> height + 9 * $self->{scaling};
 	return if $x < 0 || $y < 0;
@@ -833,14 +861,51 @@ sub List_MouseDown
 	$y = int($y / $pc);
 	return if $x > 3 * $self->{scaling} || $y > 4 * $self->{scaling};
 	$y = 4 - $y;
-	$combo-> listVisible(0);
 	my $shft = $combo-> {scr}-> value;
 	my $maxc = $combo-> colors;
 	my $xcol = $shft + $x + $y * 4;
 	return if $xcol >= $maxc;
+
+	return $x, $y, $xcol;
+}
+
+sub List_MouseDown
+{
+	my ( $combo, $self, $btn, $mod, $x, $y) = @_;
+	my $xcol;
+	($x, $y, $xcol) = $combo->list_pos2xy($self, $x, $y);
+	return unless defined $x;
+	$combo-> listVisible(0);
 	my $xval = 0;
 	$combo-> notify('Colorify', $xcol, \$xval);
 	$combo-> value( $xval);
+}
+
+sub List_MouseMove
+{
+	my ( $combo, $self, $mod, $x, $y) = @_;
+	my $xcol;
+	($x, $y, $xcol) = $combo->list_pos2xy($self, $x, $y);
+	if ( defined $xcol ) {
+		return if
+			defined $self->{prelight} &&
+			$self->{prelight}->[0] == $x &&
+			$self->{prelight}->[1] == $y;
+		$self->{prelight} = [ $x, $y ];
+	} else {
+		return unless defined $self->{prelight};
+		delete $self->{prelight};
+	}
+	$self->repaint;
+}
+
+sub List_MouseLeave
+{
+	my ($self, $widget) = @_;
+	if ( !$widget->capture && $self->enabled) {
+		delete $widget->{prelight};
+		$widget->repaint;
+	}
 }
 
 sub MoreBtn_Click
