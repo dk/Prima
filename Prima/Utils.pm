@@ -285,7 +285,13 @@ if is a valid utf8, then it is a utf8 string. Mostly because .UTF-8 locale are
 default and standard everywhere. Prima ignores C< $ENV{LANG} > here. This is a
 bit problematic on Perls under 5.22 as these don't provide means to check for
 utf8 string validity, so everything will be slapped a utf8 bit on here --
-beware.
+Beware.
+
+=item *
+
+Setting environment variables may or may not sync with C< %ENV >, depending on
+how perl is built. Also, C< %ENV > will warn when trying to set scalars with
+utf-8 bit there.
 
 =back
 
@@ -336,7 +342,8 @@ disregarding both perl unicode settings and the locale.
 
 =item getenv NAME
 
-Same as reading from C< $ENV{$NAME} > but disregards thread local environment on Win32.
+Reads directly from environment, possibly bypassing C< %ENV >, and disregarding
+thread local environment on Win32.
 
 =item link OLDNAME, NEWNAME
 
@@ -369,7 +376,13 @@ Same as C<CORE::rmdir>
 
 =item setenv NAME, VAL
 
-Same as setting C< $ENV{$NAME} = $VAL > but disregards thread local environment on Win32.
+Directly sets environment variable, possibly bypassing C< %ENV >, depending on
+how perl is built.  Also disregards thread local environment on Win32.
+
+Note that effective synchronization between this call and C< %ENV > is not
+always possible, since Win32 perl implementation simply does not allow that.
+One is advised to assign to C< %ENV > manually, but only if both NAME and VAL
+don't have their utf8 bit set, otherwise perl will warn about wide character.
 
 =item stat PATH
 
