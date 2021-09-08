@@ -126,10 +126,7 @@ Prima::Utils - miscellanneous routines
 
 =head1 DESCRIPTION
 
-The module contains several helper routines, implemented in both C and perl.
-Whereas the C-coded parts are accessible only if 'use Prima;' statement was issued
-prior to the 'use Prima::Utils' invocation, the perl-coded are always available.
-This makes the module valuable when used without the rest of toolkit code.
+The module contains miscellaneous helper routines.
 
 =head1 API
 
@@ -206,11 +203,10 @@ Postpones a call to SUB with PARAMS until the next event loop tick.
 
 =item query_drives_map [ FIRST_DRIVE = "A:" ]
 
-Returns anonymous array to drive letters, used by the system.
-FIRST_DRIVE can be set to other value to start enumeration from.
-Some OSes can probe eventual diskette drives inside the drive enumeration
-routines, so there is a chance to increase responsiveness of the function
-it might be reasonable to set FIRST_DRIVE to C<C:> string.
+Returns anonymous array to drive letters, used by the system.  FIRST_DRIVE can
+be set to other value to start enumeration from.  Win32 can probe removable
+drives there, so to increase responsiveness of the function it might be
+reasonable to call it with FIRST_DRIVE set to C<C:> .
 
 If the system supports no drive letters, empty array reference is returned ( unix ).
 
@@ -252,9 +248,10 @@ and returns 24-bit RGB integer value.
 =head1 Unicode-aware filesystem functions
 
 Since perl win32 unicode support for files is unexistent, Prima has its own
-parallel set of functions mimicking native functions, ie open, chdir etc. This
-means that files with names that cannot be converted to ANSI (ie user-preferred
-) codepage are not visible in perl, but the functions below mitigate that problem. 
+parallel set of functions mimicking native functions, ie C<open>, C<chdir> etc.
+This means that files with names that cannot be converted to ANSI (ie
+user-preferred) codepage are not visible in perl, but the functions below
+mitigate that problem.
 
 The following fine points need to be understood prior to using these functions though:
 
@@ -382,7 +379,7 @@ how perl is built.  Also disregards thread local environment on Win32.
 Note that effective synchronization between this call and C< %ENV > is not
 always possible, since Win32 perl implementation simply does not allow that.
 One is advised to assign to C< %ENV > manually, but only if both NAME and VAL
-don't have their utf8 bit set, otherwise perl will warn about wide character.
+don't have their utf8 bit set, otherwise perl will warn about wide characters.
 
 =item stat PATH
 
@@ -402,7 +399,7 @@ Same as C<CORE::unlink>.
 =item utime ATIME, MTIME, PATH
 
 Same as C<CORE::utime>, except where there is sub-second time resolution provided,
-returns atime/mtime/ctime entries as floats, same as C<Time::HiRes::utime>.
+accepts atime/mtime/ctime entries as floats, same as C<Time::HiRes::utime>.
 
 =back
 
