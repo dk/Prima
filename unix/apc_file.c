@@ -245,7 +245,7 @@ apc_fs_seekdir( PDirHandleRec dh, long position )
 Bool
 apc_fs_setenv(const char * varname, Bool is_name_utf8, const char * value, Bool is_value_utf8)
 {
-	Perl_my_setenv(varname, value);
+	Perl_my_setenv(aTHX_ varname, value);
 	return true;
 }
 
