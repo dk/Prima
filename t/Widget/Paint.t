@@ -11,6 +11,8 @@ $::application->begin_paint;
 plan skip_all => "rdesktop" if $^O =~ /win32/i && $::application->pixel(0,0) == cl::Invalid;
 $::application->end_paint;
 
+$Prima::sys::Test::timeout = 5000;
+
 plan tests => 11;
 
 $window-> bring_to_front;
