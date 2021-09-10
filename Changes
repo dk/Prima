@@ -1,6 +1,6 @@
 Revision history for Perl module Prima
 
-1.63 2021-XX-XX
+1.63 2021-09-10
  - Fixes for macOS Catalina
  - Drawable changes:
    -- .alpha renamed to .bar_alpha
