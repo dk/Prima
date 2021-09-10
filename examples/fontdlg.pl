@@ -586,6 +586,7 @@ sub create_info_window
 			push @{$ranges[-1]}, $_ :
 			push @ranges, [$_];
 	}
+	pop @ranges unless @ranges and @{$ranges[0]};
 	@ranges = sort { $a->[0] <=> $b-> [0] } @ranges;
 	my %charmap;
 	my $count = 0;

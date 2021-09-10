@@ -81,7 +81,8 @@ sub t
 
 my $filter = @ARGV ? qr/$ARGV[0]/ : qr/./;
 my $bad_guys = qr/(
-	Color\sEmoji       # fontconfig doesn't support this .ttc, reports crazy numbers and cannot display it
+	Color\sEmoji|     # fontconfig doesn't support this .ttc, reports crazy numbers and cannot display it
+	Pebble            # no glyphs in the font?
 )/x;
 
 $x = Prima::DeviceBitmap-> create( type => dbt::Bitmap, width => 8, height => 8);
