@@ -280,41 +280,41 @@ apc_application_get_handle( Handle self, ApiHandle apiHandle)
 Rect
 apc_application_get_indents( Handle self)
 {
-		Point size;
-		UINT rc;
-		Rect ret = {0,0,0,0};
-		APPBARDATA d;
+	Point size;
+	UINT rc;
+	Rect ret = {0,0,0,0};
+	APPBARDATA d;
 
-		size = apc_application_get_size( self);
+	size = apc_application_get_size( self);
 
+	memset( &d, 0, sizeof(d));
+	d. cbSize = sizeof(d);
+	rc = SHAppBarMessage( ABM_GETSTATE, &d);
+	if (( rc & ABS_AUTOHIDE) == 0) {
 		memset( &d, 0, sizeof(d));
 		d. cbSize = sizeof(d);
-		rc = SHAppBarMessage( ABM_GETSTATE, &d);
-		if (( rc & ABS_AUTOHIDE) == 0) {
-			memset( &d, 0, sizeof(d));
-			d. cbSize = sizeof(d);
-			rc = SHAppBarMessage( ABM_GETTASKBARPOS, &d);
-			switch ( d. uEdge) {
-			case ABE_TOP:
-				ret. top = d. rc. bottom;
-				if ( ret. top < 0) ret. top = 0;
-				break;
-			case ABE_BOTTOM:
-				ret. bottom = size. y - d. rc. top;
-				if ( ret. bottom < 0) ret. bottom = 0;
-				break;
-			case ABE_RIGHT:
-				ret. right = size. x - d. rc. left;
-				if ( ret. right < 0) ret. right = 0;
-				break;
-			case ABE_LEFT:
-				ret. left = d. rc. right;
-				if ( ret. left < 0) ret. left = 0;
-				break;
-			}
+		rc = SHAppBarMessage( ABM_GETTASKBARPOS, &d);
+		switch ( d. uEdge) {
+		case ABE_TOP:
+			ret. top = d. rc. bottom;
+			if ( ret. top < 0) ret. top = 0;
+			break;
+		case ABE_BOTTOM:
+			ret. bottom = size. y - d. rc. top;
+			if ( ret. bottom < 0) ret. bottom = 0;
+			break;
+		case ABE_RIGHT:
+			ret. right = size. x - d. rc. left;
+			if ( ret. right < 0) ret. right = 0;
+			break;
+		case ABE_LEFT:
+			ret. left = d. rc. right;
+			if ( ret. left < 0) ret. left = 0;
+			break;
 		}
+	}
 
-		return ret;
+	return ret;
 }
 
 Point
