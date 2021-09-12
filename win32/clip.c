@@ -347,8 +347,6 @@ apc_clipboard_get_data( Handle self, Handle id, PClipboardDataRec c)
 Bool
 apc_clipboard_set_data( Handle self, Handle id, PClipboardDataRec c)
 {
-	if ( c-> length < 0 ) return false;
-
 	id = cf2CF( id);
 	if (self == guts.clipboards[CLIPBOARD_DND])
 		return dnd_clipboard_set_data(id, c);
@@ -370,6 +368,7 @@ apc_clipboard_set_data( Handle self, Handle id, PClipboardDataRec c)
 			}
 			return true;
 		case CF_UNICODETEXT:
+			if ( c-> length < 0 ) return false;
 			{
 				int ulen = MultiByteToWideChar(CP_UTF8, 0, (char*) c-> data, c-> length, NULL, 0) + 1;
 				void *ptr = NULL;
@@ -388,6 +387,7 @@ apc_clipboard_set_data( Handle self, Handle id, PClipboardDataRec c)
 			}
 			return true;
 		case CF_TEXT:
+			if ( c-> length < 0 ) return false;
 			{
 				int ulen = c-> length;
 				int i, cr = 0;
@@ -427,6 +427,7 @@ apc_clipboard_set_data( Handle self, Handle id, PClipboardDataRec c)
 			}
 			return true;
 		default:
+			if ( c-> length < 0 ) return false;
 			{
 				char* ptr;
 				HGLOBAL glob = GlobalAlloc( GMEM_DDESHARE, c-> length);
