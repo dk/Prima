@@ -2087,7 +2087,11 @@ sub on_paint
 		}
 		$canvas-> lineWidth(0);
 		$canvas-> color( $clr[0]);
+		$canvas-> antialias(1);
+		$canvas-> lineWidth(1) if $canvas-> antialias;
 		$canvas-> ellipse( @cpt);
+		$canvas-> lineWidth(0);
+		$canvas-> antialias(0);
 	}
 
 	if ( $self-> {stdPointer}) {
@@ -2113,6 +2117,8 @@ AFTER_DIAL:
 
 	if ( $self-> {show_scale} && !defined $self-> {singlePaint}) {
 		my $i;
+		$canvas-> antialias(1);
+		$canvas-> lineWidth(1) if $canvas->antialias;
 		for ( $i = 0; $i < scalar @{$tval}; $i++) {
 			my $r = $rad + 3 + $$tlen[ $i];
 			my ( $cos, $sin) = $self-> offset2data( $$tval[$i]);
@@ -2128,6 +2134,8 @@ AFTER_DIAL:
 				$canvas-> text_shape_out( $$ttxt[ $i], $x, $y);
 			}
 		}
+		$canvas-> lineWidth(0);
+		$canvas-> antialias(0);
 	}
 
 	my $ttw = $canvas-> get_text_width( $self-> {string}, 1);
