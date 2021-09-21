@@ -338,9 +338,9 @@ gtk_openfile( Bool open)
 #endif
 		GTK_RESPONSE_CANCEL,
 #if GTK_MAJOR_VERSION == 3
-		"_Open",
+		open ? "_Open" : "_Save",
 #else
-		GTK_STOCK_OPEN,
+		open ? GTK_STOCK_OPEN : GTK_STOCK_SAVE,
 #endif
 		GTK_RESPONSE_ACCEPT,
 		NULL);
