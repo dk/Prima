@@ -49,7 +49,6 @@ src/Widget.cls
 src/Widget_geometry.c
 src/Window.c
 src/Window.cls
-examples/amba.pl
 examples/animate.pl
 examples/antialias.pl
 examples/async.pl
@@ -59,6 +58,7 @@ examples/blend.pl
 examples/buttons2.pl
 examples/calendar.pl
 examples/canvas.pl
+examples/chess_puzzle.pl.pl
 examples/cv.pl
 examples/detailedoutline.pl
 examples/dock.pl
