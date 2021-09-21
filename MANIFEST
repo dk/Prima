@@ -58,12 +58,11 @@ examples/blend.pl
 examples/buttons2.pl
 examples/calendar.pl
 examples/canvas.pl
-examples/chess_puzzle.pl.pl
+examples/chess_puzzle.pl
 examples/cv.pl
 examples/detailedoutline.pl
 examples/dock.pl
 examples/drivecombo.pl
-examples/e.pl
 examples/edit.pl
 examples/editor.pl
 examples/extlist.pl
@@ -96,6 +95,7 @@ examples/notebk.pl
 examples/outline.pl
 examples/ownerchange.pl
 examples/palette.pl
+examples/pbrush.pl
 examples/periodic.pl
 examples/pitch.pl
 examples/pointers.pl
