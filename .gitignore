@@ -46,8 +46,15 @@ utils/fmview
 utils/gencls
 utils/makedoc/Prima.cache.tex
 utils/makedoc/Prima.tex
+utils/makedoc/Prima.aux
+utils/makedoc/Prima.dvi
+utils/makedoc/Prima.idx
+utils/makedoc/Prima.pdf
+utils/makedoc/Prima.ps
+utils/makedoc/Prima.toc
 utils/makedoc/out.tex
 utils/p-class
 utils/tmlink
 utils/par.txt
 makefile.log.old
+
