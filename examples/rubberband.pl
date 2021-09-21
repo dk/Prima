@@ -13,6 +13,7 @@ sub xordraw
 }
 
 Prima::MainWindow-> create(
+	text => 'Click and drag!',
 	onMouseDown => sub {
 		my ( $self, $btn, $mod, $x, $y) = @_;
 		$self-> {anchor} = [$self-> client_to_screen( $x, $y)];
