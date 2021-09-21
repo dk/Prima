@@ -4,7 +4,7 @@ use Prima 'MsgBox', 'Application';
 
 =head1 NAME
 
-examples/amba.pl - A chess puzzle
+examples/chess_puzzle.pl - A chess puzzle
 
 =head1 FEATURES
 

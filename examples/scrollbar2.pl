@@ -2,7 +2,7 @@
 
 =head1 NAME
 
-examples/rtc.pl - Prima scrollbar widget
+examples/scrollbar2.pl - Prima scrollbar widget
 
 =head1 FEATURES
 
@@ -21,7 +21,7 @@ use Prima::Application name => 'rtc';
 package UserInit;
 
 my $w = Prima::MainWindow-> create(
-	text=> "Test of RTC",
+	text=> "Scrollbar",
 	origin => [ 200, 200],
 	size   => [ 250, 300],
 	designScale => [7, 16],

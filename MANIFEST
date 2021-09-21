@@ -103,9 +103,9 @@ examples/print.pl
 examples/progressbar.pl
 examples/ps_fonts.pl
 examples/ps_setup.pl
-examples/rot.pl
-examples/rtc.pl
+examples/rotation.pl
 examples/scrollbar.pl
+examples/scrollbar2.pl
 examples/sheet.pl
 examples/socket.pl
 examples/socket_anyevent.pl

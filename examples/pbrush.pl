@@ -2,7 +2,7 @@
 
 =head1 NAME
 
-examples/e.pl - A minimalistic graphic editor window
+examples/pbrush.pl - A minimalistic graphic editor window
 
 =head1 FEATURES
 
