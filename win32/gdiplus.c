@@ -108,6 +108,33 @@ apc_gp_get_antialias( Handle self)
 	return is_apt(aptGDIPlus);
 }
 
+Bool
+apc_gp_aa_bar( Handle self, double x1, double y1, double x2, double y2);
+{
+	int i;
+	double dy = sys lastSize. y;
+	Point t = sys gp_transform;
+	GpPointF *p;
+	objCheck false;
+
+	if ((p = malloc( sizeof(GpPointF) * numPts)) == NULL)
+		return false;
+
+	x1 += t.x;
+	x2 += t.y;
+	y1 = t.y + dy - y1;
+	y2 = t.y + dy - y2;
+
+	STYLUS_USE_GP_BRUSH;
+	GPCALL GdipFillRectangle(
+		sys graphics,
+		sys stylusGPResource-> brush,
+		x1, y1, x2, y2
+	);
+	apiGPErrCheckRet(false);
+
+	return true;
+}
 
 Bool
 apc_gp_aa_fill_poly( Handle self, int numPts, NPoint * points)

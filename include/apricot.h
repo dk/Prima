@@ -3546,6 +3546,9 @@ extern Bool
 apc_gp_done( Handle self);
 
 extern Bool
+apc_gp_aa_bar( Handle self, double x1, double y1, double x2, double y2);
+
+extern Bool
 apc_gp_aa_fill_poly( Handle self, int numPts, NPoint * points);
 
 extern Bool

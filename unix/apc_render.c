@@ -238,6 +238,45 @@ pen_update(Handle self)
 }
 
 Bool
+apc_gp_aa_bar( Handle self, double x1, double y1, double x2, double y2)
+{
+	XPointDouble p[5];
+	int ok;
+	DEFXX;
+
+	if ( PObject( self)-> options. optInDrawInfo) return false;
+	if ( !XF_IN_PAINT(XX)) return false;
+
+	x1 += XX-> gtransform. x + XX-> btransform. x;
+	y1 = REVERT(y1 + XX-> gtransform. y + XX-> btransform. y) + 1;
+	x2 += XX-> gtransform. x + XX-> btransform. x + 1;
+	y2 = REVERT(y2 + XX-> gtransform. y + XX-> btransform. y);
+	RANGE2(x2, y2);
+	p[0].x = x1;
+	p[0].y = y1;
+	p[1].x = x2;
+	p[1].y = y1;
+	p[2].x = x2;
+	p[2].y = y2;
+	p[3].x = x1;
+	p[3].y = y2;
+	p[4].x = x1;
+	p[4].y = y1;
+
+	if ( guts.xrender_pen_dirty ) pen_update(self);
+	ok = my_XRenderCompositeDoublePoly(
+		DISP, PictOpOver, pen.picture, XX->argb_picture,
+		XX->flags.antialias ? guts.xrender_a8_format : guts.xrender_a1_format,
+		0, 0, 0, 0, p, 5,
+		EvenOddRule
+	);
+
+	XSync(DISP, false);
+	XCHECKPOINT;
+	return ok;
+}
+
+Bool
 apc_gp_aa_fill_poly( Handle self, int numPts, NPoint * points)
 {
 	XPointDouble *p;

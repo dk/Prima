@@ -567,11 +567,9 @@ Drawable_bar( Handle self, double x1, double y1, double x2, double y2)
 
 	if ( !var->antialias ) TRUNC4(x1,y1,x2,y2);
 
-	if (IS_AA) {
-		NPoint r[5] = { {x1,y1}, {x2,y1}, {x2,y2}, {x1,y2}, {x1,y1} };
-		return apc_gp_aa_fill_poly( self, 5, r);
-	} else
-		return apc_gp_bar(self, x1, y1, x2, y2);
+	return IS_AA ?
+		apc_gp_aa_bar( self, x1, y1, x2, y2) :
+		apc_gp_bar(self, x1, y1, x2, y2);
 }
 
 Bool
