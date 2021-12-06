@@ -1557,6 +1557,55 @@ sub pos2info
 	}
 }
 
+sub repaint_value_change
+{
+	my ($self, $value_old, $value_new) = @_;
+	my @size = $self-> size;
+	my $sb = $self-> {shaftBreadth};
+	if ( $self-> {vertical}) {
+		$sb = $size[0] / 6 unless $sb;
+		$sb = 2 unless $sb;
+		my $bh = $self-> font-> height;
+		my $bw  = ( $size[0] - $sb) / 2;
+		my $v1  = $bh + 1 + abs( $value_new - $self-> {min}) *
+			( $size[1] - 2 * $bh - 5) / (abs($self-> {max} - $self-> {min})||1);
+		my $v2  = $bh + 1 + abs( $value_old - $self-> {min}) *
+			( $size[1] - 2 * $bh - 5) / (abs($self-> {max} - $self-> {min})||1);
+		( $v2, $v1) = ( $v1, $v2) if $v1 > $v2;
+		my $kb = $self-> knobBreadth / 2;
+		my $xd = 0;
+		$xd = (( $self-> {tickAlign} == tka::Normal) ? 1 : -1) *
+			( $bw - $sb - $self->knobBreadth)
+				if $self-> {tickAlign} != tka::Dual;
+		$self-> invalidate_rect(
+			map { int($_ + .5) }
+			$bw - 4 + $xd, $v1 - $kb, $bw + $sb * 2 + 3 + $xd, $v2 + $kb + 1
+		);
+	} else {
+		$sb = $size[1] / 6 unless $sb;
+		$sb = 2 unless $sb;
+		my $bw = $self-> font-> width + $self-> {borderWidth};
+		my $bh  = ( $size[1] - $sb) / 2;
+		my $v1  = $bw + 1 + abs( $value_new - $self-> {min}) *
+			( $size[0] - 2 * $bw - 5) / (abs($self-> {max} - $self-> {min})||1);
+		my $v2  = $bw + 1 + abs( $value_old - $self-> {min}) *
+			( $size[0] - 2 * $bw - 5) / (abs($self-> {max} - $self-> {min})||1);
+		( $v2, $v1) = ( $v1, $v2) if $v1 > $v2;
+		my $kb = $self-> knobBreadth / 2;
+		my $yd = 0;
+		$yd = (( $self-> {tickAlign} == tka::Normal) ? -1 : 1) *
+			( $bh - $sb - $self->knobBreadth)
+				if $self-> {tickAlign} != tka::Dual;
+		$self-> invalidate_rect(
+			map { int($_ + .5) }
+			$v1 - $kb, $bh - $kb - 2 + $yd,
+			$v2 + $kb + 1, $bh + $sb + 5 + $yd
+		);
+	}
+}
+
+sub repaint_knob { $_[0]->repaint_value_change(($_[0]->{value}) x 2)}
+
 sub on_mousedown
 {
 	my ( $self, $btn, $mod, $x, $y) = @_;
@@ -1595,7 +1644,7 @@ sub on_mousemove
 			$prelight = (!defined($prelight) || ($prelight != 1)) ? undef : 1;
 			if (($prelight // 0) != ($self->{prelight} // 0)) {
 				$self->{prelight} = $prelight;
-				$self->repaint;
+				$self->repaint_knob;
 			}
 		}
 		return;
@@ -1613,7 +1662,7 @@ sub on_mousemove
 sub on_mouseleave
 {
 	my $self = shift;
-	$self-> repaint if defined( delete $self->{prelight} );
+	$self-> repaint_knob if defined( delete $self->{prelight} );
 }
 
 sub on_keydown
@@ -1700,46 +1749,7 @@ sub value
 		$value = $max if $value > $max;
 		return if $old == $value;
 		$self-> {value} = $value;
-		my @size = $self-> size;
-		my $sb = $self-> {shaftBreadth};
-		if ( $self-> {vertical}) {
-			$sb = $size[0] / 6 unless $sb;
-			$sb = 2 unless $sb;
-			my $bh = $self-> font-> height;
-			my $bw  = ( $size[0] - $sb) / 2;
-			my $v1  = $bh + 1 + abs( $self-> {value} - $self-> {min}) *
-				( $size[1] - 2 * $bh - 5) / (abs($self-> {max} - $self-> {min})||1);
-			my $v2  = $bh + 1 + abs( $old - $self-> {min}) *
-				( $size[1] - 2 * $bh - 5) / (abs($self-> {max} - $self-> {min})||1);
-			( $v2, $v1) = ( $v1, $v2) if $v1 > $v2;
-			my $kb = $self-> knobBreadth / 2;
-			my $xd = 0;
-			$xd = (( $self-> {tickAlign} == tka::Normal) ? 1 : -1) *
-			( $bw - $sb - $self->knobBreadth) if $self-> {tickAlign} != tka::Dual;
-			$self-> invalidate_rect(
-				map { int($_ + .5) }
-				$bw - 4 + $xd, $v1 - $kb, $bw + $sb * 2 + 3 + $xd, $v2 + $kb + 1
-			);
-		} else {
-			$sb = $size[1] / 6 unless $sb;
-			$sb = 2 unless $sb;
-			my $bw = $self-> font-> width + $self-> {borderWidth};
-			my $bh  = ( $size[1] - $sb) / 2;
-			my $v1  = $bw + 1 + abs( $self-> {value} - $self-> {min}) *
-				( $size[0] - 2 * $bw - 5) / (abs($self-> {max} - $self-> {min})||1);
-			my $v2  = $bw + 1 + abs( $old - $self-> {min}) *
-				( $size[0] - 2 * $bw - 5) / (abs($self-> {max} - $self-> {min})||1);
-			( $v2, $v1) = ( $v1, $v2) if $v1 > $v2;
-			my $kb = $self-> knobBreadth / 2;
-			my $yd = 0;
-			$yd = (( $self-> {tickAlign} == tka::Normal) ? -1 : 1) *
-			( $bh - $sb - $self->knobBreadth) if $self-> {tickAlign} != tka::Dual;
-			$self-> invalidate_rect(
-				map { int($_ + .5) }
-				$v1 - $kb, $bh - $kb - 2 + $yd,
-				$v2 + $kb + 1, $bh + $sb + 5 + $yd
-			);
-		}
+		$self->repaint_value_change($old, $value);
 		$self-> notify(q(Change)) unless $self-> {suppressNotify};
 	} else {
 		return $_[0]-> {value};
