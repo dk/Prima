@@ -109,10 +109,12 @@ sub message_box
 	}
 
 	my $dlg = Prima::Dialog-> create(
+		borderStyle   => bs::Sizeable,
 		centered      => 1,
 		width         => 435,
 		height        => 125,
 		designScale   => [7, 18],
+		sizeMin       => [435, 125],
 		scaleChildren => 1,
 		visible       => 0,
 		text          => $title,
@@ -134,6 +136,7 @@ sub message_box
 		$icon = Prima::StdBitmap::icon( $icon);
 		if ( defined $icon) {
 			$iconView = $dlg-> insert( Widget =>
+				growMode => gm::YCenter,
 				origin         => [
 					20,
 					($dlg-> height + $fresh-> height - $icon-> height)/2
