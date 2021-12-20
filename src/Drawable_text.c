@@ -1969,10 +1969,10 @@ textout2sv(Handle self, int * c, TextWrapRec * t)
 				else
 					*(dst++) = *src;
 			}
-			sv = newSVpv((char*) pbuf.heap, sz - 1 );
+			sv = newSVpvn((char*) pbuf.heap, sz - 1 );
 		} else {
 		AS_IS:
-			sv = newSVpv( t->text + c[i], c[i+1]);
+			sv = newSVpvn( t->text + c[i], c[i+1]);
 		}
 		if (( t-> options & twCollapseTilde) && ( line == t-> t_line) && t-> t_char) {
 			STRLEN tlen;
