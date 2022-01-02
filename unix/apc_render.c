@@ -645,6 +645,7 @@ my_XRenderCompositeDoublePoly (Display		    *dpy,
 Bool prima_init_xrender_subsystem(char * error_buf)                 { return true; }
 void prima_done_xrender_subsystem(void)                             { }
 Bool apc_gp_aa_fill_poly( Handle self, int numPts, NPoint * points) { return false; }
+Bool apc_gp_aa_bar( Handle self, double x1, double y1, double x2, double y2) { return false; }
 
 #endif
 

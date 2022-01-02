@@ -1008,6 +1008,8 @@ Constant alpha flags
 Others
 
         rop::AlphaCopy
+	rop::Premultiply
+	rop::ConstantColor
 
 =head2 sbmp:: - system bitmaps indices
 
