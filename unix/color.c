@@ -1181,7 +1181,7 @@ ALLOC_STAGE:
 	/* allocate some colors */
 	prima_color_sync();
 	XCHECKPOINT;
-	for ( i = 0; i < psz; i++)
+	for ( i = 0; i < psz; i++) {
 		if (( req[i] & 0x80000000) == 0) {
 			XColor xc;
 			xc. red   = COLOR_R16(req[i]);
@@ -1195,7 +1195,8 @@ ALLOC_STAGE:
 			} else
 				break;
 		}
-		Pdebug("color replace :ok - now %d are granted\n", granted);
+	}
+	Pdebug("color replace :ok - now %d are granted\n", granted);
 
 	if ( granted == psz) {
 		free( req);
