@@ -1108,6 +1108,7 @@ See also L<Prima::Application/get_system_value>
 	sv::MenuCheckSize    - width and height of default menu check icon
 	sv::FriBidi          - 1 if Prima is compiled with libfribidi and full bidi unicode support is available
 	sv::Antialias        - 1 if system supports antialiasing and alpha layer for primitives
+	sv::LibThai          - 1 if Prima is compiled with libthai
 
 =head2 ta::  - alignment constants
 

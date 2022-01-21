@@ -1986,8 +1986,8 @@ strings of glyphs. In the glyph cases, some wrapping options are not
 applicable.  It is possible to send both text as TEXT and its shaped
 representation as GLYPHS.
 
-The break algorithm and its result are governed by OPTIONS integer value
-which is a combination of C<tw::> constants:
+The breaking algorithm and its result are governed by the OPTIONS integer value
+that is a combination of the following C<tw::> constants:
 
 =over 4
 
@@ -2022,16 +2022,16 @@ Not applicable in glyph wrapping.
 
 =item tw::BreakSingle
 
-Defines procedure behavior when the text cannot be fit in WIDTH,
-does not affect anything otherwise.
+Defines the method behavior when the text cannot be fit in WIDTH,
+does not affect anything else otherwise.
 
-If set, returns an empty array.
-If unset, returns a text broken by minimum number of characters per chunk.
+If set, the method returns an empty array.
+If unset, it returns a text broken by minimum number of characters per chunk.
 In the latter case, the width of the resulting text blocks B<will> exceed WIDTH.
 
 =item tw::NewLineBreak
 
-Forces new chunk after a newline character ('\n') is met.
+Forces creation of a new chunk after a newline character ('\n') is met.
 If UTF8 text is passed, unicode line break characters C<0x2028> and C<0x2029>
 produce same effect as the newline character.
 
@@ -2039,13 +2039,13 @@ Not applicable in glyph wrapping.
 
 =item tw::SpaceBreak
 
-Forces new chunk after a space character (' ') or a tab character ('\t') are met.
+Forces creation of a new chunk after a space character (' ') or a tab character ('\t') are met.
 
 Not applicable in glyph wrapping.
 
 =item tw::ReturnChunks
 
-Defines the result of text_wrap() function.
+Defines the result of the text_wrap() method.
 
 If set, the array consists of integer pairs,
 where each is a text offset within TEXT and its length.
@@ -2068,6 +2068,11 @@ In glyph wrapping means C<tw::ReturnGlyphs>.
 If unset, the TEXT breaks as soon as the chunk width exceeds WIDTH.
 If set, tries to keep words in TEXT so they do not appear in two
 chunks, e.g. breaks TEXT by words, not by characters.
+
+If Prima is compiled with the I<libthai> library, and thai text is detected,
+Prima uses the library to detects the word boundaries, because the Thai
+language does not use spaces between words. This behavior can be disabled by
+running Prima with C<--no-libthai>.
 
 Not applicable in glyph wrapping.
 

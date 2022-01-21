@@ -1750,6 +1750,7 @@ LIBTHAI
 	}
 	printlog "yes\n";
 	$cmd_options{WITH_LIBTHAI} = $DEFINES{WITH_LIBTHAI} = 1;
+	return;
 
 WARN:
 	$END .= <<LIBTHAI;

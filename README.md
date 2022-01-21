@@ -11,17 +11,15 @@ PREREQUISITES
 Debian/Ubuntu
 -------------
 
-For easy setup, run this:
-
   apt-get install libgtk2.0-dev libgif-dev libjpeg-dev libtiff-dev libxpm-dev
-      libwebp-dev libfribidi-dev libharfbuzz-dev
+      libwebp-dev libfribidi-dev libharfbuzz-dev libthai0-dev
 
 OpenSUSE
 --------
 
   zypper install gtk2-devel giflib-devel libjpeg-devel libtiff-devel
       libXpm-devel libXrandr-devel libXcomposite-devel libXcursor-devel
-      libfribidi-devel libwebp-devel libharfbuzz-devel
+      libfribidi-devel libwebp-devel libharfbuzz-devel libthai-devel
 
 Solaris
 -------
@@ -40,8 +38,7 @@ Cygwin
 - install prerequisites:
 
    apt-cyg install libgtk2.0-devel libfribidi-devel libgif-devel libjpeg-devel libtiff-devel libXpm-devel
-        libwebp-devel libharfbuzz-devel
-
+        libwebp-devel libharfbuzz-devel libthai-devel
 
 Graphic libraries
 -----------------
@@ -100,15 +97,21 @@ or linux-homebrew's (not tested)
 
   brew install linuxbrew/xorg/libxft
 
+- install libthai from https://github.com/phondanai/homebrew-libthai (not tested)
+
 Bidirectional input and complex scripts
 ---------------------------------------
 
-To support bi-directional unicode text input and output you'll need the fribidi
-library.  Additionally for unix builds you'll need harfbuzz library for output
-of complex scripts and font ligature support.
+- To support bi-directional unicode text input and output you'll need the
+fribidi library.  Additionally for unix builds you'll need harfbuzz library
+for output of complex scripts and font ligature support. Prima can compile and
+work fine without these libraries, but the support of the features will be
+rather primitive.
 
-Prima can compile and work fine without these, but the support of these
-features will be rather primitive.
+- Thai language doesn't use spaces between the words in a sentence. To wrap
+thai texts properly Prima can be compiled with the libthai library. No special
+treatment of thai text is needed programmatically, text wrapper does everything
+under the hood.
 
 SOURCE DISTRIBUTION INSTALLATION
 ================================
