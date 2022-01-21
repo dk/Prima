@@ -881,24 +881,24 @@ Image_end_paint( Handle self)
 	inherited end_paint( self);
 	if ( is_opt( optPreserveType) && var->type != oldType) {
 		my->reset( self, oldType, NULL, 0);
-	} else {
-		switch( var->type)
-		{
-			case imbpp1:
-				if ( var-> palSize == 2 && memcmp( var->palette, stdmono_palette, sizeof( stdmono_palette)) == 0)
-					var->type |= imGrayScale;
-				break;
-			case imbpp4:
-				if ( var-> palSize == 16 && memcmp( var->palette, std16gray_palette, sizeof( std16gray_palette)) == 0)
-					var->type |= imGrayScale;
-				break;
-			case imbpp8:
-				if ( var-> palSize == 256 && memcmp( var->palette, std256gray_palette, sizeof( std256gray_palette)) == 0)
-					var->type |= imGrayScale;
-				break;
-		}
-		my->update_change( self);
+		return;
 	}
+
+	switch( var->type) {
+	case imbpp1:
+		if ( var-> palSize == 2 && memcmp( var->palette, stdmono_palette, sizeof( stdmono_palette)) == 0)
+			var->type |= imGrayScale;
+		break;
+	case imbpp4:
+		if ( var-> palSize == 16 && memcmp( var->palette, std16gray_palette, sizeof( std16gray_palette)) == 0)
+			var->type |= imGrayScale;
+		break;
+	case imbpp8:
+		if ( var-> palSize == 256 && memcmp( var->palette, std256gray_palette, sizeof( std256gray_palette)) == 0)
+			var->type |= imGrayScale;
+		break;
+	}
+	my->update_change( self);
 }
 
 void
@@ -926,21 +926,21 @@ Image_stats( Handle self, Bool set, int index, double value)
 		var-> statsCache |= 1 << index;
 		return 0;
 	} else {
-#define gather_stats(TYP) if ( var->data) {                \
-	TYP *src = (TYP*)var->data, *stop, *s;            \
-	maxv = minv = *src;                              \
-	for ( y = 0; y < var->h; y++) {                   \
-		s = src;  stop = s + var->w;                   \
+#define gather_stats(TYP) if ( var->data) {                   \
+	TYP *src = (TYP*)var->data, *stop, *s;                \
+	maxv = minv = *src;                                   \
+	for ( y = 0; y < var->h; y++) {                       \
+		s = src;  stop = s + var->w;                  \
 		while (s != stop) {                           \
-			v = (double)*s;                            \
-			sum += v;                                  \
-			sum2 += v*v;                               \
-			if ( minv > v) minv = v;                   \
-			if ( maxv < v) maxv = v;                   \
-			s++;                                       \
+			v = (double)*s;                       \
+			sum += v;                             \
+			sum2 += v*v;                          \
+			if ( minv > v) minv = v;              \
+			if ( maxv < v) maxv = v;              \
+			s++;                                  \
 		}                                             \
-		src = (TYP*)(((Byte *)src) + var->lineSize);   \
-	}                                                \
+		src = (TYP*)(((Byte *)src) + var->lineSize);  \
+	}                                                     \
 }
 		int y;
 		double sum = 0.0, sum2 = 0.0, minv = 0.0, maxv = 0.0, v;
@@ -948,11 +948,11 @@ Image_stats( Handle self, Bool set, int index, double value)
 		if ( var->statsCache & ( 1 << index)) return var->stats[ index];
 		/* calculate image stats */
 		switch ( var->type) {
-			case imByte:    gather_stats(uint8_t);break;
-			case imShort:   gather_stats(int16_t);  break;
-			case imLong:    gather_stats(int32_t);   break;
-			case imFloat:   gather_stats(float);  break;
-			case imDouble:  gather_stats(double); break;
+			case imByte:    gather_stats(uint8_t); break;
+			case imShort:   gather_stats(int16_t); break;
+			case imLong:    gather_stats(int32_t); break;
+			case imFloat:   gather_stats(float);   break;
+			case imDouble:  gather_stats(double);  break;
 			default:        return 0;
 		}
 		if ( var->w * var->h > 0)

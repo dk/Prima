@@ -20,7 +20,13 @@ src/Component.cls
 src/DeviceBitmap.c
 src/DeviceBitmap.cls
 src/Drawable.c
-src/Drawable_text.c
+src/Drawable/mapper.c
+src/Drawable/fonts.c
+src/Drawable/primitives.c
+src/Drawable/render.c
+src/Drawable/text.c
+src/Drawable/shape.c
+src/Drawable/wrap.c
 src/Drawable.cls
 src/File.c
 src/File.cls
@@ -46,7 +52,9 @@ src/Utils.c
 src/Utils.cls
 src/Widget.c
 src/Widget.cls
-src/Widget_geometry.c
+src/Widget/events.c
+src/Widget/geometry.c
+src/Widget/taborder.c
 src/Window.c
 src/Window.cls
 examples/animate.pl

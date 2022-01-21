@@ -126,6 +126,14 @@ Application_done( Handle self)
 	application = NULL_HANDLE;
 }
 
+static Bool 
+kill_all_objects( Handle self, Handle child, void * dummy)
+{
+	Object_destroy( child);
+	return false;
+}
+
+
 void
 Application_cleanup( Handle self)
 {
@@ -138,7 +146,7 @@ Application_cleanup( Handle self)
 		my-> detach( self, var-> icon, true);
 	var-> icon = NULL_HANDLE;
 
-	my-> first_that_component( self, (void*)prima_kill_all_objects, NULL);
+	my-> first_that_component( self, (void*)kill_all_objects, NULL);
 
 	CDrawable-> cleanup( self);
 }

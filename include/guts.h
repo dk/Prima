@@ -47,7 +47,6 @@ extern Bool prima_accel_notify ( Handle group, Handle self, PEvent event);
 extern Bool prima_font_notify ( Handle self, Handle child, void * font);
 extern Bool prima_find_accel( Handle self, Handle item, int * key);
 extern Bool prima_single_color_notify ( Handle self, Handle child, void * color);
-extern Bool prima_kill_all_objects( Handle self, Handle child, void * dummy);
 
 extern void  prima_init_font_mapper(void);
 extern void  prima_cleanup_font_mapper(void);

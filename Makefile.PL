@@ -279,6 +279,7 @@ sub setup_files
 	@pm_files  = ffind( qr/\.pm$/ );
 	@c_files    = (
 		<src/*.c>,
+		<src/*/*.c>,
 		(grep { not $PASSIVE_CODECS{$_} } <img/*.c>),
 		(grep { !m/xft.c/ || $cmd_options{WITH_XFT} } <$platform/*.c>),
 	);
