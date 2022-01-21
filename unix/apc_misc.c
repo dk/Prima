@@ -814,16 +814,16 @@ apc_show_message( const char * message, Bool utf8)
 			return false;
 		}
 
-		twr. text      = ( char *) message;
-		twr. utf8_text = utf8;
-		twr. textLen   = strlen( message);
+		bzero(&twr, sizeof(twr));
+		twr. text         = ( char *) message;
+		twr. utf8_text    = utf8;
+		twr. textLen      = strlen( message);
 		twr. utf8_textLen = utf8 ? prima_utf8_length( message, -1) : twr. textLen;
-		twr. width     = appSz. x * 2 / 3;
-		twr. tabIndent = 3;
-		twr. options   = twNewLineBreak | twWordBreak | twReturnLines;
-		twr. ascii     = &font_abc_ascii;
-		twr. unicode   = &font_abc_unicode;
-		twr. count     = 0;
+		twr. width        = appSz. x * 2 / 3;
+		twr. tabIndent    = 3;
+		twr. options      = twNewLineBreak | twWordBreak | twReturnLines;
+		twr. ascii        = &font_abc_ascii;
+		twr. unicode      = &font_abc_unicode;
 		guts. font_abc_nil_hack = fs;
 		wrapped = CDrawable->do_text_wrap( NULL_HANDLE, &twr, NULL, NULL);
 
@@ -1098,6 +1098,7 @@ apc_sys_get_value( int v)  /* XXX one big XXX */
 ;
 	case svMenuCheckSize   : return MENU_CHECK_XOFFSET;
 	case svFriBidi         : return use_fribidi;
+	case svLibThai         : return use_libthai;
 	case svAntialias       : return guts. argb_visual. visual != NULL;
 	default:
 		return -1;

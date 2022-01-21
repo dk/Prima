@@ -199,6 +199,7 @@ sub init
 		hScroll   => 1,
 		vScroll   => 1,
 		growMode  => gm::Client,
+		wordWrap => 1,
 	);
 	undef $cap;
 	$self-> text( $fn);

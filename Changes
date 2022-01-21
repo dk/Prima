@@ -1,5 +1,8 @@
 Revision history for Perl module Prima
 
+1.64 202X-XX-XX
+ - Use libthai for Drawable.text_wrap
+
 1.63 2021-09-10
  - Fixes for macOS Catalina
  - Drawable changes:

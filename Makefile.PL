@@ -135,6 +135,7 @@ options:
     WITH_GTK3         - compile with/without GTK3 (default 0), X only
     WITH_OPENMP       - compile with/without openmp (default 1)
     WITH_COCOA        - compile with/without Cocoa (default 1), MacOSX only
+    WITH_LIBTHAI      - compile with/without libthai (default 1)
     CYGWIN_WINAPI     - Winapi build in cygwin environment
     DEBUG             - build with debug information
     VERBOSE           - don't redirect commands to makefile.log
@@ -167,6 +168,7 @@ setup_defines();
 setup_dl_loadflags();
 setup_pkgconfig();
 setup_fribidi() if $cmd_options{WITH_FRIBIDI};
+setup_libthai() if $cmd_options{WITH_LIBTHAI};
 setup_X11() if $unix;
 setup_xlibs() if $unix;
 setup_codecs();
@@ -191,6 +193,7 @@ sub setup_argv
 		WITH_GTK3     => 0,
 		WITH_OPENMP   => 1,
 		WITH_COCOA    => ($^O eq 'darwin'),
+		WITH_LIBTHAI  => 1,
 		CYGWIN_WINAPI => 0,
 		DEBUG         => 0,
 		EXTRA_CCFLAGS => '',
@@ -1720,6 +1723,41 @@ TEXT
 
 	printlog "yes\n";
 	$DEFINES{WITH_COCOA} = 1;
+}
+
+sub setup_libthai
+{
+	$cmd_options{WITH_LIBTHAI} = 0;
+
+	unless ( $use_pkgconfig ) {
+		printlog "Checking for presence of libthai... no, can only check with pkg-config installed\n";
+		goto WARN;
+	}
+
+	goto WARN unless pkgconfig('libthai');
+
+	printlog "Checking if can compile and link with libthai... ";
+	unless (compile( <<LIBTHAI)) {
+#include <thai/thwchar.h>
+#include <thai/thwbrk.h>
+int main() {
+	void * ixi = th_brk_wc_find_breaks;
+	return 0;
+}
+LIBTHAI
+		printlog "no\n";
+		goto WARN;
+	}
+	printlog "yes\n";
+	$cmd_options{WITH_LIBTHAI} = $DEFINES{WITH_LIBTHAI} = 1;
+
+WARN:
+	$END .= <<LIBTHAI;
+
+** Warning: libthai is needed for proper breaking of thai text.
+Consider fixing your installation.
+
+LIBTHAI
 }
 
 sub generate_win32_def

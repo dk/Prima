@@ -1930,6 +1930,8 @@ SV(MenuCheckSize)
 SV(FriBidi)
 #define   svAntialias       38
 SV(Antialias)
+#define   svLibThai         39
+SV(LibThai)
 END_TABLE(sv,UV)
 #undef SV
 
@@ -3432,6 +3434,9 @@ typedef struct _TextWrapRec {
 	int    t_pos;                       /* ~ offset in t_line in characters */
 	int    t_bytepos;                   /* ~ offset in t_line in bytes */
 	char * t_char;                      /* letter next to ~ */
+
+	unsigned n_word_breaks;            /* array of extra word breaks */
+	int     *word_breaks;
 
 	PFontABC * ascii;                   /* eventual abc caches, to be freed after call. */
 	PList    * unicode;                 /* NB - .ascii can be present in .unicode ! */

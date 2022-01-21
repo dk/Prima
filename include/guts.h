@@ -26,6 +26,7 @@ extern int    recursiveCall;
 extern PHash  primaObjects;
 extern SV *   eventHook;
 extern Bool   use_fribidi;
+extern int    use_libthai;
 
 #define CORE_INIT_TRANSIENT(cls) ((PObject)self)->transient_class = (void*)C##cls
 

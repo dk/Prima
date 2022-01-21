@@ -1,5 +1,6 @@
 use strict;
 use warnings;
+use utf8;
 
 use Test::More;
 use Prima::sys::Test;
@@ -61,7 +62,7 @@ sub test
 	}
 }
 
-my $all = 1;
+my $all = 0;
 
 test( "U1G1 U1G1",
         # 4     0 5        6
@@ -256,5 +257,26 @@ test( "-U3G2/4 -U2G2/8 + tilde",
 	first => 3,
 	len   => 6,
 ) if $all;
+
+$all = 1;
+
+SKIP: {
+	skip "libthai not used", 1
+		unless $::application->get_system_value(sv::LibThai);
+	test("thai breaks",
+		"สวัสดีชาวโลก",
+		80,
+		tw::WordBreak,
+		glyph( [(1) x 12], [0..12], [(10) x 12]),
+
+		6,
+		[0,6,6,6],
+		["สวัสดี","ชาวโลก"],
+		[
+			glyph( [(1) x 6], [0..5,12],  [(10) x 6]),
+			glyph( [(1) x 6], [6..11,12], [(10) x 6]),
+		],
+	) if $all;
+}
 
 done_testing;

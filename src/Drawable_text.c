@@ -9,6 +9,16 @@
 #define MAX_CHARACTERS 8192
 extern Bool   use_fribidi;
 
+#ifdef WITH_LIBTHAI
+#include <thai/thwchar.h>
+#include <thai/thwbrk.h>
+#define LIBTHAI_MAX_TEXT_BREAKS 2048
+#define dLIBTHAI(tb) int libthai_buf[LIBTHAI_MAX_TEXT_BREAKS];tb.word_breaks=libthai_buf
+#else
+#define dLIBTHAI(tb)
+#endif
+extern int use_libthai;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -1645,7 +1655,7 @@ static Bool
 precalc_abc_buffer( PFontABC src, float * width, PFontABC dest)
 {
 	int i;
-	if ( !dest) return false;
+	if ( !src || !dest) return false;
 	for ( i = 0; i < 256; i++) {
 		width[i] = src[i]. a + src[i]. b + src[i]. c;
 		dest[i]. a = ( src[i]. a < 0) ? - src[i]. a : 0;
@@ -1861,6 +1871,55 @@ fill_tilde_properties(Handle self, TextWrapRec * t, int tildeIndex, int tildePos
 	t-> t_end   = end   + .5 * (( end   < 0 ) ? -1 : 1);
 }
 
+#ifdef WITH_LIBTHAI
+static void
+text_get_libthai_breaks( TextWrapRec* t)
+{
+	STRLEN charlen;
+	char * utf8, thbuf[1024 * sizeof(thwchar_t)];
+	int target_len_xchars, src_len_bytes, got_thai_chars = 0;
+	thwchar_t *u32;
+	semistatic_t pbuf;
+
+	if ( use_libthai == 1 ) {
+		ThBrk * t;
+		if (!( t = th_brk_new(NULL))) {
+			warn("libthai error, disabling");
+			use_libthai = 0;
+		} else {
+			use_libthai = 2;
+			th_brk_delete(t);
+		}
+	}
+
+	utf8              = t-> text;
+	target_len_xchars = t-> utf8_textLen;
+	src_len_bytes     = t-> textLen;
+	semistatic_init(&pbuf, &thbuf, sizeof(thwchar_t), 1024);
+
+	if ( !semistatic_expand(&pbuf, t->utf8_textLen)) {
+		warn("Not enough memory");
+		goto FAIL;
+	}
+	u32 = (thwchar_t*) pbuf.heap;
+	while ( target_len_xchars--) {
+		UV u = (thwchar_t) prima_utf8_uvchr(utf8, src_len_bytes, &charlen);
+		*(u32++) = u;
+		if ( u >= 0xE00 && u <= 0xE7F ) /* thai code block */
+			got_thai_chars = 1;
+		utf8 += charlen;
+		src_len_bytes -= charlen;
+		if ( src_len_bytes <= 0 || charlen == 0) break;
+	}
+	if ( !got_thai_chars )
+		goto FAIL;
+
+	t-> n_word_breaks = th_brk_wc_find_breaks(NULL, (thwchar_t*)pbuf.heap, t->word_breaks, LIBTHAI_MAX_TEXT_BREAKS);
+FAIL:
+	semistatic_done(&pbuf);
+}
+#endif
+
 static void
 text_init_wrap_rec( Handle self, SV * text, int width, int options, int tabIndent, int from, int len, TextWrapRec * t)
 {
@@ -1893,6 +1952,12 @@ text_init_wrap_rec( Handle self, SV * text, int width, int options, int tabInden
 	t-> t_pos     = C_NUMERIC_UNDEF;
 	t-> t_bytepos = C_NUMERIC_UNDEF;
 	t-> count     = 0;
+	t-> n_word_breaks = 0;
+
+#ifdef WITH_LIBTHAI
+	if ( use_libthai && t-> utf8_text && (t->options & twWordBreak))
+		text_get_libthai_breaks(t);
+#endif
 }
 
 static SV*
@@ -2003,7 +2068,7 @@ typedef struct {
 		int start, utf8_start;
 		int end;
 		int split_start, utf8_split_start;
-		int split_end;
+		int split_end, utf8_split_end;
 		int p, utf8_p;
 	} curr, prev;
 	Bool do_width_break, first_only;
@@ -2024,7 +2089,7 @@ wrap_init( WrapRec * w, TextWrapRec * tw, GlyphWrapRec * gw)
 
 	w-> base             = 0x10000000;
 
-	w-> curr.split_start = w-> curr.split_end = w-> curr.utf8_split_start = -1;
+	w-> curr.split_start = w-> curr.split_end = w-> curr.utf8_split_start = w-> curr.utf8_split_end = -1;
 	w-> prev             = w-> curr;
 
 	w-> bufsize          = 128;
@@ -2080,10 +2145,11 @@ wrap_add_entry( WrapRec * w, TextWrapRec * tw, GlyphWrapRec * gw, int end, int u
 	return !w-> first_only;
 }
 
-#define wrap_new_word(w,len)                      \
+#define wrap_new_word(w,len,utflen)               \
 	w.curr.split_start      = w.curr.p;       \
 	w.curr.split_end        = w.curr.p + len; \
-	w.curr.utf8_split_start = w.curr.utf8_p
+	w.curr.utf8_split_start = w.curr.utf8_p;  \
+	w.curr.utf8_split_end   = w.curr.utf8_p + utflen
 
 #define wrap_fetch_uvchr(w, tw, len)              \
 	((len = 1) && tw->utf8_text) ?            \
@@ -2094,9 +2160,9 @@ wrap_add_entry( WrapRec * w, TextWrapRec * tw, GlyphWrapRec * gw, int end, int u
 		) :                               \
 		((unsigned char*)(tw-> text))[w.curr.p]
 
-#define wrap_step_ptr(w,len)                      \
+#define wrap_step_ptr(w,len,utflen)               \
 	w.curr.p += len;                          \
-	w.curr.utf8_p++
+	w.curr.utf8_p += utflen
 
 static Bool
 wrap_load_glyphs_abc(uint32_t uv, WrapRec * w, Handle self, GlyphWrapRec *g)
@@ -2319,10 +2385,12 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * tw, GlyphWrapRec * gw, uint16_
 	WrapRec wr;
 	float w = 0, initial_overhang = 0;
 	Bool reassign_w = 0;
-	int space_width = -1, space_c = 0;
+	int space_width = -1, space_c = 0, curr_word_break_idx = -1;
 
 	if ( !wrap_init(&wr, tw, gw))
 		return NULL;
+	if ( tw && tw-> n_word_breaks )
+		curr_word_break_idx = 0;
 
 	/* determining ~ character location */
 	if ( wr.options & twCalcMnemonic)
@@ -2378,27 +2446,43 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * tw, GlyphWrapRec * gw, uint16_
 			index = wr.curr.utf8_p;
 		}
 
+#define wrap_fetch_uvchr(w, tw, len)              \
+	((len = 1) && tw->utf8_text) ?            \
+		prima_utf8_uvchr_end(             \
+			tw->text + w.curr.p,      \
+			tw->text + tw-> textLen,  \
+			&len                      \
+		) :                               \
+		((unsigned char*)(tw-> text))[w.curr.p]
 		uv = tw ? wrap_fetch_uvchr(wr,tw,len) : 0;
-		if ( !tw || nc > 1 ) goto NON_BREAKER;
-
 		if ( len < 1 ) break;
+
+		if ( curr_word_break_idx >= 0 && tw->word_breaks[curr_word_break_idx] == wr.curr.utf8_p) {
+			if ( ++curr_word_break_idx >= tw->n_word_breaks)
+				curr_word_break_idx = -1;
+			wrap_new_word(wr,0,0);
+			goto NON_BREAKER;
+		}
+
+		if ( !tw || nc > 1 )
+			goto NON_BREAKER;
 
 		switch ( uv ) {
 		case '\n':
 		case 0x2028:
 		case 0x2029:
-			wrap_new_word(wr,len);
+			wrap_new_word(wr,len,1);
 			if (!( wr.options & twNewLineBreak))
 				goto NON_BREAKER;
 			break;
 
 		case ' ':
-			wrap_new_word(wr,len);
+			wrap_new_word(wr,len,1);
 			if (!( wr.options & twSpaceBreak))
 				goto NON_BREAKER;
 			break;
 		case '\t':
-			wrap_new_word(wr,len);
+			wrap_new_word(wr,len,1);
 			if ( wr.options & twCalcTabs)
 				wmul = tw->tabIndent;
 			if (!( wr.options & twSpaceBreak))
@@ -2423,8 +2507,9 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * tw, GlyphWrapRec * gw, uint16_
 		default:
 			goto NON_BREAKER;
 		}
+
 		ADD(p);
-		wrap_step_ptr(wr, len);
+		wrap_step_ptr(wr, len, 1);
 		wr.curr.start      = wr.curr.p;
 		wr.curr.utf8_start = wr.curr.utf8_p;
 		reassign_w = 1;
@@ -2468,10 +2553,10 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * tw, GlyphWrapRec * gw, uint16_
 			for ( j = 0; j < nc; j++) {
 				wrap_fetch_uvchr(wr,tw,len);
 				if ( len < 1 ) break;
-				wrap_step_ptr(wr, len);
+				wrap_step_ptr(wr, len, 1);
 			}
 		} else {
-			wrap_step_ptr(wr, 1);
+			wrap_step_ptr(wr, 1, 1);
 		}
 
 #ifdef _DEBUG
@@ -2509,11 +2594,15 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * tw, GlyphWrapRec * gw, uint16_
 		} else {
 			/* normal break condition */
 			if ( wr.options & twWordBreak) {
-				/* checking if break was at word boundary */
-				if ( wr.curr.start <= wr.curr.split_start) {
+				if (
+					/* checking if break was at word boundary */
+					(wr.curr.start < wr.curr.split_start) ||
+					/* or add at least the breaker char itself */
+					(wr.curr.start == wr.curr.split_start && wr.curr.split_start < wr.curr.split_end)
+				) {
 					ADD(split_start);
 					wr.curr.p      = wr.curr.start      = wr.curr.split_end;
-					wr.curr.utf8_p = wr.curr.utf8_start = wr.curr.utf8_split_start + 1;
+					wr.curr.utf8_p = wr.curr.utf8_start = wr.curr.utf8_split_end;
 					w = 0;
 					reassign_w = 1;
 					continue;
@@ -2559,6 +2648,7 @@ string_wrap( Handle self,SV * text, int width, int options, int tabIndent, int f
 	TextWrapRec t;
 	int * c;
 	SV *ret;
+	dLIBTHAI(t);
 
 	if ( options & twReturnGlyphs ) {
 		warn("Drawable.text_wrap only can use tw::ReturnGlyphs if glyphs are supplied");
@@ -2642,8 +2732,8 @@ string_glyphs_wrap( Handle self, SV * text, int width, int options, int tabInden
 	TextWrapRec tw;
 	GlyphWrapRec gw;
 	int *c;
-	void *subglyphs = NULL;
 	uint16_t *log2vis = NULL;
+	dLIBTHAI(tw);
 
 	if ( !SvROK(glyphs) || SvTYPE( SvRV(glyphs)) != SVt_PVAV ) {
 		warn("Drawable::text_wrap: not a glyph array passed");
@@ -2667,16 +2757,18 @@ string_glyphs_wrap( Handle self, SV * text, int width, int options, int tabInden
 			return qt;
 	}
 
+	gpENTER(NULL_SV);
+
 	glyph_init_wrap_rec( self, width, options, from, &g, &gw);
 	if ( g.indexes ) {
 		/* log2vis needs to address the whole string */
 		if ( !( log2vis = fill_log2vis(&g, from))) {
+			gpLEAVE;
 			warn("not enough memory");
 			return NULL_SV;
 		}
 	}
 
-	gpENTER(NULL_SV);
 	c = my->do_text_wrap( self, &tw, &gw, log2vis + from);
 	gpLEAVE;
 	tw.t_pos += from;
@@ -2703,7 +2795,6 @@ string_glyphs_wrap( Handle self, SV * text, int width, int options, int tabInden
 	)
 		av_push((AV*) av, mnemonic2sv(&tw));
 
-	if ( subglyphs ) free(subglyphs);
 	if ( log2vis) free(log2vis);
 	free( c);
 

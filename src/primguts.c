@@ -62,6 +62,13 @@ Bool   use_fribidi =
 		false
 #endif
 		;
+int    use_libthai =
+#ifdef WITH_LIBTHAI
+		1
+#else
+		0
+#endif
+		;
 
 char *
 duplicate_string( const char *s)
@@ -568,6 +575,9 @@ common_get_options( int * argc, char *** argv)
 #ifdef WITH_FRIBIDI
 		"no-fribidi", "do not use fribidi",
 #endif
+#ifdef WITH_LIBTHAI
+		"no-libthai", "do not use libthai",
+#endif
 	};
 	*argv = common_argv;
 	*argc = sizeof( common_argv) / sizeof( char*);
@@ -592,6 +602,13 @@ common_set_option( char * option, char * value)
 	else if ( strcmp( option, "no-fribidi") == 0) {
 		if ( value) warn("`--no-fribidi' option has no parameters");
 		use_fribidi = false;
+		return true;
+	}
+#endif
+#ifdef WITH_LIBTHAI
+	else if ( strcmp( option, "no-libthai") == 0) {
+		if ( value) warn("`--no-libthai' option has no parameters");
+		use_libthai = false;
 		return true;
 	}
 #endif
