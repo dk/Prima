@@ -434,7 +434,7 @@ aa_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y, int * text_advance, H
 		if ( advances ) {
 			adv = *(advances++);
 			if ( text_advance )
-				*text_advance += *advances;
+				*text_advance += adv;
 			pabc = NULL;
 			dx = *(positions++);
 			dy = *(positions++);
@@ -450,11 +450,11 @@ aa_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y, int * text_advance, H
 			abc.abcfB = abci.abcB;
 			abc.abcfC = abci.abcC;
 		}
-
 		if ( !aa_render(self, x, y, &delta, pabc, adv, dx, dy))
 			return false;
 	}
-	return false;
+
+	return true;
 }
 
 #ifdef __cplusplus

@@ -22,6 +22,7 @@ extern "C" {
 typedef struct {
 	HDC dc;
 	int i, len, stop;
+	Bool fixed_pitch, orig_fixed_pitch;
 	Handle self;
 	HFONT orig, saved, curr;
 	PDCFont nondefault_font;
@@ -38,6 +39,7 @@ font_context_init( FontContext * fc, Handle self, PGlyphsOutRec t)
 	fc->fonts = t->fonts;
 	fc->len   = t->len;
 	fc->dc    = sys ps;
+	fc->fixed_pitch = fc->orig_fixed_pitch = (sys tmPitchAndFamily & TMPF_FIXED_PITCH) ? 0 : 1;
 }
 
 static void
@@ -63,6 +65,7 @@ font_context_next( FontContext * fc )
 	uint16_t nfid;
 	int start, len;
 	HFONT hfont, selected;
+	Bool fixed_pitch;
 
 	if ( fc-> stop ) return 0;
 
@@ -89,11 +92,14 @@ font_context_next( FontContext * fc )
 	if ( len == 0 ) return 0;
 
 	if ( nfid == 0 ) {
-		hfont = fc->orig;
+		hfont       = fc->orig;
+		fixed_pitch = fc->orig_fixed_pitch;
 	} else if ( nfid == fc->nondefault_fid ) {
-		hfont = fc->nondefault_font->hfont;
+		hfont       = fc->nondefault_font->hfont;
+		fixed_pitch = fc->nondefault_font->font.pitch == fpFixed;
 	} else if ( !( _src = prima_font_mapper_get_font(nfid))) {
-		hfont = fc->orig;
+		hfont       = fc->orig;
+		fixed_pitch = fc->orig_fixed_pitch;
 	} else {
 		dst = (( PWidget) fc->self)-> font;
 		src = *_src;
@@ -108,13 +114,16 @@ font_context_next( FontContext * fc )
 				font_free(fc-> nondefault_font, false);
 			fc->nondefault_font = font_alloc(&dst);
 			fc->nondefault_fid  = nfid;
-			hfont = fc->nondefault_font->hfont;
+			hfont               = fc->nondefault_font->hfont;
+			fixed_pitch         = fc->nondefault_font->font.pitch == fpFixed;
 		} else {
-			hfont = fc->orig;
+			hfont               = fc->orig;
+			fixed_pitch         = fc->orig_fixed_pitch;
 		}
 	}
 
 	fc->curr = hfont;
+	fc->fixed_pitch = fixed_pitch;
 	selected = SelectObject(fc->dc, fc->curr);
 	if ( !fc->saved ) fc->saved = selected;
 
@@ -520,7 +529,7 @@ fix_combiners_pdx( Handle self, PGlyphsOutRec t, INT *pdx)
 }
 
 static Bool
-gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y, int * text_advance)
+gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y, int * text_advance, Bool fixed_pitch)
 {
 	Bool ok;
 	if ( t-> advances ) {
@@ -558,7 +567,7 @@ gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y, int * text_advance)
 			pdx[i + 1] -= gy;
 		}
 
-		if ( !(sys tmPitchAndFamily & TMPF_FIXED_PITCH ))
+		if ( fixed_pitch )
 			fix_combiners_pdx(self, t, pdx);
 		ok = ExtTextOutW(sys ps, x, y, ETO_GLYPH_INDEX | ETO_PDY, NULL, (LPCWSTR) t->glyphs, t->len, pdx);
 		if ( pdx != dx ) free(pdx);
@@ -622,7 +631,7 @@ apc_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 		int advance = 0;
 		if ( !( ok = use_alpha ?
 				aa_glyphs_out(self, t, xx, yy, fc.stop ? NULL : &advance, fc.curr) :
-				gp_glyphs_out(self, t, xx, yy, fc.stop ? NULL : &advance)
+				gp_glyphs_out(self, t, xx, yy, fc.stop ? NULL : &advance, fc.fixed_pitch)
 			))
 			break;
 		if ( !fc.stop ) {
