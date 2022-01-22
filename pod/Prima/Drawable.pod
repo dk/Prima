@@ -952,7 +952,8 @@ FONT record from the passive list.
 As a setter, manages the active list, and uses COMMAND integer as a second argument.
 If COMMAND is 0, removes the INDEXth font from the active list, and if 1, marks it
 for immediate scanning and adding to the active list. The font is added in the end
-of the list, after the existing active entries.
+of the list, after the existing active entries. The COMMAND 2 disables a font in both
+active and passive lists, until a COMMAND 3 call that enables it.
 
 =item lineEnd VALUE
 

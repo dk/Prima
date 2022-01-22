@@ -106,6 +106,7 @@ prima_font_mapper_save_font(const char * name, unsigned int style)
 		return NULL;
 	}
 	bzero(p, sizeof(PassiveFontEntry));
+	p->is_enabled = true;
 	f = &p->font;
 	memset( &f->undef, 0xff, sizeof(f->undef));
 	f->undef.encoding = 0; /* needs enforcing */
@@ -221,6 +222,9 @@ can_substitute(uint32_t c, int pitch, int fid)
 	unsigned int page, bit;
 	PPassiveFontEntry pfe = PASSIVE_FONT(fid);
 
+	if ( !pfe-> is_enabled)
+		return false;
+
 	if ( !pfe-> ranges_queried )
 		query_ranges(pfe);
 
@@ -256,9 +260,8 @@ find_font(uint32_t c, int pitch, int style, uint16_t preferred_font)
 	unsigned int i, def_style;
 	unsigned int page = c >> FONTMAPPER_VECTOR_BASE;
 
-	if ( preferred_font > 0 && can_substitute(c, pitch, preferred_font)) {
+	if ( preferred_font > 0 && can_substitute(c, pitch, preferred_font))
 		return preferred_font;
-	}
 
 	if ( font_active_entries.count > page && font_active_entries.items[page] ) {
 		PList fonts = (PList) font_active_entries.items[page];
@@ -290,10 +293,11 @@ find_font(uint32_t c, int pitch, int style, uint16_t preferred_font)
 		return font_mapper_default_id[def_style];
 
 	for ( i = 1; i < font_passive_entries.count; i++) {
-		if ( style >= 0 ) {
-			PPassiveFontEntry pfe = PASSIVE_FONT(i);
-			if ( pfe-> font.style != style ) continue;
-		}
+		PPassiveFontEntry pfe = PASSIVE_FONT(i);
+		if ( !pfe-> is_enabled)
+			continue;
+		if ( style >= 0 && pfe-> font.style != style )
+			continue;
 		if ( can_substitute(c, pitch, i))
 			return i;
 	}
@@ -302,10 +306,11 @@ find_font(uint32_t c, int pitch, int style, uint16_t preferred_font)
 		if ( font_mapper_default_id[def_style] >= 0 && can_substitute(c, pitch, font_mapper_default_id[def_style]))
 			return font_mapper_default_id[def_style];
 		for ( i = 1; i < font_passive_entries.count; i++) {
-			if ( style >= 0 ) {
-				PPassiveFontEntry pfe = PASSIVE_FONT(i);
-				if ( pfe->font.style != style ) continue;
-			}
+			PPassiveFontEntry pfe = PASSIVE_FONT(i);
+			if ( !pfe-> is_enabled)
+				continue;
+			if ( style >= 0 && pfe-> font.style != style )
+				continue;
 			if ( can_substitute(c, fpDefault, i))
 				return i;
 		}
@@ -332,7 +337,7 @@ Drawable_fontMapperPalette( Handle self, Bool set, int index, SV * sv)
 {
 	if ( var->  stage > csFrozen) return NULL_SV;
 	if ( set) {
-		uint16_t fid;
+		uint16_t i, fid;
 		Font font;
 		PPassiveFontEntry pfe;
 		char * key;
@@ -344,15 +349,28 @@ Drawable_fontMapperPalette( Handle self, Bool set, int index, SV * sv)
 		pfe = PASSIVE_FONT(fid);
 
 		switch ( index ) {
-		case 0: 
-			/* delete */
+		case 0:
+			/* delete active */
 			if ( !pfe-> is_active ) return NULL_SV;
 			remove_active_font(fid);
 			return newSViv(1);
 		case 1:
-			/* add */
+			/* add active */
 			if ( pfe-> is_active ) return NULL_SV;
+			if ( !pfe-> is_enabled ) return NULL_SV;
 			add_active_font(fid);
+			return newSViv(1);
+		case 2:
+			/* disable */
+			if ( pfe-> is_active ) remove_active_font(fid);
+			pfe-> is_enabled = 0;
+			for ( i = 0; i < N_STYLES; i++)
+				if ( font_mapper_default_id[i] == fid )
+					font_mapper_default_id[i] = -1;
+			return newSViv(1);
+		case 3:
+			/* enable */
+			pfe-> is_enabled = 1;
 			return newSViv(1);
 		default:
 			warn("Drawable::fontPalette(%d) operation is not defined", index);

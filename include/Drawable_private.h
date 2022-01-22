@@ -30,6 +30,7 @@ typedef struct {
 	List   vectors;
 	Bool   ranges_queried;
 	Bool   is_active;
+	Bool   is_enabled;
 	unsigned int flags, style;
 } PassiveFontEntry, *PPassiveFontEntry;
 
