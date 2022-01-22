@@ -380,6 +380,14 @@ text_get_libthai_breaks( TextWrapRec* t)
 		goto FAIL;
 
 	t-> n_word_breaks = th_brk_wc_find_breaks(NULL, (thwchar_t*)pbuf.heap, t->word_breaks, LIBTHAI_MAX_TEXT_BREAKS);
+#ifdef _DEBUG
+	if ( t-> n_word_breaks ) {
+		int i;
+		printf("thai breaks:");
+		for ( i = 0; i < t-> n_word_breaks; i++) printf(" %d", t->word_breaks[i]);
+		printf("\n");
+	}
+#endif
 FAIL:
 	semistatic_done(&pbuf);
 }
