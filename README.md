@@ -111,7 +111,7 @@ rather primitive.
 - Thai language doesn't use spaces between the words in a sentence. To wrap
 thai texts properly Prima can be compiled with the libthai library. No special
 treatment of thai text is needed programmatically, text wrapper does everything
-under the hood.
+under the hood. Get the libthai for strawberry at http://prima.eu.org/download/libthai-0.1.29-win64.zip
 
 SOURCE DISTRIBUTION INSTALLATION
 ================================

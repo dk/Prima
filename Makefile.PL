@@ -1735,6 +1735,7 @@ sub setup_libthai
 		goto WARN;
 	}
 
+	my @lib = @LIBS;
 	goto WARN unless pkgconfig('libthai');
 
 	printlog "Checking if can compile and link with libthai... ";
@@ -1747,6 +1748,7 @@ int main() {
 }
 LIBTHAI
 		printlog "no\n";
+		@LIBS = @lib;
 		goto WARN;
 	}
 	printlog "yes\n";
