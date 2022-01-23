@@ -531,20 +531,38 @@ sub get_text_width
 	my ( $self, $text, $flags, $from, $len) = @_;
 	$flags //= 0;
 	$from  //= 0;
+	return 0 if $from < 0;
 	my $glyphs;
 	if ( ref($text) eq 'Prima::Drawable::Glyphs') {
 		$glyphs = $text->glyphs;
-		$len    = @$glyphs if !defined($len) || $len < 0 || $len > @$glyphs;
+		$len    = @$glyphs - $from if !defined($len) || $from + $len > @$glyphs;
 	} elsif (ref($text)) {
 		$len //= -1;
 		return $text->get_text_width($self, $flags, $from, $len);
 	} else {
-		$len = length($text) if !defined($len) || $len < 0 || $len > length($text);
+		$len = length($text) - $from if !defined($len) || $from + $len > length($text);
 	}
-	return 0 unless $len;
+	return 0 if $len <= 0;
 
-	my $w = $self->glyph_canvas-> get_text_width( $text, $flags, $from, $len);
-	$w *= $self->{font_scale} unless $glyphs && $text->advances;
+	my $w;
+	if ( $glyphs && $text->advances ) {
+		if ( $flags & to::AddOverhangs) {
+			$w = $self->glyph_canvas-> get_text_width( $text, $flags & ~to::AddOverhangs, $from, $len);
+			my ($g1,$g2) = @$glyphs[$from, $from + $len - 1];
+			my $abc = $self->get_font_abc($g1,$g1,to::Glyphs) or goto NO_ABC;
+			$w += ($abc->[0] < 0) ? -$abc->[0] : 0;
+			if ( $g1 != $g2 ) {
+				$abc = $self->get_font_abc($g2,$g2,to::Glyphs) or goto NO_ABC;
+				$w += ($abc->[2] < 0) ? -$abc->[2] : 0;
+			}
+		NO_ABC:
+		} else {
+			$w = $self->glyph_canvas-> get_text_width( $text, $flags, $from, $len);
+		}
+	} else {
+		$w = $self->glyph_canvas-> get_text_width( $text, $flags, $from, $len);
+		$w *= $self->{font_scale};
+	}
 	return int( $w * $self-> {font_x_scale} + .5);
 }
 
