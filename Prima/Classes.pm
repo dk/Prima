@@ -610,6 +610,8 @@ sub fillWinding # compatibility
 	$_[0]->fillMode(($_[1] ? fm::Winding : fm::Alternate) | fm::Overlay);
 }
 
+sub font_mapper { Prima::FontMapper->new( shift ) }
+
 package Prima::Image;
 use vars qw( @ISA);
 @ISA = qw(Prima::Drawable);
@@ -1989,6 +1991,33 @@ sub set_text
 	$self-> notify( 'Change');
 	$self-> repaint;
 }
+
+package Prima::FontMapper;
+
+sub new { bless { canvas => $_[1] }, $_[0] }
+
+sub get   { Prima::Application->font_mapper_action( command => 'get_font', index => $_[1] ) }
+sub count { Prima::Application->font_mapper_action( command => 'get_count' ) }
+
+sub index
+{
+	my $canvas = $_[0]->{canvas};
+	return undef unless $canvas;
+	return Prima::Application->font_mapper_action( command => 'get_index', font => $canvas->font );
+}
+
+sub AUTOLOAD
+{
+	no strict;
+	my $self = shift;
+	my $cmd = $AUTOLOAD;
+	$cmd =~ s/.*://;
+	my %font = ( style => fs::Normal, @_ );
+	Carp::carp("at least font name is required"), return -1 unless exists $font{name};
+	return Prima::Application->font_mapper_action( command => $cmd, font => \%font );
+}
+
+sub DESTROY {}
 
 package Prima::Application;
 use vars qw(@ISA @startupNotifications);

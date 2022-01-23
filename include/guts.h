@@ -53,6 +53,16 @@ extern void  prima_cleanup_font_mapper(void);
 extern PFont prima_font_mapper_save_font(const char * name, unsigned int style);
 extern PFont prima_font_mapper_get_font(unsigned int fid );
 
+#define pfmaGetCount      0
+#define pfmaIsActive      1
+#define pfmaPassivate     2
+#define pfmaActivate      3
+#define pfmaIsEnabled     4
+#define pfmaEnable        5
+#define pfmaDisable       6
+#define pfmaGetIndex      7
+extern int   prima_font_mapper_action(int action, PFont font);
+
 #ifdef __cplusplus
 }
 #endif

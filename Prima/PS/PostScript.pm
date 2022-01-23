@@ -595,7 +595,7 @@ sub glyph_out_outline
 				$newfont = $self->{font};
 				$restore_font = 0;
 			} else {
-				my $src  = $self-> fontMapperPalette($nfid);
+				my $src  = $self->font_mapper->get($nfid);
 				my $dst  = \%{$self->{font}};
 				$newfont = Prima::Drawable->font_match( $src, $dst );
 				$restore_font = 1;

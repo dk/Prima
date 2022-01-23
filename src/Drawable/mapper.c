@@ -332,61 +332,63 @@ find_font(uint32_t c, int pitch, int style, uint16_t preferred_font)
 	return 0;
 }
 
-SV *
-Drawable_fontMapperPalette( Handle self, Bool set, int index, SV * sv)
+int
+prima_font_mapper_action(int action, PFont font)
 {
-	if ( var->  stage > csFrozen) return NULL_SV;
-	if ( set) {
-		uint16_t i, fid;
-		Font font;
-		PPassiveFontEntry pfe;
-		char * key;
+	uint16_t i, fid;
+	char * key;
+	PPassiveFontEntry pfe;
 
-		SvHV_Font(sv, &font, "Drawable::fontMapperPalette");
-		key = font_key(font.name, font.style);
+	switch (action) {
+	case pfmaIsActive:
+	case pfmaActivate:
+	case pfmaPassivate:
+	case pfmaIsEnabled:
+	case pfmaEnable:
+	case pfmaDisable:
+	case pfmaGetIndex:
+		key = font_key(font->name, font->style);
 		fid = PTR2IV(hash_fetch(font_substitutions, key, strlen(key)));
-		if ( fid == 0 ) return NULL_SV;
+		if ( fid == 0 ) return -1;
 		pfe = PASSIVE_FONT(fid);
-
-		switch ( index ) {
-		case 0:
-			/* delete active */
-			if ( !pfe-> is_active ) return NULL_SV;
-			remove_active_font(fid);
-			return newSViv(1);
-		case 1:
-			/* add active */
-			if ( pfe-> is_active ) return NULL_SV;
-			if ( !pfe-> is_enabled ) return NULL_SV;
-			add_active_font(fid);
-			return newSViv(1);
-		case 2:
-			/* disable */
-			if ( pfe-> is_active ) remove_active_font(fid);
-			pfe-> is_enabled = 0;
-			for ( i = 0; i < N_STYLES; i++)
-				if ( font_mapper_default_id[i] == fid )
-					font_mapper_default_id[i] = -1;
-			return newSViv(1);
-		case 3:
-			/* enable */
-			pfe-> is_enabled = 1;
-			return newSViv(1);
-		default:
-			warn("Drawable::fontPalette(%d) operation is not defined", index);
-			return NULL_SV;
-		}
-	} else if ( index < 0 ) {
-		return newSViv( font_passive_entries.count );
-	} else if ( index == 0 ) {
-		char * key = font_key(var->font.name, var->font.style);
-		index = PTR2IV(hash_fetch(font_substitutions, key, strlen(key)));
-		return newSViv(index);
-	} else {
-		PFont f = prima_font_mapper_get_font(index);
-		if (!f) return NULL_SV;
-		return sv_Font2HV( f );
+		break;
+	case pfmaGetCount:
+		return font_passive_entries.count;
+		break;
+	default:
+		return -1;
 	}
+
+	switch (action) {
+	case pfmaIsActive:
+		return pfe-> is_active;
+	case pfmaPassivate:
+		if ( !pfe-> is_active ) return 0;
+		remove_active_font(fid);
+		return 1;
+	case pfmaActivate:
+		if ( pfe-> is_active || !pfe-> is_enabled ) return 0;
+		add_active_font(fid);
+		return 1;
+	case pfmaIsEnabled:
+		return pfe-> is_enabled;
+	case pfmaEnable:
+		if ( pfe-> is_enabled ) return 0;
+		pfe-> is_enabled = 1;
+		return 1;
+	case pfmaDisable:
+		if ( !pfe-> is_enabled ) return 0;
+		if ( pfe-> is_active ) remove_active_font(fid);
+		pfe-> is_enabled = 0;
+		for ( i = 0; i < N_STYLES; i++)
+			if ( font_mapper_default_id[i] == fid )
+				font_mapper_default_id[i] = -1;
+		return 1;
+	case pfmaGetIndex:
+		return fid;
+	}
+
+	return -1;
 }
 
 Bool

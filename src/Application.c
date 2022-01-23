@@ -353,6 +353,56 @@ Application_fonts( Handle self, char * name, char * encoding)
 }
 
 SV*
+Application_font_mapper_action( char * dummy, HV * profile)
+{
+	dPROFILE;
+	SV * ret = NULL_SV;
+	char * command;
+	int cmd;
+	Font font;
+	if ( !pexist(command) ) {
+		warn("command expected");
+		goto EXIT;
+	}
+
+	command = pget_c(command);
+	if ( strcmp(command, "get_font") == 0 ) {
+		PFont f;
+		if ( !pexist(index) ) {
+			warn("index expected");
+			goto EXIT;
+		}
+		f = prima_font_mapper_get_font(pget_i(index));
+		if (!f) goto EXIT;
+
+		ret = sv_Font2HV( f );
+	} else if ( strcmp(command, "get_count") == 0 ) {
+		ret = newSViv( prima_font_mapper_action(pfmaGetCount, NULL));
+	} else if (
+		((strcmp(command, "disable")    == 0 ) && (cmd = pfmaIsActive )) ||
+		((strcmp(command, "enable")     == 0 ) && (cmd = pfmaPassivate)) ||
+		((strcmp(command, "is_enabled") == 0 ) && (cmd = pfmaActivate )) ||
+		((strcmp(command, "passivate")  == 0 ) && (cmd = pfmaIsEnabled)) ||
+		((strcmp(command, "activate")   == 0 ) && (cmd = pfmaEnable   )) ||
+		((strcmp(command, "is_active")  == 0 ) && (cmd = pfmaDisable  )) ||
+		((strcmp(command, "get_index")  == 0 ) && (cmd = pfmaGetIndex ))
+	) {
+		if ( !pexist(font) ) {
+			warn("font expected");
+			goto EXIT;
+		}
+		SvHV_Font(pget_sv(font), &font, "Application::font_mapper");
+		ret = newSViv( prima_font_mapper_action(cmd, &font));
+	} else {
+		warn("unknown command");
+	}
+
+EXIT:
+	hv_clear(profile);
+	return ret;
+}
+
+SV*
 Application_font_encodings( Handle self, char * encoding)
 {
 	AV * glo = newAV();

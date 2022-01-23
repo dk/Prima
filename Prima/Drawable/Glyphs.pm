@@ -80,7 +80,7 @@ sub _debug
 		delete $f{0};
 		if ( $::application ) {
 			for my $fid ( sort keys %f ) {
-				my $f = $::application->fontMapperPalette($fid);
+				my $f = Prima::FontMapper->get($fid);
 				$out .= "  #$fid: $f->{name}\n";
 			}
 		}
@@ -1101,7 +1101,7 @@ The array is respected by C<text_out> (but not by C<get_text_width>).
 =item fonts
 
 Contains a set of unsigned 16-bit integers where each is an index in the font
-substitution list (see L<Prima::Drawable/fontMapperPalette>). Zero means the
+substitution list (see L<Prima::Drawable/font_mapper>). Zero means the
 current font.
 
 The font substitution is applied by C<text_shape> when C<polyfont> options is

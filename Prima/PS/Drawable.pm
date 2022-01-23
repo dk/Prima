@@ -400,10 +400,11 @@ sub fonts
 	my $enc = 'iso10646-1'; # unicode only
 	if ( !defined $family ) {
 		my @fonts;
-		my $num = $self->fontMapperPalette(-1);
+		my $fm = $self-> font_mapper;
+		my $num = $fm->count;
 		if ( $num > 0 ) {
 			for my $fid ( 1 .. $num ) {
-				my $f = $self->fontMapperPalette($fid) or next;
+				my $f = $fm->get($fid) or next;
 				$f->{encodings} = [$enc];
 				$f->{encoding} = $enc;
 				push @fonts, $f;
