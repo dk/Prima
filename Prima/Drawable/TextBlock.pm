@@ -519,6 +519,10 @@ sub block_wrap
 				push @$z, OP_TEXT, $ofs, $tlen, $tw;
 				$x += $tw;
 				$has_text = 1;
+			} elsif ( $x + $apx >= $width ) {
+				return if $x == 0;
+				$newblock-> ();
+				goto REWRAP;
 			} elsif ( $can_wrap) {
 				return if $tlen <= 0;
 				my $str = substr( $$t, $o + $ofs, $tlen);
