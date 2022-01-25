@@ -1188,11 +1188,19 @@ Widget_set_centered( Handle self, Bool x, Bool y)
 
 	if ( parent == application ) {
 		int i, nrects = 0;
+		Point mouse = apc_pointer_get_pos(application);
 		Box *best = NULL, *rects = apc_application_get_monitor_rects( application, &nrects);
 		for ( i = 0; i < nrects; i++) {
 			Box * curr = rects + i;
-			if ( best == NULL || best-> x > curr->x || best->y > curr->y)
+			if (
+				curr->x <= mouse.x &&
+				curr->y <= mouse.y &&
+				curr->x + curr->width > mouse.x &&
+				curr->y + curr->height > mouse.y
+			) {
 				best = curr;
+				break;
+			}
 		}
 		if ( best ) {
 			delta.x = best->x;
