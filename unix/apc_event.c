@@ -1298,12 +1298,19 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 			e. pos. dblclk = true;
 		}
 
-		if ( e. cmd == cmMouseDown
-			&& (( guts. mouse_wheel_up != 0 && bev-> button == guts. mouse_wheel_up)
-					|| ( guts. mouse_wheel_down != 0 && bev-> button == guts. mouse_wheel_down)))
-		{
-			e. cmd = cmMouseWheel;
-			e. pos. button = bev-> button == guts. mouse_wheel_up ? WHEEL_DELTA : -WHEEL_DELTA;
+		if (
+			(e. cmd == cmMouseDown || e. cmd == cmMouseUp) &&
+			(
+				( guts. mouse_wheel_up   != 0 && bev-> button == guts. mouse_wheel_up) ||
+				( guts. mouse_wheel_down != 0 && bev-> button == guts. mouse_wheel_down)
+			)
+		) {
+			if ( e. cmd == cmMouseDown ) {
+				e. cmd = cmMouseWheel;
+				e. pos. button = bev-> button == guts. mouse_wheel_up ? WHEEL_DELTA : -WHEEL_DELTA;
+			} else {
+				e. cmd = 0;
+			}
 		} else if ( e.cmd == cmMouseUp &&
 			guts.last_button_event.type == cmMouseDown &&
 			bev-> window == guts.last_button_event.window &&
