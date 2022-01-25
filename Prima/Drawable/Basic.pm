@@ -425,6 +425,7 @@ sub text_wrap_shape
 
 	my $opt    = delete($opt{options}) // tw::Default;
 	my $shaped = $self-> text_shape( $text, %opt );
+	$SIG{__WARN__} = sub { Carp::confess };
 	return $self->text_wrap( $text, $width // -1, $opt, delete($opt{tabs}) // 8) unless $shaped;
 	my $ret    = $self-> text_wrap( $text, $width // -1, $opt, delete($opt{tabs}) // 8, 0, -1, $shaped);
 
