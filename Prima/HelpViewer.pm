@@ -932,7 +932,9 @@ sub setup_dialog
 	my $t = $self-> {text};
 	unless ( defined $setupdlg) {
 		Prima::message("$@"), return
-			unless $setupdlg = Prima::VBLoad( 'Prima::HelpViewer.fm');
+			unless $setupdlg = Prima::VBLoad( 'Prima::HelpViewer.fm',
+				'Form1'  => { visible => 0, centered => 1, designScale => [ 7, 16 ]}
+			);
 	}
 
 	my $sec = $inifile-> section('View');
