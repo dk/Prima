@@ -493,10 +493,10 @@ sub set_font
 	} else {
 		$font->{size} = $orig;
 		my $newh  = $font->{size} / $div;
-		my $xil   = $font->{internalLeading};
-		my $ratio = $font->{height} / ($newh + $xil);
+		my $xil   = $font->{internalLeading} * $newh / $font->{height};
+		my $ratio = $font->{height} / $newh;
 		$font->{height} = int( $newh + $xil + .5);
-		$font->{$_} = int( $font->{$_} / $ratio + .5) for qw(ascent internalLeading externalLeading);
+		$font->{$_} = int( $font->{$_} * $ratio + .5) for qw(ascent internalLeading externalLeading);
 		$font->{descent} = $font->{height} - $font->{ascent};
 	}
 
@@ -512,9 +512,8 @@ sub set_font
 
 	# When querying glyph extensions, remember to scale to the
 	# difference between PS and Prima models, ie without and with the internal leading
-	my $y_scale = 1.0 + $f1000->internalLeading / $f1000->height;
 	# Also, note that querying is on the canvas that has size=1000.
-	$self->{font_scale} = ($font->{size} / $div) / $f1000->height * $y_scale;
+	$self->{font_scale} = ($font->{size} / $div) / ( $f1000->height - $f1000-> internalLeading);
 
 	$new_font = $font->{size} . '.' . $self->{glyph_font};
 	$self-> {changed}->{font} = 1 if $curr_font ne $new_font;

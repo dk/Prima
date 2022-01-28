@@ -408,6 +408,11 @@ sub profile_default
 	return $def;
 }
 
+sub profile_check_in
+{
+	my ( $self, $p, $default) = @_;
+	$p->{userData}->{$_} = $p->{$_} for qw(resolution reversed rotate scaling);
+}
 
 sub init
 {
@@ -457,6 +462,13 @@ sub init
 	}
 
 	$self-> printer( $pr);
+	$self-> $_( $profile{userData}->{$_} ) for
+		grep { defined $profile{userData}->{$_} }
+		qw(reversed rotate);
+	$self-> resolution( @{$profile{userData}->{resolution}} )
+		if defined $profile{userData}->{resolution};
+	$self-> scale( ($profile{userData}->{scaling}) x 2)
+		if defined $profile{userData}->{scaling};
 	return %profile;
 }
 
