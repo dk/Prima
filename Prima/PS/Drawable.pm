@@ -482,7 +482,7 @@ sub set_font
 	#
 	# Here #2 is implemented
 	if ( $by_height ) {
-		my $xil = $font->{internalLeading} * $font->{height} / ( $font->{internalLeading} + $font->{height});
+		my $xil = $font->{internalLeading} * $orig / $font->{height};
 		$font->{size} = int( ($font->{height} - $xil) * $div + .5);
 		if ( $orig != $font->{height}) {
 			my $ratio = $orig / $font->{height};
@@ -493,10 +493,10 @@ sub set_font
 	} else {
 		$font->{size} = $orig;
 		my $newh  = $font->{size} / $div;
-		my $xil   = $font->{internalLeading} * $newh / $font->{height};
-		my $ratio = $font->{height} / $newh;
+		my $ratio = ($font->{height} - $font->{internalLeading}) / $newh;
+		my $xil   = $font->{internalLeading} / $ratio;
 		$font->{height} = int( $newh + $xil + .5);
-		$font->{$_} = int( $font->{$_} * $ratio + .5) for qw(ascent internalLeading externalLeading);
+		$font->{$_} = int( $font->{$_} / $ratio + .5) for qw(ascent internalLeading externalLeading);
 		$font->{descent} = $font->{height} - $font->{ascent};
 	}
 
