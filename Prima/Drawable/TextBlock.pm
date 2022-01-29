@@ -704,6 +704,132 @@ sub block_wrap
 	return @ret;
 }
 
+sub get_text_width_with_overhangs
+{
+	my ( $b, %opt) = @_;
+	my $canvas = $opt{canvas};
+
+	my $last_letter_ofs;
+	walk( $b, %opt,
+		trace     => tb::TRACE_TEXT,
+		text      => sub { $last_letter_ofs = $_[0] },
+	);
+
+	my @xy = (0,0);
+	my $last_c_width;
+	my $first_a_width;
+	walk( $b, %opt,
+		position  => \@xy,
+		trace     => tb::TRACE_REALIZE_FONTS | tb::TRACE_TEXT | tb::TRACE_GEOMETRY |
+				(( $opt{restoreCanvas} // 1) ? tb::TRACE_PAINT_STATE : 0 ),
+		text      => sub {
+			my ($ofs, $len, undef, $t) = @_;
+			my ($whole, $this_c_width);
+			if ( !defined $first_a_width) {
+				my $char = substr( $t, 0, 1 );
+				( $first_a_width, undef, $this_c_width ) = @{ $canvas->get_font_abc(
+					ord($char), ord($char), utf8::is_utf8($t)
+				) };
+				$whole++ if $len == 1;
+			}
+			if ( $ofs == $last_letter_ofs ) {
+				if ( $whole ) {
+					$last_c_width = $this_c_width;
+				} else {
+					my $char = substr( $t, -1, 1 );
+					( undef, undef, $last_c_width ) = @{ $canvas->get_font_abc(ord($char), ord($char), utf8::is_utf8($t)) };
+				}
+			}
+		},
+	);
+	if ( defined $first_a_width ) {
+		$first_a_width = ( $first_a_width < 0 ) ? -$first_a_width : 0;
+		$last_c_width  = ( $last_c_width  < 0 ) ? -$last_c_width : 0;
+	} else {
+		$first_a_width = $last_c_width = 0;
+	}
+
+	return $xy[0] + $first_a_width + $last_c_width;
+}
+
+sub justify_interspace
+{
+	my ($b, %opt) = @_;
+	my ($canvas, $width) = @opt{qw(canvas width)};
+
+	my $curr_width = get_text_width_with_overhangs($b, %opt);
+	return if $curr_width > $opt{width} || $curr_width == 0;
+	my $min_text_to_space_ratio = $opt{max_text_to_space_ratio} // 0.75;
+	return if $curr_width / $width < $min_text_to_space_ratio;
+
+	my @new = @$b[0 .. BLK_DATA_END];
+	my @breaks;
+	my $n_spaces = 0;
+	my $tt = '';
+	walk( $b, %opt,
+		trace     => TRACE_TEXT | REALIZE_FONTS,
+		other     => sub { push @new, @_ },
+		text      => sub {
+			my $t = pop;
+			return push @new, text(@_) unless $t =~ m/^(\s*)(\S+\s+\S.*?)(\s*)$/;
+
+			my ($ofs, $len) = @_;
+			my ($start, $mid, $end) = ($1, $2, $3);
+			my @txt;
+			while ( 1 ) {
+				my $tx;
+				if ( $mid =~ m/\G(\s+)/gcs) {
+					my $l = length($1);
+					$ofs += $l;
+					my $tw = $canvas->get_text_width($1);
+					push @txt, undef, undef, $tw;
+					$n_spaces++;
+					next;
+				} elsif ( $mid =~ m/\G$/gcs) {
+					last;
+				} elsif ($mid =~ m/\G^(\S+)/gcs) {
+					$tx = "$start$1";
+				} elsif ( $mid =~ m/\G(\S+)$/gcs) {
+					$tx = "$1$end";
+				} elsif ( $mid =~ m/\G(\S+)/gcs) {
+					$tx = $1;
+				}
+				$tt .= "$tx ";
+
+				my $l = length($tx);
+				my $tw = $canvas->get_text_width($tx);
+				push @txt, $ofs, $l, $tw;
+				$ofs += $l;
+			}
+			push @breaks, [ scalar(@new), \@txt ];
+		},
+	);
+	return unless $n_spaces;
+
+	my $avg_space_incr  = ($width - $curr_width) / $n_spaces;
+	my ($curr, $last_incr) = (0,0);
+
+	for ( my $i = $#breaks; $i >= 0; $i--) {
+		my ( $at, $txt ) = @{ $breaks[$i] };
+		my @blk;
+		for ( my $j = 0; $j < @$txt; $j += 3) {
+			if ( defined $$txt[$j] ) {
+				push @blk, text(@$txt[$j .. $j+2] );
+			} else {
+				$curr += $avg_space_incr;
+				my $incr = int( $curr - $last_incr );
+				$last_incr += $incr;
+				push @blk, moveto($$txt[$j + 2] + $incr, 0);
+			}
+		}
+		splice( @new, $at, 0, @blk);
+	}
+	$new[BLK_WIDTH] = $width;
+
+	return \@new;
+}
+
+
 package Prima::Drawable::TextBlock;
 
 sub new
@@ -843,43 +969,14 @@ sub text_out
 	return not $semaphore;
 }
 
-sub get_text_width_with_overhangs
-{
-	my ($self, $canvas) = @_;
-	my $first_a_width;
-	my $last_c_width;
-	my @xy = (0,0);
-	tb::walk( $self->{block}, $self-> walk_options,
-		position  => \@xy,
-		trace     => tb::TRACE_GEOMETRY | tb::TRACE_REALIZE | tb::TRACE_TEXT |
-				( $self-> {restoreCanvas} ? tb::TRACE_PAINT_STATE : 0 ),
-		canvas    => $canvas,
-		text      => sub {
-			my $t = pop;
-			if ( !defined $first_a_width) {
-				my $char = substr( $t, 0, 1 );
-				( $first_a_width ) = @{ $canvas->get_font_abc(ord($char), ord($char), utf8::is_utf8($t)) };
-			}
-			my $char = substr( $t, -1, 1 );
-			( undef, undef, $last_c_width ) = @{ $canvas->get_font_abc(ord($char), ord($char), utf8::is_utf8($t)) };
-		},
-	);
-	return (0,0,0) unless defined $first_a_width;
-	$first_a_width = ( $first_a_width < 0 ) ? -$first_a_width : 0;
-	$last_c_width  = ( $last_c_width  < 0 ) ? -$last_c_width : 0;
-	return ($xy[0], $first_a_width, $last_c_width);
-}
-
 sub get_text_width
 {
 	my ( $self, $canvas, $add_overhangs) = @_;
 
 	$self->acquire($canvas, font => 1, dimensions => 1);
 
-	if ( $add_overhangs ) {
-		my ( $width, $a, $c) = $self-> get_text_width_with_overhangs($canvas);
-		return $width + $a + $c;
-	}
+	return tb::get_text_width_with_overhangs( $self->{block}, $self-> walk_options )
+		if $add_overhangs;
 
 	my @xy = (0,0);
 	tb::walk( $self->{block}, $self-> walk_options,
@@ -1204,6 +1301,11 @@ cleared in the output block.
 - C<OP_MARK>'s second and third parameters assigned to the current (X,Y) coordinates.
 
 - C<OP_WRAP> removed from the output.
+
+=item justify_interspace %OPTIONS
+
+Uses C<$OPTIONS{width}> and C<$OPTIONS{min_text_to_space_ratio}> to try to make
+inter-word spacing. Returns new block if successful, undef otherwise.
 
 =item walk BLOCK, %OPTIONS
 
