@@ -407,7 +407,7 @@ sub walk
 				$y *= $resolution->[1] / 72;
 				$f &= ~X_DIMENSION_POINT;
 			}
-			$ret = $sub->( $x, $y, $f ) if $sub;
+			$ret = $sub->( @opcode, $x, $y, $f ) if $sub;
 			if (!($f & X_EXTEND) && ($trace & TRACE_POSITION)) {
 				$$position[0] += $x;
 				$$position[1] += $y;
@@ -824,7 +824,6 @@ sub justify_interspace
 		}
 		splice( @new, $at, 0, @blk);
 	}
-
 	$new[BLK_WIDTH] = $width;
 
 	return \@new;

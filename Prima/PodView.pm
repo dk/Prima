@@ -1744,7 +1744,7 @@ sub print
 
 	for ( ; $mid <= $max; $mid++) {
 		# don't print the Index section
-		next if defined $self->{index_ends_at} and $mid <= $self->{index_ends_at};
+		next if defined $self->{index_ends_at} and $mid < $self->{index_ends_at};
 
 		my $m = $self-> {model}-> [$mid];
 		next if $$m[M_TYPE] != T_NORMAL; # don't print div background

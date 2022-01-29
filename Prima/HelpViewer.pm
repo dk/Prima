@@ -231,8 +231,8 @@ sub profile_default
 				$inifile-> section('View')-> {FullText} = $_[0]-> {text}-> topicView ? 0 : 1;
 			}],
 			[ 'justify' => '~Justify text' => sub {
-				$_[0]-> {text}-> justify( ! $_[0]-> menu-> toggle( $_[1]));
-				$inifile-> section('View')-> {Justify} = $_[0]-> {text}-> justify ? 0 : 1;
+				$_[0]-> {text}-> justify( $_[0]-> menu-> toggle( $_[1]));
+				$inifile-> section('View')-> {Justify} = $_[0]-> {text}-> justify ? 1 : 0;
 			}],
 			['-src' => 'View so~urce' => 'Ctrl+U' => '^U' => 'view_source'],
 			[],
