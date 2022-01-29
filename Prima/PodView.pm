@@ -973,6 +973,7 @@ sub close_read
 
 	my $secid = 0;
 	my $msecid = scalar(@{$self-> {topics}});
+	delete $self->{index_ends_at};
 
 	unless ( $msecid) {
 		push @{$self-> {topics}}, [
@@ -1044,7 +1045,10 @@ sub close_read
 	$$_[M_TEXT_OFFSET] += $offsets[0]      for @$m[0..$text_ends_at[1]-1];
 	$$_[M_TEXT_OFFSET] -= $text_ends_at[0] for @$m[$text_ends_at[1]..$index_ends_at[1]-1];
 	# next reshuffle the model
-	unshift @$m, splice( @$m, $text_ends_at[1]);
+	my @index_section = splice( @$m, $text_ends_at[1]);
+	unshift @$m, @index_section;
+	$self->{index_ends_at} = @index_section;
+	undef @index_section;
 	# text
 	my $t = $self-> {text};
 	my $ts = substr( $$t, $text_ends_at[0]);
@@ -1739,9 +1743,13 @@ sub print
 	};
 
 	for ( ; $mid <= $max; $mid++) {
-		my $g = tb::block_create();
+		# don't print the Index section
+		next if defined $self->{index_ends_at} and $mid <= $self->{index_ends_at};
+
 		my $m = $self-> {model}-> [$mid];
 		next if $$m[M_TYPE] != T_NORMAL; # don't print div background
+
+		my $g = tb::block_create();
 
 		my @blocks;
 		$$g[ tb::BLK_TEXT_OFFSET] = $$m[M_TEXT_OFFSET];
