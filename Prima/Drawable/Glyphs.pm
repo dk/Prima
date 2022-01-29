@@ -837,6 +837,9 @@ sub justify_interspace
 
 	my $curr_width  = $canvas->get_text_width($self, to::AddOverhangs);
 	return if $curr_width > $width || $curr_width == 0;
+	my $min_text_to_space_ratio = $opt{max_text_to_space_ratio} // 0.75;
+	return if $curr_width / $width < $min_text_to_space_ratio;
+
 	my $advances = $self->[ADVANCES] or return 0;
 	my $indexes = $self->[INDEXES];
 	my $n_glyphs = scalar @{$self->[GLYPHS]};
@@ -1404,6 +1407,11 @@ that can be reused in subsequent calls.
 =item word BOOL = 1
 
 If set, runs an inter-word spacing by extending advances on all space glyphs.
+
+=item min_text_to_space_ratio FLOAT = 0.75
+
+If C<word> set, does not run inter-word justification if text to space ratio
+is too small (i e don't spread text too thin )
 
 =back
 
