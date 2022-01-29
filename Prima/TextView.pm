@@ -412,7 +412,22 @@ sub block_wrap
 		baseFontSize  => $self->{defaultFontSize},
 		resolution    => $self->{resolution},
 		wordBreak     => 1,
-		textDirection => $self->{textDirection}, 
+		textDirection => $self->{textDirection},
+	);
+}
+
+sub justify_interspace
+{
+	my ( $self, $canvas, $b, $state, $width) = @_;
+	return tb::justify_interspace( $b,
+		textPtr       => $self->{text},
+		canvas        => $canvas,
+		state         => $state,
+		width         => $width,
+		fontmap       => $self->{fontPalette},
+		baseFontSize  => $self->{defaultFontSize},
+		resolution    => $self->{resolution},
+		textDirection => $self->{textDirection},
 	);
 }
 
