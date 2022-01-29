@@ -179,7 +179,8 @@ sub profile_default
 		],
 		pageName      => '',
 		topicView     => 0,
-		textDirection  => $::application->textDirection,
+		textDirection => $::application->textDirection,
+		justify       => 1,
 	);
 	@$def{keys %prf} = values %prf;
 	return $def;
@@ -199,6 +200,7 @@ sub init
 	$self-> {topics}     = [];
 	$self-> {hasIndex}   = 0;
 	$self-> {topicView}  = 0;
+	$self-> {justify}  = 0;
 	$self-> {lastLinkPointer} = -1;
 	my %profile = $self-> SUPER::init(@_);
 
@@ -209,7 +211,7 @@ sub init
 	$self-> {fontPalette}-> [1] = \%font;
 	$self-> {fontPaletteSize} = 2;
 
-	$self-> $_($profile{$_}) for qw( styles images pageName topicView);
+	$self-> $_($profile{$_}) for qw( styles images pageName topicView justify);
 
 	return %profile;
 }
@@ -477,6 +479,15 @@ sub topicView
 	$self-> load_file( $self-> {pageName});
 }
 
+sub justify
+{
+	return $_[0]-> {justify} unless $#_;
+	my ( $self, $justify) = @_;
+	$justify = ( $justify ? 1 : 0);
+	return if $self-> {justify} == $justify;
+	$self-> {justify} = $justify;
+	$self-> format(1);
+}
 
 sub pageName
 {
@@ -1573,7 +1584,7 @@ sub format_chunks
 
 		my $next_text_offs = ( $mid == $#{$self->{model}} ) ? length( ${$self->{text}} ) : $self->{model}->[$mid + 1]->[M_TEXT_OFFSET];
 		my $indent = $$m[M_INDENT] * $$indents[ $$m[M_FONT_ID]];
-		@blocks = $self-> block_wrap( $self, $g, $state, $formatWidth - $indent);
+		@blocks = $self-> block_wrap( $self, $g, $state, $formatWidth - $indent, right_indent => $$indents[ $$m[M_FONT_ID]]);
 
 		# adjust size
 		for ( @blocks) {
@@ -1739,7 +1750,7 @@ sub print
 
 		# format the paragraph
 		my $indent = $$m[M_INDENT] * $indents[ $$m[M_FONT_ID]];
-		@blocks = $self-> block_wrap( $canvas, $g, $state, $formatWidth - $indent);
+		@blocks = $self-> block_wrap( $canvas, $g, $state, $formatWidth - $indent, right_indent => $indents[ $$m[M_FONT_ID]]);
 
 		# paint
 		$self-> reset_state;
@@ -1769,6 +1780,25 @@ sub print
 	$ret = 1;
 ABORT:
 	return $ret;
+}
+
+sub block_wrap
+{
+	my ( $self, $canvas, $block, $state, $width, %opt ) = @_;
+	my @blocks = $self-> SUPER::block_wrap( $canvas, $block, $state, $width );
+	return unless @blocks;
+
+	if ( $self->{justify} ) {
+		my $ri = $opt{right_indent} // 0;
+		my @b;
+		for ( my $i = 0; $i < $#blocks; $i++) {
+			my $b = $self->justify_interspace( $canvas, $blocks[$i], $state, $width - $ri);
+			push @b, $b // $blocks[$i];
+		}
+		push @b, $blocks[-1];
+		@blocks = @b;
+	}
+	return @blocks;
 }
 
 sub select_text_offset

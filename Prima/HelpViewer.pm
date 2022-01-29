@@ -199,6 +199,7 @@ $inifile = Prima::IniFile-> create(
 	file => Prima::Utils::path('HelpWindow'),
 	default => { View => {
 		FullText => 1,
+		Justify  => 1,
 		FixedFont => 'monospace',
 	}},
 );
@@ -228,6 +229,10 @@ sub profile_default
 				$_[0]-> {text}-> topicView( ! $_[0]-> menu-> toggle( $_[1]));
 				$_[0]-> update;
 				$inifile-> section('View')-> {FullText} = $_[0]-> {text}-> topicView ? 0 : 1;
+			}],
+			[ 'justify' => '~Justify text' => sub {
+				$_[0]-> {text}-> justify( ! $_[0]-> menu-> toggle( $_[1]));
+				$inifile-> section('View')-> {Justify} = $_[0]-> {text}-> justify ? 0 : 1;
 			}],
 			['-src' => 'View so~urce' => 'Ctrl+U' => '^U' => 'view_source'],
 			[],
@@ -407,7 +412,9 @@ sub init
 		$self-> {text}-> topicView(0);
 	} else {
 		$self-> {text}-> topicView(1);
-    }
+	}
+	$self-> {text}-> justify( $sec->{Justify});
+	$self-> menu-> justify-> checked($sec->{Justify});
 
 	$self-> {text}-> {fontPalette}-> [0]-> {name} = $sec-> {VariableFont}
 		if $sec-> {VariableFont};

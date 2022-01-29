@@ -757,7 +757,7 @@ sub justify_interspace
 	my ($b, %opt) = @_;
 	my ($canvas, $width) = @opt{qw(canvas width)};
 
-	my $curr_width = get_text_width_with_overhangs($b, %opt);
+	my $curr_width = $$b[BLK_WIDTH] // get_text_width_with_overhangs($b, %opt);
 	return if $curr_width > $opt{width} || $curr_width == 0;
 	my $min_text_to_space_ratio = $opt{max_text_to_space_ratio} // 0.75;
 	return if $curr_width / $width < $min_text_to_space_ratio;
@@ -824,6 +824,7 @@ sub justify_interspace
 		}
 		splice( @new, $at, 0, @blk);
 	}
+
 	$new[BLK_WIDTH] = $width;
 
 	return \@new;
