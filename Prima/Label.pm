@@ -124,7 +124,7 @@ sub on_paint
 				%justify,
 				($i == $#$ws) ? (letter => 0, word => 0) : ()
 			);
-			push @wss, $ws->[$i];
+			push @wss, $s;
 		} else {
 			push @wss, $ws->[$i];
 		}
@@ -405,6 +405,9 @@ sub textJustify
 		my $tj = shift;
 		my %tj = ref($tj) ? %$tj : map { ($_, !!$tj) } qw(letter word kashida);
 		$tj{$_} //= 0 for qw(letter word kashida min_kashida);
+		if ( ref($tj) ) {
+			$tj{$_} = $$tj{$_} for qw(min_text_to_space_ratio);
+		}
 		$self->{textJustify} = \%tj;
 	} else {
 		my %h = @_;
