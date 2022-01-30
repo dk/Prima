@@ -453,12 +453,13 @@ sub set_font
 	$curr_font = ($self->{font}->{size} // '-1'). '.' . ($self->{glyph_font} // '');
 
 	$font = { %$font };
-	my $wscale     = $font-> {width};
-	delete $font-> {width};
+	my $explicit_width = delete $font-> {width};
 
 	my $div        = 72.27 / $self-> {resolution}-> [1];
 	my $by_height  = defined($font->{height});
 	$font = Prima::Drawable-> font_match( $font, $self-> {font});
+	delete $font->{width};
+
 	# best size pre-shoot
 	my $orig;
 	if ( $by_height ) {
@@ -487,7 +488,7 @@ sub set_font
 		if ( $orig != $font->{height}) {
 			my $ratio = $orig / $font->{height};
 			$font->{height} = $orig;
-			$font->{$_}     = int( $font->{$_} / $ratio + .5) for qw(ascent internalLeading externalLeading);
+			$font->{$_}     = int( $font->{$_} / $ratio + .5) for qw(ascent internalLeading externalLeading width);
 			$font->{descent} = $font->{height} - $font->{ascent};
 		}
 	} else {
@@ -496,15 +497,18 @@ sub set_font
 		my $ratio = ($font->{height} - $font->{internalLeading}) / $newh;
 		my $xil   = $font->{internalLeading} / $ratio;
 		$font->{height} = int( $newh + $xil + .5);
-		$font->{$_} = int( $font->{$_} / $ratio + .5) for qw(ascent internalLeading externalLeading);
+		$font->{$_} = int( $font->{$_} / $ratio + .5) for qw(ascent internalLeading externalLeading width);
 		$font->{descent} = $font->{height} - $font->{ascent};
 	}
 
 	# we emulate wider fonts by PS scaling, but this factor is needed
 	# when reporting horizontal glyph and text extension
-	my $font_width_divisor  = $font->{width};
-	$font-> {width} = $wscale if $wscale;
-	$self-> {font_x_scale}  = $font->{width} / $font_width_divisor;
+	if ( $explicit_width ) {
+		$self-> {font_x_scale}  = $explicit_width / $font->{width};
+		$font-> {width}         = $explicit_width;
+	} else {
+		$self-> {font_x_scale}  = 1;
+	}
 
 	$self-> glyph_canvas_set_font(%$font);
 	my $f1000 = $self->glyph_canvas->font;
