@@ -189,7 +189,7 @@ sub realize_colors
 
 sub _debug_block
 {
-	my ($b) = @_;
+	my ($b, $text) = @_;
 	print STDERR "FLAGS      : ", (( $$b[BLK_FLAGS] & T_SIZE ) ? "T_SIZE" : ""), (( $$b[BLK_FLAGS] & T_WRAPABLE ) ? "T_WRAPABLE" : ""), "\n";
 	print STDERR "POSITION   : ", $$b[BLK_X] // 'undef', 'x', $$b[BLK_Y] // 'undef', "\n";
 	print STDERR "SIZE       : ", $$b[BLK_WIDTH] // 'undef', 'x', $$b[BLK_HEIGHT] // 'undef', "\n";
@@ -229,7 +229,11 @@ sub _debug_block
 			my $ofs = $$b[ $i + T_OFS];
 			my $len = $$b[ $i + T_LEN];
 			my $wid = $$b[ $i + T_WID] // 'NULL';
-			print STDERR ": OP_TEXT( $ofs $len : $wid )\n";
+			print STDERR ": OP_TEXT( $ofs $len : $wid )";
+			print STDERR ": (",
+				substr( $$text, $$b[BLK_TEXT_OFFSET] + $$b[$i + T_OFS], $$b[$i + T_LEN] ),
+				")" if $text;
+			print STDERR "\n";
 		} elsif ( $cmd == OP_FONT ) {
 			my $mode = $$b[ $i + F_MODE ];
 			my $data = $$b[ $i + F_DATA ];
@@ -317,7 +321,7 @@ sub walk
 	$commands[ $opnames{$_} & 0xffff ] = $commands{$_} for grep { exists $opnames{$_} } keys %commands;
 	my $ret;
 
-	my ( $text_offset, $f_taint, $font, $c_taint, $paint_state, %save_properties );
+	my ( $text_offset, $f_taint, $font, $c_taint, $paint_state, %save_properties, $f_touched, $c_touched );
 
 	# save paint state
 	if ( $trace & TRACE_PAINT_STATE ) {
@@ -355,11 +359,13 @@ sub walk
 
 			if (( $trace & TRACE_FONTS) && ($trace & TRACE_REALIZE) && !$f_taint) {
 				$realize->($state, REALIZE_FONTS);
-				$f_taint = 1;
+				$f_taint   = 1;
+				$f_touched = 1;
 			}
 			if (( $trace & TRACE_COLORS) && ($trace & TRACE_REALIZE) && !$c_taint) {
 				$realize->($state, REALIZE_COLORS);
-				$c_taint = 1;
+				$c_taint   = 1;
+				$c_touched = 1;
 			}
 			$ret = $sub->(
 				@opcode,
@@ -394,7 +400,8 @@ sub walk
 				if ( $f & X_DIMENSION_FONT_HEIGHT) {
 					unless ( $f_taint) {
 						$realize->($state, REALIZE_FONTS);
-						$f_taint = 1;
+						$f_taint   = 1;
+						$f_touched = 1;
 					}
 					$font //= $canvas-> get_font;
 					$x *= $font-> {height};
@@ -417,11 +424,13 @@ sub walk
 		} elsif (( $cmd == OP_CODE) && ($trace & TRACE_PENS) && ($trace & TRACE_REALIZE)) {
 			unless ( $f_taint) {
 				$realize->($state, REALIZE_FONTS);
-				$f_taint = 1;
+				$f_taint   = 1;
+				$f_touched = 1;
 			}
 			unless ( $c_taint) {
 				$realize->($state, REALIZE_COLORS);
-				$c_taint = 1;
+				$c_taint   = 1;
+				$c_touched = 1;
 			}
 		} elsif (( $cmd == OP_MARK) & ( $trace & TRACE_UPDATE_MARK)) {
 			$$block[ $i + MARK_X] = $$position[0];
@@ -439,6 +448,8 @@ sub walk
 	# restore paint state
 	if ( $trace & TRACE_PAINT_STATE ) {
 		if ( $paint_state ) {
+			delete @save_properties{qw(color backColor)} unless $c_touched;
+			delete @save_properties{qw(font)}            unless $f_touched;
 			$canvas->$_( $save_properties{$_} ) for keys %save_properties;
 		} else {
 			$canvas->end_paint_info;
@@ -707,6 +718,9 @@ sub block_wrap
 sub get_text_width_with_overhangs
 {
 	my ( $b, %opt) = @_;
+
+	return $$b[BLK_WIDTH] if !wantarray && defined $$b[BLK_WIDTH];
+
 	my $canvas = $opt{canvas};
 
 	my $last_letter_ofs;
@@ -749,7 +763,9 @@ sub get_text_width_with_overhangs
 		$first_a_width = $last_c_width = 0;
 	}
 
-	return $xy[0] + $first_a_width + $last_c_width;
+	return wantarray ?
+		($xy[0], $first_a_width, $last_c_width) :
+		$xy[0] + $first_a_width + $last_c_width;
 }
 
 sub justify_interspace
@@ -757,7 +773,7 @@ sub justify_interspace
 	my ($b, %opt) = @_;
 	my ($canvas, $width) = @opt{qw(canvas width)};
 
-	my $curr_width = $$b[BLK_WIDTH] // get_text_width_with_overhangs($b, %opt);
+	my $curr_width = $$b[BLK_WIDTH] // scalar get_text_width_with_overhangs($b, %opt);
 	return if $curr_width > $opt{width} || $curr_width == 0;
 	my $min_text_to_space_ratio = $opt{max_text_to_space_ratio} // 0.75;
 	return if $curr_width / $width < $min_text_to_space_ratio;
@@ -766,23 +782,32 @@ sub justify_interspace
 	my @breaks;
 	my $n_spaces = 0;
 	my $tt = '';
+	my $space_width;
+	my $got_spaces_at_start;
 	walk( $b, %opt,
-		trace     => TRACE_TEXT | REALIZE_FONTS,
+		trace     => TRACE_TEXT | TRACE_FONTS | REALIZE_FONTS | TRACE_PAINT_STATE,
 		other     => sub { push @new, @_ },
+		font      => sub {
+			push @new, font(@_);
+			undef $space_width;
+		},
 		text      => sub {
 			my $t = pop;
 			return push @new, text(@_) unless $t =~ m/^(\s*)(\S+\s+\S.*?)(\s*)$/;
 
 			my ($ofs, $len) = @_;
 			my ($start, $mid, $end) = ($1, $2, $3);
+			($start, $mid) = ('', "$start$mid") if $got_spaces_at_start;
+			$got_spaces_at_start = 1;
+
 			my @txt;
 			while ( 1 ) {
 				my $tx;
 				if ( $mid =~ m/\G(\s+)/gcs) {
 					my $l = length($1);
 					$ofs += $l;
-					my $tw = $canvas->get_text_width($1);
-					push @txt, undef, undef, $tw;
+					$space_width //= $canvas->get_text_width(' ');
+					push @txt, undef, undef, $l * $space_width;
 					$n_spaces++;
 					next;
 				} elsif ( $mid =~ m/\G$/gcs) {
@@ -794,7 +819,7 @@ sub justify_interspace
 				} elsif ( $mid =~ m/\G(\S+)/gcs) {
 					$tx = $1;
 				}
-				$tt .= "$tx ";
+#				$tt .= "$tx ";
 
 				my $l = length($tx);
 				my $tw = $canvas->get_text_width($tx);
@@ -824,6 +849,7 @@ sub justify_interspace
 		}
 		splice( @new, $at, 0, @blk);
 	}
+
 	$new[BLK_WIDTH] = $width;
 
 	return \@new;
@@ -975,7 +1001,7 @@ sub get_text_width
 
 	$self->acquire($canvas, font => 1, dimensions => 1);
 
-	return tb::get_text_width_with_overhangs( $self->{block}, $self-> walk_options )
+	return scalar tb::get_text_width_with_overhangs( $self->{block}, $self-> walk_options )
 		if $add_overhangs;
 
 	my @xy = (0,0);
