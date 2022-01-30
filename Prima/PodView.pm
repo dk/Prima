@@ -1588,7 +1588,7 @@ sub format_chunks
 
 		my $next_text_offs = ( $mid == $#{$self->{model}} ) ? length( ${$self->{text}} ) : $self->{model}->[$mid + 1]->[M_TEXT_OFFSET];
 		my $indent = $$m[M_INDENT] * $$indents[ $$m[M_FONT_ID]];
-		@blocks = $self-> block_wrap( $self, $g, $state, $formatWidth - $indent, right_indent => $$indents[ $$m[M_FONT_ID]]);
+		@blocks = $self-> format_block( $self, $g, $state, $formatWidth, $indent);
 
 		# adjust size
 		for ( @blocks) {
@@ -1758,7 +1758,7 @@ sub print
 
 		# format the paragraph
 		my $indent = $$m[M_INDENT] * $indents[ $$m[M_FONT_ID]];
-		@blocks = $self-> block_wrap( $canvas, $g, $state, $formatWidth - $indent, right_indent => $indents[ $$m[M_FONT_ID]]);
+		@blocks = $self-> format_block( $canvas, $g, $state, $formatWidth, $indent);
 
 		# paint
 		$self-> reset_state;
@@ -1790,22 +1790,26 @@ ABORT:
 	return $ret;
 }
 
-sub block_wrap
+sub format_block
 {
-	my ( $self, $canvas, $block, $state, $width, %opt ) = @_;
-	my @blocks = $self-> SUPER::block_wrap( $canvas, $block, $state, $width );
+	my ( $self, $canvas, $block, $state, $width, $indent ) = @_;
+
+	$width -= $indent;
+	$width -= $indent if $self->{justify};
+
+	my @blocks = $self-> block_wrap( $canvas, $block, $state, $width );
 	return unless @blocks;
 
 	if ( $self->{justify} ) {
-		my $ri = $opt{right_indent} // 0;
 		my @b;
 		for ( my $i = 0; $i < $#blocks; $i++) {
-			my $b = $self->justify_interspace( $canvas, $blocks[$i], $state, $width - $ri);
+			my $b = $self->justify_interspace( $canvas, $blocks[$i], $width);
 			push @b, $b // $blocks[$i];
 		}
 		push @b, $blocks[-1];
 		@blocks = @b;
 	}
+
 	return @blocks;
 }
 
