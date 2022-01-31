@@ -1781,7 +1781,7 @@ sub print
 
 		# format the paragraph
 		my $indent = $$m[M_INDENT] * $indents[ $$m[M_FONT_ID]];
-		return $self-> format_block( $canvas, $g, $state, $formatWidth, $indent);
+		return $self-> format_block( $canvas, $g, $state, $formatWidth, $indent, 1);
 	};
 
 	my @block_queue;
@@ -1847,12 +1847,16 @@ ABORT:
 
 sub format_block
 {
-	my ( $self, $canvas, $block, $state, $width, $indent ) = @_;
+	my ( $self, $canvas, $block, $state, $width, $indent, $printing ) = @_;
 
 	$width -= $indent * 2;
 
-	my @blocks = $self-> block_wrap( $canvas, $block, $state, $width );
-	return unless @blocks;
+	my @blocks = $self-> block_wrap( $canvas, $block, $state, $width ) or return;
+
+	if ( $printing and 1 == @blocks and $width < $blocks[0][tb::BLK_WIDTH] ) {
+		# cannot wrap a (verbatim?) block -- force break it
+		return $self-> block_wrap( $canvas, $block, $state, $width, stripLeadingSpaces => 0, ignoreWraps => 1);
+	}
 
 	if ( $self->{justify}) {
 		my @b;

@@ -402,7 +402,7 @@ sub block_walk
 
 sub block_wrap
 {
-	my ( $self, $canvas, $b, $state, $width) = @_;
+	my ( $self, $canvas, $b, $state, $width, %opt) = @_;
 	return tb::block_wrap( $b,
 		textPtr       => $self->{text},
 		canvas        => $canvas,
@@ -413,6 +413,7 @@ sub block_wrap
 		resolution    => $self->{resolution},
 		wordBreak     => 1,
 		textDirection => $self->{textDirection},
+		%opt
 	);
 }
 

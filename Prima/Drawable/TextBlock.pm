@@ -478,8 +478,10 @@ sub block_wrap
 	my ( @ret, $z, $ptr);
 	my $lastTextOffset = $$b[ BLK_TEXT_OFFSET];
 	my $has_text;
-	my $word_break = $opt{wordBreak};
-	my $wrap_opts  = $word_break ? tw::WordBreak : 0;
+	my $strip_leading_spaces = $opt{stripLeadingSpaces} // 1;
+	my $ignore_wrap_commands = $opt{ignoreWraps} // 0;
+	my $word_break           = $opt{wordBreak};
+	my $wrap_opts            = $word_break ? tw::WordBreak : 0;
 
 	my $newblock = sub
 	{
@@ -538,7 +540,7 @@ sub block_wrap
 				return if $tlen <= 0;
 				my $str = substr( $$t, $o + $ofs, $tlen);
 				my $leadingSpaces = '';
-				if ( $str =~ /^(\s+)/) {
+				if ( $strip_leading_spaces && $str =~ /^(\s+)/) {
 					$leadingSpaces = $1;
 					$str =~ s/^\s+//;
 				}
@@ -610,6 +612,8 @@ sub block_wrap
 			}
 		},
 		wrap => sub {
+			return if $ignore_wrap_commands;
+
 			my $mode = shift;
 			if ( $can_wrap && $mode == WRAP_MODE_OFF) {
 				@wrapret = ( scalar @$z, [ @$state ], $ptr);
