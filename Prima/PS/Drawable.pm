@@ -458,19 +458,10 @@ sub set_font
 	my $div        = 72.27 / $self-> {resolution}-> [1];
 	my $by_height  = defined($font->{height});
 	$font = Prima::Drawable-> font_match( $font, $self-> {font});
-	delete $font->{width};
 
-	# best size pre-shoot
-	my $orig;
-	if ( $by_height ) {
-		$orig = $font->{height};
-		delete $font->{size};
-	} else {
-		$orig = delete $font->{size};
-		$font->{height} = $orig / $div;
-	}
-	$canvas->set_font( $font );
-	$font = $self-> {font} = { %{ $canvas->get_font } };
+	$self-> glyph_canvas_set_font(%$font);
+	my $f1000 = { %{ $self->glyph_canvas->get_font }};
+	$self-> apply_canvas_font( $f1000 );
 
 	# convert Prima size definition to PS size definition
 	#
@@ -482,24 +473,22 @@ sub set_font
 	# will get $font->height padded slightly by internal leading.
 	#
 	# Here #2 is implemented
+	my $ratio;
+	my $ps_fix = (( $f1000->{height} - $f1000->{internalLeading} ) / $f1000->{height});
 	if ( $by_height ) {
-		my $xil = $font->{internalLeading} * $orig / $font->{height};
-		$font->{size} = int( ($font->{height} - $xil) * $div + .5);
-		if ( $orig != $font->{height}) {
-			my $ratio = $orig / $font->{height};
-			$font->{height} = $orig;
-			$font->{$_}     = int( $font->{$_} / $ratio + .5) for qw(ascent internalLeading externalLeading width);
-			$font->{descent} = $font->{height} - $font->{ascent};
-		}
+		$self->{font_scale} = $font->{height} / $f1000->{height};
+		$ratio              = $self->{font_scale} * $div / $ps_fix;
 	} else {
-		$font->{size} = $orig;
-		my $newh  = $font->{size} / $div;
-		my $ratio = ($font->{height} - $font->{internalLeading}) / $newh;
-		my $xil   = $font->{internalLeading} / $ratio;
-		$font->{height} = int( $newh + $xil + .5);
-		$font->{$_} = int( $font->{$_} / $ratio + .5) for qw(ascent internalLeading externalLeading width);
-		$font->{descent} = $font->{height} - $font->{ascent};
+		$ratio              = $font->{size} / $f1000->{size};
+		$self->{font_scale} = $ratio / $div * $ps_fix;
 	}
+	%$font = %$f1000;
+	# When querying glyph extensions, remember to scale to the
+	# difference between PS and Prima models, ie without and with the internal leading
+	$font->{$_}   = int( $f1000->{$_} * $self->{font_scale} + .5)
+		for qw(ascent height internalLeading externalLeading width);
+	$font->{size} = int( $f1000->{size} * $ratio + .5);
+	$font->{descent}    = $font->{height} - $font->{ascent};
 
 	# we emulate wider fonts by PS scaling, but this factor is needed
 	# when reporting horizontal glyph and text extension
@@ -509,15 +498,7 @@ sub set_font
 	} else {
 		$self-> {font_x_scale}  = 1;
 	}
-
-	$self-> glyph_canvas_set_font(%$font);
-	my $f1000 = $self->glyph_canvas->font;
-	$self-> apply_canvas_font( $f1000 );
-
-	# When querying glyph extensions, remember to scale to the
-	# difference between PS and Prima models, ie without and with the internal leading
-	# Also, note that querying is on the canvas that has size=1000.
-	$self->{font_scale} = ($font->{size} / $div) / ( $f1000->height - $f1000-> internalLeading);
+	$self->{font} = $font;
 
 	$new_font = $font->{size} . '.' . $self->{glyph_font};
 	$self-> {changed}->{font} = 1 if $curr_font ne $new_font;
