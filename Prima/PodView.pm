@@ -1696,13 +1696,25 @@ sub format_chunks
 
 sub print
 {
-	my ( $self, $canvas, $callback) = @_;
+	my ( $self, $canvas, $_callback) = @_;
 
 	my ( $min, $max, $linkIdStart) = @{$self-> {modelRange}};
 	return 1 if $min >= $max;
 	my $ret = 0;
 
-	goto ABORT if $callback && ! $callback-> ();
+	my $save_defaultFontSize = $self->{defaultFontSize};
+	my $print_defaultFontSize = 10;
+	$self->{defaultFontSize} = $print_defaultFontSize;
+
+	my $callback = sub {
+		return 1 unless $_callback;
+		$self->{defaultFontSize} = $save_defaultFontSize;
+		my $ret = $_callback->();
+		$self->{defaultFontSize} = $print_defaultFontSize;
+		return $ret;
+	};
+
+	goto ABORT unless $callback-> ();
 
 	# cache indents
 	my @indents;
@@ -1736,7 +1748,7 @@ sub print
 		$pageno++;
 	};
 	my $new_page = sub {
-		goto ABORT if $callback && ! $callback-> ();
+		goto ABORT unless $callback-> ();
 		$pagenum->();
 		goto ABORT unless $canvas-> new_page;
 		$canvas->translate( $hmargin, $vmargin );
@@ -1787,6 +1799,7 @@ sub print
 
 	$ret = 1;
 ABORT:
+	$self->{defaultFontSize} = $save_defaultFontSize;
 	return $ret;
 }
 
@@ -1794,13 +1807,12 @@ sub format_block
 {
 	my ( $self, $canvas, $block, $state, $width, $indent ) = @_;
 
-	$width -= $indent;
-	$width -= $indent if $self->{justify};
+	$width -= $indent * 2;
 
 	my @blocks = $self-> block_wrap( $canvas, $block, $state, $width );
 	return unless @blocks;
 
-	if ( $self->{justify} ) {
+	if ( $self->{justify}) {
 		my @b;
 		for ( my $i = 0; $i < $#blocks; $i++) {
 			my $b = $self->justify_interspace( $canvas, $blocks[$i], $width);
