@@ -288,6 +288,22 @@ GENPROC
 
 sub DESTROY {}
 
+sub _debug
+{
+	my $f = shift;
+	printf STDERR "%d.%s [%dx%d]",
+		@{$f}{qw(size name width height)};
+	print STDERR " thin"   if $f->{style} & fs::Thin;
+	print STDERR " bold"   if $f->{style} & fs::Bold;
+	print STDERR " italic" if $f->{style} & fs::Italic;
+	print STDERR " fixed"  if $f->{pitch} == fp::Fixed;
+	print STDERR " B"      if $f->{vector} == fv::Bitmap;
+
+	printf STDERR " dir=%g", $f->{direction} if $f->{direction} != 0.0;
+	printf STDERR " %s",     $f->{encoding};
+	print STDERR "\n";
+}
+
 package Prima::Component;
 use vars qw(@ISA);
 @ISA = qw(Prima::Object);
