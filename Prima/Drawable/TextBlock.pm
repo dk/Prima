@@ -784,18 +784,22 @@ sub justify_interspace
 	my $tt = '';
 	my $space_width;
 	my $got_spaces_at_start;
+	my $combined_width = 0;
 	walk( $b, %opt,
-		trace     => TRACE_TEXT | TRACE_FONTS | REALIZE_FONTS | TRACE_PAINT_STATE,
+		trace     => TRACE_TEXT | TRACE_REALIZE_FONTS | TRACE_PAINT_STATE,
 		other     => sub { push @new, @_ },
 		font      => sub {
 			push @new, font(@_);
 			undef $space_width;
 		},
 		text      => sub {
-			my $t = pop;
-			return push @new, text(@_) unless $t =~ m/^(\s*)(\S+\s+\S.*?)(\s*)$/;
+			my ($ofs, $len, $wid, $t) = @_;
+			unless ($t =~ m/^(\s*)(\S+\s+\S.*?)(\s*)$/) {
+				push @new, text(@_);
+				$combined_width += $wid;
+				return;
+			}
 
-			my ($ofs, $len) = @_;
 			my ($start, $mid, $end) = ($1, $2, $3);
 			($start, $mid) = ('', "$start$mid") if $got_spaces_at_start;
 			$got_spaces_at_start = 1;
@@ -809,6 +813,7 @@ sub justify_interspace
 					$space_width //= $canvas->get_text_width(' ');
 					push @txt, undef, undef, $l * $space_width;
 					$n_spaces++;
+					$combined_width += $l * $space_width;
 					next;
 				} elsif ( $mid =~ m/\G$/gcs) {
 					last;
@@ -823,6 +828,7 @@ sub justify_interspace
 
 				my $l = length($tx);
 				my $tw = $canvas->get_text_width($tx);
+				$combined_width += $tw;
 				push @txt, $ofs, $l, $tw;
 				$ofs += $l;
 			}
@@ -831,7 +837,7 @@ sub justify_interspace
 	);
 	return unless $n_spaces;
 
-	my $avg_space_incr  = ($width - $curr_width) / $n_spaces;
+	my $avg_space_incr  = ($width - $combined_width) / $n_spaces;
 	my ($curr, $last_incr) = (0,0);
 
 	for ( my $i = $#breaks; $i >= 0; $i--) {
