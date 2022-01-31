@@ -474,7 +474,7 @@ sub set_font
 	#
 	# Here #2 is implemented
 	my $ratio;
-	my $ps_fix = (( $f1000->{height} - $f1000->{internalLeading} ) / $f1000->{height});
+	my $ps_fix = $f1000->{size} / ( $f1000->{height} - $f1000->{internalLeading} );
 	if ( $by_height ) {
 		$self->{font_scale} = $font->{height} / $f1000->{height};
 		$ratio              = $self->{font_scale} * $div / $ps_fix;
