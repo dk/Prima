@@ -94,8 +94,10 @@ use constant MDIV_TAG      => 2;
 use constant MDIV_STYLE    => 3;
 
 # model entries
-use constant T_NORMAL          => 0;
-use constant T_DIV             => 1;
+use constant T_NORMAL          => 0x010;
+use constant T_DIV             => 0x020;
+use constant T_TYPE_MASK       => 0x030;
+use constant T_LOOKAHEAD       => 0x007;
 use constant TDIVTAG_OPEN      => 0;
 use constant TDIVTAG_CLOSE     => 1;
 use constant TDIVSTYLE_SOLID   => 0;
@@ -119,7 +121,7 @@ sub model_create
 {
 	my %opt = @_;
 	return (
-		$opt{type}   // T_NORMAL,
+		T_NORMAL | (($opt{lookahead} // 0) & T_LOOKAHEAD),
 		$opt{offset} // 0,
 		$opt{indent} // 0,
 		$opt{font}   // 0
@@ -714,7 +716,8 @@ sub add_image
 	$w *= 72 / $resolution[0];
 	$h *= 72 / $resolution[1];
 	$src-> {stretch} = [$w, $h];
-	$self-> {readState}-> {pod_cutting} = $opt{cut} ? 0 : 1
+	my $r = $self-> {readState};
+	$r-> {pod_cutting} = $opt{cut} ? 0 : 1
 		if defined $opt{cut};
 
 	my @imgop = (
@@ -727,18 +730,20 @@ sub add_image
 	);
 
 	push @{$self-> {model}},
-		$opt{title} ? [div_create(open => 1, style => TDIVSTYLE_OUTLINE)] : (),
+		$opt{title} ? [div_create(
+			open     => 1,
+			style    => TDIVSTYLE_OUTLINE,
+		)] : (),
 		[model_create(
-			indent => $self-> {readState}-> {indent},
-			offset => $self-> {readState}-> {bigofs}
-		),
-		@imgop],
+			indent    => $r-> {indent},
+			offset    => $r-> {bigofs},
+			lookahead => $opt{title} ? 4 : 1,
+		), @imgop],
 		;
-	if ( $opt{title}) {
-		my $r = $self-> {readState};
 
+	if ( $opt{title}) {
 		my @g = model_create(
-			indent => $self-> {readState}-> {indent},
+			indent => $r-> {indent},
 			offset => $r-> {bigofs}
 		);
 		push @g,
@@ -1134,7 +1139,18 @@ sub add
 	return unless $r;
 
 	$p =~ s/\n//g;
-	my $g = [ model_create( indent => $indent, offset => $r-> {bigofs}) ];
+	my $g = [ model_create(
+		indent    => $indent,
+		offset    => $r-> {bigofs},
+		# #0 =head1   =item TEXT  =item *
+		# #1 .        .           .
+		# #2 text     text
+		# #3 .        .
+		lookahead =>
+			($style == STYLE_ITEM && $r->{bulletMode}) ? 1 : (
+				(($style >= STYLE_HEAD_1) && ($style <= STYLE_ITEM)) ? 3 : 0
+			),
+	) ];
 	my $styles = $self-> {styles};
 	my $no_push_block;
 	my $itemid = scalar @{$self-> {model}};
@@ -1173,7 +1189,6 @@ sub add
 		$p =~ s/[\s\t]+/ /g;
 		$p =~ s/([\200-\377])/"E<".ord($1).">"/ge;
 		$p =~ s/(E<[^<>]+>)/noremap($1)/ge;
-		$p =~ s/([:A-Za-z_][:A-Za-z_0-9]*\([^\)]*\))/C<$1>/g;
 		my $maxnest = 10;
 		my $linkStart = scalar @{$self-> {links}};
 		my $m = $p;
@@ -1350,9 +1365,6 @@ sub add
 			my $pp = $p;
 			$pp =~ s/\|//g;
 			$pp =~ s/([<>])/'E<' . (($1 eq '<') ? 'lt' : 'gt') . '>'/ge;
-			if ( $style == STYLE_ITEM && $pp =~ /^\s*[a-z]/) {
-				$pp =~ s/([\s\)\(\[\]\{\}].*)$/C<$1>/; # seems like function entry?
-			}
 			my $newTopic = [ $itemid, 0, $pp, $style, $itemDepth, $linkStart];
 			$self-> _close_topic( $style, $newTopic);
 			push @{$self-> {topics}}, $newTopic;
@@ -1567,7 +1579,7 @@ sub format_chunks
 		my $g = tb::block_create();
 		my $m = $self-> {model}-> [$mid];
 
-		if ( $m->[M_TYPE] == T_DIV ) {
+		if (( $m->[M_TYPE] & T_TYPE_MASK) == T_DIV ) {
 			if ( $m->[MDIV_TAG] == TDIVTAG_OPEN) {
 				$f->{verbatim} = scalar @{ $self->{blocks} };
 			} else {
@@ -1747,6 +1759,7 @@ sub print
 		$canvas->font(\%save);
 		$pageno++;
 	};
+
 	my $new_page = sub {
 		goto ABORT unless $callback-> ();
 		$pagenum->();
@@ -1754,44 +1767,73 @@ sub print
 		$canvas->translate( $hmargin, $vmargin );
 	};
 
-	for ( ; $mid <= $max; $mid++) {
+	my $get_blocks = sub {
 		# don't print the Index section
-		next if defined $self->{index_ends_at} and $mid < $self->{index_ends_at};
+		return if defined $self->{index_ends_at} and $mid < $self->{index_ends_at};
 
 		my $m = $self-> {model}-> [$mid];
-		next if $$m[M_TYPE] != T_NORMAL; # don't print div background
+		return if ($$m[M_TYPE] & T_TYPE_MASK) != T_NORMAL; # don't print div background
 
 		my $g = tb::block_create();
-
-		my @blocks;
 		$$g[ tb::BLK_TEXT_OFFSET] = $$m[M_TEXT_OFFSET];
 		$$g[ tb::BLK_Y] = undef;
 		push @$g, @$m[ M_START .. $#$m ];
 
 		# format the paragraph
 		my $indent = $$m[M_INDENT] * $indents[ $$m[M_FONT_ID]];
-		@blocks = $self-> format_block( $canvas, $g, $state, $formatWidth, $indent);
+		return $self-> format_block( $canvas, $g, $state, $formatWidth, $indent);
+	};
+
+	my @block_queue;
+	for ( ; $mid <= $max; $mid++) {
+		my @queue;
+		my @blocks = $get_blocks->() or next;
+		my $m      = $self-> {model}-> [$mid];
+		push @queue, [ $m, \@blocks ];
+
+		# try to look-ahead some blocks, see if they all can fit on the same page
+		if ( my $lookahead = $m->[M_TYPE] & T_LOOKAHEAD) {
+			my $y2 = 0;
+			$y2 += $$_[tb::BLK_HEIGHT] for @blocks;
+			for ( 1 .. $lookahead ) {
+				last if $mid + 1 > $max;
+				my $xm = $self-> {model}-> [$mid + 1];
+				last if $xm->[M_TYPE] & T_LOOKAHEAD;
+				$mid++;
+				my @b = $get_blocks->();
+				$y2 += $$_[tb::BLK_HEIGHT] for @b;
+				push @queue, [ $xm, \@b ] if @b;
+			}
+			if ( $y2 > $y && @blocks && $blocks[0][tb::BLK_HEIGHT] <= $formatHeight ) {
+				$new_page->();
+				$y = $formatHeight;
+			}
+		}
+
 
 		# paint
 		$self-> reset_state;
-		for ( @blocks) {
-			my $b = $_;
-			if ( $y < $$b[ tb::BLK_HEIGHT]) {
-				if ( $$b[ tb::BLK_HEIGHT] < $formatHeight) {
-					$new_page->();
-					$y = $formatHeight - $$b[ tb::BLK_HEIGHT];
-					$self-> block_draw( $canvas, $b, $indent, $y);
+		for my $q (@queue) {
+			my ( $m, $blocks ) = @$q;
+			my $indent = $$m[M_INDENT] * $indents[ $$m[M_FONT_ID]];
+			for my $b ( @$blocks) {
+				if ( $y < $$b[ tb::BLK_HEIGHT]) {
+					if ( $$b[ tb::BLK_HEIGHT] < $formatHeight) {
+						$new_page->();
+						$y = $formatHeight - $$b[ tb::BLK_HEIGHT];
+						$self-> block_draw( $canvas, $b, $indent, $y);
+					} else {
+						$y -= $$b[ tb::BLK_HEIGHT];
+						while ( $y < 0) {
+							$new_page->();
+							$self-> block_draw( $canvas, $b, $indent, $y);
+							$y += $formatHeight;
+						}
+					}
 				} else {
 					$y -= $$b[ tb::BLK_HEIGHT];
-					while ( $y < 0) {
-						$new_page->();
-						$self-> block_draw( $canvas, $b, $indent, $y);
-						$y += $formatHeight;
-					}
+					goto ABORT unless $self-> block_draw( $canvas, $b, $indent, $y);
 				}
-			} else {
-				$y -= $$b[ tb::BLK_HEIGHT];
-				goto ABORT unless $self-> block_draw( $canvas, $b, $indent, $y);
 			}
 		}
 	}
