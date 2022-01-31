@@ -423,12 +423,12 @@ sub walk
 			next;
 		} elsif (( $cmd == OP_CODE) && ($trace & TRACE_PENS) && ($trace & TRACE_REALIZE)) {
 			unless ( $f_taint) {
-				$realize->($state, REALIZE_FONTS);
+				$realize->($state, REALIZE_FONTS) if $trace & TRACE_FONTS;
 				$f_taint   = 1;
 				$f_touched = 1;
 			}
 			unless ( $c_taint) {
-				$realize->($state, REALIZE_COLORS);
+				$realize->($state, REALIZE_COLORS) if $trace & TRACE_COLORS;
 				$c_taint   = 1;
 				$c_touched = 1;
 			}
