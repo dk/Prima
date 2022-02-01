@@ -482,7 +482,7 @@ sub set_font
 		$ratio              = $font->{size} / $f1000->{size};
 		$self->{font_scale} = $ratio / $div * $ps_fix;
 	}
-	%$font = %$f1000;
+	%$font = ( %$f1000, direction => $font->{direction} );
 	# When querying glyph extensions, remember to scale to the
 	# difference between PS and Prima models, ie without and with the internal leading
 	$font->{$_}   = int( $f1000->{$_} * $self->{font_scale} + .5)
