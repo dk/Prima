@@ -1,5 +1,6 @@
 .packlist
 src/*.o
+src/*/*.o
 Makefile
 auto/Prima/Prima.a
 auto/Prima/Prima.dll
