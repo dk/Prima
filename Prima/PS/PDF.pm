@@ -124,6 +124,11 @@ sub fill
 		$r1 == rop::NoOper &&
 		$r2 == rop::NoOper;
 
+	if ( $self-> {changed}-> {alpha}) {
+		my $al = $self-> alpha;
+		$self-> emit_content( "/GSA$al gs");
+		$self-> {changed}-> {alpha} = 0;
+	}
 	if ( $r2 != rop::NoOper && $self-> {fpType} ne 'F') {
 		my $bk =
 			( $r2 == rop::Blackness) ? 0 :
@@ -194,6 +199,12 @@ sub stroke
 		my $ml = $self-> miterLimit;
 		$self-> emit_content( "$ml M");
 		$self-> {changed}-> {miterLimit} = 0;
+	}
+
+	if ( $self-> {changed}-> {alpha}) {
+		my $al = $self-> alpha;
+		$self-> emit_content( "/GSA$al gs");
+		$self-> {changed}-> {alpha} = 0;
 	}
 
 	if ( $r2 != rop::NoOper && $lp ne lp::Solid ) {
@@ -377,8 +388,10 @@ ROOT
 	$self-> {page_images}   = [];
 	$self-> {page_fonts}    = {};
 	$self-> {page_rops}     = {};
-	$self-> {all_rops}     = {};
+	$self-> {page_alphas}   = {};
+	$self-> {all_rops}      = {};
 	$self-> {all_fonts}     = {};
+	$self-> {all_alphas}    = {};
 	unless ($self-> {page_content} = $self->new_file_obj) {
 		$self-> abort_doc;
 		return 0;
@@ -441,15 +454,19 @@ PAGE
 		}
 		$self-> emit(">>");
 	}
-	$self-> emit(">>"); # % Resources
 
-	if ( keys %{ $self->{page_rops} } ) {
+	if ( keys %{ $self->{page_rops} } || keys %{ $self->{page_alphas} } ) {
 		$self-> emit("/ExtGState <<");
 		while ( my ( $name, $xid ) = each %{ $self->{page_rops} } ) {
 			$self-> emit("/GS$name $xid 0 R");
 		}
+		while ( my ( $name, $xid ) = each %{ $self->{page_alphas} } ) {
+			$self-> emit("/GSA$name $xid 0 R");
+		}
 		$self-> emit(">>");
 	}
+
+	$self-> emit(">>"); # % Resources
 
 	if ( @{ $self->{page_refs} } ) {
 		$self-> emit("/XObject <<");
@@ -664,6 +681,26 @@ sub new_page
 }
 
 sub pages { scalar @{ $_[0]-> {pages} } }
+
+sub alpha
+{
+	return $_[0]->{alpha} unless $#_;
+	my ( $self, $alpha ) = @_;
+	$alpha = int( $alpha + .5);
+	$alpha = 0 if $alpha < 0;
+	$alpha = 255 if $alpha > 255;
+	return if ($self->{alpha} // -1 ) == $alpha;
+	$self->{alpha} = $alpha;
+	return unless $self-> get_paint_state;
+
+	my $ca = int( $alpha / 2.55 ) / 100;
+	$self-> {all_alphas}->{ $alpha } //= {
+		xid => $self-> emit_new_dummy_object("/Type /ExtGState /ca $ca /CA $ca"),
+		id  => "GSA$alpha",
+	};
+	$self-> {page_alphas}-> {$alpha} = $self->{all_alphas}->{$alpha}->{xid};
+	$self-> {changed}->{alpha} = 1;
+}
 
 sub fillPattern
 {
@@ -1363,10 +1400,6 @@ described below.
 Can be set while object is in normal stage - cannot be changed if document
 is opened. Applies to fillPattern realization and general pixel-to-point
 and vice versa calculations
-
-=item ::region
-
-- ::region is not realized ( yet?)
 
 =back
 

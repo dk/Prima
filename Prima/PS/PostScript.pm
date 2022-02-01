@@ -1020,9 +1020,9 @@ Can be set while object is in normal stage - cannot be changed if document
 is opened. Applies to fillPattern realization and general pixel-to-point
 and vice versa calculations
 
-=item ::region
+=item ::alpha
 
-- ::region is not realized ( yet?)
+- ::alpha is not implemented
 
 =back
 
