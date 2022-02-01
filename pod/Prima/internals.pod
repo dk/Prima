@@ -195,6 +195,12 @@ and from C:
    obj = Object_create("SampleObject", profile);
    sv_free(( SV*) profile);
 
+or even
+
+   create_object("SampleObject", "si",
+       "name", "Sample",
+       "index", 10
+   );
 
 Convenience pset_XX macros assign a value of XX type to
 the hash key given as a first parameter, to a hash variable
