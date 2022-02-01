@@ -109,7 +109,6 @@ is not really useful.
 On every supported platform Prima can make use of the following graphic
 libraries:
 
-   libX11   - XBM bitmaps
    libXpm   - Xpm pixmaps
    libjpeg  - JPEG images
    libgif   - GIF images
@@ -144,8 +143,8 @@ library.
 =head2 Compile error
 
 There are various reasons why a compilation may fail. The best would be
-to copy the output together with outputs of env and perl -V and send these into
-the Prima mailing list.
+to copy the output together with outputs of env and perl -V and send these to
+the author or better open a github issue here L<https://github.com/dk/Prima/issues>.
 
 =head2 Prima doesn't run
 
@@ -157,24 +156,27 @@ unix, F<Prima.dll> for win32 ) is copied in the
 correct location in the perl tree.
 
 Second, try to run 'perl -MPrima -e 1' . If Prima.pm is not found, the error
-message would something like
+message would be something like
 
   Can't locate Prima.pm in @INC
 
 If Prima library or one of the libraries it depends on cannot be found, perl
 Dynaloader would complain. On win32 this usually happen when
 some dll files Prima needs are not found. If this is the case, try
-to copy these files into your PATH, for example in C:/WINNT .
+to copy these files into your PATH, for example in C:/Windows .
 
 =head2 Prima doesn't get installed using ppm (ActiveState)
 
-Prima uses a non-conventional build process, which is not picked up by
+Prima uses a non-conventional build process, which is not picked up by the
 automated ActiveState ppm builder. So if you run "ppm install Prima" and
 it succeeds but installs nothing, try this:
 
   ppm install --force http://cpan.uwinnipeg.ca/PPMPackages/10xx/Prima.ppd
 
 (Justin Allegakoen and Randy Kobes:thanks!)
+
+Alternatively you could try to install a compiler with C<ppm install MinGW> and
+then build Prima yourself.
 
 =head2 Prima error: Can't open display
 
@@ -205,7 +207,7 @@ of latex and dvips to produce one of tex, dvi, ps, or pdf targets.
 
 =head2 I've found a bug!
 
-Send the bug report into the mailing list or to CPAN RT.
+L<https://github.com/dk/Prima/issues> is the place.
 
 =head1 PROGRAMMING
 
@@ -219,7 +221,7 @@ podview L<Prima::VB::VBLoader>
    use Prima;
    my $i = Prima::Image-> load( ... )
 
-Note that drawing on images will be severly limited - only pixel and put_image methods would work.
+Note that drawing on images will be somewhat limited.
 
 =head2 How would I change several properties with a single call?
 
@@ -232,7 +234,7 @@ Note that drawing on images will be severly limited - only pixel and put_image m
 =head2 I want Prima::Edit to have feature XXX
 
 If the feature is not governed by none of the C<Prima::Edit> properties,
-you've to overload C<::on_paint>. It is not that hard as you might think.
+you need to overload C<::on_paint>. It is not that hard as you might think.
 
 If the feature is generic enough, you can send a patch in the list.
 
@@ -321,10 +323,11 @@ actions. If you must though, compare values of C<clipRect> property to see
 whether the invalid area is indeed the same as it is expected.
 
 Remember, that inside on_paint all coordinates are inclusive-inclusive,
-and outside inclusive-exclusive.
+while the widget coordinates generally are inclusive-exclusive.
 
 Note, that C<buffered> property does not guarantee that the widget
-output would be actually buffered.
+output would be actually buffered. Same goes with C<antialias> and C<layered>;
+these functions are opportunistic.
 
 =item *
 
@@ -340,29 +343,29 @@ VB property into the VB palette and Object Inspector.
 
 =head2 How would I use unicode/UTF8 in Prima?
 
-Basically,
+Prima by default is unicode-aware, in some areas more than the Perl (as of 5.32) itself.
 
-   $::application-> wantUnicodeInput(1)
+For example on win32 Perl has big difficulties with files with unicode
+characters, and this is recommended to mitigate using L<Prima::sys::FS>, which
+overrides C<open>, C<opendir> and the like builtin functions with their
+unicode-friendly versions. It doesn't though overload C<-f>,C<-e> syntax, so
+use C<_f>,C<_e> etc instead.
 
-is enough to tell Prima to provide input in Unicode/UTF8. Note, that if the
-data received in that fashion are to be put through file I/O, the C<'utf8'> IO
+Displaying UTF8 text is unproblematic, because Perl scalars can be
+unambiguously told whether the text they contain is in UTF8 or not. The text
+that comes from the user input, i e keyboard and clipboard, can be treated and
+reported to Prima either as UTF8 r plain text, depending on
+C<Prima::Application::wantUnicodeInput> property, which is set to 1 by default.
+Remember though that if data are to be put through file I/O, the C<'utf8'> IO
 layer must be selected ( see L<open> ).
 
-Prima can input and output UTF8 text if the underlying system capabilities
-support that ( check Prima::Application::get_system_value, C<sv::CanUTF8_Input>
-and C<sv::CanUTF8_Output> ).  Displaying UTF8 text is unproblematic, because Perl
-scalars can be unambiguously told whether the text they contain is in UTF8 or
-not. The text that comes from the user input
-- keyboard and clipboard - can be treated and reported to Prima
-either as UTF8 or plain text, depending on
-C<Prima::Application::wantUnicodeInput> property.
+The keyboard input is also easy, because a character key event comes with the
+character code, not the character itself, and conversion between these is done
+via standard perl's C<chr> and C<ord>.
 
-The keyboard input is also easy, because a character key event comes with the character
-code, not the character itself, and conversion between these is done via
-standard perl's C<chr> and C<ord>.  The clipboard input is more complicated,
-because the clipboard may contain both UTF8 and plain text data at once, and it
-must be decided by the programmer explicitly which one is desired.  See more in
-L<Prima::Clipboard/Unicode>.
+The clipboard input is more complicated, because the clipboard may contain both
+UTF8 and plain text data at once, and it must be decided by the programmer
+explicitly which one is desired.  See more in L<Prima::Clipboard/Unicode>.
 
 =head2 Is there a way to display POD text that comes with my program / package ?
 
@@ -402,25 +405,12 @@ asyncronously read data passed through a pipe or a socket.
 Note: Win32 runtime library does not support asynchronous pipes, only asyncronous sockets.
 Cygwin does support both asyncronous pipes and sockets.
 
-=head2 How do I use Prima with AnyEvent ?
+=head2 How do I use Prima with AnyEvent or POE ?
 
-Prima works well with L<AnyEvent> but there are some minor differences in using
-Prima. L<AnyEvent> is a generic event processing library that supports various
-underlying event loop implementations such as L<EV>, L<Event>, L<POE> etc.
-Prima internally uses its own event loop to perform its event handling and
-L<AnyEvent> can support that by automatically selecting L<POE> to be the
-internal implementation when Prima is loaded.  However, you may use L<AnyEvent>
-with any other internal event loop implementation such as L<EV> along with Prima
-with varying results depending on the event library used. There are a few points
-to note:
+L<AnyEvent> kind of knows about Prima, so if Prima is loaded then AnyEvent promises 
+to detect it and load the corresponside backend.
 
-=over
-
-=item *
-
-Prima has to be loaded before L<AnyEvent>.
-
-=item *
+If that doesn't work, the AnyEvent::Impl::Prima module is there in cpan.
 
 If you want to use Prima's internal event loop system you have to install
 L<POE::Loop::Prima> and include it in your code before Prima is loaded like
@@ -429,30 +419,20 @@ below:
         use Prima qw/Application/;
         use AnyEvent;
 
-=item *
-
 You can call C<AnyEvent::detect> to check if the implementation is
 C<'AnyEvent::Impl::POE'> if you want to use Prima's event loop or it should be
 the event loop implementation you expect such as C<'AnyEvent::Impl::EV'>;
 
-=item *
-
 If you use L<POE::Loop::Prima> then you can continue to call C<run Prima> and
 should not call L<AnyEvent>'s condition variable C<recv> function.
-
-=item *
 
 If you want to use another event library implementation of L<AnyEvent>, you have
 to not call C<run Prima> but instead call L<AnyEvent>'s condition variable
 C<recv> function.
 
-=item *
-
 You have to use C<$::application-E<gt>yield> in an C<AnyEvent-E<gt>timer> object to
 allow for the Prima UI to update periodically, if you're not using
 L<POE::Loop::Prima>.
-
-=back
 
 See full example in F<examples/socket_anyevent.pl> and
 F<examples/socket_anyevent_poe.pl>.
