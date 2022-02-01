@@ -80,16 +80,7 @@ sub open(*;$*)
 	return $ok;
 
 NATIVE:
-	if ( 0 == @p ) {
-		return CORE::open($handle);
-	} elsif ( 1 == @p ) {
-		return CORE::open($handle, $p[0]);
-	} elsif ( 2 == @p ) {
-		return CORE::open($handle, $p[0], $p[1]);
-	} else {
-		my ( $x, $y ) = (shift @p, shift @p);
-		return CORE::open($handle, $x, $y, @p);
-	}
+	goto &CORE::open;
 }
 
 sub opendir(*$)
