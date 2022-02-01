@@ -758,7 +758,7 @@ apc_show_message( const char * message, Bool utf8)
 	Point textSz;
 	Point winSz;
 	TextWrapRec twr;
-	int i;
+	int i, j;
 	struct MsgDlg md, **storage;
 	Bool ret = false;
 	PList font_abc_unicode = NULL;
@@ -829,7 +829,6 @@ apc_show_message( const char * message, Bool utf8)
 
 		if ( font_abc_ascii) free( font_abc_ascii);
 		if ( font_abc_unicode) {
-			int i;
 			for ( i = 0; i < font_abc_unicode-> count; i += 2)
 				free(( void*) font_abc_unicode-> items[ i + 1]);
 			plist_destroy( font_abc_unicode);
@@ -846,16 +845,16 @@ apc_show_message( const char * message, Bool utf8)
 
 		/* find text extensions */
 		max = 0;
-		for ( i = 0; i < md.count; i+=4) {
-			md.lengths[i] = wrapped[i+3];
+		for ( i = j = 0; i < md.count; i++, j += 4) {
+			md.lengths[i] = wrapped[j+3];
 			if (utf8) {
-				if (!(md.wrapped[i] = (char*)prima_alloc_utf8_to_wchar( message + wrapped[i], md.lengths[i])))
+				if (!(md.wrapped[i] = (char*)prima_alloc_utf8_to_wchar( message + wrapped[j], md.lengths[i])))
 					goto EXIT;
 				md.widths[i] = XTextWidth16( fs, (XChar2b*) md.wrapped[i], md.lengths[i]);
 			} else {
 				if (!(md.wrapped[i] = malloc( md.lengths[i] + 1)))
 					goto EXIT;
-				memcpy(md.wrapped[i], message + wrapped[i], md.lengths[i]);
+				memcpy(md.wrapped[i], message + wrapped[j], md.lengths[i]);
 				md.wrapped[i][md.lengths[i]] = 0;
 				md. widths[i] = XTextWidth( fs, md.wrapped[i], md.lengths[i]);
 			}
@@ -974,6 +973,7 @@ EXIT:
 			free(md.wrapped[i]);
 		free(md.wrapped);
 	}
+	md.wrappedCount = 0;
 
 	return ret;
 }
