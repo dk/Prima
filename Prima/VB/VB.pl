@@ -2532,6 +2532,11 @@ __END__
 
 VB - Visual Builder for the Prima toolkit
 
+=for podview <img src="vb-large.png">
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/vb-large.png">
+
+
 =head1 DESCRIPTION
 
 Visual Builder is a RAD-style suite for designing forms under
