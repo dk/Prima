@@ -207,7 +207,6 @@ prima_set_view_ex( Handle self, PViewProfile p)
 {
 	DEFXX;
 
-	if ( p-> visible ) XMapWindow( DISP, X_WINDOW);
 	XX-> origin. x--; /* force it */
 	if ( XX-> type. window ) {
 		apc_window_set_client_rect( self, p-> pos.x, p-> pos.y, p-> size.x, p->size.y);
@@ -217,6 +216,7 @@ prima_set_view_ex( Handle self, PViewProfile p)
 		apc_widget_set_rect( self, p-> pos.x, p-> pos.y, p-> size.x, p->size.y);
 	}
 
+	if ( p-> visible) XMapWindow( DISP, X_WINDOW);
 	if ( p-> focused) apc_widget_set_focused( self);
 	if ( p-> capture) apc_widget_set_capture( self, 1, NULL_HANDLE);
 
@@ -244,8 +244,8 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
 {
 	DEFXX;
 	ViewProfile vprf;
-	Bool reparent, recreate, layered_requested;
-	Handle real_owner, old_parent;
+	Bool recreate, layered_requested;
+	Handle real_owner;
 	XWindow parent, old = X_WINDOW;
 	XSetWindowAttributes attrs;
 	unsigned long valuemask;
@@ -259,12 +259,10 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
 	XX-> visual   = layered ? &guts. argb_visual : &guts. visual;
 	XX-> colormap = layered ? guts. argbColormap : guts. defaultColormap;
 
-	reparent = ( old != NULL_HANDLE) && (
+	recreate = ( old != NULL_HANDLE) && (
+		( layered != XX-> flags. layered ) ||
 		( clip_owner != XX-> flags. clip_owner) ||
 		( parentHandle != XX-> parent)
-	);
-	recreate = ( old != NULL_HANDLE) && (
-		( layered != XX-> flags. layered )
 	);
 	if ( recreate ) {
 		int i, count;
@@ -279,7 +277,6 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
 		for( i = 0; i < count; i++)
 			prima_get_view_ex( list[ i], ( ViewProfile*)( X( list[ i])-> recreateData = malloc( sizeof( ViewProfile))));
 
-		reparent = false;
 		if ( XX-> recreateData) {
 			memcpy( &vprf, XX-> recreateData, sizeof( vprf));
 			free( XX-> recreateData);
@@ -299,8 +296,6 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
 		hash_delete( guts.windows, (void*)&old, sizeof(old), false);
 		XCHECKPOINT;
 	}
-
-	old_parent = ( old != NULL_HANDLE ) ? XX->parent : NULL_HANDLE;
 
 	XX-> flags. transparent = !!transparent;
 	XX-> type.drawable = true;
@@ -335,34 +330,6 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
 	attrs. win_gravity = ( clip_owner && ( owner != application))
 		? SouthWestGravity : NorthWestGravity;
 	attrs. colormap = XX->colormap;
-
-	if ( reparent) {
-		Point pos = PWidget(self)-> pos;
-		XEvent dummy_ev;
-
-		if ( old_parent == parent ) return true;
-
-		if ( guts. currentMenu && PComponent( guts. currentMenu)-> owner == self) prima_end_menu();
-		CWidget( self)-> end_paint_info( self);
-		CWidget( self)-> end_paint( self);
-		if ( XX-> flags. paint_pending) {
-			TAILQ_REMOVE( &guts.paintq, XX, paintq_link);
-			XX-> flags. paint_pending = false;
-		}
-		/* flush configure events */
-		XSync( DISP, false);
-		while ( XCheckIfEvent( DISP, &dummy_ev, (XIfEventProcType)prima_flush_events, (XPointer)self));
-
-		XChangeWindowAttributes( DISP, X_WINDOW, CWWinGravity, &attrs);
-		XReparentWindow( DISP, X_WINDOW, parent, pos. x,
-			X(real_owner)-> size.y - pos. y - X(self)-> size. y);
-
-		XX-> ackOrigin = pos;
-		XX-> ackSize   = XX-> size;
-		XX-> flags. mapped = XX-> flags. want_visible;
-		process_transparents( self);
-		return true;
-	}
 
 	valuemask =
 		0
@@ -406,14 +373,14 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
 		Point pos = PWidget(self)-> pos;
 		list  = PWidget(self)-> widgets. items;
 		count = PWidget(self)-> widgets. count;
-		prima_set_view_ex( self, &vprf);
+		hash_store( guts.windows, &X_WINDOW, sizeof(X_WINDOW), (void*)self);
 		XX-> gdrawable = XX-> udrawable = X_WINDOW;
 		XX-> ackOrigin = pos;
 		XX-> ackSize   = XX-> size;
 		XX-> flags. mapped = XX-> flags. want_visible;
-		hash_store( guts.windows, &X_WINDOW, sizeof(X_WINDOW), (void*)self);
-		for ( i = 0; i < count; i++) ((( PComponent) list[ i])-> self)-> recreate( list[ i]);
 		XDestroyWindow( DISP, old);
+		prima_set_view_ex( self, &vprf);
+		for ( i = 0; i < count; i++) ((( PComponent) list[ i])-> self)-> recreate( list[ i]);
 		prima_notify_sys_handle( self );
 		return true;
 	}
