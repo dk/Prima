@@ -99,7 +99,7 @@ sub load_link
 			close UNIQUE_FILE_HANDLE_NEVER_TO_BE_CLOSED if 0;
 		} else {
 			my $pg;
-			CMD: for my $cmd ( qw(sensible-browser xdg-open x-www-browser www-browser firefox mozilla netscape)) {
+			CMD: for my $cmd ( qw(xdg-open x-www-browser www-browser firefox mozilla sensible-browser netscape)) {
 				for ( split /:/, $ENV{PATH} ) {
 					$pg = "$_/$cmd", last CMD if -x "$_/$cmd";
 				}
