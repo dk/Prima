@@ -4,10 +4,9 @@ Prima::Clipboard - GUI interprocess data exchange
 
 =head1 DESCRIPTION
 
-Prima::Clipboard class is a descendant of Prima::Component.  It serves as an
-interface to the specific data storage, called clipboard, visible to all
-clients of one GUI space. The system clipboard is intended for the exchange of
-information of an arbitrary type between graphic applications.
+Prima::Clipboard is an interface to system clipboards. Depending on the OS,
+there can be only one clipboard (Win32), or three (X11). The class is also used
+for data exchange in drag-and-drop interactions.
 
 =head1 SYNOPSIS
 
@@ -31,7 +30,6 @@ information of an arbitrary type between graphic applications.
    # clear
    $c-> clear;
 
-
 =head1 USAGE
 
 Prima::Clipboard provides access to the system clipboard data storage. For the
@@ -40,10 +38,10 @@ stored along with the data.  This field is used to distinguish between data
 formats.  Moreover, a clipboard can hold simultaneously several data instances,
 of different data formats. Since the primary usage of a clipboard is 'copying'
 and 'pasting', an application can store copied information in several formats,
-increasing possibility that the receiving application recognizes the data.
+increasing possibility that the receiving application can recognize the data.
 
 Different systems provide spectrum of predefined data types, but the toolkit
-uses only three of these - ascii text, utf8 text, and image. It does not limit,
+uses only three of these out of the box - ascii text, utf8 text, and image. It does not limit,
 however, the data format being one of these three types - an application is
 free to register its own formats. Both predefined and newly defined data
 formats are described by a string, and the three predefined formats are
@@ -60,7 +58,7 @@ and pasting. Both can be exemplified by the following:
    # copy
    $c-> text( $string);
 
-This simplistic code hides other aspects of Prima::Clipboard class.
+Here is what happens under the hood:
 
 First, the default clipboard is accessible by an implicit name call, as an
 object named 'Clipboard'. This scheme makes it easily overridable.  A more
@@ -70,12 +68,12 @@ also 'Primary' and 'Secondary' system clipboards. Their functionality is
 identical to the default clipboard, however. C<get_standard_clipboards()>
 method returns strings for the clipboards, provided by the system.
 
-Second, code for fetching and storing multi-format data is somewhat different.
-Clipboard is viewed as a shared system resource, and have to be 'opened',
+Second, code for fetching and/or storing multi-format data is somewhat different.
+Clipboard is viewed as a shared system resource, and has to be 'opened',
 before a process can grab it, so other processes can access the clipboard data
-only after the clipboard is 'closed' ( Note: It is not so under X11, where
-there the clipboard locking is advisory, and any process can grab clipboard at
-any time) .
+only after the clipboard is 'closed' ( note: It is not so under X11, where
+there is no such thing as clipboard locking, -- but the toolkit imposes this model
+for the cosistency sake).
 
 C<fetch()> and C<store()> implicitly call C<open()> and C<close()>, but these
 functions must be called explicitly for the multi-format data handling. The
@@ -119,35 +117,49 @@ by a program:
       $c-> close;
    }
 
+=head2 On-demand storage
+
+Under X11 it is possible to skip the generation of data in all possible
+clipboard format when when copying. The native X11 mechanism allows to ask the
+source application for the exact data format needed by the target application,
+and the toolkit uses special event C<onClipboard> triggered on the application
+whenever necessary.
+
+By default this event handler responds to querying image in file encoded
+formats (gif,jpg) under X11 on the fly. It can be extended to generate other
+formats as well. See L<Prima::Application/Events> Clipboard for the details.
+
 =head2 Custom formats
 
 Once registered, all processes in a GUI space can access the data by this
 format. The registration must take place also if a Prima-driven program needs
 to read data in a format, defined by an another program. In either case, the
-duplicate registration is a valid event.  When no longer needed, a format can
-be de-registered.  It is not a mandatory action, however - the toolkit cleans
-up before exit. Moreover, the system maintains a reference counter on the
-custom-registered formats; de-registering does not mean deletion, thus. If two
-processes use a custom format, and one exits and re-starts, it still can access
-the data in the same format, registered by its previous incarnation.
+duplicate registration is a valid case.  When no longer needed, a format can be
+de-registered. It is not a mandatory action, however - the toolkit cleans up
+before exit. Moreover, the system maintains a reference counter on the
+custom-registered formats; de-registering thus does not mean deletion. If two
+processes use a custom format, and one exits and re-starts, the other still can
+access the data in the same format, registered by its previous incarnation.
 
 =head2 Unicode
 
-In real life, application often interchange text in both ascii and utf8,
-leaving the choice to reader programs.  While it is possible to access both at
-the same time, by C<fetch>'ing content of C<Text> and C<UTF8> clipboard slots,
-widgets implement their own pasting scheme. To avoid hacking widget code, usage
-of C<text> property is advised instead of indicating C<'Text'> and C<'UTF8'>
-constants. This method is used in standard widgets, and is implemented so the
-programmer can reprogram its default action by overloading C<PasteText>
-notification of C<Prima::Application> ( see L<Prima::Application/PasteText> ).
+Applications can interchange text in both ascii and utf8, leaving the selection
+choice to reader programs. While it is possible to access both at the same
+time, by C<fetch>'ing content of C<Text> and C<UTF8> clipboard slots, the wiget
+proposes its own pasting scheme, where the mechanics are hidden under the
+C<text> property call. The property is advised to be used instead of
+individual C<'Text'> and C<'UTF8'> formats. This method is used in all the
+standard widgets, and is implemented so the programmer can reprogram its
+default action by overloading C<PasteText> notification of
+C<Prima::Application> ( see L<Prima::Application/PasteText> ).
 
 The default action of C<PasteText> is to query first if C<'Text'> format is
 available, and if so, return the ascii text scalar. If
-C<Prima::Application::wantUnicodeInput> is set, C<'UTF8'> format is checked
-before resorting to C<'Text'>. It is clear that this scheme is not the only
-possibly needed, for example, an application may want to ignore ASCII text, or,
-ignore UTF8 text but have C<Prima::Application::wantUnicodeInput> set, etc.
+C<Prima::Application::wantUnicodeInput> is set (default), C<'UTF8'> format is
+checked before resorting to C<'Text'>. It is clear that this scheme is not the
+only possibly needed, for example, an application may want to ignore ASCII
+text, or, ignore UTF8 text but have C<Prima::Application::wantUnicodeInput>
+set, etc.
 
 The symmetric action is C<CopyText>, that allows for a custom text conversion
 code to be installed.
@@ -166,7 +178,7 @@ is present, and if so, load a new image from this data, before falling back to
 OS-dependent image storage.
 
 When storing the image on the clipboard, only the default format, raw pixel data
-is used.
+is used. Under X11 the toolkit can also serve images encoded as file formats.
 
 =head2 Exact and meta formats
 
@@ -191,13 +203,13 @@ encoded PNG streams, for example.
 
 =item image OBJECT, [KEEP]
 
-Provides access to an image, stored in the system clipboard.  In get-mode call,
+Provides access to an image, stored in the system clipboard. In get-mode call
 return C<undef> if no image is stored.  In set-mode clears the clipboard unless
 KEEP is set.
 
 =item text STRING, [KEEP]
 
-Provides access to text stored in the system clipboard.  In get-mode call,
+Provides access to the text stored in the system clipboard. In get-mode call
 return C<undef> if no text information is present.  In set-mode clears the
 clipboard unless KEEP is set.
 
@@ -223,35 +235,34 @@ Sets DATA in FORMAT. Clears the clipboard before unless KEEP is set.
 
 =item deregister_format FORMAT_STRING
 
-De-registers a previously registered data format.
-Called implicitly for all not de-registered format
-before a clipboard object is destroyed.
+De-registers a previously registered data format.  Called implicitly for all
+not de-registered format before a clipboard object is destroyed.
 
 =item fetch FORMAT_STRING
 
-Returns the data of exact FORMAT_STRING data format, if present in the clipboard.
-Depending on FORMAT_STRING, data is either text string for C<'Text'> format,
-Prima::Image object for C<'Image'> format and a binary scalar value for all
-custom formats.
+Returns the data of exact FORMAT_STRING data format, if present in the
+clipboard.  Depending on FORMAT_STRING, data is either text string for
+C<'Text'> format, Prima::Image object for C<'Image'> format and a binary scalar
+value for all custom formats.
 
 =item format_exists FORMAT_STRING
 
-Returns a boolean flag, showing whether FORMAT_STRING
-exact format data is present in the clipboard or not.
+Returns a boolean flag, showing whether FORMAT_STRING exact format data is
+present in the clipboard or not.
 
 =item has_format FORMAT_STRING
 
-Returns a boolean flag, showing whether FORMAT_STRING
-meta format data is present in the clipboard or not.
+Returns a boolean flag, showing whether FORMAT_STRING meta format data is
+present in the clipboard or not.
 
 =item get_handle
 
-Returns a system handle for a clipboard object.
+Returns the system handle for the clipboard object.
 
 =item get_formats INCLUDE_UNREGISTERED = 0
 
-Returns array of strings, where each is a format ID,
-reflecting the formats present in the clipboard.
+Returns an array of strings, where each is a format ID, reflecting the formats
+present in the clipboard.
 
 Only the predefined formats, and the formats registered via
 C<register_format()> are returned if C<INCLUDE_UNREGISTERED> is unset.  If the
@@ -260,19 +271,16 @@ necessarily are the same as registered with Prima.
 
 =item get_registered_formats
 
-Returns array of strings, each representing
-a registered format. C<Text> and C<Image>
-are returned also.
+Returns an array of strings, each representing a registered format. C<Text> and
+C<Image> are returned also.
 
 =item get_standard_clipboards
 
-Returns array of strings, each representing
-a system clipboard. The default C<Clipboard>
-is always present. Other clipboards are optional.
-As an example, this function returns only C<Clipboard>
-under win32, but also C<Primary> and C<Secondary>
-under X11. The code, specific to these clipboards
-must refer to this function first.
+Returns array of strings, each representing a system clipboard. The default
+C<Clipboard> is always present. Other clipboards are optional. As an example,
+this function returns only C<Clipboard> under win32, but also C<Primary> and
+C<Secondary> under X11. The code, specific to these clipboards must refer to
+this function first.
 
 =item is_dnd
 
@@ -283,11 +291,10 @@ See also: C<Widget/Drag and drop>, C<Application/get_dnd_clipboard>.
 
 =item open
 
-Opens a system clipboard and locks it for the process
-single use; returns a success flag. Subsequent C<open>
-calls are possible, and always return 1. Each C<open()>
-must correspond to C<close()>, otherwise the clipboard
-will stay locked until the blocking process is finished.
+Opens a system clipboard and locks it for the process single use; returns a
+success flag. Subsequent C<open> calls are possible, and always return 1. Each
+C<open()> must correspond to C<close()>, otherwise the clipboard will stay
+locked until the blocking process is finished.
 
 =item paste FORMAT_STRING
 
@@ -295,16 +302,15 @@ Returns data of meta format FORMAT_STRING if found in the clipboard, or undef ot
 
 =item register_format FORMAT_STRING
 
-Registers a data format under FORMAT_STRING string ID,
-returns a success flag. If a format is already registered,
-1 is returned. All formats, registered via C<register_format()>
-are de-registered with C<deregister_format()> when a program is
-finished.
+Registers a data format under FORMAT_STRING string ID, returns a success flag.
+If a format is already registered, 1 is returned. All formats, registered via
+C<register_format()> are de-registered with C<deregister_format()> when a
+program is finished.
 
 =item store FORMAT_STRING, SCALAR
 
-Stores SCALAR value into the clipboard in FORMAT_STRING
-exact data format. Depending of FORMAT_STRING, SCALAR is treated as follows:
+Stores SCALAR value into the clipboard in FORMAT_STRING exact data format.
+Depending of FORMAT_STRING, SCALAR is treated as follows:
 
    FORMAT_STRING     SCALAR
    ------------------------------------
@@ -314,13 +320,12 @@ exact data format. Depending of FORMAT_STRING, SCALAR is treated as follows:
    other formats     binary scalar value
 
 
-NB. All custom formats treated as a binary data. In case
-when the data are transferred between hosts with different byte orders
-no implicit conversions are made. It is up to the programmer
-whether to convert the data in a portable format, or leave it as
-is. The former option is of course preferable. As far as the author knows,
-the I<Storable> module from I<CPAN> collection provides the system-independent
-conversion routines.
+NB. All custom formats treated as a binary data. In case when the data are
+transferred between hosts with different byte orders no implicit conversions
+are made. It is up to the programmer whether to convert the data in a portable
+format, or leave it as is. The former option is of course preferable. As far as
+the author knows, the I<Storable> module from I<CPAN> collection provides the
+system-independent conversion routines.
 
 =back
 
