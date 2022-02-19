@@ -88,19 +88,9 @@ Drawable_bars( Handle self, SV * rects)
 		int i;
 		NRect *r;
 		for ( i = 0, r = (NRect*)p; i < count; i++, r++) {
-			NPoint xr[5] = {
-				{r->left,r->bottom},
-				{r->left,r->top},
-				{r->right,r->top},
-				{r->right,r->bottom},
-				{r->left,r->bottom}
-			};
-			if ( !var->antialias) {
-				int j;
-				for ( j = 0; j < 5; j++)
-					TRUNC2(xr[j].x,xr[j].y);
-			}
-			if ( !( ret = apc_gp_aa_fill_poly( self, 5, xr)))
+			int x1 = r-> left,y1 = r->bottom, x2 = r->right, y2 = r->top;
+			if ( !var->antialias ) TRUNC4(x1,y1,x2,y2);
+			if ( !apc_gp_aa_bar( self, x1, y1, x2, y2))
 				break;
 		}
 	} else
@@ -122,12 +112,11 @@ Drawable_clear( Handle self, double x1, double y1, double x2, double y2)
 		Bool ok;
 		Color color;
 		FillPattern fp;
-		NPoint r[5] = { {x1,y1}, {x2,y1}, {x2,y2}, {x1,y2}, {x1,y1} };
 		color = apc_gp_get_color(self);
 		memcpy(&fp, apc_gp_get_fill_pattern(self), sizeof(FillPattern));
 		apc_gp_set_color(self, apc_gp_get_back_color(self));
 		apc_gp_set_fill_pattern(self, fillPatterns[fpSolid]);
-		ok = apc_gp_aa_fill_poly( self, 5, r);
+		ok = apc_gp_aa_bar( self, x1, y1, x2, y2);
 		apc_gp_set_fill_pattern(self, fp);
 		apc_gp_set_color(self, color);
 		return ok;
