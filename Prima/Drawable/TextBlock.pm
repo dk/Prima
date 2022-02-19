@@ -781,7 +781,6 @@ sub justify_interspace
 	return if $curr_width > $opt{width} || $curr_width == 0;
 	my $min_text_to_space_ratio = $opt{max_text_to_space_ratio} // 0.75;
 	return if $curr_width / $width < $min_text_to_space_ratio;
-
 	my @new = @$b[0 .. BLK_DATA_END];
 	my @breaks;
 	my $n_spaces = 0;
@@ -814,7 +813,7 @@ sub justify_interspace
 				if ( $mid =~ m/\G(\s+)/gcs) {
 					my $l = length($1);
 					$ofs += $l;
-					$space_width //= $canvas->get_text_width(' ');
+					$space_width //= $canvas->get_text_shape_width(' ');
 					push @txt, undef, undef, $l * $space_width;
 					$n_spaces++;
 					$combined_width += $l * $space_width;
@@ -831,7 +830,7 @@ sub justify_interspace
 #				$tt .= "$tx ";
 
 				my $l = length($tx);
-				my $tw = $canvas->get_text_width($tx);
+				my $tw = $canvas->get_text_shape_width($tx);
 				$combined_width += $tw;
 				push @txt, $ofs, $l, $tw;
 				$ofs += $l;
@@ -840,6 +839,7 @@ sub justify_interspace
 		},
 	);
 	return unless $n_spaces;
+	return if $combined_width >= $width;
 
 	my $avg_space_incr  = ($width - $combined_width) / $n_spaces;
 	my ($curr, $last_incr) = (0,0);
