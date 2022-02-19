@@ -80,7 +80,7 @@ sub _debug
 		delete $f{0};
 		if ( $::application ) {
 			for my $fid ( sort keys %f ) {
-				my $f = Prima::FontMapper->get($fid);
+				my $f = Prima::Font::Mapper->get($fid);
 				$out .= "  #$fid: $f->{name}\n";
 			}
 		}

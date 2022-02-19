@@ -626,7 +626,7 @@ sub fillWinding # compatibility
 	$_[0]->fillMode(($_[1] ? fm::Winding : fm::Alternate) | fm::Overlay);
 }
 
-sub font_mapper { Prima::FontMapper->new( shift ) }
+sub font_mapper { Prima::Font::Mapper->new( shift ) }
 
 package Prima::Image;
 use vars qw( @ISA);
@@ -2008,7 +2008,7 @@ sub set_text
 	$self-> repaint;
 }
 
-package Prima::FontMapper;
+package Prima::Font::Mapper;
 
 sub new { bless { canvas => $_[1] }, $_[0] }
 
