@@ -1074,6 +1074,10 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
 		XftFont * base = kf_base ? kf_base-> xft : xf;
 		loaded_font. descent = base-> descent;
 		loaded_font. ascent  = base-> ascent;
+		if ( loaded_font. descent + loaded_font. ascent != loaded_font. height ) {
+			XFTdebug("descent %d + ascent %d != height %d, fixing", loaded_font. descent, loaded_font. ascent, loaded_font. height );
+			loaded_font. ascent = loaded_font. height - loaded_font. descent;
+		}
 	}
 
 	if ( cache_results ) {
