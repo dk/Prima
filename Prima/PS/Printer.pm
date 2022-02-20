@@ -186,7 +186,7 @@ my ( $sigpipe);
 
 sub __end
 {
-	my $self = $_[0];
+	my ($self, $aborted) = @_;
 	close( $self-> {spoolHandle}) if $self-> {spoolHandle} && $self-> {data}-> {spoolerType} ne 'fh';
 	if ( $self-> {data}-> {spoolerType} ne 'file') {
 		defined($sigpipe) ? $SIG{PIPE} = $sigpipe : delete($SIG{PIPE});
@@ -195,14 +195,16 @@ sub __end
 	$self-> {spoolingFailed} = undef;
 
 	if ( $self->{data}->{spoolerType} eq 'cmd' && $self->{data}->{spoolerData} =~ /\$/) {
-		my $cmd = $self->{data}->{spoolerData};
-		my $tmp = $self->{spoolName};
-		$cmd =~ s/\$/$tmp/g;
-		if ( $self->{gui} && $cmd !~ />2/) {
-			$self->{spoolSTDERR} = Prima::PS::TempFile->new_filename;
-			$cmd .= " 2>$self->{spoolSTDERR}";
+		unless ( $aborted ) {
+			my $cmd = $self->{data}->{spoolerData};
+			my $tmp = $self->{spoolName};
+			$cmd =~ s/\$/$tmp/g;
+			if ( $self->{gui} && $cmd !~ />2/) {
+				$self->{spoolSTDERR} = Prima::PS::TempFile->new_filename;
+				$cmd .= " 2>$self->{spoolSTDERR}";
+			}
+			$self-> show_msg("Error running '$cmd'") if system $cmd;
 		}
-		$self-> show_msg("Error running '$cmd'") if system $cmd;
 		$self->{spoolTmpFile}->remove;
 		undef $self->{spoolTmpFile};
 	}
@@ -218,7 +220,7 @@ sub _end_doc
 	my $self = $_[0];
 	my $backend = $self->{backend};
 	$backend->can('end_doc')->($self);
-	$self-> __end;
+	$self-> __end(0);
 }
 
 sub _abort_doc
@@ -226,7 +228,7 @@ sub _abort_doc
 	my $self = $_[0];
 	my $backend = $self->{backend};
 	$backend->can('abort_doc')->($self);
-	$self-> __end;
+	$self-> __end(1);
 	unlink $self-> {spoolName} if $self-> {data}-> {spoolerType} eq 'file';
 }
 
@@ -295,9 +297,10 @@ sub _spool
 		return $ok;
 	}
 
-	if ( !(print {$self-> {spoolHandle}} $data) ||
-			( $piped && $self-> {data}-> {spoolerType} ne 'file' )
-		) {
+	if (
+		!(print {$self-> {spoolHandle}} $data) ||
+		( $piped && $self-> {data}-> {spoolerType} ne 'file' )
+	) {
 		$self-> show_msg("Error printing to '$self->{spoolName}'");
 		$self-> {spoolingFailed} = 1;
 		return 0;
