@@ -843,6 +843,8 @@ sub justify_interspace
 
 	my $avg_space_incr  = ($width - $combined_width) / $n_spaces;
 	my ($curr, $last_incr) = (0,0);
+	my $ff = $canvas->font;
+	my $fh = $ff->{height} + $ff->{externalLeading};
 
 	for ( my $i = $#breaks; $i >= 0; $i--) {
 		my ( $at, $txt ) = @{ $breaks[$i] };
@@ -854,6 +856,7 @@ sub justify_interspace
 				$curr += $avg_space_incr;
 				my $incr = int( $curr - $last_incr );
 				$last_incr += $incr;
+				push @blk, extend($$txt[$j + 2] + $incr, $fh);
 				push @blk, moveto($$txt[$j + 2] + $incr, 0);
 			}
 		}
