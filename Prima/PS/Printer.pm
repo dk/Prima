@@ -448,8 +448,12 @@ sub init
 			$self-> {printers}-> {GhostView}-> {spoolerType} = 'cmd';
 			$self-> {printers}-> {GhostView}-> {spoolerData} = 'gv $';
 		}
-		$self-> {printers}-> {File} = deepcopy( $self-> {defaultData});
-		$self-> {printers}-> {File}-> {spoolerType} = 'file';
+		$self-> {printers}-> {'Save as PostScript'} = deepcopy( $self-> {defaultData});
+		$self-> {printers}-> {'Save as PostScript'}-> {spoolerType} = 'file';
+	}
+
+	if ( exists $self->{printers}->{File} && ! exists $self->{printers}->{'Save as PostScript'}) {
+		$self-> {printers}-> {'Save as PostScript'} = delete $self->{printers}->{File};
 	}
 
 	unless ( defined $pr) {
@@ -514,7 +518,7 @@ sub printers
 	my $self = $_[0];
 
 	my @res;
-	for ( keys %{$self-> {printers}}) {
+	for ( sort keys %{$self-> {printers}}) {
 		my $d = $self-> {printers}-> {$_};
 		push @res, {
 			name    => $_,
