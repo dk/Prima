@@ -1,15 +1,12 @@
 use strict;
 use warnings;
-use Prima;
-use Prima::PodView;
-use Prima::Buttons;
-use Prima::InputLine;
-use Prima::IniFile;
-use Prima::Drawable::Metafile;
-use Prima::Utils;
-use Prima::Dialog::FileDialog;
-use Prima::Dialog::FindDialog;
-use Prima::Dialog::PrintDialog;
+use Prima qw(
+	Buttons InputLine IniFile MsgBox PodView Utils
+	Drawable::Metafile
+	Dialog::FileDialog
+	Dialog::FindDialog
+	Dialog::PrintDialog
+);
 
 package Prima::HelpViewer;
 use vars qw(@helpWindows $windowClass);
@@ -433,6 +430,18 @@ sub init
 sub on_close
 {
 	my $self = $_[0];
+
+	if (( $self->{printing} // -1) > 0) {
+		$self->clear_event;
+		if ( Prima::MsgBox::message_box(
+			"Printing",
+			"Abort printing?",
+			mb::Abort|mb::Cancel|mb::Warning
+		) == mb::Abort) {
+			$self->{printing} = -2;
+		}
+	}
+
 	my $sec = $inifile-> section('View');
 
 	$sec-> {FontSize}     = $self-> {text}-> {defaultFontSize};
@@ -929,6 +938,7 @@ sub print
 		$self-> {text}-> {fontPalette}-> [$_]-> {name} = $font[$_] if defined $font[$_];
 	}
 
+	Prima::Utils::post( sub { $self-> close } ) if $self->{printing} == -2;
 	$self-> {printing} = undef;
 }
 
