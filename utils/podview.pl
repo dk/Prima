@@ -3,7 +3,7 @@ use warnings;
 use Getopt::Long;
 use Prima;
 use Prima::HelpViewer;
-use Prima::Application;
+use Prima::Application name => 'POD viewer';
 
 package SoleHelpViewer;
 use vars qw(@ISA %profile_default);
