@@ -131,27 +131,21 @@ sub message_box
 
 	my $iconRight = 0;
 	my $iconView;
-	if ( $icon)
-	{
-		$icon = Prima::StdBitmap::icon( $icon);
-		if ( defined $icon) {
-			$iconView = $dlg-> insert( Widget =>
-				growMode => gm::YCenter,
-				origin         => [
-					20,
-					($dlg-> height + $fresh-> height - $icon-> height)/2
-				],
-				size           => [ $icon-> width, $icon-> height],
-				onPaint        => sub {
-					my $self = $_[1];
-					$self-> color( $dlg-> backColor);
-					$self-> bar( 0, 0, $self-> size);
-					$self-> put_image( 0, 0, $icon);
-				},
-			);
-
-			$iconRight = $iconView-> right;
-		}
+	if ( $icon and ($icon = Prima::StdBitmap::icon( $icon))) {
+		$iconView = $dlg-> insert( Widget =>
+			growMode       => gm::GrowHiY,
+			left           => 20,
+			width          => $icon-> width,
+			top            => $dlg-> height - 10,
+			bottom         => $fresh-> height + 20,
+			ownerBackColor => 1,
+			onPaint        => sub {
+				my $self = $_[1];
+				$self-> clear;
+				$self-> put_image(0, ($self->height - $icon->height)/2, $icon);
+			},
+		);
+		$iconRight = $iconView-> right;
 	}
 
 	my $label = $dlg-> insert( Label =>
