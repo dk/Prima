@@ -1518,17 +1518,22 @@ sub paint_code_div
 	my ( $self, $canvas, $block, $state, $x, $y, $coord) = @_;
 	my $f  = $canvas->font;
 	my ($style, $w, $h) = @$coord;
-	my @x = ( $canvas-> backColor, $canvas-> color );
-	my $path = $canvas->new_path->round_rect($x, $y, $x + $w, $y + $h, 20);
+	my %save = map { $_ => $canvas-> $_() } qw(color);
+
+	my $path = $canvas->new_path->round_rect(
+		$x, $y,
+		$x + $w, $y + $h,
+		$self->{defaultFontSize} * 2 * $self->{resolution}->[0] / 96.0
+	);
 	if ( $style == TDIVSTYLE_SOLID ) {
+		$save{backColor} = $canvas->backColor;
 		$canvas->set(backColor => $self->{colorMap}->[5], color => 0xcccccc);
 		$path->fill_stroke;
-		$canvas-> set( backColor => $x[0], color => $x[1] );
 	} else {
 		$canvas->set(color => 0x808080);
-		$path-> stroke;
-		$canvas-> set( color => $x[1] );
+		$path->stroke;
 	}
+	$canvas-> set(%save);
 }
 
 sub add_code_div
@@ -1772,7 +1777,7 @@ sub print
 		return if defined $self->{index_ends_at} and $mid < $self->{index_ends_at};
 
 		my $m = $self-> {model}-> [$mid];
-		return if ($$m[M_TYPE] & T_TYPE_MASK) != T_NORMAL; # don't print div background
+		return if ($$m[M_TYPE] & T_TYPE_MASK) != T_NORMAL; # don't print divs
 
 		my $g = tb::block_create();
 		$$g[ tb::BLK_TEXT_OFFSET] = $$m[M_TEXT_OFFSET];
