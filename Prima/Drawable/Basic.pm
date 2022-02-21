@@ -207,7 +207,7 @@ sub text_split_lines
 {
 	my ($self, $text) = @_;
 	return ref($text) ?
-		@{ $self-> text_wrap( $text, 0, tw::NewLineBreak ) } :
+		@{ $self-> text_wrap( $text, -1, tw::NewLineBreak ) } :
 		split "\n", $text;
 }
 
