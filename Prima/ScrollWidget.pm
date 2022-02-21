@@ -252,7 +252,7 @@ sub init
 		owner => $self,
 		name => 'SlaveWindow',
 		rect  => [ $self-> get_active_area(0) ],
-		growMode => gm::Client,
+#		growMode => gm::Client, do that manually because client's own resize causes changes too
 	);
 
 	$self-> {client_geomSize} = [0,0];
@@ -340,6 +340,8 @@ sub children_extensions
 	my @ext = ( 0,0 );
 	for my $w ( $self-> {client}-> widgets) {
 		my @r = $w-> rect;
+		$r[2] -= $r[0] if $r[0] < 0;
+		$r[3] -= $r[1] if $r[1] < 0;
 		$ext[0] = $r[2] if $ext[0] < $r[2];
 		$ext[1] = $r[3] if $ext[1] < $r[3];
 	}
