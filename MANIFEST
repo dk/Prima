@@ -114,6 +114,7 @@ examples/ps_setup.pl
 examples/rotation.pl
 examples/scrollbar.pl
 examples/scrollbar2.pl
+examples/scrollgroup.pl
 examples/sheet.pl
 examples/socket.pl
 examples/socket_anyevent.pl
