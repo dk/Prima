@@ -50,6 +50,7 @@ use Prima::PS::PostScript;
 use Prima::PS::PDF;
 use Prima::PS::TempFile;
 use Prima::PS::Setup;
+use Prima::MsgBox;
 
 package Prima::PS::Printer::Common;
 use Prima::sys::FS;
@@ -146,7 +147,7 @@ sub _begin_doc
 			my $h = IO::Handle-> new;
 			unless ( open $h, ">", $f) {
 				undef $h;
-				Prima::message("Error opening $f:$!");
+				message("Error opening $f:$!");
 				goto AGAIN;
 			}
 			binmode $h;
@@ -172,7 +173,7 @@ sub _begin_doc
 	} elsif ( $self-> {data}-> {spoolerType} eq 'cmd' && $self->{data}->{spoolerData} =~ /\$/) {
 		my $f = Prima::PS::TempFile->new(unlink => 0, warn => !$self->{gui});
 		unless ( defined $f ) {
-			Prima::message("Error creating temporary file: $!") if $self-> {gui};
+			message("Error creating temporary file: $!") if $self-> {gui};
 			return 0;
 		}
 		$self-> {spoolTmpFile} = $f;
@@ -237,24 +238,16 @@ sub show_msg
 	my ( $self, $msg ) = @_;
 	return unless $self->{gui};
 
-	my $tmpf = $self->{spoolSTDERR};
-	my @msg;
-	if ( defined($tmpf) && (open my $f, "<", $tmpf )) {
-		while ( my $c = <$f> ) {
-			chomp $c;
-			push @msg, $c;
-			if (@msg > 5) {
-				push @msg, "...";
-				last;
-			}
-		}
+	if (
+		defined($self->{spoolSTDERR}) &&
+		(open my $f, "<", $self->{spoolSTDERR} )
+	) {
+		local $/;
+		$msg .= ": " . <$f>;
 		close $f;
 	}
-	if ( @msg ) {
-		unshift @msg, '' if length($msg[0]) + length($msg) > 60;
-		$msg .= ": ". join("\n", @msg);
-	}
-	Prima::message($msg);
+
+	message($msg);
 }
 
 sub _spool
