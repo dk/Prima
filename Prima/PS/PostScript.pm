@@ -608,7 +608,10 @@ sub glyph_out_outline
 		my $char = defined($plaintext) ?
 			substr( $plaintext, $indexes->[$i] & ~to::RTL, $ix_lengths[$i]) :
 			undef;
-		my $gid = $keeper-> use_char($canvas, $font, $glyph, $char);
+		my $gid =
+			$keeper-> use_char($canvas, $font, $glyph, $char) //
+			$Prima::PS::Unicode->{$char} // # not a single vector font found
+			'question';
 		if ( $advances) {
 			$advance = $advances->[$i];
 			$x2 += $positions->[$i*2];
@@ -618,13 +621,8 @@ sub glyph_out_outline
 			$advance = ($$xr[0] + $$xr[1] + $$xr[2]) * $div;
 		}
 		$adv += $advance;
-		if ( defined $gid ) {
-			($x2, $y2) = map { int( $_ * 100 + 0.5) / 100 } $self->pixel2point($x2, $y2);
-			$emit .= "$x2 $y2 M " if $x2 != 0 || $y2 != 0;
-		} else {
-			# not a single vector font found
-			$gid //= $Prima::PS::Unicode->{$char} // 'question';
-		}
+		($x2, $y2) = map { int( $_ * 100 + 0.5) / 100 } $self->pixel2point($x2, $y2);
+		$emit .= "$x2 $y2 M " if $x2 != 0 || $y2 != 0;
 		$emit .= "/$gid Y\n";
 	}
 
