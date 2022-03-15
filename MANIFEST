@@ -293,6 +293,7 @@ Prima/noX11.pm
 Prima/Outlines.pm
 Prima/PodView.pm
 Prima/PS/CFF.pm
+Prima/PS/Format.pm
 Prima/PS/Drawable.pm
 Prima/PS/Glyphs.pm
 Prima/PS/PDF.pm

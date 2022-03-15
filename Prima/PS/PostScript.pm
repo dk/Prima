@@ -2,6 +2,7 @@ package Prima::PS::PostScript;
 use strict;
 use warnings;
 use Prima;
+use Prima::PS::Format;
 use Prima::PS::Type1;
 use Prima::PS::TempFile;
 use base qw(Prima::PS::Drawable);
@@ -108,6 +109,7 @@ sub change_transform
 
 	$self-> emit(';') unless $gsave;
 	$self-> emit(':');
+	float_inplace(@cr, @tp, @sc, $mcr3, $ro);
 	$self-> emit(<<CLIP) if $doClip;
 N $cr[0] $cr[1] M 0 $cr[3] L $cr[2] 0 L 0 $mcr3 L X C
 CLIP
@@ -178,7 +180,7 @@ sub stroke
 
 	if ( $self-> {changed}-> {lineWidth}) {
 		my ($lw) = $self-> pixel2point($self-> lineWidth);
-		$self-> emit( $lw . ' SW');
+		$self-> emit( float_format($lw) . ' SW');
 		$self-> {changed}-> {lineWidth} = 0;
 	}
 
@@ -195,9 +197,9 @@ sub stroke
 		$self-> emit( "$id SJ");
 		$self-> {changed}-> {lineJoin} = 0;
 	}
-	
+
 	if ( $self-> {changed}-> {miterLimit}) {
-		my $ml = $self-> miterLimit;
+		my $ml = float_format($self-> miterLimit);
 		$self-> emit( "$ml ML");
 		$self-> {changed}-> {miterLimit} = 0;
 	}
@@ -621,7 +623,7 @@ sub glyph_out_outline
 			$advance = ($$xr[0] + $$xr[1] + $$xr[2]) * $div;
 		}
 		$adv += $advance;
-		($x2, $y2) = map { int( $_ * 100 + 0.5) / 100 } $self->pixel2point($x2, $y2);
+		($x2, $y2) = float_format($self->pixel2point($x2, $y2));
 		$emit .= "$x2 $y2 M " if $x2 != 0 || $y2 != 0;
 		$emit .= "/$gid Y\n";
 	}
@@ -676,7 +678,7 @@ sub text_out
 		my ( $ds, $bs) = ( $self-> {font}-> {direction}, $self-> textOutBaseline);
 		$self-> {font}-> {direction} = 0;
 		$self-> textOutBaseline(1) unless $bs;
-		@rb = $self-> pixel2point( @{$self-> get_text_box( $text, $from, $len)});
+		@rb = float_format($self-> pixel2point( @{$self-> get_text_box( $text, $from, $len)}));
 		$self-> {font}-> {direction} = $ds;
 		$self-> textOutBaseline($bs) unless $bs;
 	}
@@ -712,7 +714,7 @@ sub text_out
 sub bar
 {
 	my ( $self, $x1, $y1, $x2, $y2) = @_;
-	( $x1, $y1, $x2, $y2) = $self-> pixel2point( $x1, $y1, $x2, $y2);
+	( $x1, $y1, $x2, $y2) = float_format($self-> pixel2point( $x1, $y1, $x2, $y2));
 	$self-> fill( "N $x1 $y1 M $x1 $y2 l $x2 $y2 l $x2 $y1 l X F");
 }
 
@@ -721,7 +723,7 @@ sub bars
 	my ( $self, $array) = @_;
 	my $i;
 	my $c = scalar @$array;
-	my @a = $self-> pixel2point( @$array);
+	my @a = float_format($self-> pixel2point( @$array));
 	$c = int( $c / 4) * 4;
 	my $z = '';
 	for ( $i = 0; $i < $c; $i += 4) {
@@ -733,7 +735,7 @@ sub bars
 sub rectangle
 {
 	my ( $self, $x1, $y1, $x2, $y2) = @_;
-	( $x1, $y1, $x2, $y2) = $self-> pixel2point( $x1, $y1, $x2, $y2);
+	( $x1, $y1, $x2, $y2) = float_format($self-> pixel2point( $x1, $y1, $x2, $y2));
 	$self-> stroke( "N $x1 $y1 M $x1 $y2 l $x2 $y2 l $x2 $y1 l X O");
 }
 
@@ -746,7 +748,7 @@ sub clear
 			($x1, $y1, $x2, $y2) = (0,0,@{$self-> {size}});
 		}
 	}
-	( $x1, $y1, $x2, $y2) = $self-> pixel2point( $x1, $y1, $x2, $y2);
+	( $x1, $y1, $x2, $y2) = float_format($self-> pixel2point( $x1, $y1, $x2, $y2));
 	my $c = $self-> cmd_rgb( $self-> backColor);
 	$self-> emit(<<CLEAR);
 $c
@@ -758,7 +760,7 @@ CLEAR
 sub line
 {
 	my ( $self, $x1, $y1, $x2, $y2) = @_;
-	( $x1, $y1, $x2, $y2) = $self-> pixel2point( $x1, $y1, $x2, $y2);
+	( $x1, $y1, $x2, $y2) = float_format($self-> pixel2point( $x1, $y1, $x2, $y2));
 	$self-> stroke("N $x1 $y1 M $x2 $y2 l O");
 }
 
@@ -767,7 +769,7 @@ sub lines
 	my ( $self, $array) = @_;
 	my $i;
 	my $c = scalar @$array;
-	my @a = $self-> pixel2point( @$array);
+	my @a = float_format($self-> pixel2point( @$array));
 	$c = int( $c / 4) * 4;
 	my $z = '';
 	for ( $i = 0; $i < $c; $i += 4) {
@@ -781,7 +783,7 @@ sub polyline
 	my ( $self, $array) = @_;
 	my $i;
 	my $c = scalar @$array;
-	my @a = $self-> pixel2point( @$array);
+	my @a = float_format($self-> pixel2point( @$array));
 	$c = int( $c / 2) * 2;
 	return if $c < 2;
 	my $z = "N @a[0,1] M ";
@@ -799,7 +801,7 @@ sub fillpoly
 	my $c = scalar @$array;
 	$c = int( $c / 2) * 2;
 	return if $c < 2;
-	my @a = $self-> pixel2point( @$array);
+	my @a = float_format($self-> pixel2point( @$array));
 	my $x = "N @a[0,1] M ";
 	for ( $i = 2; $i < $c; $i += 2) {
 		$x .= "@a[$i,$i+1] l ";
@@ -813,7 +815,7 @@ sub pixel
 	my ( $self, $x, $y, $pix) = @_;
 	return cl::Invalid unless defined $pix;
 	my $c = $self-> cmd_rgb( $pix);
-	($x, $y) = $self-> pixel2point( $x, $y);
+	($x, $y) = float_format($self-> pixel2point( $x, $y));
 	$self-> emit(<<PIXEL);
 :
 $c
@@ -876,6 +878,7 @@ sub put_image_indirect
 	my $bt = ( $image-> type & im::BPP) * $is[0] / 8;
 	my $ls = $image->lineSize;
 	my ( $i, $j);
+	float_inplace($x, $y, @fullScale);
 
 	$self-> emit(": $x $y T @fullScale Z");
 	$self-> emit("/scanline $bt string d");

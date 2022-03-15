@@ -5,6 +5,7 @@ use warnings;
 use Encode;
 use Prima;
 use Prima::PS::CFF;
+use Prima::PS::Format;
 use Prima::PS::TempFile;
 use base qw(Prima::PS::Drawable);
 
@@ -71,11 +72,20 @@ sub change_transform
 	my ( $self, $gsave ) = @_;
 	return if $self-> {delay};
 
+	my ($ps, $pm) = @{ $self }{ qw(pageSize pageMargins) };
+	my @pm = (
+		@$pm[0,1],
+		$ps->[0] - $pm->[2] - $pm->[0],
+		$ps->[1] - $pm->[3] - $pm->[1]
+	);
+
 	my @tp = $self-> translate;
 	my @cr = $self-> clipRect;
 	my @sc = $self-> scale;
 	my $ro = $self-> rotate;
 	my $rg = $self-> region;
+	$ro += 90, $tp[0] += ($self->point2pixel($pm[2]))[0];
+	$ro /= $Prima::PS::Drawable::RAD;
 
 	$cr[2] -= $cr[0];
 	$cr[3] -= $cr[1];
@@ -95,13 +105,7 @@ sub change_transform
 	$self-> emit_content('Q') unless $gsave;
 	$self-> emit_content('q');
 
-	my ($ps, $pm) = @{ $self }{ qw(pageSize pageMargins) };
-	my @pm = (
-		@$pm[0,1],
-		$ps->[0] - $pm->[2] - $pm->[0],
-		$ps->[1] - $pm->[3] - $pm->[1]
-	);
-
+	float_inplace(@pm, @cr, @tp, @sc);
 	$self-> emit_content("h @pm re W n");
 	$self-> emit_content("h @cr re W n") if $doClip;
 	$self-> emit_content("1 0 0 1 @tp cm") if $doTR;
@@ -111,6 +115,7 @@ sub change_transform
 		my $sin1 = sin($ro);
 		my $cos  = cos($ro);
 		my $sin2 = -$sin1;
+		float_inplace($cos, $sin1, $sin2);
 		$self-> emit_content("$cos $sin1 $sin2 $cos 0 0 cm");
 	}
 	$self-> {changed}-> {$_} = 1 for qw(fill linePattern lineWidth lineJoin lineEnd miterLimit font);
@@ -177,7 +182,7 @@ sub stroke
 
 	if ( $self-> {changed}-> {lineWidth}) {
 		my ($lw) = $self-> pixel2point($self-> lineWidth);
-		$self-> emit_content( $lw . ' w');
+		$self-> emit_content( float_format($lw) . ' w');
 		$self-> {changed}-> {lineWidth} = 0;
 	}
 
@@ -197,7 +202,7 @@ sub stroke
 
 	if ( $self-> {changed}-> {miterLimit}) {
 		my $ml = $self-> miterLimit;
-		$self-> emit_content( "$ml M");
+		$self-> emit_content( float_format($ml) . " M");
 		$self-> {changed}-> {miterLimit} = 0;
 	}
 
@@ -921,7 +926,7 @@ sub glyph_out_outline
 		my $dx = $x2 - $x;
 		my $dy = $y2 - $y;
 		if  ($dx != 0 || $dy != 0) {
-			($dx, $dy) = map { int( $_ * 100 + 0.5) / 100 } ($dx, $dy);
+			float_inplace($dx, $dy);
 			$emit .= "$dx $dy Td ";
 		}
 		($x, $y) = ($x2, $y2);
@@ -965,8 +970,10 @@ sub text_out
 		my $cos  = cos($r);
 		my $wcos = cos($r) * $wmul;
 		my $sin2 = -$sin1;
+		float_inplace($wcos, $sin1, $sin2, $cos, $x, $y);
 		$self-> emit_content("$wcos $sin1 $sin2 $cos $x $y cm");
 	} else {
+		float_inplace($wmul, $x, $y);
 		$self-> emit_content("$wmul 0 0 1 $x $y cm");
 	}
 
@@ -975,7 +982,7 @@ sub text_out
 		my ( $ds, $bs) = ( $self-> {font}-> {direction}, $self-> textOutBaseline);
 		$self-> {font}-> {direction} = 0;
 		$self-> textOutBaseline(1) unless $bs;
-		@rb = $self-> pixel2point( @{$self-> get_text_box( $text, $from, $len)});
+		@rb = float_format($self-> pixel2point( @{$self-> get_text_box( $text, $from, $len)}));
 		$self-> {font}-> {direction} = $ds;
 		$self-> textOutBaseline($bs) unless $bs;
 	}
@@ -1056,6 +1063,7 @@ sub clear
 	$x2 -= $x1;
 	$y2 -= $y1;
 	my $c = lc $self-> cmd_rgb( $self-> backColor);
+	float_inplace($x1, $y1, $x2, $y2);
 	$self-> emit_content(<<CLEAR);
 $c
 h $x1 $y1 $x2 $y2 re f
@@ -1066,7 +1074,7 @@ CLEAR
 sub line
 {
 	my ( $self, $x1, $y1, $x2, $y2) = @_;
-	( $x1, $y1, $x2, $y2) = $self-> pixel2point( $x1, $y1, $x2, $y2);
+	( $x1, $y1, $x2, $y2) = float_format($self-> pixel2point( $x1, $y1, $x2, $y2));
 	$self-> stroke("h $x1 $y1 m $x2 $y2 l S");
 }
 
@@ -1075,7 +1083,7 @@ sub lines
 	my ( $self, $array) = @_;
 	my $i;
 	my $c = scalar @$array;
-	my @a = $self-> pixel2point( @$array);
+	my @a = float_format($self-> pixel2point( @$array));
 	$c = int( $c / 4) * 4;
 	my $z = '';
 	for ( $i = 0; $i < $c; $i += 4) {
@@ -1123,7 +1131,7 @@ sub pixel
 	return cl::Invalid unless defined $pix;
 	my $c = lc $self-> cmd_rgb( $pix);
 	my $w;
-	($x, $y, $w) = $self-> pixel2point( $x, $y, 1);
+	($x, $y, $w) = float_format($self-> pixel2point( $x, $y, 1));
 	$self-> emit_content(<<PIXEL);
 q
 $c
