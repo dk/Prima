@@ -422,9 +422,7 @@ C<wordWrap = 0> mode there is added a scroller, so that even if the text indeed
 is too big to get on the screen event with the maximized dialog.
 
 By default the function analyzes the message text and decides which of the two
-modes is suited best. However explicit override is possible with this flag.
-However explicit override is possible with this flag. However explicit override
-is possible with this flag. The explicit override is possible with this
+modes is suited best. The explicit override is possible with this
 flag.
 
 =back
