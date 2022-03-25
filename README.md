@@ -1,11 +1,27 @@
-DESCRIPTION
+Description
 ===========
 
 PRIMA is a general purpose extensible graphical user interface toolkit with a
 rich set of standard widgets and an emphasis on 2D image processing tasks. A
 Perl program using PRIMA looks and behaves identically on X11 and Win32.
 
-PREREQUISITES
+Example
+-------
+
+	use Prima qw(Application Buttons);
+
+	Prima::MainWindow->new(
+		text     => 'Hello world!',
+		size     => [ 200, 200],
+	)-> insert( Button =>
+		centered => 1,
+		text     => 'Hello world!',
+		onClick  => sub { $::application-> close },
+	);
+
+	run Prima;
+
+Prerequisites
 =============
 
 Debian/Ubuntu
@@ -113,7 +129,7 @@ thai texts properly Prima can be compiled with the libthai library. No special
 treatment of thai text is needed programmatically, text wrapper does everything
 under the hood. Get the libthai for strawberry at http://prima.eu.org/download/libthai-0.1.29-win64.zip
 
-SOURCE DISTRIBUTION INSTALLATION
+Source distribution installation
 ================================
 
 Create a makefile by running Makefile.PL using perl and then run make ( or
@@ -147,7 +163,7 @@ By default Prima tries to build with it, but if you don't want it, run
 
     perl Makefile.PL WITH_GTK2=0 WITH_GTK3=0
 
-BINARY DISTRIBUTION INSTALLATION
+Binary distribution installation
 ================================
 
 Available only for MSWin32. Please use installation from source for
@@ -160,7 +176,7 @@ To install the toolkit from the binary distribution run
 You have to patch Prima::Config.pm manually if you need to compile
 prima-dependent modules.
 
-USAGE EXAMPLES
+Usage examples
 ==============
 
 Try running the toolkit examples, by default installed in
@@ -194,7 +210,7 @@ and ends with
 
 Or, alternatively, start the VB program, the toolkit visual builder.
 
-MORE INFORMATION
+More information
 ================
 
 The toolkit contains set of POD files describing its features, and the
@@ -205,19 +221,19 @@ Visit http://www.prima.eu.org/ for the recent versions of the toolkit. You can
 use github.com/dk/Prima to keep in touch. The mailing list on the toolkit is
 available, you can ask questions there. See the Prima homepage for details.
 
-COPYRIGHT
+Copyright
 =========
 
 (c) 1997-2003 The Protein Laboratory, University of Copenhagen
 
 (c) 1997-2021 Dmitry Karasik
 
-AUTHOR
+Author
 ======
 
  - Dmitry Karasik <dmitry@karasik.eu.org>
 
-CREDITS
+Credits
 =======
 
  - Anton Berezin
