@@ -1747,7 +1747,7 @@ sub print
         my $hmargin = $formatWidth  / 24;
         my $vmargin = $formatHeight / 12;
         $formatWidth  -= $hmargin * 2;
-        $formatHeight -= $vmargin * 2;
+        $formatHeight -= $vmargin * 1.5;
         $canvas->translate( $hmargin, $vmargin );
 
 	my $mid = $min;

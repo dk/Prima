@@ -84,22 +84,19 @@ sub change_transform
 	my @sc = $self-> scale;
 	my $ro = $self-> rotate;
 	my $rg = $self-> region;
-	$ro += 90, $tp[0] += ($self->point2pixel($pm[2]))[0];
-	$ro /= $Prima::PS::Drawable::RAD;
+	if ( $self->{reversed}) {
+		$ro += 90; $tp[1] -= ($self->point2pixel($pm[2]))[0];
+		$ro /= $Prima::PS::Drawable::RAD;
+	}
 
 	$cr[2] -= $cr[0];
 	$cr[3] -= $cr[1];
 	my $doClip = grep { $_ != 0 } @cr;
-	my $doTR   = grep { $_ != 0 } @tp;
 	my $doSC   = grep { $_ != 0 } @sc;
-
-	if ( !$doClip && !$doTR && !$doSC && !$ro && !$rg) {
-		$self-> emit_content('q') if $gsave;
-		return;
-	}
+	my $doTR   = grep { $_ != 0 } @tp;
 
 	@cr = $self-> pixel2point( @cr);
-	@tp = $self-> pixel2point( @tp);
+	@tp = $self-> pixel2point( @tp );
 	my $mcr3 = -$cr[3];
 
 	$self-> emit_content('Q') unless $gsave;
@@ -107,10 +104,7 @@ sub change_transform
 
 	float_inplace(@pm, @cr, @tp, @sc);
 	$self-> emit_content("h @pm re W n");
-	$self-> emit_content("h @cr re W n") if $doClip;
-	$self-> emit_content("1 0 0 1 @tp cm") if $doTR;
-	$self-> emit_content($rg-> apply_offset . " n") if $rg && !$doClip;
-	$self-> emit_content("$sc[0] 0 0 $sc[1] 0 0 cm") if $doSC;
+	$self-> emit_content("1 0 0 1 $pm[0] $pm[1] cm");
 	if ($ro != 0) {
 		my $sin1 = sin($ro);
 		my $cos  = cos($ro);
@@ -118,6 +112,10 @@ sub change_transform
 		float_inplace($cos, $sin1, $sin2);
 		$self-> emit_content("$cos $sin1 $sin2 $cos 0 0 cm");
 	}
+	$self-> emit_content("h @cr re W n") if $doClip;
+	$self-> emit_content("1 0 0 1 @tp cm") if $doTR;
+	$self-> emit_content($rg-> apply_offset . " n") if $rg && !$doClip;
+	$self-> emit_content("$sc[0] 0 0 $sc[1] 0 0 cm") if $doSC;
 	$self-> {changed}-> {$_} = 1 for qw(fill linePattern lineWidth lineJoin lineEnd miterLimit font);
 }
 

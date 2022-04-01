@@ -41,7 +41,7 @@ sub init
 	$self-> {pageMargins} = [0,0,0,0];
 	$self-> {resolution}  = [72,72];
 	$self-> {scale}       = [ 1, 1];
-	$self-> {rotate}      = 1;
+	$self-> {rotate}      = 0;
 	my %profile = $self-> SUPER::init(@_);
 	$self-> $_( $profile{$_}) for qw( grayscale rotate reversed );
 	$self-> $_( @{$profile{$_}}) for qw( pageSize pageMargins resolution scale );
