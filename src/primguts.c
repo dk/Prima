@@ -161,15 +161,15 @@ strcasestr( register const char * s,  register const char * find)
 		register size_t len;
 
 		if ((c = *find++) != 0) {
-					c = tolower((unsigned char)c);
-					len = strlen(find);
-					do {
-								do {
-										if ((sc = *s++) == 0)
-													return (NULL);
-								} while ((char)tolower((unsigned char)sc) != c);
-					} while (strnicmp(s, find, len) != 0);
-					s--;
+			c = tolower((unsigned char)c);
+			len = strlen(find);
+			do {
+				do {
+					if ((sc = *s++) == 0)
+						return (NULL);
+				} while ((char)tolower((unsigned char)sc) != c);
+			} while (strnicmp(s, find, len) != 0);
+			s--;
 		}
 		return ((char *)s);
 }
