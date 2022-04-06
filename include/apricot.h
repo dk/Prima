@@ -515,8 +515,6 @@ typedef HV *PHash;
 typedef Bool HashProc( void * item, int keyLen, void * key, void * params);
 typedef HashProc *PHashProc;
 
-extern PHash primaObjects;
-
 extern PHash
 prima_hash_create( void);
 

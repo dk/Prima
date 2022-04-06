@@ -108,24 +108,24 @@ typedef HANDLE SOCKETHANDLE;
 	else \
 		err_msg( rc, NULL)
 
-#define apcErr( err) apcError = err
+#define apcErr( err) guts.apcError = err
 #define apiErr {           \
 	rc = GetLastError();    \
-	apcError = errApcError; \
+	guts.apcError = errApcError; \
 	apcWarn;                \
 }
 #define apiAltErr( err) {  \
-	apcError = errApcError; \
+	guts.apcError = errApcError; \
 	rc = err;               \
 	apcWarn;                \
 }
 #define apiErrRet         { apiErr;               return false; }
 #define apcErrRet(err)    { apcErr(err);          return false; }
-#define apcErrClear       { apcError = errOk;                   }
+#define apcErrClear       { guts.apcError = errOk;              }
 
 #define GPCALL rc = (DWORD)
 #define apiGPErr { \
-	apcError = errApcError; \
+	guts.apcError = errApcError; \
 	if ( debug ) \
 		warn( "win32 error 0x%x: '%s' at line %d in %s\n", (unsigned int)rc, \
 			err_msg_gplus( rc, NULL), __LINE__, __FILE__);   \
@@ -134,7 +134,7 @@ typedef HANDLE SOCKETHANDLE;
 #define apiGPErrCheck if (rc) apiGPErr;
 #define apiGPErrCheckRet(f) if (rc) { apiGPErr; return f; }
 #define apiHErr(hr) {           \
-	apcError = errApcError; \
+	guts.apcError = errApcError; \
 	rc = hr;                \
 	apcWarn;                \
 }
@@ -249,6 +249,7 @@ typedef struct _WinGuts
 	WORD           language_id;        // default shaping language
 	char           language_descr[32];
 	Bool           application_stop_signal;
+	long           apcError;
 } WinGuts, *PWinGuts;
 
 typedef struct _WindowData

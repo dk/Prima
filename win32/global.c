@@ -523,7 +523,7 @@ char * err_msg_gplus( GpStatus errId, char * buffer)
 char *
 apc_last_error(void)
 {
-	switch (apcError) {
+	switch (guts.apcError) {
 	case errApcError              : return err_buf;
 	case errOk                    : return NULL;
 	case errInvObject             : return "Bad object";

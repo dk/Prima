@@ -396,7 +396,7 @@ apc_pointer_set_user( Handle self, Handle icon, Point hotSpot)
 		Point sz = { PImage(icon)->w, PImage(icon)-> h };
 		hotSpot. y = sz.y - hotSpot. y - 1;
 		cursor = image_make_icon_handle( icon, sz, &hotSpot);
-		if ( apcError) return false;
+		if ( guts.apcError) return false;
 	} else
 		cursor = NULL;
 

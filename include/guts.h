@@ -20,7 +20,6 @@ sv_setsv( GvSV( PL_errgv), NULL_SV)
 if ( errSave) sv_catsv( GvSV( PL_errgv), errSave);\
 if ( errSave) sv_free( errSave)
 
-extern long   apcError;
 extern List   postDestroys;
 extern int    recursiveCall;
 extern PHash  primaObjects;

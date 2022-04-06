@@ -435,7 +435,7 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
 		notify_sys_handle( self );
 		if ( layered ) hwnd_repaint_layered(self, false);
 	}
-	return apcError == 0;
+	return guts.apcError == 0;
 }
 
 Bool
@@ -768,7 +768,7 @@ apc_window_set_menu( Handle self, Handle menu)
 	DrawMenuBar( HANDLE);
 	if ( apc_window_get_window_state( self) == wsNormal)
 		var self-> set_size( self, size);
-	return apcError == 0;
+	return guts.apcError == 0;
 }
 
 Bool
@@ -1003,7 +1003,7 @@ apc_widget_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
 		notify_sys_handle( self );
 		apc_widget_redraw( self);
 	}
-	return apcError == 0;
+	return guts.apcError == 0;
 }
 
 Bool

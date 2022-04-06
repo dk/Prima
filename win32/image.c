@@ -1389,7 +1389,7 @@ apc_image_end_paint( Handle self)
 	DeleteDC( sys ps);
 	sys stockBM = NULL;
 	sys ps = NULL;
-	return apcError == errOk;
+	return guts.apcError == errOk;
 }
 
 Bool
@@ -1400,7 +1400,7 @@ apc_image_end_paint_info( Handle self)
 	hwnd_leave_paint( self);
 	DeleteDC( sys ps);
 	sys ps = NULL;
-	return apcError == errOk;
+	return guts.apcError == errOk;
 }
 
 

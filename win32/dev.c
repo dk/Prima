@@ -753,7 +753,7 @@ apc_prn_end_doc( Handle self)
 	DeleteDC( sys ps);
 	sys pal = NULL;
 	sys ps = NULL;
-	return apcError == errOk;
+	return guts.apcError == errOk;
 }
 
 Bool
@@ -764,7 +764,7 @@ apc_prn_end_paint_info( Handle self)
 	hwnd_leave_paint( self);
 	DeleteDC( sys ps);
 	sys ps = NULL;
-	return apcError == errOk;
+	return guts.apcError == errOk;
 }
 
 Bool
@@ -774,7 +774,7 @@ apc_prn_new_page( Handle self)
 	objCheck false;
 	if ( EndPage( sys ps) < 0) apiPrnErr;
 	if ( StartPage( sys ps) < 0) apiPrnErr;
-	return apcError == errOk;
+	return guts.apcError == errOk;
 }
 
 Bool
@@ -787,7 +787,7 @@ apc_prn_abort_doc( Handle self)
 	DeleteDC( sys ps);
 	sys pal = NULL;
 	sys ps = NULL;
-	return apcError == errOk;
+	return guts.apcError == errOk;
 }
 
 #ifdef __cplusplus

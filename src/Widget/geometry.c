@@ -1,4 +1,5 @@
 #include "apricot.h"
+#include "guts.h"
 #include "Widget.h"
 
 #ifdef __cplusplus

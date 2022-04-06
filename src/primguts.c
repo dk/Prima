@@ -50,7 +50,6 @@ static List  staticHashes;
 static int   prima_init_ok = 0;
 
 Handle application = NULL_HANDLE;
-long   apcError = 0;
 List   postDestroys;
 int    recursiveCall = 0;
 PHash  primaObjects = NULL;
