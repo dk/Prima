@@ -1,6 +1,6 @@
 Revision history for Perl module Prima
 
-1.64 202X-XX-XX
+1.64 2022-04-09
  - Use libthai for Drawable.text_wrap
  - PS/PDF font metric calculations simplified and fixed
  - POD printing quality improved
