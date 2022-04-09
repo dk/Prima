@@ -3,6 +3,7 @@ package Prima::Drawable;
 
 use strict;
 use warnings;
+use Prima;
 
 sub rect3d
 {

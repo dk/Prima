@@ -1,6 +1,7 @@
 use strict;
 use warnings;
 package Prima::VB::Classes;
+use Prima qw(ComboBox);
 
 sub classes
 {
@@ -14,7 +15,6 @@ sub classes
 	);
 }
 
-use Prima::Classes;
 
 
 package Prima::VB::Object;
@@ -2936,6 +2936,7 @@ sub open
 
 sub write
 {
+	no warnings 'once';
 	my ( $class, $id, $data) = @_;
 	return $VB::writeMode ? "sub { $data\n}" :
 		'Prima::VB::VBLoader::GO_SUB(\''.Prima::VB::Types::generic::quotable($data).

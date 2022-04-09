@@ -1,6 +1,7 @@
 package Prima::Drawable::TextBlock;
 use strict;
 use warnings;
+use Prima;
 
 package
     tb;

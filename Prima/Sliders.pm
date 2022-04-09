@@ -10,9 +10,7 @@ package Prima::Sliders;
 
 use strict;
 use warnings;
-use Prima::Const;
-use Prima::Classes;
-use Prima::IntUtils;
+use Prima qw(IntUtils);
 
 package Prima::AbstractSpinButton;
 use vars qw(@ISA);

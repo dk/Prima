@@ -286,6 +286,7 @@ use Prima::sys::FS;
 
 sub profile_default
 {
+	no warnings 'once';
 	my $def = $_[ 0]-> SUPER::profile_default;
 	my %prf = (
 		text           => 'Code editor',

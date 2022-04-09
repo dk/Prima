@@ -1,12 +1,10 @@
 package Prima::Label;
 use vars qw(@ISA);
 @ISA = qw(Prima::Widget);
-
-use Carp;
-use Prima::Const;
-use Prima::Classes;
 use strict;
 use warnings;
+use Carp;
+use Prima;
 
 sub profile_default
 {

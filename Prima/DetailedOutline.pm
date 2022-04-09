@@ -2,8 +2,7 @@ package Prima::DetailedOutline;
 
 use strict;
 use warnings;
-use Prima::Outlines;
-use Prima::DetailedList;
+use Prima qw(Outlines DetailedList);
 
 use vars qw(@ISA @images @imageSize);
 @ISA = qw(Prima::OutlineViewer Prima::DetailedList);

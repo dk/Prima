@@ -8,7 +8,7 @@ package Prima::Outlines;
 use strict;
 use warnings;
 use Cwd;
-use Prima qw(Classes IntUtils StdBitmap);
+use Prima qw(IntUtils StdBitmap);
 
 package Prima::OutlineViewer;
 use vars qw(@ISA @images @imageSize);
@@ -1723,7 +1723,7 @@ my $unix = Prima::Application-> get_system_info-> {apc} == apc::Unix || $^O =~ /
 my @images;
 my @drvImages;
 
-{
+unless ($^C) {
 	my $i = 0;
 	my @idx = (  sbmp::SFolderOpened, sbmp::SFolderClosed);
 	$images[ $i++] = Prima::StdBitmap::icon( $_) for @idx;

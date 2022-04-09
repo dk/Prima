@@ -1,6 +1,7 @@
 package Prima::StartupWindow;
 use strict;
 use warnings;
+use Prima;
 use vars qw(@windowStack @pointersStack);
 
 sub import {

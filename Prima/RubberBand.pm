@@ -2,6 +2,7 @@ package Prima::RubberBand;
 
 use strict;
 use warnings;
+use Prima;
 
 sub new
 {

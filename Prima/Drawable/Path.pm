@@ -2,6 +2,7 @@ package Prima::Drawable::Path;
 
 use strict;
 use warnings;
+use Prima;
 
 our $PI = 3.14159265358979323846264338327950288419716939937510;
 our $PI_2 = $PI / 2;

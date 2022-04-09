@@ -2,6 +2,7 @@ package Prima::sys::XQuartz;
 
 use strict;
 use warnings;
+use Prima;
 
 sub get_fullscreen_image
 {

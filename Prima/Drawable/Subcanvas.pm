@@ -2,6 +2,7 @@ package Prima::Drawable::Subcanvas;
 
 use strict;
 use warnings;
+use Prima;
 our @ISA = qw(Prima::Drawable);
 use Carp;
 

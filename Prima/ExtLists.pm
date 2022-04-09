@@ -4,10 +4,7 @@
 package Prima::ExtLists;
 use strict;
 use warnings;
-use Prima::Const;
-use Prima::Classes;
-use Prima::Lists;
-use Prima::StdBitmap;
+use Prima qw(Lists StdBitmap);
 
 package Prima::CheckList;
 use vars qw(@ISA);

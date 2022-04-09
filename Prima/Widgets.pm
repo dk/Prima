@@ -4,8 +4,7 @@ package Prima::Widgets;
 
 use strict;
 use warnings;
-use Prima::Const;
-use Prima::Classes;
+use Prima;
 
 package Prima::Panel;
 use vars qw(@ISA);

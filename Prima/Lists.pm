@@ -12,12 +12,7 @@ package Prima::Lists;
 
 use strict;
 use warnings;
-use Prima::Const;
-use Prima::Classes;
-use Prima::ScrollBar;
-use Prima::StdBitmap;
-use Prima::IntUtils;
-use Prima::Utils;
+use Prima qw(ScrollBar StdBitmap IntUtils Utils);
 
 package
     ci;

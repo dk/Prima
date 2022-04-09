@@ -2,6 +2,8 @@ package Prima::PS::Glyphs;
 
 use strict;
 use warnings;
+use Carp;
+use Prima;
 use Prima::Utils;
 use base qw(Exporter);
 our @EXPORT = qw(num int32);

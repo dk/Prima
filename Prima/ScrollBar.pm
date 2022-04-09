@@ -15,8 +15,7 @@ my $win32 = (Prima::Application-> get_system_info-> {apc} == apc::Win32);
 
 use strict;
 use warnings;
-use Prima::Const;
-use Prima::IntUtils;
+use Prima qw(IntUtils);
 
 sub profile_default
 {

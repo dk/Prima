@@ -2,10 +2,7 @@ package Prima::Notebooks;
 
 use strict;
 use warnings;
-use Prima::Const;
-use Prima::Classes;
-use Prima::IntUtils;
-use Prima::ScrollWidget;
+use Prima qw(IntUtils ScrollWidget);
 
 package Prima::TabSet;
 use vars qw(@ISA);

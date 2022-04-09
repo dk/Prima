@@ -1,6 +1,7 @@
 package Prima::VB::CoreClasses;
 use strict;
 use warnings;
+use Prima qw(ComboBox Sliders);
 
 sub classes
 {
@@ -1781,6 +1782,7 @@ sub on_hook
 
 sub widget_repage
 {
+	no warnings 'once';
 	my $self = $_[0];
 	my @mw = $VB::form-> marked_widgets;
 	my $d = Prima::Dialog-> create(

@@ -1,6 +1,7 @@
 package Prima::PS::Unicode;
 use strict;
 use warnings;
+no warnings 'once';
 $Prima::PS::Unicode = { 
 # -----------------------------------------------------------
 # Copyright 2002-2019 Adobe (http://www.adobe.com/).

@@ -11,15 +11,10 @@
 #   Cluster
 
 package Prima::Buttons;
-
-use Carp;
-use Prima::Const;
-use Prima::Classes;
-use Prima::IntUtils;
-use Prima::StdBitmap;
 use strict;
 use warnings;
-
+use Carp;
+use Prima qw(IntUtils StdBitmap);
 
 package Prima::AbstractButton;
 use vars qw(@ISA);

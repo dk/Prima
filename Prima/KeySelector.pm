@@ -7,12 +7,7 @@ package Prima::KeySelector;
 
 use strict;
 use warnings;
-use Prima;
-use Prima::Buttons;
-use Prima::Label;
-use Prima::ComboBox;
-use Prima::DetailedOutline;
-use Prima::MsgBox;
+use Prima qw(Buttons Label ComboBox DetailedOutline MsgBox);
 
 use vars qw(@ISA %vkeys);
 @ISA = qw(Prima::Widget);

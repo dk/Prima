@@ -2,8 +2,12 @@ package Prima::Drawable::CurvedText;
 
 use strict;
 use warnings;
+use Prima;
 
-*Prima::Drawable::curved_text_out  = \&curved_text_out;
+{
+	no warnings 'once';
+	*Prima::Drawable::curved_text_out  = \&curved_text_out;
+}
 
 sub init_pointer
 {

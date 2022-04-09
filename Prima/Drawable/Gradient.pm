@@ -2,6 +2,7 @@ package Prima::Drawable::Gradient;
 
 use strict;
 use warnings;
+use Prima;
 
 sub new
 {
