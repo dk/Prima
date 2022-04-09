@@ -1,5 +1,6 @@
 #ifndef _IMG_IMG_CONV_H_
 #define _IMG_IMG_CONV_H_
+#include "guts.h"
 #include "Image.h"
 #include <sys/types.h>
 #include <limits.h>

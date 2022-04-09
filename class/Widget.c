@@ -232,7 +232,7 @@ Widget_update_sys_handle( Handle self, HV * profile)
 	transparent  = pexist( transparent)  ? pget_B( transparent)  : my-> get_transparent( self);
 
 	if ( parentHandle) {
-		if (( owner != application) && clipOwner)
+		if (( owner != prima_guts.application) && clipOwner)
 			croak("Cannot accept 'parentHandle' for non-application child and clip-owner widget");
 	}
 
@@ -367,7 +367,7 @@ Widget_cleanup( Handle self)
 
 	my-> set_geometry( self, gtDefault);
 
-	if ( application && (( PApplication) application)-> hintUnder == self)
+	if ( prima_guts.application && P_APPLICATION-> hintUnder == self)
 		my-> set_hintVisible( self, 0);
 
 	{
@@ -734,7 +734,7 @@ Widget_set( Handle self, HV * profile)
 				opt_set( optOwnerBackColor);
 			}
 			if ( is_opt( optOwnerShowHint)) {
-				Bool newSH = ( postOwner == application) ? 1 :
+				Bool newSH = ( postOwner == prima_guts.application) ? 1 :
 					CWidget( postOwner)-> get_showHint( postOwner);
 				my-> set_showHint( self, newSH);
 				opt_set( optOwnerShowHint);
@@ -1099,15 +1099,15 @@ Widget_hintVisible( Handle self, Bool set, int hintVisible)
 {
 	Bool wantVisible;
 	if ( !set)
-		return PApplication( application)-> hintVisible;
+		return P_APPLICATION-> hintVisible;
 	if ( var-> stage >= csDead) return false;
 	wantVisible = ( hintVisible != 0);
-	if ( wantVisible == PApplication( application)-> hintVisible) return false;
+	if ( wantVisible == P_APPLICATION-> hintVisible) return false;
 	if ( wantVisible) {
 		if ( SvCUR( var-> hint) == 0) return false;
-		if ( hintVisible > 0) PApplication(application)-> hintActive = -1; /* immediate */
+		if ( hintVisible > 0) P_APPLICATION-> hintActive = -1; /* immediate */
 	}
-	CApplication( application)-> set_hint_action( application, self, wantVisible, false);
+	C_APPLICATION-> set_hint_action( prima_guts.application, self, wantVisible, false);
 	return false;
 }
 
@@ -1126,7 +1126,7 @@ Handle
 Widget_get_parent( Handle self)
 {
 	enter_method;
-	return my-> get_clipOwner( self) ? var-> owner : application;
+	return my-> get_clipOwner( self) ? var-> owner : prima_guts.application;
 }
 
 Point
@@ -1186,10 +1186,10 @@ Widget_set_centered( Handle self, Bool x, Bool y)
 
 	if ( !x && !y ) return;
 
-	if ( parent == application ) {
+	if ( parent == prima_guts.application ) {
 		int i, nrects = 0;
-		Point mouse = apc_pointer_get_pos(application);
-		Box *best = NULL, *rects = apc_application_get_monitor_rects( application, &nrects);
+		Point mouse = apc_pointer_get_pos(prima_guts.application);
+		Box *best = NULL, *rects = apc_application_get_monitor_rects( prima_guts.application, &nrects);
 		for ( i = 0; i < nrects; i++) {
 			Box * curr = rects + i;
 			if (
@@ -1669,10 +1669,10 @@ Widget_set_hint( Handle self, SV *hint)
 	my-> first_that( self, (void*)hint_notify, (void*)hint);
 	if ( var-> hint ) sv_free( var-> hint );
 	var-> hint = newSVsv( hint);
-	if ( application && (( PApplication) application)-> hintVisible &&
-		(( PApplication) application)-> hintUnder == self)
+	if ( prima_guts.application && P_APPLICATION-> hintVisible &&
+		P_APPLICATION-> hintUnder == self)
 	{
-		Handle hintWidget = (( PApplication) application)-> hintWidget;
+		Handle hintWidget = P_APPLICATION-> hintWidget;
 		if ( SvLEN( var-> hint) == 0)
 			my-> set_hintVisible( self, 0);
 		if ( hintWidget)
@@ -2032,7 +2032,7 @@ Widget_selected( Handle self, Bool set, Bool selected)
 						toFocus = x;  /* choose closest owner to focus */
 						break;
 					}
-					if (( Handle) x != application && !kind_of(( Handle) x, CWindow))
+					if (( Handle) x != prima_guts.application && !kind_of(( Handle) x, CWindow))
 						list_insert_at( &lst, ( Handle) x, 0);
 					x = ( PWidget) x-> owner;
 				}
@@ -2153,7 +2153,7 @@ Widget_showHint( Handle self, Bool set, Bool showHint )
 	my-> first_that( self, (void*)showhint_notify, &showHint);
 	opt_clear( optOwnerShowHint);
 	opt_assign( optShowHint, showHint);
-	if ( application && !is_opt( optShowHint) && oldShowHint) my-> set_hintVisible( self, 0);
+	if ( prima_guts.application && !is_opt( optShowHint) && oldShowHint) my-> set_hintVisible( self, 0);
 	return false;
 }
 

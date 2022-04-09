@@ -343,8 +343,8 @@ direct_pointer_change( Handle self)
 	if ( var stage != csNormal) return false;
 	if ( guts.dragSource != NULL ) return true;
 	if ( !IsWindowVisible( HANDLE)) return false;
-	p = apc_pointer_get_pos( application);
-	return self == apc_application_get_widget_from_point( application, p);
+	p = apc_pointer_get_pos( prima_guts.application);
+	return self == apc_application_get_widget_from_point( prima_guts.application, p);
 }
 
 Bool

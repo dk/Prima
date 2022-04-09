@@ -480,7 +480,7 @@ create_object( const char *objClass, const char *types, ...)
 Handle
 apc_get_application(void)
 {
-	return application;
+	return prima_guts.application;
 }
 
 Handle

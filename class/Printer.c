@@ -1,4 +1,5 @@
 #include "apricot.h"
+#include "Application.h"
 #include "Printer.h"
 #include <Printer.inc>
 
@@ -38,8 +39,8 @@ Bool
 Printer_validate_owner( Handle self, Handle * owner, HV * profile)
 {
 	dPROFILE;
-	if ( pget_H( owner) != application || application == NULL_HANDLE) return false;
-	*owner = application;
+	if ( pget_H( owner) != prima_guts.application || prima_guts.application == NULL_HANDLE) return false;
+	*owner = prima_guts.application;
 	return true;
 }
 
@@ -50,7 +51,7 @@ Printer_begin_doc( Handle self, char * docName)
 	char buf[ 256];
 	if ( is_opt( optInDraw)) return false;
 	if ( !docName || *docName == '\0') {
-		snprintf( buf, 256, "APC: %s", (( PComponent) application)-> name);
+		snprintf( buf, 256, "APC: %s", P_APPLICATION->name);
 		docName = buf;
 	}
 	if ( is_opt( optInDrawInfo))

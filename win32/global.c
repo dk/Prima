@@ -454,7 +454,7 @@ window_subsystem_done()
 void
 window_subsystem_cleanup()
 {
-	while ( guts. appLock > 0) apc_application_unlock( application);
+	while ( guts. appLock > 0) apc_application_unlock( prima_guts.application);
 	while ( guts. pointerLock < 0) {
 		ShowCursor( 1);
 		guts. pointerLock++;
@@ -565,7 +565,7 @@ local_wnd( HWND who, HWND client)
 		return true;
 	self = GetWindowLongPtr( client, GWLP_USERDATA);
 	v = (PComponent) hwnd_to_view( who);
-	while (v && ( Handle) v != application)
+	while (v && ( Handle) v != prima_guts.application)
 	{
 		if ( (Handle)v == self) return true;
 		v = ( PComponent) ( v-> owner);
@@ -762,7 +762,7 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
 
 			keyState = guts. keyState;
 AGAIN:
-			if ( PApplication(application)-> wantUnicodeInput) {
+			if ( P_APPLICATION-> wantUnicodeInput) {
 				WCHAR keys[ 2];
 				// unicode mapping
 				switch ( ToUnicodeEx( mp1, scan, keyState, keys, 2, 0, kl)) {
@@ -966,7 +966,7 @@ AGAIN:
 			SendMessage( win, WM_MOUSEENTER, mp1, mp2);
 			if ( !guts. mouseTimer) {
 				guts. mouseTimer = 1;
-				if ( !SetTimer( dsys(application)handle, TID_USERMAX, 100, NULL)) apiErr;
+				if ( !SetTimer( dsys(prima_guts.application)handle, TID_USERMAX, 100, NULL)) apiErr;
 			}
 		}
 		goto MB_MAIN;
@@ -998,11 +998,11 @@ AGAIN:
 	MB_MAIN:
 		if ( ev. cmd == cmMouseDown && !is_apt( aptFirstClick)) {
 			Handle x = self;
-			while ( dsys(x) className != WC_FRAME && ( x != application)) x = (( PWidget) x)-> owner;
-			if ( x != application && !local_wnd( GetActiveWindow(), DHANDLE( x)))
+			while ( dsys(x) className != WC_FRAME && ( x != prima_guts.application)) x = (( PWidget) x)-> owner;
+			if ( x != prima_guts.application && !local_wnd( GetActiveWindow(), DHANDLE( x)))
 			{
 				ev. cmd = 0; // yes, we abandon mousedown but we should force selection:
-				if ((( PApplication) application)-> hintUnder == self) v-> self-> set_hintVisible( self, 0);
+				if (P_APPLICATION-> hintUnder == self) v-> self-> set_hintVisible( self, 0);
 				if (( v-> options. optSelectable) && ( v-> selectingButtons & ev. pos. button))
 					apc_widget_set_focused( self);
 			}
@@ -1087,7 +1087,7 @@ AGAIN:
 	case WM_NCHITTEST:
 		if ( guts. focSysDialog) return HTERROR;
 		// dlg protect code - protecting from user actions
-		if ( !guts. focSysDisabled && ( Application_map_focus( application, self) != self))
+		if ( !guts. focSysDisabled && ( Application_map_focus( prima_guts.application, self) != self))
 			return HTERROR;
 		break;
 	case WM_PAINT:
@@ -1137,7 +1137,7 @@ AGAIN:
 		if ( guts. focSysDialog) return 1;
 		// dlg protect code - general case
 		if ( !guts. focSysDisabled && !guts. focSysGranted) {
-			Handle hf = Application_map_focus( application, self);
+			Handle hf = Application_map_focus( prima_guts.application, self);
 			if ( hf != self) {
 				PostMessage( win, WM_FORCEFOCUS, 0, ( LPARAM) hf);
 				return 1;
@@ -1289,10 +1289,10 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
 		if ( guts. focSysDialog) return 1;
 		// dlg protect code - protecting from window activation
 		if ( LOWORD( mp1) && !guts. focSysDisabled) {
-			Handle hf = Application_map_focus( application, self);
+			Handle hf = Application_map_focus( prima_guts.application, self);
 			if ( hf != self) {
 				guts. focSysDisabled = 1;
-				Application_popup_modal( application);
+				Application_popup_modal( prima_guts.application);
 				PostMessage( win, msg, 0, 0);
 				guts. focSysDisabled = 0;
 				return 1;
@@ -1346,10 +1346,10 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
 		}
 		// dlg protect code - protecting from window activation
 		if ( mp1 && !guts. focSysDisabled) {
-			Handle hf = Application_map_focus( application, self);
+			Handle hf = Application_map_focus( prima_guts.application, self);
 			if ( hf != self) {
 				guts. focSysDisabled = 1;
-				Application_popup_modal( application);
+				Application_popup_modal( prima_guts.application);
 				PostMessage( win, msg, 0, 0);
 				guts. focSysDisabled = 0;
 				return 1;
@@ -1360,7 +1360,7 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
 		if ( guts. focSysDialog) return HTERROR;
 		// dlg protect code - protecting from user actions
 		if ( !guts. focSysDisabled) {
-			Handle foc = Application_map_focus( application, self);
+			Handle foc = Application_map_focus( prima_guts.application, self);
 			if ( foc != self) {
 				return ( foc == apc_window_get_active()) ? HTERROR : HTCLIENT;
 			}
@@ -1371,7 +1371,7 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
 
 		// dlg protect code - general case
 		if ( !guts. focSysDisabled && !guts. focSysGranted) {
-			Handle hf = Application_map_focus( application, self);
+			Handle hf = Application_map_focus( prima_guts.application, self);
 			if ( hf != self) {
 				PostMessage( win, WM_FORCEFOCUS, 0, ( LPARAM) hf);
 				return 1;
@@ -1465,7 +1465,7 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
 						lastMouseOver = s;
 					} else if ( guts. mouseTimer) {
 						guts. mouseTimer = 0;
-						if ( !KillTimer( dsys(application)handle, TID_USERMAX)) apiErr;
+						if ( !KillTimer( dsys(prima_guts.application)handle, TID_USERMAX)) apiErr;
 					}
 				}
 			}
@@ -1665,8 +1665,8 @@ LRESULT CALLBACK generic_app_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM mp
 					guts. displayBMInfo. bmiHeader. biPlanes   = GetDeviceCaps( dc, PLANES);
 				};
 			}
-			dsys( application) lastSize. x = ( short) LOWORD( mp2);
-			dsys( application) lastSize. y = ( short) HIWORD( mp2);
+			dsys( prima_guts.application) lastSize. x = ( short) LOWORD( mp2);
+			dsys( prima_guts.application) lastSize. y = ( short) HIWORD( mp2);
 			if ( dc) {
 				if ( oldBPP != guts. displayBMInfo. bmiHeader. biBitCount)
 					hash_first_that( imageMan, kill_img_cache, (void*)1, NULL, NULL);
@@ -1683,7 +1683,7 @@ LRESULT CALLBACK generic_app_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM mp
 			reset_system_fonts();
 			destroy_font_hash();
 			font_clean();
-			PComponent(application)-> self-> message( application, &ev);
+			PComponent(prima_guts.application)-> self-> message( prima_guts.application, &ev);
 			break;
 		}
 		case WM_COMPACTING:

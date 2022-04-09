@@ -81,9 +81,9 @@ void Clipboard_handle_event( Handle self, PEvent event)
 	{
 		case cmClipboard: {
 			var-> openCount++;
-			CApplication(application)-> push_event( application);
-			CApplication(application)-> notify( application, "<sHss", "Clipboard", self, "copy", (char*)event->gen.p);
-			CApplication(application)-> pop_event( application);
+			C_APPLICATION-> push_event( prima_guts.application);
+			C_APPLICATION-> notify( prima_guts.application, "<sHss", "Clipboard", self, "copy", (char*)event->gen.p);
+			C_APPLICATION-> pop_event( prima_guts.application);
 			var-> openCount--;
 			return;
 		}
@@ -96,8 +96,8 @@ Bool
 Clipboard_validate_owner( Handle self, Handle * owner, HV * profile)
 {
 	dPROFILE;
-	if ( pget_H( owner) != application || application == NULL_HANDLE) return false;
-	*owner = application;
+	if ( pget_H( owner) != prima_guts.application || prima_guts.application == NULL_HANDLE) return false;
+	*owner = prima_guts.application;
 	return true;
 }
 

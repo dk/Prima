@@ -1298,7 +1298,7 @@ prima_find_toplevel_window(Handle self)
 
 	if (!application) return NULL_HANDLE;
 
-	toplevel = CApplication(application)-> get_modal_window(application, mtExclusive, true);
+	toplevel = C_APPLICATION-> get_modal_window(application, mtExclusive, true);
 	if ( toplevel == NULL_HANDLE && self != NULL_HANDLE) {
 		if (
 			PWindow(self)-> owner &&
@@ -1366,7 +1366,7 @@ apc_window_end_modal( Handle self)
 	CWindow( self)-> exec_leave_proc( self);
 	apc_widget_set_visible( self, false);
 	if ( application) {
-		modal = CApplication(application)->popup_modal( application);
+		modal = C_APPLICATION->popup_modal( application);
 		if ( !modal && win->owner)
 			CWidget( win->owner)-> set_selected( win->owner, true);
 		if (( oldfoc = XX-> preexec_focus)) {

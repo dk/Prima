@@ -1,4 +1,5 @@
 #include "apricot.h"
+#include "guts.h"
 #include "Application.h"
 #include "Popup.h"
 #include "Widget.h"
@@ -251,7 +252,7 @@ handle_delegate_key( Handle self, PEvent event)
 			}
 			if ( var-> owner && my->can_propagate_key(self))
 			{
-				if ( var-> owner == application)
+				if ( var-> owner == prima_guts.application)
 					ev. cmd = cmTranslateAccel;
 				else
 					ev. key. subcmd = 0;
@@ -505,7 +506,7 @@ void Widget_handle_event( Handle self, PEvent event)
 				event-> pos. button, event-> pos. mod, event-> pos. where, event-> pos. dblclk);
 			break;
 		case cmMouseDown:
-			if ((( PApplication) application)-> hintUnder == self)
+			if (P_APPLICATION-> hintUnder == self)
 				my-> set_hintVisible( self, 0);
 			objCheck;
 			if (((event-> pos. button & var-> selectingButtons) != 0) && my-> get_selectable( self))
@@ -519,7 +520,7 @@ void Widget_handle_event( Handle self, PEvent event)
 				event-> pos. button, event-> pos. mod, event-> pos. where);
 			break;
 		case cmMouseMove:
-			if ((( PApplication) application)-> hintUnder == self)
+			if (P_APPLICATION-> hintUnder == self)
 				my-> set_hintVisible( self, -1);
 			objCheck;
 			my-> notify( self, "<siP", "MouseMove", event-> pos. mod, event -> pos. where);
@@ -532,17 +533,12 @@ void Widget_handle_event( Handle self, PEvent event)
 		case cmMouseEnter:
 			my-> notify( self, "<siP", "MouseEnter", event-> pos. mod, event -> pos. where);
 			objCheck;
-			if ( application && is_opt( optShowHint) && ((( PApplication) application)-> options. optShowHint) && var-> hint && SvCUR(var-> hint))
-			{
-				PApplication app = ( PApplication) application;
-				app-> self-> set_hint_action( application, self, true, true);
-			}
+			if ( prima_guts.application && is_opt( optShowHint) && (P_APPLICATION-> options. optShowHint) && var-> hint && SvCUR(var-> hint))
+				C_APPLICATION-> set_hint_action( prima_guts.application, self, true, true);
 			break;
 		case cmMouseLeave:
-			if ( application && is_opt( optShowHint)) {
-				PApplication app = ( PApplication) application;
-				app-> self-> set_hint_action( application, self, false, true);
-			}
+			if ( prima_guts.application && is_opt( optShowHint))
+				C_APPLICATION-> set_hint_action( prima_guts.application, self, false, true);
 			my-> notify( self, "<s", "MouseLeave");
 			break;
 		case cmKeyDown:

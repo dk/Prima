@@ -1364,7 +1364,7 @@ apc_fonts( Handle self, const char* facename, const char *encoding, int * retCou
 	apcErrClear;
 
 	*retCount = 0;
-	if ( self == NULL_HANDLE || self == application) {
+	if ( self == NULL_HANDLE || self == prima_guts.application) {
 		if ( !( dc = dc_alloc())) return NULL;
 	}
 	else if ( kind_of( self, CPrinter)) {
@@ -1390,7 +1390,7 @@ apc_fonts( Handle self, const char* facename, const char *encoding, int * retCou
 		f. hash = NULL;
 	}
 
-	if ( self == NULL_HANDLE || self == application)
+	if ( self == NULL_HANDLE || self == prima_guts.application)
 		dc_free();
 	else if ( hasdc)
 		CPrinter( self)-> end_paint_info( self);
@@ -1427,7 +1427,7 @@ apc_font_encodings( Handle self )
 	LOGFONTW elf;
 	apcErrClear;
 
-	if ( self == NULL_HANDLE || self == application) {
+	if ( self == NULL_HANDLE || self == prima_guts.application) {
 		if ( !( dc = dc_alloc())) return NULL;
 	}
 	else if ( kind_of( self, CPrinter)) {
@@ -1444,7 +1444,7 @@ apc_font_encodings( Handle self )
 	elf. lfCharSet = DEFAULT_CHARSET;
 	EnumFontFamiliesExW( dc, &elf, (FONTENUMPROCW) fep3, ( LPARAM) lst, 0);
 
-	if ( self == NULL_HANDLE || self == application)
+	if ( self == NULL_HANDLE || self == prima_guts.application)
 		dc_free();
 	else if ( hasdc)
 		CPrinter( self)-> end_paint_info( self);
@@ -1743,7 +1743,7 @@ hwnd_enter_paint( Handle self)
 	sys stylus. extPen. actual = false;
 	apt_set( aptDCChangeLock);
 	sys bpp = GetDeviceCaps( sys ps, BITSPIXEL);
-	if ( is_apt( aptWinPS) && self != application) {
+	if ( is_apt( aptWinPS) && self != prima_guts.application) {
 		apc_gp_set_color( self, sys viewColors[ ciFore]);
 		apc_gp_set_back_color( self, sys viewColors[ ciBack]);
 	} else {
@@ -1878,9 +1878,9 @@ hwnd_top_level( Handle self)
 Handle
 hwnd_frame_top_level( Handle self)
 {
-	while ( self && ( self != application)) {
+	while ( self && ( self != prima_guts.application)) {
 		if (( sys className == WC_FRAME) ||
-			( !is_apt( aptClipOwner) && ( var owner != application))) return self;
+			( !is_apt( aptClipOwner) && ( var owner != prima_guts.application))) return self;
 		self = var owner;
 	}
 	return NULL_HANDLE;
@@ -1889,9 +1889,9 @@ hwnd_frame_top_level( Handle self)
 Handle
 hwnd_layered_top_level( Handle self)
 {
-	while ( self && ( self != application)) {
+	while ( self && ( self != prima_guts.application)) {
 		if (( sys className == WC_FRAME) ||
-			(!is_apt( aptClipOwner) || (var owner == application))) return self;
+			(!is_apt( aptClipOwner) || (var owner == prima_guts.application))) return self;
 		self = var owner;
 	}
 	return NULL_HANDLE;
@@ -1950,7 +1950,7 @@ typedef struct _SzList
 static Bool
 pal_count( Handle window, Handle self, PSzList l)
 {
-	if ( !is_apt( aptClipOwner) && ( window != application))
+	if ( !is_apt( aptClipOwner) && ( window != prima_guts.application))
 		return false;
 	if ( var palSize > 0) {
 		list_add( &l->l, self);

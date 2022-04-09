@@ -177,7 +177,7 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
 			Bool layered = is_apt(aptLayered);
 			if ( !clipOwner) parentView = HWND_DESKTOP;
 			if ( !taskListed && ( parentView == HWND_DESKTOP || parentView == NULL))
-				parentView = DHANDLE( application);
+				parentView = DHANDLE( prima_guts.application);
 			if ( !usePos)  rcp[0] = rcp[1] = CW_USEDEFAULT;
 			if ( !useSize) rcp[2] = rcp[3] = CW_USEDEFAULT;
 			if ( !( frame = CreateWindowExW( exstyle, layered ? L"LayeredFrame" : L"GenericFrame", &wnull,
@@ -187,10 +187,10 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
 				apiErrRet;
 			if ( !SetWindowPos( frame, behind, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE))
 				apiErr;
-			if ((( PApplication) application)-> topExclModal &&
-				((( PApplication) application)-> topExclModal != self)
+			if (P_APPLICATION-> topExclModal &&
+				(P_APPLICATION-> topExclModal != self)
 				)
-				if ( !SetWindowPos( frame, DHANDLE((( PApplication) application)-> topExclModal),
+				if ( !SetWindowPos( frame, DHANDLE(P_APPLICATION-> topExclModal),
 						0,0,0,0,SWP_NOMOVE | SWP_NOSIZE  | SWP_NOACTIVATE))
 					apiErr;
 			GetClientRect( frame, &r);
@@ -218,7 +218,7 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
 		}
 		break;
 	case WC_CUSTOM:
-		if ( !parentHandle && ( !clipOwner || owner == application)) {
+		if ( !parentHandle && ( !clipOwner || owner == prima_guts.application)) {
 				style &= ~WS_CHILD;
 				style |= WS_POPUP;
 				exstyle |= WS_EX_TOOLWINDOW;
@@ -888,8 +888,8 @@ apc_window_end_modal( Handle self)
 	objCheck false;
 	apc_widget_set_enabled( self, 0);
 	objCheck false;
-	if ( application) {
-		Handle who = Application_popup_modal( application);
+	if ( prima_guts.application) {
+		Handle who = Application_popup_modal( prima_guts.application);
 		if ( sys s. window. oldActive)
 			SetActiveWindow( sys s. window. oldActive);
 		if ( !who && var owner)
@@ -910,9 +910,9 @@ apc_widget_map_points( Handle self, Bool toScreen, int count, Point * p)
 {
 	int i;
 	Point sz = ((( PWidget) self)-> self)-> get_size( self);
-	Point appSz = apc_application_get_size( application);
+	Point appSz = apc_application_get_size( prima_guts.application);
 
-	if ( self == application)
+	if ( self == prima_guts.application)
 		return true;
 
 	objCheck false;
@@ -964,7 +964,7 @@ apc_widget_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
 	redraw = is_apt( aptLayeredRequested ) != layered;
 	apt_assign( aptLayeredRequested, layered );
 	apt_clear( aptLayered );
-	if ( layered && (( owner == application || !clipOwner ))) {
+	if ( layered && (( owner == prima_guts.application || !clipOwner ))) {
 		apt_set( aptLayered );
 		exstyle |= WS_EX_LAYERED;
 	}
@@ -1435,7 +1435,7 @@ static PRECT map_Rect( Handle self, Rect * rect)
 	RECT  __rectangle;
 	objCheck ( PRECT) rect;
 	GetWindowRect(( HWND) var handle, &__rectangle);
-	if ( is_apt( aptClipOwner) && ( var owner != application))
+	if ( is_apt( aptClipOwner) && ( var owner != prima_guts.application))
 		MapWindowPoints( NULL, ( HWND)((( PWidget) var owner)-> handle), ( LPPOINT) &__rectangle, 2);
 	rect-> bottom = ( __rectangle. bottom - __rectangle. top) - rect-> bottom;
 	rect-> top    = ( __rectangle. bottom - __rectangle. top) - rect-> top;
@@ -1453,7 +1453,7 @@ static Rect * map_RECT( Handle self, RECT * rect)
 	RECT __rectangle;
 	objCheck ( Rect*)rect;
 	GetWindowRect(( HWND) var handle, &__rectangle);
-	if ( is_apt( aptClipOwner) && ( var owner != application))
+	if ( is_apt( aptClipOwner) && ( var owner != prima_guts.application))
 		MapWindowPoints( NULL, ( HWND)((( PWidget) var owner)-> handle), ( LPPOINT)&__rectangle, 2);
 	rect-> bottom = ( __rectangle. bottom - __rectangle. top) - rect-> bottom;
 	rect-> top    = ( __rectangle. bottom - __rectangle. top) - rect-> top;
@@ -1516,7 +1516,7 @@ apc_widget_get_pos( Handle self)
 	Point p, sz = {0,0};
 	Handle parent;
 	objCheck sz;
-	parent = is_apt( aptClipOwner) ? var owner : application;
+	parent = is_apt( aptClipOwner) ? var owner : prima_guts.application;
 	sz = ((( PWidget) parent)-> self)-> get_size( parent);
 	if ( sys className == WC_FRAME && apc_window_get_window_state( self) == wsMinimized) {
 		WINDOWPLACEMENT w = {sizeof(WINDOWPLACEMENT)};
@@ -1529,7 +1529,7 @@ apc_widget_get_pos( Handle self)
 		p. y = sys layeredPos. y + r. bottom - r.top;
 	} else {
 		GetWindowRect( HANDLE, &r);
-		if ( is_apt( aptClipOwner) && ( var owner != application))
+		if ( is_apt( aptClipOwner) && ( var owner != prima_guts.application))
 			MapWindowPoints( NULL, ( HWND)((( PWidget) var owner)-> handle), ( LPPOINT)&r, 2);
 		p. x = r. left;
 		p. y = sz. y - r. bottom;
@@ -1550,7 +1550,7 @@ apc_widget_get_size( Handle self)
 		p. y = w. rcNormalPosition. bottom - w. rcNormalPosition. top;
 	} else {
 		GetWindowRect( HANDLE, &r);
-		if ( is_apt( aptClipOwner) && ( var owner != application))
+		if ( is_apt( aptClipOwner) && ( var owner != prima_guts.application))
 			MapWindowPoints( NULL, ( HWND)((( PWidget) var owner)-> handle), ( LPPOINT)&r, 2);
 		p. x = r. right - r. left;
 		p. y = r. bottom - r. top;
@@ -1660,7 +1660,7 @@ apc_widget_is_responsive( Handle self)
 {
 	Bool ena = true;
 	objCheck false;
-	while ( ena && self != application) {
+	while ( ena && self != prima_guts.application) {
 		// ena  = IsWindowEnabled( HANDLE);
 		ena  = is_apt( aptEnabled);
 		self = var owner;
@@ -1853,7 +1853,7 @@ apc_widget_set_enabled( Handle self, Bool enable)
 {
 	objCheck false;
 	apt_assign( aptEnabled, enable);
-	if (( sys className == WC_FRAME) || ( var owner == application))
+	if (( sys className == WC_FRAME) || ( var owner == prima_guts.application))
 		EnableWindow( HANDLE, enable);
 	else
 		SendMessage( HANDLE, WM_ENABLE, ( WPARAM) enable, 0);
@@ -1871,7 +1871,7 @@ apc_widget_set_first_click( Handle self, Bool firstClick)
 Bool
 apc_widget_set_focused( Handle self)
 {
-	if ( self && ( self != Application_map_focus( application, self)))
+	if ( self && ( self != Application_map_focus( prima_guts.application, self)))
 		return false;
 	guts. focSysGranted++;
 	SetFocus( self ? (( HWND) var handle) : NULL);
@@ -1909,7 +1909,7 @@ apc_widget_set_pos( Handle self, int x, int y)
 	objCheck false;
 	if ( !hwnd_check_limits( x, y, true)) apcErrRet( errInvParams);
 
-	parent = is_apt( aptClipOwner) ? var owner : application;
+	parent = is_apt( aptClipOwner) ? var owner : prima_guts.application;
 	sz = ((( PWidget) parent)-> self)-> get_size( parent);
 	apt_set( aptWinPosDetermined);
 
@@ -1929,12 +1929,12 @@ apc_widget_set_pos( Handle self, int x, int y)
 		}
 	}
 	if ( !GetWindowRect( HANDLE, &r)) apiErrRet;
-	if ( is_apt( aptClipOwner) && ( var owner != application))
+	if ( is_apt( aptClipOwner) && ( var owner != prima_guts.application))
 		MapWindowPoints( NULL, ( HWND)((( PWidget) var owner)-> handle), ( LPPOINT)&r, 2);
 	if ( sys parentHandle) {
 		POINT ppos;
 		ppos. x = x;
-		ppos. y = dsys( application) lastSize. y - y;
+		ppos. y = dsys( prima_guts.application) lastSize. y - y;
 		MapWindowPoints( NULL, sys parentHandle, ( LPPOINT)&ppos, 1);
 		GetWindowRect( sys parentHandle, &r);
 		x = ppos. x;
@@ -1976,7 +1976,7 @@ apc_widget_set_size( Handle self, int width, int height)
 		}
 	}
 	if ( !GetWindowRect( h, &r)) apiErrRet;
-	if ( is_apt( aptClipOwner) && ( var owner != application))
+	if ( is_apt( aptClipOwner) && ( var owner != prima_guts.application))
 		MapWindowPoints( NULL, ( HWND)((( PWidget) var owner)-> handle), ( LPPOINT)&r, 2);
 	if ( sys parentHandle)
 		MapWindowPoints( NULL, sys parentHandle, ( LPPOINT)&r, 2);
@@ -2019,7 +2019,7 @@ apc_widget_set_rect( Handle self, int x, int y, int width, int height)
 	if ( !hwnd_check_limits( width, height, false)) apcErrRet( errInvParams);
 	if ( !hwnd_check_limits( x, y, true)) apcErrRet( errInvParams);
 
-	parent = is_apt( aptClipOwner) ? var owner : application;
+	parent = is_apt( aptClipOwner) ? var owner : prima_guts.application;
 	sz = ((( PWidget) parent)-> self)-> get_size( parent);
 	apt_set( aptWinPosDetermined);
 
@@ -2051,7 +2051,7 @@ apc_widget_set_rect( Handle self, int x, int y, int width, int height)
 	if ( sys parentHandle) {
 		POINT ppos;
 		ppos. x = x;
-		ppos. y = dsys( application) lastSize. y - y;
+		ppos. y = dsys( prima_guts.application) lastSize. y - y;
 		MapWindowPoints( NULL, sys parentHandle, ( LPPOINT)&ppos, 1);
 		x = ppos. x;
 		y = ppos. y;

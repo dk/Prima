@@ -167,7 +167,7 @@ XS( prima_cleanup)
 	dXSARGS;
 	(void)items;
 
-	if ( application) Object_destroy( application);
+	if ( prima_guts.application) Object_destroy( prima_guts.application);
 	prima_guts.app_is_dead = true;
 	hash_first_that( prima_guts.objects, (void*)kill_objects, NULL, NULL, NULL);
 	hash_destroy( prima_guts.objects, false);

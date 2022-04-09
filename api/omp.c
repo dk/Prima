@@ -1,3 +1,6 @@
+#include <apricot.h>
+#include <guts.h>
+
 #ifdef HAVE_OPENMP
 #include <omp.h>
 #endif

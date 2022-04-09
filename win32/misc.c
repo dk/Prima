@@ -352,7 +352,7 @@ apc_fetch_resource( const char *className, const char *name,
 			duplicate_string( PComponent( owner)-> name), false), 0);
 		list_insert_at(&ids[0], ( Handle) prima_normalize_resource_string(
 			duplicate_string(
-				( owner == application) ? "Prima" : CComponent( owner)-> className
+				( owner == prima_guts.application) ? "Prima" : CComponent( owner)-> className
 			), true), 0);
 		owner = PComponent( owner)-> owner;
 	}

@@ -356,7 +356,7 @@ Image_resolution( Handle self, Bool set, Point resolution)
 	if ( !set)
 		return var-> resolution;
 	if ( resolution. x <= 0 || resolution. y <= 0)
-		resolution = apc_gp_get_resolution( application);
+		resolution = apc_gp_get_resolution( prima_guts.application);
 	var-> resolution = resolution;
 	return resolution;
 }

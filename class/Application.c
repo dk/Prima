@@ -26,14 +26,14 @@ Application_init( Handle self, HV * profile)
 	SV * hintFont = pget_sv( hintFont);
 	SV * sv;
 	char * hintClass      = pget_c( hintClass);
-	if ( application != NULL_HANDLE)
+	if ( prima_guts.application != NULL_HANDLE)
 		croak( "Attempt to create more than one application instance");
 
 	opt_set(optSystemDrawable);
 	CDrawable-> init( self, profile);
 	list_create( &var->  widgets, 16, 16);
 	list_create( &var->  modalHorizons, 0, 8);
-	application = self;
+	prima_guts.application = self;
 	if ( !apc_application_create( self))
 		croak( "Error creating application");
 /* Widget init */
@@ -110,7 +110,7 @@ Application_init( Handle self, HV * profile)
 void
 Application_done( Handle self)
 {
-	if ( self != application) return;
+	if ( self != prima_guts.application) return;
 	unprotect_object( var-> hintTimer);
 	unprotect_object( var-> hintWidget);
 	list_destroy( &var->  modalHorizons);
@@ -123,7 +123,7 @@ Application_done( Handle self)
 	var-> hint = var-> text = NULL;
 	apc_application_destroy( self);
 	CDrawable-> done( self);
-	application = NULL_HANDLE;
+	prima_guts.application = NULL_HANDLE;
 }
 
 static Bool 
@@ -769,7 +769,7 @@ Application_HintTimer_handle_event( Handle timer, PEvent event)
 {
 	CComponent-> handle_event( timer, event);
 	if ( event-> cmd == cmTimer) {
-		Handle self = application;
+		Handle self = prima_guts.application;
 		CTimer(timer)-> stop( timer);
 		if ( var->  hintActive == 1) {
 			Event ev = {cmHint};
@@ -901,13 +901,13 @@ Application_top_frame( Handle self, Handle from)
 	while ( from) {
 		if (
 			kind_of( from, CWindow) && (
-			( PWidget( from)-> owner == application) ||
+			( PWidget( from)-> owner == prima_guts.application) ||
 			!CWidget( from)-> get_clipOwner(from)
 		))
 			return from;
 		from = PWidget( from)-> owner;
 	}
-	return application;
+	return prima_guts.application;
 }
 
 Handle
@@ -998,7 +998,7 @@ Application_popup_modal( Handle self)
 		/* checking shared modal chains */
 		if ( ha) {
 			xTop = ( PWindow(ha)->modal == 0) ? CWindow(ha)->get_horizon(ha) : ha;
-			if ( xTop == application) xTop = var->  sharedModal;
+			if ( xTop == prima_guts.application) xTop = var->  sharedModal;
 		} else
 			xTop = var->  sharedModal ? var->  sharedModal : var->  modalHorizons. items[ 0];
 

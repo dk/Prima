@@ -551,7 +551,7 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 
 	if ( pexist(rtl) ?
 		pget_B(rtl) :
-		(application ? PApplication(application)->textDirection : lang_is_rtl()
+		(prima_guts.application ? P_APPLICATION->textDirection : lang_is_rtl()
 	))
 		t.flags |= toRTL;
 	if ( pexist(language))

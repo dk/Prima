@@ -104,7 +104,7 @@ apc_application_destroy( Handle self)
 	}
 	PostThreadMessage( guts. mainThreadId, WM_TERMINATE, 0, 0);
 	PostQuitMessage(0);
-	application = NULL_HANDLE;
+	prima_guts.application = NULL_HANDLE;
 	return true;
 }
 
@@ -421,11 +421,11 @@ process_msg( MSG * msg)
 	case WM_KEYPACKET: {
 		KeyPacket * kp = ( KeyPacket *) msg-> lParam;
 		BYTE * mod = mod_select( kp-> mod);
-		Bool wui = PApplication(application)-> wantUnicodeInput;
-		PApplication(application)-> wantUnicodeInput = kp-> mod & kmUnicode;
+		Bool wui = P_APPLICATION-> wantUnicodeInput;
+		P_APPLICATION-> wantUnicodeInput = kp-> mod & kmUnicode;
 		SendMessage( kp-> wnd, kp-> msg, kp-> mp1, kp-> mp2);
 		mod_free( mod);
-		PApplication(application)-> wantUnicodeInput = wui;
+		P_APPLICATION->wantUnicodeInput = wui;
 		exception_check_raise();
 		break;
 	}
@@ -565,7 +565,7 @@ apc_application_unlock( Handle self)
 Bool
 apc_application_stop( Handle self)
 {
-	if ( application == NULL_HANDLE ) return false;
+	if ( prima_guts.application == NULL_HANDLE ) return false;
 	guts. application_stop_signal = true;
 	return true;
 }
@@ -589,17 +589,17 @@ apc_application_yield(Bool wait_for_event)
 			return false;
 		}
 	}
-	if ( application && wait_for_event && !got_events && !guts. application_stop_signal) {
+	if ( prima_guts.application && wait_for_event && !got_events && !guts. application_stop_signal) {
 		Event ev;
 		ev. cmd = cmIdle;
-		CComponent( application)-> message( application, &ev);
-		if ( application ) {
+		C_APPLICATION-> message( prima_guts.application, &ev);
+		if ( prima_guts.application ) {
 			GetMessage( &msg, NULL, 0, 0);
 			process_msg( &msg);
 		}
 	}
 	guts. application_stop_signal = false;
-	return application != NULL_HANDLE;
+	return prima_guts.application != NULL_HANDLE;
 }
 
 Handle
@@ -822,13 +822,13 @@ apc_message( Handle self, PEvent ev, Bool post)
 			}
 		} else {
 			BYTE * mod = NULL;
-			Bool wui = PApplication(application)-> wantUnicodeInput;
+			Bool wui = P_APPLICATION-> wantUnicodeInput;
 			if (( GetKeyState( VK_MENU) < 0) ^ (( ev-> pos. mod & kmAlt) != 0))
 				mod = mod_select( ev-> pos. mod);
-			PApplication(application)-> wantUnicodeInput = ev-> key. mod & kmUnicode;
+			P_APPLICATION-> wantUnicodeInput = ev-> key. mod & kmUnicode;
 			SendMessage(( HWND) var handle, msg, mp1, mp2);
 			if ( mod) mod_free( mod);
-			PApplication(application)-> wantUnicodeInput = wui;
+			P_APPLICATION-> wantUnicodeInput = wui;
 		}
 		break;
 	}
@@ -913,12 +913,12 @@ apc_message( Handle self, PEvent ev, Bool post)
 				PostMessage( 0, WM_KEYPACKET, 0, ( LPARAM) kp);
 			}
 		} else {
-			Bool wui = PApplication(application)-> wantUnicodeInput;
+			Bool wui = P_APPLICATION-> wantUnicodeInput;
 			BYTE * mod = mod_select( ev-> key. mod);
-			PApplication(application)-> wantUnicodeInput = ev-> key. mod & kmUnicode;
+			P_APPLICATION-> wantUnicodeInput = ev-> key. mod & kmUnicode;
 			SendMessage( HANDLE, msg, mp1, mp2);
 			mod_free( mod);
-			PApplication(application)-> wantUnicodeInput = wui;
+			P_APPLICATION-> wantUnicodeInput = wui;
 		}
 		break;
 	}

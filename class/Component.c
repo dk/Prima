@@ -28,7 +28,7 @@ Component_init( Handle self, HV * profile)
 	if ( !my-> validate_owner( self, &var-> owner, profile)) {
 		var-> stage = csDeadInInit;
 		croak( "Illegal 'owner' reference passed to %s::%s%s", my-> className, "init",
-				application ? "" : ". Probably you forgot to include 'use Prima::Application' in your code. Error");
+				prima_guts.application ? "" : ". Probably you forgot to include 'use Prima::Application' in your code. Error");
 	}
 	if ( var-> owner)
 		((( PComponent) var-> owner)-> self)-> attach( var-> owner, self);
@@ -528,7 +528,7 @@ Component_post_message( Handle self, SV * info1, SV * info2)
 {
 	PPostMsg p;
 	Event ev = { cmPost};
-	if ( !application ) return;
+	if ( !prima_guts.application ) return;
 	if ( var-> stage > csNormal) return;
 	if (!( p = alloc1( PostMsg))) return;
 	p-> info1  = newSVsv( info1);
@@ -539,7 +539,7 @@ Component_post_message( Handle self, SV * info1, SV * info2)
 	list_add( var-> postList, ( Handle) p);
 	ev. gen. p = p;
 	ev. gen. source = ev. gen. H = self;
-	apc_message( application, &ev, true);
+	apc_message( prima_guts.application, &ev, true);
 }
 
 

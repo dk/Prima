@@ -590,7 +590,7 @@ handle_key_event( Handle self, XKeyEvent *ev, Event *e, KeySym * sym, Bool relea
 	if ( ev-> state & ShiftMask)    e-> key. mod |= kmShift;
 	if ( ev-> state & ControlMask)  e-> key. mod |= kmCtrl;
 	if ( ev-> state & Mod1Mask)     e-> key. mod |= kmAlt;
-	if ( PApplication(application)-> wantUnicodeInput) {
+	if ( P_APPLICATION-> wantUnicodeInput) {
 		e-> key. mod  |= kmUnicode;
 		e-> key. code = KeySymToUcs4( keysym);
 		if (( ev-> state & ControlMask) && isalpha( e-> key. code))
@@ -696,7 +696,7 @@ input_disabled( PDrawableSysData XX, Bool ignore_horizon)
 
 	if ( guts. message_boxes) return true;
 	if ( guts. modal_count > 0 && !ignore_horizon) {
-		horizon = CApplication(application)-> map_focus( application, XX-> self);
+		horizon = C_APPLICATION-> map_focus( application, XX-> self);
 		if ( XX-> self == horizon) return !XF_ENABLED(XX);
 	}
 	while (XX->self && XX-> self != horizon && XX-> self != application) {
@@ -904,7 +904,7 @@ wm_event( Handle self, XEvent *xev, PEvent ev)
 		if ( xev-> xclient. message_type == WM_PROTOCOLS) {
 			if ((Atom) xev-> xclient. data. l[0] == WM_DELETE_WINDOW) {
 				if ( guts. message_boxes) return false;
-				if ( self != CApplication(application)-> map_focus( application, self))
+				if ( self != C_APPLICATION-> map_focus( application, self))
 					return false;
 				ev-> cmd = cmClose;
 				return true;
@@ -919,7 +919,7 @@ wm_event( Handle self, XEvent *xev, PEvent ev)
 					return false;
 				}
 
-				selectee = CApplication(application)-> map_focus( application, self);
+				selectee = C_APPLICATION-> map_focus( application, self);
 
 				/* under modal window? */
 
@@ -1359,7 +1359,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 				while ( !X(f)-> type. window && ( f != application)) f = (( PWidget) f)-> owner;
 				if ( x != f) {
 					e. cmd = 0;
-					if ((( PApplication) application)-> hintUnder == self)
+					if (P_APPLICATION-> hintUnder == self)
 						CWidget(self)-> set_hintVisible( self, 0);
 					if (( PWidget(self)-> options. optSelectable) && ( PWidget(self)-> selectingButtons & e. pos. button))
 						apc_widget_set_focused( self);
@@ -1460,9 +1460,9 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 		syntetic_mouse_move(); /* XXX - simulated MouseMove event for compatibility reasons */
 
 		if (!XT_IS_WINDOW(XX))
-			frame = CApplication(application)-> top_frame( application, self);
-		if ( CApplication(application)-> map_focus( application, frame) != frame) {
-			CApplication(application)-> popup_modal( application);
+			frame = C_APPLICATION-> top_frame( application, self);
+		if ( C_APPLICATION-> map_focus( application, frame) != frame) {
+			C_APPLICATION-> popup_modal( application);
 			break;
 		}
 

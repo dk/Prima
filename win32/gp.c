@@ -43,7 +43,7 @@ apc_gp_done( Handle self)
 		if ( is_apt( aptWinPS) && is_apt( aptWM_PAINT)) {
 			if ( !EndPaint(( HWND) var handle, &sys paintStruc)) apiErr;
 		} else if ( is_apt( aptWinPS)) {
-			if ( self == application)
+			if ( self == prima_guts.application)
 				dc_free();
 			else {
 				if ( !ReleaseDC(( HWND) var handle,  sys ps)) apiErr;

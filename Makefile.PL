@@ -301,6 +301,7 @@ sub setup_files
 	@target_clean = (
 		"include/generic/*",
 		"class/*$Config{_o}",
+		"class/*/*$Config{_o}",
 		"img/*$Config{_o}",
 		"api/*$Config{_o}",
 		"$platform/*$Config{_o}",
@@ -2528,11 +2529,13 @@ bindist: all
 \t$^X $0 --bindist $DISTNAME
 
 devclean:
-\t\$(RM_F) api/*$Config{_o} class/*$Config{_o} img/*$Config{_o} $platform/*$Config{_o}
+\t\$(RM_F) api/*$Config{_o} class/*/*$Config{_o} class/*$Config{_o} img/*$Config{_o} $platform/*$Config{_o}
 
 deinstall:
 $pm_deinstall
 $pm_deinstall_dir
+
+include/img_conv.h: include/generic/Image.h
 
 H
 

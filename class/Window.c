@@ -229,7 +229,7 @@ Window_get_horizon( Handle self)
 	/* self trick is appropriate here;
 		don't bump into it accidentally */
 	self = var-> owner;
-	while ( self != application && !my-> get_modalHorizon( self))
+	while ( self != prima_guts.application && !my-> get_modalHorizon( self))
 		self = var-> owner;
 	return self;
 }
@@ -246,24 +246,24 @@ Window_exec_enter_proc( Handle self, Bool sharedExec, Handle insertBefore)
 		var-> modal = mtShared;
 
 		/* adding new modal horizon in global mh-list */
-		if ( mh != application && !PWindow(mh)-> nextSharedModal)
-			list_add( &PApplication( application)-> modalHorizons, mh);
+		if ( mh != prima_guts.application && !PWindow(mh)-> nextSharedModal)
+			list_add( &P_APPLICATION-> modalHorizons, mh);
 
 		if (( var-> nextSharedModal = insertBefore)) {
 			/* inserting window in between of modal list */
-			Handle *iBottom = ( mh == application) ?
+			Handle *iBottom = ( mh == prima_guts.application) ?
 				&PApplication(mh)-> sharedModal : &PWindow(mh)-> nextSharedModal;
 			var-> prevSharedModal = PWindow( insertBefore)-> prevSharedModal;
 			if ( *iBottom == insertBefore)
 				*iBottom = self;
 		} else {
 			/* inserting window on top of modal list */
-			Handle *iTop = ( mh == application) ?
+			Handle *iTop = ( mh == prima_guts.application) ?
 				&PApplication(mh)-> topSharedModal : &PWindow(mh)-> topSharedModal;
 			if ( *iTop)
 				PWindow( *iTop)-> nextSharedModal = self;
 			else {
-				if ( mh == application)
+				if ( mh == prima_guts.application)
 					PApplication(mh)-> sharedModal = self;
 				else
 					PWindow(mh)-> nextSharedModal = self;
@@ -276,7 +276,7 @@ Window_exec_enter_proc( Handle self, Bool sharedExec, Handle insertBefore)
 	else
 	/* start of exclusive exec */
 	{
-		PApplication app = ( PApplication) application;
+		PApplication app = ( PApplication) prima_guts.application;
 		var-> modal = mtExclusive;
 		if (( var-> nextExclModal = insertBefore)) {
 			var-> prevExclModal = PWindow( insertBefore)-> prevExclModal;
@@ -312,8 +312,8 @@ Window_exec_leave_proc( Handle self)
 			if ( next-> prevSharedModal == self)
 				next-> prevSharedModal = var-> prevSharedModal;
 		}
-		if ( mh == application) {
-			PApplication app = ( PApplication) application;
+		if ( mh == prima_guts.application) {
+			PApplication app = ( PApplication) prima_guts.application;
 			if ( app) {
 				if ( app-> sharedModal == self)
 					app-> sharedModal = var-> nextSharedModal;
@@ -328,7 +328,7 @@ Window_exec_leave_proc( Handle self)
 				win-> topSharedModal = var-> prevSharedModal;
 			/* removing horizon from global mh-list */
 			if ( !win-> nextSharedModal)
-				list_delete( &PApplication(application)-> modalHorizons, mh);
+				list_delete( &P_APPLICATION-> modalHorizons, mh);
 		}
 
 		var-> prevSharedModal = var-> nextSharedModal = NULL_HANDLE;
@@ -336,7 +336,7 @@ Window_exec_leave_proc( Handle self)
 	else
 	/* start of exclusive exec */
 	{
-		PApplication app = ( PApplication) application;
+		PApplication app = ( PApplication) prima_guts.application;
 		if ( var-> prevExclModal) {
 			PWindow prev = ( PWindow) var-> prevExclModal;
 			if ( prev-> nextExclModal == self)
@@ -370,7 +370,7 @@ Window_cancel_children( Handle self)
 		}
 	} else {
 		Handle mh   = my-> get_horizon( self);
-		Handle next = ( mh == application) ?
+		Handle next = ( mh == prima_guts.application) ?
 				PApplication(mh)-> sharedModal :
 				PWindow(mh)-> nextSharedModal;
 		while ( next) {
@@ -659,8 +659,8 @@ Window_ownerIcon( Handle self, Bool set, Bool ownerIcon)
 		return is_opt( optOwnerIcon);
 	opt_assign( optOwnerIcon, ownerIcon);
 	if ( is_opt( optOwnerIcon) && var-> owner) {
-		Handle icon = ( var-> owner == application) ?
-			CApplication( application)-> get_icon( application) :
+		Handle icon = ( var-> owner == prima_guts.application) ?
+			C_APPLICATION-> get_icon(prima_guts.application) :
 			CWindow(      var-> owner)-> get_icon( var-> owner);
 		my-> set_icon( self, icon);
 		opt_set( optOwnerIcon);
@@ -829,7 +829,7 @@ Window_validate_owner( Handle self, Handle * owner, HV * profile)
 {
 	dPROFILE;
 	*owner = pget_H( owner);
-	if ( *owner != application && !kind_of( *owner, CWidget)) return false;
+	if ( *owner != prima_guts.application && !kind_of( *owner, CWidget)) return false;
 	return inherited validate_owner( self, owner, profile);
 }
 

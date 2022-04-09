@@ -625,7 +625,7 @@ apc_popup( Handle self, int x, int y, Rect * anchor)
 
 	y = dsys( var owner) lastSize. y - y;
 	owner = ( HWND)(( PComponent) var owner)-> handle;
-	if ( var owner != application) {
+	if ( var owner != prima_guts.application) {
 		POINT pt;
 		pt. x = x;
 		pt. y = y;

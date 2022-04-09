@@ -4119,44 +4119,6 @@ apc_fs_utime( double atime, double mtime, const char* path, Bool is_utf8 );
 extern Bool
 apc_dl_export(char *path);
 
-/* OpenMP support */
-extern int
-prima_omp_max_threads(void);
-
-extern int
-prima_omp_thread_num(void);
-
-extern void
-prima_omp_set_num_threads(int num);
-
-#ifdef HAVE_OPENMP
-#define OMP_MAX_THREADS prima_omp_max_threads()
-#define OMP_THREAD_NUM prima_omp_thread_num()
-#else
-#define OMP_MAX_THREADS 1
-#define OMP_THREAD_NUM  0
-#endif
-
-typedef struct {
-	void *stack, *heap;
-	unsigned int elem_size, count, size;
-} semistatic_t;
-
-extern void
-semistatic_init( semistatic_t * s, void * stack, unsigned int elem_size, unsigned int static_size);
-
-extern int
-semistatic_expand( semistatic_t * s, unsigned int desired_elems);
-
-extern void
-semistatic_done( semistatic_t * s);
-
-#define semistatic_at(s,type,i) (((type*)s.heap)[i])
-
-#define semistatic_push(s,type,v) \
-	((( s.count >= s.size ) ? semistatic_expand(&s,-1) : 1) && \
-		(((((type*)s.heap)[s.count++])=v) || 1))
-
 #ifdef __cplusplus
 }
 #endif

@@ -15,7 +15,7 @@ extern "C" {
 #define var (( PWidget) self)->
 #define HANDLE sys handle
 #define DHANDLE(x) dsys(x) handle
-#define OWNER DHANDLE(application)
+#define OWNER DHANDLE(prima_guts.application)
 
 static int
 add_timer( Handle timerObject)
@@ -78,7 +78,7 @@ Bool
 apc_timer_destroy( Handle self)
 {
 	objCheck false;
-	if ( application && is_opt( optActive) && var handle ) {
+	if ( prima_guts.application && is_opt( optActive) && var handle ) {
 		if ( !KillTimer( OWNER, var handle)) apiErr;
 	}
 	remove_timer( self);
@@ -96,7 +96,7 @@ Bool
 apc_timer_set_timeout( Handle self, int timeout)
 {
 	objCheck false;
-	if ( !application ) return false;
+	if ( !prima_guts.application ) return false;
 	if ( is_opt( optActive)) {
 		if ( !SetTimer( OWNER, var handle, timeout, NULL)) {
 			opt_clear( optActive);
@@ -112,7 +112,7 @@ Bool
 apc_timer_start( Handle self)
 {
 	objCheck false;
-	if ( !application ) return false;
+	if ( !prima_guts.application ) return false;
 	if ( !SetTimer( OWNER, var handle, sys s. timer. timeout, NULL))
 		apiErrRet;
 	return true;
@@ -122,7 +122,7 @@ Bool
 apc_timer_stop( Handle self)
 {
 	objCheck false;
-	if ( !application ) return false;
+	if ( !prima_guts.application ) return false;
 	KillTimer( OWNER, var handle);
 	return true;
 }
