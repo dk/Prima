@@ -1097,8 +1097,8 @@ apc_sys_get_value( int v)  /* XXX one big XXX */
 #endif
 ;
 	case svMenuCheckSize   : return MENU_CHECK_XOFFSET;
-	case svFriBidi         : return use_fribidi;
-	case svLibThai         : return use_libthai;
+	case svFriBidi         : return prima_guts.use_fribidi;
+	case svLibThai         : return prima_guts.use_libthai;
 	case svAntialias       : return guts. argb_visual. visual != NULL;
 	default:
 		return -1;

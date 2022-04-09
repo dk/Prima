@@ -1,4 +1,5 @@
 #include "apricot.h"
+#include "guts.h"
 #include "Drawable.h"
 #include "Application.h"
 #include "Drawable_private.h"
@@ -356,7 +357,7 @@ shape_unicode(Handle self, PTextShapeRec t, PTextShapeFunc shaper,
 #endif
 
 #ifdef WITH_FRIBIDI
-	if ( use_fribidi ) {
+	if ( prima_guts.use_fribidi ) {
 		reorder_swaps_rtl = true;
 		ok = bidi_reorder(t, fribidi_arabic_shaping);
 	}
@@ -542,9 +543,9 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 
 	/* asserts */
 #ifdef WITH_FRIBIDI
-	if ( use_fribidi && sizeof(FriBidiLevel) != 1) {
+	if ( prima_guts.use_fribidi && sizeof(FriBidiLevel) != 1) {
 		warn("sizeof(FriBidiLevel) != 1, fribidi is disabled");
-		use_fribidi = false;
+		prima_guts.use_fribidi = false;
 	}
 #endif
 

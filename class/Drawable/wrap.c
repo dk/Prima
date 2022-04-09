@@ -1,4 +1,5 @@
 #include "apricot.h"
+#include "guts.h"
 #include "Drawable.h"
 #include "Drawable_private.h"
 
@@ -346,13 +347,13 @@ text_get_libthai_breaks( TextWrapRec* t)
 	thwchar_t *u32;
 	semistatic_t pbuf;
 
-	if ( use_libthai == 1 ) {
+	if ( prima_guts.use_libthai == 1 ) {
 		ThBrk * t;
 		if (!( t = th_brk_new(NULL))) {
 			warn("libthai error, disabling");
-			use_libthai = 0;
+			prima_guts.use_libthai = 0;
 		} else {
-			use_libthai = 2;
+			prima_guts.use_libthai = 2;
 			th_brk_delete(t);
 		}
 	}
@@ -428,7 +429,7 @@ text_init_wrap_rec( Handle self, SV * text, int width, int options, int tabInden
 	t-> n_word_breaks = 0;
 
 #ifdef WITH_LIBTHAI
-	if ( use_libthai && t-> utf8_text && (t->options & twWordBreak))
+	if ( prima_guts.use_libthai && t-> utf8_text && (t->options & twWordBreak))
 		text_get_libthai_breaks(t);
 #endif
 }

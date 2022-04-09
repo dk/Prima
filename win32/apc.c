@@ -585,7 +585,7 @@ apc_application_yield(Bool wait_for_event)
 	while ( !guts. application_stop_signal && PeekMessage( &msg, NULL, 0, 0, PM_REMOVE)) {
 		got_events = true;
 		if ( !process_msg( &msg)) {
-			PostThreadMessage( guts. mainThreadId, appDead ? WM_QUIT : WM_TERMINATE, 0, 0);
+			PostThreadMessage( guts. mainThreadId, prima_guts.app_is_dead ? WM_QUIT : WM_TERMINATE, 0, 0);
 			return false;
 		}
 	}

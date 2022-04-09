@@ -278,17 +278,18 @@ sub setup_files
 	@pod_files  = ffind( qr/./, 'pod' );
 	@pm_files  = ffind( qr/\.pm$/ );
 	@c_files    = (
-		<src/*.c>,
-		<src/*/*.c>,
+		<api/*.c>,
+		<class/*.c>,
+		<class/*/*.c>,
 		(grep { not $PASSIVE_CODECS{$_} } <img/*.c>),
 		(grep { !m/xft.c/ || $cmd_options{WITH_XFT} } <$platform/*.c>),
 	);
-	@cls_files  = ( <src/*.cls> );
+	@cls_files  = ( <class/*.cls> );
 	@h_files    = (
 		<include/*.h>,
 		<include/generic/*.h>,
 		<include/$platform/*.h>,
-		map { s[src/][]; "include/generic/$_" } extmap( '.h', @cls_files),
+		map { s[class/][]; "include/generic/$_" } extmap( '.h', @cls_files),
 	);
 	@o_files  = extmap( $Config{_o}, @c_files );
 
@@ -299,8 +300,9 @@ sub setup_files
 
 	@target_clean = (
 		"include/generic/*",
-		"src/*$Config{_o}",
+		"class/*$Config{_o}",
 		"img/*$Config{_o}",
+		"api/*$Config{_o}",
 		"$platform/*$Config{_o}",
 	);
 
@@ -2451,12 +2453,12 @@ SHOWMORE
     	printlog "Finding .cls dependencies...\n";
 
 	for my $clsfile ( @cls_files) {
-		my ( $base ) = $clsfile =~ m/^src\/(.*?).cls$/;
-		my $ancestors = join(' ', map { "include/generic/$_.h src/$_.cls" } gencls( $clsfile, depend => 1, incpath => ['src']));
+		my ( $base ) = $clsfile =~ m/^class\/(.*?).cls$/;
+		my $ancestors = join(' ', map { "include/generic/$_.h class/$_.cls" } gencls( $clsfile, depend => 1, incpath => ['class']));
 	  	$t .= <<H;
 
-include/generic/$base.h: \$(FIRST_MAKEFILE) $showlog src/$base.cls $ancestors
-\t$^X -I. utils/prima-gencls.pl --inc --h -Isrc --tml $clsfile include/generic
+include/generic/$base.h: \$(FIRST_MAKEFILE) $showlog class/$base.cls $ancestors
+\t$^X -I. utils/prima-gencls.pl --inc --h -Iclass --tml $clsfile include/generic
 
 H
 		push @alltml, "include/generic/$base.tml";
@@ -2526,7 +2528,7 @@ bindist: all
 \t$^X $0 --bindist $DISTNAME
 
 devclean:
-\t\$(RM_F) src/*$Config{_o} img/*$Config{_o} $platform/*$Config{_o}
+\t\$(RM_F) api/*$Config{_o} class/*$Config{_o} img/*$Config{_o} $platform/*$Config{_o}
 
 deinstall:
 $pm_deinstall

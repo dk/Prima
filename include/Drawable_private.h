@@ -44,9 +44,6 @@ extern PHash font_substitutions;
 #define N_STYLES   (1 + STYLE_MASK)
 extern int   font_mapper_default_id[N_STYLES];
 
-extern int   use_libthai;
-extern Bool  use_fribidi;
-
 void
 clear_font_abc_caches( Handle self);
 

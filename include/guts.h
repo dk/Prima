@@ -20,12 +20,25 @@ sv_setsv( GvSV( PL_errgv), NULL_SV)
 if ( errSave) sv_catsv( GvSV( PL_errgv), errSave);\
 if ( errSave) sv_free( errSave)
 
-extern List   postDestroys;
-extern int    recursiveCall;
-extern PHash  primaObjects;
-extern SV *   eventHook;
-extern Bool   use_fribidi;
-extern int    use_libthai;
+typedef struct {
+	List       post_destroys;
+	int        recursive_call;
+	PHash      objects;
+	SV *       event_hook;
+	Bool       use_fribidi;
+	int        use_libthai;
+	List       static_hashes;
+	int        init_ok;
+	PHash      vmt_hash;
+	List       static_objects;
+	PAnyObject kill_chain;
+	PAnyObject ghost_chain;
+	Bool       app_is_dead;
+} PrimaGuts, *PPrimaGuts;
+
+extern PrimaGuts prima_guts;
+
+extern PPrimaGuts prima_api_guts(void);
 
 #define CORE_INIT_TRANSIENT(cls) ((PObject)self)->transient_class = (void*)C##cls
 
@@ -38,7 +51,17 @@ extern void prima_init_image_subsystem( void);
 extern void prima_cleanup_image_subsystem( void);
 
 /* kernel exports */
-extern XS( Component_set_notification_FROMPERL);
+XS( Prima_options);
+XS( Prima_dl_export);
+XS( Prima_message_FROMPERL);
+XS( create_from_Perl);
+XS( destroy_from_Perl);
+XS( Object_alive_FROMPERL);
+XS( Component_set_notification_FROMPERL);
+XS( Component_event_hook_FROMPERL);
+XS(Utils_getdir_FROMPERL);
+XS(Utils_stat_FROMPERL);
+XS(Utils_closedir_FROMPERL);
 
 extern PRGBColor prima_read_palette( int * palSize, SV * palette);
 extern Bool prima_read_point( SV *rvav, int * pt, int number, char * error);
@@ -61,6 +84,9 @@ extern PFont prima_font_mapper_get_font(unsigned int fid );
 #define pfmaDisable       6
 #define pfmaGetIndex      7
 extern int   prima_font_mapper_action(int action, PFont font);
+
+extern void
+prima_register_notifications( PVMT vmt);
 
 #ifdef __cplusplus
 }

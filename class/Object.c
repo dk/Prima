@@ -20,7 +20,7 @@ Object_create( char *className, HV * profile)
 	SV *xmate;
 	SV *profRef;
 
-	if ( primaObjects == NULL)
+	if ( prima_guts.objects == NULL)
 		return NULL_HANDLE;
 
 	ENTER;
@@ -64,8 +64,8 @@ Object_create( char *className, HV * profile)
 		FREETMPS;
 		LEAVE;
 	}
-	if ( primaObjects)
-		hash_store( primaObjects, &self, sizeof( self), (void*)1);
+	if ( prima_guts.objects)
+		hash_store( prima_guts.objects, &self, sizeof( self), (void*)1);
 	SvREFCNT_dec( profRef);
 	if ( var-> stage > csConstructing) {
 		if ( var-> mate && ( var-> mate != NULL_SV) && SvRV( var-> mate))
@@ -97,11 +97,11 @@ Object_destroy( Handle self)
 	if ( var-> stage == csDeadInInit) {
 		/* lightweight destroy */
 		if ( is_opt( optInDestroyList)) {
-			list_delete( &postDestroys, self);
+			list_delete( &prima_guts.post_destroys, self);
 			opt_clear( optInDestroyList);
 		}
-		if ( primaObjects)
-			hash_delete( primaObjects, &self, sizeof( self), false);
+		if ( prima_guts.objects)
+			hash_delete( prima_guts.objects, &self, sizeof( self), false);
 		mate = var-> mate;
 		var-> stage = csDead;
 		var-> mate = NULL_SV;
@@ -115,7 +115,7 @@ Object_destroy( Handle self)
 	if ( var-> destroyRefCount > 0) {
 		if ( !is_opt( optInDestroyList)) {
 			opt_set( optInDestroyList);
-			list_add( &postDestroys, self);
+			list_add( &prima_guts.post_destroys, self);
 		}
 		return;
 	}
@@ -128,17 +128,17 @@ Object_destroy( Handle self)
 		if ( !object)
 			return;
 		var-> stage = csFinalizing;
-		recursiveCall++;
+		prima_guts.recursive_call++;
 		protect_chain( owner = var-> owner, 1);
 		my-> done( self);
 		protect_chain( owner, -1);
-		recursiveCall--;
+		prima_guts.recursive_call--;
 		if ( is_opt( optInDestroyList)) {
-			list_delete( &postDestroys, self);
+			list_delete( &prima_guts.post_destroys, self);
 			opt_clear( optInDestroyList);
 		}
-		if ( primaObjects)
-			hash_delete( primaObjects, &self, sizeof( self), false);
+		if ( prima_guts.objects)
+			hash_delete( prima_guts.objects, &self, sizeof( self), false);
 		var-> stage = csDead;
 		return;
 	}
@@ -151,9 +151,9 @@ Object_destroy( Handle self)
 	if ( object) {
 		Handle owner;
 		var-> stage = csHalfDead;
-		recursiveCall++;
+		prima_guts.recursive_call++;
 		/*  ENTER;
-		SAVEINT recursiveCall; */
+		SAVEINT prima_guts.recursive_call; */
 		protect_chain( owner = var-> owner, 1);
 		if ( enter_stage > csConstructing)
 			my-> cleanup( self);
@@ -162,33 +162,33 @@ Object_destroy( Handle self)
 		if ( var-> stage == csHalfDead) {
 			var-> stage = csFinalizing;
 			my-> done( self);
-			if ( primaObjects)
-				hash_delete( primaObjects, &self, sizeof( self), false);
+			if ( prima_guts.objects)
+				hash_delete( prima_guts.objects, &self, sizeof( self), false);
 			if ( is_opt( optInDestroyList)) {
-				list_delete( &postDestroys, self);
+				list_delete( &prima_guts.post_destroys, self);
 				opt_clear( optInDestroyList);
 			}
 		}
 		protect_chain( owner, -1);
 		/*  LEAVE; */
-		recursiveCall--;
+		prima_guts.recursive_call--;
 	}
 	var-> stage = csDead;
 	var-> mate = NULL_SV;
 	if ( mate && object) sv_free( mate);
 
-	while (( recursiveCall == 0) && ( postDestroys. count > 0)) {
-		Handle last = postDestroys. items[ 0];
-		recursiveCall++;
-		Object_destroy( postDestroys. items[ 0]);
-		recursiveCall--;
-		if ( postDestroys. count == 0) break;
-		if ( postDestroys. items[ 0] != last) continue;
-		if ( postDestroys. count == 1)
+	while (( prima_guts.recursive_call == 0) && ( prima_guts.post_destroys. count > 0)) {
+		Handle last = prima_guts.post_destroys. items[ 0];
+		prima_guts.recursive_call++;
+		Object_destroy( prima_guts.post_destroys. items[ 0]);
+		prima_guts.recursive_call--;
+		if ( prima_guts.post_destroys. count == 0) break;
+		if ( prima_guts.post_destroys. items[ 0] != last) continue;
+		if ( prima_guts.post_destroys. count == 1)
 			croak("Zombie detected: %p", (void*)last);
 		else {
-			list_delete_at( &postDestroys, 0);
-			list_add( &postDestroys, last);
+			list_delete_at( &prima_guts.post_destroys, 0);
+			list_add( &prima_guts.post_destroys, last);
 		}
 	}
 }

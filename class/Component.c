@@ -592,8 +592,8 @@ XS( Component_event_hook_FROMPERL)
 
 	if ( items == 0) {
 	GET_CASE:
-		if ( eventHook)
-			XPUSHs( sv_2mortal( newSVsv(( SV *) eventHook)));
+		if ( prima_guts.event_hook)
+			XPUSHs( sv_2mortal( newSVsv(( SV *) prima_guts.event_hook)));
 		else
 			XPUSHs( &PL_sv_undef);
 		PUTBACK;
@@ -608,8 +608,8 @@ XS( Component_event_hook_FROMPERL)
 	}
 
 	if ( SvTYPE(hook) == SVt_NULL) {
-		if ( eventHook) sv_free( eventHook);
-		eventHook = NULL;
+		if ( prima_guts.event_hook) sv_free( prima_guts.event_hook);
+		prima_guts.event_hook = NULL;
 		PUTBACK;
 		return;
 	}
@@ -620,8 +620,8 @@ XS( Component_event_hook_FROMPERL)
 		return;
 	}
 
-	if ( eventHook) sv_free( eventHook);
-	eventHook = newSVsv( hook);
+	if ( prima_guts.event_hook) sv_free( prima_guts.event_hook);
+	prima_guts.event_hook = newSVsv( hook);
 	PUTBACK;
 	return;
 }
@@ -654,7 +654,7 @@ XS( Component_notify_FROMPERL)
 		return;
 	}
 
-	if ( eventHook) {
+	if ( prima_guts.event_hook) {
 		dSP;
 		dG_EVAL_ARGS;
 
@@ -666,7 +666,7 @@ XS( Component_notify_FROMPERL)
 		for ( i = 0; i < items; i++) PUSHs( ST( i));
 		PUTBACK;
 		OPEN_G_EVAL;
-		perl_call_sv( eventHook, G_SCALAR | G_EVAL);
+		perl_call_sv( prima_guts.event_hook, G_SCALAR | G_EVAL);
 		SPAGAIN;
 		if ( SvTRUE( GvSV( PL_errgv))) {
 			(void)POPs;

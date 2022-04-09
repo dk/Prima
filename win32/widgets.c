@@ -857,7 +857,7 @@ apc_window_execute( Handle self, Handle insertBefore)
 		MSG msg;
 		while ( GetMessage( &msg, NULL, 0, 0)) {
 			if ( !process_msg( &msg)) {
-				if ( !appDead)
+				if ( !prima_guts.app_is_dead)
 					PostThreadMessage( guts. mainThreadId, WM_TERMINATE, 0, 0);
 				break;
 			}

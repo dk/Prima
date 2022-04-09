@@ -415,8 +415,8 @@ window_subsystem_done()
 	list_destroy( &guts. files);
 
 	if ( guts. socketMutex) {
-		// appDead must be TRUE for this moment!
-		appDead = true;
+		// prima_guts.app_is_dead must be TRUE for this moment!
+		prima_guts.app_is_dead = true;
 		CloseHandle( guts. socketMutex);
 	}
 
@@ -624,7 +624,7 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
 	Bool    hiStage   = false;
 	Bool    message_result = true;
 
-	if ( !self || appDead)
+	if ( !self || prima_guts.app_is_dead)
 		return DefWindowProcW( win, msg, mp1, mp2);
 
 	memset( &ev, 0, sizeof (ev));

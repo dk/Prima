@@ -49,8 +49,6 @@ prima_xw2h( XWindow win)
 	return self;
 }
 
-extern Bool appDead;
-
 /* x11 keysym to unicode: from http://cvsweb.xfree86.org/cvsweb/xc/lib/X11/imKStoUCS.c */
 
 static unsigned short const keysym_to_unicode_1a1_1ff[] = {
@@ -1087,7 +1085,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 		}
 	}
 
-	if ( appDead)
+	if ( prima_guts.app_is_dead)
 		return;
 
 	bzero( &e, sizeof( e));

@@ -683,12 +683,12 @@ Widget_pack_enter( Handle self)
 
 	/* see if leftover object references are alive */
 	if ( var-> geomInfo. order &&
-		!hash_fetch( primaObjects, &var-> geomInfo. order, sizeof(Handle))) {
+		!hash_fetch( prima_guts.objects, &var-> geomInfo. order, sizeof(Handle))) {
 		var-> geomInfo. order = NULL_HANDLE;
 		var-> geomInfo. after = 0;
 	}
 	if ( var-> geomInfo. in) {
-		if ( hash_fetch( primaObjects, &var-> geomInfo. in, sizeof(Handle)))
+		if ( hash_fetch( prima_guts.objects, &var-> geomInfo. in, sizeof(Handle)))
 			var-> geomInfo. in = Widget_check_in( self, var-> geomInfo. in, false);
 		else
 			var-> geomInfo. in = NULL_HANDLE;
@@ -979,7 +979,7 @@ Widget_place_enter( Handle self)
 
 	/* see if leftover object references are alive */
 	if ( var-> geomInfo. in) {
-		if ( hash_fetch( primaObjects, &var-> geomInfo. in, sizeof(Handle)))
+		if ( hash_fetch( prima_guts.objects, &var-> geomInfo. in, sizeof(Handle)))
 			var-> geomInfo. in = Widget_check_in( self, var-> geomInfo. in, false);
 		else
 			var-> geomInfo. in = NULL_HANDLE;

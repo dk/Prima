@@ -61,7 +61,7 @@ void
 socket_select( void *dummy)
 {
 	int count;
-	while ( !appDead) {
+	while ( !prima_guts.app_is_dead) {
 		if ( socketSetChanged) {
 			// updating  handles
 			int i;
