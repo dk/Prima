@@ -158,7 +158,7 @@ font_query_name( XFontStruct * s, PFontInfo f)
 					Font fx = f-> font;
 					fill_default_font( &fx);
 					if ( f-> flags. encoding) strcpy( fx. encoding, f-> font. encoding);
-					prima_core_font_pick( application, &fx, &fx);
+					prima_core_font_pick( prima_guts.application, &fx, &fx);
 					strcpy( f-> font. name, fx. name);
 				}
 			} else {
@@ -530,7 +530,7 @@ pick_default_font_with_encoding(void)
 		fill_default_font( &guts. default_font);
 		strcpy( guts. default_font. name, guts. font_info[best].font.name);
 		strcpy( guts. default_font. encoding, guts. locale);
-		prima_core_font_pick( application, &guts. default_font, &guts. default_font);
+		prima_core_font_pick( prima_guts.application, &guts. default_font, &guts. default_font);
 		guts. default_font. pitch = fpDefault;
 		return true;
 	}
@@ -669,7 +669,7 @@ prima_init_font_subsystem( char * error_buf)
 	} else if ( !apc_fetch_resource( "Prima", "", "Font", "font",
 		NULL_HANDLE, frFont, &guts. default_font)) {
 		fill_default_font( &guts. default_font);
-		apc_font_pick( application, &guts. default_font, &guts. default_font);
+		apc_font_pick( prima_guts.application, &guts. default_font, &guts. default_font);
 		guts. default_font. pitch = fpDefault;
 		/*
 			Although apc_font_pick() does respect $LANG, it does not always picks
@@ -856,7 +856,7 @@ prima_font_pp2font( char * ppFontNameSize, PFont font)
 			Fdebug("font: cannot load %s\n", ppFontNameSize);
 			if ( !guts. default_font_ok) {
 				fill_default_font( font);
-				apc_font_pick( application, font, font);
+				apc_font_pick( prima_guts.application, font, font);
 				font-> pitch = fpDefault;
 			}
 #ifdef USE_XFT
@@ -881,13 +881,13 @@ prima_font_pp2font( char * ppFontNameSize, PFont font)
 		def = &guts. default_font;
 	} else {
 		fill_default_font( def = &def_dummy);
-		apc_font_pick( application, def, def);
+		apc_font_pick( prima_guts.application, def, def);
 	}
 	if ( font-> height == 0) font-> height = def-> height;
 	if ( font-> size   == 0) font-> size   = def-> size;
 	if ( strlen( font-> name) == 0) strcpy( font-> name, def-> name);
 	if ( strlen( font-> family) == 0) strcpy( font-> family, def-> family);
-	apc_font_pick( application, font, font);
+	apc_font_pick( prima_guts.application, font, font);
 	if (
 		( stricmp( font-> family, fi. font. family) == 0) &&
 		( stricmp( font-> name, fi. font. name) == 0)

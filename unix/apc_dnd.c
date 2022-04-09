@@ -385,7 +385,7 @@ handle_xdnd_position( Handle self, XEvent* xev)
 		h = (Handle) hash_fetch( guts.windows, (void*)&to, sizeof(to));
 		if (
 			!h ||
-			h == application ||
+			h == prima_guts.application ||
 			!X(h)->flags.enabled
 		)
 			break;
@@ -393,7 +393,7 @@ handle_xdnd_position( Handle self, XEvent* xev)
 		if ( !child )
 			break;
 	}
-	if ( h == application || !X(h)->flags.enabled)
+	if ( h == prima_guts.application || !X(h)->flags.enabled)
 		h = NULL_HANDLE;
 	if ( !h )
 		goto FAIL;
@@ -729,13 +729,13 @@ get_top_window(Handle from)
 	while ( from) {
 		if (
 			kind_of( from, CWindow) ||
-			( PWidget( from)-> owner == application) ||
+			( PWidget( from)-> owner == prima_guts.application) ||
 			!CWidget( from)-> get_clipOwner(from)
 		)
 			return from;
 		from = PWidget( from)-> owner;
 	}
-	return application;
+	return prima_guts.application;
 }
 
 Bool
@@ -748,7 +748,7 @@ apc_dnd_set_aware( Handle self, Bool is_target )
 
 	if ( src == dst ) return true;
 	top_level = get_top_window(self);
-	if ( top_level == application ) return false;
+	if ( top_level == prima_guts.application ) return false;
 
 	XX->flags. dnd_aware = dst;
 	prima_update_dnd_aware( top_level );
@@ -796,7 +796,7 @@ apc_dnd_start( Handle self, int actions, Bool default_pointers, Handle * counter
 		return -1;
 	}
 	top_level = get_top_window(self);
-	if ( top_level == application ) {
+	if ( top_level == prima_guts.application ) {
 		Cdebug("dnd:no toplevel window\n");
 		return -1;
 	}

@@ -1845,7 +1845,7 @@ prima_handle_menu_shortcuts( Handle self, XEvent * ev, KeySym keysym)
 		bzero( &e, sizeof(e));
 		e. cmd    = cmPopup;
 		e. gen. B = false;
-		e. gen. P = apc_pointer_get_pos( application);
+		e. gen. P = apc_pointer_get_pos( prima_guts.application);
 		e. gen. H = self;
 		apc_widget_map_points( self, false, 1, &e. gen. P);
 		CComponent( self)-> message( self, &e);

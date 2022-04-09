@@ -462,7 +462,7 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
 	XCHECKPOINT;
 
 	if (( class_hint = XAllocClassHint()) != NULL) {
-		class_hint-> res_class  = PComponent(application)-> name;
+		class_hint-> res_class  = P_APPLICATION-> name;
 		class_hint-> res_name = CObject( self)-> className;
 		XSetClassHint( DISP, X_WINDOW, class_hint);
 		XFree (class_hint);
@@ -479,7 +479,7 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
 	XX-> type.widget = true;
 	XX-> type.window = true;
 
-	real_owner = application;
+	real_owner = prima_guts.application;
 	XX-> parent = guts. root;
 	XX-> real_parent = NULL_HANDLE;
 	XX-> udrawable = XX-> gdrawable = XX-> client;
@@ -596,7 +596,7 @@ apc_window_activate( Handle self)
 
 	if ( !XX->flags. want_visible) return true;
 	if ( guts. message_boxes) return false;
-	if ( self && ( self != CApplication( application)-> map_focus( application, self)))
+	if ( self && ( self != C_APPLICATION-> map_focus(prima_guts.application, self)))
 		return false;
 
 	XMapRaised( DISP, X_WINDOW);
@@ -1296,13 +1296,13 @@ prima_find_toplevel_window(Handle self)
 {
 	Handle toplevel = NULL_HANDLE;
 
-	if (!application) return NULL_HANDLE;
+	if (!prima_guts.application) return NULL_HANDLE;
 
-	toplevel = C_APPLICATION-> get_modal_window(application, mtExclusive, true);
+	toplevel = C_APPLICATION-> get_modal_window(prima_guts.application, mtExclusive, true);
 	if ( toplevel == NULL_HANDLE && self != NULL_HANDLE) {
 		if (
 			PWindow(self)-> owner &&
-			PWindow(self)-> owner != application
+			PWindow(self)-> owner != prima_guts.application
 		)
 			toplevel = PWindow(self)-> owner;
 	}
@@ -1310,7 +1310,7 @@ prima_find_toplevel_window(Handle self)
 	/* find main window */
 	if ( toplevel == NULL_HANDLE) {
 		int i;
-		PList l = & PWidget(application)-> widgets;
+		PList l = & P_APPLICATION-> widgets;
 		for ( i = 0; i < l-> count; i++) {
 			if ( PObject(l-> items[i])-> options. optMainWindow && self != l->items[i]) {
 				toplevel = l-> items[i];
@@ -1328,7 +1328,7 @@ apc_window_execute( Handle self, Handle insert_before)
 	DEFXX;
 	Handle toplevel;
 
-	if (!application) return false;
+	if (!prima_guts.application) return false;
 
 	toplevel = prima_find_toplevel_window(self);
 	if ( toplevel) XSetTransientForHint( DISP, X_WINDOW, PWidget(toplevel)-> handle);
@@ -1365,8 +1365,8 @@ apc_window_end_modal( Handle self)
 	XX-> flags.modal = false;
 	CWindow( self)-> exec_leave_proc( self);
 	apc_widget_set_visible( self, false);
-	if ( application) {
-		modal = C_APPLICATION->popup_modal( application);
+	if ( prima_guts.application) {
+		modal = C_APPLICATION->popup_modal( prima_guts.application);
 		if ( !modal && win->owner)
 			CWidget( win->owner)-> set_selected( win->owner, true);
 		if (( oldfoc = XX-> preexec_focus)) {

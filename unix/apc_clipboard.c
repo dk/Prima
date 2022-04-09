@@ -3,7 +3,7 @@
 #include "Clipboard.h"
 #include "Icon.h"
 
-#define WIN PComponent(application)-> handle
+#define WIN PComponent(prima_guts.application)-> handle
 
 #define CF_NAME(x)   (guts. clipboard_formats[(x)*3])
 #define CF_TYPE(x)   (guts. clipboard_formats[(x)*3+1])

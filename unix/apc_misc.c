@@ -59,7 +59,7 @@ update_quarks_cache( Handle self)
 	if (!XX)
 		return false;
 
-	qClass = get_class_quark( self == application ? "Prima" : me-> self-> className);
+	qClass = get_class_quark( self == prima_guts.application ? "Prima" : me-> self-> className);
 	qInstance = get_instance_quark( me-> name ? me-> name : "noname");
 
 	free( XX-> q_class_name); XX-> q_class_name = NULL;
@@ -780,7 +780,7 @@ apc_show_message( const char * message, Bool utf8)
 	/* multi-monitor centering */
 	{
 		int i, nrects = 0;
-		Box *best = NULL, *rects = apc_application_get_monitor_rects( application, &nrects);
+		Box *best = NULL, *rects = apc_application_get_monitor_rects( prima_guts.application, &nrects);
 		for ( i = 0; i < nrects; i++) {
 				Box * curr = rects + i;
 				if ( best == NULL || best-> x > curr->x || best->y > curr->y)

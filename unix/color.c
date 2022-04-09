@@ -234,7 +234,7 @@ prima_allocate_color( Handle self, Color color, Brush * brush)
 	} else {
 		if ( guts. palSize > 0) {
 			int ab2;
-			Bool dyna = guts. dynamicColors && self && X(self)-> type. widget && ( self != application);
+			Bool dyna = guts. dynamicColors && self && X(self)-> type. widget && ( self != prima_guts.application);
 			brush-> primary = prima_color_find( self, color, -1, &ab2, RANK_FREE);
 
 			if ( dyna && ab2 > 12) {
@@ -936,7 +936,7 @@ prima_color_find( Handle self, long color, int maxDiff, int * diff, int maxRank)
 	int r = (color >> 16) & 0xff;
 	int lossy = maxDiff != 0;
 	if ( maxDiff < 0) maxDiff = 256 * 256 * 3;
-	global = self ? (X(self)-> type. widget && ( self != application)) : true;
+	global = self ? (X(self)-> type. widget && ( self != prima_guts.application)) : true;
 
 	maxDiff++;
 	if ( global || !guts. dynamicColors || (maxRank > RANK_FREE)) {
@@ -1017,7 +1017,7 @@ prima_color_add_ref( Handle self, int index, int rank)
 	int r, nr = (rank == RANK_PRIORITY) ? 2 : 1;
 	if ( index < 0 || index >= guts. palSize) return false;
 	if ( guts. palette[index]. rank == RANK_IMMUTABLE) return false;
-	if ( !self || ( self == application)) return false;
+	if ( !self || ( self == prima_guts.application)) return false;
 	r = wlpal_get(self, index);
 	if ( r != 0 && r <= nr) return false;
 	if ( r == 0) list_add( &guts. palette[index]. users, self);
@@ -1081,7 +1081,7 @@ prima_palette_replace( Handle self, Bool fast)
 	List widgets;
 
 	if ( !guts. dynamicColors) return true;
-	if ( self == application) return true;
+	if ( self == prima_guts.application) return true;
 
 	if ( XX-> type.widget) rank = RANK_PRIORITY; else
 	if ( XX-> type.image || XX-> type. dbm) rank = RANK_LOCKED; else

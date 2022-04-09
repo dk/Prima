@@ -822,7 +822,7 @@ apc_application_destroy( Handle self)
 		XCHECKPOINT;
 		hash_delete( guts.windows, (void*)&X_WINDOW, sizeof(X_WINDOW), false);
 	}
-	application = NULL_HANDLE;
+	prima_guts.application = NULL_HANDLE;
 	return true;
 }
 
@@ -897,7 +897,7 @@ apc_application_get_widget_from_point( Handle self, Point p)
 			Handle h;
 			if ( to == from) to = X_WINDOW;
 			h = (Handle)hash_fetch( guts.windows, (void*)&to, sizeof(to));
-			return ( h == application) ? NULL_HANDLE : h;
+			return ( h == prima_guts.application) ? NULL_HANDLE : h;
 		}
 	}
 	return NULL_HANDLE;
@@ -1055,7 +1055,7 @@ apc_application_get_monitor_rects( Handle self, int * nrects)
 Bool
 apc_application_go( Handle self)
 {
-	if (!application) return false;
+	if (!prima_guts.application) return false;
 
 	XNoOp( DISP);
 	XFlush( DISP);
@@ -1083,7 +1083,7 @@ apc_application_unlock( Handle self)
 Bool
 apc_application_stop( Handle self)
 {
-	if ( application == NULL_HANDLE ) return false;
+	if ( prima_guts.application == NULL_HANDLE ) return false;
 	guts. application_stop_signal = true;
 	return true;
 }
@@ -1098,10 +1098,10 @@ apc_application_sync(void)
 Bool
 apc_application_yield( Bool wait_for_event)
 {
-	if (!application) return false;
+	if (!prima_guts.application) return false;
 	guts. application_stop_signal = false;
 	prima_one_loop_round(wait_for_event ? WAIT_IF_NONE : WAIT_NEVER, true);
 	guts. application_stop_signal = false;
 	XSync( DISP, false);
-	return application != NULL_HANDLE && !guts. applicationClose;
+	return prima_guts.application != NULL_HANDLE && !guts. applicationClose;
 }

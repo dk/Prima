@@ -16,17 +16,17 @@ apc_widget_map_points( Handle self, Bool toScreen, int n, Point *p)
 {
 	Point d = {0,0};
 
-	while ( self && (self != application)) {
+	while ( self && (self != prima_guts.application)) {
 		DEFXX;
 		Point origin;
 		if ( XX-> parentHandle) {
 			XWindow dummy;
 			XTranslateCoordinates( DISP, XX-> client, guts. root, 0, XX-> size.y-1, &origin.x, &origin.y, &dummy);
 			origin. y = guts. displaySize. y - origin. y;
-			self = application;
+			self = prima_guts.application;
 		} else {
 			origin = XX-> origin;
-			self = XX-> flags. clip_owner ? PWidget(self)-> owner : application;
+			self = XX-> flags. clip_owner ? PWidget(self)-> owner : prima_guts.application;
 		}
 		d. x += origin. x;
 		d. y += origin. y;
@@ -254,7 +254,7 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
 		layered = false;
 
 	layered_requested = layered;
-	layered = ( clip_owner && owner != application ) ? X(owner)->flags. layered : layered_requested;
+	layered = ( clip_owner && owner != prima_guts.application ) ? X(owner)->flags. layered : layered_requested;
 
 	XX-> visual   = layered ? &guts. argb_visual : &guts. visual;
 	XX-> colormap = layered ? guts. argbColormap : guts. defaultColormap;
@@ -300,9 +300,9 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
 	XX-> flags. transparent = !!transparent;
 	XX-> type.drawable = true;
 	XX-> type.widget = true;
-	if ( !clip_owner || ( owner == application)) {
+	if ( !clip_owner || ( owner == prima_guts.application)) {
 		parent = guts. root;
-		real_owner = application;
+		real_owner = prima_guts.application;
 	} else {
 		parent = X( owner)-> client;
 		real_owner = owner;
@@ -327,7 +327,7 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
 		| OwnerGrabButtonMask;
 	attrs. override_redirect = true;
 	attrs. do_not_propagate_mask = attrs. event_mask;
-	attrs. win_gravity = ( clip_owner && ( owner != application))
+	attrs. win_gravity = ( clip_owner && ( owner != prima_guts.application))
 		? SouthWestGravity : NorthWestGravity;
 	attrs. colormap = XX->colormap;
 
@@ -792,7 +792,7 @@ Bool
 apc_widget_is_responsive( Handle self)
 {
 	Bool ena = true;
-	while ( ena && self != application) {
+	while ( ena && self != prima_guts.application) {
 		ena  = XF_ENABLED(X(self)) ? true : false;
 		self = PWidget(self)-> owner;
 	}
@@ -1116,7 +1116,7 @@ apc_widget_set_focused( Handle self)
 	XWindow focus = None, xfoc;
 	XEvent ev;
 	if ( guts. message_boxes) return false;
-	if ( self && ( self != CApplication( application)-> map_focus( application, self)))
+	if ( self && ( self != C_APPLICATION-> map_focus(prima_guts.application, self)))
 		return false;
 	if ( self) {
 		if (XT_IS_WINDOW(X(self))) return true; /* already done in activate() */
@@ -1129,7 +1129,7 @@ apc_widget_set_focused( Handle self)
 		Handle who = ( Handle) hash_fetch( guts.windows, (void*)&xfoc, sizeof(xfoc)), x = self;
 		while ( who && XT_IS_WINDOW(X(who))) who = PComponent( who)-> owner;
 		while ( x && !XT_IS_WINDOW(X(x)) && X(x)->flags.clip_owner) x = PComponent( x)-> owner;
-		if ( x && x != application && x != who && XT_IS_WINDOW(X(x)))
+		if ( x && x != prima_guts.application && x != who && XT_IS_WINDOW(X(x)))
 			XSetInputFocus( DISP, PComponent(x)-> handle, RevertToNone, guts. currentFocusTime);
 	}
 
@@ -1247,7 +1247,7 @@ apc_XUnmapWindow( Handle self)
 			if (PComponent(self)-> owner) {
 				z = PComponent(self)-> owner;
 				while ( z && !X(z)-> type. window) z = PComponent(z)-> owner;
-				if ( z && z != application)
+				if ( z && z != prima_guts.application)
 					XSetInputFocus( DISP, PComponent(z)-> handle, RevertToNone, guts. currentFocusTime);
 			}
 			break;
@@ -1275,7 +1275,7 @@ prima_send_cmSize( Handle self, Point oldSize)
 		for ( i = 0; i < count; i++) {
 			PWidget child = PWidget( PWidget( self)-> widgets. items[i]);
 			if ((( PWidget(child)-> growMode & gmDontCare) == 0) &&
-				( !X(child)-> flags. clip_owner || ( child-> owner == application))) {
+				( !X(child)-> flags. clip_owner || ( child-> owner == prima_guts.application))) {
 				XMoveWindow( DISP, child-> handle, X(child)-> origin.x, y - X(child)-> size.y - X(child)-> origin. y);
 			}
 		}

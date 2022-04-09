@@ -76,7 +76,7 @@ apc_timer_set_timeout( Handle self, int timeout)
 	sys-> timeout = timeout;
 	if ( !real || is_opt( optActive))
 		apc_timer_start( self);
-	return real ? (application != NULL_HANDLE) : true;
+	return real ? (prima_guts.application != NULL_HANDLE) : true;
 }
 
 Bool
@@ -86,7 +86,7 @@ apc_timer_start( Handle self)
 	ENTERTIMER;
 
 	inactivate_timer( sys);
-	if ( real && !application ) return false;
+	if ( real && !prima_guts.application ) return false;
 
 	gettimeofday( &sys-> when, NULL);
 	sys-> when. tv_sec += sys-> timeout / 1000;

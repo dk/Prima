@@ -679,7 +679,7 @@ apc_pointer_set_shape( Handle self, int id)
 	id = get_cursor( self, NULL, NULL, NULL, &uc);
 	if ( id == crUser || is_drag_cursor_available(id)) {
 		if ( uc != None ) {
-			if ( self != application) {
+			if ( self != prima_guts.application) {
 				if ( guts. pointer_invisible_count < 0) {
 					if ( !XX-> flags. pointer_obscured) {
 						XDefineCursor( DISP, XX-> udrawable, prima_null_pointer());
@@ -700,7 +700,7 @@ apc_pointer_set_shape( Handle self, int id)
 			XCHECKPOINT;
 		}
 		XX-> actual_pointer = predefined_cursors[id];
-		if ( self != application) {
+		if ( self != prima_guts.application) {
 			if ( guts. pointer_invisible_count < 0) {
 				if ( !XX-> flags. pointer_obscured) {
 					XDefineCursor( DISP, XX-> udrawable, prima_null_pointer());
@@ -747,7 +747,7 @@ apc_pointer_set_user( Handle self, Handle icon, Point hot_spot)
 		ok = create_cursor(&XX->user_pointer, icon, hot_spot);
 		if ( !ok ) return false;
 
-		if ( XX-> pointer_id == crUser && self != application) {
+		if ( XX-> pointer_id == crUser && self != prima_guts.application) {
 			if ( guts. pointer_invisible_count < 0) {
 				if ( !XX-> flags. pointer_obscured) {
 					XDefineCursor( DISP, XX-> udrawable, prima_null_pointer());
@@ -782,8 +782,8 @@ apc_pointer_set_visible( Handle self, Bool visible)
 
 	/* setting pointer for widget under cursor */
 	{
-		Point p    = apc_pointer_get_pos( application);
-		Handle wij = apc_application_get_widget_from_point( application, p);
+		Point p    = apc_pointer_get_pos( prima_guts.application);
+		Handle wij = apc_application_get_widget_from_point( prima_guts.application, p);
 		if ( wij) {
 			X(wij)-> flags. pointer_obscured = (visible ? 0 : 1);
 			XDefineCursor( DISP, X(wij)-> udrawable, prima_get_cursor(wij));

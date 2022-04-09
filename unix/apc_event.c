@@ -692,14 +692,14 @@ handle_key_event( Handle self, XKeyEvent *ev, Event *e, KeySym * sym, Bool relea
 static Bool
 input_disabled( PDrawableSysData XX, Bool ignore_horizon)
 {
-	Handle horizon = application;
+	Handle horizon = prima_guts.application;
 
 	if ( guts. message_boxes) return true;
 	if ( guts. modal_count > 0 && !ignore_horizon) {
-		horizon = C_APPLICATION-> map_focus( application, XX-> self);
+		horizon = C_APPLICATION-> map_focus( prima_guts.application, XX-> self);
 		if ( XX-> self == horizon) return !XF_ENABLED(XX);
 	}
-	while (XX->self && XX-> self != horizon && XX-> self != application) {
+	while (XX->self && XX-> self != horizon && XX-> self != prima_guts.application) {
 		if (!XF_ENABLED(XX)) return true;
 		XX = X(PWidget(XX->self)->owner);
 	}
@@ -904,7 +904,7 @@ wm_event( Handle self, XEvent *xev, PEvent ev)
 		if ( xev-> xclient. message_type == WM_PROTOCOLS) {
 			if ((Atom) xev-> xclient. data. l[0] == WM_DELETE_WINDOW) {
 				if ( guts. message_boxes) return false;
-				if ( self != C_APPLICATION-> map_focus( application, self))
+				if ( self != C_APPLICATION-> map_focus( prima_guts.application, self))
 					return false;
 				ev-> cmd = cmClose;
 				return true;
@@ -919,7 +919,7 @@ wm_event( Handle self, XEvent *xev, PEvent ev)
 					return false;
 				}
 
-				selectee = C_APPLICATION-> map_focus( application, self);
+				selectee = C_APPLICATION-> map_focus( prima_guts.application, self);
 
 				/* under modal window? */
 
@@ -1346,17 +1346,17 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 		if ( e. cmd == cmMouseDown) {
 			if ( XX-> flags. first_click) {
 				if ( ! is_opt( optSelectable)) {
-					Handle x = self, f = guts. focused ? guts. focused : application;
-					while ( f && !X(f)-> type. window && ( f != application)) f = (( PWidget) f)-> owner;
+					Handle x = self, f = guts. focused ? guts. focused : prima_guts.application;
+					while ( f && !X(f)-> type. window && ( f != prima_guts.application)) f = (( PWidget) f)-> owner;
 					while ( !X(x)-> type. window && X(x)-> flags. clip_owner &&
-						x != application) x = (( PWidget) x)-> owner;
+						x != prima_guts.application) x = (( PWidget) x)-> owner;
 					if ( x && x != f && X(x)-> type. window)
 						XSetInputFocus( DISP, PWidget(x)-> handle, RevertToParent, bev-> time);
 				}
 			} else {
-				Handle x = self, f = guts. focused ? guts. focused : application;
-				while ( !X(x)-> type. window && ( x != application)) x = (( PWidget) x)-> owner;
-				while ( !X(f)-> type. window && ( f != application)) f = (( PWidget) f)-> owner;
+				Handle x = self, f = guts. focused ? guts. focused : prima_guts.application;
+				while ( !X(x)-> type. window && ( x != prima_guts.application)) x = (( PWidget) x)-> owner;
+				while ( !X(f)-> type. window && ( f != prima_guts.application)) f = (( PWidget) f)-> owner;
 				if ( x != f) {
 					e. cmd = 0;
 					if (P_APPLICATION-> hintUnder == self)
@@ -1460,9 +1460,9 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 		syntetic_mouse_move(); /* XXX - simulated MouseMove event for compatibility reasons */
 
 		if (!XT_IS_WINDOW(XX))
-			frame = C_APPLICATION-> top_frame( application, self);
-		if ( C_APPLICATION-> map_focus( application, frame) != frame) {
-			C_APPLICATION-> popup_modal( application);
+			frame = C_APPLICATION-> top_frame( prima_guts.application, self);
+		if ( C_APPLICATION-> map_focus( prima_guts.application, frame) != frame) {
+			C_APPLICATION-> popup_modal( prima_guts.application);
 			break;
 		}
 
@@ -1956,7 +1956,7 @@ perform_pending_paints( void)
 	int i, events = 0;
 	List list;
 
-	if ( !application ) return 0;
+	if ( !prima_guts.application ) return 0;
 
 	list_create(&list, 256, 1024);
 	for ( XX = TAILQ_FIRST( &guts.paintq); XX != NULL; ) {
@@ -2009,7 +2009,7 @@ send_pending_events( void)
 	PendingEvent *pe, *next;
 	int stage, events = 0;
 
-	if ( !application ) return 0;
+	if ( !prima_guts.application ) return 0;
 
 	for ( pe = TAILQ_FIRST( &guts.peventq); pe != NULL; ) {
 		next = TAILQ_NEXT( pe, peventq_link);
@@ -2035,7 +2035,7 @@ send_queued_x_events(int careOfApplication)
 	int events = 0, queued_events;
 	XEvent ev, next_event;
 
-	if ( !application && careOfApplication ) return 0;
+	if ( !prima_guts.application && careOfApplication ) return 0;
 
 	if (( queued_events = XEventsQueued( DISP, QueuedAlready)) <= 0)
 		return 0;
@@ -2044,7 +2044,7 @@ send_queued_x_events(int careOfApplication)
 	XCHECKPOINT;
 	queued_events--;
 	while ( queued_events > 0) {
-		if (!application && careOfApplication) return false;
+		if (!prima_guts.application && careOfApplication) return false;
 		XNextEvent( DISP, &next_event);
 		XCHECKPOINT;
 		prima_handle_event( &ev, &next_event);
@@ -2052,7 +2052,7 @@ send_queued_x_events(int careOfApplication)
 		queued_events = XEventsQueued( DISP, QueuedAlready);
 		memcpy( &ev, &next_event, sizeof( XEvent));
 	}
-	if (!application && careOfApplication) return events;
+	if (!prima_guts.application && careOfApplication) return events;
 	prima_handle_event( &ev, NULL);
 	events++;
 	return events;
@@ -2111,7 +2111,7 @@ process_file_events(Bool * x_events_pending, struct timeval * t)
 
 	if ( x_events_pending )
 		*x_events_pending = 0;
-	if ( !application ) return 0;
+	if ( !prima_guts.application ) return 0;
 
 	read_set  = guts.read_set;
 	write_set = guts.write_set;
@@ -2240,26 +2240,26 @@ prima_one_loop_round( int wait, Bool careOfApplication)
 		t. tv_sec = 0;
 		t. tv_usec = 0;
 		events += process_file_events(&x_events_pending, &t);
-		if ( x_events_pending && ( application || !careOfApplication) ) {
+		if ( x_events_pending && ( prima_guts.application || !careOfApplication) ) {
 			x_flush();
 			events += handle_queued_events(careOfApplication);
 		}
 		if ( wait == WAIT_NEVER || ( events > 0 && wait == WAIT_IF_NONE))
 			return true;
-		if ( !application || guts. applicationClose || guts. application_stop_signal)
+		if ( !prima_guts.application || guts. applicationClose || guts. application_stop_signal)
 			return false;
 		if ( events == 0 )
 			break;
 	}
 
 	/* wait for events */
-	prima_simple_message( application, cmIdle, false);
+	prima_simple_message( prima_guts.application, cmIdle, false);
 	process_file_events(&x_events_pending, select_timeout(&timeout));
-	if ( x_events_pending && ( application || !careOfApplication) )
+	if ( x_events_pending && ( prima_guts.application || !careOfApplication) )
 		x_flush();
 	handle_queued_events(careOfApplication);
 
-	return application != NULL_HANDLE;
+	return prima_guts.application != NULL_HANDLE;
 }
 
 Bool
