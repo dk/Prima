@@ -160,6 +160,7 @@ include/apricot.h
 include/guts.h
 include/img.h
 include/img_conv.h
+include/Drawable_private.h
 include/unix/guts.h
 include/unix/queue.h
 include/win32/win32guts.h
