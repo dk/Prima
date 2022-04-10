@@ -686,7 +686,7 @@ find_filter( int scaling )
 
 /* Fast rotation by Paeth algortihm. Accepts grayscale images with bpp >= 8, and 24 bpp RGBs */
 Bool
-img_generic_rotate( Handle self, float degrees, PImage dummy)
+img_generic_rotate( Handle self, float degrees, PImage output)
 {
 	Bool apply_180 = false;
 	Image *i = (PImage)self, s0, s1, s2;
@@ -734,21 +734,21 @@ img_generic_rotate( Handle self, float degrees, PImage dummy)
 	free(s1.data);
 
 	s3dim.x++; /* double shearing by x can result in 2 extra pixels, not just 1 */
-	if ( !create_tmp_image(i, channels, dummy, s3dim)) {
+	if ( !create_tmp_image(i, channels, output, s3dim)) {
 		free(s1.data);
 		return false;
 	}
-	shear_x(&s2, channels, dummy, tan2, filter, -s3min.x,false);
+	shear_x(&s2, channels, output, tan2, filter, -s3min.x,false);
 	free(s2.data);
 
-	dummy-> w /= channels;
-	dummy-> type = i->type;
+	output-> w /= channels;
+	output-> type = i->type;
 
 	return true;
 }
 
 static Bool
-integral_rotate( Handle self, int degrees, PImage dummy)
+integral_rotate( Handle self, int degrees, PImage output)
 {
 	PImage i = (PImage) self;
 	int w, h;
@@ -760,12 +760,12 @@ integral_rotate( Handle self, int degrees, PImage dummy)
 		h = i->h;
 	}
 
-	img_fill_dummy( dummy, w, h, i->type, NULL, i->palette);
-	if (!(dummy->data = malloc( dummy->dataSize))) {
-		warn("not enough memory: %d bytes", dummy->dataSize);
+	img_fill_dummy( output, w, h, i->type, NULL, i->palette);
+	if (!(output->data = malloc( output->dataSize))) {
+		warn("not enough memory: %d bytes", output->dataSize);
 		return false;
 	}
-	img_integral_rotate( self, dummy->data, dummy->lineSize, degrees);
+	img_integral_rotate( self, output->data, output->lineSize, degrees);
 	return true;
 }
 
@@ -779,7 +779,7 @@ roundoff(float * matrix, int count)
 
 /* very special case for rotation */
 static int
-check_rotated_case( Handle self, float *matrix, PImage dummy)
+check_rotated_case( Handle self, float *matrix, PImage output)
 {
 	if ( matrix[0] == matrix[3] && matrix[1] == -matrix[2] ) {
 		float angle = acos(matrix[0]);
@@ -789,16 +789,16 @@ check_rotated_case( Handle self, float *matrix, PImage dummy)
 			float cos1 = matrix[0];
 			if ( cos1 == 0.0 ) {
 				if ( sin1 == 1.0 ) 
-					return integral_rotate(self, 90, dummy);
+					return integral_rotate(self, 90, output);
 				else if ( sin1 == -1.0 )
-					return integral_rotate(self, 270, dummy);
+					return integral_rotate(self, 270, output);
 			} else if ( cos1 == 1.0 && sin1 == 0.0 ) {
-				img_fill_dummy( dummy, 0, 0, 0, NULL, NULL);
+				img_fill_dummy( output, 0, 0, 0, NULL, NULL);
 				return true;
 			} else if ( cos1 == -1.0 && sin1 == 0.0 ) 
-				return integral_rotate(self, 180, dummy);
+				return integral_rotate(self, 180, output);
 
-			return img_generic_rotate( self, angle * RAD, dummy);
+			return img_generic_rotate( self, angle * RAD, output);
 		}
 	}
 	return -1;
@@ -964,7 +964,7 @@ select_ldu( float *matrix, LDUCoeff c, int * steps, int * n_steps)
    and addionally checks whether 90/180/270 integral rotation can be applied. */
 
 Bool
-img_2d_transform( Handle self, float *matrix, PImage dummy)
+img_2d_transform( Handle self, float *matrix, PImage output)
 {
 	int n_steps = 0, applied_steps = 0, steps[MAX_STEPS], step, n, type, channels;
 	Point p[4], dimensions[MAX_STEPS+1], offsets[MAX_STEPS];
@@ -973,7 +973,7 @@ img_2d_transform( Handle self, float *matrix, PImage dummy)
 	LDUCoeff c;
 
 	roundoff(matrix, 4);
-	if ((n = check_rotated_case(self, matrix, dummy)) >= 0)
+	if ((n = check_rotated_case(self, matrix, output)) >= 0)
 		return n;
 	select_ldu(matrix, c, steps, &n_steps);
 	for ( n = 0; n <= MAX_LDU_COEFF; n++)
@@ -1043,7 +1043,7 @@ img_2d_transform( Handle self, float *matrix, PImage dummy)
 	}
 
 	if ( applied_steps == 0 ) {
-		img_fill_dummy( dummy, 0, 0, 0, NULL, NULL);
+		img_fill_dummy( output, 0, 0, 0, NULL, NULL);
 		return true;
 	}
 
@@ -1092,9 +1092,9 @@ img_2d_transform( Handle self, float *matrix, PImage dummy)
 			free(tmp_images[step].data);
 	}
 
-	*dummy = tmp_images[n_steps];
-	dummy-> w /= channels;
-	dummy-> type = i->type;
+	*output = tmp_images[n_steps];
+	output-> w /= channels;
+	output-> type = i->type;
 	return true;
 }
 
