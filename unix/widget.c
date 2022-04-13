@@ -191,6 +191,7 @@ prima_get_view_ex( Handle self, PViewProfile p)
 		p-> size      = apc_widget_get_size( self);
 		p-> title     = NULL;
 	}
+	p-> virtualSize = PWidget(self)-> virtualSize;
 	p-> capture   = apc_widget_is_captured( self);
 	p-> focused   = apc_widget_is_focused( self);
 	p-> visible   = apc_widget_is_visible( self);
@@ -215,6 +216,7 @@ prima_set_view_ex( Handle self, PViewProfile p)
 	} else {
 		apc_widget_set_rect( self, p-> pos.x, p-> pos.y, p-> size.x, p->size.y);
 	}
+	PWidget(self)-> virtualSize = p-> virtualSize;
 
 	if ( p-> visible) XMapWindow( DISP, X_WINDOW);
 	if ( p-> focused) apc_widget_set_focused( self);

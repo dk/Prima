@@ -1536,6 +1536,7 @@ prima_cocoa_is_x11_local(void);
 typedef struct _ViewProfile {
 Point        pos;
 Point        size;
+Point        virtualSize;
 Bool         visible;
 Bool         focused;
 Handle       capture;
