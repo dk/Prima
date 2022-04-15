@@ -252,7 +252,7 @@ sub abs_path
 	return undef unless Prima::Utils::chdir($path);
 	my $realpath = Prima::Utils::getcwd();
 	if (! ((_d $cwd) && (Prima::Utils::chdir($cwd)))) {
-		_croak("Cannot chdir back to $cwd: $!");
+		croak("Cannot chdir back to $cwd: $!");
 	}
 
 	return $realpath;
