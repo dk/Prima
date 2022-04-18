@@ -180,11 +180,10 @@ size_t
 strlcpy(char * dst, const char * src, size_t dstsize)
 {
 	size_t l = strlen(src);
-	if (l + 1 < dstsize)
-		memcpy(dst, src, dstsize + 1);
-	else if (dstsize > 0) {
-		memcpy(dst, src, dstsize - 1);
-		dst[dstsize - 1] = 0;
+	if (dstsize > 0) {
+		size_t len = (l >= dstsize) ? dstsize - 1 : l;
+		memcpy(dst, src, len);
+		dst[len] = 0;
 	}
 	return l;
 }
