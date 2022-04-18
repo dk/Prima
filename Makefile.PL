@@ -1848,7 +1848,7 @@ sub setup_codecs
 
 	my @codec_libpath = $Config{installsitearch};
 	my @warn_codecs;
-	my $webp_version;
+	my ($webp_version, $heif_version);
 	CODEC: for my $cx ( @codecs) {
 		my @inc;
 		my $foundlib;
@@ -1866,7 +1866,10 @@ sub setup_codecs
 						if $MODVERSIONS{libwebp} =~ /^(\d+).(\d+).(\d+)/;
 				}
 			} elsif ( $codec eq 'heif') {
-				$found = 1 if pkgconfig('libheif');
+				if ( pkgconfig('libheif')) {
+					$heif_version = $1 * 100 + $2 if
+						$MODVERSIONS{libheif} =~ /^(\d+).(\d+).\d+/;
+				}
 			} elsif ( $codec eq 'png') {
 				$found = 1 if pkgconfig('libpng');
 			} elsif ( $codec eq 'tiff') {
@@ -1967,6 +1970,13 @@ VER
 				", skipping\n";
 			@ACTIVE_CODECS = grep { !/webp/ } @ACTIVE_CODECS;
 			$PASSIVE_CODECS{'img/codec_webp.c'} = 1;
+		}
+	}
+	if ( defined $heif_version ) {
+		if ( $heif_version < 112 ) {
+			printlog "** Warning: libheif version is too low, at least 1.12.0 is needed, skipping\n";
+			@ACTIVE_CODECS = grep { !/heif/ } @ACTIVE_CODECS;
+			$PASSIVE_CODECS{'img/codec_heif.c'} = 1;
 		}
 	}
 

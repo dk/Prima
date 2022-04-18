@@ -229,9 +229,9 @@ read_metadata(const struct heif_image_handle* h, HV * profile)
 		profile = newHV();
 		av_push( av, newRV_noinc((SV*)profile));
 
-		c = heif_image_handle_get_metadata_type(h, ids[i]);
+		c = (char*) heif_image_handle_get_metadata_type(h, ids[i]);
 		pset_c(type, c);
-		c = heif_image_handle_get_metadata_content_type(h, ids[i]);
+		c = (char*) heif_image_handle_get_metadata_content_type(h, ids[i]);
 		pset_c(content_type, c);
 
 		sz = heif_image_handle_get_metadata_size(h, ids[i]);
