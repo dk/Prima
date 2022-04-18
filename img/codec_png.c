@@ -249,7 +249,7 @@ init( PImgCodecInfo * info, void * param)
 }
 
 
-#define outc(x){ strncpy( fi-> errbuf, x, 256); return false;}
+#define outc(x){ strlcpy( fi-> errbuf, x, 256); return false;}
 #define outcm(dd){ snprintf( fi-> errbuf, 256, "Not enough memory (%d bytes)", (int)(dd)); return false;}
 
 static HV *
@@ -319,7 +319,7 @@ PNGAPI
 error_fn( png_structp png_ptr, png_const_charp msg)
 {
 	char * buf = ( char *) png_get_error_ptr( png_ptr);
-	if ( buf) strncpy( buf, msg, 256);
+	if ( buf) strlcpy( buf, msg, 256);
 	throw(png_ptr);
 }
 

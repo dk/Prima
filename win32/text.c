@@ -737,7 +737,7 @@ langid(const char *lang)
 
 	if ( strncmp( lang, last_lang, LANGBUF) == 0) return last_langid;
 	last_langid = make_langid(lang);
-	strncpy( last_lang, lang, LANGBUF);
+	strlcpy( last_lang, lang, LANGBUF);
 	return last_langid;
 #undef LANGBUF
 }
@@ -1512,7 +1512,7 @@ apc_gp_get_mapper_ranges(PFont font, int * count, unsigned int * flags)
 
 	*count = 0;
 
-	strncpy(name, font->name, 256);
+	strlcpy(name, font->name, 256);
 	apc_font_pick( NULL_HANDLE, font, font);
 	if ( strcmp( font->name, name ) != 0 ) 
 		return NULL;

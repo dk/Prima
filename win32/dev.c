@@ -178,8 +178,8 @@ apc_prn_enumerate( Handle self, int * count)
 
 	for ( i = 0; i < returned; i++)
 	{
-		strncpy( list[ i]. name,   ppi[ i]. pPrinterName, 255);   list[ i]. name[ 255]   = 0;
-		strncpy( list[ i]. device, ppi[ i]. pPortName, 255);      list[ i]. device[ 255] = 0;
+		strlcpy( list[ i]. name,   ppi[ i]. pPrinterName, 255);
+		strlcpy( list[ i]. device, ppi[ i]. pPortName, 255);
 		list[ i]. defaultPrinter = (( printer != NULL) && ( strcmp( printer, list[ i]. name) == 0));
 	}
 	*count = returned;
@@ -496,7 +496,7 @@ apc_prn_set_option( Handle self, char * option, char * value)
 
 	/* DM_FORMNAME string is special because it's a literal string */
 	if ( v == DM_FORMNAME) {
-		strncpy((char*) dev-> dmFormName, value, CCHFORMNAME);
+		strlcpy((char*) dev-> dmFormName, value, CCHFORMNAME);
 		dev-> dmFormName[CCHFORMNAME-1] = 0;
 		return true;
 	}
@@ -639,7 +639,7 @@ apc_prn_get_option( Handle self, char * option, char ** value)
 		sprintf( c = buf, "%d", dev-> dmCollate);
 		break;
 	case DM_FORMNAME:
-		strncpy( c = buf, (char*)dev-> dmFormName, CCHFORMNAME);
+		strlcpy( c = buf, (char*)dev-> dmFormName, CCHFORMNAME);
 		break;
 	default:
 		return false;

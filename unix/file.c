@@ -212,7 +212,7 @@ apc_fs_readdir( PDirHandleRec dh, char * entry)
 	struct dirent *de;
 	if ( !( de = readdir(dh->handle)))
 		return false;
-	strncpy( entry, de->d_name, PATH_MAX_UTF8);
+	strlcpy( entry, de->d_name, PATH_MAX_UTF8);
 	return true;
 }
 

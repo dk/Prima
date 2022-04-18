@@ -471,7 +471,7 @@ char * err_msg( DWORD errId, char * buffer)
 		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
 		( LPTSTR) &lpMsgBuf, 0, NULL);
 	if ( lpMsgBuf)
-		strncpy( buffer, ( const char *) lpMsgBuf, 256);
+		strlcpy( buffer, ( const char *) lpMsgBuf, 256);
 	else
 		buffer[0] = 0;
 	buffer[ 255] = 0;

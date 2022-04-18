@@ -103,7 +103,7 @@ load_output_message(j_common_ptr cinfo)
 	LoadRec *l = (LoadRec*)( fi-> instance);
 	if ( !l-> init) {
 		(*cinfo->err->format_message) (cinfo, buffer);
-		strncpy( fi-> errbuf, buffer, 256);
+		strlcpy( fi-> errbuf, buffer, 256);
 	}
 }
 
@@ -437,8 +437,7 @@ exif_find_angle_tag( unsigned char * c, STRLEN len, int wipe)
 	c += strlen( sig );
 	if ((c2 = strstr((char*)c, "<")) == NULL) return 0;
 
-	strncpy( buf, (char*)c, c2 - (char*)c);
-	buf[255] = 0;
+	strlcpy( buf, (char*)c, c2 - (char*)c);
 	i = atoi(buf);
 	if ( i == 0 ) return 0;
 
@@ -724,7 +723,7 @@ save_output_message(j_common_ptr cinfo)
 	SaveRec *l = (SaveRec*)( fi-> instance);
 	if ( !l-> init) {
 		(*cinfo->err->format_message) (cinfo, buffer);
-		strncpy( fi-> errbuf, buffer, 256);
+		strlcpy( fi-> errbuf, buffer, 256);
 	}
 }
 

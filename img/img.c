@@ -208,7 +208,7 @@ apc_img_load( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq,  
 
 
 #define out(x){ err = true;\
-	strncpy( fi.errbuf, x, 256);\
+	strlcpy( fi.errbuf, x, 256);\
 	goto EXIT_NOW;}
 
 #define outd(x,d){ err = true;\
@@ -842,7 +842,7 @@ apc_img_save( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq, H
 	char dummy_error_buf[256];
 
 #define out(x){ err = true;\
-	strncpy( fi.errbuf, x, 256);\
+	strlcpy( fi.errbuf, x, 256);\
 	goto EXIT_NOW;}
 
 #define outd(x,d){ err = true;\

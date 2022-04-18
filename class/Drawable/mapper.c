@@ -86,7 +86,7 @@ font_key( const char * name, unsigned int style)
 	static char buf[2048];
 	if ( !name ) return NULL;
 	buf[0] = '0' + (style & STYLE_MASK);
-	strncpy( buf + 1, name, 2046 );
+	strlcpy( buf + 1, name, 2046 );
 	return buf;
 }
 
@@ -112,8 +112,7 @@ prima_font_mapper_save_font(const char * name, unsigned int style)
 	f->undef.encoding = 0; /* needs enforcing */
 	if (name) {
 		f->undef.name = 0;
-		strncpy(f->name, name, 256);
-		f->name[255] = 0;
+		strlcpy(f->name, name, 256);
 		f->undef.style = 0;
 		f->style = style;
 	}

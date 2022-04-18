@@ -114,8 +114,7 @@ END:;
 #ifndef __CYGWIN__
 					msg = err_msg( err, socketErrBuf);
 #else
-					strncpy( msg = socketErrBuf, strerror(err), 255);
-					socketErrBuf[255] = 0;
+					strlcpy( msg = socketErrBuf, strerror(err), 255);
 #endif
 					PostThreadMessage( guts. mainThreadId, WM_CROAK, 0, (LPARAM) msg);
 				}

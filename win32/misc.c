@@ -92,7 +92,7 @@ apc_query_drive_type( const char *drive)
 #ifdef __CYGWIN__
 	return false;
 #endif
-	strncpy( buf, drive, 255);             //     sometimes D: isn't enough for 95,
+	strlcpy( buf, drive, 255);             //     sometimes D: isn't enough for 95,
 	if ( buf[1] == ':' && buf[2] == 0) {   //     but ok for D:\.
 		buf[2] = '\\';                      //
 		buf[3] = 0;                         //

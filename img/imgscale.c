@@ -437,7 +437,7 @@ ic_stretch_box( int type, Byte * src_data, int src_w, int src_h, Byte * dst_data
 		break;
 	}
 	if ( xproc == NULL ) {
-		strncpy(error, "Cannot stretch this image type", 255);
+		strlcpy(error, "Cannot stretch this image type", 255);
 		return false;
 	}
 
@@ -507,7 +507,7 @@ ic_stretch_box( int type, Byte * src_data, int src_w, int src_h, Byte * dst_data
 	if ( yproc ) {
 		semistatic_init(&pimpl_buf, &impl_buf, 1, 1024);
 		if ( !semistatic_expand(&pimpl_buf, dst_line)) {
-			strncpy(error, "Not enough memory", 255);
+			strlcpy(error, "Not enough memory", 255);
 			return false;
 		}
 	}
@@ -910,11 +910,11 @@ stretch_filtered( int type, Byte * old_data, int old_w, int old_h, Byte * new_da
 		}
 	}
 	if ( !filter ) {
-		strncpy( error, "no appropriate scaling filter found", 255);
+		strlcpy( error, "no appropriate scaling filter found", 255);
 		return false;
 	}
 	if ( w <= 0 || h <= 0) {
-		strncpy(error, "image dimensions must be positive", 255);
+		strlcpy(error, "image dimensions must be positive", 255);
 		return false;
 	}
 
@@ -924,7 +924,7 @@ stretch_filtered( int type, Byte * old_data, int old_w, int old_h, Byte * new_da
 	case imNibble:
 	case im256:
 	case imNibble | imGrayScale:
-		strncpy(error, "type not supported", 255);
+		strlcpy(error, "type not supported", 255);
 		return false;
 	case imRGB:
 		channels = 3;

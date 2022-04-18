@@ -907,7 +907,7 @@ font_pp2font( char * presParam, Font * f)
 	} else
 		f-> size = 10;
 
-	strncpy( f-> name, p, 255);
+	strlcpy( f-> name, p, 255);
 	p = f-> name;
 	f-> style = 0;
 	f-> pitch = fpDefault;
@@ -1168,7 +1168,7 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
 			}
 			font_textmetric2font( &es. tm, font, true);
 			font-> direction = 0;
-			strncpy( font-> family, es. family, LF_FULLFACESIZE);
+			strlcpy( font-> family, es. family, LF_FULLFACESIZE);
 			font-> is_utf8.family = es.is_utf8_family;
 			font-> size     = ( es. tm. tmHeight - es. tm. tmInternalLeading) * 72.0 / res.y + 0.5;
 			font-> width    = es. lf. lfWidth;
@@ -1201,7 +1201,7 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
 				font-> width = tm. tmAveCharWidth;
 
 			font_textmetric2font( &tm, font, true);
-			strncpy( font-> family, es. family, LF_FULLFACESIZE);
+			strlcpy( font-> family, es. family, LF_FULLFACESIZE);
 			font-> is_utf8.family = es.is_utf8_family;
 			out( fvOutline);
 		}
@@ -1569,7 +1569,7 @@ apc_lookup_color( const char * colorName)
 
 #define xcmp( name, stlen, retval)  if (( len == stlen) && ( strcmp( name, buf) == 0)) return retval
 
-	strncpy( buf, colorName, 255);
+	strlcpy( buf, colorName, 255);
 	len = strlen( buf);
 	for ( b = buf; *b; b++) *b = tolower(*b);
 

@@ -167,7 +167,7 @@ swap_pal( RGBColor * p)
 	p[1] = tmp;
 }
 
-#define outc(x){ strncpy( fi-> errbuf, x, 256); return false;}
+#define outc(x){ strlcpy( fi-> errbuf, x, 256); return false;}
 #define outr(fd) { snprintf( fi-> errbuf, 256, "Read error:%s",strerror( req_error( fd))); return false; }
 #define outw(fd) { snprintf( fi-> errbuf, 256, "Write error:%s",strerror( req_error( fd))); return false; }
 #define outs(fd) { snprintf( fi-> errbuf, 256, "Seek error:%s",strerror( req_error( fd))); return false; }

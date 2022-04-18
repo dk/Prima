@@ -1189,7 +1189,7 @@ prima_xft_fonts( PFont array, const char *facename, const char * encoding, int *
 					if ( hash_fetch( names, f-> name, strlen( f-> name))) continue;
 					hash_store( names, f-> name, strlen( f-> name), ( void*)1);
 				}
-				strncpy( f-> encoding, encoding, 255);
+				strlcpy( f-> encoding, encoding, 255);
 				f++;
 			}
 		} else if ( facename) {
@@ -1200,7 +1200,7 @@ prima_xft_fonts( PFont array, const char *facename, const char * encoding, int *
 				if ( !std_charsets[j]. enabled) continue;
 				if ( FcCharSetIntersectCount( c, std_charsets[j]. fcs) >= std_charsets[j]. glyphs - 1) {
 					*f = *tmpl;
-					strncpy( f-> encoding, std_charsets[j]. name, 255);
+					strlcpy( f-> encoding, std_charsets[j]. name, 255);
 					f++;
 				}
 			}
@@ -2410,7 +2410,7 @@ prima_xft_mapper_query_ranges(PFont font, int * count, unsigned int * flags)
 	char name[256];
 	XftFont * xft = NULL;
 	unsigned long * ranges;
-	strncpy(name, font->name, 256);
+	strlcpy(name, font->name, 256);
 	prima_xft_font_pick( NULL_HANDLE, font, font, NULL, &xft);
 	*flags = 0 | MAPPER_FLAGS_SYNTHETIC_PITCH;
 	if ( !xft || strcmp( font->name, name ) != 0 ) {
@@ -2605,7 +2605,7 @@ prima_xft_init_font_substitution(void)
 			if (( f = prima_font_mapper_save_font(guts.default_font.name, 0)) != NULL ) {
 				f->is_utf8 = guts.default_font.is_utf8;
 				f->undef.name = 0;
-				strncpy(f->family, guts.default_font.family,256);
+				strlcpy(f->family, guts.default_font.family,256);
 				f->undef.vector = 0;
 				f->vector = guts.default_font.vector;
 				f->undef.pitch = 0;

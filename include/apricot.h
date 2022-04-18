@@ -282,6 +282,11 @@ extern void *
 memmem(const void *l, size_t l_len, const void *s, size_t s_len);
 #endif
 
+#ifndef HAVE_STRLCPY
+extern size_t
+strlcpy(char * dst, const char * src, size_t dstsize);
+#endif
+
 
 #define alloc1(typ)     ((typ*)malloc(sizeof(typ)))
 #define allocn(typ,n)   ((typ*)malloc((n)*sizeof(typ)))

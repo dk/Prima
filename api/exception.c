@@ -42,7 +42,7 @@ exception_check_raise(void)
 {
 	char buf[1024];
 	if ( !exception_text ) return;
-	strncpy( buf, exception_text, 1023 );
+	strlcpy( buf, exception_text, 1024 );
 	free( exception_text );
 	exception_text = NULL;
 	croak("%s", buf);

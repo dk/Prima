@@ -230,8 +230,7 @@ prima_gtk_init(void)
 
 		if ( !f) continue;
 		bzero(f, sizeof(Font));
-		strncpy( f->name, pango_font_description_get_family(t->font_desc), 255);
-		f->name[255]=0;
+		strlcpy( f->name, pango_font_description_get_family(t->font_desc), 255);
 		/* does gnome ignore X resolution? */
 		f-> size = pango_font_description_get_size(t->font_desc) / PANGO_SCALE * (96.0 / guts. resolution. y) + .5;
 		weight = pango_font_description_get_weight(t->font_desc);
@@ -443,7 +442,7 @@ gtk_openfile( Bool open)
 		{
 			char * d = gtk_file_chooser_get_current_folder( GTK_FILE_CHOOSER (gtk_dialog));
 			if ( d) {
-				strncpy( gtk_current_folder, d, MAXPATHLEN);
+				strlcpy( gtk_current_folder, d, MAXPATHLEN);
 				gtk_current_folder_ptr = gtk_current_folder;
 				g_free( d);
 			} else {
@@ -500,8 +499,7 @@ prima_gtk_openfile( char * params)
 				gtk_current_folder_ptr = NULL;
 			} else {
 				gtk_current_folder_ptr = gtk_current_folder;
-				strncpy( gtk_current_folder, params, MAXPATHLEN);
-				gtk_current_folder[MAXPATHLEN] = 0;
+				strlcpy( gtk_current_folder, params, MAXPATHLEN);
 			}
 		} else
 			return duplicate_string( gtk_current_folder_ptr);
@@ -575,8 +573,7 @@ prima_gtk_openfile( char * params)
 			gtk_dialog_title_ptr = NULL;
 		} else {
 			gtk_dialog_title_ptr = gtk_dialog_title;
-			strncpy( gtk_dialog_title, params, 255);
-			gtk_dialog_title[255] = 0;
+			strlcpy( gtk_dialog_title, params, 255);
 		}
 	} else {
 		warn("gtk.OpenFile: Unknown function %s", params);

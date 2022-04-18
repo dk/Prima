@@ -847,7 +847,7 @@ apc_application_get_gui_info( char * description, int len1, char * language, int
 {
 	int ret = guiXLib;
 	if ( description)
-		strncpy( description, "X Window System", len1);
+		strlcpy( description, "X Window System", len1);
 
 #ifdef WITH_GTK
 	if ( guts. use_gtk ) {
@@ -978,32 +978,21 @@ apc_application_get_os_info( char *system, int slen,
 
 	if (!fetched) {
 		if ( uname(&name)!=0) {
-			strncpy( name. sysname, "Some UNIX", sizeof(name.sysname));
-			name. sysname[ sizeof(name.sysname)-1] = 0;
-			strncpy( name. release, "Unknown version of UNIX", sizeof(name.release));
-			name. release[ sizeof(name.release)-1] = 0;
-			strncpy( name. machine, "Unknown architecture", sizeof(name.machine));
-			name. machine[ sizeof(name.machine)-1] = 0;
+			strlcpy( name. sysname, "Some UNIX", sizeof(name.sysname));
+			strlcpy( name. release, "Unknown version of UNIX", sizeof(name.release));
+			strlcpy( name. machine, "Unknown architecture", sizeof(name.machine));
 		}
 		fetched = true;
 	}
 
-	if (system) {
-		strncpy( system, name. sysname, slen);
-		system[ slen-1] = 0;
-	}
-	if (release) {
-		strncpy( release, name. release, rlen);
-		release[ rlen-1] = 0;
-	}
-	if (vendor) {
-		strncpy( vendor, "Unknown vendor", vlen);
-		vendor[ vlen-1] = 0;
-	}
-	if (arch) {
-		strncpy( arch, name. machine, alen);
-		arch[ alen-1] = 0;
-	}
+	if (system)
+		strlcpy( system, name. sysname, slen);
+	if (release)
+		strlcpy( release, name. release, rlen);
+	if (vendor)
+		strlcpy( vendor, "Unknown vendor", vlen);
+	if (arch)
+		strlcpy( arch, name. machine, alen);
 
 	return apcUnix;
 }

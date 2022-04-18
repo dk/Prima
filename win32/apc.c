@@ -133,10 +133,8 @@ apc_application_end_paint_info( Handle self)
 int
 apc_application_get_gui_info( char * description, int len1, char * language, int len2)
 {
-	if ( description) {
-		strncpy( description, "Windows", len1);
-		description[len1-1] = 0;
-	}
+	if ( description)
+		strlcpy( description, "Windows", len1);
 	if ( language ) {
 		ULONG n_lang, n_words = 128;
 		WORD buffer[128];
@@ -241,14 +239,10 @@ apc_application_get_os_info( char *system, int slen,
 	GetSystemInfo( &si);
 	version = GetVersion();
 	GetVersionEx( &os);
-	if ( system) {
-		strncpy( system, "Windows NT", slen);
-		system[ slen-1] = 0;
-	}
-	if ( vendor) {
-		strncpy( vendor, "Microsoft", vlen);
-		vendor[ vlen-1] = 0;
-	}
+	if ( system)
+		strlcpy( system, "Windows NT", slen);
+	if ( vendor)
+		strlcpy( vendor, "Microsoft", vlen);
 	if ( arch) {
 		char * pb = "Unknown";
 #if defined( __BORLANDC__) && ! ( defined( __cplusplus) || defined( _ANONYMOUS_STRUCT))
@@ -261,8 +255,7 @@ apc_application_get_os_info( char *system, int slen,
 		case PROCESSOR_ARCHITECTURE_ALPHA :   pb = "Alpha"; break;
 		case PROCESSOR_ARCHITECTURE_PPC   :   pb = "PPC";   break;
 		}
-		strncpy( arch, pb, alen);
-		arch[ alen-1] = 0;
+		strlcpy( arch, pb, alen);
 	}
 	if ( release)
 		snprintf( release, rlen, "%d.%d",

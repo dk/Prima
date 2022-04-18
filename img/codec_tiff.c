@@ -175,7 +175,7 @@ static ImgCodecInfo codec_info = {
 };
 
 #define outcm(dd) snprintf( fi-> errbuf, 256, "Not enough memory (%d bytes)", (int)dd)
-#define outc(x)   strncpy( fi-> errbuf, x, 256)
+#define outc(x)   strlcpy( fi-> errbuf, x, 256)
 
 static char * errbuf = NULL;
 static Bool err_signal = 0;

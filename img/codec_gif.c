@@ -270,7 +270,7 @@ typedef struct _GIFNetscapeLoopExt {
 #pragma pack()
 
 #define out(l) { format_error( l->Error, fi-> errbuf, __LINE__); return false;}
-#define outc(x){ strncpy( fi-> errbuf, x, 256); return false;}
+#define outc(x){ strlcpy( fi-> errbuf, x, 256); return false;}
 #define outcm(dd){ snprintf( fi-> errbuf, 256, "Not enough memory (%d bytes)", dd); return false;}
 
 #define NETSCAPE_EXT_FUNC_CODE 255

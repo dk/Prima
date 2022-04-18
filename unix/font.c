@@ -104,7 +104,7 @@ font_query_name( XFontStruct * s, PFontInfo f)
 		XCHECKPOINT;
 		if ( c) {
 			f-> flags. family = true;
-			strncpy( f-> font. family, c, 255);  f-> font. family[255] = '\0';
+			strlcpy( f-> font. family, c, 255);
 			str_lwr( f-> font. family, f-> font. family);
 			XFree( c);
 		}
@@ -117,7 +117,7 @@ font_query_name( XFontStruct * s, PFontInfo f)
 		XCHECKPOINT;
 		if ( c) {
 			f-> flags. name = true;
-			strncpy( f-> font. name, c, 255);  f-> font. name[255] = '\0';
+			strlcpy( f-> font. name, c, 255);
 			str_lwr( f-> font. name, f-> font. name);
 			XFree( c);
 		}
@@ -137,11 +137,11 @@ font_query_name( XFontStruct * s, PFontInfo f)
 					if ( c == d ) continue;
 					if ( cnt == 0 ) {
 						lim = ( c - d > 255 ) ? 255 : c - d;
-						strncpy( f-> font. family, d, lim);
+						strlcpy( f-> font. family, d, lim);
 						cnt++;
 					} else if ( cnt == 1) {
 						lim = ( c - d > 255 ) ? 255 : c - d;
-						strncpy( f-> font. name, d, lim);
+						strlcpy( f-> font. name, d, lim);
 						break;
 					} else
 						break;
@@ -164,8 +164,7 @@ font_query_name( XFontStruct * s, PFontInfo f)
 			} else {
 				char c[512];
 				snprintf( c, 512, "%s %s", f-> font. family, f-> font. name);
-				strncpy( f-> font. name, c, 256);
-				f-> font.name[255] = 0;
+				strlcpy( f-> font. name, c, 256);
 			}
 		}
 		str_lwr( f-> font. family, f-> font. family);
@@ -628,8 +627,7 @@ prima_init_font_subsystem( char * error_buf)
 		char * s = setlocale( LC_CTYPE, NULL);
 		while ( *s && *s != '.') s++;
 		while ( *s && *s == '.') s++;
-		strncpy( guts. locale, s, 31);
-		guts. locale[31] = 0;
+		strlcpy( guts. locale, s, 31);
 		len = strlen( guts. locale);
 		if ( !hash_fetch( encodings, guts. locale, len)) {
 			str_lwr( guts. locale, guts. locale);

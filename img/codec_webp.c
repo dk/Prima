@@ -90,7 +90,7 @@ load_defaults( PImgCodec c)
 }
 
 #define outcm(dd) snprintf( fi-> errbuf, 256, "Not enough memory (%d bytes)", (int)dd)
-#define outc(x)   strncpy( fi-> errbuf, x, 256)
+#define outc(x)   strlcpy( fi-> errbuf, x, 256)
 
 
 typedef struct _LoadRec {

@@ -83,7 +83,7 @@ typedef struct _LoadRec {
 } LoadRec;
 
 #define outcm(dd) snprintf( fi-> errbuf, 256, "Not enough memory (%d bytes)", (int)(dd))
-#define outc(x)   strncpy( fi-> errbuf, x, 256)
+#define outc(x)   strlcpy( fi-> errbuf, x, 256)
 
 static void *
 open_load( PImgCodec instance, PImgLoadFileInstance fi)

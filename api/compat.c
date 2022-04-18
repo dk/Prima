@@ -175,6 +175,21 @@ memmem(const void *l, size_t l_len, const void *s, size_t s_len)
 
 #endif
 
+#ifndef STRLCPY
+size_t
+strlcpy(char * dst, const char * src, size_t dstsize)
+{
+	size_t l = strlen(src);
+	if (l + 1 < dstsize)
+		memcpy(dst, src, dstsize + 1);
+	else if (dstsize > 0) {
+		memcpy(dst, src, dstsize - 1);
+		dst[dstsize - 1] = 0;
+	}
+	return l;
+}
+#endif
+
 #ifdef __cplusplus
 }
 #endif
