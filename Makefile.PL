@@ -1865,6 +1865,8 @@ sub setup_codecs
 					$webp_version = $1 * 0x10000 + $2 * 0x100 + $3
 						if $MODVERSIONS{libwebp} =~ /^(\d+).(\d+).(\d+)/;
 				}
+			} elsif ( $codec eq 'heif') {
+				$found = 1 if pkgconfig('libheif');
 			} elsif ( $codec eq 'png') {
 				$found = 1 if pkgconfig('libpng');
 			} elsif ( $codec eq 'tiff') {

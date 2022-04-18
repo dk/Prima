@@ -142,6 +142,7 @@ img/bc_const.c
 img/bc_extra.c
 img/codec_bmp.c
 img/codec_jpeg.c
+img/codec_heic.c
 img/codec_png.c
 img/codec_tiff.c
 img/codec_gif.c
