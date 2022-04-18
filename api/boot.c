@@ -142,19 +142,6 @@ kill_objects( void * item, int keyLen, Handle * self, void * dummy)
 	return false;
 }
 
-
-#if (PERL_PATCHLEVEL == 5)
-#define PRIMAPERL_scopestack_ix PL_scopestack_ix
-#define PRIMAPERL_defstash PL_defstash
-#define PRIMAPERL_curstash PL_curstash
-#define PRIMAPERL_endav PL_endav
-#elif (PERL_PATCHLEVEL == 4)
-#define PRIMAPERL_scopestack_ix scopestack_ix
-#define PRIMAPERL_defstash defstash
-#define PRIMAPERL_curstash curstash
-#define PRIMAPERL_endav endav
-#endif
-
 static Bool
 kill_hashes( PHash hash, void * dummy)
 {
@@ -192,60 +179,132 @@ XS( prima_cleanup)
 	XSRETURN(1);
 }
 
+XS( destroy_mate)
+{
+	dXSARGS;
+	Handle self;
+
+	if ( items != 1)
+		croak ("Invalid usage of ::destroy_mate");
+	self = gimme_the_real_mate( ST( 0));
+
+	if ( self == NULL_HANDLE)
+		croak( "Illegal object reference passed to ::destroy_mate");
+	{
+		Object_destroy( self);
+		if (((PObject)self)-> protectCount > 0) {
+			(( PObject) self)-> killPtr = (PAnyObject)prima_guts.ghost_chain;
+			prima_guts.ghost_chain = ( PAnyObject) self;
+		} else {
+			free(( void*) self);
+		}
+	}
+	XSRETURN_EMPTY;
+}
+
+
 static void
 register_constants( void)
 {
-	register_nt_constants();
-	register_kb_constants();
-	register_km_constants();
-	register_mb_constants();
-	register_ta_constants();
-	register_cl_constants();
-	register_ci_constants();
-	register_wc_constants();
-	register_cm_constants();
-	register_rop_constants();
-	register_gm_constants();
-	register_lp_constants();
-	register_fp_constants();
-	register_le_constants();
-	register_lj_constants();
-	register_fs_constants();
-	register_fw_constants();
-	register_bi_constants();
-	register_bs_constants();
-	register_ws_constants();
-	register_sv_constants();
-	register_im_constants();
-	register_ictp_constants();
-	register_ictd_constants();
-	register_ict_constants();
-	register_ist_constants();
-	register_is_constants();
 	register_am_constants();
 	register_apc_constants();
-	register_gui_constants();
-	register_dt_constants();
+	register_bi_constants();
+	register_bs_constants();
+	register_ci_constants();
+	register_cl_constants();
+	register_cm_constants();
 	register_cr_constants();
-	register_sbmp_constants();
-	register_tw_constants();
-	register_fds_constants();
-	register_fdo_constants();
-	register_fe_constants();
-	register_fr_constants();
-	register_mt_constants();
-	register_gt_constants();
-	register_ps_constants();
-	register_scr_constants();
 	register_dbt_constants();
+	register_dnd_constants();
+	register_dt_constants();
+	register_fdo_constants();
+	register_fds_constants();
+	register_fe_constants();
+	register_fm_constants();
+	register_fp_constants();
+	register_fr_constants();
+	register_fs_constants();
+	register_fv_constants();
+	register_fw_constants();
+	register_ggo_constants();
+	register_gm_constants();
+	register_gt_constants();
+	register_gui_constants();
+	register_ict_constants();
+	register_ictd_constants();
+	register_ictp_constants();
+	register_im_constants();
+	register_is_constants();
+	register_ist_constants();
+	register_kb_constants();
+	register_km_constants();
+	register_le_constants();
+	register_lj_constants();
+	register_lp_constants();
+	register_mb_constants();
+	register_mt_constants();
+	register_nt_constants();
+	register_ps_constants();
 	register_rgn_constants();
 	register_rgnop_constants();
-	register_fm_constants();
-	register_ggo_constants();
-	register_fv_constants();
-	register_dnd_constants();
+	register_rop_constants();
+	register_sbmp_constants();
+	register_scr_constants();
+	register_sv_constants();
+	register_ta_constants();
 	register_to_constants();
 	register_ts_constants();
+	register_tw_constants();
+	register_wc_constants();
+	register_ws_constants();
+}
+
+/* register builtin classes */
+static void
+register_classes( void)
+{
+	register_AbstractMenu_Class();
+	register_AccelTable_Class();
+	register_Application_Class();
+	register_Clipboard_Class();
+	register_Component_Class();
+	register_DeviceBitmap_Class();
+	register_Drawable_Class();
+	register_File_Class();
+	register_Icon_Class();
+	register_Image_Class();
+	register_Menu_Class();
+	register_Object_Class();
+	register_Popup_Class();
+	register_Printer_Class();
+	register_Region_Class();
+	register_Timer_Class();
+	register_Utils_Package();
+	register_Widget_Class();
+	register_Window_Class();
+}
+
+/* register hard coded XSUBs */
+static void
+register_xsubs( void)
+{
+	newXS( "::destroy_mate", destroy_mate, "Prima Guts");
+	newXS( "Prima::cleanup", prima_cleanup, "Prima");
+	newXS( "Prima::init", Prima_init, "Prima");
+	newXS( "Prima::options", Prima_options, "Prima");
+	newXS( "Prima::Utils::getdir", Utils_getdir_FROMPERL, "Prima::Utils");
+	newXS( "Prima::Utils::stat", Utils_stat_FROMPERL, "Prima::Utils");
+	newXS( "Prima::Utils::DIRHANDLE::DESTROY", Utils_closedir_FROMPERL, "Prima::Utils");
+	newXS( "Prima::Object::create",  create_from_Perl, "Prima::Object");
+	newXS( "Prima::Object::destroy", destroy_from_Perl, "Prima::Object");
+	newXS( "Prima::Object::alive", Object_alive_FROMPERL, "Prima::Object");
+	newXS( "Prima::Component::event_hook", Component_event_hook_FROMPERL, "Prima::Component");
+	newXS( "Prima::message", Prima_message_FROMPERL, "Prima");
+	newXS( "Prima::dl_export", Prima_dl_export, "Prima");
+	cv_set_prototype("Prima::Utils", "closedir", "$");
+	cv_set_prototype("Prima::Utils", "rewinddir", "$");
+	cv_set_prototype("Prima::Utils", "seekdir", "$$");
+	cv_set_prototype("Prima::Utils", "telldir", "$");
 }
 
 /* This stuff is not part of the API! Yes, I have been warned. */
@@ -265,34 +324,6 @@ register_constants( void)
 	(PERL_DECIMAL_VERSION <= PERL_VERSION_DECIMAL(r,v,s))
 #endif
 
-XS( destroy_mate)
-{
-	dXSARGS;
-	Handle self;
-
-	if ( items != 1)
-		croak ("Invalid usage of ::destroy_mate");
-	self = gimme_the_real_mate( ST( 0));
-
-	if ( self == NULL_HANDLE)
-		croak( "Illegal object reference passed to ::destroy_mate");
-	{
-		Object_destroy( self);
-		if (((PObject)self)-> protectCount > 0)
-		{
-			(( PObject) self)-> killPtr = (PAnyObject)prima_guts.ghost_chain;
-			prima_guts.ghost_chain = ( PAnyObject) self;
-		}
-		else
-		{
-			free(( void*) self);
-		}
-	}
-	XSRETURN_EMPTY;
-}
-
-
-
 XS( boot_Prima)
 {
 	dXSARGS;
@@ -305,12 +336,11 @@ XS( boot_Prima)
 #  endif
 #endif
 
-
 #define TYPECHECK(s1,s2) \
 if (sizeof(s1) != (s2)) { \
-		printf("Error: type %s is %d bytes long (expected to be %d)", #s1, (int)sizeof(s1), s2); \
-		ST(0) = &PL_sv_no; \
-		XSRETURN(1); \
+	printf("Error: type %s is %d bytes long (expected to be %d)", #s1, (int)sizeof(s1), s2); \
+	ST(0) = &PL_sv_no; \
+	XSRETURN(1); \
 }
 	TYPECHECK( uint8_t,  1);
 	TYPECHECK( int8_t,   1);
@@ -326,51 +356,15 @@ if (sizeof(s1) != (s2)) { \
 
 	bzero(&prima_guts, sizeof(prima_guts));
 	list_create( &prima_guts.static_objects, 16, 16);
-	list_create( &prima_guts.static_hashes, 16, 16);
-	prima_guts.objects = hash_create();
-	prima_guts.vmt_hash      = hash_create();
-	list_create( &prima_guts.post_destroys, 16, 16);
+	list_create( &prima_guts.static_hashes,  16, 16);
+	list_create( &prima_guts.post_destroys,  16, 16);
+	prima_guts.objects   = hash_create();
+	prima_guts.vmt_hash  = hash_create();
 
-	/* register hard coded XSUBs */
-	newXS( "::destroy_mate", destroy_mate, "Prima Guts");
-	newXS( "Prima::cleanup", prima_cleanup, "Prima");
-	newXS( "Prima::init", Prima_init, "Prima");
-	newXS( "Prima::options", Prima_options, "Prima");
-	newXS( "Prima::Utils::getdir", Utils_getdir_FROMPERL, "Prima::Utils");
-	newXS( "Prima::Utils::stat", Utils_stat_FROMPERL, "Prima::Utils");
-	newXS( "Prima::Utils::DIRHANDLE::DESTROY", Utils_closedir_FROMPERL, "Prima::Utils");
-	/* register built-in classes */
-	newXS( "Prima::Object::create",  create_from_Perl, "Prima::Object");
-	newXS( "Prima::Object::destroy", destroy_from_Perl, "Prima::Object");
-	newXS( "Prima::Object::alive", Object_alive_FROMPERL, "Prima::Object");
-	newXS( "Prima::Component::event_hook", Component_event_hook_FROMPERL, "Prima::Component");
-	newXS( "Prima::message", Prima_message_FROMPERL, "Prima");
-	newXS( "Prima::dl_export", Prima_dl_export, "Prima");
 	register_constants();
-	register_Object_Class();
-	register_Utils_Package();
-	cv_set_prototype("Prima::Utils", "closedir", "$");
-	cv_set_prototype("Prima::Utils", "rewinddir", "$");
-	cv_set_prototype("Prima::Utils", "seekdir", "$$");
-	cv_set_prototype("Prima::Utils", "telldir", "$");
-	register_Component_Class();
-	register_File_Class();
-	register_Clipboard_Class();
-	register_DeviceBitmap_Class();
-	register_Drawable_Class();
-	register_Widget_Class();
-	register_Window_Class();
-	register_Image_Class();
+	register_classes();
+	register_xsubs();
 	init_image_support();
-	register_Icon_Class();
-	register_AbstractMenu_Class();
-	register_AccelTable_Class();
-	register_Menu_Class();
-	register_Popup_Class();
-	register_Application_Class();
-	register_Timer_Class();
-	register_Printer_Class();
-	register_Region_Class();
 
 #if PERL_VERSION_LE(5, 21, 5)
 #  if PERL_VERSION_GE(5, 9, 0)
