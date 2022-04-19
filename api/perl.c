@@ -316,7 +316,7 @@ parse_hv( I32 ax, SV **sp, I32 items, SV **mark, int expected, const char *metho
 		if (!( SvPOK( ST( i)) && ( !SvROK( ST( i)))))
 			croak( "GUTS011: Illegal value for a profile key (argument #%d) passed to ``%s''", i, methodName);
 		/* and add the pair */
-		hv_store_ent( hv, ST( i), newSVsv( ST( i+1)), 0);
+		(void) hv_store_ent( hv, ST( i), newSVsv( ST( i+1)), 0);
 		av_push( order, newSVsv( ST( i)));
 	}
 	(void) hv_store( hv, "__ORDER__", 9, newRV_noinc((SV *)order), 0);
