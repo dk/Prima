@@ -269,7 +269,11 @@ typedef struct _GIFNetscapeLoopExt {
 } GIFNetscapeLoopExt, *PGIFNetscapeLoopExt;
 #pragma pack()
 
+#if defined(GIFLIB_MAJOR) && GIFLIB_MAJOR >= 5
 #define out(l) { format_error( l->Error, fi-> errbuf, __LINE__); return false;}
+#else
+#define out(l) { format_error( img_gif_error_code, fi-> errbuf, __LINE__); return false;}
+#endif
 #define outc(x){ strlcpy( fi-> errbuf, x, 256); return false;}
 #define outcm(dd){ snprintf( fi-> errbuf, 256, "Not enough memory (%d bytes)", dd); return false;}
 
