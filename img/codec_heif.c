@@ -113,7 +113,7 @@ struct heif_reader reader = {
 	.wait_for_file_size = heif_wait_for_file_size
 };
 
-#define SET_ERROR(e) strlcpy(fi->errbuf,e,sizeof(fi->errbuf))
+#define SET_ERROR(e) strlcpy(fi->errbuf,e,256)
 #define SET_HEIF_ERROR SET_ERROR(l->error.message)
 
 static void *
