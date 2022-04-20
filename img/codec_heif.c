@@ -58,7 +58,8 @@ load_defaults( PImgCodec c)
 	HV * profile = newHV();
 	pset_i( ignore_transformations, 0);
 	pset_i( convert_hdr_to_8bit, 0);
-	pset_c( source, "toplevel");
+	pset_c( folder,   "toplevel");
+	pset_c( subindex, 0);
 	return profile;
 }
 
@@ -69,11 +70,15 @@ init( PImgCodecInfo * info, void * param)
 	return (void*)1;
 }
 
+#define FOLDER_TOPLEVEL  0
+#define FOLDER_THUMBNAIL 1
+
 typedef struct _LoadRec {
 	struct heif_context* ctx;
 	struct heif_error    error;
 	heif_item_id*        image_ids;
-	int                  primary_index;
+	int                  primary_index, folder, subindex;
+	struct heif_image_handle* subhandle;
 } LoadRec;
 
 static int64_t
@@ -117,8 +122,9 @@ struct heif_reader reader = {
 	.wait_for_file_size = heif_wait_for_file_size
 };
 
-#define SET_ERROR(e) strlcpy(fi->errbuf,e,256)
+#define SET_ERROR(e) if (1) { strlcpy(fi->errbuf,e,256); goto FAIL; }
 #define SET_HEIF_ERROR SET_ERROR(l->error.message)
+#define CHECK_HEIF_ERROR if (l->error.code != heif_error_Ok) SET_HEIF_ERROR
 
 static void *
 open_load( PImgCodec instance, PImgLoadFileInstance fi)
@@ -144,55 +150,49 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
 		fi-> stop = true;
 		break;
 	case heif_filetype_yes_unsupported:
-		SET_ERROR("unsupported HEIF/AVIC");
 		fi-> stop = true;
-		return NULL;
+		SET_ERROR("unsupported HEIF/AVIC");
 	default:
 		return NULL;
 	}
 #undef PEEK_SIZE
 
-	if (pexist(source)) {
-		char * c = pget_c(source);
+	memset( l, 0, sizeof( LoadRec));
+
+	l-> folder   = FOLDER_TOPLEVEL;
+	if (pexist(folder)) {
+		char * c = pget_c(folder);
+		if ( strcmp(c, "toplevel") == 0)
+			l-> folder = FOLDER_TOPLEVEL;
+		else if ( strcmp(c, "thumbnails") == 0)
+			l-> folder = FOLDER_THUMBNAIL;
+		else
+			SET_ERROR("unknown folder, must be one of: toplevel, thumbnails");
+	}
+	if (pexist(subindex)) {
+		l-> subindex = pget_i(subindex);
+		if ( l-> subindex < 0 ) SET_ERROR("bad subindex");
 	}
 
-	memset( l, 0, sizeof( LoadRec));
-	if ( !( l-> ctx = heif_context_alloc())) {
+	if ( !( l-> ctx = heif_context_alloc()))
 		SET_ERROR("cannot create context");
-		free(l);
-		return NULL;
-	}
 
 	l->error = heif_context_read_from_reader(l->ctx, &reader, fi->req, NULL);
-	if (l->error.code != heif_error_Ok) {
-		SET_HEIF_ERROR;
-		goto FAIL;
-	}
+	CHECK_HEIF_ERROR;
 
 	n_images = heif_context_get_number_of_top_level_images(l->ctx);
-	if ( n_images < 1 ) {
-		SET_ERROR("cannot get top level images");
-		goto FAIL;
-	}
+	if ( n_images < 1 ) SET_ERROR("cannot get top level images");
 
 	l-> error = heif_context_get_primary_image_ID(l->ctx, &primary_id);
-	if (l->error.code != heif_error_Ok) {
-		SET_HEIF_ERROR;
-		goto FAIL;
-	}
+	CHECK_HEIF_ERROR;
 
-	if ( !( l-> image_ids = malloc( sizeof(heif_item_id) * n_images))) {
+	if ( !( l-> image_ids = malloc( sizeof(heif_item_id) * n_images))) 
 		SET_ERROR("not enough memory");
-		goto FAIL;
-	}
+
 	n = heif_context_get_list_of_top_level_image_IDs(l->ctx, l->image_ids, n_images);
 	if ( n < n_images ) {
 		n_images = n;
-		if ( n < 0 ) {
-			SET_ERROR("cannot get list of top level images");
-			free( l-> image_ids );
-			goto FAIL;
-		}
+		if ( n < 0 ) SET_ERROR("cannot get list of top level images");
 	}
 	l-> primary_index = -1;
 	for ( n = 0; n < n_images; n++)
@@ -201,12 +201,48 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
 			break;
 		}
 
+	if ( l-> folder != FOLDER_TOPLEVEL ) {
+		int subindex;
+		if ( l-> subindex >= n_images ) SET_ERROR("subindex out of frame range");
+		subindex = l->image_ids[l->subindex];
+		free(l->image_ids);
+		l->image_ids = NULL;
+		l-> error = heif_context_get_image_handle(l-> ctx, subindex, &l->subhandle);
+		CHECK_HEIF_ERROR;
+
+		switch ( l-> folder ) {
+		case FOLDER_THUMBNAIL:
+			n_images = heif_image_handle_get_number_of_thumbnails(l->subhandle);
+			break;
+		default:
+			SET_ERROR("panic: internal error");
+		}
+		if ( !( l-> image_ids = malloc( sizeof(heif_item_id) * n_images))) 
+			SET_ERROR("not enough memory");
+		switch ( l-> folder ) {
+		case FOLDER_THUMBNAIL:
+			n = heif_image_handle_get_list_of_thumbnail_IDs(l->subhandle, l->image_ids, n_images);
+			break;
+		default:
+			SET_ERROR("panic: internal error");
+		}
+		if ( n < n_images ) {
+			n_images = n;
+			if ( n < 0 ) {
+				snprintf(fi->errbuf, 256, "cannot get list of %s images", pget_c(folder));
+				goto FAIL;
+			}
+		}
+	}
+
 	fi->frameCount = n_images;
 
 	return l;
 
 FAIL:
-	heif_context_free(l-> ctx);
+	if ( l->subhandle  ) heif_image_handle_release(l->subhandle);
+	if ( l-> image_ids ) free(l-> image_ids);
+	if ( l->ctx) heif_context_free(l-> ctx);
 	free(l);
 	return NULL;
 }
@@ -260,12 +296,6 @@ BAILOUT:
 	free(ids);
 }
 
-#define CHECK_HEIF_ERROR \
-	if (l->error.code != heif_error_Ok) { \
-		SET_HEIF_ERROR; \
-		goto BAILOUT; \
-	}
-
 static Bool
 load( PImgCodec instance, PImgLoadFileInstance fi)
 {
@@ -281,15 +311,19 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 	int y, bit_depth, width, height, src_stride, alpha_stride = 0;
 	Byte *src, *dst, *alpha = NULL;
 
-	l-> error = heif_context_get_image_handle(l-> ctx, l-> image_ids[fi->frame], &h);
+	switch (l->folder) {
+	case FOLDER_TOPLEVEL:
+		l-> error = heif_context_get_image_handle(l-> ctx, l-> image_ids[fi->frame], &h);
+		break;
+	case FOLDER_THUMBNAIL:
+		l-> error = heif_image_handle_get_thumbnail(l->subhandle, l-> image_ids[fi->frame], &h);
+		break;
+	}
 	CHECK_HEIF_ERROR;
 
 	/* read basics */
 	bit_depth = heif_image_handle_get_luma_bits_per_pixel(h);
-	if ( bit_depth < 0 ) {
-		SET_ERROR("undefined bit depth");
-		goto BAILOUT;
-	}
+	if ( bit_depth < 0 ) SET_ERROR("undefined bit depth");
 	width  = heif_image_handle_get_width(h);
 	height = heif_image_handle_get_height(h);
 	if ( fi-> loadExtras) {
@@ -314,10 +348,8 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 		icon = false;
 
 	/* check load options */
-	if ( !( hdo = heif_decoding_options_alloc())) {
+	if ( !( hdo = heif_decoding_options_alloc()))
 		SET_ERROR("not enough memory");
-		goto BAILOUT;
-	}
 	{
 		dPROFILE;
 		HV * profile = fi->profile;
@@ -379,7 +411,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 
 SUCCESS:
 	ret = true;
-BAILOUT:
+FAIL:
 	if (himg) heif_image_release(himg);
 	if (hdo) heif_decoding_options_free(hdo);
 	if (h) heif_image_handle_release(h);
@@ -390,6 +422,7 @@ static void
 close_load( PImgCodec instance, PImgLoadFileInstance fi)
 {
 	LoadRec * l = ( LoadRec *) fi-> instance;
+	if ( l->subhandle ) heif_image_handle_release(l->subhandle);
 	if ( l-> ctx)       heif_context_free( l-> ctx);
 	if ( l-> image_ids) free( l-> image_ids );
 	free( l);
