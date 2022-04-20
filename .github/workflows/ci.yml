@@ -6,21 +6,25 @@ on:
         branches: '*'
 jobs:
   perl-job:
-    runs-on: ubuntu-latest
+    runs-on: ${{matrix-runner}}
     strategy:
       fail-fast: false
       matrix:
+        runner: [ubuntu-latest, windows-latest]
         perl-version:
-          - '5.32'
           - 'latest'
+#          - '5.32'
     container:
       image: perldocker/perl-tester:${{ matrix.perl-version }}     # https://hub.docker.com/r/perldocker/perl-tester
     name: Perl ${{ matrix.perl-version }}
     steps:
       - uses: actions/checkout@v2
       - name: Regular tests
+        if: matrix.runner == 'ubuntu.latest'
         run: |
             apt-get install -y libgtk2.0-dev libgif-dev libjpeg-dev libtiff-dev libxpm-dev libwebp-dev libfribidi-dev libharfbuzz-dev libthai-dev
+        run: |
+            uname -a
             cpanm --notest Test::Pod
             perl Makefile.PL
             make
