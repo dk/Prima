@@ -17,13 +17,17 @@ jobs:
     name: Perl ${{ matrix.runner }} ${{ matrix.perl-version }}
     steps:
       - uses: actions/checkout@v2
-      - name: Regular test
+      - name: Prepare
         run: |
             uname -a
             apt-get install -y libgtk2.0-dev libgif-dev libjpeg-dev libtiff-dev libxpm-dev libwebp-dev libfribidi-dev libharfbuzz-dev libthai-dev
             cpanm --notest Test::Pod
+      - name: Build
+        run: |
             perl Makefile.PL
             make
+      - name: Test
+        run: |
             make test
   strawberry:
     strategy:
@@ -40,10 +44,14 @@ jobs:
         with:
           perl-version: ${{ matrix.perl }}
           distribution: ${{ ( startsWith( matrix.runner, 'windows-' ) && 'strawberry' ) || 'default' }}
-      - name: Regular test
+      - name: Prepare
         run: |
             uname -a
             cpanm --notest Test::Pod
+      - name: Build
+        run: |
             perl Makefile.PL
             make
+      - name: Test
+        run: |
             make test
