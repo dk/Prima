@@ -15,13 +15,15 @@ static char * ext[] = { "heic", "heif", NULL };
 static int    bpp[] = { imbpp24, 0 };
 
 static char * loadOutput[] = {
-	"primary_frame",
-	"is_alpha_premultiplied",
 	"chroma_bits_per_pixel",
-	"luma_bits_per_pixel",
-	"ispe_width",
-	"ispe_height",
+	"depth_images",
 	"has_alpha",
+	"ispe_height",
+	"ispe_width",
+	"luma_bits_per_pixel",
+	"premultiplied_alpha",
+	"primary_frame",
+	"thumbnails",
 	NULL
 };
 
@@ -43,7 +45,8 @@ static ImgCodecInfo codec_info = {
 	NULL,    /* features  */
 	"",     /* module */
 	"",     /* package */
-	IMG_LOAD_FROM_FILE | IMG_LOAD_FROM_STREAM | IMG_SAVE_TO_FILE | IMG_SAVE_TO_STREAM,
+	IMG_LOAD_FROM_FILE | IMG_LOAD_FROM_STREAM | IMG_LOAD_MULTIFRAME |
+	IMG_SAVE_TO_FILE | IMG_SAVE_TO_STREAM | IMG_SAVE_MULTIFRAME,
 	bpp, /* save types */
 	loadOutput,
 	mime
@@ -134,6 +137,7 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
 	ftype = heif_check_filetype( data, PEEK_SIZE );
 	switch ( ftype ) {
 	case heif_filetype_yes_supported:
+	case heif_filetype_maybe:
 		fi-> stop = true;
 		break;
 	case heif_filetype_yes_unsupported:
@@ -282,13 +286,21 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 	width  = heif_image_handle_get_width(h);
 	height = heif_image_handle_get_height(h);
 	if ( fi-> loadExtras) {
-		pset_i( primary_frame,          l-> primary_index);
-		pset_i( is_alpha_premultiplied, heif_image_handle_is_premultiplied_alpha(h));
+		int n;
+		if ( l-> primary_index >= 0)
+			pset_i( primary_index,  l-> primary_index);
+		if ( heif_image_handle_is_premultiplied_alpha(h))
+			pset_i( premultiplied_alpha, 1);
 		pset_i( chroma_bits_per_pixel,  heif_image_handle_get_chroma_bits_per_pixel(h));
 		pset_i( luma_bits_per_pixel,    bit_depth);
 		pset_i( ispe_width,             heif_image_handle_get_ispe_width(h));
 		pset_i( ispe_height,            heif_image_handle_get_ispe_height(h));
-		pset_i( has_alpha,              heif_image_handle_has_alpha_channel(h));
+		if (heif_image_handle_has_alpha_channel(h))
+			pset_i( has_alpha,      1);
+		n = heif_image_handle_get_number_of_depth_images(h);
+		if (n) pset_i( depth_images,    n);
+		n = heif_image_handle_get_number_of_thumbnails(h);
+		if (n) pset_i( thumbnails,      n);
 	}
 	icon = kind_of( fi-> object, CIcon);
 	if ( icon && !heif_image_handle_has_alpha_channel(h))
@@ -317,20 +329,21 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 	}
 	i-> self-> create_empty(( Handle) i, width, height, imbpp24);
 	if ( icon ) {
-		PIcon(i)->self-> set_maskType((Handle) i, imbpp8);
 		PIcon(i)->self-> set_autoMasking((Handle) i, false);
+		PIcon(i)->self-> set_maskType((Handle) i, imbpp8);
 	}
 
 	/* load */
 	l->error = heif_decode_image(h, &himg,
-		icon ? heif_chroma_interleaved_RGBA : heif_colorspace_RGB,
-		heif_chroma_interleaved_RGB, hdo);
+		heif_colorspace_RGB,
+		icon ? heif_chroma_interleaved_RGBA : heif_chroma_interleaved_RGB,
+		hdo);
 	CHECK_HEIF_ERROR;
 
 	src = (Byte*) heif_image_get_plane_readonly(himg, heif_channel_interleaved, &src_stride);
 	if ( icon ) {
 		alpha        = PIcon(i)-> mask;
-		alpha_stride = PIcon(i)-> maskSize;
+		alpha_stride = PIcon(i)-> maskLine;
 	}
 	for (
 		y = 0, src += (height - 1) * src_stride, dst = i->data;
@@ -342,11 +355,12 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 			register Byte *d = dst;
 			register Byte *a = alpha;
 			register int   x = width;
+			x = width;
 			while (x--) {
-				register Byte r = *(s++);
-				register Byte g = *(s++);
-				register Byte b = *(s++);
-				*(d++) = b;
+				register Byte r,g;
+				r = *(s++);
+				g = *(s++);
+				*(d++) = *(s++);
 				*(d++) = g;
 				*(d++) = r;
 				*(a++) = *(s++);
