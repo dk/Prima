@@ -5,25 +5,42 @@ on:
     pull_request:
         branches: '*'
 jobs:
-  perl-job:
+  ubuntu:
     strategy:
       fail-fast: false
       matrix:
-        runner: [ubuntu-latest, windows-latest]
         perl-version:
           - 'latest'
-#          - '5.32'
-    runs-on: ${{matrix.runner}}
+    runs-on: ubuntu-latest
     container:
       image: perldocker/perl-tester:${{ matrix.perl-version }}     # https://hub.docker.com/r/perldocker/perl-tester
-    name: Perl ${{ matrix.perl-version }}
+    name: Perl ${{ matrix.runner }} ${{ matrix.perl-version }}
     steps:
       - uses: actions/checkout@v2
-      - name: Prepare
-        if: matrix.runner == 'ubuntu.latest'
+      - name: Regular test
         run: |
+            uname -a
             apt-get install -y libgtk2.0-dev libgif-dev libjpeg-dev libtiff-dev libxpm-dev libwebp-dev libfribidi-dev libharfbuzz-dev libthai-dev
-      - name: Regular tests
+            cpanm --notest Test::Pod
+            perl Makefile.PL
+            make
+            make test
+  strawberry:
+    strategy:
+      fail-fast: false
+      matrix:
+        perl-version:
+          - 'latest'
+    runs-on: windows-latest
+    name: Perl ${{ matrix.runner }} ${{ matrix.perl-version }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up perl
+        uses: shogo82148/actions-setup-perl@v1
+        with:
+          perl-version: ${{ matrix.perl }}
+          distribution: ${{ ( startsWith( matrix.runner, 'windows-' ) && 'strawberry' ) || 'default' }}
+      - name: Regular test
         run: |
             uname -a
             cpanm --notest Test::Pod
