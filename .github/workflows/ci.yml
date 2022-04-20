@@ -19,10 +19,11 @@ jobs:
     name: Perl ${{ matrix.perl-version }}
     steps:
       - uses: actions/checkout@v2
-      - name: Regular tests
+      - name: Prepare
         if: matrix.runner == 'ubuntu.latest'
         run: |
             apt-get install -y libgtk2.0-dev libgif-dev libjpeg-dev libtiff-dev libxpm-dev libwebp-dev libfribidi-dev libharfbuzz-dev libthai-dev
+      - name: Regular tests
         run: |
             uname -a
             cpanm --notest Test::Pod
