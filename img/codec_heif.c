@@ -58,6 +58,7 @@ load_defaults( PImgCodec c)
 	HV * profile = newHV();
 	pset_i( ignore_transformations, 0);
 	pset_i( convert_hdr_to_8bit, 0);
+	pset_c( source, "toplevel");
 	return profile;
 }
 
@@ -122,6 +123,8 @@ struct heif_reader reader = {
 static void *
 open_load( PImgCodec instance, PImgLoadFileInstance fi)
 {
+	dPROFILE;
+	HV * profile = fi->extras;
 	LoadRec * l = malloc( sizeof( LoadRec));
 	int n, n_images;
 #define PEEK_SIZE 32
@@ -148,6 +151,10 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
 		return NULL;
 	}
 #undef PEEK_SIZE
+
+	if (pexist(source)) {
+		char * c = pget_c(source);
+	}
 
 	memset( l, 0, sizeof( LoadRec));
 	if ( !( l-> ctx = heif_context_alloc())) {
