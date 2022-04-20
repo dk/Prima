@@ -20,7 +20,7 @@ jobs:
       - uses: actions/checkout@v2
       - name: Regular tests
         run: |
-            apt-get install -y libgtk2.0-dev libgif-dev libjpeg-dev libtiff-dev libxpm-dev libwebp-dev libfribidi-dev libharfbuzz-dev libthai0-dev
+            apt-get install -y libgtk2.0-dev libgif-dev libjpeg-dev libtiff-dev libxpm-dev libwebp-dev libfribidi-dev libharfbuzz-dev libthai-dev
             cpanm --notest Test::Pod
             perl Makefile.PL
             make
