@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: perldocker/perl-tester:${{ matrix.perl-version }}     # https://hub.docker.com/r/perldocker/perl-tester
-    name: Perl ${{ matrix.runner }} ${{ matrix.perl-version }}
+    name: Linux ${{ matrix.perl-version }}
     steps:
       - uses: actions/checkout@v2
       - name: Prepare
@@ -36,14 +36,14 @@ jobs:
         perl-version:
           - 'latest'
     runs-on: windows-latest
-    name: Perl ${{ matrix.runner }} ${{ matrix.perl-version }}
+    name: Strawberry ${{ matrix.perl-version }}
     steps:
       - uses: actions/checkout@v2
       - name: Set up perl
         uses: shogo82148/actions-setup-perl@v1
         with:
           perl-version: ${{ matrix.perl }}
-          distribution: ${{ ( startsWith( matrix.runner, 'windows-' ) && 'strawberry' ) || 'default' }}
+          distribution: strawberry
       - name: Prepare
         run: |
             uname -a
