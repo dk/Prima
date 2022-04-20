@@ -13,7 +13,7 @@ jobs:
         perl-version:
           - 'latest'
 #          - '5.32'
-    runs-on: ${{matrix-runner}}
+    runs-on: ${{matrix.runner}}
     container:
       image: perldocker/perl-tester:${{ matrix.perl-version }}     # https://hub.docker.com/r/perldocker/perl-tester
     name: Perl ${{ matrix.perl-version }}
