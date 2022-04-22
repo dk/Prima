@@ -163,8 +163,11 @@ prima_clipboard_kill_item( PClipboardDataItem item, Handle id)
 {
 	item += id;
 	clipboard_free_data( item-> data, item-> size, id);
-	if ( item-> image ) 
+	if ( item-> image ) {
+		if ( PObject(item->image)-> mate )
+			SvREFCNT_dec( SvRV( PObject(item-> image)->mate ));
 		unprotect_object( item-> image );
+	}
 	item-> image = NULL_HANDLE;
 	item-> data = NULL;
 	item-> size = 0;
@@ -852,6 +855,7 @@ apc_clipboard_set_data( Handle self, Handle id, PClipboardDataRec c)
 	case cfBitmap:
 		if (( XX-> internal[id]. image = c-> image) != NULL_HANDLE) {
 			protect_object( XX-> internal[id]. image );
+			SvREFCNT_inc( SvRV( PObject(XX-> internal[id]. image)-> mate ));
 			XX-> internal[id]. immediate = false;
 		}
 		break;
