@@ -1,6 +1,7 @@
 .packlist
-src/*.o
-src/*/*.o
+api/*.o
+class/*.o
+class/*/*.o
 Makefile
 auto/Prima/Prima.a
 auto/Prima/Prima.dll
@@ -17,7 +18,9 @@ win32/*.o
 unix/*.o
 auto/
 vc100.pdb 
-src/*.obj
+api/*.obj
+class/*.obj
+class/*/*.obj
 img/*.obj
 vc100.pdb
 win32/*.obj
