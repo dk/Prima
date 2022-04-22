@@ -180,6 +180,12 @@ OS-dependent image storage.
 When storing the image on the clipboard, only the default format, raw pixel data
 is used. Under X11 the toolkit can also serve images encoded as file formats.
 
+Note: Under X11 you'll need to keep the image alive during the whole time it might
+get copied from the application - Prima doesn't keep a copy of the image, only
+the reference. Changing the image after it was stored in the clipboard will affect
+the clipboard content.
+
+
 =head2 Exact and meta formats
 
 Prima registers two special I<meta formats>, C<Image> and C<Text>, that

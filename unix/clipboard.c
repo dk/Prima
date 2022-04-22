@@ -163,10 +163,8 @@ prima_clipboard_kill_item( PClipboardDataItem item, Handle id)
 {
 	item += id;
 	clipboard_free_data( item-> data, item-> size, id);
-	if ( item-> image ) {
-		SvREFCNT_dec( SvRV( PObject(item-> image)->mate ));
+	if ( item-> image ) 
 		unprotect_object( item-> image );
-	}
 	item-> image = NULL_HANDLE;
 	item-> data = NULL;
 	item-> size = 0;
@@ -794,7 +792,9 @@ apc_clipboard_get_data( Handle self, Handle id, PClipboardDataRec c)
 	switch ( id) {
 	case cfBitmap:
 		if ( XX-> internal[cfBitmap].image) {
-			c->image = XX->internal[cfBitmap].image;
+			PObject o = (PObject) XX->internal[cfBitmap].image;
+			if (o-> stage == csNormal)
+				c->image = (Handle)o;
 		} else if ( XX->external[cfBitmap].size > 0 ) {
 			XWindow foo;
 			Pixmap px = *(( Pixmap*)( XX-> external[id]. data ));
@@ -852,7 +852,6 @@ apc_clipboard_set_data( Handle self, Handle id, PClipboardDataRec c)
 	case cfBitmap:
 		if (( XX-> internal[id]. image = c-> image) != NULL_HANDLE) {
 			protect_object( XX-> internal[id]. image );
-			SvREFCNT_inc( SvRV( PObject(XX-> internal[id]. image)->mate ));
 			XX-> internal[id]. immediate = false;
 		}
 		break;
@@ -1013,7 +1012,7 @@ fill_bitmap( Handle self )
 	PClipboardDataItem c;
 
 	c = &C(self)->internal[cfBitmap];
-	if ( !c-> image) return false;
+	if ( !c-> image || PObject(c->image)->stage != csNormal) return false;
 
 	px = prima_std_pixmap( c-> image, CACHE_LOW_RES);
 	if ( !px) return false;
