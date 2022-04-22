@@ -1,5 +1,9 @@
 Revision history for Perl module Prima
 
+1.65 2022-04-21
+ - Fix broken 1.64 distro
+ - Fix libgif4 compilation
+
 1.64 2022-04-09
  - Use libthai for Drawable.text_wrap
  - PS/PDF font metric calculations simplified and fixed
