@@ -11,8 +11,13 @@
 extern "C" {
 #endif
 
-static char * ext[] = { "heic", "heif", NULL };
-static int    bpp[] = { imbpp24, 0 };
+static char * ext[] = {
+	"heic",
+	"heif",
+	NULL, /* <-- maybe avif here, see below */
+	NULL
+};
+static int    bpp[] = { imbpp24, imByte, 0 };
 
 static char * loadOutput[] = {
 	"chroma_bits_per_pixel",
@@ -24,8 +29,12 @@ static char * loadOutput[] = {
 	"premultiplied_alpha",
 	"primary_frame",
 	"thumbnails",
+	"aux",
 	NULL
 };
+
+#define MAX_FEATURES 15
+static char * features[MAX_FEATURES+1];
 
 static char * mime[] = {
 	"image/heic",
@@ -42,7 +51,7 @@ static ImgCodecInfo codec_info = {
 	ext,    /* extension */
 	"High Efficiency Image File Format",     /* file type */
 	"HEIF", /* short type */
-	NULL,    /* features  */
+	features,    /* features  */
 	"",     /* module */
 	"",     /* package */
 	IMG_LOAD_FROM_FILE | IMG_LOAD_FROM_STREAM | IMG_LOAD_MULTIFRAME |
@@ -67,7 +76,68 @@ static void *
 init( PImgCodecInfo * info, void * param)
 {
 	*info = &codec_info;
+	{
+		struct heif_context*ctx = heif_context_alloc();
+		struct heif_encoder_descriptor *enc[1024];
+		int i, n, feat;
+		n = heif_context_get_encoder_descriptors(ctx, heif_compression_undefined, NULL,
+			(const struct heif_encoder_descriptor**) enc, 1024);
+		for ( i = feat = 0; i < n; i++) {
+			char buf[2048];
+			const char *name, *shrt, *compstr;
+			enum heif_compression_format comp;
+			int lossy, lossless;
+
+			if ( feat >= MAX_FEATURES) {
+				features[MAX_FEATURES] = NULL;
+				break;
+			}
+
+			comp     = heif_encoder_descriptor_get_compression_format(enc[i]);
+			switch ( comp ) {
+			case heif_compression_HEVC:
+				compstr = "HEVC";
+				break;
+			case heif_compression_AVC:
+				compstr = "AVC";
+				ext[2] = "avif";
+				break;
+			case heif_compression_AV1:
+				compstr = "AV1";
+				ext[2] = "avif";
+				break;
+			default:
+				continue;
+			}
+
+			name     = heif_encoder_descriptor_get_name(enc[i]);
+			shrt     = heif_encoder_descriptor_get_id_name(enc[i]);
+			lossy    = heif_encoder_descriptor_supports_lossy_compression(enc[i]);
+			lossless = heif_encoder_descriptor_supports_lossless_compression(enc[i]);
+
+			snprintf(buf, 2048, "%s/%s%s%s (%s)",
+				compstr,
+				shrt,
+				lossy    ? " lossy"    : "",
+				lossless ? " lossless" : "",
+				name
+			);
+			buf[2047] = 0;
+			features[feat++] = duplicate_string(buf);
+		}
+		heif_context_free(ctx);
+	}
 	return (void*)1;
+}
+
+static void
+done( PImgCodec codec)
+{
+	int feat;
+	for ( feat = 0; feat < MAX_FEATURES; feat++) {
+		if ( features[feat] == NULL ) break;
+		free(features[feat]);
+	}
 }
 
 #define FOLDER_TOPLEVEL  0
@@ -115,7 +185,7 @@ heif_wait_for_file_size(int64_t target_size, void* userdata)
 }
 
 struct heif_reader reader = {
-	.reader_api_version = LIBHEIF_NUMERIC_VERSION,
+	.reader_api_version = 1,
 	.get_position       = heif_get_position,
 	.read               = heif_read,
 	.seek               = heif_seek,
@@ -125,20 +195,23 @@ struct heif_reader reader = {
 #define SET_ERROR(e) if (1) { strlcpy(fi->errbuf,e,256); goto FAIL; }
 #define SET_HEIF_ERROR SET_ERROR(l->error.message)
 #define CHECK_HEIF_ERROR if (l->error.code != heif_error_Ok) SET_HEIF_ERROR
+#define CALL l->error=
 
 static void *
 open_load( PImgCodec instance, PImgLoadFileInstance fi)
 {
 	dPROFILE;
 	HV * profile = fi->extras;
-	LoadRec * l = malloc( sizeof( LoadRec));
+	LoadRec * l;
 	int n, n_images;
 #define PEEK_SIZE 32
 	uint8_t data[PEEK_SIZE];
 	enum heif_filetype_result ftype;
 	heif_item_id primary_id;
 
+	l = malloc( sizeof( LoadRec));
 	if ( !l) return NULL;
+	memset( l, 0, sizeof( LoadRec));
 
 	if ( req_seek( fi-> req, 0, SEEK_SET) < 0) return NULL;
 	if ( req_read( fi-> req, PEEK_SIZE, data) < PEEK_SIZE) return NULL;
@@ -156,8 +229,6 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
 		return NULL;
 	}
 #undef PEEK_SIZE
-
-	memset( l, 0, sizeof( LoadRec));
 
 	l-> folder   = FOLDER_TOPLEVEL;
 	if (pexist(folder)) {
@@ -177,13 +248,13 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
 	if ( !( l-> ctx = heif_context_alloc()))
 		SET_ERROR("cannot create context");
 
-	l->error = heif_context_read_from_reader(l->ctx, &reader, fi->req, NULL);
+	CALL heif_context_read_from_reader(l->ctx, &reader, fi->req, NULL);
 	CHECK_HEIF_ERROR;
 
 	n_images = heif_context_get_number_of_top_level_images(l->ctx);
 	if ( n_images < 1 ) SET_ERROR("cannot get top level images");
 
-	l-> error = heif_context_get_primary_image_ID(l->ctx, &primary_id);
+	CALL heif_context_get_primary_image_ID(l->ctx, &primary_id);
 	CHECK_HEIF_ERROR;
 
 	if ( !( l-> image_ids = malloc( sizeof(heif_item_id) * n_images))) 
@@ -207,7 +278,7 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
 		subindex = l->image_ids[l->subindex];
 		free(l->image_ids);
 		l->image_ids = NULL;
-		l-> error = heif_context_get_image_handle(l-> ctx, subindex, &l->subhandle);
+		CALL heif_context_get_image_handle(l-> ctx, subindex, &l->subhandle);
 		CHECK_HEIF_ERROR;
 
 		switch ( l-> folder ) {
@@ -313,10 +384,10 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 
 	switch (l->folder) {
 	case FOLDER_TOPLEVEL:
-		l-> error = heif_context_get_image_handle(l-> ctx, l-> image_ids[fi->frame], &h);
+		CALL heif_context_get_image_handle(l-> ctx, l-> image_ids[fi->frame], &h);
 		break;
 	case FOLDER_THUMBNAIL:
-		l-> error = heif_image_handle_get_thumbnail(l->subhandle, l-> image_ids[fi->frame], &h);
+		CALL heif_image_handle_get_thumbnail(l->subhandle, l-> image_ids[fi->frame], &h);
 		break;
 	}
 	CHECK_HEIF_ERROR;
@@ -342,6 +413,12 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 		if (n) pset_i( depth_images,    n);
 		n = heif_image_handle_get_number_of_thumbnails(h);
 		if (n) pset_i( thumbnails,      n);
+		n = heif_image_handle_get_number_of_auxiliary_images(h,
+			LIBHEIF_AUX_IMAGE_FILTER_OMIT_ALPHA|
+			LIBHEIF_AUX_IMAGE_FILTER_OMIT_DEPTH
+		);
+		if (n) pset_i( aux,      n);
+
 	}
 	icon = kind_of( fi-> object, CIcon);
 	if ( icon && !heif_image_handle_has_alpha_channel(h))
@@ -373,7 +450,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 	}
 
 	/* load */
-	l->error = heif_decode_image(h, &himg,
+	CALL heif_decode_image(h, &himg,
 		heif_colorspace_RGB,
 		icon ? heif_chroma_interleaved_RGBA : heif_chroma_interleaved_RGB,
 		hdo);
@@ -390,20 +467,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 		y++, src -= src_stride, dst += i->lineSize
 	) {
 		if ( icon ) {
-			register Byte *s = src;
-			register Byte *d = dst;
-			register Byte *a = alpha;
-			register int   x = width;
-			x = width;
-			while (x--) {
-				register Byte r,g;
-				r = *(s++);
-				g = *(s++);
-				*(d++) = *(s++);
-				*(d++) = g;
-				*(d++) = r;
-				*(a++) = *(s++);
-			}
+			bc_rgba_bgr_a( src, dst, alpha, width);
 			alpha += alpha_stride;
 		} else
 			cm_reverse_palette(( PRGBColor) src, (PRGBColor) dst, width);
@@ -428,28 +492,196 @@ close_load( PImgCodec instance, PImgLoadFileInstance fi)
 	free( l);
 }
 
+typedef struct _SaveRec {
+	struct heif_context* ctx;
+	struct heif_error    error;
+} SaveRec;
+
 static HV *
 save_defaults( PImgCodec c)
 {
 	HV * profile = newHV();
+	pset_c(encoder, "HEVC");
+	pset_c(quality, "75");
 	return profile;
 }
 
 static void *
 open_save( PImgCodec instance, PImgSaveFileInstance fi)
 {
-	return (void*)1;
+	SaveRec *l;
+	if (!(l = malloc(sizeof(SaveRec)))) return NULL;
+	memset( l, 0, sizeof( SaveRec));
+
+	if ( !( l-> ctx = heif_context_alloc()))
+		SET_ERROR("cannot create context");
+
+	return (void*)l;
+
+FAIL:
+	if ( l->ctx) heif_context_free(l-> ctx);
+	free(l);
+	return NULL;
 }
+
+static struct heif_error
+heif_write(struct heif_context* ctx, const void* data, size_t size, void* userdata)
+{
+	struct heif_error err;
+	if ( req_write(( PImgIORequest) (userdata), size, (void*)data) >= 0) {
+		err.code    = heif_error_Ok;
+		err.subcode = heif_suberror_Unspecified;
+		err.message = "Ok";
+	} else {
+		err.code    = heif_error_Encoding_error;
+		err.subcode = heif_suberror_Cannot_write_output_data;
+		err.message = "write error";
+	}
+	return err;
+}
+
+struct heif_writer writer = {
+	.writer_api_version = 1,
+	.write              = heif_write
+};
 
 static Bool
 save( PImgCodec instance, PImgSaveFileInstance fi)
 {
+	dPROFILE;
+	SaveRec * l = ( SaveRec *) fi-> instance;
+	struct heif_encoder* encoder = NULL;
+	HV * profile = fi-> objectExtras;
+	enum heif_compression_format compression;
+	struct heif_image* himg = NULL;
+	PIcon i = ( PIcon) fi-> object;
+	Bool icon;
+	int y, dst_stride, alpha_stride = 0;
+	Byte *src, *dst, *alpha = NULL;
+	struct heif_encoding_options* options = NULL;
+	enum heif_colorspace colorspace;
+	enum heif_chroma chroma;
+
+	compression = heif_compression_HEVC;
+	if ( pexist(encoder)) {
+		char * c = pget_c(encoder);
+		if ( strcmp(c, "HEVC") == 0)
+			compression = heif_compression_HEVC;
+		else if ( strcmp(c, "AVC") == 0)
+			compression = heif_compression_AVC;
+		else if ( strcmp(c, "AV1") == 0)
+			compression = heif_compression_AV1;
+		else
+			SET_ERROR("bad encoder, must be one of: HEVC, AVC, AV1");
+	}
+	if ( !heif_have_decoder_for_format(compression))
+		SET_ERROR("encoder is not available");
+	CALL heif_context_get_encoder_for_format(l->ctx, compression, &encoder);
+	CHECK_HEIF_ERROR;
+
+	if ( pexist(quality)) {
+		char * c = pget_c(quality);
+		if ( strcmp(c, "lossless") == 0) {
+			CALL heif_encoder_set_lossless(encoder, 1);
+		} else {
+			char * err = NULL;
+			int quality = strtol(c, &err, 10);
+			if ( *err || quality < 0 || quality > 100 )
+				SET_ERROR("quality must be set either to an integer between 0 and 100 or to 'lossless'");
+			CALL heif_encoder_set_lossy_quality(encoder, quality);
+		}
+	} else
+		CALL heif_encoder_set_lossy_quality(encoder, 75);
+	CHECK_HEIF_ERROR;
+
+	options = heif_encoding_options_alloc();
+
+
+	icon = kind_of( fi-> object, CIcon);
+	if ( icon ) {
+		if ( i->type == imByte ) {
+			colorspace = heif_colorspace_monochrome;
+			chroma     = heif_chroma_monochrome;
+		} else {
+			colorspace = heif_colorspace_RGB;
+			chroma     = heif_chroma_interleaved_RGBA;
+		}
+	} else {
+		if ( i->type == imByte ) {
+			colorspace = heif_colorspace_monochrome;
+			chroma     = heif_chroma_monochrome;
+		} else {
+			colorspace = heif_colorspace_RGB;
+			chroma     = heif_chroma_interleaved_RGB;
+		}
+	}
+	CALL heif_image_create(i-> w, i-> h, colorspace, chroma, &himg);
+	CHECK_HEIF_ERROR;
+
+	if ( i->type == imByte ) {
+		CALL heif_image_add_plane(himg, heif_channel_Y, i->w, i->h, 8);
+		CHECK_HEIF_ERROR;
+		dst = (Byte*) heif_image_get_plane(himg, heif_channel_Y, &dst_stride);
+	} else {
+		CALL heif_image_add_plane(himg, heif_channel_interleaved, i->w, i->h, 8);
+		CHECK_HEIF_ERROR;
+		dst = (Byte*) heif_image_get_plane(himg, heif_channel_interleaved, &dst_stride);
+	}
+
+	if ( icon ) {
+		alpha        = i-> mask;
+		alpha_stride = i-> maskLine;
+	}
+	for (
+		y = 0, dst += (i->h - 1) * dst_stride, src = i->data;
+		y < i->h;
+		y++, src += i->lineSize, dst -= dst_stride
+	) {
+		if ( icon ) {
+			if ( i->type == imByte ) {
+				memcpy( dst, src, i-> w);
+			} else {
+				bc_bgr_a_rgba( src, alpha, dst, i->w);
+				alpha += alpha_stride;
+			}
+		} else {
+			if ( i->type == imByte ) {
+				memcpy( dst, src, i-> w);
+			} else {
+				cm_reverse_palette(( PRGBColor) src, (PRGBColor) dst, i->w);
+			}
+		}
+	}
+
+	struct heif_image_handle* handle;
+	CALL heif_context_encode_image(l->ctx, himg, encoder, options, &handle);
+	CHECK_HEIF_ERROR;
+
+	heif_encoding_options_free(options);
+	heif_image_handle_release(handle);
+	heif_encoder_release(encoder);
+	encoder = NULL;
+	options = NULL;
+
+	if ( fi-> frame == fi-> frameMapSize - 1 ) {
+		CALL heif_context_write(l->ctx, &writer, fi->req);
+		CHECK_HEIF_ERROR;
+	}
+	return true;
+
+FAIL:
+	if ( options ) heif_encoding_options_free(options);
+	if ( encoder ) heif_encoder_release(encoder);
 	return false;
+
 }
 
 static void
 close_save( PImgCodec instance, PImgSaveFileInstance fi)
 {
+	SaveRec * l = ( SaveRec *) fi-> instance;
+	if ( l-> ctx) heif_context_free( l-> ctx);
+	free(l);
 }
 
 void
@@ -466,6 +698,7 @@ apc_img_codec_heif( void )
 	vmt. open_save     = open_save;
 	vmt. save          = save;
 	vmt. close_save    = close_save;
+	vmt. done          = done;
 	apc_img_register( &vmt, NULL);
 }
 

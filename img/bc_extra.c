@@ -188,6 +188,51 @@ bc_rgb_ibgr( register Byte * source, register Byte * dest, register int count)
 	}
 }
 
+void bc_rgba_rgb_a( register Byte * rgba_source, register Byte * rgb_dest, register Byte * a_dest, register int count)
+{
+	while (count--) {
+		*rgb_dest++ = *rgba_source++;
+		*rgb_dest++ = *rgba_source++;
+		*rgb_dest++ = *rgba_source++;
+		*a_dest++ = *rgba_source++;
+	}
+}
+
+void bc_rgba_bgr_a( register Byte * rgba_source, register Byte * bgr_dest, register Byte * a_dest,    register int count)
+{
+	while (count--) {
+		register Byte r, g;
+		r = *rgba_source++;
+		g = *rgba_source++;
+		*bgr_dest++ = *rgba_source++;
+		*bgr_dest++ = g;
+		*bgr_dest++ = r;
+		*a_dest++ = *rgba_source++;
+	}
+}
+
+void bc_rgb_a_rgba( register Byte * rgb_source,  register Byte * a_source, register Byte * rgba_dest, register int count)
+{
+	while (count--) {
+		*rgba_dest++ = *rgb_source++;
+		*rgba_dest++ = *rgb_source++;
+		*rgba_dest++ = *rgb_source++;
+		*rgba_dest++ = *a_source++;
+	}
+}
+
+void bc_bgr_a_rgba( register Byte * bgr_source,  register Byte * a_source, register Byte * rgba_dest, register int count)
+{
+	while (count--) {
+		register Byte r, g;
+		r = *bgr_source++;
+		g = *bgr_source++;
+		*rgba_dest++ = *bgr_source++;
+		*rgba_dest++ = g;
+		*rgba_dest++ = r;
+		*rgba_dest++ = *a_source++;
+	}
+}
 
 
 #ifdef __cplusplus
