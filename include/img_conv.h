@@ -266,6 +266,10 @@ extern void bc_rgb_irgb( Byte * source, Byte * dest, int count);
 extern void bc_rgb_rgbi( Byte * source, Byte * dest, int count);
 extern void bc_rgb_ibgr( Byte * source, Byte * dest, int count);
 extern void bc_rgb_bgri( Byte * source, Byte * dest, int count);
+extern void bc_rgba_rgb_a( Byte * rgba_source, Byte * rgb_dest, Byte * a_dest, int count);
+extern void bc_rgba_bgr_a( Byte * rgba_source, Byte * bgr_dest, Byte * a_dest, int count);
+extern void bc_rgb_a_rgba( Byte * rgb_source, Byte * a_source, Byte * rgba_dest, int count);
+extern void bc_bgr_a_rgba( Byte * bgr_source, Byte * a_source, Byte * rgba_dest, int count);
 
 
 /* misc */
