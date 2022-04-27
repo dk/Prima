@@ -463,7 +463,7 @@ Prima::Dialog::FontDialog - standard font dialog
 
 =for podview <img src="fontdlg.gif">
 
-=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/fontdlg.gif">
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/Dialog/fontdlg.gif">
 
 =head1 DESCRIPTION
 

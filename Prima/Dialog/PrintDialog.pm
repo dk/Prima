@@ -206,7 +206,7 @@ selection process.
 
 =for podview <img src="printdialog.gif">
 
-=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/printdialog.gif">
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/Dialog/printdialog.gif">
 
 =head1 AUTHOR
 

@@ -1720,7 +1720,7 @@ Prima::Dialog::FileDialog - File system related widgets and dialogs.
 
 =for podview <img src="filedlg.gif">
 
-=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/filedlg.gif">
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/Dialog/filedlg.gif">
 
 =head1 DESCRIPTION
 

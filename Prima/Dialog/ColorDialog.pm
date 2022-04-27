@@ -1016,7 +1016,7 @@ Prima::Dialog::ColorDialog - standard color selection facilities
 
 =for podview <img src="colordlg.png">
 
-=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/colordlg.png">
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/Dialog/colordlg.png">
 
 =head1 DESCRIPTION
 

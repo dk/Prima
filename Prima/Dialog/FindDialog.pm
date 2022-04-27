@@ -260,7 +260,7 @@ Prima::Dialog::ReplaceDialog to find and replace text.
 
 =for podview <img src="editdlg.gif">
 
-=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/editdlg.gif">
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/Dialog/editdlg.gif">
 
 =head1 DESCRIPTION
 
