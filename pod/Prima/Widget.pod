@@ -2112,15 +2112,6 @@ Returns the mapped OFFSETS.
 
 See also: C<screen_to_client>, C<clipOwner>
 
-=item clear_event
-
-Use this call in your overloaded event handlers when wanted to signal that 
-further processing should be stopped, f ex onMouseDown doing something else than 
-the basw widget.
-
-See more in L<Prima::Object/Execution control>. Consult the exact C<nt::> type of the
-event in the Prima/Classes.pm source.
-
 =item close
 
 Calls C<can_close()>, and if successful, destroys a widget.

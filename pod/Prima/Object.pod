@@ -798,6 +798,13 @@ Signals the event execution stop for nt::Event-prototyped events.
 
 See also: L<"Events">, C<push_event>, C<pop_event>, C<::eventFlag>, C<notify>.
 
+Use this call in your overloaded event handlers when wanted to signal that
+further processing should be stopped, f ex onMouseDown doing something else than
+the base widget.
+
+See more in L<Execution control>. Consult the exact C<nt::> type of the
+event in the Prima/Classes.pm source.
+
 =item detach OBJECT, KILL
 
 Removes OBJECT from the attached objects list and decreases OBJECT's reference
