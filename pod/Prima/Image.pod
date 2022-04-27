@@ -763,7 +763,9 @@ it can not load and save images.
 
 See L<Prima::image-load> for details.
 
-This method can be called without object instance.
+This method can be called without object instance:
+
+   perl -MData::Dumper=Dumper -MPrima::noX11 -MPrima -le 'print Dumper(Prima::Image->codecs)'
 
 =item dup
 
