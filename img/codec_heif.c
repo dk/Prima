@@ -63,6 +63,8 @@ static ImgCodecInfo codec_info = {
 	mime
 };
 
+static enum heif_compression_format default_compression = heif_compression_HEVC;
+
 static HV *
 load_defaults( PImgCodec c)
 {
@@ -79,7 +81,7 @@ init( PImgCodecInfo * info, void * param)
 	{
 		struct heif_context*ctx = heif_context_alloc();
 		struct heif_encoder_descriptor *enc[1024];
-		int i, n, feat;
+		int i, n, feat, got_hevc = 0;
 		n = heif_context_get_encoder_descriptors(ctx, heif_compression_undefined, NULL,
 			(const struct heif_encoder_descriptor**) enc, 1024);
 		for ( i = feat = 0; i < n; i++) {
@@ -97,6 +99,7 @@ init( PImgCodecInfo * info, void * param)
 			switch ( comp ) {
 			case heif_compression_HEVC:
 				compstr = "HEVC";
+				got_hevc = 1;
 				break;
 			case heif_compression_AVC:
 				compstr = "AVC";
@@ -109,6 +112,7 @@ init( PImgCodecInfo * info, void * param)
 			default:
 				continue;
 			}
+			default_compression = comp;
 
 			name     = heif_encoder_descriptor_get_name(enc[i]);
 			shrt     = heif_encoder_descriptor_get_id_name(enc[i]);
@@ -125,6 +129,7 @@ init( PImgCodecInfo * info, void * param)
 			buf[2047] = 0;
 			features[feat++] = duplicate_string(buf);
 		}
+		if ( got_hevc ) default_compression = heif_compression_HEVC;
 		heif_context_free(ctx);
 	}
 	return (void*)1;
@@ -586,7 +591,12 @@ static HV *
 save_defaults( PImgCodec c)
 {
 	HV * profile = newHV();
-	pset_c(encoder, "HEVC");
+	switch (default_compression) {
+	case heif_compression_HEVC: pset_c(encoder, "HEVC"); break;
+	case heif_compression_AVC:  pset_c(encoder, "AVC"); break;
+	case heif_compression_AV1:  pset_c(encoder, "AV1"); break;
+	default: break;
+	}
 	pset_c(quality, "75");
 	pset_i(premultiplied_alpha, 0);
 	pset_i(thumbnail_of,    -1);
@@ -743,7 +753,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 	enum heif_colorspace colorspace;
 	enum heif_chroma chroma;
 
-	compression = heif_compression_HEVC;
+	compression = default_compression;
 	if ( pexist(encoder)) {
 		char * c = pget_c(encoder);
 		if ( strcmp(c, "HEVC") == 0)
