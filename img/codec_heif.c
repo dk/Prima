@@ -30,6 +30,8 @@ static char * loadOutput[] = {
 	"primary_frame",
 	"thumbnails",
 	"aux",
+	"metadata",
+	"thumbnail_of",
 	NULL
 };
 
@@ -67,8 +69,6 @@ load_defaults( PImgCodec c)
 	HV * profile = newHV();
 	pset_i( ignore_transformations, 0);
 	pset_i( convert_hdr_to_8bit, 0);
-	pset_c( folder,   "toplevel");
-	pset_c( subindex, 0);
 	return profile;
 }
 
@@ -140,15 +140,19 @@ done( PImgCodec codec)
 	}
 }
 
-#define FOLDER_TOPLEVEL  0
-#define FOLDER_THUMBNAIL 1
+typedef struct {
+	heif_item_id *items;
+	int           count, size, curr;
+	heif_item_id _buf[1];
+} ItemList;
 
 typedef struct _LoadRec {
 	struct heif_context* ctx;
 	struct heif_error    error;
-	heif_item_id*        image_ids;
-	int                  primary_index, folder, subindex;
-	struct heif_image_handle* subhandle;
+	int                  primary_index;
+	ItemList             *toplevel, *thumbnails;
+	int                  *toplevel_index;
+	struct heif_image_handle *curr_toplevel_handle;
 } LoadRec;
 
 static int64_t
@@ -197,11 +201,33 @@ struct heif_reader reader = {
 #define CHECK_HEIF_ERROR if (l->error.code != heif_error_Ok) SET_HEIF_ERROR
 #define CALL l->error=
 
+static Bool
+item_list_alloc(ItemList** list, int n)
+{
+	ItemList* p = *list;
+	if ( p ) {
+		if ( p-> size < n ) {
+			int sz = p-> size;
+			while (sz < n) sz *= 2;
+			if ( !( p = realloc( p, (sz - 1) * sizeof(heif_item_id) + sizeof(ItemList))))
+				return false;
+			p-> size = sz;
+		}
+	} else {
+		if ( !( p = malloc((n - 1) * sizeof(heif_item_id) + sizeof(ItemList))))
+			return false;
+		p-> size = n;
+		p-> curr = 0;
+	}
+	p-> count = n;
+	p-> items = p-> _buf;
+	*list = p;
+	return true;
+}
+
 static void *
 open_load( PImgCodec instance, PImgLoadFileInstance fi)
 {
-	dPROFILE;
-	HV * profile = fi->extras;
 	LoadRec * l;
 	int n, n_images;
 #define PEEK_SIZE 32
@@ -230,21 +256,6 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
 	}
 #undef PEEK_SIZE
 
-	l-> folder   = FOLDER_TOPLEVEL;
-	if (pexist(folder)) {
-		char * c = pget_c(folder);
-		if ( strcmp(c, "toplevel") == 0)
-			l-> folder = FOLDER_TOPLEVEL;
-		else if ( strcmp(c, "thumbnails") == 0)
-			l-> folder = FOLDER_THUMBNAIL;
-		else
-			SET_ERROR("unknown folder, must be one of: toplevel, thumbnails");
-	}
-	if (pexist(subindex)) {
-		l-> subindex = pget_i(subindex);
-		if ( l-> subindex < 0 ) SET_ERROR("bad subindex");
-	}
-
 	if ( !( l-> ctx = heif_context_alloc()))
 		SET_ERROR("cannot create context");
 
@@ -257,62 +268,54 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
 	CALL heif_context_get_primary_image_ID(l->ctx, &primary_id);
 	CHECK_HEIF_ERROR;
 
-	if ( !( l-> image_ids = malloc( sizeof(heif_item_id) * n_images))) 
+	if ( !item_list_alloc(&l->toplevel, n_images))
 		SET_ERROR("not enough memory");
+	l->toplevel->curr = -1;
 
-	n = heif_context_get_list_of_top_level_image_IDs(l->ctx, l->image_ids, n_images);
+	if ( !( l->toplevel_index = malloc((n_images + 1) * sizeof(int))))
+		SET_ERROR("not enough memory");
+	l->toplevel_index[0] = 0;
+	for ( n = 1; n <= n_images; n++) l->toplevel_index[n] = -1;
+
+	if ( !item_list_alloc(&l->thumbnails, 16))
+		SET_ERROR("not enough memory");
+	l->thumbnails->count = 0;
+
+	n = heif_context_get_list_of_top_level_image_IDs(l->ctx, l->toplevel->items, n_images);
 	if ( n < n_images ) {
 		n_images = n;
 		if ( n < 0 ) SET_ERROR("cannot get list of top level images");
 	}
 	l-> primary_index = -1;
 	for ( n = 0; n < n_images; n++)
-		if ( primary_id == l->image_ids[n] ) {
+		if ( primary_id == l->toplevel->items[n] ) {
 			l-> primary_index = n;
 			break;
 		}
 
-	if ( l-> folder != FOLDER_TOPLEVEL ) {
-		int subindex;
-		if ( l-> subindex >= n_images ) SET_ERROR("subindex out of frame range");
-		subindex = l->image_ids[l->subindex];
-		free(l->image_ids);
-		l->image_ids = NULL;
-		CALL heif_context_get_image_handle(l-> ctx, subindex, &l->subhandle);
-		CHECK_HEIF_ERROR;
-
-		switch ( l-> folder ) {
-		case FOLDER_THUMBNAIL:
-			n_images = heif_image_handle_get_number_of_thumbnails(l->subhandle);
-			break;
-		default:
-			SET_ERROR("panic: internal error");
+	if ( fi-> wantFrames ) {
+		struct heif_image_handle *h;
+		int index = 0;
+		fi-> frameCount = n_images;
+		for ( n = 0; n < n_images; n++) {
+			int nn;
+			CALL heif_context_get_image_handle(l-> ctx, n, &h);
+			CHECK_HEIF_ERROR;
+			nn = heif_image_handle_get_number_of_thumbnails(h);
+			l->toplevel_index[n] = index;
+			index += 1 + nn;
+			fi-> frameCount += nn;
+			heif_image_handle_release(h);
 		}
-		if ( !( l-> image_ids = malloc( sizeof(heif_item_id) * n_images))) 
-			SET_ERROR("not enough memory");
-		switch ( l-> folder ) {
-		case FOLDER_THUMBNAIL:
-			n = heif_image_handle_get_list_of_thumbnail_IDs(l->subhandle, l->image_ids, n_images);
-			break;
-		default:
-			SET_ERROR("panic: internal error");
-		}
-		if ( n < n_images ) {
-			n_images = n;
-			if ( n < 0 ) {
-				snprintf(fi->errbuf, 256, "cannot get list of %s images", pget_c(folder));
-				goto FAIL;
-			}
-		}
+		l->toplevel_index[n_images] = index;
 	}
-
-	fi->frameCount = n_images;
 
 	return l;
 
 FAIL:
-	if ( l->subhandle  ) heif_image_handle_release(l->subhandle);
-	if ( l-> image_ids ) free(l-> image_ids);
+	if ( l-> toplevel_index) free(l-> toplevel_index);
+	if ( l-> toplevel   ) free(l-> toplevel);
+	if ( l-> thumbnails ) free(l-> thumbnails);
 	if ( l->ctx) heif_context_free(l-> ctx);
 	free(l);
 	return NULL;
@@ -368,6 +371,86 @@ BAILOUT:
 }
 
 static Bool
+set_toplevel_handle( PImgLoadFileInstance fi, int toplevel)
+{
+	int n;
+	struct heif_image_handle* h = NULL;
+	LoadRec * l  = ( LoadRec *) fi-> instance;
+
+	if ( toplevel == l->toplevel->curr && l->curr_toplevel_handle)
+		return true;
+
+	if ( l->curr_toplevel_handle ) {
+		heif_image_handle_release(l->curr_toplevel_handle);
+		l->curr_toplevel_handle = NULL;
+	}
+	CALL heif_context_get_image_handle(l-> ctx, l->toplevel->items[toplevel], &h);
+	CHECK_HEIF_ERROR;
+	l->toplevel->curr = toplevel;
+	l->curr_toplevel_handle = h;
+
+	n = heif_image_handle_get_number_of_thumbnails(h);
+	if ( !item_list_alloc(&l->thumbnails, n))
+		SET_ERROR("not enough memory");
+	bzero(l->thumbnails->items, sizeof(heif_item_id) * n);
+	heif_image_handle_get_list_of_thumbnail_IDs(h, l->thumbnails->items, l->thumbnails->count);
+
+	return true;
+
+FAIL:
+	return false;
+}
+
+static struct heif_image_handle*
+load_thumbnail( PImgLoadFileInstance fi, int toplevel)
+{
+	LoadRec * l  = ( LoadRec *) fi-> instance;
+	struct heif_image_handle* h = NULL;
+
+	if ( !set_toplevel_handle(fi, toplevel)) return false;
+
+	CALL heif_image_handle_get_thumbnail(l->curr_toplevel_handle,
+		l-> thumbnails->items[fi->frame - l->toplevel_index[toplevel] - 1],
+		&h);
+	CHECK_HEIF_ERROR;
+FAIL:
+	return h;
+}
+
+static struct heif_image_handle*
+seek_image_handle( PImgLoadFileInstance fi)
+{
+	int i;
+	struct heif_image_handle* h = NULL;
+
+	if ( fi->frame < 0 ) return NULL;
+	LoadRec * l  = ( LoadRec *) fi-> instance;
+
+	for ( i = 0; i < l-> toplevel-> count; i++) {
+		if ( l->toplevel_index[i+1] < 0 ) {
+			if ( !set_toplevel_handle(fi, i)) return false;
+			l->toplevel_index[i+1] = l->toplevel_index[i] + 1 + l->thumbnails->count;
+		}
+
+		if ( fi->frame == l->toplevel_index[i]) {
+			if ( !set_toplevel_handle(fi, i)) return false;
+			return l->curr_toplevel_handle;
+		} else if ( fi->frame < l->toplevel_index[i] ) {
+			if ( !( h = load_thumbnail(fi, i - 1))) return false;
+			break;
+		} else if ( i + 1 == l-> toplevel->count && fi->frame > l->toplevel_index[i] ) {
+			if ( !( h = load_thumbnail(fi, i))) return false;
+			break;
+		}
+	}
+
+	if ( fi->frameCount < 0 && l->toplevel_index[l->toplevel->count] >= 0 ) 
+		fi->frameCount = l->toplevel_index[l->toplevel->count];
+
+	return h;
+}
+
+Bool
 load( PImgCodec instance, PImgLoadFileInstance fi)
 {
 	HV * profile = fi-> frameProperties;
@@ -382,15 +465,8 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 	int y, bit_depth, width, height, src_stride, alpha_stride = 0;
 	Byte *src, *dst, *alpha = NULL;
 
-	switch (l->folder) {
-	case FOLDER_TOPLEVEL:
-		CALL heif_context_get_image_handle(l-> ctx, l-> image_ids[fi->frame], &h);
-		break;
-	case FOLDER_THUMBNAIL:
-		CALL heif_image_handle_get_thumbnail(l->subhandle, l-> image_ids[fi->frame], &h);
-		break;
-	}
-	CHECK_HEIF_ERROR;
+	if ( !( h = seek_image_handle(fi)))
+		goto FAIL;
 
 	/* read basics */
 	bit_depth = heif_image_handle_get_luma_bits_per_pixel(h);
@@ -409,15 +485,19 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 		pset_i( ispe_height,            heif_image_handle_get_ispe_height(h));
 		if (heif_image_handle_has_alpha_channel(h))
 			pset_i( has_alpha,      1);
-		n = heif_image_handle_get_number_of_depth_images(h);
-		if (n) pset_i( depth_images,    n);
-		n = heif_image_handle_get_number_of_thumbnails(h);
-		if (n) pset_i( thumbnails,      n);
-		n = heif_image_handle_get_number_of_auxiliary_images(h,
-			LIBHEIF_AUX_IMAGE_FILTER_OMIT_ALPHA|
-			LIBHEIF_AUX_IMAGE_FILTER_OMIT_DEPTH
-		);
-		if (n) pset_i( aux,      n);
+		if ( h == l->curr_toplevel_handle ) {
+			n = heif_image_handle_get_number_of_depth_images(h);
+			if (n) pset_i( depth_images, n);
+			n = heif_image_handle_get_number_of_thumbnails(h);
+			if (n) pset_i( thumbnails, n);
+			n = heif_image_handle_get_number_of_auxiliary_images(h,
+				LIBHEIF_AUX_IMAGE_FILTER_OMIT_ALPHA|
+				LIBHEIF_AUX_IMAGE_FILTER_OMIT_DEPTH
+			);
+			if (n) pset_i( aux, n);
+		} else {
+			pset_i(thumbnail_of, l->toplevel_index[l->toplevel->curr]);
+		}
 
 	}
 	icon = kind_of( fi-> object, CIcon);
@@ -478,7 +558,8 @@ SUCCESS:
 FAIL:
 	if (himg) heif_image_release(himg);
 	if (hdo) heif_decoding_options_free(hdo);
-	if (h) heif_image_handle_release(h);
+	if ( h && h != l->curr_toplevel_handle )
+		heif_image_handle_release(h);
 	return ret;
 }
 
@@ -486,15 +567,19 @@ static void
 close_load( PImgCodec instance, PImgLoadFileInstance fi)
 {
 	LoadRec * l = ( LoadRec *) fi-> instance;
-	if ( l->subhandle ) heif_image_handle_release(l->subhandle);
-	if ( l-> ctx)       heif_context_free( l-> ctx);
-	if ( l-> image_ids) free( l-> image_ids );
+	if ( l-> curr_toplevel_handle) heif_image_handle_release(l-> curr_toplevel_handle);
+	if ( l-> ctx)        heif_context_free( l-> ctx);
+	if ( l-> toplevel_index) free(l-> toplevel_index);
+	if ( l-> toplevel)   free( l-> toplevel );
+	if ( l-> thumbnails) free(l-> thumbnails);
 	free( l);
 }
 
 typedef struct _SaveRec {
 	struct heif_context* ctx;
 	struct heif_error    error;
+	struct heif_image_handle** handles;
+	struct heif_image_handle*  handlebuf[1];
 } SaveRec;
 
 static HV *
@@ -503,6 +588,9 @@ save_defaults( PImgCodec c)
 	HV * profile = newHV();
 	pset_c(encoder, "HEVC");
 	pset_c(quality, "75");
+	pset_i(premultiplied_alpha, 0);
+	pset_i(thumbnail_of,    -1);
+	pset_sv(metadata,  newRV_noinc((SV*) newHV()));
 	return profile;
 }
 
@@ -510,8 +598,12 @@ static void *
 open_save( PImgCodec instance, PImgSaveFileInstance fi)
 {
 	SaveRec *l;
-	if (!(l = malloc(sizeof(SaveRec)))) return NULL;
-	memset( l, 0, sizeof( SaveRec));
+	int sz;
+
+	sz = sizeof(SaveRec) + (fi->frameMapSize * sizeof(struct heif_image_handle*));
+	if (!(l = malloc(sz))) return NULL;
+	memset( l, 0, sz);
+	l-> handles = l->handlebuf;
 
 	if ( !( l-> ctx = heif_context_alloc()))
 		SET_ERROR("cannot create context");
@@ -546,6 +638,95 @@ struct heif_writer writer = {
 };
 
 static Bool
+encode_thumbnail( PImgSaveFileInstance fi, HV * profile)
+{
+	dPROFILE;
+	SaveRec * l  = ( SaveRec *) fi-> instance;
+	int thumbnail_of = -1;
+
+	if ( !pexist(thumbnail_of))
+		return true;
+
+	thumbnail_of = pget_i(thumbnail_of);
+	if ( thumbnail_of < 0 || thumbnail_of >= fi->frameMapSize )
+		SET_ERROR("thumbnail_of must be an integer from 0 to the last frame");
+	if ( thumbnail_of == fi->frame)
+		SET_ERROR("thumbnail_of cannot refer to itself");
+	if ( !l->handles[thumbnail_of])
+		SET_ERROR("master image is not encoded yet");
+	CALL heif_context_assign_thumbnail(l->ctx, l->handles[thumbnail_of], l->handles[fi->frame]);
+	CHECK_HEIF_ERROR;
+	return true;
+
+FAIL:
+	return false;
+}
+
+static Bool
+encode_metadata( PImgSaveFileInstance fi, HV * profile)
+{
+	dPROFILE;
+	SaveRec * l  = ( SaveRec *) fi-> instance;
+	SV *sv, *content;
+	AV *av;
+	void * data;
+	STRLEN size;
+	char * item_type, * content_type;
+	int i, len;
+
+	if ( !pexist(metadata))
+		return true;
+	sv = pget_sv(metadata);
+
+	if ( !SvOK(sv) || !SvROK(sv) || SvTYPE(SvRV(sv)) != SVt_PVAV)
+		SET_ERROR("'metadata' is not an array");
+	av = (AV*) SvRV(sv);
+	len = av_len(av) + 1;
+	for ( i = 0; i < len; i++) {
+		SV **ssv;
+		ssv = av_fetch( av, i, 0 );
+		if ( !ssv || !(sv = *ssv) || !SvOK(sv) || !SvROK(sv) || SvTYPE(SvRV(sv)) != SVt_PVHV)
+			SET_ERROR("metadata[index] is not a hash");
+
+		profile = ( HV*) SvRV( sv);
+
+		/*
+		XMP:  mime=application/rdf+xml
+		EXIF: (uint32_t)offset + data, Exif=
+		*/
+
+		if ( pexist(type))
+			item_type = pget_c(type);
+		else
+			SET_ERROR("metadata.type is missing");
+
+		if ( pexist(content_type))
+			content_type = pget_c(content_type);
+		else
+			content_type = NULL;
+
+		if ( pexist(content))
+			content = pget_sv(content);
+		else
+			SET_ERROR("metadata.content is missing");
+		data = SvPV(content, size);
+
+		CALL heif_context_add_generic_metadata(
+			l->ctx, l->handles[fi->frame],
+			data, (int)size,
+			(const char*)item_type, (const char*)content_type
+		);
+		CHECK_HEIF_ERROR;
+	}
+
+	return true;
+
+FAIL:
+	return false;
+}
+
+
+static Bool
 save( PImgCodec instance, PImgSaveFileInstance fi)
 {
 	dPROFILE;
@@ -557,7 +738,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 	PIcon i = ( PIcon) fi-> object;
 	Bool icon;
 	int y, dst_stride, alpha_stride = 0;
-	Byte *src, *dst, *alpha = NULL;
+	Byte *src, *dst, *alpha = NULL, *mask8 = NULL;
 	struct heif_encoding_options* options = NULL;
 	enum heif_colorspace colorspace;
 	enum heif_chroma chroma;
@@ -599,6 +780,10 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 
 	icon = kind_of( fi-> object, CIcon);
 	if ( icon ) {
+		if ( i-> maskType != 8 ) {
+			if ( !( mask8 = i-> self-> convert_mask((Handle) i, 8)))
+				SET_ERROR("not enough memory");
+		}
 		if ( i->type == imByte ) {
 			colorspace = heif_colorspace_monochrome;
 			chroma     = heif_chroma_monochrome;
@@ -628,9 +813,12 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 		dst = (Byte*) heif_image_get_plane(himg, heif_channel_interleaved, &dst_stride);
 	}
 
+	if ( pexist(premultiplied_alpha) && pget_i(premultiplied_alpha))
+		heif_image_set_premultiplied_alpha(himg, 1);
+
 	if ( icon ) {
-		alpha        = i-> mask;
-		alpha_stride = i-> maskLine;
+		alpha        = mask8 ? mask8 : i-> mask;
+		alpha_stride = mask8 ? LINE_SIZE(i->w, 8) : i-> maskLine;
 	}
 	for (
 		y = 0, dst += (i->h - 1) * dst_stride, src = i->data;
@@ -652,16 +840,33 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 			}
 		}
 	}
+	if ( icon && i->type == imByte ) {
+		CALL heif_image_add_plane(himg, heif_channel_Alpha, i->w, i->h, 8);
+		CHECK_HEIF_ERROR;
+		dst = (Byte*) heif_image_get_plane(himg, heif_channel_Y, &dst_stride);
+		for (
+			y = 0, dst += (i->h - 1) * dst_stride;
+			y < i->h;
+			y++, alpha += alpha_stride, dst -= dst_stride
+		) {
+			memcpy( dst, src, i-> w);
+		}
+	}
 
-	struct heif_image_handle* handle;
-	CALL heif_context_encode_image(l->ctx, himg, encoder, options, &handle);
+	CALL heif_context_encode_image(l->ctx, himg, encoder, options, &l->handles[fi->frame]);
 	CHECK_HEIF_ERROR;
 
 	heif_encoding_options_free(options);
-	heif_image_handle_release(handle);
 	heif_encoder_release(encoder);
+	if ( mask8) free(mask8);
 	encoder = NULL;
 	options = NULL;
+	mask8   = NULL;
+
+	if ( !encode_thumbnail(fi, profile))
+		goto FAIL;
+	if ( !encode_metadata(fi, profile))
+		goto FAIL;
 
 	if ( fi-> frame == fi-> frameMapSize - 1 ) {
 		CALL heif_context_write(l->ctx, &writer, fi->req);
@@ -670,6 +875,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 	return true;
 
 FAIL:
+	if ( mask8)    free(mask8);
 	if ( options ) heif_encoding_options_free(options);
 	if ( encoder ) heif_encoder_release(encoder);
 	return false;
@@ -680,6 +886,12 @@ static void
 close_save( PImgCodec instance, PImgSaveFileInstance fi)
 {
 	SaveRec * l = ( SaveRec *) fi-> instance;
+	int i;
+
+	for ( i = 0; i < fi-> frameMapSize; i++) {
+		if ( l->handles[i] )
+			heif_image_handle_release(l->handles[i]);
+	}
 	if ( l-> ctx) heif_context_free( l-> ctx);
 	free(l);
 }

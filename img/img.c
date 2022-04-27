@@ -201,6 +201,7 @@ apc_img_load( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq,  
 	Bool iconUnmask = false;
 	Bool blending = true;
 	Bool noIncomplete = false;
+	Bool wantFrames = false;
 	char * baseClassName = "Prima::Image";
 	ImgIORequest sioreq;
 	int  load_mask;
@@ -288,6 +289,9 @@ apc_img_load( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq,  
 
 	if ( pexist( noIncomplete) && pget_B( noIncomplete))
 		fi. noIncomplete = noIncomplete = true;
+
+	if ( pexist( wantFrames) && pget_B( wantFrames))
+		fi. wantFrames = wantFrames = true;
 
 	if ( pexist( eventMask))
 		fi. eventMask = pget_i( eventMask);
@@ -615,7 +619,7 @@ apc_img_load( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq,  
 EXIT_NOW:;
 	if ( err && fi.errbuf[0] == 0)
 		strcpy(fi.errbuf, fi.wasTruncated ? "Truncated file" : "Internal error");
-	if ( fi. frameCount < 0 && pexist( wantFrames) && pget_i( wantFrames)) {
+	if ( fi. frameCount < 0 && wantFrames) {
 		if ( ioreq != NULL)
 			req_seek( ioreq, 0, SEEK_SET);
 		fi. frameCount = apc_img_frame_count( fileName, is_utf8, ioreq);
