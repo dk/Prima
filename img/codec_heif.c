@@ -625,15 +625,15 @@ save_defaults( PImgCodec c)
 				while ( list && *list) {
 					HV *hv = newHV();
 					const char* name = heif_encoder_parameter_get_name(*list);
-					char prefix = 0;
+					const char* svtype = "";
 					enum heif_encoder_parameter_type type = heif_encoder_parameter_get_type(*list);
 					switch (type) {
 					case heif_encoder_parameter_type_integer: {
 						HV *profile = hv;
 						int v, have_min = 0, have_max = 0, min = 0, max = 0, n = 0, *ints = NULL;
-						prefix = 'i';
+						svtype = "int";
 						if ( heif_encoder_get_parameter_integer(encoder, name, &v).code == heif_error_Ok)
-							pset_i(value, v);
+							pset_i(default, v);
 						if ( heif_encoder_parameter_get_valid_integer_values(*list,
 							&have_min, &have_max, &min, &max, &n, (const int**) &ints
 							).code == heif_error_Ok) {
@@ -651,17 +651,17 @@ save_defaults( PImgCodec c)
 					case heif_encoder_parameter_type_boolean: {
 						int v;
 						HV *profile = hv;
-						prefix = 'b';
+						svtype = "bool";
 						if ( heif_encoder_get_parameter_boolean(encoder, name, &v).code == heif_error_Ok)
-							pset_i(value, v);
+							pset_i(default, v);
 						break;
 					}
 					case heif_encoder_parameter_type_string: {
 						char v[2048], **strs;
 						HV *profile = hv;
-						prefix = 's';
+						svtype = "str";
 						if ( heif_encoder_get_parameter_string(encoder, name, v, sizeof(v)).code == heif_error_Ok) 
-							pset_c(value, v);
+							pset_c(default, v);
 						if (
 							heif_encoder_parameter_get_valid_string_values(
 								*list,
@@ -682,7 +682,8 @@ save_defaults( PImgCodec c)
 						list++;
 						continue;
 					}
-					snprintf(buf, 2048, "%s.%c_%s", shrt, prefix, name);
+					snprintf(buf, 2048, "%s.%s", shrt, name);
+					(void)hv_store( hv, "type", 4, newSVpv(svtype, 0), 0);
 					(void)hv_store( profile, buf, (I32) strlen(buf), newRV_noinc((SV*)hv), 0);
 					list++;
 				}
@@ -856,24 +857,10 @@ apply_encoder_options( PImgSaveFileInstance fi, enum heif_compression_format com
 	while ( list && *list) {
 		char buf[2048];
 		const char* name = heif_encoder_parameter_get_name(*list);
-		char prefix = 0;
 		enum heif_encoder_parameter_type type = heif_encoder_parameter_get_type(*list);
 		SV* sv;
 
-		switch (type) {
-		case heif_encoder_parameter_type_integer:
-			prefix = 'i';
-			break;
-		case heif_encoder_parameter_type_boolean:
-			prefix = 'b';
-			break;
-		case heif_encoder_parameter_type_string:
-			prefix = 's';
-			break;
-		default: goto NEXT;
-		}
-
-		snprintf(buf, 2048, "%s.%c_%s", shrt, prefix, name);
+		snprintf(buf, 2048, "%s.%s", shrt, name);
 		if ( !hv_exists( profile, buf, (I32) strlen( buf)))
 			goto NEXT;
 		if (( tmp = hv_fetch( profile, buf, (I32) strlen( buf), 0)) == NULL)
