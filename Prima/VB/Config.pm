@@ -263,6 +263,13 @@ sub classes
 		icon   => 'VB::classes.gif:33',
 		module   => 'Prima::VB::CoreClasses',
 	},
+	'Prima::DetailedOutline' => {
+		icon     => 'VB::classes.gif:35',
+		page     => 'Additional',
+		class    => 'Prima::VB::DetailedOutline',
+		RTModule => 'Prima::DetailedOutline',
+		module   => 'Prima::VB::CoreClasses',
+	},
 	);
 }
 
