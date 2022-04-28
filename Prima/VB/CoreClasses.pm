@@ -213,6 +213,13 @@ sub classes
 			page   => 'General',
 			icon   => 'VB::classes.gif:33',
 		},
+		'Prima::DetailedOutline' => {
+			icon     => 'VB::classes.gif:35',
+			page     => 'Additional',
+			class    => 'Prima::VB::DetailedOutline',
+			RTModule => 'Prima::DetailedOutline',
+			module   => 'Prima::VB::CoreClasses',
+		},
 	);
 }
 
@@ -1632,6 +1639,116 @@ ENOUGH:
 }
 
 sub prf_items  { $_[0]-> repaint; }
+
+package Prima::VB::DetailedOutline;
+use strict;
+use vars qw(@ISA);
+@ISA = qw(Prima::VB::StringOutline);
+
+sub prf_types
+{
+	my $pt = $_[ 0]-> SUPER::prf_types;
+	my %de = (
+		items  => ['headers', 'widths'],
+		uiv    => ['mainColumn', 'columns', 'minTabWidth', 'offset'],
+		treeArrays => ['items'],
+		string => ['headerClass'],
+		bool   => ['clickable', 'scalable', 'multiColumn', 'autoWidth'],
+	);
+	$_[0]-> prf_types_delete( $pt, qw(items));
+	$_[0]-> prf_types_add( $pt, \%de);
+	return $pt;
+}
+
+sub prf_adjust_default
+{
+	my ( $self, $p, $pf) = @_;
+	$self-> SUPER::prf_adjust_default( $p, $pf);
+}
+
+sub prf_events
+{
+	return (
+		$_[0]-> SUPER::prf_events,
+		onSort  => 'my ( $self, $column, $direction) = @_;',
+	);
+}
+
+sub on_paint
+{
+	my ( $self, $canvas) = @_;
+	my @r = $self-> paint_exterior( $canvas);
+	my $i = $self-> prf('items');
+	my @w = @{$self-> prf('widths')};
+	my @h = @{$self-> prf('headers')};
+	my @c = @h;
+	my $cl = $self-> prf('columns');
+	my $f = $canvas-> font-> height;
+
+	my $traverse;
+	return $self->common_paint($canvas) unless scalar(@r);
+
+	$canvas-> color( cl::Gray);
+	$canvas-> bar( 1, $r[3] - $f, $r[2], $r[3] - 1);
+	$canvas-> color( cl::Fore);
+
+	if ( $i && scalar @r) {
+		my $max = int(($r[3] - $r[1]) / $f);
+		$traverse = sub{
+			my ( $x, $l) = @_;
+			goto ENOUGH unless $max--;
+			$c[0] .= "\n";
+			$c[0] .= "\t\t" x $l;
+			$c[0] .= $x-> [2] ? '[-] ' : '[+] ' if $x-> [1];
+			$c[0] .= $x-> [0]->[0];
+			for ( my $j = 1; $j < @{$x->[0]}; $j++) {
+				$c[$j] .= "\n" . $x->[0]->[$j] // '';
+			}
+			$l++;
+			if ( $x-> [1] && $x-> [2]) {
+				$traverse-> ($_, $l) for @{$x-> [1]};
+			}
+		};
+		$traverse-> ($_,0) for @$i;
+ENOUGH:
+		my $z = $r[0];
+		for (my $j = 0; $j < @c; $j++) {
+			my $ww = $w[$j];
+			$ww = $canvas-> get_text_width( $h[$j] // ' ')
+				if !(defined($ww)) || !($ww =~ m/^\s*\d+\s*$/);
+			my @z = ( $z, $r[1], ( $z + $ww > $r[2]) ? $r[2] : $z + $ww, $r[3]);
+			$z[2]++; $canvas-> rectangle( @z); $z[2]--;
+			$z += $ww + 1;
+			$canvas-> draw_text( $c[$j], @z,
+				dt::NoWordWrap | dt::ExpandTabs |
+				dt::NewLineBreak | dt::Left | dt::Top | dt::UseExternalLeading |
+				dt::UseClip
+			);
+		}
+	}
+	$self-> common_paint($canvas);
+}
+
+sub prf_items
+{
+	my ( $self, $data) = @_;
+	my $c = $self-> prf('columns');
+	my $traverse;
+	$traverse = sub{
+		my ($x) = @_;
+		my $x0 = $x->[0];
+		push @$x0, ('') x ($c - @$x0) if @$x0 < $c;
+		if ( $x-> [1] && $x-> [2]) {
+			$traverse->($_) for @{$x-> [1]};
+		}
+	};
+	$traverse-> ($_) for @$data;
+	$self-> repaint;
+}
+
+sub prf_columns { $_[0]-> prf_items( $_[0]-> prf('items')); }
+sub prf_widths  { $_[0]-> repaint; }
+sub prf_headers { $_[0]-> prf_set( columns => scalar @{$_[0]-> prf('headers')}); }
 
 package Prima::VB::DirectoryOutline;
 use strict;

@@ -3853,6 +3853,7 @@ use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::generic);
 
+sub outliner {'Prima::VB::ItemsOutline' }
 
 sub open
 {
@@ -3861,7 +3862,7 @@ sub open
 	my $w = $self-> {container}-> width;
 	my $fh = $self-> {container}-> font-> height;
 
-	$self-> {A} = $self-> {container}-> insert( 'Prima::VB::ItemsOutline' =>
+	$self-> {A} = $self-> {container}-> insert( $self->outliner,
 		origin => [ 0, $fh + 4],
 		size   => [ $w - 1, $h - $fh - 4],
 		growMode => gm::Client,
@@ -3895,15 +3896,21 @@ sub open
 		text => '',
 		onChange => sub {
 			my ( $x, $l) = $self-> {A}-> get_item( $self-> {A}-> focusedItem);
-			if ( $x) {
-				$x-> [0] = $_[0]-> text;
-				$self-> change;
-				$self-> {A}-> reset_tree;
-				$self-> {A}-> update_tree;
-				$self-> {A}-> repaint;
-			}
+			$self->on_b_change($x, $l, $self->{B}->text);
 		},
 	);
+}
+
+sub on_b_change
+{
+	my ( $self, $x, $l, $text) = @_;
+	if ( $x) {
+		$x-> [0] = $text;
+		$self-> change;
+		$self-> {A}-> reset_tree;
+		$self-> {A}-> update_tree;
+		$self-> {A}-> repaint;
+	}
 }
 
 sub enter_menuitem
@@ -3933,6 +3940,106 @@ sub write
 		my ($x,$lev) = @_;
 		$c .= ' ' x ( $lev * 3);
 		$c .= "['". Prima::VB::Types::generic::quotable($x-> [0])."', ";
+		if ( $x-> [1]) {
+			$lev++;
+			$c .= "[\n";
+			$traverse-> ($_, $lev) for @{$x-> [1]};
+			$lev--;
+			$c .= ' ' x ( $lev * 3)."], $$x[2]";
+		}
+		$c .= "],\n";
+	};
+	$traverse-> ($_, 0) for @$data;
+	undef $traverse;
+	return "\n[$c]";
+}
+
+package Prima::VB::ArrayOutline;
+use strict;
+use vars qw(@ISA);
+@ISA = qw(Prima::StringOutline Prima::VB::MyOutline);
+
+sub new_item
+{
+	return  [['New', 'Item'], undef, 0];
+}
+
+sub draw_items
+{
+	my ($self, $canvas, $paintStruc) = @_;
+	for ( @$paintStruc) {
+		my ( $node, $left, $bottom, $right, $top, $position, $selected, $focused, $prelight) = @$_;
+		if ( $selected || $prelight) {
+			my $bc = $self->backColor;
+			$self-> draw_item_background($canvas,
+				$left, $bottom, $right, $top, $prelight,
+				$selected ? $self-> hiliteBackColor : $self-> backColor
+			);
+			$self->backColor($bc);
+			my $c = $canvas-> color;
+			$canvas-> color( $selected ? $self-> hiliteColor : $c );
+			$canvas-> text_shape_out( "@{$node->[0]}", $left, $bottom);
+			$canvas-> color( $c);
+		} else {
+			$canvas-> text_shape_out( "@{$node->[0]}", $left, $bottom);
+		}
+		$canvas-> rect_focus( $left, $bottom, $right, $top) if $focused;
+	}
+}
+
+sub on_measureitem
+{
+	my ( $self, $node, $level, $result) = @_;
+	$$result = $self-> get_text_width( "@{$node->[0]}");
+}
+
+sub on_stringify
+{
+	my ( $self, $node, $result) = @_;
+	$$result = "@{$node->[0]}";
+}
+
+package Prima::VB::Types::treeArrays;
+use strict;
+use vars qw(@ISA);
+@ISA = qw(Prima::VB::Types::treeItems);
+
+sub outliner {'Prima::VB::ArrayOutline' }
+
+sub on_b_change
+{
+	my ( $self, $x, $l, $text) = @_;
+	if ( $x) {
+		$x-> [0] = [split ' ', $text];
+		$self-> change;
+		$self-> {A}-> reset_tree;
+		$self-> {A}-> update_tree;
+		$self-> {A}-> repaint;
+	}
+}
+
+sub enter_menuitem
+{
+	my ( $self, $x ) = @_;
+	$self-> {B}-> text( $x ? "@{$x->[0]}" : '');
+}
+
+sub write
+{
+	my ( $class, $id, $data) = @_;
+	return '[[]]' unless $data;
+	my $c = '';
+	my $traverse;
+	$traverse = sub {
+		my ($x,$lev) = @_;
+		$c .= ' ' x ( $lev * 3);
+		$c .= '[[' .
+			join(',',
+				map {"'$_'" }
+				map {Prima::VB::Types::generic::quotable($_)}
+				@{$x->[0]}
+			) .
+			'], ';
 		if ( $x-> [1]) {
 			$lev++;
 			$c .= "[\n";
