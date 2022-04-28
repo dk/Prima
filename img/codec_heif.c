@@ -662,7 +662,12 @@ save_defaults( PImgCodec c)
 						prefix = 's';
 						if ( heif_encoder_get_parameter_string(encoder, name, v, sizeof(v)).code == heif_error_Ok) 
 							pset_c(value, v);
-						if ( heif_encoder_parameter_get_valid_string_values(*list, (const char**) &strs).code == heif_error_Ok) {
+						if (
+							heif_encoder_parameter_get_valid_string_values(
+								*list,
+								(const char* const**) &strs
+							).code == heif_error_Ok
+						) {
 							AV * av = newAV();
 							while (strs && *strs) {
 								av_push(av, newSVpv(*strs, 0));
@@ -674,6 +679,7 @@ save_defaults( PImgCodec c)
 					}
 					default:
 						sv_free((SV*) hv);
+						list++;
 						continue;
 					}
 					snprintf(buf, 2048, "%s.%c_%s", shrt, prefix, name);
@@ -820,6 +826,84 @@ FAIL:
 	return false;
 }
 
+static Bool
+apply_encoder_options( PImgSaveFileInstance fi, enum heif_compression_format compression, struct heif_encoder* encoder)
+{
+	SV **tmp;
+	HV * profile = fi-> objectExtras;
+	SaveRec * l = ( SaveRec *) fi-> instance;
+	const struct heif_encoder_parameter*const* list;
+	const char * shrt = NULL, * enc_name;
+	int i, n_descriptors;
+	struct heif_encoder_descriptor* out_encoders[16];
+
+	n_descriptors = heif_context_get_encoder_descriptors(
+		l->ctx, compression, NULL,
+		(const struct heif_encoder_descriptor**) out_encoders, 16
+	);
+	enc_name = heif_encoder_get_name(encoder);
+	for ( i = 0; i < n_descriptors; i++) {
+		const char *descr_name = heif_encoder_descriptor_get_name(out_encoders[i]);
+		if ( descr_name && strcmp(descr_name, enc_name) == 0) {
+			shrt = heif_encoder_descriptor_get_id_name(out_encoders[i]);
+			break;
+		}
+	}
+	if ( !shrt )
+		SET_ERROR("cannot find encoder descriptor");
+
+	list = heif_encoder_list_parameters(encoder);
+	while ( list && *list) {
+		char buf[2048];
+		const char* name = heif_encoder_parameter_get_name(*list);
+		char prefix = 0;
+		enum heif_encoder_parameter_type type = heif_encoder_parameter_get_type(*list);
+		SV* sv;
+
+		switch (type) {
+		case heif_encoder_parameter_type_integer:
+			prefix = 'i';
+			break;
+		case heif_encoder_parameter_type_boolean:
+			prefix = 'b';
+			break;
+		case heif_encoder_parameter_type_string:
+			prefix = 's';
+			break;
+		default: goto NEXT;
+		}
+
+		snprintf(buf, 2048, "%s.%c_%s", shrt, prefix, name);
+		if ( !hv_exists( profile, buf, (I32) strlen( buf)))
+			goto NEXT;
+		if (( tmp = hv_fetch( profile, buf, (I32) strlen( buf), 0)) == NULL)
+			goto NEXT;
+		sv = *tmp;
+
+		switch (type) {
+		case heif_encoder_parameter_type_integer:
+			CALL heif_encoder_set_parameter_integer(encoder, name, SvIV(sv));
+			break;
+		case heif_encoder_parameter_type_boolean:
+			CALL heif_encoder_set_parameter_boolean(encoder, name, SvIV(sv));
+			break;
+		case heif_encoder_parameter_type_string:
+			CALL heif_encoder_set_parameter_string(encoder, name, SvPV_nolen(sv));
+			break;
+		}
+		if (l->error.code != heif_error_Ok) {
+			snprintf(fi->errbuf, 256, "%s (%s)", l->error.message, buf);
+			goto FAIL;
+		}
+	NEXT:
+		list++;
+	}
+
+	return true;
+
+FAIL:
+	return false;
+}
 
 static Bool
 save( PImgCodec instance, PImgSaveFileInstance fi)
@@ -870,8 +954,10 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 		CALL heif_encoder_set_lossy_quality(encoder, 75);
 	CHECK_HEIF_ERROR;
 
-	options = heif_encoding_options_alloc();
+	if ( !apply_encoder_options(fi, compression, encoder))
+		goto FAIL;
 
+	options = heif_encoding_options_alloc();
 
 	icon = kind_of( fi-> object, CIcon);
 	if ( icon ) {
