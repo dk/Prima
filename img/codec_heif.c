@@ -35,7 +35,7 @@ static char * loadOutput[] = {
 	NULL
 };
 
-#define MAX_FEATURES 15
+#define MAX_FEATURES 32
 static char * features[MAX_FEATURES+1];
 
 static char * mime[] = {
@@ -119,7 +119,7 @@ init( PImgCodecInfo * info, void * param)
 			lossy    = heif_encoder_descriptor_supports_lossy_compression(enc[i]);
 			lossless = heif_encoder_descriptor_supports_lossless_compression(enc[i]);
 
-			snprintf(buf, 2048, "%s/%s%s%s (%s)",
+			snprintf(buf, 2048, "encoder %s/%s%s%s (%s)",
 				compstr,
 				shrt,
 				lossy    ? " lossy"    : "",
@@ -128,6 +128,12 @@ init( PImgCodecInfo * info, void * param)
 			);
 			buf[2047] = 0;
 			features[feat++] = duplicate_string(buf);
+
+			if ( heif_have_decoder_for_format(comp)) {
+				snprintf(buf, 2048, "decoder %s/%s", compstr, shrt);
+				buf[2047] = 0;
+				features[feat++] = duplicate_string(buf);
+			}
 		}
 		if ( got_hevc ) default_compression = heif_compression_HEVC;
 		heif_context_free(ctx);
@@ -591,16 +597,95 @@ static HV *
 save_defaults( PImgCodec c)
 {
 	HV * profile = newHV();
+	struct heif_encoder* encoder = NULL;
+	struct heif_context* ctx;
+
 	switch (default_compression) {
 	case heif_compression_HEVC: pset_c(encoder, "HEVC"); break;
 	case heif_compression_AVC:  pset_c(encoder, "AVC"); break;
 	case heif_compression_AV1:  pset_c(encoder, "AV1"); break;
 	default: break;
 	}
+
 	pset_c(quality, "75");
 	pset_i(premultiplied_alpha, 0);
 	pset_i(thumbnail_of,    -1);
 	pset_sv(metadata,  newRV_noinc((SV*) newHV()));
+
+	if (( ctx = heif_context_alloc()) != NULL) {
+		struct heif_encoder_descriptor *enc[1024];
+		int i, n;
+		n = heif_context_get_encoder_descriptors(ctx, heif_compression_undefined, NULL,
+			(const struct heif_encoder_descriptor**) enc, 1024);
+		for ( i = 0; i < n; i++) {
+			const char * shrt = heif_encoder_descriptor_get_id_name(enc[i]);
+			if (heif_context_get_encoder(ctx, enc[i], &encoder).code == heif_error_Ok) {
+				char buf[2048];
+				const struct heif_encoder_parameter*const* list = heif_encoder_list_parameters(encoder);
+				while ( list && *list) {
+					HV *hv = newHV();
+					const char* name = heif_encoder_parameter_get_name(*list);
+					char prefix = 0;
+					enum heif_encoder_parameter_type type = heif_encoder_parameter_get_type(*list);
+					switch (type) {
+					case heif_encoder_parameter_type_integer: {
+						HV *profile = hv;
+						int v, have_min = 0, have_max = 0, min = 0, max = 0, n = 0, *ints = NULL;
+						prefix = 'i';
+						if ( heif_encoder_get_parameter_integer(encoder, name, &v).code == heif_error_Ok)
+							pset_i(value, v);
+						if ( heif_encoder_parameter_get_valid_integer_values(*list,
+							&have_min, &have_max, &min, &max, &n, (const int**) &ints
+							).code == heif_error_Ok) {
+							if ( have_min ) pset_i(min, min);
+							if ( have_max ) pset_i(max, max);
+							if ( ints && n > 0 ) {
+								AV * av = newAV();
+								for (v = 0; v < n; v++)
+									av_push(av, newSViv(ints[v]));
+								pset_sv(values, newRV_noinc((SV*)av));
+							}
+						}
+						break;
+					}
+					case heif_encoder_parameter_type_boolean: {
+						int v;
+						HV *profile = hv;
+						prefix = 'b';
+						if ( heif_encoder_get_parameter_boolean(encoder, name, &v).code == heif_error_Ok)
+							pset_i(value, v);
+						break;
+					}
+					case heif_encoder_parameter_type_string: {
+						char v[2048], **strs;
+						HV *profile = hv;
+						prefix = 's';
+						if ( heif_encoder_get_parameter_string(encoder, name, v, sizeof(v)).code == heif_error_Ok) 
+							pset_c(value, v);
+						if ( heif_encoder_parameter_get_valid_string_values(*list, (const char**) &strs).code == heif_error_Ok) {
+							AV * av = newAV();
+							while (strs && *strs) {
+								av_push(av, newSVpv(*strs, 0));
+								strs++;
+							}
+							pset_sv(values, newRV_noinc((SV*)av));
+						}
+						break;
+					}
+					default:
+						sv_free((SV*) hv);
+						continue;
+					}
+					snprintf(buf, 2048, "%s.%c_%s", shrt, prefix, name);
+					(void)hv_store( profile, buf, (I32) strlen(buf), newRV_noinc((SV*)hv), 0);
+					list++;
+				}
+				heif_encoder_release(encoder);
+			}
+		}
+		heif_context_free(ctx);
+	}
+
 	return profile;
 }
 
