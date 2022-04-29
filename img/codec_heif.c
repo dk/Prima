@@ -310,7 +310,7 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
 		fi-> frameCount = n_images;
 		for ( n = 0; n < n_images; n++) {
 			int nn;
-			CALL heif_context_get_image_handle(l-> ctx, n, &h);
+			CALL heif_context_get_image_handle(l-> ctx, l->toplevel->items[n], &h);
 			CHECK_HEIF_ERROR;
 			nn = heif_image_handle_get_number_of_thumbnails(h);
 			l->toplevel_index[n] = index;
