@@ -1305,6 +1305,8 @@ Array of hashes with keys I<type>, I<content_type>, and I<content>.
 
 Set it is thumbnail of the INDEXth toplevel frame
 
+=back
+
 =head3 Save input
 
 =over
