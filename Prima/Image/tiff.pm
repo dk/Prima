@@ -59,7 +59,7 @@ sub Cancel_Click
 sub save_dialog
 {
 	my $codec = $_[1];
-	return Prima::VBLoad( 'Prima::Image::tiff.fm',
+	my $dialog = Prima::VBLoad( 'Prima::Image::tiff.fm',
 		Form1 => {
 			visible => 0,
 			onChange  => \&on_change,
@@ -69,6 +69,8 @@ sub save_dialog
 		OK      => { onClick => \&OK_Click },
 		Cancel  => { onClick => \&Cancel_Click },
 	);
+	Prima::message($@) unless $dialog;
+	return $dialog;
 }
 
 1;
