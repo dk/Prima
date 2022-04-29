@@ -54,8 +54,8 @@ static ImgCodecInfo codec_info = {
 	"High Efficiency Image File Format",     /* file type */
 	"HEIF", /* short type */
 	features,    /* features  */
-	"",     /* module */
-	"",     /* package */
+	"Prima::Image::heif",     /* module */
+	"Prima::Image::heif",     /* package */
 	IMG_LOAD_FROM_FILE | IMG_LOAD_FROM_STREAM | IMG_LOAD_MULTIFRAME |
 	IMG_SAVE_TO_FILE | IMG_SAVE_TO_STREAM | IMG_SAVE_MULTIFRAME,
 	bpp, /* save types */

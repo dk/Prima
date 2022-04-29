@@ -285,6 +285,8 @@ Prima/HelpViewer.fm
 Prima/HelpViewer.pm
 Prima/Image/Animate.pm
 Prima/Image/gif.pm
+Prima/Image/heif.fm
+Prima/Image/heif.pm
 Prima/Image/jpeg.pm
 Prima/Image/png.pm
 Prima/Image/tiff.fm
