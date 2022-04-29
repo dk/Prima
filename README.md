@@ -70,6 +70,9 @@ libraries can be compiled in on all platforms:
    - libgif
    - libtiff
    - libwebp,libwebpdemux,libwebpmux
+   - libheif
+
+(libheif is not widespread yet. See Prima/Image/heif.pm for details)
 
 Win32
 -----

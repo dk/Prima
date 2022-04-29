@@ -226,6 +226,7 @@ sub save_dialog
 	return $dialog;
 }
 
+=pod
 sub test
 {
 	use Data::Dumper;
@@ -241,5 +242,45 @@ sub test
 	return if $dlg->execute != mb::OK;
 	print Dumper($image->{extras});
 }
+=cut
 
 1;
+
+=pod
+
+=head1 NAME
+
+Prima::Image::heif
+
+=head1 DESCRIPTION
+
+HEIF image save dialog
+
+=head1 INSTALLATION
+
+libheif so far could be built from the sources, and its dependencies as well,
+as major distros are not yet providing its binaries. For windows you can grab
+the distro from
+L<http://prima.eu.org/download/libheif-1.12.0-win64.zip>.
+
+=over
+
+=item *
+
+You will need gcc,nasm,cmake
+
+=item *
+
+Get the sources for libaom,libx265,libde265. Build and install them.
+
+=item *
+
+Get the sources for libheif. Build, make sure that I<configure --disable-multithreading> says this:
+
+   configure: Multithreading: no
+   configure: libaom decoder: yes
+   configure: libaom encoder: yes
+   configure: libde265 decoder: yes
+   configure: libx265 encoder: yes
+
+=back
