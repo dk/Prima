@@ -226,23 +226,21 @@ sub save_dialog
 	return $dialog;
 }
 
-=pod
-sub test
-{
-	use Data::Dumper;
-	my $image = Prima::Image->new;
-	$image->{extras} = {
-		'x265.quality' => 30,
-		compression    => 'AV1',
-	};
-	my ($codec) = grep { $_->{name} eq 'libheif' } @{ Prima::Image->codecs };
-	die "no heif codec" unless $codec;
-	my $dlg = shift->save_dialog($codec);
-	$dlg->notify(q(Change), $codec, $image);
-	return if $dlg->execute != mb::OK;
-	print Dumper($image->{extras});
-}
-=cut
+# sub test
+# {
+# 	use Data::Dumper;
+# 	my $image = Prima::Image->new;
+# 	$image->{extras} = {
+# 		'x265.quality' => 30,
+# 		compression    => 'AV1',
+# 	};
+# 	my ($codec) = grep { $_->{name} eq 'libheif' } @{ Prima::Image->codecs };
+# 	die "no heif codec" unless $codec;
+# 	my $dlg = shift->save_dialog($codec);
+# 	$dlg->notify(q(Change), $codec, $image);
+# 	return if $dlg->execute != mb::OK;
+# 	print Dumper($image->{extras});
+# }
 
 1;
 

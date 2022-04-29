@@ -23,11 +23,11 @@ static char * loadOutput[] = {
 	"chroma_bits_per_pixel",
 	"depth_images",
 	"has_alpha",
+	"is_primary",
 	"ispe_height",
 	"ispe_width",
 	"luma_bits_per_pixel",
 	"premultiplied_alpha",
-	"primary_frame",
 	"thumbnails",
 	"aux",
 	"metadata",
@@ -236,6 +236,21 @@ item_list_alloc(ItemList** list, int n)
 	return true;
 }
 
+/*
+this codec throws all found images as frame numbers.
+currently only thumbnails, but if i get my hands on heics with depth images and the like, i'll add these here as well.
+if f ex we have a 2-frame heic where each frame has two thumbnails, Prima treats such file as this:
+
+frame 0 -> toplevel #0
+frame 1 -> toplevel #0's thumbnail #0
+frame 2 -> toplevel #0's thumbnail #1
+frame 3 -> toplevel #1
+frame 4 -> toplevel #1's thumbnail #0
+frame 5 -> toplevel #1's thumbnail #1
+
+thumbnail extras have .thumbnail_of field set
+
+*/
 static void *
 open_load( PImgCodec instance, PImgLoadFileInstance fi)
 {
@@ -486,8 +501,6 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 	height = heif_image_handle_get_height(h);
 	if ( fi-> loadExtras) {
 		int n;
-		if ( l-> primary_index >= 0)
-			pset_i( primary_index,  l-> primary_index);
 		if ( heif_image_handle_is_premultiplied_alpha(h))
 			pset_i( premultiplied_alpha, 1);
 		pset_i( chroma_bits_per_pixel,  heif_image_handle_get_chroma_bits_per_pixel(h));
@@ -506,6 +519,8 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 				LIBHEIF_AUX_IMAGE_FILTER_OMIT_DEPTH
 			);
 			if (n) pset_i( aux, n);
+			if ( l->primary_index == l->toplevel->curr)
+				pset_i(is_primary, 1);
 		} else {
 			pset_i(thumbnail_of, l->toplevel_index[l->toplevel->curr]);
 		}
@@ -607,6 +622,7 @@ save_defaults( PImgCodec c)
 	default: break;
 	}
 
+	pset_i(is_primary, 0);
 	pset_c(quality, "75");
 	pset_i(premultiplied_alpha, 0);
 	pset_i(thumbnail_of,    -1);
@@ -1035,6 +1051,10 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 		goto FAIL;
 	if ( !encode_metadata(fi, profile))
 		goto FAIL;
+	if ( pexist(is_primary) && pget_B(is_primary)) {
+		CALL heif_context_set_primary_image(l->ctx, l->handles[fi->frame]);
+		CHECK_HEIF_ERROR;
+	}
 
 	if ( fi-> frame == fi-> frameMapSize - 1 ) {
 		CALL heif_context_write(l->ctx, &writer, fi->req);

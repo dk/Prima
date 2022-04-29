@@ -1265,6 +1265,76 @@ Use multi-threading if available (off by default)
 
 =back
 
+=head2 HEIF codec
+
+=head3 Load output
+
+=over
+
+=item chroma_bits_per_pixel
+
+=item depth_images
+
+Number of depth images available for the frame
+
+=item has_alpha
+
+=item ispe_height, ispe_width
+
+Original image size before tranformations (crop, rotation, etc) are applied
+
+=item is_primary
+
+Set if this is the primary image
+
+=item luma_bits_per_pixel
+
+=item premultiplied_alpha
+
+Set if alpha is premultiplied
+
+=item thumbnails
+
+Array of hashes with keys I<type>, I<content_type>, and I<content>.
+
+=item aux
+
+=item metadata
+
+=item thumbnail_of INDEX
+
+Set it is thumbnail of the INDEXth toplevel frame
+
+=head3 Save input
+
+=over
+
+=item quality
+
+0-100
+
+=item compression
+
+HEIC,AV1,AVC
+
+=item is_primary
+
+0 gets to be a primary by default, but an be set explicitly
+
+=item premultiplied_alpha
+
+True if alpha is premultiplied
+
+=item metadata
+
+Array of hashes with keys I<type>, I<content_type>, and I<content>.
+
+=item thumbnail_of INDEX
+
+Sets this images as a thumbnail of the INDEXth toplevel frame
+
+=back
+
 =head1 AUTHOR
 
 Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
