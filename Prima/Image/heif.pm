@@ -14,6 +14,7 @@ use constant KEY          => 4;
 sub on_change
 {
 	my ( $self, $codec, $image) = @_;
+
 	$self-> {image} = $image;
 	my $e = $self-> {data}  = \ %{ $image->{extras} // {} };
 
@@ -23,12 +24,23 @@ sub on_change
 		$nb->Encoder->notify(q(Change));
 	}
 	if ( exists $e->{quality} ) {
-		$nb->Quality->text($e->{compression});
-		$nb->Quality->notify(q(Change));
+		if ( $e->{quality} eq 'lossless') {
+			my $l = $nb->GroupBox1->Lossless;
+			$l->checked;
+			$l->notify(q(Change));
+		} else {
+			my $q = $nb->GroupBox1->Quality;
+			$q->value($e->{quality});
+			$q->enabled(1);
+			$q->notify(q(Change))
+		}
 	}
+	$e->{quality} //= 75;
 	my $tree = $self->{refs};
 	my $props = $nb->Properties;
-	while ( my ( $k, $v ) = each %{ $self->{data} }) {
+
+	my %e = %$e;
+	while ( my ( $k, $v ) = each %e) {
 		next unless my $node = $tree->{$k};
 		$node->[VISUAL_KEY]   = M("B<$node->[KEY]>");
 		$node->[VISUAL_VALUE] = M("B<$v>");
@@ -41,7 +53,6 @@ sub OK_Click
 {
 	my $self = $_[0]-> owner;
 	my $e = $self-> {image}-> {extras} //= {};
-	%$e = (%$e, %{$self->{data}});
 }
 
 sub Cancel_Click
@@ -60,6 +71,23 @@ sub Quality_Change
 		$v->[VISUAL_VALUE] = $v->[PARAMETER]->{default} // '';
 		delete $dialog->{data}->{$v->[FULLKEY]};
 	}
+}
+
+sub Lossless_Check
+{
+	my ( $dialog, $value ) = @_;
+	if ( $value ) {
+		$dialog->{data}->{quality} = 'lossless';
+	} else {
+		$dialog->{data}->{quality} = $dialog->TabbedNotebook1->Notebook->GroupBox1->Quality->value;
+	}
+	while ( my ($k, $v) = each %{ $dialog->{refs} } ) {
+		next unless $v->[KEY] eq 'lossless' or $v->[KEY] eq 'quality';
+		$v->[VISUAL_KEY]   = $v->[KEY];
+		$v->[VISUAL_VALUE] = $v->[PARAMETER]->{default} // '';
+		delete $dialog->{data}->{$v->[FULLKEY]};
+	}
+	$dialog->TabbedNotebook1->Notebook->GroupBox1->Quality->enabled(!$value)
 }
 
 sub Properties_SelectItem
@@ -215,20 +243,25 @@ sub save_dialog
 		},
 		Description => { text => $encoders[$curr_encoder]->{description} },
 		Quality     => { onChange => sub { Quality_Change($dialog, shift->value) }},
+		Lossless    => { onCheck  => sub { Lossless_Check($dialog, shift->checked) }},
 		VBool       => { onCheck  => sub { V_Change( $dialog, shift->checked ) }},
 		VInt        => { onChange => sub { V_Change( $dialog, shift->value   ) }},
 		VStr        => { onChange => sub { V_Change( $dialog, shift->text    ) }},
 	);
+	unless($dialog) {
+		Prima::message($@);
+		return;
+	}
 	$dialog->{refs} = \%data;
 	$dialog->{data} = {};
 
-	Prima::message($@) unless $dialog;
 	return $dialog;
 }
 
 # sub test
 # {
 # 	use Data::Dumper;
+#	use Prima::Application;
 # 	my $image = Prima::Image->new;
 # 	$image->{extras} = {
 # 		'x265.quality' => 30,
@@ -236,7 +269,7 @@ sub save_dialog
 # 	};
 # 	my ($codec) = grep { $_->{name} eq 'libheif' } @{ Prima::Image->codecs };
 # 	die "no heif codec" unless $codec;
-# 	my $dlg = shift->save_dialog($codec);
+# 	my $dlg = shift->save_dialog($codec) or die $@;
 # 	$dlg->notify(q(Change), $codec, $image);
 # 	return if $dlg->execute != mb::OK;
 # 	print Dumper($image->{extras});

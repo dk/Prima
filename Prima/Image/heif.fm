@@ -3,6 +3,60 @@
 sub
 {
 	return (
+	'TabbedNotebook1' => {
+		class   => 'Prima::TabbedNotebook',
+		module  => 'Prima::Notebooks',
+		extras => {
+			Description => '0',
+			Encoder => '0',
+			GroupBox1 => '0',
+			Label1 => '0',
+			Lossless => '0',
+			Properties => '1',
+			Quality => '0',
+			VBool => '1',
+			VInt => '1',
+			VStr => '1',
+			Values => '1',
+		},
+		actions => {
+			onChild => Prima::VB::VBLoader::GO_SUB('$_[2]-> defaultInsertPage( $_[1]-> {extras}-> {$_[3]})
+','TabbedNotebook1', 'onChild'),
+		},
+		profile => {
+			growMode => gm::GrowHiX | gm::GrowHiY,
+			name => 'TabbedNotebook1',
+			origin => [ 0, 50],
+			owner => 'Form1',
+			pageIndex => 0,
+			size => [ 495, 400],
+			tabs => ['General', 'Encoding', ],
+	}},
+	'Form1' => {
+		class   => 'Prima::Window',
+		module  => 'Prima::Classes',
+		parent => 1,
+		code => Prima::VB::VBLoader::GO_SUB(''),
+		profile => {
+			centered => 1,
+			name => 'Form1',
+			origin => [ 390, 303],
+			originDontCare => 0,
+			size => [ 500, 450],
+			sizeDontCare => 0,
+			text => 'HEIC encoder options',
+	}},
+	'GroupBox1' => {
+		class   => 'Prima::GroupBox',
+		module  => 'Prima::Buttons',
+		profile => {
+			growMode => gm::GrowHiX | gm::GrowHiY,
+			name => 'GroupBox1',
+			origin => [ 10, 10],
+			owner => 'TabbedNotebook1',
+			size => [ 440, 102],
+			text => 'Quality',
+	}},
 	'VBool' => {
 		class   => 'Prima::CheckBox',
 		module  => 'Prima::Buttons',
@@ -13,20 +67,6 @@ sub
 			owner => 'Values',
 			size => [ 69, 35],
 			text => '',
-	}},
-	'Form1' => {
-		class   => 'Prima::Window',
-		module  => 'Prima::Classes',
-		parent => 1,
-		code => Prima::VB::VBLoader::GO_SUB(''),
-		profile => {
-			centered => 1,
-			name => 'Form1',
-			origin => [ 2654, 259],
-			originDontCare => 0,
-			size => [ 500, 450],
-			sizeDontCare => 0,
-			text => 'HEIC encoder options',
 	}},
 	'OK' => {
 		class   => 'Prima::Button',
@@ -54,11 +94,12 @@ sub
 		class   => 'Prima::ComboBox',
 		module  => 'Prima::ComboBox',
 		profile => {
+			growMode => gm::GrowLoY,
 			hint => 'Select compression library and format',
 			name => 'Encoder',
-			origin => [ 5, 70],
+			origin => [ 10, 120],
 			owner => 'TabbedNotebook1',
-			size => [ 112, 20],
+			size => [ 110, 20],
 			style => cs::DropDownList,
 	}},
 	'Cancel' => {
@@ -89,74 +130,23 @@ sub
 		siblings => [qw(focusLink)],
 		profile => {
 			focusLink => 'Encoder',
+			growMode => gm::GrowLoY,
 			name => 'Label1',
-			origin => [ 5, 95],
+			origin => [ 10, 143],
 			owner => 'TabbedNotebook1',
 			size => [ 112, 19],
 			text => '~Compression',
-	}},
-	'TabbedNotebook1' => {
-		class   => 'Prima::TabbedNotebook',
-		module  => 'Prima::Notebooks',
-		extras => {
-			Description => '0',
-			Encoder => '0',
-			Label1 => '0',
-			Label3 => '0',
-			Properties => '1',
-			Quality => '0',
-			VBool => '1',
-			VInt => '1',
-			VStr => '1',
-			Values => '1',
-		},
-		actions => {
-			onChild => Prima::VB::VBLoader::GO_SUB('$_[2]-> defaultInsertPage( $_[1]-> {extras}-> {$_[3]})
-','TabbedNotebook1', 'onChild'),
-		},
-		profile => {
-			growMode => gm::GrowHiX | gm::GrowHiY,
-			name => 'TabbedNotebook1',
-			origin => [ 0, 50],
-			owner => 'Form1',
-			pageIndex => 0,
-			size => [ 495, 400],
-			tabs => ['General', 'Encoding', ],
 	}},
 	'Description' => {
 		class   => 'Prima::Label',
 		module  => 'Prima::Label',
 		siblings => [qw(focusLink)],
 		profile => {
+			growMode => gm::GrowLoY,
 			name => 'Description',
-			origin => [ 125, 70],
+			origin => [ 129, 115],
 			owner => 'TabbedNotebook1',
-			size => [ 340, 20],
-	}},
-	'Quality' => {
-		class   => 'Prima::SpinEdit',
-		module  => 'Prima::Sliders',
-		profile => {
-			hint => 'Encoder-defined quality from 0 to 100',
-			max => 100,
-			min => 0,
-			name => 'Quality',
-			origin => [ 5, 15],
-			owner => 'TabbedNotebook1',
-			size => [ 112, 21],
-			value => 75,
-	}},
-	'Label3' => {
-		class   => 'Prima::Label',
-		module  => 'Prima::Label',
-		siblings => [qw(focusLink)],
-		profile => {
-			focusLink => 'Quality',
-			name => 'Label3',
-			origin => [ 5, 40],
-			owner => 'TabbedNotebook1',
-			size => [ 100, 19],
-			text => '~Quality',
+			size => [ 330, 20],
 	}},
 	'Properties' => {
 		class   => 'Prima::DetailedOutline',
@@ -190,6 +180,31 @@ sub
 			pageCount => 4,
 			pageIndex => 3,
 			size => [ 435, 35],
+	}},
+	'Lossless' => {
+		class   => 'Prima::CheckBox',
+		module  => 'Prima::Buttons',
+		profile => {
+			growMode => 0,
+			name => 'Lossless',
+			origin => [ 10, 50],
+			owner => 'GroupBox1',
+			size => [ 112, 22],
+			text => '~Lossless',
+	}},
+	'Quality' => {
+		class   => 'Prima::SpinEdit',
+		module  => 'Prima::Sliders',
+		profile => {
+			growMode => 0,
+			hint => 'Encoder-defined quality from 0 to 100',
+			max => 100,
+			min => 0,
+			name => 'Quality',
+			origin => [ 10, 17],
+			owner => 'GroupBox1',
+			size => [ 112, 21],
+			value => 75,
 	}},
 	);
 }
