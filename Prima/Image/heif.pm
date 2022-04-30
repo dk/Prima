@@ -11,6 +11,20 @@ use constant PARAMETER    => 2;
 use constant FULLKEY      => 3;
 use constant KEY          => 4;
 
+sub BOLD($) { M("B<< $_[0] >>") }
+
+sub set_node_value
+{
+	my ( $node, $value ) = @_;
+	if ( defined $value ) {
+		$node->[VISUAL_KEY]   = BOLD $node->[KEY] unless ref $node->[VISUAL_KEY];
+		$node->[VISUAL_VALUE] = BOLD $value;
+	} else {
+		$node->[VISUAL_KEY]   = $node->[KEY];
+		$node->[VISUAL_VALUE] = $node->[PARAMETER]->{default} // '';
+	}
+}
+
 sub on_change
 {
 	my ( $self, $codec, $image) = @_;
@@ -35,15 +49,14 @@ sub on_change
 			$q->notify(q(Change))
 		}
 	}
-	$e->{quality} //= 75;
+	$e->{quality} //= 50;
 	my $tree = $self->{refs};
 	my $props = $nb->Properties;
 
 	my %e = %$e;
 	while ( my ( $k, $v ) = each %e) {
 		next unless my $node = $tree->{$k};
-		$node->[VISUAL_KEY]   = M("B<$node->[KEY]>");
-		$node->[VISUAL_VALUE] = M("B<$v>");
+		set_node_value($node, $v);
 	}
 	$props-> autowidths;
 	$props-> repaint;
@@ -67,8 +80,7 @@ sub Quality_Change
 	$dialog->{data}->{quality} = $value;
 	while ( my ($k, $v) = each %{ $dialog->{refs} } ) {
 		next unless $v->[KEY] eq 'quality';
-		$v->[VISUAL_KEY]   = $v->[KEY];
-		$v->[VISUAL_VALUE] = $v->[PARAMETER]->{default} // '';
+		set_node_value($v);
 		delete $dialog->{data}->{$v->[FULLKEY]};
 	}
 }
@@ -83,8 +95,7 @@ sub Lossless_Check
 	}
 	while ( my ($k, $v) = each %{ $dialog->{refs} } ) {
 		next unless $v->[KEY] eq 'lossless' or $v->[KEY] eq 'quality';
-		$v->[VISUAL_KEY]   = $v->[KEY];
-		$v->[VISUAL_VALUE] = $v->[PARAMETER]->{default} // '';
+		set_node_value($v);
 		delete $dialog->{data}->{$v->[FULLKEY]};
 	}
 	$dialog->TabbedNotebook1->Notebook->GroupBox1->Quality->enabled(!$value)
@@ -157,13 +168,9 @@ sub Properties_Click
 	my $k = $node->[FULLKEY];
 	if ( exists $e->{$k} || !exists $node->[PARAMETER]->{default} ) {
 		delete $e->{$k};
-		my $v = $e->{$k} // $node->[PARAMETER]->{default};
-		$node->[VISUAL_KEY]   = $node->[KEY];
-		$node->[VISUAL_VALUE] = $v;
+		set_node_value($node);
 	} else {
-		$e->{$k} = $node->[PARAMETER]->{default};
-		$node->[VISUAL_KEY]   = M("B<$node->[KEY]>");
-		$node->[VISUAL_VALUE] = M("B<$e->{$k}>");
+		set_node_value($node, $e->{$k} = $node->[PARAMETER]->{default});
 	}
 	$self->autowidths;
 	$self->repaint;
@@ -177,12 +184,8 @@ sub V_Change
 	my ($node, $lev) = $props-> get_item( $props-> focusedItem );
 	next unless $node && $node->[0] && $node->[0]->[PARAMETER];
 	$node = $node->[0];
-	my $e = $dialog->{data};
-	my $k = $node->[FULLKEY];
-	$node->[VISUAL_KEY]   = M("B<$node->[KEY]>")
-		unless ref $node->[VISUAL_KEY];
-	$node->[VISUAL_VALUE] = M("B<$value>");
-	$e->{$k} = $value;
+	set_node_value($node, $value);
+	$dialog->{data}->{$node->[FULLKEY]} = $value;
 	$props-> autowidths;
 	$props-> repaint;
 }

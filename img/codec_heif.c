@@ -623,7 +623,7 @@ save_defaults( PImgCodec c)
 	}
 
 	pset_i(is_primary, 0);
-	pset_c(quality, "75");
+	pset_c(quality, "50"); /* x265.quality and aom.quality defauilt values are 50 */
 	pset_i(premultiplied_alpha, 0);
 	pset_i(thumbnail_of,    -1);
 	pset_sv(metadata,  newRV_noinc((SV*) newHV()));
@@ -953,8 +953,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 				SET_ERROR("quality must be set either to an integer between 0 and 100 or to 'lossless'");
 			CALL heif_encoder_set_lossy_quality(encoder, quality);
 		}
-	} else
-		CALL heif_encoder_set_lossy_quality(encoder, 75);
+	}
 	CHECK_HEIF_ERROR;
 
 	if ( !apply_encoder_options(fi, compression, encoder))

@@ -72,7 +72,7 @@ static Bool bring_by_name( Handle self, PComponent item, char * name)
 }
 
 Handle
-Component_bring( Handle self, char * componentName)
+Component_bring( Handle self, char * componentName, int max_depth)
 {
 	return my-> first_that_component( self, (void*)bring_by_name, componentName);
 }

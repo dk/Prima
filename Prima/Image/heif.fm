@@ -204,7 +204,7 @@ sub
 			origin => [ 10, 17],
 			owner => 'GroupBox1',
 			size => [ 112, 21],
-			value => 75,
+			value => 50,
 	}},
 	);
 }
