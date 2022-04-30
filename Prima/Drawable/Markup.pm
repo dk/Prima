@@ -370,7 +370,8 @@ sub parse
 			) {
 				my $t = $1;
 				pop @delim_stack;
-				push @$block, tb::text( length($plaintext), length($t) );
+				push @$block, tb::text( length($plaintext), length($t) )
+					if length($t);
 				$plaintext .= $t;
 
 				my $rest = substr($token, length($1) + length($2));
@@ -388,7 +389,8 @@ sub parse
 				$callback->($self, 0, $cmd, \%stacks, $state, $block) if $has_text;
 			} # end of if block for close sequence
 			else { # if we get here, we're non-escaped text
-				push @$block, tb::text( length($plaintext), length($token) );
+				push @$block, tb::text( length($plaintext), length($token) )
+					if length $token;
 				$plaintext .= $token;
 			}
 		} # end of else block after if block for open sequence
