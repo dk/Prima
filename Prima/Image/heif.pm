@@ -63,6 +63,7 @@ sub OK_Click
 {
 	my $self = $_[0]-> owner;
 	my $e = $self-> {image}-> {extras} //= {};
+	%$e = (%$e, %{ $self->{data} });
 }
 
 sub Cancel_Click
