@@ -74,7 +74,7 @@ static Bool bring_by_name( Handle self, PComponent item, char * name)
 Handle
 Component_bring( Handle self, char * componentName, int max_depth)
 {
-	return my-> first_that_component( self, (void*)bring_by_name, componentName);
+	return my-> first_that_component( self, max_depth, (void*)bring_by_name, componentName);
 }
 
 static Bool
@@ -498,10 +498,11 @@ Component_recreate( Handle self)
 }
 
 Handle
-Component_first_that_component( Handle self, void * actionProc, void * params)
+Component_first_that_component( Handle self, int max_depth, void * actionProc, void * params)
 {
 	Handle child = NULL_HANDLE;
 	int i, count;
+	Bool depth_first = false;
 	Handle * list = NULL;
 
 	if ( actionProc == NULL || var-> components == NULL)
@@ -510,15 +511,38 @@ Component_first_that_component( Handle self, void * actionProc, void * params)
 	if ( count == 0) return NULL_HANDLE;
 	if ( !( list = allocn( Handle, count))) return NULL_HANDLE;
 	memcpy( list, var-> components-> items, sizeof( Handle) * count);
+	if ( max_depth < 0 ) {
+		depth_first = true;
+		max_depth = -max_depth;
+	}
 
-	for ( i = 0; i < count; i++)
-	{
-		if ((( PActionProc) actionProc)( self, list[ i], params))
-		{
-			child = list[ i];
-			break;
+	if ( depth_first ) {
+		for ( i = 0; i < count; i++) {
+			if ( max_depth > 0 ) {
+				child = Component_first_that_component( list[i], max_depth - 1, actionProc, params);
+				if ( child ) break;
+			}
+
+			if ((( PActionProc) actionProc)( self, list[i], params)) {
+				child = list[i];
+				break;
+			}
+		}
+	} else {
+		for ( i = 0; i < count; i++) {
+			if ((( PActionProc) actionProc)( self, list[i], params)) {
+				child = list[i];
+				break;
+			}
+		}
+		if ( !child && max_depth > 0) {
+			for ( i = 0; i < count; i++) {
+				child = Component_first_that_component( list[i], max_depth - 1, actionProc, params);
+				if ( child ) break;
+			}
 		}
 	}
+
 	free( list);
 	return child;
 }

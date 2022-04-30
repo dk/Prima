@@ -32,26 +32,23 @@ sub on_change
 	$self-> {image} = $image;
 	my $e = $self-> {data}  = \ %{ $image->{extras} // {} };
 
-	my $nb = $self->TabbedNotebook1->Notebook;
 	if ( exists $e->{compression} ) {
-		$nb->Encoder->text($e->{compression});
-		$nb->Encoder->notify(q(Change));
+		$self->Encoder->text($e->{compression});
+		$self->Encoder->notify(q(Change));
 	}
 	if ( exists $e->{quality} ) {
 		if ( $e->{quality} eq 'lossless') {
-			my $l = $nb->GroupBox1->Lossless;
-			$l->checked;
-			$l->notify(q(Change));
+			$self->Lossless->checked;
+			$self->Lossless->notify(q(Change));
 		} else {
-			my $q = $nb->GroupBox1->Quality;
-			$q->value($e->{quality});
-			$q->enabled(1);
-			$q->notify(q(Change))
+			$self->Quality->value($e->{quality});
+			$self->Quality->enabled(1);
+			$self->Quality->notify(q(Change))
 		}
 	}
 	$e->{quality} //= 50;
 	my $tree = $self->{refs};
-	my $props = $nb->Properties;
+	my $props = $self->Properties;
 
 	my %e = %$e;
 	while ( my ( $k, $v ) = each %e) {
@@ -91,14 +88,14 @@ sub Lossless_Check
 	if ( $value ) {
 		$dialog->{data}->{quality} = 'lossless';
 	} else {
-		$dialog->{data}->{quality} = $dialog->TabbedNotebook1->Notebook->GroupBox1->Quality->value;
+		$dialog->{data}->{quality} = $dialog->Quality->value;
 	}
 	while ( my ($k, $v) = each %{ $dialog->{refs} } ) {
 		next unless $v->[KEY] eq 'lossless' or $v->[KEY] eq 'quality';
 		set_node_value($v);
 		delete $dialog->{data}->{$v->[FULLKEY]};
 	}
-	$dialog->TabbedNotebook1->Notebook->GroupBox1->Quality->enabled(!$value)
+	$dialog->Quality->enabled(!$value)
 }
 
 sub Properties_SelectItem
@@ -180,7 +177,7 @@ sub V_Change
 {
 	my ($dialog, $value) = @_;
 	return if $dialog->{lock_change};
-	my $props = $dialog->TabbedNotebook1->Notebook->Properties;
+	my $props = $dialog->Properties;
 	my ($node, $lev) = $props-> get_item( $props-> focusedItem );
 	next unless $node && $node->[0] && $node->[0]->[PARAMETER];
 	$node = $node->[0];
@@ -255,6 +252,8 @@ sub save_dialog
 		Prima::message($@);
 		return;
 	}
+	$dialog->AUTOLOAD_DEEP_LOOKUP(1);
+	$dialog->Properties->expand_all;
 	$dialog->{refs} = \%data;
 	$dialog->{data} = {};
 
@@ -264,7 +263,7 @@ sub save_dialog
 # sub test
 # {
 # 	use Data::Dumper;
-#	use Prima::Application;
+#       use Prima::Application;
 # 	my $image = Prima::Image->new;
 # 	$image->{extras} = {
 # 		'x265.quality' => 30,

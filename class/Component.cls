@@ -11,14 +11,14 @@ object Prima::Component( Prima::Object)
 
 	method   UV        add_notification( char * name, SV * subroutine, Handle referer = NULL_HANDLE, int index = -1);
 	method   void      attach( Handle objectHandle);
-	method   Handle    bring( char * componentName);
+	method   Handle    bring( char * componentName, int max_depth = 0);
 	method   Bool      can_event();
 	method   void      cleanup();
 	method   void      clear_event();
 	method   void      done();
 	method   void      detach( Handle objectHandle, Bool kill);
 	method   void      event_error();
-	c_only   Handle    first_that_component( void * actionProc, void * params);
+	c_only   Handle    first_that_component( int max_depth, void * actionProc, void * params);
 	public   void      get_components();
 	method   SV      * get_handle();
 	public   void      get_notification( char * name, int index);

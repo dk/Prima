@@ -550,7 +550,7 @@ void Widget_handle_event( Handle self, PEvent event)
 		case cmTranslateAccel:
 		{
 			int key = CAbstractMenu-> translate_key( NULL_HANDLE, event-> key. code, event-> key. key, event-> key. mod);
-			if ( my-> first_that_component( self, (void*)prima_find_accel, &key)) {
+			if ( my-> first_that_component( self, 0, (void*)prima_find_accel, &key)) {
 				my-> clear_event( self);
 				return;
 			}
@@ -664,7 +664,7 @@ Bool
 Widget_process_accel( Handle self, int key)
 {
 	enter_method;
-	if ( my-> first_that_component( self, (void*)prima_find_accel, &key)) return true;
+	if ( my-> first_that_component( self, 0, (void*)prima_find_accel, &key)) return true;
 	return kind_of( var-> owner, CWidget) ?
 			((( PWidget) var-> owner)-> self)->process_accel( var-> owner, key) : false;
 }

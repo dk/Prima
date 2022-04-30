@@ -380,6 +380,8 @@ sub get_notify_sub
 	return undef;
 }
 
+sub AUTOLOAD_DEEP_LOOKUP { $#_ ? $_[0]->{_autoload_deep_lookup} = $_[1] : $_[0]->{_autoload_deep_lookup} }
+
 sub AUTOLOAD
 {
 	no strict;
@@ -388,22 +390,13 @@ sub AUTOLOAD
 	Carp::confess "There is no such thing as \"$expectedMethod\"\n"
 		if scalar(@_) or not ref $self;
 	my ($componentName) = $expectedMethod =~ /::([^:]+)$/;
-	my $component = $self-> bring( $componentName);
+	my $component = $self-> bring( $componentName, $self->{_autoload_deep_lookup} ? 1000 : 0);
 	Carp::confess("Unknown widget or method \"$expectedMethod\"")
 		unless $component && ref($component);
 	return $component;
 }
 
-sub find_component
-{
-	my ( $self, $name ) = @_;
-	my @q = $self-> get_components;
-	while ( my $x = shift @q ) {
-		return $x if $x-> name eq $name;
-		push @q, $x-> get_components;
-	}
-	return undef;
-}
+sub find_component { $_[0]->bring($_[1], -1000) }
 
 package Prima::File;
 use vars qw(@ISA);

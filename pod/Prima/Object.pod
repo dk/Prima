@@ -772,9 +772,9 @@ warning is issued on such an attempt.
 
 See also: C<detach>.
 
-=item bring NAME
+=item bring NAME, MAX_DEPTH=0
 
-Looks for a immediate child object that has name equals to NAME.  Returns its
+Looks for a child object that has name equals to NAME.  Returns its
 reference on success, undef otherwise. It is a convenience method, that makes
 possible the usage of the following constructs:
 
@@ -782,8 +782,13 @@ possible the usage of the following constructs:
    $obj-> owner( $owner);
    ...
    $owner-> Obj-> destroy;
+   ...
+   $obj-> AUTOLOAD_DEEP_LOOKUP(1);
+   $obj-> insert(Foo => name => 'Bar');
+   $owner-> Bar-> do_something;
 
-See also: C<find_component>
+
+See also: C<find_component>, C<AUTOLOAD_DEEP_LOOKUP>
 
 =item can_event
 
@@ -950,6 +955,17 @@ Removes all notification subs from all event lists bound to REFERER object.
 =head2 Prima::Component properties
 
 =over 4
+
+=item AUTOLOAD_DEEP_LOOKUP BOOL
+
+If set, autoload component lookup by name uses a breadth-first deep lookup into the object hierarchy.
+If unset (default), only immediate children objects are searched.
+
+   $self->AUTOLOAD_DEEP_LOOKUP(0);
+   $self->Child1->GrandChild2;
+   ...
+   $self->AUTOLOAD_DEEP_LOOKUP(1);
+   $self->GrandChild2;
 
 =item eventFlag STATE
 

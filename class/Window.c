@@ -673,7 +673,7 @@ Window_process_accel( Handle self, int key)
 {
 	return (
 		var-> modal ?
-			my-> first_that_component( self, (void*)prima_find_accel, &key)
+			my-> first_that_component( self, 0, (void*)prima_find_accel, &key)
 			: inherited process_accel( self, key)
 		) != NULL_HANDLE;
 }

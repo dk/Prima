@@ -146,7 +146,7 @@ Application_cleanup( Handle self)
 		my-> detach( self, var-> icon, true);
 	var-> icon = NULL_HANDLE;
 
-	my-> first_that_component( self, (void*)kill_all_objects, NULL);
+	my-> first_that_component( self, 0, (void*)kill_all_objects, NULL);
 
 	CDrawable-> cleanup( self);
 }
