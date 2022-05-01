@@ -1766,6 +1766,10 @@ WARN:
 Consider fixing your installation.
 
 LIBTHAI
+	$END .= <<LIBTHAI if $Win32 and not $cygwin;
+Get libthai binary from http://prima.eu.org/download/libthai-0.1.29-win64.zip
+
+LIBTHAI
 }
 
 sub generate_win32_def
@@ -2023,6 +2027,9 @@ able to work with the corresponding image formats.
 Please follow the instructions in README file.
 
 NOCODECS
+		$END .= <<LIBHEIF if $Win32 and not $cygwin and grep {/heif/} @warn_codecs;
+Get libheif binary from http://prima.eu.org/download/libheif-1.12.0-win64.zip
+LIBHEIF
 	}
 	push @ACTIVE_CODECS, @builtin_codecs;
 }
