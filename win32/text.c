@@ -1238,7 +1238,7 @@ gp_get_font_def_bitmap( Handle self, int first, int last, int flags, PFontABC ab
 
 	memset( abc, 0, sizeof(FontABC) * (last - first + 1));
 	for ( i = 0; i <= last - first; i++) {
-		Rectangle( dc, -1, -1, w+2, h+2 );
+		Rectangle( dc, -1, -1, w+1, h+1 );
 		if ( flags & toGlyphs ) {
 			WCHAR ch = first + i;
 			ExtTextOutW( dc, var font. maximalWidth, 0, ETO_GLYPH_INDEX, NULL, &ch, 1, NULL);

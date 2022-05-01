@@ -85,7 +85,6 @@ sub repaint
 	$fader->clear;
 	render_text;
 
-	
 	my ( $dx, $dy ) = (0, 0);
 	my ( $cw, $ch ) = $fader->size;
 	my ( $tw, $th ) = $texter->size;

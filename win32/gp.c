@@ -195,8 +195,8 @@ gp_Pie(
 
 #define check_swap( parm1, parm2) if ( parm1 > parm2) { int parm3 = parm1; parm1 = parm2; parm2 = parm3;}
 
-#define ELLIPSE_RECT (int)(x - ( dX - 1) / 2), (int)(y - dY / 2), (int)(x + dX / 2 + 1), (int)(y + (dY - 1) / 2 + 1)
-#define ELLIPSE_RECT_SUPERINCLUSIVE (int)(x - ( dX - 1) / 2), (int)(y - dY / 2), (int)(x + dX / 2 + 2), (int)(y + (dY - 1) / 2 + 2)
+#define ELLIPSE_RECT (int)(x - ( dX - 1) / 2), (int)(y - dY / 2), (int)(x + dX / 2), (int)(y + (dY - 1) / 2)
+#define ELLIPSE_RECT_SUPERINCLUSIVE (int)(x - ( dX - 1) / 2), (int)(y - dY / 2), (int)(x + dX / 2 + 1), (int)(y + (dY - 1) / 2 + 1)
 #define ARC_COMPLETE (int)(x + dX / 2 + 1), y, (int)(x + dX / 2 + 1), y
 #define ARC_ANGLED   (int)(x + cos( angleStart / GRAD) * dX / 2 + 0.5), (int)(y - sin( angleStart / GRAD) * dY / 2 + 0.5), \
 							(int)(x + cos( angleEnd / GRAD) * dX / 2 + 0.5),   (int)(y - sin( angleEnd / GRAD) * dY / 2 + 0.5)
@@ -254,7 +254,7 @@ apc_gp_bar( Handle self, int x1, int y1, int x2, int y2)
 	old = SelectObject( ps, hPenHollow);
 	STYLUS_USE_BRUSH( ps);
 
-	if ( !( ok = Rectangle( ps, x1, y2, x2 + 2, y1 + 2)))
+	if ( !( ok = Rectangle( ps, x1, y2, x2 + 1, y1 + 1)))
 		apiErr;
 	SelectObject( ps, old);
 	return ok;
@@ -274,7 +274,7 @@ apc_gp_bars( Handle self, int nr, Rect *rr)
 		check_swap( xr.bottom, xr.top);
 		SHIFT_XY( xr.left, xr.bottom);
 		SHIFT_XY( xr.right, xr.top);
-		if ( !( ok = Rectangle( ps, xr.left, xr.top, xr.left + 2, xr.bottom + 2))) {
+		if ( !( ok = Rectangle( ps, xr.left, xr.top, xr.left + 1, xr.bottom + 1))) {
 			apiErr;
 			break;
 		}
@@ -382,7 +382,7 @@ apc_gp_clear( Handle self, int x1, int y1, int x2, int y2)
 	check_swap( y1, y2);
 	SHIFT_XY(x1,y1);
 	SHIFT_XY(x2,y2);
-	if ( !( ok = Rectangle( sys ps, x1, y2, x2 + 2, y1 + 2)))
+	if ( !( ok = Rectangle( sys ps, x1, y2, x2 + 1, y1 + 1)))
 		apiErr;
 	SelectObject( ps, oldp);
 	DeleteObject( SelectObject( ps, oldh));
@@ -667,7 +667,7 @@ apc_gp_fill_poly( Handle self, int numPts, Point * points)
 		bmJ = SelectObject( dc, bmSrc);
 		old1 = SelectObject( dc, sys stylusResource-> hbrush);
 		oldelta = SelectObject( dc, hPenHollow);
-		Rectangle( dc, 0, 0, bound. x + 1, bound. y + 1);
+		Rectangle( dc, 0, 0, bound. x, bound. y);
 		SelectObject( dc, oldelta);
 		SelectObject( dc, old1);
 		SelectObject( dc, bmMask);
@@ -814,12 +814,12 @@ apc_gp_rectangle( Handle self, int x1, int y1, int x2, int y2)
 
 	if ( EMULATE_OPAQUE_LINE ) {
 		STYLUS_USE_OPAQUE_LINE;
-		Rectangle( sys ps, x1, y1 + 1, x2 + 1, y2);
+		Rectangle( sys ps, x1, y1, x2, y2);
 		STYLUS_RESTORE_OPAQUE_LINE;
 	}
 
 	STYLUS_USE_PEN( ps);
-	if ( !( ok = Rectangle( sys ps, x1, y1 + 1, x2 + 1, y2))) apiErr;
+	if ( !( ok = Rectangle( sys ps, x1, y1, x2, y2))) apiErr;
 	SelectObject( ps, old);
 	return ok;
 }}

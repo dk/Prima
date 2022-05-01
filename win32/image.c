@@ -1052,7 +1052,7 @@ img_draw_black_rect( Handle self, PutImageRequest * req)
 	HGDIOBJ  oldp = SelectObject( sys ps, hPenHollow);
 	HGDIOBJ  oldh = SelectObject( sys ps, CreateSolidBrush( RGB(0,0,0 )));
 	if ( !SetROP2( sys ps, R2_COPYPEN)) apiErr;
-	if ( !Rectangle( sys ps, req-> dst_x, req-> dst_y, req-> dst_x + req-> dst_w + 1, req-> dst_y + req-> dst_h + 1)) apiErr;
+	if ( !Rectangle( sys ps, req-> dst_x, req-> dst_y, req-> dst_x + req-> dst_w, req-> dst_y + req-> dst_h)) apiErr;
 	if ( !SetROP2( sys ps, sys currentROP)) apiErr;
 	SelectObject( sys ps, oldp);
 	DeleteObject( SelectObject( sys ps, oldh));

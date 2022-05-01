@@ -1728,6 +1728,7 @@ void
 hwnd_enter_paint( Handle self)
 {
 	Point res;
+	SetGraphicsMode( sys ps, GM_ADVANCED);
 	GetObject( sys stockPen   = GetCurrentObject( sys ps, OBJ_PEN),
 		sizeof( LOGPEN), &sys stylus. pen);
 	GetObject( sys stockBrush = GetCurrentObject( sys ps, OBJ_BRUSH),
