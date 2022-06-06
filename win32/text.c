@@ -389,15 +389,15 @@ gp_get_glyphs_width( Handle self, PGlyphsOutRec t, int flags)
 static void
 paint_text_background( Handle self, const char * text, int x, int y, int len, int flags)
 {
-	int i, rop, color;
+	int i;
 	Point p[5];
-	FillPattern fp;
 	ABC abc;
 	uint32_t *palette;
 
 	palette = sys alphaArenaPalette;
 	sys alphaArenaPalette = NULL;
-	memcpy( &fp, apc_gp_get_fill_pattern( self), sizeof( FillPattern));
+	if ( !apc_gp_push(self)) return;
+
 	if ( flags & toGlyphs) {
 		PGlyphsOutRec t = (PGlyphsOutRec) text;
 		if ( t-> fonts )
@@ -407,13 +407,13 @@ paint_text_background( Handle self, const char * text, int x, int y, int len, in
 	} else {
 		gp_get_text_widths(self, text, len, flags | toAddOverhangs, &abc);
 	}
-	gp_get_text_box(self, &abc, p);
-	rop = apc_gp_get_rop( self);
-	color = apc_gp_get_color(self);
+
 
 	apc_gp_set_fill_pattern( self, fillPatterns[fpSolid]);
 	apc_gp_set_color( self, apc_gp_get_back_color(self));
 	apc_gp_set_rop( self, ropCopyPut);
+
+	gp_get_text_box(self, &abc, p);
 	for ( i = 0; i < 4; i++) {
 		p[i].x += x;
 		p[i].y += y;
@@ -422,9 +422,7 @@ paint_text_background( Handle self, const char * text, int x, int y, int len, in
 	i = p[2].y; p[2].y = p[3].y; p[3].y = i;
 
 	apc_gp_fill_poly( self, 4, p);
-	apc_gp_set_rop( self, rop);
-	apc_gp_set_color( self, color);
-	apc_gp_set_fill_pattern( self, fp);
+	apc_gp_pop( self);
 	sys alphaArenaPalette = palette;
 }
 

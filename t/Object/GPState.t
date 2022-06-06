@@ -6,7 +6,7 @@ use Prima::sys::Test;
 
 my $d = Prima::Drawable-> create( width => 1, height => 1, type => im::RGB);
 my (@z, $i, @fpo, $fillPatternCount);
-goto R;
+#goto R;
 
 $d-> color( 0x123456);
 is( $d-> color, 0x123456, 'color' );
@@ -129,6 +129,7 @@ for my $aa ( 0, 1) {
 
 	$d-> fillPattern(fp::Solid);
 	$d->graphic_context( fillPattern => [0..7], sub {
+		$i = 0;
 		$fillPatternCount = scalar grep { $i++ != $_ } @{$d-> fillPattern};
 		is( $fillPatternCount, 0, 'gc.in.fillPattern' );
 		$d->clear;
@@ -206,6 +207,44 @@ for my $aa ( 0, 1) {
 	$d->backColor(cl::Black);
 
 	check( textOutBaseline => 1, 0, act => sub { $d->text_out("fg",0,0); });
+
+	$d->clear;
+	$d->clipRect(1,1,6,6);
+	$d->graphic_context( clipRect => [2,2,5,5], sub {
+		$d->bar(0,0,7,7);
+		$bits1 = bits;
+	});
+	$d->bar(0,0,7,7);
+	$bits2 = bits;
+	isnt($bits1,$bits2,"gc.bits.clipRect1");
+	$d->clipRect(0,0,$d->size);
+	$d->clear;
+	$d->graphic_context( clipRect => [2,2,5,5], sub {
+		$d->bar(0,0,7,7);
+		$bits1 = bits;
+	});
+	$d->bar(0,0,7,7);
+	$bits2 = bits;
+	isnt($bits1,$bits2,"gc.bits.clipRect2");
+
+	$d->clear;
+	$d->region( Prima::Region->new( rect =>[1,1,6,6] ));
+	$d->graphic_context( region => Prima::Region->new( rect =>[2,2,5,5] ), sub {
+		$d->bar(0,0,7,7);
+		$bits1 = bits;
+	});
+	$d->bar(0,0,7,7);
+	$bits2 = bits;
+	isnt($bits1,$bits2,"gc.bits.region1");
+	$d->clipRect(0,0,$d->size);
+	$d->clear;
+	$d->graphic_context( region => Prima::Region->new( rect =>[2,2,5,5] ), sub {
+		$d->bar(0,0,7,7);
+		$bits1 = bits;
+	});
+	$d->bar(0,0,7,7);
+	$bits2 = bits;
+	isnt($bits1,$bits2,"gc.bits.region2");
 }
 
 done_testing;

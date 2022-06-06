@@ -1777,6 +1777,12 @@ apc_gp_set_color( Handle self, Color color)
 }
 
 Bool
+apc_gp_set_fill_image( Handle self, Handle image)
+{
+	return false;
+}
+
+Bool
 apc_gp_set_fill_mode( Handle self, int fillMode)
 {
 	DEFXX;
@@ -2048,5 +2054,17 @@ ApiHandle
 apc_gp_get_handle( Handle self)
 {
 	return ( ApiHandle) X(self)-> gdrawable;
+}
+
+Bool
+apc_gp_push( Handle self)
+{
+	return false;
+}
+
+Bool
+apc_gp_pop( Handle self)
+{
+	return false;
 }
 

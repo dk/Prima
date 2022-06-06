@@ -809,12 +809,12 @@ sub _imgpaint
 	$dx *= $res[0] / 72;
 	$dy *= $res[1] / 72;
 	$canvas-> stretch_image( $x, $y, $dx, $dy, $img);
-	if ( $self-> {selectionPaintMode}) {
-		my @save = ( fillPattern => $canvas-> fillPattern, rop => $canvas-> rop, fillPatternOffset => [$canvas->fillPatternOffset]);
-		$canvas-> set( fillPattern => fp::Borland, rop => rop::AndPut, fillPatternOffset => [$x, $y]);
-		$canvas-> bar( $x, $y, $x + $dx - 1, $y + $dy - 1);
-		$canvas-> set( @save);
-	}
+	$canvas-> graphic_context(
+		rop               => rop::AndPut,
+		fillPattern       => fp::Borland,
+		fillPatternOffset => [$x, $y],
+		sub { $canvas-> bar( $x, $y, $x + $dx - 1, $y + $dy - 1) }
+	) if $self-> {selectionPaintMode};
 }
 
 sub _bulletpaint
