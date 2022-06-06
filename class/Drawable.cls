@@ -7,6 +7,9 @@ object Prima::Drawable ( Prima::Component)
 	int          h;
 	PRGBColor    palette;       	       # logical palette
 	int          palSize;               # logical palette size
+	Bool         antialias;
+	int          alpha;
+	Handle       fillPatternImage;
 
 	property     int           alpha;
 	property     Bool          antialias;
@@ -65,6 +68,8 @@ object Prima::Drawable ( Prima::Component)
 	method SV *  render_glyph( int index, HV * profile);
 	static SV *  render_polyline( SV * obj, SV * points, HV * profile);
 	static SV *  render_spline( SV * obj, SV * points, HV * profile);
+	method Bool  graphic_context_push();
+	method Bool  graphic_context_pop();
 
 	# operators
 	method Bool  arc( double x, double y, double dX, double dY, double startAngle, double endAngle);
@@ -95,7 +100,5 @@ object Prima::Drawable ( Prima::Component)
 	PList    font_abc_glyphs;
 	unsigned long * font_abc_glyphs_ranges;
 	int             font_abc_glyphs_n_ranges;
-	Bool     antialias;
-	int      alpha;
 	c_only int*  do_text_wrap( TextWrapRec * tw, GlyphWrapRec * gw, uint16_t * log2vis);
 }

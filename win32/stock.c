@@ -217,6 +217,8 @@ stylus_gp_alloc(Handle self)
 	DCGPStylus *cached;
 	int r,g,b;
 	PStylus s = & sys stylus;
+	POINT offset;
+	GetBrushOrgEx( sys ps, &offset);
 
 	if ( sys stylusGPResource) {
 		stylus_gp_free( sys stylusGPResource, 0);
@@ -236,6 +238,7 @@ stylus_gp_alloc(Handle self)
 		r = s->brush.backColor & 0xff;
 		key.bg = (sys alpha << 24) | (r << 16) | (g << 8) | b;
 		*key.fill = *sys fillPattern;
+		key.offset = offset;
 	}
 
 	if ((cached = stylus_gp_fetch(&key)) == NULL)
@@ -255,9 +258,12 @@ stylus_gp_alloc(Handle self)
 
 			bg = key.opaque ? key.bg : 0x00000000;
 			for ( y = 0, fpp = fp; y < 8; y++) {
-				Byte src = sys fillPattern[y];
-				for ( x = 0; x < 8; x++)
-					*(fpp++) = (src & ( 1 << x )) ? key.fg : bg;
+				int yy = (y + 8 - offset.y) % 8;
+				Byte src = sys fillPattern[yy];
+				for ( x = 0; x < 8; x++) {
+					int xx = (x + offset.x) % 8;
+					*(fpp++) = (src & ( 1 << xx )) ? key.fg : bg;
+				}
 			}
 
 			GPCALL GdipCreateBitmapFromScan0( 8, 8, 32, PixelFormat32bppARGB, (BYTE*)fp, &b);
@@ -1771,7 +1777,10 @@ hwnd_enter_paint( Handle self)
 	apc_gp_set_rop( self, sys rop);
 	apc_gp_set_rop2( self, sys rop2);
 	apc_gp_set_transform( self, sys transform. x, sys transform. y);
-	apc_gp_set_fill_pattern( self, sys fillPattern2);
+	if ( var fillPatternImage )
+		apc_gp_set_fill_image( self, var fillPatternImage);
+	else
+		apc_gp_set_fill_pattern( self, sys fillPattern2);
 	sys psd-> alpha          = sys alpha;
 	sys psd-> antialias      = is_apt( aptGDIPlus);
 	sys psd-> font           = var font;

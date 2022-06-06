@@ -329,6 +329,10 @@ Image_done( Handle self)
 		free(var->regionData);
 		var->regionData = NULL;
 	}
+	if ( var->fillPatternImage ) {
+		unprotect_object(var-> fillPatternImage);
+		var->fillPatternImage = NULL_HANDLE;
+	}
 	apc_image_destroy( self);
 	my->make_empty( self);
 	inherited done( self);

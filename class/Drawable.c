@@ -53,7 +53,7 @@ Drawable_init( Handle self, HV * profile)
 		AV * av;
 		Point tr;
 		SV ** holder, *sv;
-		
+
 		sv = pget_sv( translate);
 		if ( sv && SvOK(sv) && SvROK(sv) && SvTYPE(av = (AV*)SvRV(sv)) == SVt_PVAV && av_len(av) == 1) {
 			tr.x = tr.y = 0;
@@ -85,6 +85,10 @@ Drawable_init( Handle self, HV * profile)
 void
 Drawable_done( Handle self)
 {
+	if ( var-> fillPatternImage ) {
+		unprotect_object(var-> fillPatternImage);
+		var-> fillPatternImage = NULL_HANDLE;
+	}
 	clear_font_abc_caches( self);
 	apc_gp_done( self);
 	inherited done( self);
@@ -174,6 +178,26 @@ Drawable_set( Handle self, HV * profile)
 		pdelete( fillPatternOffset);
 	}
 	inherited set( self, profile);
+}
+
+Bool
+Drawable_graphic_context_push(Handle self)
+{
+	if (!opt_InPaint) return false;
+	return apc_gp_push(self);
+}
+
+Bool
+Drawable_graphic_context_pop(Handle self)
+{
+	Bool ok;
+	if (!opt_InPaint) return false;
+	ok = apc_gp_pop(self);
+	if ( var-> fillPatternImage && PObject(var-> fillPatternImage)->stage != csNormal) {
+		unprotect_object(var-> fillPatternImage);
+		var-> fillPatternImage = NULL_HANDLE;
+	}
+	return ok;
 }
 
 int
@@ -388,12 +412,19 @@ Drawable_fillPattern( Handle self, Bool set, SV * svpattern)
 	int i;
 	if ( !set) {
 		AV * av;
-		FillPattern * fp = apc_gp_get_fill_pattern( self);
-		if ( !fp) return NULL_SV;
+		FillPattern * fp;
+		if ( var-> fillPatternImage )
+			return newSVsv( PObject(var->fillPatternImage)->mate );
+
+		if ( !( fp = apc_gp_get_fill_pattern( self))) return NULL_SV;
 		av = newAV();
 		for ( i = 0; i < 8; i++) av_push( av, newSViv(( int) (*fp)[i]));
 		return newRV_noinc(( SV *) av);
 	} else {
+		if ( var->fillPatternImage ) {
+			unprotect_object(var-> fillPatternImage);
+			var->fillPatternImage = NULL_HANDLE;
+		}
 		if ( SvROK( svpattern) && ( SvTYPE( SvRV( svpattern)) == SVt_PVAV)) {
 			FillPattern fp;
 			AV * av = ( AV *) SvRV( svpattern);
@@ -410,6 +441,16 @@ Drawable_fillPattern( Handle self, Bool set, SV * svpattern)
 				fp[ i] = SvIV( *holder);
 			}
 			apc_gp_set_fill_pattern( self, fp);
+		} else if ( SvROK( svpattern) && ( SvTYPE( SvRV( svpattern)) == SVt_PVHV)) {
+			Handle h = gimme_the_mate(svpattern);
+			if ( h && kind_of(h, CImage) && h != self && PObject(h)->stage == csNormal) {
+				protect_object(var-> fillPatternImage = h);
+			} else {
+				warn("Drawable::fillPattern: object passed is not a Prima::Image descendant or is invalid");
+				return NULL_SV;
+			}
+			if ( opt_InPaint)
+				apc_gp_set_fill_image( self, h);
 		} else {
 			int id = SvIV( svpattern);
 			if (( id < 0) || ( id > fpMaxId)) {
