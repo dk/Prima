@@ -141,14 +141,14 @@ void
 Drawable_set( Handle self, HV * profile)
 {
 	dPROFILE;
-	if ( pexist( font))
-	{
+
+	if ( pexist( font)) {
 		SvHV_Font( pget_sv( font), &Font_buffer, "Drawable::set");
 		my-> set_font( self, Font_buffer);
 		pdelete( font);
 	}
-	if ( pexist( translate))
-	{
+
+	if ( pexist( translate)) {
 		AV * av = ( AV *) SvRV( pget_sv( translate));
 		Point tr = {0,0};
 		SV ** holder = av_fetch( av, 0, 0);
@@ -158,6 +158,7 @@ Drawable_set( Handle self, HV * profile)
 		my-> set_translate( self, tr);
 		pdelete( translate);
 	}
+
 	if ( pexist( width) && pexist( height)) {
 		Point size;
 		size. x = pget_i( width);
@@ -166,8 +167,8 @@ Drawable_set( Handle self, HV * profile)
 		pdelete( width);
 		pdelete( height);
 	}
-	if ( pexist( fillPatternOffset))
-	{
+
+	if ( pexist( fillPatternOffset)) {
 		AV * av = ( AV *) SvRV( pget_sv( fillPatternOffset));
 		Point fpo = {0,0};
 		SV ** holder = av_fetch( av, 0, 0);
@@ -177,6 +178,19 @@ Drawable_set( Handle self, HV * profile)
 		my-> set_fillPatternOffset( self, fpo);
 		pdelete( fillPatternOffset);
 	}
+
+	if ( pexist( clipRect)) {
+		int r[4];
+		Rect cr;
+		prima_read_point( pget_sv( clipRect), r, 4, "Array panic on 'clipRect'");
+		cr.left   = r[0];
+		cr.bottom = r[1];
+		cr.right  = r[2];
+		cr.top    = r[3];
+		my-> set_clipRect(self, cr);
+		pdelete( clipRect);
+	}
+
 	inherited set( self, profile);
 }
 
@@ -467,8 +481,6 @@ Point
 Drawable_fillPatternOffset( Handle self, Bool set, Point fpo)
 {
 	if (!set) return apc_gp_get_fill_pattern_offset( self);
-	fpo. x %= 8;
-	fpo. y %= 8;
 	apc_gp_set_fill_pattern_offset( self, fpo);
 	return fpo;
 }

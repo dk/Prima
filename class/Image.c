@@ -2204,15 +2204,11 @@ Image_clear(Handle self, double x1, double y1, double x2, double y2)
 		return inherited clear( self, x1, y1, x2, y2);
 	else if ( !full && var->antialias ) {
 		Bool ok;
-		Color color;
-		FillPattern fp;
-		color = apc_gp_get_color(self);
-		memcpy(&fp, apc_gp_get_fill_pattern(self), sizeof(FillPattern));
+		if ( !apc_gp_push(self)) return false;
 		apc_gp_set_color(self, apc_gp_get_back_color(self));
 		apc_gp_set_fill_pattern(self, fillPatterns[fpSolid]);
 		ok = primitive( self, 1, "snnnn", "rectangle", x1, y1, x2, y2);
-		apc_gp_set_fill_pattern(self, fp);
-		apc_gp_set_color(self, color);
+		apc_gp_pop(self);
 		return ok;
 	} else {
 		_x1 = x1;

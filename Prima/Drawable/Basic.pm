@@ -47,8 +47,8 @@ sub rect_focus
 	( $y, $y1) = ( $y1, $y) if $y > $y1;
 
 	$width = 1 if !defined $width || $width < 1;
-	my ( $cl, $cl2, $aa, $alpha) = ( $canvas-> color, $canvas-> backColor, $canvas-> antialias, $canvas-> alpha);
-	my $fp = $canvas-> fillPattern;
+
+	return unless $canvas-> graphic_context_push;
 	$canvas-> set(
 		fillPattern => fp::SimpleDots,
 		color       => cl::White,
@@ -67,11 +67,7 @@ sub rect_focus
 		$canvas-> bar( $x1 - $width, $y + $width + 1, $x1, $y1 - $width - 1);
 	}
 
-	$canvas-> set(
-		fillPattern => $fp,
-		backColor   => $cl2,
-		color       => $cl,
-	);
+	$canvas-> graphic_context_pop;
 }
 
 sub draw_text
@@ -271,11 +267,11 @@ sub stroke_img_primitive
 	my $region1 = $path2->region(fm::Winding | fm::Overlay);
 	my @box = $region1->box;
 	$box[$_+2] += $box[$_] for 0,1;
-	my $fp = $self->fillPattern;
+
+	return unless $self->graphic_context_push;
 	$self->fillPattern(fp::Solid);
 	$self->translate(0,0);
 	if ( $self-> rop2 == rop::CopyPut && $self->linePattern ne lp::Solid && $self->linePattern ne lp::Null ) {
-		my $color = $self->color;
 		$self->color($self->backColor);
 		my $path3 = $path->widen( linePattern => lp::Solid );
 		my $region3 = $path3->region;
@@ -283,15 +279,12 @@ sub stroke_img_primitive
 		$region3->combine($region2, rgnop::Intersect) if $region2;
 		$self->region($region3);
 		$ok = $self->bar(@box);
-		$self->color($color);
 	}
 
 	$region1->combine($region2, rgnop::Intersect) if $region2;
 	$self->region($region1);
 	$ok &&= $self->$method(@box);
-	$self->region($region2);
-	$self->fillPattern($fp);
-	$self->translate(@offset);
+	$self->graphic_context_pop;
 	return $ok;
 }
 
@@ -330,21 +323,16 @@ sub stroke_imgaa_primitive
 	$path = $path->widen(
 		linePattern => ( $lp eq lp::Null) ? lp::Solid : $lp
 	);
-	my %save;
-	$save{fillPattern} = $self->fillPattern;
-	$save{fillMode}    = $self->fillMode;
+	return unless $self->graphic_context_push;
 	$self->fillPattern(fp::Solid);
 	$self->fillMode(fm::Winding);
-	if ( $lp eq lp::Null ) {
-		$save{color} = $self->color;
-		$self->color($self->backColor);
-	}
+	$self->color($self->backColor) if $lp eq lp::Null;
 	my $ok = 1;
 	for ($path->points(fill => 1)) {
 		$ok &= $aa->fillpoly($_);
 		last unless $ok;
 	}
-	$self->$_($save{$_}) for keys %save;
+	$self->graphic_context_pop;
 	return $ok;
 }
 
@@ -373,17 +361,12 @@ sub stroke_aa_primitive
 	$path = $path->widen(
 		linePattern => ( $lp eq lp::Null) ? lp::Solid : $lp
 	);
-	my %save;
-	$save{fillPattern} = $self->fillPattern;
-	$save{fillMode}    = $self->fillMode;
+	return unless $self->graphic_context_push;
 	$self->fillPattern(fp::Solid);
 	$self->fillMode(fm::Winding);
-	if ( $lp eq lp::Null ) {
-		$save{color} = $self->color;
-		$self->color($self->backColor);
-	}
+	$self->color($self->backColor) if $lp eq lp::Null;
 	my $ok = $path->fill;
-	$self->$_($save{$_}) for keys %save;
+	$self->graphic_context_pop;
 	return $ok;
 }
 
