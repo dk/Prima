@@ -118,6 +118,8 @@ It must be noted that some information methods like get_text_width()
 work even under the disabled state; the object is switched to
 the information state implicitly if it is necessary.
 
+See also: L<graphic_context>.
+
 =head2 Color space
 
 Graphic context and canvas operations rely completely
@@ -1924,6 +1926,21 @@ Context used: font, textOutBaseline
 =for podview </cut>
 
 =for html -->
+
+=item graphic_context %GC, $CALLBACK
+
+A shortcut method that saves the graphic context, applies changes in %GC, calls $CALLBACK,
+and finally restores the context. F ex:
+
+   $self->graphic_context( fillPattern => fp::Solid, sub { $self-> bar(..) } );
+
+=item graphic_context_pop
+
+Restores the graphic context properties from the stack.
+
+=item graphic_context_push
+
+Saves the graphic context properties on the stack.
 
 =item has_alpha_layer
 

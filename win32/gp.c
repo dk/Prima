@@ -26,10 +26,31 @@ apc_gp_init( Handle self)
 	return true;
 }
 
+static Bool
+gc_stack_free( Handle item, void * params)
+{
+	PPaintState state = ( PPaintState ) item;
+	if ( state-> fill_image )
+		unprotect_object( state-> fill_image );
+	if ( state->fontResource)
+		state->fontResource    ->refcnt--;
+	if ( state->stylusResource)
+		state->stylusResource  ->refcnt--;
+	if ( state->stylusGPResource)
+		state->stylusGPResource->refcnt--;
+	free(state);
+	return false;
+}
+
 Bool
 apc_gp_done( Handle self)
 {
 	objCheck false;
+	if ( sys gc_stack ) {
+		list_first_that(sys gc_stack, &gc_stack_free, NULL);
+		plist_destroy(sys gc_stack);
+		sys gc_stack = NULL;
+	}
 	aa_free_arena(self, 0);
 	if ( sys bm)
 		if ( !DeleteObject( sys bm)) apiErr;
@@ -981,8 +1002,13 @@ apc_gp_get_line_pattern( Handle self, unsigned char * buffer)
 			int i;
 			int len = sys stylus. extPen. patResource-> dotsCount;
 			if ( len > 255) len = 255;
-			for ( i = 0; i < len; i++)
+			for ( i = 0; i < len; i++) {
 				buffer[ i] = sys stylus. extPen. patResource-> dots[ i];
+				if ( i & 1 )
+					buffer[i]--;
+				else
+					buffer[i]++;
+			}
 			return len;
 		}
 	default:
@@ -1267,12 +1293,28 @@ apc_gp_set_fill_pattern( Handle self, FillPattern pattern)
 }}
 
 Bool
+apc_gp_set_fill_image( Handle self, Handle image)
+{
+	objCheck false;
+{
+	PImage i;
+	if ( !sys ps || !image)
+		return false;
+	i = PImage(image);
+	if ( i-> type == imBW ) {
+	} else {
+	}
+	return true;
+}}
+
+Bool
 apc_gp_set_fill_pattern_offset( Handle self, Point offset)
 {
 	objCheck false;
-	if ( sys ps)
+	if ( sys ps) {
 		SetBrushOrgEx( sys ps, offset.x, 8 - offset.y, NULL);
-	else
+		sys stylusFlags &= ~stbGPBrush;
+	} else
 		sys fillPatternOffset = offset;
 	return true;
 }
@@ -1481,6 +1523,108 @@ apc_gp_set_transform( Handle self, int x, int y)
 	}
 	sys gp_transform.x = x - sys transform2.x;
 	sys gp_transform.y = - ( y + sys transform2.y );
+	return true;
+}
+
+Bool
+apc_gp_push(Handle self)
+{
+	PPaintState state;
+
+	if ( !sys ps ) return false;
+	if ( !sys gc_stack ) {
+		if ( !( sys gc_stack = plist_create(4,4))) return false;
+	}
+	if ( !( state = malloc(sizeof(PaintState)))) return false;
+	if ( list_add( sys gc_stack, (Handle) state) < 0) return false;
+
+	bzero(state, sizeof(PaintState));
+	if ( !( SaveDC(sys ps))) {
+		list_delete_at( sys gc_stack, sys gc_stack->count - 1);
+		free(state);
+		return false;
+	}
+
+	state->stylus           = sys stylus;
+	state->stylusFlags      = sys stylusFlags;
+	state->stylusResource   = sys stylusResource;
+	state->stylusGPResource = sys stylusGPResource;
+	state->fontResource     = sys fontResource;
+	if ( state->stylusResource)
+		state->stylusResource  ->refcnt++;
+	if ( state->stylusGPResource)
+		state->stylusGPResource->refcnt++;
+	if ( state->fontResource)
+		state->fontResource    ->refcnt++;
+	state->font      = var font;
+	state->font_sin  = sys font_sin;
+	state->font_cos  = sys font_cos;
+
+	memcpy( state->fill_pattern, sys fillPattern, sizeof(FillPattern));
+	state->back_color = sys lbs[1];
+	state->fill_mode  = sys psFillMode;
+	state->rop        = sys currentROP;
+	state->rop2       = sys currentROP2;
+	state->transform  = sys gp_transform;
+	state->antialias  = is_apt(aptGDIPlus);
+	state->alpha      = sys alpha;
+
+	state->text_baseline = is_apt( aptTextOutBaseline);
+	state->text_opaque   = is_apt( aptTextOpaque);
+	if ( var fillPatternImage )
+		protect_object( state->fill_image = var fillPatternImage );
+	return true;
+}
+
+Bool
+apc_gp_pop( Handle self)
+{
+	PPaintState state;
+	if ( !sys ps ) return false;
+	if ( !sys gc_stack ) return false;
+	if ( sys gc_stack-> count <= 0 ) return false;
+	if ( !( state = ( PPaintState) list_at( sys gc_stack, sys gc_stack-> count - 1))) return false;
+	list_delete_at( sys gc_stack, sys gc_stack->count - 1);
+	RestoreDC( sys ps, -1);
+
+	if ( state->fontResource)
+		state->fontResource    ->refcnt--;
+	if ( state->stylusResource)
+		state->stylusResource  ->refcnt--;
+	if ( state->stylusGPResource)
+		state->stylusGPResource->refcnt--;
+	sys stylus           = state-> stylus;
+	sys stylusFlags      = state-> stylusFlags;
+	sys stylusResource   = state-> stylusResource;
+	sys stylusGPResource = state-> stylusGPResource;
+	sys fontResource     = state-> fontResource;
+	var font = state->font;
+	sys font_sin = state->font_sin;
+	sys font_cos = state->font_cos;
+
+	memcpy( sys fillPattern, state->fill_pattern, sizeof(FillPattern));
+	sys lbs[1]       = state->back_color;
+	sys psFillMode   = state->fill_mode;
+	sys pal          = GetCurrentObject(sys ps, OBJ_PAL);
+	sys currentROP   = state->rop;
+	sys currentROP2  = state->rop2;
+	sys gp_transform = state->transform;
+	apt_assign(aptTextOutBaseline, state->text_baseline);
+	apt_assign(aptTextOpaque,      state->text_opaque);
+
+	if (var fillPatternImage)
+		unprotect_object(var fillPatternImage);
+	var fillPatternImage = state-> fill_image;
+
+	apc_gp_set_antialias( self, state->antialias );
+	sys alpha         = state-> alpha;
+	if ( sys alphaArenaPalette ) {
+		free(sys alphaArenaPalette);
+		sys alphaArenaPalette = NULL;
+	}
+
+	free(state);
+
 	return true;
 }
 

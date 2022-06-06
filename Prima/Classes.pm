@@ -621,6 +621,16 @@ sub fillWinding # compatibility
 
 sub font_mapper { Prima::Font::Mapper->new( shift ) }
 
+sub graphic_context
+{
+	my $self = shift;
+	my $cb   = pop;
+	return unless $self->graphic_context_push;
+	$self->set(@_);
+	$cb->();
+	return $self->graphic_context_pop;
+}
+
 package Prima::Image;
 use vars qw( @ISA);
 @ISA = qw(Prima::Drawable);

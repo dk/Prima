@@ -3735,6 +3735,9 @@ apc_gp_get_font_languages( Handle self);
 extern int
 apc_gp_get_fill_mode( Handle self);
 
+extern Handle
+apc_gp_get_fill_image( Handle self);
+
 extern FillPattern *
 apc_gp_get_fill_pattern( Handle self);
 
@@ -3817,6 +3820,12 @@ extern Point
 apc_gp_get_transform( Handle self);
 
 extern Bool
+apc_gp_push(Handle self);
+
+extern Bool
+apc_gp_pop(Handle self);
+
+extern Bool
 apc_gp_set_alpha( Handle self, int alpha);
 
 extern Bool
@@ -3830,6 +3839,9 @@ apc_gp_set_clip_rect( Handle self, Rect clipRect);
 
 extern Bool
 apc_gp_set_color( Handle self, Color color);
+
+extern Bool
+apc_gp_set_fill_image( Handle self, Handle image);
 
 extern Bool
 apc_gp_set_fill_mode( Handle self, int fillMode);
