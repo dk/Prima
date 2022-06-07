@@ -934,18 +934,26 @@ typedef struct _drawable_sys_data
 
 typedef struct _PaintState
 {
-	Brush fore, back;
-	Bool antialias, text_opaque, text_baseline;
-	Handle fill_image;
-	int fill_mode, alpha, n_dashes, rop, rop2;
-	FillPattern fill_pattern;
+	Bool in_paint;
+	struct {
+		Brush fore, back;
+		GC gc;
+		GCList *gcl;
+		struct gc_head* gc_pool;
+		Region region;
+	} paint;
+	struct {
+		Color fore, back;
+		XGCValues gcv;
+	} nonpaint;
+	int alpha, fill_mode, n_dashes, rop, rop2;
+	Bool antialias, text_opaque, text_baseline, null_hatch;
 	Point fill_pattern_offset, transform;
-	unsigned char *dashes;
+	Handle fill_image;
+	FillPattern fill_pattern;
+	Font font;
 	float line_width, miter_limit;
-	GC gc;
-	GCList *gcl;
-	struct gc_head* gc_pool;
-	Region region;
+	unsigned char *dashes;
 } PaintState, *PPaintState;
 
 #define MenuTimerMessage   1021

@@ -7,56 +7,59 @@ my $unix = Prima::Application-> get_system_info-> {apc} == apc::Unix;
 
 my $d = Prima::Drawable-> create( width => 1, height => 1, type => im::RGB);
 my (@z, $i, @fpo, $fillPatternCount);
-#goto R;
 
-$d-> color( 0x123456);
-is( $d-> color, 0x123456, 'color' );
+sub test
+{
+	my ( $method, $value1, $value2) = @_;
+	$d->$method($value1);
+	$d->graphic_context( $method => $value2, sub {
+		is( $d->$method(), $value2, 'in.'.$method);
+	});
+	is( $d->$method(), $value1, 'out.' . $method);
+}
 
-$d-> backColor( 0x654321);
-is( $d-> backColor, 0x654321, 'backColor' );
+test( color => 0x123456, 0x654321 );
+test( backColor => 0x654321, 0x123456 );
 
-$d-> fillPattern( [0..7]); $i = 0;
-$fillPatternCount = scalar grep { $i++ != $_ } @{$d-> fillPattern};
-is( $fillPatternCount, 0, 'fillPattern' );
+$d-> fillPattern(fp::Solid);
+$d->graphic_context( fillPattern => [0..7], sub {
+	$i = 0;
+	$fillPatternCount = scalar grep { $i++ != $_ } @{$d-> fillPattern};
+	is( $fillPatternCount, 0, 'in.fillPattern' );
+});
+$i = 0;
+$fillPatternCount = scalar grep { $_ == 0xff } @{$d-> fillPattern};
+is( $fillPatternCount, 8, 'out.fillPattern' );
 
-$d-> fillPatternOffset( 5,4);
+$d-> fillPatternOffset( 1,2);
+$d->graphic_context( fillPatternOffset =>[5,4], sub {
+	@fpo = $d-> fillPatternOffset;
+	is( $fpo[0], 5, 'in.fillPatternOffset.x' );
+	is( $fpo[1], 4, 'in.fillPatternOffset.y' );
+});
 @fpo = $d-> fillPatternOffset;
-is( $fpo[0], 5, 'fillPatternOffset.x' );
-is( $fpo[1], 4, 'fillPatternOffset.y' );
+is( $fpo[0], 1, 'out.fillPatternOffset.x' );
+is( $fpo[1], 2, 'out.fillPatternOffset.y' );
 
-$d-> lineEnd( le::Square);
-is( $d-> lineEnd, le::Square, 'lineEnd' );
+test( fillMode => fm::Alternate, fm::Winding);
+test( lineEnd => le::Square, le::Flat);
+test( lineJoin => lj::Round, lj::Bevel);
+test( linePattern => lp::Dash, lp::Dot);
+test( lineWidth => 5, 2);
+test( miterLimit => 5, 2);
+test( rop => rop::NotSrcXor, rop::AndPut);
+test( rop2 => rop::NotSrcXor, rop::AndPut);
 
-$d-> miterLimit( 5.0 );
-is( int( $d-> miterLimit + .5), 5, 'miterLimit' );
-
-$d-> lineWidth( 5);
-is( $d-> lineWidth, 5, 'lineWidth' );
-
-$d-> linePattern( lp::Dash);
-is( $d-> linePattern, lp::Dash, 'linePattern' );
-
-$d-> rop( rop::NotSrcXor);
-is( $d-> rop, rop::NotSrcXor, 'rop' );
-
-$d-> rop2( rop::NotSrcXor);
-is( $d-> rop2, rop::NotSrcXor, 'rop2' );
-
-$d-> translate( 1, 2);
+$d-> translate( 2, 1);
+$d-> graphic_context( translate =>[1, 2], sub {
+	@z = $d-> translate;
+	is_deeply( \@z, [1,2], 'in.translate' );
+});
 @z = $d-> translate;
-is_deeply( \@z, [1,2], 'translate' );
+is_deeply( \@z, [2,1], 'in.translate' );
 
-$d-> textOpaque( 1);
-is( $d-> textOpaque, 1, 'textOpaque' );
-
-$d-> textOutBaseline( 1);
-is( $d-> textOutBaseline, 1, 'textOutBaseline' );
-
-$d-> lineJoin( lj::Bevel);
-is( $d-> lineJoin ,lj::Bevel, "lineJoin");
-
-$d-> fillMode( fm::Alternate);
-is( $d-> fillMode, fm::Alternate, "fillMode");
+test( textOpaque => 1,0);
+test( textOutBaseline => 1,0);
 
 $d-> begin_paint;
 $d-> end_paint;
@@ -64,23 +67,22 @@ is( $d-> color, 0x123456, 'color' );
 is( $d-> backColor, 0x654321, 'backColor' );
 
 $i = 0;
-$fillPatternCount = scalar grep { $i++ != $_ } @{$d-> fillPattern};
-is( $fillPatternCount, 0, "fillPattern" );
+$fillPatternCount = scalar grep { 0xff == $_ } @{$d-> fillPattern};
+is( $fillPatternCount, 8, "fillPattern" );
 is( $d-> lineEnd, le::Square, "lineEnd" );
-is( $d-> lineWidth, 5, "lineWidth" );
+is( $d-> lineJoin, lj::Round, "lineJoin" );
 is( $d-> linePattern, lp::Dash, "linePattern" );
+is( $d-> lineWidth, 5, "lineWidth" );
 is( int( $d-> miterLimit + .5), 5, 'miterLimit' );
 is( $d-> rop, rop::NotSrcXor, "rop" );
 is( $d-> rop2 , rop::NotSrcXor, "rop2");
 
 @z = $d-> translate;
-is_deeply( \@z, [1,2], "translate" );
+is_deeply( \@z, [2,1], "translate" );
 is( $d-> textOpaque, 1, "textOpaque" );
 is( $d-> textOutBaseline, 1, "textOutBaseline" );
-is( $d-> lineJoin, lj::Bevel, "lineJoin" );
 is( $d-> fillMode, fm::Alternate, "fillMode");
 
-R:
 $d = Prima::DeviceBitmap-> new( width => 8, height => 8, type => dbt::Pixmap);
 
 sub bits
