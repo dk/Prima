@@ -1734,6 +1734,7 @@ void
 hwnd_enter_paint( Handle self)
 {
 	Point res;
+	Color fore, back;
 	SetGraphicsMode( sys ps, GM_ADVANCED);
 	GetObject( sys stockPen   = GetCurrentObject( sys ps, OBJ_PEN),
 		sizeof( LOGPEN), &sys stylus. pen);
@@ -1750,6 +1751,8 @@ hwnd_enter_paint( Handle self)
 	sys stylus. extPen. actual = false;
 	apt_set( aptDCChangeLock);
 	sys bpp = GetDeviceCaps( sys ps, BITSPIXEL);
+	fore = sys lbs[0];
+	back = sys lbs[1];
 	if ( is_apt( aptWinPS) && self != prima_guts.application) {
 		apc_gp_set_color( self, sys viewColors[ ciFore]);
 		apc_gp_set_back_color( self, sys viewColors[ ciBack]);
@@ -1786,6 +1789,8 @@ hwnd_enter_paint( Handle self)
 	sys psd-> font           = var font;
 	sys psd-> fillMode       = sys fillMode;
 	sys psd-> fillPatternOffset = sys fillPatternOffset;
+	sys psd-> lbs[0]         = fore;
+	sys psd-> lbs[1]         = back;
 	sys psd-> lineWidth      = sys lineWidth;
 	sys psd-> lineEnd        = sys lineEnd;
 	sys psd-> lineJoin       = sys lineJoin;
@@ -1806,35 +1811,57 @@ hwnd_enter_paint( Handle self)
 	SetStretchBltMode( sys ps, COLORONCOLOR);
 }
 
-static Bool
-gc_stack_free( Handle item, void * params)
+static void
+gc_stack_free( Handle self, PPaintState state)
 {
-	PPaintState state = ( PPaintState ) item;
 	if ( state-> fill_image )
 		unprotect_object( state-> fill_image );
-	if ( state->fontResource)
-		state->fontResource    ->refcnt--;
-	if ( state->stylusResource)
-		state->stylusResource  ->refcnt--;
-	if ( state->stylusGPResource)
-		state->stylusGPResource->refcnt--;
+	if ( state-> in_paint) {
+		if ( state->paint.fontResource)
+			state->paint.fontResource    ->refcnt--;
+		if ( state->paint.stylusResource)
+			state->paint.stylusResource  ->refcnt--;
+		if ( state->paint.stylusGPResource)
+			state->paint.stylusGPResource->refcnt--;
+	}
+	if ( state-> user_destructor )
+		state-> user_destructor(self, state->user_data, state->user_data_size, state->in_paint);
 	free(state);
+}
+
+static Bool
+gc_stack_free_paints_only( Handle item, void * p)
+{
+	PPaintState state = ( PPaintState ) item;
+	if ( !state->in_paint) return true;
+	gc_stack_free((Handle) p, state);
+	return false;
+}
+
+static Bool
+gc_stack_free_all( Handle item, void * p)
+{
+	gc_stack_free((Handle) p, ( PPaintState ) item);
 	return false;
 }
 
 void
-cleanup_gc_stack(Handle self)
+cleanup_gc_stack(Handle self, Bool all)
 {
-	if ( sys gc_stack ) {
-		list_first_that(sys gc_stack, &gc_stack_free, NULL);
+	if ( !sys gc_stack ) return;
+
+	if ( all ) {
+		list_first_that(sys gc_stack, &gc_stack_free_all, (void*) self);
 		plist_destroy(sys gc_stack);
 		sys gc_stack = NULL;
-	}
+	} else
+		list_grep(sys gc_stack, &gc_stack_free_paints_only, (void*) self);
 }
 
 void
 hwnd_leave_paint( Handle self)
 {
+	cleanup_gc_stack(self, 0);
 	if ( sys graphics) {
 		GdipDeleteGraphics(sys graphics);
 		sys graphics = NULL;
@@ -1853,6 +1880,8 @@ hwnd_leave_paint( Handle self)
 		sys opaquePen = NULL;
 	}
 	if ( sys psd != NULL) {
+		sys lbs[0]         = sys psd-> lbs[0];
+		sys lbs[1]         = sys psd-> lbs[1];
 		var font           = sys psd-> font;
 		sys alpha          = sys psd-> alpha;
 		sys fillMode       = sys psd-> fillMode;

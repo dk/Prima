@@ -396,7 +396,7 @@ paint_text_background( Handle self, const char * text, int x, int y, int len, in
 
 	palette = sys alphaArenaPalette;
 	sys alphaArenaPalette = NULL;
-	if ( !apc_gp_push(self)) return;
+	if ( !apc_gp_push(self, NULL, NULL, 0)) return;
 
 	if ( flags & toGlyphs) {
 		PGlyphsOutRec t = (PGlyphsOutRec) text;
@@ -422,7 +422,7 @@ paint_text_background( Handle self, const char * text, int x, int y, int len, in
 	i = p[2].y; p[2].y = p[3].y; p[3].y = i;
 
 	apc_gp_fill_poly( self, 4, p);
-	apc_gp_pop( self);
+	apc_gp_pop( self, NULL);
 	sys alphaArenaPalette = palette;
 }
 

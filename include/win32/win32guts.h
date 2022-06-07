@@ -426,12 +426,22 @@ typedef struct _DCGPStylus
 
 typedef struct _PaintState
 {
-	int stylusFlags;
-	Stylus stylus;
-	PDCStylus stylusResource;
-	PDCGPStylus stylusGPResource;
-	PDCFont fontResource;
-	Color back_color;
+	Bool in_paint;
+	struct {
+		int stylusFlags;
+		Stylus stylus;
+		PDCStylus stylusResource;
+		PDCGPStylus stylusGPResource;
+		PDCFont fontResource;
+	} paint;
+	struct {
+		Point fill_pattern_offset;
+		int line_end, line_join, line_pattern_len;
+		float line_width, miter_limit;
+		unsigned char * line_pattern;
+		HPALETTE palette;
+	} nonpaint;
+	Color fore, back;
 	int antialias, alpha, fill_mode;
 	FillPattern fill_pattern;
 	Font font;
@@ -440,6 +450,11 @@ typedef struct _PaintState
 	Handle fill_image;
 	float font_sin, font_cos;
 	Bool text_opaque, text_baseline;
+
+	unsigned int user_data_size;
+	GCStorageFunction * user_destructor;
+	void *user_data, *user_context;
+	char user_data_buf[1]; /* this needs to be the last */
 } PaintState, *PPaintState;
 
 typedef struct _DrawableData
@@ -775,7 +790,7 @@ extern Bool         aa_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y, i
 extern void         aa_free_arena(Handle self, Bool for_reuse);
 extern void         gp_get_text_widths( Handle self, const char* text, int len, int flags, ABC * extents);
 extern void         gp_get_text_box( Handle self, ABC * abc, Point * pt);
-extern void         cleanup_gc_stack(Handle self);
+extern void         cleanup_gc_stack(Handle self, Bool all);
 
 /* compatibility to MSVC 6 */
 #ifndef GWLP_USERDATA

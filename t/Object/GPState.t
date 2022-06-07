@@ -18,6 +18,8 @@ sub test
 	is( $d->$method(), $value1, 'out.' . $method);
 }
 
+test( antialias => 0, 1 );
+test( alpha => 255, 10 );
 test( color => 0x123456, 0x654321 );
 test( backColor => 0x654321, 0x123456 );
 

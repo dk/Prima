@@ -128,7 +128,7 @@ sub graphic_context_push
 {
 	my $self = shift;
 	my $ok = $self->SUPER::graphic_context_push;
-	push @{ $self->{code}, [ 'graphic_context_push' ] }; 1 } if $ok;
+	push @{ $self->{code} }, [ 'graphic_context_push' ] if $ok;
 	return $ok;
 }
 
@@ -136,7 +136,7 @@ sub graphic_context_pop
 {
 	my $self = shift;
 	my $ok = $self->SUPER::graphic_context_pop;
-	push @{ $self->{code}, [ 'graphic_context_pop' ] }; 1 } if $ok;
+	push @{ $self->{code} }, [ 'graphic_context_pop' ] if $ok;
 	return $ok;
 }
 
