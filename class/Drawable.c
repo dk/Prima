@@ -197,13 +197,13 @@ Drawable_set( Handle self, HV * profile)
 Bool
 Drawable_graphic_context_push(Handle self)
 {
-	return apc_gp_push(self);
+	return apc_gp_push(self, NULL, NULL, 0);
 }
 
 Bool
 Drawable_graphic_context_pop(Handle self)
 {
-	Bool ok = apc_gp_pop(self);
+	Bool ok = apc_gp_pop(self, NULL);
 	if ( var-> fillPatternImage && PObject(var-> fillPatternImage)->stage != csNormal) {
 		unprotect_object(var-> fillPatternImage);
 		var-> fillPatternImage = NULL_HANDLE;

@@ -954,6 +954,11 @@ typedef struct _PaintState
 	Font font;
 	float line_width, miter_limit;
 	unsigned char *dashes;
+
+	unsigned int user_data_size;
+	GCStorageFunction * user_destructor;
+	void *user_data, *user_context;
+	char user_data_buf[1]; /* this needs to be the last */
 } PaintState, *PPaintState;
 
 #define MenuTimerMessage   1021

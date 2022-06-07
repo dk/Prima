@@ -3816,11 +3816,13 @@ apc_gp_get_text_out_baseline( Handle self);
 extern Point
 apc_gp_get_transform( Handle self);
 
-extern Bool
-apc_gp_push(Handle self);
+typedef void GCStorageFunction( Handle self, void * user_data, unsigned int user_data_size, Bool in_paint);
 
 extern Bool
-apc_gp_pop(Handle self);
+apc_gp_push(Handle self, GCStorageFunction * destructor, void * user_data, unsigned int user_data_size);
+
+extern Bool
+apc_gp_pop(Handle self, void *user_data);
 
 extern Bool
 apc_gp_set_alpha( Handle self, int alpha);
