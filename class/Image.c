@@ -921,6 +921,51 @@ Image_update_change( Handle self)
 	var->statsCache = 0;
 }
 
+typedef struct _PaintState
+{
+	Bool antialias;
+	int rop;
+	PRegionRec region;
+} PaintState, *PPaintState;
+
+static void
+gc_destroy( Handle self, void * user_data, unsigned int user_data_size, Bool in_paint)
+{
+	PPaintState state = ( PPaintState ) user_data;
+	if ( state-> region ) free( state-> region );
+}
+
+Bool
+Image_graphic_context_push(Handle self)
+{
+	PaintState state;
+
+	if (opt_InPaint) inherited graphic_context_push(self);
+
+	state.antialias = var->antialias;
+	state.rop       = var-> extraROP;
+	state.region    = var->regionData ? Region_clone_data(NULL_HANDLE, var->regionData) : NULL;
+
+	return apc_gp_push(self, gc_destroy, &state, sizeof(state));
+}
+
+Bool
+Image_graphic_context_pop(Handle self)
+{
+	Bool ok;
+	PaintState state;
+	if (opt_InPaint) inherited graphic_context_pop(self);
+
+	ok = apc_gp_pop( self, &state);
+	if ( ok) {
+		var-> antialias = state.antialias;
+		var-> extraROP  = state.rop;
+		if ( var-> regionData ) free( var-> regionData );
+		var-> regionData = state.region;
+	}
+	return ok;
+}
+
 double
 Image_stats( Handle self, Bool set, int index, double value)
 {
@@ -2204,11 +2249,11 @@ Image_clear(Handle self, double x1, double y1, double x2, double y2)
 		return inherited clear( self, x1, y1, x2, y2);
 	else if ( !full && var->antialias ) {
 		Bool ok;
-		if ( !apc_gp_push(self)) return false;
+		if ( !my->graphic_context_push(self)) return false;
 		apc_gp_set_color(self, apc_gp_get_back_color(self));
 		apc_gp_set_fill_pattern(self, fillPatterns[fpSolid]);
 		ok = primitive( self, 1, "snnnn", "rectangle", x1, y1, x2, y2);
-		apc_gp_pop(self);
+		my->graphic_context_pop(self);
 		return ok;
 	} else {
 		_x1 = x1;

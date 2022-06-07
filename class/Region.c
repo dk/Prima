@@ -113,6 +113,41 @@ Region_create_from_data( Handle self, PRegionRec data)
 	return self;
 }
 
+PRegionRec
+Region_clone_data( Handle self, PRegionRec data)
+{
+	int size, extras;
+	PRegionRec copy;
+
+	size = sizeof(RegionRec);
+	extras = 0;
+	switch (data->type) {
+	case rgnRectangle:
+		extras = data->data.box.n_boxes * sizeof(Box);
+		break;
+	case rgnPolygon:
+		extras = data->data.polygon.n_points * sizeof(Point);
+		break;
+	}
+
+	size += extras;
+	if ( !( copy = malloc(size))) return NULL;
+	memcpy(copy, data, sizeof(RegionRec));
+
+	switch (data->type) {
+	case rgnRectangle:
+		copy->data.box.boxes = (Box*) (((Byte*)copy) + sizeof(RegionRec));
+		memcpy( copy->data.box.boxes, data->data.box.boxes, extras);
+		break;
+	case rgnPolygon:
+		copy->data.polygon.points = (Point*) (((Byte*)copy) + sizeof(RegionRec));
+		memcpy( copy->data.polygon.points, data->data.polygon.points, extras);
+		break;
+	}
+
+	return copy;
+}
+
 void
 Region_done( Handle self)
 {

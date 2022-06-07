@@ -88,7 +88,7 @@ $d = Prima::DeviceBitmap-> new( width => 8, height => 8, type => dbt::Pixmap);
 sub bits
 {
 	my $type = $_[0] // im::Byte;
-	my $i = $d->image;
+	my $i = (ref($d) eq 'Prima::Image') ? $d : $d->image;
 	$i->type($type) if $i->type != $type;
 	$i = $i->data;
 	my $lw = ($type == im::RGB) ? 24 : 8;
@@ -254,5 +254,16 @@ for my $aa ( 0, 1) {
 	$bits2 = bits;
 	isnt($bits1,$bits2,"gc.bits.region2");
 }
+
+$d = Prima::Image->new( size => [8,8], type => im::Byte);
+$d->clipRect(0,0,$d->size);
+$d->clear;
+$d->graphic_context( region => Prima::Region->new( rect =>[2,2,5,5] ), sub {
+	$d->bar(0,0,7,7);
+	$bits1 = bits;
+});
+$d->bar(0,0,7,7);
+$bits2 = bits;
+isnt($bits1,$bits2,"gc.image.region");
 
 done_testing;

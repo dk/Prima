@@ -248,7 +248,7 @@ Unbuffered:
 }
 
 static Bool
-gc_stack_free( Handle item, void * params)
+gc_stack_free( Handle item, void * self)
 {
 	PPaintState state = ( PPaintState ) item;
 	if ( state-> dashes )
@@ -261,6 +261,8 @@ gc_stack_free( Handle item, void * params)
 	}
 	if ( state-> fill_image )
 		unprotect_object( state-> fill_image );
+	if ( state-> user_destructor )
+		state-> user_destructor(( Handle) self, state->user_data, state->user_data_size, state->in_paint);
 	free(state);
 	return false;
 }
@@ -270,7 +272,7 @@ cleanup_gc_stack(Handle self)
 {
 	DEFXX;
 	if ( XX && XX-> gc_stack ) {
-		list_first_that(XX-> gc_stack, &gc_stack_free, NULL);
+		list_first_that(XX-> gc_stack, &gc_stack_free, (void*) self);
 		plist_destroy(XX-> gc_stack);
 		XX-> gc_stack = NULL;
 	}
@@ -2091,18 +2093,25 @@ apc_gp_get_handle( Handle self)
 }
 
 Bool
-apc_gp_push( Handle self)
+apc_gp_push(Handle self, GCStorageFunction * destructor, void * user_data, unsigned int user_data_size)
 {
 	DEFXX;
+	int size;
 	PPaintState state;
 
 	if ( !XX-> gc_stack ) {
 		if ( !( XX-> gc_stack = plist_create(4,4))) return false;
 	}
-	if ( !( state = malloc(sizeof(PaintState)))) return false;
+	size = sizeof(PaintState) + user_data_size;
+	if ( !( state = malloc(size))) return false;
 	if ( list_add( XX-> gc_stack, (Handle) state) < 0) return false;
 
-	bzero(state, sizeof(PaintState));
+	bzero(state, size);
+	state->user_data = state->user_data_buf;
+	memcpy( state-> user_data, user_data, user_data_size);
+	state->user_data_size = user_data_size;
+	state->user_destructor = destructor;
+
 	state->in_paint = XF_IN_PAINT(XX);
 
 	if ( state-> in_paint ) {
@@ -2165,7 +2174,7 @@ apc_gp_push( Handle self)
 }
 
 Bool
-apc_gp_pop( Handle self)
+apc_gp_pop( Handle self, void * user_data)
 {
 	DEFXX;
 	PPaintState state;
@@ -2174,6 +2183,9 @@ apc_gp_pop( Handle self)
 	if ( XX-> gc_stack-> count <= 0 ) return false;
 	if ( !( state = ( PPaintState) list_at( XX-> gc_stack, XX-> gc_stack-> count - 1))) return false;
 	list_delete_at( XX-> gc_stack, XX-> gc_stack->count - 1);
+
+	if ( user_data )
+		memcpy( user_data, state->user_data, state->user_data_size);
 
 	if ( state-> in_paint ) {
 		XX->flags.antialias = state->antialias;

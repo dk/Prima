@@ -62,6 +62,8 @@ object Prima::Image( Prima::Drawable)
 	method int    get_bpp();
 	method SV   * get_handle();
 	method Color  get_nearest_color( Color color);
+	method Bool   graphic_context_push();
+	method Bool   graphic_context_pop();
 	c_only void   handle_event( PEvent event);
 	method void   init( HV * profile);
 	method Bool   line(double x1, double y1, double x2, double y2);

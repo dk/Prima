@@ -15,4 +15,5 @@ object Prima::Region( Prima::Component)
 	method   int       rect_inside(Rect p) => apc_region_rect_inside;
 	c_only   PRegionRec update_change(Bool disown);
 	c_only   Handle    create_from_data( PRegionRec data );
+	c_only   PRegionRec clone_data( PRegionRec data );
 }
