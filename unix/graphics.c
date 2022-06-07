@@ -50,18 +50,18 @@ prima_rop_map( int rop)
 		return rop_map[ rop];
 }
 
-void
+struct gc_head*
 prima_get_gc( PDrawableSysData selfxx)
 {
 	XGCValues gcv;
 	Bool bitmap, layered;
 	struct gc_head *gc_pool;
 
-	if ( XX-> gc && XX-> gcl) return;
+	if ( XX-> gc && XX-> gcl) return NULL;
 
 	if ( XX-> gc || XX-> gcl) {
 		warn( "UAG_010: internal error");
-		return;
+		return NULL;
 	}
 
 	bitmap = XT_IS_BITMAP(XX) ? true : false;
@@ -78,6 +78,7 @@ prima_get_gc( PDrawableSysData selfxx)
 			XX->gcl->gc = XX-> gc;
 	}
 	if ( XX-> gcl) XX->gc = XX->gcl->gc;
+	return gc_pool;
 }
 
 void
@@ -246,10 +247,38 @@ Unbuffered:
 	}
 }
 
+static Bool
+gc_stack_free( Handle item, void * params)
+{
+	PPaintState state = ( PPaintState ) item;
+	if ( state-> gcl)
+		TAILQ_INSERT_HEAD(state->gc_pool, state->gcl, gc_link);
+	if ( state-> dashes )
+		free(state->dashes);
+	if ( state-> region )
+		XDestroyRegion( state-> region );
+	if ( state-> fill_image )
+		unprotect_object( state-> fill_image );
+	free(state);
+	return false;
+}
+
+static void
+cleanup_gc_stack(Handle self)
+{
+	DEFXX;
+	if ( XX && XX-> gc_stack ) {
+		list_first_that(XX-> gc_stack, &gc_stack_free, NULL);
+		plist_destroy(XX-> gc_stack);
+		XX-> gc_stack = NULL;
+	}
+}
+
 void
 prima_cleanup_drawable_after_painting( Handle self)
 {
 	DEFXX;
+	cleanup_gc_stack(self);
 	DELETE_ARGB_PICTURE(XX->argb_picture);
 #ifdef USE_XFT
 	prima_xft_gp_destroy( self );
@@ -445,6 +474,7 @@ apc_gp_done( Handle self)
 {
 	DEFXX;
 	if (!XX) return false;
+	cleanup_gc_stack(self);
 	if ( XX-> dashes) {
 		free(XX-> dashes);
 		XX-> dashes = NULL;
@@ -1557,7 +1587,9 @@ apc_gp_get_fill_pattern( Handle self)
 Point
 apc_gp_get_fill_pattern_offset( Handle self)
 {
-	return X(self)-> fill_pattern_offset;
+	Point fpo = X(self)-> fill_pattern_offset;
+	fpo.y = 8 - fpo.y;
+	return fpo;
 }
 
 int
@@ -2059,12 +2091,112 @@ apc_gp_get_handle( Handle self)
 Bool
 apc_gp_push( Handle self)
 {
-	return false;
+	DEFXX;
+	PPaintState state;
+
+	if ( !XF_IN_PAINT(XX) ) return false;
+	if ( !XX-> gc_stack ) {
+		if ( !( XX-> gc_stack = plist_create(4,4))) return false;
+	}
+	if ( !( state = malloc(sizeof(PaintState)))) return false;
+	if ( list_add( XX-> gc_stack, (Handle) state) < 0) return false;
+
+	bzero(state, sizeof(PaintState));
+
+	state->antialias = XX->flags.antialias;
+	state->fore = XX->fore;
+	state->back = XX->back;
+	state->fill_mode = XX->fill_mode;
+	memcpy( state->fill_pattern, XX->fill_pattern, sizeof(FillPattern));
+	state->fill_pattern_offset = XX->fill_pattern_offset;
+	state->alpha = XX->paint_alpha;
+	state->line_width = XX->paint_line_width;
+	state->n_dashes = XX-> paint_ndashes;
+	if (( state->dashes = malloc( XX-> paint_ndashes)) != NULL)
+		memcpy( state->dashes, XX-> paint_dashes, XX->paint_ndashes);
+	state->miter_limit = XX->miter_limit;
+	state->rop  = XX->paint_rop;
+	state->rop2 = XX->paint_rop2;
+	state->transform = XX->gtransform;
+	state->text_baseline = XX->flags. paint_base_line;
+	state->text_opaque   = XX->flags. paint_opaque;
+
+	state->gc  = XX-> gc;
+	state->gcl = XX-> gcl;
+	XX->gcl = NULL;
+	XX->gc = NULL;
+	state->gc_pool = prima_get_gc(XX);
+	XCopyGC( DISP, state->gc, (1 << (GCLastBit + 1)) - 1, XX->gc);
+	XCHECKPOINT;
+
+	if ( XX-> current_region ) {
+		state->region = XCreateRegion();
+		XUnionRegion( state->region, XX-> current_region, state->region);
+		XSetRegion( DISP, state->gc, state->region );
+		XCHECKPOINT;
+	} else
+		state->region = 0;
+
+	if ( PDrawable(self)->fillPatternImage )
+		protect_object( state->fill_image = PDrawable(self)->fillPatternImage );
+	return true;
 }
 
 Bool
 apc_gp_pop( Handle self)
 {
-	return false;
+	DEFXX;
+	PPaintState state;
+	if ( !XF_IN_PAINT(XX) ) return false;
+	if ( !XX-> gc_stack ) return false;
+	if ( XX-> gc_stack-> count <= 0 ) return false;
+	if ( !( state = ( PPaintState) list_at( XX-> gc_stack, XX-> gc_stack-> count - 1))) return false;
+	list_delete_at( XX-> gc_stack, XX-> gc_stack->count - 1);
+
+	XX->flags.antialias = state->antialias;
+	XX->fore = state->fore;
+	XX->back = state->back;
+	XX-> flags. brush_fore = 0;
+	XX-> flags. brush_back = 0;
+	XX-> fill_mode = state->fill_mode;
+	memcpy( XX->fill_pattern, state->fill_pattern, sizeof(FillPattern));
+	XX-> fill_pattern_offset = state->fill_pattern_offset;
+	XX-> paint_alpha = state-> alpha;
+	XX-> paint_line_width = state-> line_width;
+	free( XX-> paint_dashes);
+	XX->paint_dashes = state->dashes;
+	XX->paint_ndashes = state->n_dashes;
+	XX->miter_limit = state->miter_limit;
+	XX->paint_rop = state->rop;
+	XX->paint_rop2 = state->rop2;
+	XX->gtransform = state->transform;
+	XX->flags. paint_base_line = state->text_baseline;
+	XX->flags. paint_opaque = state->text_opaque;
+
+	if (PDrawable(self)->fillPatternImage)
+		unprotect_object(PDrawable(self)->fillPatternImage);
+	PDrawable(self)->fillPatternImage = state-> fill_image;
+
+	prima_release_gc(XX);
+	XX->gc  = state->gc;
+	XX->gcl = state->gcl;
+
+	if ( XX-> current_region && XX-> flags. kill_current_region )
+		XDestroyRegion( XX-> current_region );
+	XX-> current_region = state-> region;
+	if ( !state-> region ) {
+		XRectangle r = {0,0,XX->size.x,XX->size.y};
+		XX-> current_region = XCreateRegion();
+		XUnionRectWithRegion( &r, XX->current_region, XX->current_region);
+	}
+	XX-> flags. kill_current_region = 1;
+#ifdef USE_XFT
+	if ( XX-> xft_drawable) prima_xft_update_region( self);
+#endif
+	CLIP_ARGB_PICTURE(XX->argb_picture, XX->current_region);
+
+	free(state);
+	guts.xrender_pen_dirty = true;
+	return true;
 }
 

@@ -911,6 +911,7 @@ typedef struct _drawable_sys_data
 	int borderIcons;
 	XVisualInfo * visual;
 	Colormap colormap;
+	PList gc_stack;
 #ifdef USE_XFT
 	XftDraw  * xft_drawable;
 	uint32_t * xft_map8;
@@ -930,6 +931,22 @@ typedef struct _drawable_sys_data
 #define XF_IN_PAINT(x)  ((x)->flags.paint)
 #define XF_LAYERED(x)  ((x)->flags.layered)
 #define XFLUSH          if (XX->flags.force_flush) XFlush(DISP)
+
+typedef struct _PaintState
+{
+	Brush fore, back;
+	Bool antialias, text_opaque, text_baseline;
+	Handle fill_image;
+	int fill_mode, alpha, n_dashes, rop, rop2;
+	FillPattern fill_pattern;
+	Point fill_pattern_offset, transform;
+	unsigned char *dashes;
+	float line_width, miter_limit;
+	GC gc;
+	GCList *gcl;
+	struct gc_head* gc_pool;
+	Region region;
+} PaintState, *PPaintState;
 
 #define MenuTimerMessage   1021
 
@@ -1104,7 +1121,7 @@ prima_save_xerror_event( XErrorEvent *xr);
 extern void
 prima_restore_xerror_event( XErrorEvent *xr);
 
-extern void
+extern struct gc_head*
 prima_get_gc( PDrawableSysData);
 
 extern void
