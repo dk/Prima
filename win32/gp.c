@@ -30,7 +30,7 @@ Bool
 apc_gp_done( Handle self)
 {
 	objCheck false;
-	cleanup_gc_stack(self);
+	cleanup_gc_stack(self, 1);
 	aa_free_arena(self, 0);
 	if ( sys bm)
 		if ( !DeleteObject( sys bm)) apiErr;
@@ -1507,48 +1507,78 @@ apc_gp_set_transform( Handle self, int x, int y)
 }
 
 Bool
-apc_gp_push(Handle self)
+apc_gp_push(Handle self, GCStorageFunction * destructor, void * user_data, unsigned int user_data_size)
 {
+	int size;
 	PPaintState state;
 
-	if ( !sys ps ) return false;
 	if ( !sys gc_stack ) {
 		if ( !( sys gc_stack = plist_create(4,4))) return false;
 	}
-	if ( !( state = malloc(sizeof(PaintState)))) return false;
+	size = sizeof(PaintState) + user_data_size;
+	if ( !( state = malloc(size))) return false;
 	if ( list_add( sys gc_stack, (Handle) state) < 0) return false;
 
 	bzero(state, sizeof(PaintState));
-	if ( !( SaveDC(sys ps))) {
-		list_delete_at( sys gc_stack, sys gc_stack->count - 1);
-		free(state);
-		return false;
+	state->user_data = state->user_data_buf;
+	memcpy( state-> user_data, user_data, user_data_size);
+	state->user_data_size = user_data_size;
+	state->user_destructor = destructor;
+
+	state->in_paint = (sys ps != 0);
+
+	if ( sys ps ) {
+		if ( !( SaveDC(sys ps))) {
+			list_delete_at( sys gc_stack, sys gc_stack->count - 1);
+			free(state);
+			return false;
+		}
+		state->paint.stylus           = sys stylus;
+		state->paint.stylusFlags      = sys stylusFlags;
+		state->paint.stylusResource   = sys stylusResource;
+		state->paint.stylusGPResource = sys stylusGPResource;
+		state->paint.fontResource     = sys fontResource;
+		if ( state->paint.stylusResource)
+			state->paint.stylusResource  ->refcnt++;
+		if ( state->paint.stylusGPResource)
+			state->paint.stylusGPResource->refcnt++;
+		if ( state->paint.fontResource)
+			state->paint.fontResource    ->refcnt++;
+		state->font_sin  = sys font_sin;
+		state->font_cos  = sys font_cos;
+
+		memcpy( state->fill_pattern, sys fillPattern, sizeof(FillPattern));
+		state->fill_mode  = sys psFillMode;
+		state->rop        = sys currentROP;
+		state->rop2       = sys currentROP2;
+		state->transform  = sys gp_transform;
+		state->antialias  = is_apt(aptGDIPlus);
+	} else {
+		state->fill_mode  = sys fillMode;
+		memcpy( state->fill_pattern, sys fillPattern2, sizeof(FillPattern));
+		state->nonpaint.fill_pattern_offset = sys fillPatternOffset;
+		state->nonpaint.line_end    = sys lineEnd;
+		state->nonpaint.line_join   = sys lineJoin;
+		state->nonpaint.line_width  = sys lineWidth;
+		state->nonpaint.miter_limit = sys miterLimit;
+		state->nonpaint.line_pattern_len = sys linePatternLen;
+		if ( state->nonpaint.line_pattern_len > sizeof(sys linePattern)) {
+			if (( state->nonpaint.line_pattern = malloc(state->nonpaint.line_pattern_len)) != NULL)
+				memcpy( state->nonpaint.line_pattern, sys linePattern, state->nonpaint.line_pattern_len);
+			else
+				state->nonpaint.line_pattern_len = 0;
+		} else
+			state->nonpaint.line_pattern = sys linePattern;
+		state->nonpaint.palette = palette_create(self);
+		state->rop         = sys rop;
+		state->rop2        = sys rop2;
+		state->transform   = sys transform;
 	}
 
-	state->stylus           = sys stylus;
-	state->stylusFlags      = sys stylusFlags;
-	state->stylusResource   = sys stylusResource;
-	state->stylusGPResource = sys stylusGPResource;
-	state->fontResource     = sys fontResource;
-	if ( state->stylusResource)
-		state->stylusResource  ->refcnt++;
-	if ( state->stylusGPResource)
-		state->stylusGPResource->refcnt++;
-	if ( state->fontResource)
-		state->fontResource    ->refcnt++;
+	state->alpha     = sys alpha;
+	state->fore      = sys lbs[0];
+	state->back      = sys lbs[1];
 	state->font      = var font;
-	state->font_sin  = sys font_sin;
-	state->font_cos  = sys font_cos;
-
-	memcpy( state->fill_pattern, sys fillPattern, sizeof(FillPattern));
-	state->back_color = sys lbs[1];
-	state->fill_mode  = sys psFillMode;
-	state->rop        = sys currentROP;
-	state->rop2       = sys currentROP2;
-	state->transform  = sys gp_transform;
-	state->antialias  = is_apt(aptGDIPlus);
-	state->alpha      = sys alpha;
-
 	state->text_baseline = is_apt( aptTextOutBaseline);
 	state->text_opaque   = is_apt( aptTextOpaque);
 	if ( var fillPatternImage )
@@ -1557,65 +1587,87 @@ apc_gp_push(Handle self)
 }
 
 Bool
-apc_gp_pop( Handle self)
+apc_gp_pop( Handle self, void * user_data)
 {
 	PPaintState state;
-	if ( !sys ps ) return false;
+
 	if ( !sys gc_stack ) return false;
 	if ( sys gc_stack-> count <= 0 ) return false;
 	if ( !( state = ( PPaintState) list_at( sys gc_stack, sys gc_stack-> count - 1))) return false;
 	list_delete_at( sys gc_stack, sys gc_stack->count - 1);
-	RestoreDC( sys ps, -1);
 
-	if ( state->fontResource)
-		state->fontResource    ->refcnt--;
-	if ( state->stylusResource)
-		state->stylusResource  ->refcnt--;
-	if ( state->stylusGPResource)
-		state->stylusGPResource->refcnt--;
-	sys stylus           = state-> stylus;
-	sys stylusFlags      = state-> stylusFlags;
-	sys stylusResource   = state-> stylusResource;
-	sys stylusGPResource = state-> stylusGPResource;
-	sys fontResource     = state-> fontResource;
-	var font = state->font;
-	sys font_sin = state->font_sin;
-	sys font_cos = state->font_cos;
+	if ( user_data )
+		memcpy( user_data, state->user_data, state->user_data_size);
 
-	memcpy( sys fillPattern, state->fill_pattern, sizeof(FillPattern));
-	sys lbs[1]       = state->back_color;
-	sys psFillMode   = state->fill_mode;
-	sys pal          = GetCurrentObject(sys ps, OBJ_PAL);
-	sys currentROP   = state->rop;
-	sys currentROP2  = state->rop2;
-	sys gp_transform = state->transform;
-	apt_assign(aptTextOutBaseline, state->text_baseline);
-	apt_assign(aptTextOpaque,      state->text_opaque);
+	if ( state-> in_paint ) {
+		RestoreDC( sys ps, -1);
+		if ( state->paint.fontResource)
+			state->paint.fontResource    ->refcnt--;
+		if ( state->paint.stylusResource)
+			state->paint.stylusResource  ->refcnt--;
+		if ( state->paint.stylusGPResource)
+			state->paint.stylusGPResource->refcnt--;
+		sys stylus           = state-> paint.stylus;
+		sys stylusFlags      = state-> paint.stylusFlags;
+		sys stylusResource   = state-> paint.stylusResource;
+		sys stylusGPResource = state-> paint.stylusGPResource;
+		sys fontResource     = state-> paint.fontResource;
+		sys font_sin         = state->font_sin;
+		sys font_cos         = state->font_cos;
 
+		memcpy( sys fillPattern, state->fill_pattern, sizeof(FillPattern));
+		sys psFillMode   = state->fill_mode;
+		sys pal          = GetCurrentObject(sys ps, OBJ_PAL);
+		sys currentROP   = state->rop;
+		sys currentROP2  = state->rop2;
+		sys gp_transform = state->transform;
+
+		if (sys graphics) {
+			HRGN rgn;
+			int res;
+			rgn = CreateRectRgn(0,0,0,0);
+			res = GetClipRgn( sys ps, rgn );
+			if ( res <= 0 ) {
+				if ( res < 0 ) apiErr;
+				DeleteObject(rgn);
+				rgn = CreateRectRgn(0,0,sys lastSize.x,sys lastSize.y);
+			}
+			GPCALL GdipSetClipHrgn(sys graphics, rgn, CombineModeReplace);
+			apiGPErrCheck;
+			DeleteObject(rgn);
+		}
+	} else {
+		sys fillMode = state->fill_mode;
+		memcpy( sys fillPattern2, state->fill_pattern, sizeof(FillPattern));
+		sys fillPatternOffset = state->nonpaint.fill_pattern_offset;
+		sys lineEnd        = state->nonpaint.line_end;
+		sys lineJoin       = state->nonpaint.line_join;
+		sys lineWidth      = state->nonpaint.line_width;
+		sys miterLimit     = state->nonpaint.miter_limit;
+		if ( sys linePatternLen > sizeof(sys linePattern)) 
+			free(sys linePattern);
+		sys linePatternLen = state->nonpaint.line_pattern_len;
+		sys linePattern    = state->nonpaint.line_pattern;
+		if ( sys pal ) DeleteObject( sys pal);
+		sys pal            = state-> nonpaint.palette;
+		sys rop            = state-> rop;
+		sys rop2           = state-> rop2;
+		sys transform      = state-> transform;
+	}
+
+	sys alpha  = state-> alpha;
+	apc_gp_set_antialias( self, state->antialias );
+	var font   = state->font;
+	sys lbs[0] = state->fore;
+	sys lbs[1] = state->back;
 	if (var fillPatternImage)
 		unprotect_object(var fillPatternImage);
 	var fillPatternImage = state-> fill_image;
-
-	apc_gp_set_antialias( self, state->antialias );
-	sys alpha         = state-> alpha;
+	apt_assign(aptTextOutBaseline, state->text_baseline);
+	apt_assign(aptTextOpaque,      state->text_opaque);
 	if ( sys alphaArenaPalette ) {
 		free(sys alphaArenaPalette);
 		sys alphaArenaPalette = NULL;
-	}
-
-	if (sys graphics) {
-		HRGN rgn;
-		int res;
-		rgn = CreateRectRgn(0,0,0,0);
-		res = GetClipRgn( sys ps, rgn );
-		if ( res <= 0 ) {
-			if ( res < 0 ) apiErr;
-			DeleteObject(rgn);
-			rgn = CreateRectRgn(0,0,sys lastSize.x,sys lastSize.y);
-		}
-		GPCALL GdipSetClipHrgn(sys graphics, rgn, CombineModeReplace);
-		apiGPErrCheck;
-		DeleteObject(rgn);
 	}
 
 	free(state);
