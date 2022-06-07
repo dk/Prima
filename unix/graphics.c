@@ -247,10 +247,9 @@ Unbuffered:
 	}
 }
 
-static Bool
-gc_stack_free( Handle item, void * self)
+static void
+gc_stack_free( Handle self, PPaintState state)
 {
-	PPaintState state = ( PPaintState ) item;
 	if ( state-> dashes )
 		free(state->dashes);
 	if ( state-> in_paint ) {
@@ -262,19 +261,37 @@ gc_stack_free( Handle item, void * self)
 	if ( state-> fill_image )
 		unprotect_object( state-> fill_image );
 	if ( state-> user_destructor )
-		state-> user_destructor(( Handle) self, state->user_data, state->user_data_size, state->in_paint);
+		state-> user_destructor(self, state->user_data, state->user_data_size, state->in_paint);
 	free(state);
+}
+
+static Bool
+gc_stack_free_paints_only( Handle item, void * p)
+{
+	PPaintState state = ( PPaintState ) item;
+	if ( !state->in_paint) return true;
+	gc_stack_free((Handle) p, state);
+	return false;
+}
+
+static Bool
+gc_stack_free_all( Handle item, void * p)
+{
+	gc_stack_free((Handle) p, ( PPaintState ) item);
 	return false;
 }
 
 static void
-cleanup_gc_stack(Handle self)
+cleanup_gc_stack(Handle self, Bool all)
 {
 	DEFXX;
 	if ( XX && XX-> gc_stack ) {
-		list_first_that(XX-> gc_stack, &gc_stack_free, (void*) self);
-		plist_destroy(XX-> gc_stack);
-		XX-> gc_stack = NULL;
+		if ( all ) {
+			list_first_that(XX-> gc_stack, &gc_stack_free_all, (void*) self);
+			plist_destroy(XX-> gc_stack);
+			XX-> gc_stack = NULL;
+		} else
+			list_grep(XX-> gc_stack, &gc_stack_free_paints_only, (void*) self);
 	}
 }
 
@@ -282,7 +299,7 @@ void
 prima_cleanup_drawable_after_painting( Handle self)
 {
 	DEFXX;
-	cleanup_gc_stack(self);
+	cleanup_gc_stack(self, 0);
 	DELETE_ARGB_PICTURE(XX->argb_picture);
 #ifdef USE_XFT
 	prima_xft_gp_destroy( self );
@@ -478,7 +495,7 @@ apc_gp_done( Handle self)
 {
 	DEFXX;
 	if (!XX) return false;
-	cleanup_gc_stack(self);
+	cleanup_gc_stack(self, 1);
 	if ( XX-> dashes) {
 		free(XX-> dashes);
 		XX-> dashes = NULL;

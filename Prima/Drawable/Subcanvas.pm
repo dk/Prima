@@ -106,7 +106,7 @@ my @primitives = qw(
 	fill_chord fill_ellipse fillpoly fill_sector flood_fill
 	line lines polyline put_image put_image_indirect
 	rectangle sector stretch_image
-	text_out clear
+	text_out clear graphic_context_push graphic_context_pop
 );
 
 for my $primitive_name (@primitives) {

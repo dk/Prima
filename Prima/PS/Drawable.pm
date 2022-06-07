@@ -338,6 +338,30 @@ sub grayscale
 	$_[0]-> {grayscale} = $_[1] unless $_[0]-> get_paint_state;
 }
 
+sub graphic_context_push
+{
+	my $self = shift;
+	return 0 unless $self->graphic_context_push;
+	my $stack = $self->{gc_stack} //= [];
+	push @$stack, {
+		(map { $_,  $self->$_()  } qw(rotate scale reversed grayscale)),
+		(map { $_, [$self->$_()] } qw(resolution clipRect))
+	};
+	return 1;
+}
+
+sub graphic_context_pop
+{
+	my $self = shift;
+	return unless $self->graphic_context_pop;
+	my $stack = $self->{gc_stack} //= [];
+	my $item = pop @$stack or return 0;
+	@{$self->{$_}} = @{$item->{$_}} for qw(resolution clipRect);
+	$self->{$_} = $item->{$_} for qw(rotate scale reversed grayscale);
+	$self->change_transform;
+	return 1;
+}
+
 sub calc_page
 {
 	my $self = $_[0];

@@ -940,7 +940,7 @@ Image_graphic_context_push(Handle self)
 {
 	PaintState state;
 
-	if (opt_InPaint) inherited graphic_context_push(self);
+	if (opt_InPaint) return inherited graphic_context_push(self);
 
 	state.antialias = var->antialias;
 	state.rop       = var-> extraROP;
@@ -954,7 +954,7 @@ Image_graphic_context_pop(Handle self)
 {
 	Bool ok;
 	PaintState state;
-	if (opt_InPaint) inherited graphic_context_pop(self);
+	if (opt_InPaint) return inherited graphic_context_pop(self);
 
 	ok = apc_gp_pop( self, &state);
 	if ( ok) {

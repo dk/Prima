@@ -124,6 +124,26 @@ list_at( PList slf, int index)
 }
 
 int
+list_grep( PList slf, void * action, void * params)
+{
+	int i, cnt;
+	Handle * list;
+	if ( !action || !slf || !slf->count) return -1;
+	if ( !( list = allocn( Handle, slf-> count)))
+		return -1;
+	memcpy( list, slf-> items, slf-> count * sizeof( Handle));
+	cnt = slf->count;
+	slf->count = 0;
+	for ( i = 0; i < cnt; i++)
+		if ((( PListProc) action)( list[ i], params)) {
+			if ( list_add(slf, list[i]) < 0)
+				break;
+		}
+	free( list);
+	return slf->count;
+}
+
+int
 list_first_that( PList slf, void * action, void * params)
 {
 	int toRet = -1, i, cnt;
