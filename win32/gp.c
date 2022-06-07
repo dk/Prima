@@ -26,31 +26,11 @@ apc_gp_init( Handle self)
 	return true;
 }
 
-static Bool
-gc_stack_free( Handle item, void * params)
-{
-	PPaintState state = ( PPaintState ) item;
-	if ( state-> fill_image )
-		unprotect_object( state-> fill_image );
-	if ( state->fontResource)
-		state->fontResource    ->refcnt--;
-	if ( state->stylusResource)
-		state->stylusResource  ->refcnt--;
-	if ( state->stylusGPResource)
-		state->stylusGPResource->refcnt--;
-	free(state);
-	return false;
-}
-
 Bool
 apc_gp_done( Handle self)
 {
 	objCheck false;
-	if ( sys gc_stack ) {
-		list_first_that(sys gc_stack, &gc_stack_free, NULL);
-		plist_destroy(sys gc_stack);
-		sys gc_stack = NULL;
-	}
+	cleanup_gc_stack(self);
 	aa_free_arena(self, 0);
 	if ( sys bm)
 		if ( !DeleteObject( sys bm)) apiErr;

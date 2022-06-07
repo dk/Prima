@@ -775,6 +775,7 @@ extern Bool         aa_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y, i
 extern void         aa_free_arena(Handle self, Bool for_reuse);
 extern void         gp_get_text_widths( Handle self, const char* text, int len, int flags, ABC * extents);
 extern void         gp_get_text_box( Handle self, ABC * abc, Point * pt);
+extern void         cleanup_gc_stack(Handle self);
 
 /* compatibility to MSVC 6 */
 #ifndef GWLP_USERDATA

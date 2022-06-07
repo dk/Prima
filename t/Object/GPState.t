@@ -3,6 +3,7 @@ use warnings;
 
 use Test::More;
 use Prima::sys::Test;
+my $unix = Prima::Application-> get_system_info-> {apc} == apc::Unix;
 
 my $d = Prima::Drawable-> create( width => 1, height => 1, type => im::RGB);
 my (@z, $i, @fpo, $fillPatternCount);
@@ -119,6 +120,7 @@ $d->antialias(0);
 
 for my $aa ( 0, 1) {
 	$d->antialias($aa);
+	$d->clipRect(0,0,8,8);
 
 	check( color     => 0x654321, 0x123456, type => im::RGB, act => sub { $d->polyline([2,2,6,2,6,6]) } );
 	check( backColor => 0x654321, 0x123456, type => im::RGB, act => sub { $d->polyline([2,2,6,2,6,6]) });
@@ -163,18 +165,22 @@ for my $aa ( 0, 1) {
 	isnt($bits1,$bits2,"gc.bits.fillPatternOffset");
 	$d-> fillPattern(fp::Solid);
 
-	$d->lineWidth(4);
-	check( lineJoin => lj::Miter,  lj::Round, act => sub { $d->polyline([2,2,6,2,6,6]); });
+	$d->lineWidth(5);
+	$d->lineEnd(le::Square);
+	check( lineJoin => lj::Miter,  lj::Round, act => sub { $d->polyline([0,2,5,2,5,7]); });
 	check( lineEnd  => le::Square, le::Round, act => sub { $d->polyline([2,2,6,2,6,6]) });
 	$d->lineWidth(0);
 
 	check( lineWidth => 2, 5, act => sub { $d->polyline([2,2,6,2,6,6]) });
 	check( linePattern => lp::Dot, lp::Dash, act => sub { $d->polyline([2,2,6,2,6,6]) });
-
-	$d->lineWidth(2);
 	$d->linePattern(lp::Solid);
-	check( miterLimit => 1, 5, act => sub { $d->polyline([0,0,3,3,3,0]) });
-	$d->lineWidth(0);
+
+	unless ( $unix ) {
+		# X11 cannot do variable mitering
+		$d->lineWidth(2);
+		check( miterLimit => 1, 5, act => sub { $d->polyline([0,0,3,3,3,0]) });
+		$d->lineWidth(0);
+	}
 
 	check( rop  => rop::NotPut, rop::CopyPut, act => sub { $d->bar(1,1,6,6) });
 	$d->rop(rop::CopyPut);

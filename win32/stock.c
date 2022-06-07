@@ -1806,6 +1806,32 @@ hwnd_enter_paint( Handle self)
 	SetStretchBltMode( sys ps, COLORONCOLOR);
 }
 
+static Bool
+gc_stack_free( Handle item, void * params)
+{
+	PPaintState state = ( PPaintState ) item;
+	if ( state-> fill_image )
+		unprotect_object( state-> fill_image );
+	if ( state->fontResource)
+		state->fontResource    ->refcnt--;
+	if ( state->stylusResource)
+		state->stylusResource  ->refcnt--;
+	if ( state->stylusGPResource)
+		state->stylusGPResource->refcnt--;
+	free(state);
+	return false;
+}
+
+void
+cleanup_gc_stack(Handle self)
+{
+	if ( sys gc_stack ) {
+		list_first_that(sys gc_stack, &gc_stack_free, NULL);
+		plist_destroy(sys gc_stack);
+		sys gc_stack = NULL;
+	}
+}
+
 void
 hwnd_leave_paint( Handle self)
 {
