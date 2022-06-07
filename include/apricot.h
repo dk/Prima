@@ -1508,6 +1508,9 @@ extern int
 list_first_that( PList self, void * action, void * params);
 
 extern int
+list_grep( PList self, void * action, void * params);
+
+extern int
 list_index_of( PList self, Handle item);
 
 /* utf8 */

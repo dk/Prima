@@ -266,4 +266,16 @@ $d->bar(0,0,7,7);
 $bits2 = bits;
 isnt($bits1,$bits2,"gc.image.region");
 
+$d->color(0x123456);
+$d->graphic_context_push;
+$d->color(0x234567);
+$d->begin_paint;
+$d->color(0x345678);
+$d->graphic_context( color => 0x456789, sub {} );
+is( $d->color, 0x345678, "color in paint after gc");
+$d->end_paint;
+is( $d->color, 0x234567, "color outside paint before gc");
+$d->graphic_context_pop;
+is( $d->color, 0x123456, "color outside paint after gc");
+
 done_testing;
