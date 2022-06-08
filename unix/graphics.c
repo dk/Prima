@@ -261,8 +261,6 @@ gc_stack_free( Handle self, PPaintState state)
 	if ( state-> fill_image )
 		unprotect_object( state-> fill_image );
 	if ( state-> user_destructor )
-	if ( state-> user_destructor )
-		state-> user_destructor(self, state->user_data, state->user_data_size, state->in_paint);
 		state-> user_destructor(self, state->user_data, state->user_data_size, state->in_paint);
 	free(state);
 }
