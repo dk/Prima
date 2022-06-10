@@ -41,7 +41,7 @@ SKIP: {
 	);
 	$w->show;
 	$w->bring_to_front;
-	wait_flag;
+	skip "x11 server overloaded", 1 unless wait_flag;
 	select(undef,undef,undef,0.1);
 
 	my $i = $a->get_image(1,1,2,1);
