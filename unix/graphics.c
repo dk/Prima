@@ -257,6 +257,10 @@ gc_stack_free( Handle self, PPaintState state)
 			TAILQ_INSERT_HEAD(state->paint.gc_pool, state->paint.gcl, gc_link);
 		if ( state-> paint.region )
 			XDestroyRegion( state-> paint.region );
+		if ( state-> paint.kill_tile )
+			XFreePixmap( DISP, state-> paint.tile);
+		if ( state-> paint.kill_stipple )
+			XFreePixmap( DISP, state-> paint.stipple);
 	}
 	if ( state-> fill_image )
 		unprotect_object( state-> fill_image );
@@ -295,12 +299,46 @@ cleanup_gc_stack(Handle self, Bool all)
 	}
 }
 
+/* COW the pixmaps on the stack */
+static void
+cleanup_stipples( Handle self )
+{
+	DEFXX;
+	Bool kill = false;
+
+	if ( XX-> gc_stack ) {
+		int i;
+		for ( i = XX->gc_stack->count - 1; i >= 0; i--) {
+			PPaintState state = ( PPaintState ) XX->gc_stack->items[i];
+			if ( !state->paint.tile || !state->paint.stipple)
+				continue;
+
+			if ( state-> paint.tile       ) state-> paint.kill_tile       = true;
+			if ( state-> paint.stipple    ) state-> paint.kill_stipple    = true;
+			kill = false;
+			break;
+		}
+	}
+
+	if ( kill ) {
+		if ( XX-> fp_tile )
+			XFreePixmap( DISP, XX-> fp_tile);
+		if ( XX-> fp_stipple )
+			XFreePixmap( DISP, XX-> fp_stipple);
+	}
+
+	XX-> fp_stipple = XX-> fp_tile = 0;
+}
+
 void
 prima_cleanup_drawable_after_painting( Handle self)
 {
 	DEFXX;
+
 	cleanup_gc_stack(self, 0);
+	cleanup_stipples(self);
 	DELETE_ARGB_PICTURE(XX->argb_picture);
+	CLEANUP_RENDER_STIPPLES(self);
 #ifdef USE_XFT
 	prima_xft_gp_destroy( self );
 #endif
@@ -368,10 +406,32 @@ if (!XX->flags.brush_back && XX-> paint_rop2 == ropCopyPut) {\
 XSetFillStyle( DISP, XX-> gc, FillSolid);\
 
 Bool
-prima_make_brush( DrawableSysData * XX, int colorIndex)
+prima_make_brush( Handle self, int colorIndex)
 {
+	DEFXX;
 	Pixmap p;
-	if ( XT_IS_BITMAP(XX) || ( guts. idepth == 1)) {
+	if ( XX-> fp_stipple || XX-> fp_tile ) {
+		/* custom image */
+		if ( colorIndex > 0) return false;
+		XCHECKPOINT;
+		if ( XX-> fp_stipple) {
+			XSetStipple( DISP, XX-> gc, XX-> fp_stipple);
+			XCHECKPOINT;
+			if (!XX->flags.brush_fore) {
+				XSetForeground( DISP, XX-> gc, XX-> fore. primary);
+				XX->flags.brush_fore = 1;
+			}
+			if (!XX->flags.brush_back) {
+				XSetBackground( DISP, XX-> gc, XX-> back. primary);
+				XX->flags.brush_back = 1;
+			}
+			XSetFillStyle( DISP, XX-> gc, FillOpaqueStippled);
+		} else {
+			XSetTile( DISP, XX-> gc, XX-> fp_tile);
+			XCHECKPOINT;
+			XSetFillStyle( DISP, XX-> gc, FillTiled);
+		}
+	} else if ( XT_IS_BITMAP(XX) || ( guts. idepth == 1)) {
 		int i;
 		FillPattern mix, *p1, *p2;
 		if ( colorIndex > 0) return false;
@@ -634,7 +694,7 @@ apc_gp_bar( Handle self, int x1, int y1, int x2, int y2)
 	SHIFT( x1, y1); SHIFT( x2, y2);
 	SORT( x1, x2); SORT( y1, y2);
 	RANGE4( x1, y1, x2, y2);
-	while ( prima_make_brush( XX, mix++))
+	while ( prima_make_brush( self, mix++))
 		XFillRectangle( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y2), x2 - x1 + 1, y2 - y1 + 1);
 	XCHECKPOINT;
 	XFLUSH;
@@ -662,7 +722,7 @@ apc_gp_bars( Handle self, int nr, Rect *rr)
 		rp->height = rr->top - rr->bottom + 1;
 	}
 
-	while ( prima_make_brush( XX, mix++))
+	while ( prima_make_brush( self, mix++))
 		XFillRectangles( DISP, XX-> gdrawable, XX-> gc, r, nr);
 
 	XCHECKPOINT;
@@ -888,7 +948,7 @@ apc_gp_fill_chord( Handle self, int x, int y, int dX, int dY, double angleStart,
 	XSetArcMode( DISP, XX-> gc, ArcChord);
 	FILL_ANTIDEFECT_OPEN;
 
-	while ( prima_make_brush( XX, mix++)) {
+	while ( prima_make_brush( self, mix++)) {
 		compl = arc_completion( &angleStart, &angleEnd, &needf);
 		while ( compl--) {
 			XFillArc( DISP, XX-> gdrawable, XX-> gc, x - ( dX + 1) / 2 + 1, y - dY / 2, dX, dY, 0, 64*360);
@@ -926,7 +986,7 @@ apc_gp_fill_ellipse( Handle self, int x, int y,  int dX, int dY)
 	y = REVERT( y);
 
 	FILL_ANTIDEFECT_OPEN;
-	while ( prima_make_brush( XX, mix++)) {
+	while ( prima_make_brush( self, mix++)) {
 		XFillArc( DISP, XX-> gdrawable, XX-> gc, x - ( dX + 1) / 2 + 1, y - dY / 2, dX, dY, 0, 64*360);
 		if ( FILL_ANTIDEFECT_REPAIRABLE)
 			XDrawArc( DISP, XX-> gdrawable, XX-> gc, x - ( dX + 1) / 2 + 1, y - dY / 2, dX-1, dY-1, 0, 64*360);
@@ -960,7 +1020,7 @@ apc_gp_fill_poly( Handle self, int numPts, Point *points)
 
 	FILL_ANTIDEFECT_OPEN;
 	if ( guts. limits. XFillPolygon >= numPts) {
-		while ( prima_make_brush( XX, mix++)) {
+		while ( prima_make_brush( self, mix++)) {
 			XFillPolygon( DISP, XX-> gdrawable, XX-> gc, p, numPts, ComplexShape, CoordModeOrigin);
 			if ( FILL_ANTIDEFECT_REPAIRABLE) {
 				XDrawLines( DISP, XX-> gdrawable, XX-> gc, p, numPts+1, CoordModeOrigin);
@@ -991,7 +1051,7 @@ apc_gp_fill_sector( Handle self, int x, int y, int dX, int dY, double angleStart
 	XSetArcMode( DISP, XX-> gc, ArcPieSlice);
 
 	FILL_ANTIDEFECT_OPEN;
-	while ( prima_make_brush( XX, mix++)) {
+	while ( prima_make_brush( self, mix++)) {
 		compl = arc_completion( &angleStart, &angleEnd, &needf);
 		while ( compl--) {
 			XFillArc( DISP, XX-> gdrawable, XX-> gc, x - ( dX + 1) / 2 + 1, y - dY / 2, dX, dY, 0, 64*360);
@@ -1240,13 +1300,13 @@ apc_gp_flood_fill( Handle self, int x, int y, Color color, Bool singleBorder)
 		return false;
 	bzero( s. lists, ( s. clip. bottom - s. clip. top + 1) * sizeof( void*));
 
-	prima_make_brush( XX, mix++);
+	prima_make_brush( self, mix++);
 	if ( fs_get_pixel( &s, x, y)) {
 		fill( &s, x, y, -1, x, x);
 		ret = true;
 	}
 
-	while ( prima_make_brush( XX, mix++)) {
+	while ( prima_make_brush( self, mix++)) {
 		for ( y = 0; y < s. clip. bottom - s. clip. top + 1; y++)
 			if ( s. lists[y])
 				for ( x = 0; x < s.lists[y]-> count; x += 2)
@@ -1829,10 +1889,67 @@ apc_gp_set_color( Handle self, Color color)
 	return true;
 }
 
+static Pixmap
+create_tile( Handle self, Handle image, Bool mono )
+{
+	DEFXX;
+	Pixmap px;
+	int depth, flag;
+	PImage i = (PImage) image;
+	ImageCache *cache;
+	GC gc;
+	XGCValues gcv;
+
+	if ( mono) {
+		depth = 1;
+		flag = CACHE_BITMAP;
+	} else if ( XF_LAYERED(XX) ) {
+		depth = guts.argb_depth;
+		flag = CACHE_LAYERED;
+	} else {
+		depth = guts.depth;
+		flag = CACHE_PIXMAP;
+	}
+
+	px = XCreatePixmap( DISP, guts.root, i->w, i->h, depth);
+	XCHECKPOINT;
+	if ( !px ) return 0;
+
+	if (!(cache = prima_image_cache((PImage) image, flag))) {
+		XFreePixmap(DISP, px);
+		return 0;
+	}
+
+	if ( !( gc = XCreateGC( DISP, px, GCGraphicsExposures, &gcv))) {
+		XFreePixmap(DISP, px);
+		return 0;
+	}
+
+	prima_put_ximage( px, gc, cache->image, 0,0,0,0, i->w, i->h);
+	XFreeGC(DISP, gc);
+
+	return px;
+}
+
 Bool
 apc_gp_set_fill_image( Handle self, Handle image)
 {
-	return false;
+	DEFXX;
+	PImage i = (PImage) image;
+
+	if ( !XF_IN_PAINT(XX)) return false;
+	if ( i->stage != csNormal ) return false;
+
+	cleanup_stipples(self);
+	if ( i->type == imBW )
+		XX->fp_stipple = create_tile(self, image, 1);
+	else
+		XX->fp_tile    = create_tile(self, image, 0);
+	XCHECKPOINT;
+
+	guts.xrender_pen_dirty = true;
+
+	return true;
 }
 
 Bool
@@ -1864,8 +1981,10 @@ apc_gp_set_fill_pattern( Handle self, FillPattern pattern)
 	XX-> flags. brush_null_hatch =
 	( memcmp( pattern, fillPatterns[fpSolid], sizeof(FillPattern)) == 0);
 	memcpy( XX-> fill_pattern, pattern, sizeof( FillPattern));
-	if ( XF_IN_PAINT(XX))
+	if ( XF_IN_PAINT(XX)) {
+		cleanup_stipples(self);
 		guts.xrender_pen_dirty = true;
+	}
 	return true;
 }
 
@@ -2147,6 +2266,9 @@ apc_gp_push(Handle self, GCStorageFunction * destructor, void * user_data, unsig
 		state->text_baseline = XX->flags. paint_base_line;
 		state->text_opaque   = XX->flags. paint_opaque;
 
+		state->paint.stipple = XX->fp_stipple;
+		state->paint.tile = XX->fp_tile;
+
 		state->paint.gc  = XX-> gc;
 		state->paint.gcl = XX-> gcl;
 		XX->gcl = NULL;
@@ -2223,6 +2345,17 @@ apc_gp_pop( Handle self, void * user_data)
 		XX->flags. paint_opaque = state->text_opaque;
 		PDrawable(self)->font = state->font;
 		apc_gp_set_font(self, &PDrawable(self)->font);
+
+		if ( XX->fp_stipple != state->paint.stipple ) {
+			if ( XX-> fp_stipple )
+				XFreePixmap( DISP, XX->fp_stipple);
+			XX->fp_stipple = state->paint.stipple;
+		}
+		if ( XX->fp_tile != state->paint.tile ) {
+			if ( XX-> fp_tile )
+				XFreePixmap( DISP, XX->fp_tile);
+			XX->fp_tile = state->paint.tile;
+		}
 
 		prima_release_gc(XX);
 		XX->gc  = state->paint.gc;

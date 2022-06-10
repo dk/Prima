@@ -1789,8 +1789,7 @@ img_put_image_on_pixmap( Handle self, Handle image, PutImageRequest * req)
 	PImage img = (PImage) image;
 	PDrawableSysData YY = X(image);
 
-	if (!(cache = prima_image_cache(img,
-		XT_IS_DBM(YY) ? CACHE_LOW_RES : CACHE_PIXMAP)))
+	if (!(cache = prima_image_cache(img, CACHE_PIXMAP)))
 		return false;
 
 	if ( XT_IS_ICON(YY) && !img_put_icon_mask( self, cache->icon, req))

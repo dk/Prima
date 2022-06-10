@@ -237,6 +237,80 @@ pen_update(Handle self)
 	guts.xrender_pen_dirty = false;
 }
 
+static void
+pen_create_tile(Handle self, Pixmap tile)
+{
+	DEFXX;
+	XRenderPictureAttributes xrp_attr;
+	xrp_attr.repeat = RepeatNormal;
+	XX-> fp_render_picture = XRenderCreatePicture( DISP, tile, guts.xrender_display_format, CPRepeat, &xrp_attr);
+}
+
+static void
+pen_create_stipple(Handle self, Pixmap stipple)
+{
+	DEFXX;
+	XWindow _w;
+	int _i;
+	unsigned int w, h, _u;
+	XRenderPictureAttributes xrp_attr;
+	GC gc;
+	XGCValues gcv;
+
+	XGetGeometry( DISP, stipple, &_w, &_i, &_i, &w, &h, &_u, &_u);
+	if ( !( XX-> fp_render_pen = XCreatePixmap( DISP, guts.root, w, h, guts.depth)))
+		return;
+
+	gcv.foreground = XX-> fore.primary;
+	gcv.background = XX-> back.primary;
+	if ( !( gc = XCreateGC(DISP, XX-> fp_render_pen, GCForeground|GCBackground, &gcv))) {
+		XFreePixmap( DISP, XX-> fp_render_pen );
+		XX-> fp_render_pen = 0;
+		return;
+	}
+	XCopyPlane( DISP, stipple, XX-> fp_render_pen, gc, 0, 0, w, h, 0, 0, 1);
+	XFreeGC(DISP, gc);
+
+	xrp_attr.repeat = RepeatNormal;
+	if ( !( XX-> fp_render_picture = XRenderCreatePicture( DISP, XX-> fp_render_pen, guts.xrender_display_format, CPRepeat, &xrp_attr))) {
+		XFreePixmap(DISP, XX-> fp_render_pen);
+		XX-> fp_render_pen = 0;
+		return;
+	}
+}
+
+void
+prima_render_cleanup_stipples(Handle self)
+{
+	DEFXX;
+	if ( XX-> fp_render_picture ) {
+		XRenderFreePicture( DISP, XX-> fp_render_picture);
+		XX-> fp_render_picture = 0;
+	}
+	if ( XX-> fp_render_pen ) {
+		XFreePixmap(DISP, XX-> fp_render_pen);
+		XX-> fp_render_pen = 0;
+	}
+}
+
+static Picture
+pen_picture( Handle self)
+{
+	DEFXX;
+	if ( guts.xrender_pen_dirty ) {
+		prima_render_cleanup_stipples(self);
+		if ( XX-> fp_stipple || XX-> fp_tile ) {
+			if ( XX-> fp_tile )
+				pen_create_tile(self, XX-> fp_tile);
+			else
+				pen_create_stipple(self, XX-> fp_stipple);
+			guts.xrender_pen_dirty = false;
+		} else
+			pen_update(self);
+	}
+	return XX-> fp_render_picture ? XX-> fp_render_picture : pen.picture;
+}
+
 Bool
 apc_gp_aa_bar( Handle self, double x1, double y1, double x2, double y2)
 {
@@ -263,9 +337,8 @@ apc_gp_aa_bar( Handle self, double x1, double y1, double x2, double y2)
 	p[4].x = x1;
 	p[4].y = y1;
 
-	if ( guts.xrender_pen_dirty ) pen_update(self);
 	ok = my_XRenderCompositeDoublePoly(
-		DISP, PictOpOver, pen.picture, XX->argb_picture,
+		DISP, PictOpOver, pen_picture(self), XX->argb_picture,
 		XX->flags.antialias ? guts.xrender_a8_format : guts.xrender_a1_format,
 		0, 0, 0, 0, p, 5,
 		EvenOddRule
@@ -297,9 +370,8 @@ apc_gp_aa_fill_poly( Handle self, int numPts, NPoint * points)
 	p[numPts].y = REVERT(points[0]. y + XX-> gtransform. y + XX-> btransform. y);
 	RANGE2(p[numPts].x, p[numPts].y);
 
-	if ( guts.xrender_pen_dirty ) pen_update(self);
 	ok = my_XRenderCompositeDoublePoly(
-		DISP, PictOpOver, pen.picture, XX->argb_picture,
+		DISP, PictOpOver, pen_picture(self), XX->argb_picture,
 		XX->flags.antialias ? guts.xrender_a8_format : guts.xrender_a1_format,
 		0, 0, 0, 0, p, numPts,
 		((XX->fill_mode & fmWinding) == fmAlternate) ? EvenOddRule : WindingRule
