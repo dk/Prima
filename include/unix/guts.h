@@ -835,7 +835,8 @@ typedef struct _drawable_sys_data
 	FillPattern fill_pattern, saved_fill_pattern;
 	Point fill_pattern_offset, saved_fill_pattern_offset;
 	int fill_mode, saved_fill_mode;
-	Pixmap fp_pixmap;
+	Pixmap fp_tile, fp_stipple, fp_render_pen;
+	XID fp_render_picture;
 #if defined(sgi) && !defined(__GNUC__)
 /* multiple compilation and runtime errors otherwise. must be some alignment tricks */
 	char dummy_b_1[2];
@@ -941,6 +942,8 @@ typedef struct _PaintState
 		GCList *gcl;
 		struct gc_head* gc_pool;
 		Region region;
+		Pixmap tile, stipple;
+		Bool kill_tile, kill_stipple;
 	} paint;
 	struct {
 		Color fore, back;
@@ -1243,14 +1246,21 @@ prima_std_pixmap( Handle self, int type);
 #define CREATE_ARGB_PICTURE(drawable, depth, target) \
 	if ( guts.render_extension) target = prima_render_create_picture(drawable, depth)
 
+#define CLEANUP_RENDER_STIPPLES(self) \
+	if (guts.render_extension) prima_render_cleanup_stipples(self)
+
 extern Picture
 prima_render_create_picture(XDrawable drawable, int depth);
+
+void
+prima_render_cleanup_stipples(Handle self);
 
 #else
 
 #define CREATE_ARGB_PICTURE(drawable, depth, target)
 #define DELETE_ARGB_PICTURE(x)
 #define CLIP_ARGB_PICTURE(x,region)
+#define CLEANUP_RENDER_STIPPLES(self)
 
 #endif
 
