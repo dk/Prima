@@ -1269,7 +1269,10 @@ apc_gp_set_fill_pattern_offset( Handle self, Point offset)
 	objCheck false;
 	if ( sys ps) {
 		SetBrushOrgEx( sys ps, offset.x % 8, 8 - offset.y % 8, NULL);
-		STYLUS_FREE_GP_BRUSH;
+		if ( CURRENT_GP_BRUSH != NULL ) {
+			GdipResetTextureTransform(CURRENT_BRUSH);
+			GdipTranslateTextureTransform(CURRENT_BRUSH,offset.x,-offset.y,MatrixOrderPrepend);
+		}
 	} else
 		sys fillPatternOffset = offset;
 	return true;
@@ -1598,6 +1601,12 @@ apc_gp_pop( Handle self, void * user_data)
 			GPCALL GdipSetClipHrgn(sys graphics, rgn, CombineModeReplace);
 			apiGPErrCheck;
 			DeleteObject(rgn);
+		}
+		if ( CURRENT_GP_BRUSH != NULL ) {
+			POINT offset;
+			GetBrushOrgEx( sys ps, &offset);
+			GdipResetTextureTransform(CURRENT_BRUSH);
+			GdipTranslateTextureTransform(CURRENT_BRUSH,offset.x,offset.y,MatrixOrderPrepend);
 		}
 	} else {
 		sys fillMode = state->common.fill_mode;

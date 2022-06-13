@@ -427,13 +427,10 @@ Bool
 select_gp_brush(Handle self)
 {
 	int r,g,b;
-	POINT offset;
 	COLORREF fg, bg;
 	RQGPBrush key;
 	PDCObject ret;
 	Bool is_solid;
-
-	GetBrushOrgEx( sys ps, &offset);
 
 	is_solid = sys rq_brush.logbrush.lbStyle == BS_SOLID;
 
@@ -460,7 +457,6 @@ select_gp_brush(Handle self)
 		r =  bg & 0xff;
 		key.bg = (sys alpha << 24) | (r << 16) | (g << 8) | b;
 		*key.fill_pattern = *sys fillPattern;
-		key.offset = offset;
 	}
 
 	if ((ret = stylus_fetch(&key)) == NULL)
@@ -481,10 +477,10 @@ select_gp_brush(Handle self)
 
 		bg = key.opaque ? key.bg : 0x00000000;
 		for ( y = 0, fpp = fp; y < 8; y++) {
-			int yy = (y + 8 - offset.y) % 8;
+			int yy = (y + 8) % 8;
 			Byte src = sys fillPattern[yy];
 			for ( x = 0; x < 8; x++) {
-				int xx = (x + offset.x) % 8;
+				int xx = x % 8;
 				*(fpp++) = (src & ( 1 << xx )) ? key.fg : bg;
 			}
 		}
