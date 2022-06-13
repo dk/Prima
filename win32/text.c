@@ -35,7 +35,7 @@ font_context_init( FontContext * fc, Handle self, PGlyphsOutRec t)
 {
 	bzero(fc, sizeof(FontContext));
 	fc->self  = self;
-	fc->orig  = sys fontResource->hfont;
+	fc->orig  = sys dc_font->hfont;
 	fc->fonts = t->fonts;
 	fc->len   = t->len;
 	fc->dc    = sys ps;
@@ -134,17 +134,9 @@ font_context_next( FontContext * fc )
 static void
 underscore_font( Handle self, int x, int y, int width, Bool use_alpha)
 {
-	Stylus ss;
-	HPEN old = NULL;
 	HDC dc = sys ps;
-	PDCStylus dcs;
 	float c, s;
 	GpPen * gppen = NULL;
-
-	bzero(&ss, sizeof(ss));
-	ss.pen.lopnStyle   = PS_SOLID;
-	ss.pen.lopnWidth.x = 1;
-	ss.pen.lopnColor   = sys stylus.pen.lopnColor;
 
 	if ( var font. direction != 0) {
 		if ( sys font_sin == sys font_cos && sys font_sin == 0.0 ) {
@@ -158,16 +150,33 @@ underscore_font( Handle self, int x, int y, int width, Bool use_alpha)
 		c = 1.0;
 	}
 
+	if ( var font. style & (fsUnderlined|fsStruckOut)) {
+		int line_width = 1;
+		COLORREF fg = sys rq_pen.logpen.lopnColor;
+		if (sys otmsUnderscoreSize > 0)
+			line_width = sys otmsUnderscoreSize;
+		if ( use_alpha ) {
+			gppen = stylus_gp_get_pen(line_width,
+				( sys alpha << 24) |
+				 (fg >> 16) |
+				 (fg & 0xff00) |
+				((fg & 0xff) << 16)
+			);
+		} else {
+			SelectObject( dc, stylus_get_pen(PS_SOLID, line_width, fg));
+			STYLUS_FREE_PEN;
+		}
+	}
+
 	if ( var font. style & fsUnderlined ) {
 		int i, Y = 0;
 		Point pt[2];
 
 		if ( !is_apt( aptTextOutBaseline))
 			Y -= var font. descent;
-		if (sys otmsUnderscoreSize > 0) {
+		if (sys otmsUnderscoreSize > 0)
 			Y -= sys otmsUnderscorePosition;
-			ss.pen.lopnWidth.x = sys otmsUnderscoreSize;
-		} else
+		else
 			Y += var font. descent - 1;
 
 		pt[0].x = 0;
@@ -184,17 +193,8 @@ underscore_font( Handle self, int x, int y, int width, Bool use_alpha)
 		}
 
 		if ( use_alpha ) {
-			gppen = stylus_gp_get_pen(ss.pen.lopnWidth.x,
-				( sys alpha << 24) | 
-				(ss.pen.lopnColor >> 16) |
-				(ss.pen.lopnColor & 0xff00) |
-				((ss.pen.lopnColor & 0xff) << 16)
-			);
 			GdipDrawLineI(sys graphics, gppen, x + pt[0].x, y - pt[0].y, x + pt[1].x, y - pt[1].y);
 		} else {
-			dcs = stylus_alloc(&ss);
-			old = SelectObject( dc, dcs-> hpen );
-
 			MoveToEx( dc, x + pt[0].x, y - pt[0].y, NULL);
 			LineTo( dc, x + pt[1].x, y - pt[1].y);
 		}
@@ -206,25 +206,9 @@ underscore_font( Handle self, int x, int y, int width, Bool use_alpha)
 
 		if ( !is_apt( aptTextOutBaseline))
 			Y -= var font. descent;
-		if (sys otmsStrikeoutSize > 0) {
+		if (sys otmsStrikeoutSize > 0)
 			Y -= sys otmsStrikeoutPosition;
-			if ( ss.pen.lopnWidth.x != sys otmsStrikeoutSize ) {
-				if ( use_alpha && gppen == NULL ) {
-					gppen = stylus_gp_get_pen(ss.pen.lopnWidth.x,
-						( sys alpha << 24) | 
-						(ss.pen.lopnColor >> 16) |
-						(ss.pen.lopnColor & 0xff00) |
-						((ss.pen.lopnColor & 0xff) << 16)
-					);
-				} else if ( !use_alpha && old == NULL ) {
-					HPEN curr;
-					ss.pen.lopnWidth.x = sys otmsStrikeoutSize;
-					dcs = stylus_alloc(&ss);
-					curr = SelectObject( dc, dcs-> hpen );
-					if ( old == NULL ) old = curr;
-				}
-			}
-		} else
+		else
 			Y -= var font. ascent / 2;
 
 		pt[0].x = 0;
@@ -247,9 +231,6 @@ underscore_font( Handle self, int x, int y, int width, Bool use_alpha)
 			LineTo( dc, x + pt[1].x, y - pt[1].y);
 		}
 	}
-
-	if ( !use_alpha )
-		SelectObject( dc, old );
 }
 
 void
@@ -454,10 +435,10 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flag
 	use_alpha = sys alpha < 255;
 	use_path = (GetROP2( sys ps) != R2_COPYPEN) && !use_alpha;
 	if ( use_path ) {
-		STYLUS_USE_BRUSH( ps);
+		STYLUS_USE_BRUSH;
 		BeginPath(ps);
 	} else if ( !use_alpha ) {
-		STYLUS_USE_TEXT( ps);
+		STYLUS_USE_TEXT;
 		if ( opa != bk) SetBkMode( ps, opa);
 	}
 	SHIFT_XY(X,Y);
@@ -598,13 +579,13 @@ apc_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 	use_path = GetROP2( sys ps) != R2_COPYPEN;
 	use_alpha = sys alpha < 255;
 	if ( use_path ) {
-		STYLUS_USE_BRUSH( ps);
+		STYLUS_USE_BRUSH;
 		BeginPath(ps);
 	} else if ( use_alpha ) {
 		if ( is_apt( aptTextOpaque))
 			paint_text_background(self, (char*) t, x, y, 0, toGlyphs);
 	} else {
-		STYLUS_USE_TEXT( ps);
+		STYLUS_USE_TEXT;
 		if ( opa != bk) SetBkMode( ps, opa);
 	}
 
@@ -947,7 +928,7 @@ win32_unicode_shaper( Handle self, PTextShapeRec t)
 		int j, itemlen, nglyphs;
 
 		SCRIPT_CACHE * script_cache;
-		ScriptCacheKey key = { sys fontResource->hfont, items[item].a.eScript };
+		ScriptCacheKey key = { sys dc_font->hfont, items[item].a.eScript };
 		if (( script_cache = ( SCRIPT_CACHE*) hash_fetch( scriptCacheMan, &key, sizeof(key))) == NULL) {
 			if ((script_cache = malloc(sizeof(SCRIPT_CACHE))) == NULL)
 				goto EXIT;

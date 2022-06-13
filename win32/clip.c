@@ -188,16 +188,16 @@ clipboard_get_data(int cfid, PClipboardDataRec c, void * p1, void * p2)
 			XBITMAPINFO * bi;
 			if ( !( bi = ( XBITMAPINFO*) GlobalLock( p1)))
 				apiErrRet;
-			if ( bi-> bmiHeader. biCompression != BI_RGB ) {
+			if ( bi-> header.biCompression != BI_RGB ) {
 				GlobalUnlock( p1);
 				return false;
 			}
-			if ( bi-> bmiHeader. biBitCount == 32 ) {
+			if ( bi-> header.biBitCount == 32 ) {
 				i = (PIcon) create_object("Prima::Icon",
 					"iiiii",
 					"maskType",    8,
-					"width",       bi-> bmiHeader. biWidth,
-					"height",      bi-> bmiHeader. biHeight,
+					"width",       bi-> header.biWidth,
+					"height",      bi-> header.biHeight,
 					"type",        imRGB,
 					"autoMasking", amNone
 				);
@@ -207,18 +207,18 @@ clipboard_get_data(int cfid, PClipboardDataRec c, void * p1, void * p2)
 				}
 				image_argb_query_bits((Handle) i);
 			} else if (
-				bi-> bmiHeader. biBitCount == 1 ||
-				bi-> bmiHeader. biBitCount == 4 ||
-				bi-> bmiHeader. biBitCount == 8
+				bi-> header.biBitCount == 1 ||
+				bi-> header.biBitCount == 4 ||
+				bi-> header.biBitCount == 8
 			) {
 				Byte * data;
-				int j, colors = bi-> bmiHeader. biClrUsed;
+				int j, colors = bi-> header.biClrUsed;
 
 				i = (PIcon) create_object("Prima::Image",
 					"iii",
-					"width",       bi-> bmiHeader. biWidth,
-					"height",      bi-> bmiHeader. biHeight,
-					"type",        bi-> bmiHeader. biBitCount
+					"width",       bi-> header.biWidth,
+					"height",      bi-> header.biHeight,
+					"type",        bi-> header.biBitCount
 				);
 				if ( !i) {
 					GlobalUnlock( p1);
@@ -227,13 +227,13 @@ clipboard_get_data(int cfid, PClipboardDataRec c, void * p1, void * p2)
 				if ( colors > 256 ) colors = 256;
 				i->palSize = colors;
 				for ( j = 0; j < colors; j++) {
-					i-> palette[ j]. r = bi-> bmiColors[ j]. rgbRed  ;
-					i-> palette[ j]. g = bi-> bmiColors[ j]. rgbGreen;
-					i-> palette[ j]. b = bi-> bmiColors[ j]. rgbBlue ;
+					i-> palette[ j]. r = bi-> colors[j]. rgbRed  ;
+					i-> palette[ j]. g = bi-> colors[j]. rgbGreen;
+					i-> palette[ j]. b = bi-> colors[j]. rgbBlue ;
 				}
 
 				data = (Byte*)bi;
-				data += sizeof(BITMAPINFOHEADER) + bi-> bmiHeader.biClrUsed * sizeof(RGBQUAD);
+				data += sizeof(BITMAPINFOHEADER) + bi-> header.biClrUsed * sizeof(RGBQUAD);
 				memcpy( i->data, data, i->dataSize );
 			} else {
 				GlobalUnlock( p1);

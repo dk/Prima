@@ -213,10 +213,9 @@ for my $aa ( 0, 1) {
 	$d->backColor(cl::Yellow);
 	$d->color(cl::Black);
 	check( textOpaque => 1, 0, type => im::RGB, act => sub { $d->bar(0,0,8,8); $d->text_out("__",0,0); });
-	$d->color(cl::White);
 	$d->backColor(cl::Black);
-
-	check( textOutBaseline => 1, 0, act => sub { $d->text_out("fg",0,0); });
+	$d->color(cl::White);
+	check( textOutBaseline => 1, 0, act => sub { $d->text_out("fg",0,0) });
 
 	$d->clear;
 	$d->clipRect(1,1,6,6);
