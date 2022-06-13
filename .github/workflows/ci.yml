@@ -17,12 +17,10 @@ jobs:
     name: Linux ${{ matrix.perl-version }}
     steps:
       - uses: actions/checkout@v2
-      - name: Xvfb
-        uses: GabrielBB/xvfb-action@v1
       - name: Prepare
         run: |
             uname -a
-            apt-get install -y libgtk2.0-dev libgif-dev libjpeg-dev libtiff-dev libxpm-dev libwebp-dev libfribidi-dev libharfbuzz-dev libthai-dev
+            apt-get install -y libgtk2.0-dev libgif-dev libjpeg-dev libtiff-dev libxpm-dev libwebp-dev libfribidi-dev libharfbuzz-dev libthai-dev xvfb
             cpanm --notest Test::Pod
       - name: Build
         run: |
@@ -30,7 +28,7 @@ jobs:
             make
       - name: Test
         run: |
-            make test
+            xvfb-run -a make test
   strawberry:
     strategy:
       fail-fast: false
