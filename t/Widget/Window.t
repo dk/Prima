@@ -11,7 +11,7 @@ my %id;
 my $xw = create_window(
 	onActivate    => sub { set_flag; $id{Activate}   = 1;},
 	onDeactivate  => sub { set_flag; $id{Deactivate} = 1;},
-	onExecute     => sub { set_flag; $id{Execute}    = 1; execute(); },
+	onExecute     => sub { set_flag; $id{Execute}    = 1;},
 	onWindowState => sub { set_flag; $id{State}      = 1;},
 	onClose       => sub { set_flag; $id{Close}      = 1; $_[0]-> clear_event; },
 	onShow        => sub { set_flag; $id{Show}       = 1; },
@@ -70,19 +70,16 @@ is( $xw-> windowState, ws::Normal, "user modality" );
 %id=();
 reset_flag;
 
-sub execute
-{
-$xw-> insert( Timer =>
-              timeout => 250,
-              onTick => sub {
-                  $_[0]-> stop;
-                  $window-> focus;
-                  ok( !$window-> selected, "execute" );
-                  $xw-> ok;
-                  $_[0]-> destroy;
-              })-> start;
-}
+my $tt = $xw-> insert( Timer =>
+	timeout => 250,
+	onTick => sub {
+		$_[0]-> stop;
+		$xw-> ok;
+	}
+);
+$tt-> start;
 my $mr = $xw-> execute;
+ok( $id{Execute}, "cmExecute");
 ok( get_flag, "execute" );
 is( $mr, mb::OK, "execute" );
 
