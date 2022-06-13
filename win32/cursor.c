@@ -254,8 +254,8 @@ apc_pointer_get_bitmap( Handle self, Handle icon)
 	}};
 	BITMAP bitmap;
 
-	bi. bmiHeader. biWidth = guts. pointerSize. x;
-	bi. bmiHeader. biHeight = guts. pointerSize. y;
+	bi. header.biWidth = guts. pointerSize. x;
+	bi. header.biHeight = guts. pointerSize. y;
 
 	if ( icon == NULL_HANDLE)
 		apcErrRet( errInvParams);
@@ -280,7 +280,7 @@ apc_pointer_get_bitmap( Handle self, Handle icon)
 		dsys( icon) ps = ops;
 		dsys( icon) bm = obm;
 	} else {
-		bi. bmiHeader. biHeight *= 2;
+		bi. header.biHeight *= 2;
 		if ( !GetDIBits( dc, ii. hbmMask, 0, i-> h, i-> data, ( BITMAPINFO*) &bi, DIB_RGB_COLORS)) apiErr;
 		if ( !GetDIBits( dc, ii. hbmMask, i-> h, i-> h, i-> mask, ( BITMAPINFO*) &bi, DIB_RGB_COLORS)) apiErr;
 	}

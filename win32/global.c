@@ -21,8 +21,7 @@ extern "C" {
 
 WinGuts guts;
 DWORD   rc;
-PHash   stylusMan      = NULL; // pen & brush manager
-PHash   stylusGpMan    = NULL; // pen & brush manager for GDI+
+PHash   stylusMan      = NULL; // pen and brush manager
 PHash   fontMan        = NULL; // font manager
 PHash   patMan         = NULL; // pattern resource manager
 PHash   menuMan        = NULL; // HMENU manager
@@ -34,11 +33,7 @@ PHash   scriptCacheMan = NULL; // SCRIPT_CACHE entries per font/script
 HPEN    hPenHollow;
 HBRUSH  hBrushHollow;
 HCURSOR arrowCursor;
-PatResource hPatHollow;
-DIBMONOBRUSH bmiHatch = {
-	{ sizeof( BITMAPINFOHEADER), 8, 8, 1, 1, BI_RGB, 0, 0, 0, 2, 2},
-	{{0,0,0,0}, {0,0,0,0}}
-};
+LinePattern hPatHollow;
 int     FONTSTRUCSIZE;
 Handle lastMouseOver = NULL_HANDLE;
 MusClkRec musClk = {0};
@@ -213,7 +208,6 @@ window_subsystem_init( char * error_buf)
 	RegisterClassW( &wc);
 
 	stylusMan  = hash_create();
-	stylusGpMan= hash_create();
 	fontMan    = hash_create();
 	patMan     = hash_create();
 	menuMan    = hash_create();
@@ -226,10 +220,10 @@ window_subsystem_init( char * error_buf)
 	{
 		LOGBRUSH b = { BS_HOLLOW, 0, 0};
 		Font f;
-		hPenHollow        = CreatePen( PS_NULL, 0, 0);
-		hBrushHollow      = CreateBrushIndirect( &b);
-		hPatHollow. dotsCount = 0;
-		hPatHollow. dotsPtr   = NULL;
+		hPenHollow       = CreatePen( PS_NULL, 0, 0);
+		hBrushHollow     = CreateBrushIndirect( &b);
+		hPatHollow.count = 0;
+		hPatHollow.ptr   = NULL;
 		FONTSTRUCSIZE    = (char *)(&(f. name)) - (char *)(&f);
 	}
 
@@ -427,14 +421,12 @@ window_subsystem_done()
 	font_clean();
 	stylus_clean();
 
-	stylus_gp_clean();
 	GdiplusShutdown(guts.gdiplusToken);
 
 	hash_destroy( imageMan,   false);
 	hash_destroy( menuMan,    false);
 	hash_destroy( patMan,     true);
 	hash_destroy( fontMan,    true);
-	hash_destroy( stylusGpMan,true);
 	hash_destroy( stylusMan,  true);
 	hash_destroy( regnodeMan, false);
 
@@ -1688,7 +1680,6 @@ LRESULT CALLBACK generic_app_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM mp
 		}
 		case WM_COMPACTING:
 			stylus_clean();
-			stylus_gp_clean();
 			font_clean();
 			destroy_font_hash();
 			hash_first_that( imageMan, kill_img_cache, NULL, NULL, NULL);

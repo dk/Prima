@@ -157,10 +157,10 @@ unchecked_bitmap(void)
 	cx = GetSystemMetrics( SM_CXMENUCHECK ) - 1;
 	dc = GetDC(NULL);
 	if ( !( uncheckedBitmap = image_create_argb_dib_section( dc, cx, cx, &ptr))) {
-		DeleteDC(dc);
+		ReleaseDC(NULL, dc);
 		return NULL;
 	}
-	DeleteDC(dc);
+	ReleaseDC(NULL, dc);
 
 	dc = CreateCompatibleDC(NULL);
 	stock_bm = SelectObject( dc, uncheckedBitmap);

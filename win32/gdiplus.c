@@ -64,7 +64,7 @@ apc_gp_set_alpha( Handle self, int alpha)
 	}
 
 	if ( sys ps && sys graphics )
-		stylus_change( self);
+		STYLUS_FREE_GP_BRUSH;
 
 	if ( sys alphaArenaPalette ) {
 		free(sys alphaArenaPalette);
@@ -121,9 +121,10 @@ apc_gp_aa_bar( Handle self, double x1, double y1, double x2, double y2)
 	y1 = t.y + dy - y1 - y2;
 
 	STYLUS_USE_GP_BRUSH;
+	if ( !CURRENT_GP_BRUSH ) return false;
 	GPCALL GdipFillRectangle(
 		sys graphics,
-		sys stylusGPResource-> brush,
+		CURRENT_GP_BRUSH,
 		x1, y1, x2, y2
 	);
 	apiGPErrCheckRet(false);
@@ -149,9 +150,10 @@ apc_gp_aa_fill_poly( Handle self, int numPts, NPoint * points)
 	}
 
 	STYLUS_USE_GP_BRUSH;
+	if ( !CURRENT_GP_BRUSH ) return false;
 	GPCALL GdipFillPolygon(
 		sys graphics,
-		sys stylusGPResource-> brush,
+		CURRENT_GP_BRUSH,
 		p, numPts,
 		((sys psFillMode & fmWinding) == fmAlternate) ?
 			FillModeAlternate : FillModeWinding
@@ -235,7 +237,7 @@ aa_make_arena(Handle self)
 
 	if ( sys alphaArenaFontChanged || !sys alphaArenaStockFont) {
 		HFONT f;
-		f = SelectObject( sys alphaArenaDC, sys fontResource-> hfont );
+		f = SelectObject( sys alphaArenaDC, sys dc_font-> hfont );
 		if ( !sys alphaArenaStockFont )
 			sys alphaArenaStockFont = f;
 		sys alphaArenaFontChanged = false;
@@ -344,7 +346,7 @@ Bool
 aa_fill_palette(Handle self)
 {
 	int i,j,r,g,b;
-	PStylus s = & sys stylus;
+	COLORREF fg = sys rq_pen.logpen.lopnColor;
 
 	if ( sys alphaArenaPalette )
 		return true;
@@ -352,9 +354,9 @@ aa_fill_palette(Handle self)
 	if ( !( sys alphaArenaPalette = malloc(4 * 256 * 3)))
 		return false;
 
-	b = (s->pen.lopnColor >> 16) & 0xff;
-	g = (s->pen.lopnColor & 0xff00) >> 8;
-	r = s->pen.lopnColor & 0xff;
+	b = (fg >> 16) & 0xff;
+	g = (fg & 0xff00) >> 8;
+	r =  fg & 0xff;
 
 	for ( i = j = 0; i < 256; i++) {
 		uint32_t a = sys alpha * i / 255;
