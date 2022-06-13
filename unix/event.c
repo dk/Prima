@@ -2034,6 +2034,8 @@ send_queued_x_events(int careOfApplication)
 {
 	int events = 0, queued_events;
 	XEvent ev, next_event;
+	struct timeval t1, t2;
+	gettimeofday( &t1, NULL );
 
 	if ( !prima_guts.application && careOfApplication ) return 0;
 
@@ -2045,6 +2047,11 @@ send_queued_x_events(int careOfApplication)
 	queued_events--;
 	while ( queued_events > 0) {
 		if (!prima_guts.application && careOfApplication) return false;
+		if ( events % 100 ) {
+			gettimeofday( &t2, NULL );
+			if (( (t2.tv_sec - t1.tv_sec) * 1000000 + t2.tv_usec - t1.tv_usec ) > 10000)
+				break; /* 10 ms is a good slice */
+		}
 		XNextEvent( DISP, &next_event);
 		XCHECKPOINT;
 		prima_handle_event( &ev, &next_event);

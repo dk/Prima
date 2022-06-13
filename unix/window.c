@@ -1341,7 +1341,7 @@ apc_window_execute( Handle self, Handle insert_before)
 	protect_object( self);
 
 	XSync( DISP, false);
-	while ( prima_one_loop_round( WAIT_ALWAYS, true) && XX-> flags.modal)
+	while ( prima_one_loop_round( WAIT_IF_NONE, true) && XX-> flags.modal)
 		;
 
 	if ( toplevel) XSetTransientForHint( DISP, X_WINDOW, None);
