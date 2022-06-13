@@ -292,6 +292,12 @@ typedef struct _XLOGPALETTE {
 	PALETTEENTRY palPalEntry[ 256];
 } XLOGPALETTE, *PXLOGPALETTE;
 
+typedef struct {
+	UINT         flags;
+	UINT         count;
+	ARGB         entries[256];
+} XColorPalette, *PXColorPalette;
+
 typedef struct _XBITMAPINFO {
 	BITMAPINFOHEADER header;
 	RGBQUAD          colors[ 256];
@@ -613,6 +619,7 @@ typedef struct _MusClkRec {
 #define STYLUS_FREE_GP_BRUSH         sys stylus_flags &= ~stbGPBrush
 #define STYLUS_FREE_GP               sys stylus_flags &= ~stbGPBrush
 #define STYLUS_FREE_ALL              sys stylus_flags &= ~(stbGPBrush|stbBrush|stbPen|stbText)
+#define STYLUS_FREE_TEXT             sys stylus_flags &= ~stbText
 
 #define CURRENT_PEN      ((HPEN)  sys current_dc_obj[DCO_PEN]->handle)
 #define CURRENT_BRUSH    ((HBRUSH)sys current_dc_obj[DCO_BRUSH]->handle)
@@ -705,6 +712,7 @@ extern Handle       hwnd_layered_top_level( Handle self);
 extern Bool         hwnd_repaint_layered( Handle self, Bool now);
 extern BITMAPINFO*  image_create_mono_pattern_dib(Handle self, COLORREF fg, COLORREF bg);
 extern BITMAPINFO*  image_create_color_pattern_dib( Handle self);
+extern GpTexture*   image_create_gp_pattern( Handle self, Handle image );
 extern void         image_fill_bitmap_cache( Handle self, int bm_type, Handle optimize_for_surface);
 extern HICON        image_make_icon_handle( Handle img, Point size, Point * hotSpot);
 extern void         image_query_bits( Handle self, Bool forceNewImage);

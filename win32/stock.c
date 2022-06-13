@@ -59,7 +59,7 @@ dump_key(void * key, int size)
 */
 
 static PDCObject
-stylus_alloc(int type, Bool cacheable)
+stylus_alloc(int type)
 {
 	int size;
 	PDCObject ret;
@@ -74,7 +74,6 @@ stylus_alloc(int type, Bool cacheable)
 	ret-> type    = type;
 	ret-> rq_size = size;
 	ret-> rq      = &ret-> rq_buf;
-	ret-> cached  = cacheable;
 
 	return ret;
 }
@@ -87,8 +86,9 @@ stylus_fetch( void * key )
 	int size = stylus_get_key_size(type);
 	if (( cached = (PDCObject) hash_fetch( stylusMan, key, size)) != NULL )
 		return cached;
-	if (( cached = stylus_alloc(type, 1)) == NULL)
+	if (( cached = stylus_alloc(type)) == NULL)
 		return NULL;
+	cached-> cached = true;
 	if ( hash_count( stylusMan) > 128)
 		stylus_clean();
 	memcpy( cached-> rq, key, size );
@@ -296,7 +296,7 @@ select_brush( Handle self)
 			h = CreateBrushIndirect(&b);
 			free((void *) b.lbHatch);
 			if ( h != 0 ) {
-				if (( ret = stylus_alloc(DCO_BRUSH, 0)) == NULL ) {
+				if (( ret = stylus_alloc(DCO_BRUSH)) == NULL ) {
 					DeleteObject(h);
 					return false;
 				}
@@ -408,29 +408,13 @@ stylus_get_extpen_style( Handle self )
 static PDCObject
 alloc_gp_image_brush( Handle self )
 {
+	GpTexture *t;
 	PDCObject ret;
-	BITMAPINFO *dib;
-	GpTexture * t;
-	GpBitmap * b;
 
-	/* XXX opaque, offset */
-	dib = ( PImage(var fillPatternImage)->type == imBW ) ?
-		image_create_mono_pattern_dib(var fillPatternImage,sys rq_pen.logpen.lopnColor,sys rq_brush.back_color) :
-		image_create_color_pattern_dib(var fillPatternImage)
-		;
-	if ( !dib )
+	if (( t = image_create_gp_pattern( self, var fillPatternImage )) == NULL)
 		return NULL;
 
-	GPCALL GdipCreateBitmapFromHBITMAP(( HBITMAP )dib, NULL, &b);
-	apiGPErrCheck;
-	if ( rc ) return NULL;
-
-	GPCALL GdipCreateTexture((GpImage*) b, WrapModeTile, &t);
-	apiGPErrCheck;
-	GdipDisposeImage((GpImage*) b);
-	if ( rc ) return NULL;
-
-	if (( ret = stylus_alloc( DCO_GP_BRUSH, 0 )) == NULL) {
+	if (( ret = stylus_alloc(DCO_GP_BRUSH)) == NULL) {
 		GdipDeleteBrush((GpBrush*) t);
 		return NULL;
 	}
@@ -447,23 +431,29 @@ select_gp_brush(Handle self)
 	COLORREF fg, bg;
 	RQGPBrush key;
 	PDCObject ret;
+	Bool is_solid;
 
 	GetBrushOrgEx( sys ps, &offset);
 
-	if ( var fillPatternImage )
+	is_solid = sys rq_brush.logbrush.lbStyle == BS_SOLID;
+
+	if ( var fillPatternImage ) {
 		if (( ret = alloc_gp_image_brush(self)) != NULL )
 			goto SUCCESS;
+		else
+			is_solid = true;
+	}
 
 	memset(&key, 0, sizeof(key));
 	key.type = DCO_GP_BRUSH;
-
 	fg = sys rq_pen.logpen.lopnColor;
 	bg = sys rq_brush.back_color;
 	b = (fg >> 16) & 0xff;
 	g = (fg & 0xff00) >> 8;
 	r = fg & 0xff;
 	key.fg = (sys alpha << 24) | (r << 16) | (g << 8) | b;
-	if ( sys rq_brush.logbrush.lbStyle != BS_SOLID ) {
+	key.opaque = sys currentROP2 == ropCopyPut;
+	if ( !is_solid ) {
 		key.opaque = (sys currentROP2 == ropCopyPut) ? 1 : 0;
 		b = (bg >> 16) & 0xff;
 		g = (bg & 0xff00) >> 8;
@@ -478,8 +468,7 @@ select_gp_brush(Handle self)
 
 	if ( ret->handle )
 		goto SUCCESS;
-
-	if ( sys rq_brush.logbrush.lbStyle == BS_SOLID ) {
+	if ( is_solid ) {
 		GpSolidFill *f;
 		GPCALL GdipCreateSolidFill((ARGB)key.fg, &f);
 		if ( rc ) goto FAIL;
