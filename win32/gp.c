@@ -352,10 +352,10 @@ apc_gp_clear( Handle self, int x1, int y1, int x2, int y2)
 {objCheck false;{
 	Bool     ok = true;
 	HDC      ps   = sys ps;
+	HGDIOBJ  o1, o2;
 
-	SelectObject( ps, hPenHollow);
-	SelectObject( ps, stylus_get_solid_brush(sys bg));
-	STYLUS_FREE_PEN_AND_BRUSH;
+	o1 = SelectObject( ps, hPenHollow);
+	o2 = SelectObject( ps, stylus_get_solid_brush(sys bg));
 
 	if ( x1 < 0 && y1 < 0 && x2 < 0 && y2 < 0) {
 		x1 = y1 = 0;
@@ -369,6 +369,9 @@ apc_gp_clear( Handle self, int x1, int y1, int x2, int y2)
 	if ( !( ok = Rectangle( sys ps, x1, y2, x2 + 1, y1 + 1)))
 		apiErr;
 
+	SelectObject( ps, o1 );
+	SelectObject( ps, o2 );
+
 	return ok;
 }}
 
@@ -378,11 +381,11 @@ apc_gp_chord( Handle self, int x, int y, int dX, int dY, double angleStart, doub
 	Bool ok = true;
 	HDC     ps = sys ps;
 	int compl, needf;
+	HGDIOBJ old;
 	compl = arc_completion( &angleStart, &angleEnd, &needf);
 
 	SHIFT_XY(x,y);
-	SelectObject( ps, hBrushHollow);
-	STYLUS_FREE_BRUSH;
+	old = SelectObject( ps, hBrushHollow);
 
 	if (EMULATE_OPAQUE_LINE) {
 		STYLUS_USE_OPAQUE_LINE;
@@ -397,6 +400,8 @@ apc_gp_chord( Handle self, int x, int y, int dX, int dY, double angleStart, doub
 	if ( needf) {
 		if ( !( ok = gp_Chord( self, ELLIPSE_RECT, ARC_ANGLED, angleStart, angleEnd, false))) apiErr;
 	}
+
+	SelectObject( ps, old );
 
 	return ok;
 }}
@@ -474,10 +479,9 @@ apc_gp_ellipse( Handle self, int x, int y, int dX, int dY)
 {objCheck false;{
 	Bool    ok = true;
 	HDC     ps = sys ps;
+	HGDIOBJ old;
 
-	SelectObject( ps, hBrushHollow);
-	STYLUS_FREE_BRUSH;
-
+	old = SelectObject( ps, hBrushHollow);
 	SHIFT_XY(x,y);
 
 	if (EMULATE_OPAQUE_LINE) {
@@ -488,6 +492,7 @@ apc_gp_ellipse( Handle self, int x, int y, int dX, int dY)
 
 	STYLUS_USE_PEN;
 	if ( !( ok = Ellipse( ps, ELLIPSE_RECT))) apiErr;
+	SelectObject( ps, old );
 
 	return ok;
 }}
@@ -776,12 +781,12 @@ apc_gp_rectangle( Handle self, int x1, int y1, int x2, int y2)
 {objCheck false;{
 	Bool ok = true;
 	HDC     ps = sys ps;
+	HGDIOBJ old;
 
 	check_swap( x1, x2);
 	check_swap( y1, y2);
 
-	SelectObject( ps, hBrushHollow);
-	STYLUS_FREE_BRUSH;
+	old = SelectObject( ps, hBrushHollow);
 	if ( sys rq_pen.logpen.lopnWidth.x > 1 &&
 		(sys rq_pen.logpen.lopnWidth.x % 2) == 0
 		) {
@@ -800,6 +805,8 @@ apc_gp_rectangle( Handle self, int x1, int y1, int x2, int y2)
 
 	STYLUS_USE_PEN;
 	if ( !( ok = Rectangle( sys ps, x1, y1, x2, y2))) apiErr;
+	SelectObject( ps, old );
+
 	return ok;
 }}
 
@@ -810,10 +817,10 @@ apc_gp_sector( Handle self, int x, int y, int dX, int dY, double angleStart, dou
 	HDC     ps = sys ps;
 	int compl, needf;
 	POINT   pts[ 2];
+	HGDIOBJ old;
 
 	compl = arc_completion( &angleStart, &angleEnd, &needf);
-	SelectObject( ps, hBrushHollow);
-	STYLUS_FREE_BRUSH;
+	old = SelectObject( ps, hBrushHollow);
 
 	pts[0].x = x + cos(angleEnd   / GRAD) * dX / 2 + 0.5;
 	pts[0].y = y - sin(angleEnd   / GRAD) * dY / 2 + 0.5;
@@ -846,6 +853,8 @@ apc_gp_sector( Handle self, int x, int y, int dX, int dY, double angleStart, dou
 			angleStart, angleEnd, false
 		))) apiErr;
 	}
+
+	SelectObject(ps, old);
 
 	return ok;
 }}
@@ -1143,6 +1152,8 @@ apc_gp_get_transform( Handle self)
 
 #define pal_ok ((sys bpp <= 8) && ( sys pal))
 
+#define COLOR_CHANGE_FREE_BRUSH ( var fillPatternImage ? PImage(var fillPatternImage)->type == imBW : true )
+
 Bool
 apc_gp_set_back_color( Handle self, Color color)
 {
@@ -1152,7 +1163,10 @@ apc_gp_set_back_color( Handle self, Color color)
 		if ( pal_ok) clr = palette_match( self, clr);
 		if ( SetBkColor( sys ps, clr) == CLR_INVALID) apiErr;
 		sys rq_brush.back_color = clr;
-		if ( sys rq_brush.logbrush.lbStyle == BS_DIBPATTERNPT)
+		if (
+			sys rq_brush.logbrush.lbStyle == BS_DIBPATTERNPT &&
+			COLOR_CHANGE_FREE_BRUSH
+		)
 			STYLUS_FREE_BRUSH;
 	}
 	sys bg = clr;
@@ -1169,7 +1183,13 @@ apc_gp_set_color( Handle self, Color color)
 		if ( pal_ok) clr = palette_match( self, clr);
 		sys rq_pen.logpen.lopnColor   = ( COLORREF) clr;
 		sys rq_brush.logbrush.lbColor = ( COLORREF) (( sys rq_brush.logbrush.lbStyle == BS_DIBPATTERNPT) ? 0 : clr);
-		STYLUS_FREE_ALL;
+		STYLUS_FREE_PEN;
+		STYLUS_FREE_GP_PEN;
+		STYLUS_FREE_TEXT;
+		if ( COLOR_CHANGE_FREE_BRUSH ) {
+			STYLUS_FREE_BRUSH;
+			STYLUS_FREE_GP_BRUSH;
+		}
 		if ( sys alphaArenaPalette ) {
 			free(sys alphaArenaPalette);
 			sys alphaArenaPalette = NULL;
@@ -1548,11 +1568,8 @@ apc_gp_pop( Handle self, void * user_data)
 		memcpy( user_data, state->user_data, state->user_data_size);
 
 	if ( state-> in_paint ) {
-		int i;
+		stylus_release(self);
 		RestoreDC( sys ps, -1);
-		for ( i = 0; i < DCO_COUNT; i++)
-			if ( state->paint.dc_obj[i] )
-				state->paint.dc_obj[i]->refcnt--;
 		memcpy( sys current_dc_obj, state->paint.dc_obj, sizeof(sys current_dc_obj));
 		sys stylus_flags     = state-> paint.stylus_flags;
 		sys dc_font          = state-> paint.dc_font;

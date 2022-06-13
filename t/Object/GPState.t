@@ -43,6 +43,11 @@ $d->graphic_context( fillPatternOffset =>[5,4], sub {
 is( $fpo[0], 1, 'out.fillPatternOffset.x' );
 is( $fpo[1], 2, 'out.fillPatternOffset.y' );
 
+my $fpx1 = Prima::Image->new( size => [1,1], type => im::RGB, data => "\x11\x11\x11" );
+my $fpx2 = Prima::Image->new( size => [1,1], type => im::RGB, data => "\x22\x22\x22" );
+test( fillPattern => $fpx1, $fpx2);
+$d->fillPattern(fp::Solid);
+
 test( fillMode => fm::Alternate, fm::Winding);
 test( lineEnd => le::Square, le::Flat);
 test( lineJoin => lj::Round, lj::Bevel);
@@ -167,6 +172,9 @@ for my $aa ( 0, 1) {
 	$d->bar(1,1,6,6);
 	$bits2 = bits;
 	isnt($bits1,$bits2,"gc.bits.fillPatternOffset");
+	$d-> fillPattern(fp::Solid);
+
+#	check( fillPattern => $fpx1, $fpx2, act => sub { $d->bar(0,0,7,7); });
 	$d-> fillPattern(fp::Solid);
 
 	$d->lineWidth(5);

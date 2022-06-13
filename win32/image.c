@@ -358,7 +358,7 @@ image_create_color_pattern_dib( Handle self)
 		goto FAIL;
 
 	size = (int)sizeof(BITMAPINFO);
-	size += (i->type == imRGB) ? -1 : (i->palSize * sizeof(RGBQUAD));
+	size += ((i->type == imRGB) ? -1 : i->palSize ) * (int)sizeof(RGBQUAD);
 	tgt = malloc(size + PImage(copy)->dataSize);
 	memcpy(tgt, bi, size);
 	memcpy(tgt + size, PImage(copy)->data, PImage(copy)->dataSize);
@@ -371,6 +371,80 @@ FAIL:
 	if ( copy != self )
 		Object_destroy(copy);
 	return NULL;
+}
+
+GpTexture*
+image_create_gp_pattern( Handle self, Handle image )
+{
+	Handle copy;
+	PImage i;
+	PixelFormat format;
+	GpBitmap *b = NULL;
+	GpTexture *ret = NULL;
+
+	if ( !( copy = CImage(image)->dup(image)))
+		return NULL;
+	i = ( PImage ) copy;
+
+	switch ( i->type & imBPP ) {
+	case 1:
+		format = PixelFormat1bppIndexed;
+		break;
+	case 4:
+		format = PixelFormat8bppIndexed;
+		i->self->set_type( copy, imbpp8 );
+		break;
+	case 8:
+		format = PixelFormat8bppIndexed;
+		break;
+	case 24:
+		format = PixelFormat24bppRGB;
+		break;
+	default:
+		if ( i-> type & imGrayScale ) {
+			format = PixelFormat8bppIndexed;
+			i->self->set_type( copy, imByte );
+		} else {
+			format = PixelFormat24bppRGB;
+			i->self->set_type( copy, imRGB );
+		}
+	}
+
+	i->self->mirror( copy, true);
+
+	GPCALL GdipCreateBitmapFromScan0(i->w, i-> h, LINE_SIZE(i->w, i->type), format, i->data, &b);
+	apiGPErrCheck;
+	if ( rc ) goto FAIL;
+
+	if (( i->type & imBPP ) != 24 ) {
+		XColorPalette palette = { 0, i-> palSize };
+		if ( i->type == imBW ) {
+			palette.entries[0] = 0xff000000 | remap_color(sys fg, false);
+			palette.entries[1] = 0xff000000 | remap_color(sys bg, false);
+		} else {
+			int j;
+			for ( j = 0; j < i->palSize; j++) {
+				palette.entries[j] =
+					0xff000000            |
+					i->palette[j].r << 16 |
+					i->palette[j].g << 8  |
+					i->palette[j].b
+					;
+			}
+		}
+                GPCALL GdipSetImagePalette(b, (ColorPalette*)&palette);
+		apiGPErrCheck;
+		if ( rc ) goto FAIL;
+	}
+
+	GPCALL GdipCreateTexture((GpImage*) b, WrapModeTile, &ret);
+	apiGPErrCheck;
+	if ( rc ) goto FAIL;
+
+FAIL:
+	if ( b ) GdipDisposeImage((GpImage*) b);
+	Object_destroy(copy);
+	return ret;
 }
 
 HBITMAP
