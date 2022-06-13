@@ -431,6 +431,7 @@ select_gp_brush(Handle self)
 	RQGPBrush key;
 	PDCObject ret;
 	Bool is_solid;
+	POINT offset;
 
 	is_solid = sys rq_brush.logbrush.lbStyle == BS_SOLID;
 
@@ -498,6 +499,9 @@ select_gp_brush(Handle self)
 	}
 
 SUCCESS:
+	GetBrushOrgEx( sys ps, &offset);
+	GdipResetTextureTransform((GpTexture*) ret->handle);
+	GdipTranslateTextureTransform((GpTexture*) ret->handle,offset.x,offset.y,MatrixOrderPrepend);
 	stylus_replace_current( self, DCO_GP_BRUSH, ret );
 	return true;
 

@@ -130,6 +130,7 @@ $d->antialias(0);
 for my $aa ( 0, 1) {
 	$d->antialias($aa);
 	$d->clipRect(0,0,8,8);
+	my $xaa = $aa ? '.aa' : '';
 
 	check( color     => 0x654321, 0x123456, type => im::RGB, act => sub { $d->polyline([2,2,6,2,6,6]) } );
 	check( backColor => 0x654321, 0x123456, type => im::RGB, act => sub { $d->polyline([2,2,6,2,6,6]) });
@@ -149,32 +150,32 @@ for my $aa ( 0, 1) {
 	});
 	$i = 0;
 	$fillPatternCount = scalar grep { $_ == 0xff } @{$d-> fillPattern};
-	is( $fillPatternCount, 8, 'gc.out.fillPattern' );
+	is( $fillPatternCount, 8, 'gc.out.fillPattern'.$xaa );
 	$d->clear;
 	$d->bar(1,1,6,6);
 	$bits2 = bits;
-	isnt($bits1,$bits2,"gc.bits.fillPattern");
+	isnt($bits1,$bits2,"gc.bits.fillPattern".$xaa);
 
 	$d-> fillPattern([0xff,0xff,0x00,0x00,0xCA,0xCA,0xAC,0xAC]);
 	$d-> fillPatternOffset( 1,2);
 	$d->graphic_context( fillPatternOffset => [5,4], sub {
 		@fpo = $d-> fillPatternOffset;
-		is( $fpo[0], 5, 'gc.in.fillPatternOffset.x' );
-		is( $fpo[1], 4, 'gc.in.fillPatternOffset.y' );
+		is( $fpo[0], 5, 'gc.in.fillPatternOffset.x'.$xaa );
+		is( $fpo[1], 4, 'gc.in.fillPatternOffset.y'.$xaa );
 		$d->clear;
 		$d->bar(1,1,6,6);
 		$bits1 = bits;
 	});
 	@fpo = $d-> fillPatternOffset;
-	is( $fpo[0], 1, 'gc.out.fillPatternOffset.x' );
-	is( $fpo[1], 2, 'gc.out.fillPatternOffset.y' );
+	is( $fpo[0], 1, 'gc.out.fillPatternOffset.x'.$xaa );
+	is( $fpo[1], 2, 'gc.out.fillPatternOffset.y'.$xaa );
 	$d->clear;
 	$d->bar(1,1,6,6);
 	$bits2 = bits;
-	isnt($bits1,$bits2,"gc.bits.fillPatternOffset");
+	isnt($bits1,$bits2,"gc.bits.fillPatternOffset".$xaa);
 	$d-> fillPattern(fp::Solid);
 
-#	check( fillPattern => $fpx1, $fpx2, act => sub { $d->bar(0,0,7,7); });
+	check( fillPattern => $fpx1, $fpx2, act => sub { $d->bar(0,0,7,7); });
 	$d-> fillPattern(fp::Solid);
 
 	$d->lineWidth(5);
@@ -205,16 +206,16 @@ for my $aa ( 0, 1) {
 
 	$d-> translate( 1, 2);
 	$d->graphic_context( translate => [4,5], sub {
-		is_deeply( [$d-> translate], [4,5], 'gc.in.translate' );
+		is_deeply( [$d-> translate], [4,5], 'gc.in.translate'.$xaa );
 		$d->clear;
 		$d->bar(1,1,6,6);
 		$bits1 = bits;
 	});
-	is_deeply( [$d-> translate], [1,2], 'gc.out.translate' );
+	is_deeply( [$d-> translate], [1,2], 'gc.out.translate'.$xaa );
 	$d->clear;
 	$d->bar(1,1,6,6);
 	$bits2 = bits;
-	isnt($bits1,$bits2,"gc.bits.translate");
+	isnt($bits1,$bits2,"gc.bits.translate".$xaa);
 	$d->translate(0,0);
 
 	$d->font->height(8);
@@ -233,7 +234,7 @@ for my $aa ( 0, 1) {
 	});
 	$d->bar(0,0,7,7);
 	$bits2 = bits;
-	isnt($bits1,$bits2,"gc.bits.clipRect1");
+	isnt($bits1,$bits2,"gc.bits.clipRect1".$xaa);
 	$d->clipRect(0,0,$d->size);
 	$d->clear;
 	$d->graphic_context( clipRect => [2,2,5,5], sub {
@@ -242,7 +243,7 @@ for my $aa ( 0, 1) {
 	});
 	$d->bar(0,0,7,7);
 	$bits2 = bits;
-	isnt($bits1,$bits2,"gc.bits.clipRect2");
+	isnt($bits1,$bits2,"gc.bits.clipRect2".$xaa);
 
 	$d->clear;
 	$d->region( Prima::Region->new( rect =>[1,1,6,6] ));
@@ -252,7 +253,7 @@ for my $aa ( 0, 1) {
 	});
 	$d->bar(0,0,7,7);
 	$bits2 = bits;
-	isnt($bits1,$bits2,"gc.bits.region1");
+	isnt($bits1,$bits2,"gc.bits.region1".$xaa);
 	$d->clipRect(0,0,$d->size);
 	$d->clear;
 	$d->graphic_context( region => Prima::Region->new( rect =>[2,2,5,5] ), sub {
@@ -261,7 +262,7 @@ for my $aa ( 0, 1) {
 	});
 	$d->bar(0,0,7,7);
 	$bits2 = bits;
-	isnt($bits1,$bits2,"gc.bits.region2");
+	isnt($bits1,$bits2,"gc.bits.region2".$xaa);
 }
 
 $d = Prima::Image->new( size => [8,8], type => im::Byte);
