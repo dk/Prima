@@ -1270,8 +1270,8 @@ apc_gp_set_fill_pattern_offset( Handle self, Point offset)
 	if ( sys ps) {
 		SetBrushOrgEx( sys ps, offset.x % 8, 8 - offset.y % 8, NULL);
 		if ( CURRENT_GP_BRUSH != NULL ) {
-			GdipResetTextureTransform(CURRENT_BRUSH);
-			GdipTranslateTextureTransform(CURRENT_BRUSH,offset.x,-offset.y,MatrixOrderPrepend);
+			GdipResetTextureTransform(CURRENT_GP_BRUSH);
+			GdipTranslateTextureTransform(CURRENT_GP_BRUSH,offset.x,-offset.y,MatrixOrderPrepend);
 		}
 	} else
 		sys fillPatternOffset = offset;
@@ -1605,8 +1605,8 @@ apc_gp_pop( Handle self, void * user_data)
 		if ( CURRENT_GP_BRUSH != NULL ) {
 			POINT offset;
 			GetBrushOrgEx( sys ps, &offset);
-			GdipResetTextureTransform(CURRENT_BRUSH);
-			GdipTranslateTextureTransform(CURRENT_BRUSH,offset.x,offset.y,MatrixOrderPrepend);
+			GdipResetTextureTransform(CURRENT_GP_BRUSH);
+			GdipTranslateTextureTransform(CURRENT_GP_BRUSH,offset.x,offset.y,MatrixOrderPrepend);
 		}
 	} else {
 		sys fillMode = state->common.fill_mode;
