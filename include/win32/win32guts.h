@@ -417,7 +417,6 @@ typedef struct
 	int          type;
 	uint32_t     fg, bg, opaque;
 	FillPattern  fill_pattern;
-	POINT        offset;
 } RQGPBrush, *PRQGPBrush;
 
 typedef struct _PaintState
