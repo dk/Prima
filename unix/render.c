@@ -241,9 +241,14 @@ static void
 pen_create_tile(Handle self, Pixmap tile)
 {
 	DEFXX;
+	XRenderPictFormat *xf;
 	XRenderPictureAttributes xrp_attr;
 	xrp_attr.repeat = RepeatNormal;
-	XX-> fp_render_picture = XRenderCreatePicture( DISP, tile, guts.xrender_display_format, CPRepeat, &xrp_attr);
+	if ( XF_LAYERED(XX))
+		xf = guts.xrender_argb32_format;
+	else
+		xf = guts.xrender_display_format;
+	XX-> fp_render_picture = XRenderCreatePicture( DISP, tile, xf, CPRepeat, &xrp_attr);
 }
 
 static void
