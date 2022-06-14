@@ -20,7 +20,6 @@ my $fp0c = $fp0m->clone( type => 4 );
 my $fp1c = $fp1m->clone( type => 4 );
 
 my $x = Prima::DeviceBitmap-> create( type => dbt::Bitmap, width => 8, height => 8);
-goto XE;
 
 $x-> color( cl::White);
 $x-> bar( 0, 0, 7, 7);
@@ -106,7 +105,6 @@ sub check
 	is( $x->image->extract(0,0,2,2)->clone(type => im::Byte)->sum / 255, $sum, "$test on $subtest");
 }
 
-XE:
 for my $subtype ( dbt::Bitmap, dbt::Pixmap, dbt::Layered ) {
 	if ( $subtype == dbt::Bitmap ) {
 		$subtest = 'bitmap';
