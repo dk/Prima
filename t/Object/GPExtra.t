@@ -105,6 +105,7 @@ sub check
 	is( $x->image->extract(0,0,2,2)->clone(type => im::Byte)->sum / 255, $sum, "$test on $subtest");
 }
 
+for my $aa ( 0, 1 ) {
 for my $subtype ( dbt::Bitmap, dbt::Pixmap, dbt::Layered ) {
 	if ( $subtype == dbt::Bitmap ) {
 		$subtest = 'bitmap';
@@ -113,11 +114,14 @@ for my $subtype ( dbt::Bitmap, dbt::Pixmap, dbt::Layered ) {
 	} else {
 		$subtest = 'layered';
 	}
+	$subtest .= '.aa' if $aa;
+
 	$x = Prima::DeviceBitmap-> create( type => $subtype, width => 8, height => 8);
 	if ( !$x ) {
 		diag "skipped bitmap type $subtest\n";
 		next;
 	}
+	$x->antialias($aa);
 
 	check( "fp0m WB", 1, $fp0m, color => cl::White, backColor => cl::Black );
 	check( "fp0m BW", 3, $fp0m, color => cl::Black, backColor => cl::White );
@@ -132,7 +136,7 @@ for my $subtype ( dbt::Bitmap, dbt::Pixmap, dbt::Layered ) {
 	check( "fp0c", 1, $fp0c, color => cl::White, backColor => cl::Black );
 	check( "fp1c", 3, $fp1c, color => cl::White, backColor => cl::Black );
 	check( "fpXc", 3, $fp1c, color => cl::White, backColor => cl::White );
-}
+}}
 
 
 done_testing;
