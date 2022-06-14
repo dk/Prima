@@ -310,7 +310,7 @@ image_create_mono_pattern_dib(Handle self, COLORREF fg, COLORREF bg)
 	if ( !( bi = image_fill_bitmap_info( copy, &xbi, BM_BITMAP)))
 		goto FAIL;
 
-	size = sizeof(BITMAPINFO) + 2 * sizeof(RGBQUAD);
+	size = sizeof(BITMAPINFOHEADER) + 2 * sizeof(RGBQUAD);
 	tgt = malloc(size + PImage(copy)->dataSize);
 	xbi.colors[0].rgbRed   =  ( bg & 0xFF);
 	xbi.colors[0].rgbGreen = (( bg >> 8) & 0xFF);
@@ -357,8 +357,8 @@ image_create_color_pattern_dib( Handle self)
 	if ( !( bi = image_fill_bitmap_info( copy, &xbi, BM_PIXMAP )))
 		goto FAIL;
 
-	size = (int)sizeof(BITMAPINFO);
-	size += ((i->type == imRGB) ? -1 : i->palSize ) * (int)sizeof(RGBQUAD);
+	size = (int)sizeof(BITMAPINFOHEADER);
+	size += ((i->type == imRGB) ? 0 : i->palSize ) * (int)sizeof(RGBQUAD);
 	tgt = malloc(size + PImage(copy)->dataSize);
 	memcpy(tgt, bi, size);
 	memcpy(tgt + size, PImage(copy)->data, PImage(copy)->dataSize);
@@ -1193,7 +1193,7 @@ img_put_argb_on_pixmap( Handle self, Handle image, PutImageRequest * req)
 static Bool
 img_put_layered_on_pixmap( Handle self, Handle image, PutImageRequest * req)
 {
-	if ( req-> rop == ropSrcCopy ) {
+	if ( req-> rop == ropSrcCopy || req-> rop == ropCopyPut ) {
 		req-> rop = ropCopyPut;
 		return img_put_pixmap_on_pixmap( self, image, req);
 	} else
