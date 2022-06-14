@@ -1900,7 +1900,7 @@ create_tile( Handle self, Handle image, Bool mono )
 	GC gc;
 	XGCValues gcv;
 
-	if ( mono) {
+	if ( mono || XT_IS_BITMAP(XX)) {
 		depth = 1;
 		flag = CACHE_BITMAP;
 	} else if ( XF_LAYERED(XX) ) {
@@ -1920,7 +1920,9 @@ create_tile( Handle self, Handle image, Bool mono )
 		return 0;
 	}
 
-	if ( !( gc = XCreateGC( DISP, px, GCGraphicsExposures, &gcv))) {
+	gcv.foreground = 0xffffffff;
+	gcv.background = 0;
+	if ( !( gc = XCreateGC( DISP, px, GCGraphicsExposures|GCForeground|GCBackground, &gcv))) {
 		XFreePixmap(DISP, px);
 		return 0;
 	}
