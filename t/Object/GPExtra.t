@@ -4,7 +4,23 @@ use warnings;
 use Test::More;
 use Prima::sys::Test;
 
+## image fill patterns:
+# mono with mostly 0s
+my $fp0m = Prima::Image->new( type => im::BW, size => [2,2] );
+$fp0m->pixel(1,1,0xffffff);
+# mono with mostly 1s
+my $fp1m = Prima::Image->new( type => im::BW, size => [2,2] );
+$fp1m->pixel(0,0,0xffffff);
+$fp1m->pixel(0,1,0xffffff);
+$fp1m->pixel(1,0,0xffffff);
+# their colored clones
+my $fp0a = $fp0m->clone( type => 1 );
+my $fp1a = $fp1m->clone( type => 1 );
+my $fp0c = $fp0m->clone( type => 4 );
+my $fp1c = $fp1m->clone( type => 4 );
+
 my $x = Prima::DeviceBitmap-> create( type => dbt::Bitmap, width => 8, height => 8);
+goto XE;
 
 $x-> color( cl::White);
 $x-> bar( 0, 0, 7, 7);
@@ -78,7 +94,47 @@ $x-> rop( rop::XorPut);
 $x-> bar( 0, 0, 1, 1);
 $x-> rop( rop::CopyPut);
 is( $x-> pixel( 0, 0), 0, "rob paint" );
-
 $x-> destroy;
+
+
+my $subtest;
+sub check
+{
+	my ($test, $sum, $fp, %opt) = @_;
+	$x->set(%opt, fillPattern => $fp);
+	$x->bar(0,0,7,7);
+	is( $x->image->extract(0,0,2,2)->clone(type => im::Byte)->sum / 255, $sum, "$test on $subtest");
+}
+
+XE:
+for my $subtype ( dbt::Bitmap, dbt::Pixmap, dbt::Layered ) {
+	if ( $subtype == dbt::Bitmap ) {
+		$subtest = 'bitmap';
+	} elsif ( $subtype == dbt::Pixmap ) {
+		$subtest = 'pixmap';
+	} else {
+		$subtest = 'layered';
+	}
+	$x = Prima::DeviceBitmap-> create( type => $subtype, width => 8, height => 8);
+	if ( !$x ) {
+		diag "skipped bitmap type $subtest\n";
+		next;
+	}
+
+	check( "fp0m WB", 1, $fp0m, color => cl::White, backColor => cl::Black );
+	check( "fp0m BW", 3, $fp0m, color => cl::Black, backColor => cl::White );
+	check( "fp1m WB", 3, $fp1m, color => cl::White, backColor => cl::Black );
+	check( "fp1m WB", 3, $fp1m, color => cl::White, backColor => cl::Black );
+	check( "fpXm WW", 4, $fp0m, color => cl::White, backColor => cl::White );
+	check( "fpXm BB", 0, $fp1m, color => cl::Black, backColor => cl::Black );
+
+	check( "fp0a", 1, $fp0a, color => cl::White, backColor => cl::Black );
+	check( "fp1a", 3, $fp1a, color => cl::White, backColor => cl::Black );
+	check( "fpXa", 3, $fp1a, color => cl::White, backColor => cl::White );
+	check( "fp0c", 1, $fp0c, color => cl::White, backColor => cl::Black );
+	check( "fp1c", 3, $fp1c, color => cl::White, backColor => cl::Black );
+	check( "fpXc", 3, $fp1c, color => cl::White, backColor => cl::White );
+}
+
 
 done_testing;
