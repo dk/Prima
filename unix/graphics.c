@@ -2295,9 +2295,11 @@ apc_gp_push(Handle self, GCStorageFunction * destructor, void * user_data, unsig
 		state->fill_mode = XX->saved_fill_mode;
 		state->alpha = XX->alpha;
 		state->line_width = XX->line_width;
-		state->n_dashes = XX-> ndashes;
-		if (( state->dashes = malloc( XX-> ndashes)) != NULL)
-			memcpy( state->dashes, XX-> dashes, XX->ndashes);
+		if (( state->n_dashes = XX-> ndashes) > 0) {
+			if (( state->dashes = malloc( XX-> ndashes)) != NULL)
+				memcpy( state->dashes, XX-> dashes, XX->ndashes);
+		} else
+			state->dashes = NULL;
 		state->rop  = XX->rop;
 		state->rop2 = XX->rop2;
 		state->transform = XX->transform;
