@@ -2248,7 +2248,7 @@ apc_image_begin_paint( Handle self)
 	PObject( self)-> options. optInDraw = 0;
 	XX->flags. paint = 0;
 
-	if (!opt_set(optReadonlyPaint)) {
+	if (!is_opt(optReadonlyPaint)) {
 		PutImageRequest req;
 		PutImageFunc ** dst = layered ? img_put_on_layered : ( bitmap ? img_put_on_bitmap : img_put_on_pixmap );
 		bzero(&req, sizeof(req));
