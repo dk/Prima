@@ -1689,6 +1689,7 @@ typedef struct _ObjectOptions_ {
 	unsigned optScaleChildren       : 1;
 	unsigned optUTF8_helpContext    : 1;
 	unsigned optPreserveType        : 1;   /* Image */
+	unsigned optReadonlyPaint       : 1;
 	unsigned optAutoPopup           : 1;   /* Popup */
 	unsigned optActive              : 1;   /* Timer */
 	unsigned optOwnerIcon           : 1;   /* Window */

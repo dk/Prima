@@ -2247,7 +2247,8 @@ apc_image_begin_paint( Handle self)
 	XX-> type. icon = icon;
 	PObject( self)-> options. optInDraw = 0;
 	XX->flags. paint = 0;
-	{
+
+	if (!opt_set(optReadonlyPaint)) {
 		PutImageRequest req;
 		PutImageFunc ** dst = layered ? img_put_on_layered : ( bitmap ? img_put_on_bitmap : img_put_on_pixmap );
 		bzero(&req, sizeof(req));
@@ -2260,6 +2261,7 @@ apc_image_begin_paint( Handle self)
 		if ( req. old_rop != XX-> gcv. function)
 			XSetFunction( DISP, XX-> gc, XX-> gcv. function);
 	}
+
 	PObject( self)-> options. optInDraw = 1;
 	XX->flags. paint = 1;
 	return true;

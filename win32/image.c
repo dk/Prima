@@ -1509,11 +1509,13 @@ apc_image_begin_paint( Handle self)
 {
 	apcErrClear;
 	objCheck false;
+
 	image_fill_bitmap_cache( self, BM_AUTO, NULL_HANDLE);
 	if ( sys bm == NULL ) {
 		image_destroy_cache( self );
 		return false;
 	}
+
 	if ( !( sys ps = CreateCompatibleDC( 0))) apiErrRet;
 	sys stockBM = SelectObject( sys ps, sys bm);
 	hwnd_enter_paint( self);
