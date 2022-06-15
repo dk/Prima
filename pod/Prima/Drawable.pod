@@ -207,10 +207,10 @@ export its palette to an output device, because images usually are not
 subject to automatic dithering algorithms. Prima::ImageViewer module
 employs this scheme.
 
-=head2 Antialiasing and alpha
+=head2 Antialiasing and alpha (render mode)
 
 If the system has capability for antialiased drawing and alpha rendering, Prima
-can use it. The antialiasing can be turned on by calling
+can use it. The render mode can be turned on by calling
 
    $drawable->antialias(1)
 
@@ -253,6 +253,16 @@ well.
 To see if alpha and antialiasing is supported on the system, check
 C<sv::Antialias> value. To see if a particular drawable supports alpha
 layering, check C<can_draw_alpha> method.
+
+Note that in the render mode, all painting operations treat alpha channel
+differently, which can have a dramatic difference on layered surfaces. In the
+normal mode, the alpha channel is completely ignored, and using normal mode
+paints on a layered widget always produces a translucent window, because the
+alpha value will always be 0 and color bits are assumed to be already
+premultiplied. In the render mode, alpha channel is addressed by C<alpha>
+property when drawing primitives, or in C<mask> property when drawing icons
+(again, drawing images and non-layered bitmaps assumes alpha = 0). The same is
+valid for fill pattern images and fill pattern icons.
 
 =head2 Monochrome bitmaps
 
@@ -842,14 +852,23 @@ over them.
 
 Default value: C<fm::Winding|fm::Overlay>
 
-=item fillPattern ( [ @PATTERN ] ) or ( fp::XXX )
+=item fillPattern ( [ @PATTERN ] ) or ( fp::XXX ) or IMAGE
 
 Selects 8x8 fill pattern that affects primitives that plot filled shapes:
 bar(), fill_chord(), fill_ellipse(), fillpoly(), fill_sector(), floodfill().
 
-Accepts either a C<fp::> constant or a reference to an array of 8 integers,
-each representing 8 bits of each line in a pattern, where the first integer
-is the topmost pattern line, and the bit 0x80 is the leftmost pixel in the line.
+Accepts either a C<fp::> constant or a reference to an array of 8 integers, or
+an image reference. In all cases, except where the image is colored, treats 0s
+in the pattern as the curently selected C<backColor>, and 1s as C<color>. In
+addition in the render mode, will respect C<rop2> when set to C<rop::NoOper>,
+treating 0s as fully transparent pixels, and the C<alpha> property. Note:
+Drawing over monochome bitmap or image will not respect its C<rop> on Win32.
+
+Depending on the parameters, treats the input as follows:
+
+=over
+
+=item fp:: constant
 
 There are some predefined patterns, that can be referred via C<fp::> constants:
 
@@ -880,6 +899,14 @@ There are some predefined patterns, that can be referred via C<fp::> constants:
 ( the actual patterns are hardcoded in primguts.c )
 The default pattern is fp::Solid.
 
+On a get-call, does not return the C<fp::> value but the corresponding array (see below).
+
+=item Array
+
+Wants an 8-item array where each item is a byte value, representing 8 bits of
+each line in a pattern.  The first integer is the topmost pattern line, and the
+bit 0x80 is the leftmost pixel in the line.
+
 An example below shows encoding of fp::Parquet pattern:
 
    # 76543210
@@ -896,11 +923,25 @@ An example below shows encoding of fp::Parquet pattern:
 
    $d-> fillPattern([ 0x51, 0x22, 0x15, 0x88, 0x45, 0x22, 0x54, 0x88 ]);
 
-On a get-call always returns an array, never a C<fp::> constant.
+=item Monochrome image
+
+Like the I<array> above, wants an image consisting of 0s and 1s where these would represent
+canvas color and backColor, when rendered.
+
+=item Color image
+
+Ignores color and backColor, just uses the tiles and the current C<alpha> value.
+
+=item Icon
+
+Ignores color, backColor, and alpha, uses the alpha pixel values from the icon's mask.
+
+=back
 
 =item fillPatternOffset X, Y
 
-Origin coordinates for the C<fillPattern>, from 0 to 7.
+Origin coordinates for the C<fillPattern>. Image patterns origin (0,0) is
+system-dependent.
 
 =item font \%FONT
 
