@@ -74,7 +74,9 @@ static Handle xdup( Handle self, Bool icon)
 	sv_free(( SV *) profile);
 	i = ( PDrawable) h;
 	s = i-> self-> get_size( h);
+	i-> options.optReadonlyPaint = 1;
 	i-> self-> begin_paint( h);
+	i-> options.optReadonlyPaint = 0;
 	i-> self-> put_image_indirect( h, self, 0, 0, 0, 0, s.x, s.y, s.x, s.y, rop);
 	i-> self-> end_paint( h);
 	--SvREFCNT( SvRV( i-> mate));
