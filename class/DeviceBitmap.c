@@ -58,10 +58,12 @@ static Handle xdup( Handle self, Bool icon)
 	pset_H( owner,        var-> owner);
 	pset_i( width,        var-> w);
 	pset_i( height,       var-> h);
-	if ( icon && var-> type == dbtLayered) {
+	if ( var-> type == dbtLayered) {
 		pset_i( type,      imRGB);
-		pset_i( maskType,  imbpp8);
-		pset_i( autoMasking, 0);
+		if ( icon ) {
+			pset_i( maskType,  imbpp8);
+			pset_i( autoMasking, 0);
+		}
 		rop = ropSrcCopy;
 	} else {
 		pset_i( type,      (var-> type == dbtBitmap) ? imBW : imRGB);

@@ -1215,7 +1215,7 @@ img_put_argb_on_pixmap( Handle self, Handle image, PutImageRequest * req)
 static Bool
 img_put_layered_on_pixmap( Handle self, Handle image, PutImageRequest * req)
 {
-	if ( req-> rop == ropSrcCopy || req-> rop == ropCopyPut ) {
+	if ( req-> rop == ropSrcCopy ) {
 		req-> rop = ropCopyPut;
 		return img_put_pixmap_on_pixmap( self, image, req);
 	} else
