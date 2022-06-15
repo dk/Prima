@@ -375,8 +375,8 @@ paint_text_background( Handle self, const char * text, int x, int y, int len, in
 	ABC abc;
 	uint32_t *palette;
 
-	palette = sys alphaArenaPalette;
-	sys alphaArenaPalette = NULL;
+	palette = sys alpha_arena_palette;
+	sys alpha_arena_palette = NULL;
 	if ( !apc_gp_push(self, NULL, NULL, 0)) return;
 
 	if ( flags & toGlyphs) {
@@ -404,7 +404,7 @@ paint_text_background( Handle self, const char * text, int x, int y, int len, in
 
 	apc_gp_fill_poly( self, 4, p);
 	apc_gp_pop( self, NULL);
-	sys alphaArenaPalette = palette;
+	sys alpha_arena_palette = palette;
 }
 
 
@@ -929,11 +929,11 @@ win32_unicode_shaper( Handle self, PTextShapeRec t)
 
 		SCRIPT_CACHE * script_cache;
 		ScriptCacheKey key = { sys dc_font->hfont, items[item].a.eScript };
-		if (( script_cache = ( SCRIPT_CACHE*) hash_fetch( scriptCacheMan, &key, sizeof(key))) == NULL) {
+		if (( script_cache = ( SCRIPT_CACHE*) hash_fetch( mgr_scripts, &key, sizeof(key))) == NULL) {
 			if ((script_cache = malloc(sizeof(SCRIPT_CACHE))) == NULL)
 				goto EXIT;
 			*script_cache = NULL;
-			hash_store( scriptCacheMan, &key, sizeof(key), script_cache);
+			hash_store( mgr_scripts, &key, sizeof(key), script_cache);
 		}
 
 		itemlen = items[item+1].iCharPos - items[item].iCharPos;

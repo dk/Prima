@@ -19,34 +19,40 @@ extern "C" {
 #define HANDLE sys handle
 #define DHANDLE(x) dsys(x) handle
 
-WinGuts guts;
-DWORD   rc;
-PHash   stylusMan      = NULL; // pen and brush manager
-PHash   fontMan        = NULL; // font manager
-PHash   patMan         = NULL; // pattern resource manager
-PHash   menuMan        = NULL; // HMENU manager
-PHash   imageMan       = NULL; // HBITMAP manager
-PHash   regnodeMan     = NULL; // cache for apc_widget_user_profile
-PHash   myfontMan      = NULL; // hash of calls to apc_font_load
-PHash   menuBitmapMan  = NULL; // HBITMAP manager for SetMenuItemBitmaps 
-PHash   scriptCacheMan = NULL; // SCRIPT_CACHE entries per font/script
-HPEN    hPenHollow;
-HBRUSH  hBrushHollow;
-HCURSOR arrowCursor;
-LinePattern hPatHollow;
-int     FONTSTRUCSIZE;
-Handle lastMouseOver = NULL_HANDLE;
-MusClkRec musClk = {0};
-char * keyLayouts[]   = {  "0409", "0403", "0405", "0406", "0407",
+Bool          debug            = false;
+int           FONTSTRUCSIZE;
+WinGuts       guts;
+Handle        last_mouse_over  = NULL_HANDLE;
+WCHAR         last_dead_key    = 0;
+int           time_defs_count  = 0;
+PItemRegRec   time_defs        = NULL;
+MouseClickRec mouse_click      = {0};
+PHash         mgr_styli        = NULL; // pen and brush manager
+PHash         mgr_fonts        = NULL; // font manager
+PHash         mgr_patterns     = NULL; // pattern resource manager
+PHash         mgr_menu         = NULL; // HMENU manager
+PHash         mgr_images       = NULL; // HBITMAP manager
+PHash         mgr_registry     = NULL; // cache for apc_widget_user_profile
+PHash         mgr_myfonts      = NULL; // hash of calls to apc_font_load
+PHash         mgr_menu_bitmaps = NULL; // HBITMAP manager for SetMenuItemBitmaps 
+PHash         mgr_scripts      = NULL; // SCRIPT_CACHE entries per font/script
+DWORD         rc;
+HCURSOR       std_arrow_cursor;
+HBRUSH        std_hollow_brush;
+LinePattern   std_hollow_line_pattern;
+HPEN          std_hollow_pen;
+HBITMAP       std_unchecked_bitmap = NULL;
+
+char *        key_layouts[]   = {  "0409", "0403", "0405", "0406", "0407",
 	"0807","0809","080A","080C","0C0C","100C","0810","0814","0816",
 	"040A","040B","040C","040E","040F","0410","0413","0414","0415","0416",
 	"0417","0418","041A","041D"
 };
-WCHAR lastDeadKey = 0;
-int          timeDefsCount = 0;
-PItemRegRec  timeDefs = NULL;
-Bool debug = false;
-HBITMAP uncheckedBitmap = NULL;
+
+extern Handle ctx_kb2VK[];
+extern Handle ctx_kb2VK2[];
+extern Handle ctx_kb2VK3[];
+
 
 BOOL APIENTRY
 DllMain( HINSTANCE hInstance, DWORD reason, LPVOID reserved)
@@ -54,7 +60,7 @@ DllMain( HINSTANCE hInstance, DWORD reason, LPVOID reserved)
 	if ( reason == DLL_PROCESS_ATTACH) {
 		memset( &guts, 0, sizeof( guts));
 		guts. instance = hInstance;
-		guts. cmdShow  = SW_SHOWDEFAULT;
+		guts. cmd_show  = SW_SHOWDEFAULT;
 	}
 	return TRUE;
 }
@@ -100,8 +106,8 @@ dpi_change(void)
 	POINT pt = {1,1};
 	HMONITOR m = MonitorFromPoint(pt, MONITOR_DEFAULTTONEAREST);
 	if ( GetDpiForMonitor && (GetDpiForMonitor( m, MDT_EFFECTIVE_DPI, &dx, &dy) == S_OK )) {
-		guts. displayResolution. x = dx;
-		guts. displayResolution. y = dy;
+		guts. display_resolution. x = dx;
+		guts. display_resolution. y = dy;
 	}
 }
 
@@ -154,10 +160,10 @@ window_subsystem_init( char * error_buf)
 		guts. utf8_prepend_0x202D ?
 			alloc_utf8_to_wchar_visual :
 			alloc_utf8_to_wchar;
-	guts. mainThreadId = GetCurrentThreadId();
-	guts. errorMode = SetErrorMode( SEM_FAILCRITICALERRORS);
-	guts. desktopWindow = GetDesktopWindow();
-	arrowCursor    = LoadCursor( NULL, IDC_ARROW);
+	guts. main_thread_id = GetCurrentThreadId();
+	guts. error_mode = SetErrorMode( SEM_FAILCRITICALERRORS);
+	guts. desktop_window = GetDesktopWindow();
+	std_arrow_cursor    = LoadCursor( NULL, IDC_ARROW);
 
 	memset( &wc, 0, sizeof( wc));
 	wc.style         = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS;
@@ -178,7 +184,7 @@ window_subsystem_init( char * error_buf)
 	wc.cbWndExtra    = 0;
 	wc.hInstance     = guts. instance;
 	wc.hIcon         = LoadIcon( guts. instance, IDI_APPLICATION);
-	wc.hCursor       = arrowCursor;
+	wc.hCursor       = std_arrow_cursor;
 	wc.hbrBackground = (HBRUSH)NULL;
 	wc.lpszClassName = L"GenericFrame";
 	RegisterClassW( &wc);
@@ -190,7 +196,7 @@ window_subsystem_init( char * error_buf)
 	wc.cbWndExtra    = 0;
 	wc.hInstance     = guts. instance;
 	wc.hIcon         = LoadIcon( guts. instance, IDI_APPLICATION);
-	wc.hCursor       = arrowCursor;
+	wc.hCursor       = std_arrow_cursor;
 	wc.hbrBackground = (HBRUSH)NULL;
 	wc.lpszClassName = L"LayeredFrame";
 	RegisterClassW( &wc);
@@ -207,29 +213,29 @@ window_subsystem_init( char * error_buf)
 	wc.lpszClassName = L"Generic";
 	RegisterClassW( &wc);
 
-	stylusMan  = hash_create();
-	fontMan    = hash_create();
-	patMan     = hash_create();
-	menuMan    = hash_create();
-	imageMan   = hash_create();
-	regnodeMan = hash_create();
-	myfontMan  = hash_create();
-	menuBitmapMan  = hash_create();
-	scriptCacheMan = hash_create();
+	mgr_styli        = hash_create();
+	mgr_fonts        = hash_create();
+	mgr_patterns     = hash_create();
+	mgr_menu         = hash_create();
+	mgr_images       = hash_create();
+	mgr_registry     = hash_create();
+	mgr_myfonts      = hash_create();
+	mgr_menu_bitmaps = hash_create();
+	mgr_scripts      = hash_create();
 	create_font_hash();
 	{
 		LOGBRUSH b = { BS_HOLLOW, 0, 0};
 		Font f;
-		hPenHollow       = CreatePen( PS_NULL, 0, 0);
-		hBrushHollow     = CreateBrushIndirect( &b);
-		hPatHollow.count = 0;
-		hPatHollow.ptr   = NULL;
+		std_hollow_pen       = CreatePen( PS_NULL, 0, 0);
+		std_hollow_brush     = CreateBrushIndirect( &b);
+		std_hollow_line_pattern.count = 0;
+		std_hollow_line_pattern.ptr   = NULL;
 		FONTSTRUCSIZE    = (char *)(&(f. name)) - (char *)(&f);
 	}
 
 	if (!( dc = dc_alloc())) return false;
-	guts. displayResolution. x = GetDeviceCaps( dc, LOGPIXELSX);
-	guts. displayResolution. y = GetDeviceCaps( dc, LOGPIXELSY);
+	guts. display_resolution. x = GetDeviceCaps( dc, LOGPIXELSX);
+	guts. display_resolution. y = GetDeviceCaps( dc, LOGPIXELSY);
 
 	/* Win7 DWM */
 #define LOAD_FUNC(m,f) load_function(m, (void**) &f, #f)
@@ -271,18 +277,18 @@ window_subsystem_init( char * error_buf)
 		lf. lfQuality        = PROOF_QUALITY;
 		lf. lfPitchAndFamily = DEFAULT_PITCH;
 		sfont = SelectObject( dc, CreateFontIndirect( &lf));
-		GetTextFace( dc, 256, guts. defaultSystemFont);
+		GetTextFace( dc, 256, guts. default_system_font);
 
 		// getting common fixed font name
 		lf. lfHeight = 320;
 		lf. lfPitchAndFamily = FIXED_PITCH;
 		DeleteObject( SelectObject( dc, CreateFontIndirect( &lf)));
-		GetTextFace( dc, 256, guts. defaultFixedFont);
+		GetTextFace( dc, 256, guts. default_fixed_font);
 
 		// getting common variable font name
 		lf. lfPitchAndFamily = VARIABLE_PITCH;
 		DeleteObject( SelectObject( dc, CreateFontIndirect( &lf)));
-		GetTextFace( dc, 256, guts. defaultVariableFont);
+		GetTextFace( dc, 256, guts. default_variable_font);
 		DeleteObject( SelectObject( dc, sfont));
 
 		// getting system font presets
@@ -290,27 +296,27 @@ window_subsystem_init( char * error_buf)
 		register_mapper_fonts();
 	}
 
-	memset( &guts. displayBMInfo, 0, sizeof( guts. displayBMInfo));
-	guts. displayBMInfo. bmiHeader. biSize = sizeof( BITMAPINFO);
+	memset( &guts. display_bm_info, 0, sizeof( guts. display_bm_info));
+	guts. display_bm_info. bmiHeader. biSize = sizeof( BITMAPINFO);
 	if ( !( hbm = GetCurrentObject( dc, OBJ_BITMAP))) {
 		apiErr;
 		dc_free();
 		return false;
 	}
 
-	if ( !GetDIBits( dc, hbm, 0, 0, NULL, &guts. displayBMInfo, DIB_PAL_COLORS)) {
-		guts. displayBMInfo. bmiHeader. biBitCount = GetDeviceCaps( dc, BITSPIXEL);
-		guts. displayBMInfo. bmiHeader. biPlanes   = GetDeviceCaps( dc, PLANES);
+	if ( !GetDIBits( dc, hbm, 0, 0, NULL, &guts. display_bm_info, DIB_PAL_COLORS)) {
+		guts. display_bm_info. bmiHeader. biBitCount = GetDeviceCaps( dc, BITSPIXEL);
+		guts. display_bm_info. bmiHeader. biPlanes   = GetDeviceCaps( dc, PLANES);
 	}
 
 	dc_free();
-	guts. insertMode = true;
-	guts. iconSizeSmall. x = GetSystemMetrics( SM_CXSMICON);
-	guts. iconSizeSmall. y = GetSystemMetrics( SM_CYSMICON);
-	guts. iconSizeLarge. x = GetSystemMetrics( SM_CXICON);
-	guts. iconSizeLarge. y = GetSystemMetrics( SM_CYICON);
-	guts. pointerSize. x   = GetSystemMetrics( SM_CXCURSOR);
-	guts. pointerSize. y   = GetSystemMetrics( SM_CYCURSOR);
+	guts. insert_mode = true;
+	guts. icon_size_small. x = GetSystemMetrics( SM_CXSMICON);
+	guts. icon_size_small. y = GetSystemMetrics( SM_CYSMICON);
+	guts. icon_size_large. x = GetSystemMetrics( SM_CXICON);
+	guts. icon_size_large. y = GetSystemMetrics( SM_CYICON);
+	guts. pointer_size. x    = GetSystemMetrics( SM_CXCURSOR);
+	guts. pointer_size. y    = GetSystemMetrics( SM_CYCURSOR);
 	list_create( &guts. transp, 8, 8);
 	list_create( &guts. files, 8, 8);
 	list_create( &guts. sockets, 8, 8);
@@ -323,11 +329,11 @@ window_subsystem_init( char * error_buf)
 		int i, j, size   = GetKeyboardLayoutList( 0, NULL);
 		HKL * kl         = ( HKL *) malloc( sizeof( HKL) * size);
 
-		guts. keyLayout = NULL;
+		guts. key_layout = NULL;
 		if ( !GetKeyboardLayoutName( buf)) apiErr;
-		for ( j = 0; j < ( sizeof( keyLayouts) / sizeof( char*)); j++) {
-			if ( strncmp( buf + 4, keyLayouts[ j], 4) == 0) {
-				guts. keyLayout = current;
+		for ( j = 0; j < ( sizeof( key_layouts) / sizeof( char*)); j++) {
+			if ( strncmp( buf + 4, key_layouts[ j], 4) == 0) {
+				guts. key_layout = current;
 				goto found_1;
 			}
 		}
@@ -337,9 +343,9 @@ window_subsystem_init( char * error_buf)
 			for ( i = 0; i < size; i++) {
 				ActivateKeyboardLayout( kl[ i], 0);
 				if ( !GetKeyboardLayoutName( buf)) apiErr;
-				for ( j = 0; j < ( sizeof( keyLayouts) / sizeof( char*)); j++) {
-					if ( strncmp( buf + 4, keyLayouts[ j], 4) == 0) {
-						guts. keyLayout = kl[ i];
+				for ( j = 0; j < ( sizeof( key_layouts) / sizeof( char*)); j++) {
+					if ( strncmp( buf + 4, key_layouts[ j], 4) == 0) {
+						guts. key_layout = kl[ i];
 						goto found_2;
 					}
 				}
@@ -350,12 +356,12 @@ window_subsystem_init( char * error_buf)
 	found_1:;
 		free( kl);
 	}
-	guts. currentKeyState = guts. keyState;
-	memset( guts. emptyKeyState, 0, sizeof( guts. emptyKeyState));
-	guts. smDblClk. x = GetSystemMetrics( SM_CXDOUBLECLK);
-	guts. smDblClk. y = GetSystemMetrics( SM_CYDOUBLECLK);
+	guts. current_key_state = guts. key_state;
+	memset( guts. empty_key_state, 0, sizeof( guts. empty_key_state));
+	guts. cmDOUBLECLK. x = GetSystemMetrics( SM_CXDOUBLECLK);
+	guts. cmDOUBLECLK. y = GetSystemMetrics( SM_CYDOUBLECLK);
 
-	GdiplusStartup(&guts.gdiplusToken, &gdiplusStartupInputDef, NULL);
+	GdiplusStartup(&guts.gdiplus_token, &gdiplusStartupInputDef, NULL);
 	{
 		HRESULT r = OleInitialize(NULL);
 		guts. ole_initialized = (r == S_OK || r == S_FALSE );
@@ -404,14 +410,14 @@ window_subsystem_done()
 {
 	if (guts. ole_initialized)
 		OleUninitialize();
-	free( timeDefs);
-	timeDefs = NULL;
+	free( time_defs);
+	time_defs = NULL;
 	list_destroy( &guts. files);
 
-	if ( guts. socketMutex) {
+	if ( guts. socket_mutex) {
 		// prima_guts.app_is_dead must be TRUE for this moment!
 		prima_guts.app_is_dead = true;
-		CloseHandle( guts. socketMutex);
+		CloseHandle( guts. socket_mutex);
 	}
 
 	list_destroy( &guts. sockets);
@@ -421,35 +427,35 @@ window_subsystem_done()
 	font_clean();
 	stylus_clean();
 
-	GdiplusShutdown(guts.gdiplusToken);
+	GdiplusShutdown(guts.gdiplus_token);
 
-	hash_destroy( imageMan,   false);
-	hash_destroy( menuMan,    false);
-	hash_destroy( patMan,     true);
-	hash_destroy( fontMan,    true);
-	hash_destroy( stylusMan,  true);
-	hash_destroy( regnodeMan, false);
+	hash_destroy( mgr_images,       false);
+	hash_destroy( mgr_menu,         false);
+	hash_destroy( mgr_patterns,     true);
+	hash_destroy( mgr_fonts,        true);
+	hash_destroy( mgr_styli,        true);
+	hash_destroy( mgr_registry,     false);
 
-	hash_first_that( menuBitmapMan, menu_bitmap_cleaner, NULL, NULL, NULL);
-	hash_destroy( menuBitmapMan,  false);
-	hash_destroy( scriptCacheMan,  true);
+	hash_first_that( mgr_menu_bitmaps, menu_bitmap_cleaner, NULL, NULL, NULL);
+	hash_destroy( mgr_menu_bitmaps, false);
+	hash_destroy( mgr_scripts,      true);
 
-	hash_first_that( myfontMan, myfont_cleaner, NULL, NULL, NULL);
-	hash_destroy( myfontMan,  false);
-	DeleteObject( hPenHollow);
-	DeleteObject( hBrushHollow);
-	if ( uncheckedBitmap && uncheckedBitmap != (HBITMAP)-1)
-		DeleteObject( uncheckedBitmap);
-	SetErrorMode( guts. errorMode);
+	hash_first_that( mgr_myfonts, myfont_cleaner, NULL, NULL, NULL);
+	hash_destroy( mgr_myfonts,      false);
+	DeleteObject( std_hollow_pen);
+	DeleteObject( std_hollow_brush);
+	if ( std_unchecked_bitmap && std_unchecked_bitmap != (HBITMAP)-1)
+		DeleteObject( std_unchecked_bitmap);
+	SetErrorMode( guts. error_mode);
 }
 
 void
 window_subsystem_cleanup()
 {
-	while ( guts. appLock > 0) apc_application_unlock( prima_guts.application);
-	while ( guts. pointerLock < 0) {
+	while ( guts. app_lock > 0) apc_application_unlock( prima_guts.application);
+	while ( guts. pointer_lock < 0) {
 		ShowCursor( 1);
-		guts. pointerLock++;
+		guts. pointer_lock++;
 	}
 }
 
@@ -481,7 +487,8 @@ char * err_msg( DWORD errId, char * buffer)
 	return buffer;
 }
 
-char * err_msg_gplus( GpStatus errId, char * buffer)
+char *
+err_msg_gplus( GpStatus errId, char * buffer)
 {
 	if ( buffer == nil) buffer = err_buf;
 	switch(errId) {
@@ -515,7 +522,7 @@ char * err_msg_gplus( GpStatus errId, char * buffer)
 char *
 apc_last_error(void)
 {
-	switch (guts.apcError) {
+	switch (guts.apc_error) {
 	case errApcError              : return err_buf;
 	case errOk                    : return NULL;
 	case errInvObject             : return "Bad object";
@@ -564,10 +571,6 @@ local_wnd( HWND who, HWND client)
 	}
 	return false;
 }
-
-extern Handle ctx_kb2VK[];
-extern Handle ctx_kb2VK2[];
-extern Handle ctx_kb2VK3[];
 
 static Bool
 find_oid( PAbstractMenu menu, PMenuItemReg m, int id)
@@ -634,15 +637,15 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
 	case WM_MOUSEACTIVATE:
 		// if pointing to non-active frame, but its declipped child is active at the moment,
 		// cancel activation - it could produce unwilling focus changes
-		if ( sys className == WC_FRAME) {
+		if ( sys class_name == WC_FRAME) {
 			Handle x = hwnd_to_view( GetActiveWindow());
 			if ( is_declipped_child(x) && Widget_is_child( x, self))
 				return MA_NOACTIVATE;
 		}
 		break;
 	case WM_CLOSE:
-		if ( guts. focSysDialog) return 0;
-		if ( sys className != WC_FRAME)
+		if ( guts. sys_focus_dialog) return 0;
+		if ( sys class_name != WC_FRAME)
 			return 0;
 		break;
 	case WM_COMMAND:
@@ -650,8 +653,8 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
 			if ( LOWORD( mp1) <= MENU_ID_AUTOSTART) {
 				HWND active = GetFocus();
 				if ( active != NULL) SendMessage( active, LOWORD( mp1), 0, 0);
-			} else if ( sys lastMenu) {
-				PAbstractMenu a = ( PAbstractMenu) sys lastMenu;
+			} else if ( sys last_menu) {
+				PAbstractMenu a = ( PAbstractMenu) sys last_menu;
 				if ( a-> stage <= csNormal)
 					a-> self-> sub_call_id(( Handle) a, LOWORD( mp1) - MENU_ID_AUTOSTART);
 			}
@@ -670,7 +673,7 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
 
 			MapWindowPoints( NULL, win, &a, 1);
 			ev. gen. P. x = a. x;
-			ev. gen. P. y = sys lastSize. y - a. y - 1;
+			ev. gen. P. y = sys last_size. y - a. y - 1;
 		}
 		break;
 	case WM_DRAG_RESPONSE:
@@ -724,7 +727,7 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
 	case WM_KEYDOWN:
 	case WM_KEYUP:
 		if ( apc_widget_is_responsive( self)) {
-			BYTE * keyState;
+			BYTE * key_state;
 			Bool up = ( msg == WM_KEYUP) || ( msg == WM_SYSKEYUP);
 			Bool extended = mp2 & ( 1 << 24);
 			UINT scan = ( HIWORD( mp2) & 0xFF) | ( up ? 0x80000000 : 0);
@@ -752,25 +755,25 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
 				(( GetKeyState( VK_CONTROL) < 0) ? kmCtrl  : 0) |
 				(( GetKeyState( VK_MENU)    < 0) ? kmAlt   : 0);
 
-			keyState = guts. keyState;
+			key_state = guts. key_state;
 AGAIN:
 			if ( P_APPLICATION-> wantUnicodeInput) {
 				WCHAR keys[ 2];
 				// unicode mapping
-				switch ( ToUnicodeEx( mp1, scan, keyState, keys, 2, 0, kl)) {
+				switch ( ToUnicodeEx( mp1, scan, key_state, keys, 2, 0, kl)) {
 				case 1: // char
-					if ( lastDeadKey ) {
+					if ( last_dead_key ) {
 						WCHAR wcBuffer[3];
 						WCHAR out[3];
 						wcBuffer[0] = keys[0];
-						wcBuffer[1] = lastDeadKey;
+						wcBuffer[1] = last_dead_key;
 						wcBuffer[2] = '\0';
 						if ( FoldStringW(MAP_PRECOMPOSED, (LPWSTR) wcBuffer, 3, (LPWSTR) out, 3) )
 							keys[0] = out[0];
 					}
 					if ( !deadPollCount && ( GetKeyState( VK_MENU) < 0) && ( GetKeyState( VK_SHIFT) >= 0)) {
 						WCHAR keys2[2];
-						if (( ToUnicodeEx( mp1, scan, guts. emptyKeyState, keys2, 2, 0, kl) == 1) &&
+						if (( ToUnicodeEx( mp1, scan, guts. empty_key_state, keys2, 2, 0, kl) == 1) &&
 							( keys2[0] != keys[0])) {
 							/* example - (AltGr+2) == '@' on danish keyboard.
 								this hack is to tell whether the key without mods
@@ -778,10 +781,10 @@ AGAIN:
 							ev. key. mod &= ~(kmAlt|kmCtrl|kmShift);
 						}
 					}
-					if (!up) lastDeadKey = 0;
+					if (!up) last_dead_key = 0;
 					break;
 				case 2: { // dead key
-						lastDeadKey = ctx_remap_def( keys[0], ctx_deadkeys, true, keys[0]);
+						last_dead_key = ctx_remap_def( keys[0], ctx_deadkeys, true, keys[0]);
 						keys[ 0] = 0;
 						   ev. key. mod |= kmDeadKey;
 					}
@@ -789,37 +792,37 @@ AGAIN:
 				case 0: // virtual key
 					if ( deadPollCount == 0) {
 					/* can't have character code - maybe fish out without mods? */
-						keyState = guts. emptyKeyState;
+						key_state = guts. empty_key_state;
 						deadPollCount = 1;
 						goto AGAIN;
 					} else {
 					/* same meaning without mods, no code anyway */
 						keys[ 0] = 0;
 					}
-					if (!up) lastDeadKey = 0;
+					if (!up) last_dead_key = 0;
 					break;
 				default:
 					ev. key. mod |= kmDeadKey;
-					if (!up) lastDeadKey = 0;
+					if (!up) last_dead_key = 0;
 				}
 				ev. key. code = keys[ 0];
 				ev. key. mod |= kmUnicode;
 			} else {
 				BYTE keys[ 4];
-				switch ( ToAsciiEx( mp1, scan, keyState, (LPWORD) keys, 0, kl)) {
+				switch ( ToAsciiEx( mp1, scan, key_state, (LPWORD) keys, 0, kl)) {
 				case 1: // char
-					if ( lastDeadKey ) {
+					if ( last_dead_key ) {
 						BYTE cBuffer[3];
 						BYTE out[3];
 						cBuffer[0] = keys[0];
-						cBuffer[1] = lastDeadKey;
+						cBuffer[1] = last_dead_key;
 						cBuffer[2] = '\0';
 						if ( FoldStringA(MAP_PRECOMPOSED, (LPSTR) cBuffer, 3, (LPSTR) out, 3) )
 		   					keys[0] = out[0];
 					}
 					if ( !deadPollCount && ( GetKeyState( VK_MENU) < 0) && ( GetKeyState( VK_SHIFT) >= 0)) {
 						BYTE keys2[4];
-						if (( ToAsciiEx( mp1, scan, guts. emptyKeyState, (LPWORD) keys2, 0, kl) == 1) &&
+						if (( ToAsciiEx( mp1, scan, guts. empty_key_state, (LPWORD) keys2, 0, kl) == 1) &&
 							( keys2[0] != keys[0])) {
 							/* example - (AltGr+2) == '@' on danish keyboard.
 								this hack is to tell whether the key without mods
@@ -829,25 +832,25 @@ AGAIN:
 					}
 					break;
 				case 2: // dead key 
-					lastDeadKey = keys[0];
+					last_dead_key = keys[0];
 					keys[ 0] = 0;
 						ev. key. mod |= kmDeadKey;
 					break;
 				case 0: // virtual key
 					if ( deadPollCount == 0) {
 					/* can't have character code - maybe fish out without mods? */
-						keyState = guts. emptyKeyState;
+						key_state = guts. empty_key_state;
 						deadPollCount = 1;
 						goto AGAIN;
 					} else {
 					/* same meaning without mods, no code anyway */
 						keys[ 0] = 0;
 					}
-					if (!up) lastDeadKey = 0;
+					if (!up) last_dead_key = 0;
 					break;
 				default:
 					ev. key. mod |= kmDeadKey;
-					if (!up) lastDeadKey = 0;
+					if (!up) last_dead_key = 0;
 				}
 				ev. key. code = keys[ 0];
 			}
@@ -866,9 +869,9 @@ AGAIN:
 		if ( HIWORD( mp2)) break; // do not use system popup
 	case WM_INITMENU:
 		{
-			PMenuWndData mwd = ( PMenuWndData) hash_fetch( menuMan, &mp1, sizeof( void*));
+			PMenuWndData mwd = ( PMenuWndData) hash_fetch( mgr_menu, &mp1, sizeof( void*));
 			PMenuItemReg m = NULL;
-			sys lastMenu = mwd ? mwd-> menu : NULL_HANDLE;
+			sys last_menu = mwd ? mwd-> menu : NULL_HANDLE;
 			if ( mwd && mwd-> menu && ( PAbstractMenu(mwd-> menu)->stage <= csNormal)) {
 				m = ( PMenuItemReg) AbstractMenu_first_that( mwd-> menu, find_oid, INT2PTR(void*,mwd->id), true);
 				hiStage    = true;
@@ -945,19 +948,19 @@ AGAIN:
 			ev. pos. button = ( short) HIWORD( mp1);
 			MapWindowPoints( NULL, win, &p, 1);
 			ev. pos. where. x = p. x;
-			ev. pos. where. y = sys lastSize. y - p. y - 1;
+			ev. pos. where. y = sys last_size. y - p. y - 1;
 		}
 		goto MB_MAIN_NOPOS;
 	case WM_MOUSEMOVE:
 		ev. cmd = cmMouseMove;
-		if ( self != lastMouseOver) {
-			Handle old = lastMouseOver;
-			lastMouseOver = self;
+		if ( self != last_mouse_over) {
+			Handle old = last_mouse_over;
+			last_mouse_over = self;
 			if ( old && ( PWidget( old)-> stage == csNormal))
 				SendMessage(( HWND)(( PWidget) old)-> handle, WM_MOUSEEXIT, mp1, mp2);
 			SendMessage( win, WM_MOUSEENTER, mp1, mp2);
-			if ( !guts. mouseTimer) {
-				guts. mouseTimer = 1;
+			if ( !guts. mouse_timer) {
+				guts. mouse_timer = 1;
 				if ( !SetTimer( dsys(prima_guts.application)handle, TID_USERMAX, 100, NULL)) apiErr;
 			}
 		}
@@ -990,7 +993,7 @@ AGAIN:
 	MB_MAIN:
 		if ( ev. cmd == cmMouseDown && !is_apt( aptFirstClick)) {
 			Handle x = self;
-			while ( dsys(x) className != WC_FRAME && ( x != prima_guts.application)) x = (( PWidget) x)-> owner;
+			while ( dsys(x) class_name != WC_FRAME && ( x != prima_guts.application)) x = (( PWidget) x)-> owner;
 			if ( x != prima_guts.application && !local_wnd( GetActiveWindow(), DHANDLE( x)))
 			{
 				ev. cmd = 0; // yes, we abandon mousedown but we should force selection:
@@ -1000,7 +1003,7 @@ AGAIN:
 			}
 		}
 		ev. pos. where. x = (short)LOWORD( mp2);
-		ev. pos. where. y = sys lastSize. y - (short)HIWORD( mp2) - 1;
+		ev. pos. where. y = sys last_size. y - (short)HIWORD( mp2) - 1;
 	MB_MAIN_NOPOS:
 		ev. pos. mod      = 0 |
 			(( mp1 & MK_CONTROL )         ? kmCtrl   : 0) |
@@ -1036,7 +1039,7 @@ AGAIN:
 			return MAKELONG( 0, MNC_CLOSE);
 
 		ev.key.code = tolower(ev.key.code);
-		if (( mwd = (MenuWndData*) hash_fetch(menuMan, &mp2, sizeof(mp2))) != NULL) {
+		if (( mwd = (MenuWndData*) hash_fetch(mgr_menu, &mp2, sizeof(mp2))) != NULL) {
 			int pos = 0;
 			PMenuItemReg m = CAbstractMenu(mwd->menu)-> first_that(mwd->menu, (void*)id_match, &mwd->id, false);
 			while ( m != NULL ) {
@@ -1070,22 +1073,22 @@ AGAIN:
 			Point sz = CWidget(parent)-> get_size( parent);
 			ev. cmd = cmMove;
 			ev. gen . P. x = ( short) LOWORD( mp2);
-			ev. gen . P. y = sz. y - ( short) HIWORD( mp2) - sys yOverride;
+			ev. gen . P. y = sz. y - ( short) HIWORD( mp2) - sys y_override;
 			if ( is_apt( aptTransparent))
 				InvalidateRect( win, NULL, false);
 		}
 		break;
 	}
 	case WM_NCHITTEST:
-		if ( guts. focSysDialog) return HTERROR;
+		if ( guts. sys_focus_dialog) return HTERROR;
 		// dlg protect code - protecting from user actions
-		if ( !guts. focSysDisabled && ( Application_map_focus( prima_guts.application, self) != self))
+		if ( !guts. sys_focus_disabled && ( Application_map_focus( prima_guts.application, self) != self))
 			return HTERROR;
 		break;
 	case WM_PAINT:
 		ev. cmd = cmPaint;
 		if (
-			( sys className == WC_CUSTOM) &&
+			( sys class_name == WC_CUSTOM) &&
 			( var stage == csNormal) &&
 			( list_index_of( &guts. transp, self) >= 0)
 			)
@@ -1126,9 +1129,9 @@ AGAIN:
 			hwnd_repaint_layered( self, true );
 		break;
 	case WM_SETFOCUS:
-		if ( guts. focSysDialog) return 1;
+		if ( guts. sys_focus_dialog) return 1;
 		// dlg protect code - general case
-		if ( !guts. focSysDisabled && !guts. focSysGranted) {
+		if ( !guts. sys_focus_disabled && !guts. sys_focus_granted) {
 			Handle hf = Application_map_focus( prima_guts.application, self);
 			if ( hf != self) {
 				PostMessage( win, WM_FORCEFOCUS, 0, ( LPARAM) hf);
@@ -1151,21 +1154,21 @@ AGAIN:
 	break;
 	case WM_SIZE:
 		ev. cmd = cmSize;
-		ev. gen. R. left   = sys lastSize. x;
-		ev. gen. R. bottom = sys lastSize. y;
-		sys lastSize. x    = ev. gen. R. right  = ev. gen . P. x = ( short) LOWORD( mp2);
-		sys lastSize. y    = ev. gen. R. top    = ev. gen . P. y = ( short) HIWORD( mp2);
+		ev. gen. R. left   = sys last_size. x;
+		ev. gen. R. bottom = sys last_size. y;
+		sys last_size. x    = ev. gen. R. right  = ev. gen . P. x = ( short) LOWORD( mp2);
+		sys last_size. y    = ev. gen. R. top    = ev. gen . P. y = ( short) HIWORD( mp2);
 		if ( ev. gen. R. top != ev. gen. R. bottom) {
 			int delta = ev. gen. R. top - ev. gen. R. bottom;
 			Widget_first_that( self, move_back, &delta);
 			if ( is_apt( aptFocused)) cursor_update(( Handle) self);
 		}
-		if ( sys sizeLockLevel == 0 && var stage <= csNormal)
-			var virtualSize = sys lastSize;
+		if ( sys size_lock_level == 0 && var stage <= csNormal)
+			var virtualSize = sys last_size;
 		break;
 	case WM_WINDOWPOSCHANGING: {
 		LPWINDOWPOS l = ( LPWINDOWPOS) mp2;
-		if ( sys className == WC_CUSTOM) {
+		if ( sys class_name == WC_CUSTOM) {
 			if (( l-> flags & SWP_NOSIZE) == 0) {
 				ev. cmd = cmCalcBounds;
 				ev. gen. R. right = l-> cx;
@@ -1181,7 +1184,7 @@ AGAIN:
 		if (( l-> flags & SWP_NOZORDER) == 0)
 			PostMessage( win, WM_ZORDERSYNC, 0, 0);
 		if (( l-> flags & SWP_NOSIZE) == 0) {
-			sys yOverride = l-> cy;
+			sys y_override = l-> cy;
 			SendMessage( win, WM_SYNCMOVE, 0, 0);
 		}
 		if ( l-> flags & SWP_HIDEWINDOW) SendMessage( win, WM_SETVISIBLE, 0, 0);
@@ -1234,13 +1237,13 @@ AGAIN:
 		break;
 	}
 	case WM_MOUSEMOVE:
-		SetCursor( is_apt( aptEnabled) ? sys pointer : arrowCursor);
+		SetCursor( is_apt( aptEnabled) ? sys pointer : std_arrow_cursor);
 		break;
 	case WM_MOUSEWHEEL:
 		return ( LRESULT)1;
 	case WM_WINDOWPOSCHANGING: {
 		LPWINDOWPOS l = ( LPWINDOWPOS) mp2;
-		if ( sys className == WC_CUSTOM) {
+		if ( sys class_name == WC_CUSTOM) {
 			if (( l-> flags & SWP_NOSIZE) == 0) {
 				int dy = l-> cy - ev. gen. R. top;
 				l-> cx = ev. gen. R. right;
@@ -1278,15 +1281,15 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
 
 	switch ( msg) {
 	case WM_ACTIVATE:
-		if ( guts. focSysDialog) return 1;
+		if ( guts. sys_focus_dialog) return 1;
 		// dlg protect code - protecting from window activation
-		if ( LOWORD( mp1) && !guts. focSysDisabled) {
+		if ( LOWORD( mp1) && !guts. sys_focus_disabled) {
 			Handle hf = Application_map_focus( prima_guts.application, self);
 			if ( hf != self) {
-				guts. focSysDisabled = 1;
+				guts. sys_focus_disabled = 1;
 				Application_popup_modal( prima_guts.application);
 				PostMessage( win, msg, 0, 0);
-				guts. focSysDisabled = 0;
+				guts. sys_focus_disabled = 0;
 				return 1;
 			}
 		}
@@ -1294,7 +1297,7 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
 		hiStage = true;
 		break;
 	case WM_CLOSE:
-		if ( guts. focSysDialog) return 0;
+		if ( guts. sys_focus_dialog) return 0;
 		ev. cmd = cmClose;
 		break;
 	case WM_COMMAND:
@@ -1328,7 +1331,7 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
 	case WM_ERASEBKGND:
 		return 1;
 	case WM_NCACTIVATE:
-		if ( guts. focSysDialog) return 1;
+		if ( guts. sys_focus_dialog) return 1;
 
 		if (( mp1 == 0) && ( mp2 != 0)) {
 			Handle x = hwnd_to_view(( HWND) mp2);
@@ -1337,21 +1340,21 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
 			}
 		}
 		// dlg protect code - protecting from window activation
-		if ( mp1 && !guts. focSysDisabled) {
+		if ( mp1 && !guts. sys_focus_disabled) {
 			Handle hf = Application_map_focus( prima_guts.application, self);
 			if ( hf != self) {
-				guts. focSysDisabled = 1;
+				guts. sys_focus_disabled = 1;
 				Application_popup_modal( prima_guts.application);
 				PostMessage( win, msg, 0, 0);
-				guts. focSysDisabled = 0;
+				guts. sys_focus_disabled = 0;
 				return 1;
 			}
 		}
 		break;
 	case WM_NCHITTEST:
-		if ( guts. focSysDialog) return HTERROR;
+		if ( guts. sys_focus_dialog) return HTERROR;
 		// dlg protect code - protecting from user actions
-		if ( !guts. focSysDisabled) {
+		if ( !guts. sys_focus_disabled) {
 			Handle foc = Application_map_focus( prima_guts.application, self);
 			if ( foc != self) {
 				return ( foc == apc_window_get_active()) ? HTERROR : HTCLIENT;
@@ -1359,10 +1362,10 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
 		}
 		break;
 	case WM_SETFOCUS:
-		if ( guts. focSysDialog) return 1;
+		if ( guts. sys_focus_dialog) return 1;
 
 		// dlg protect code - general case
-		if ( !guts. focSysDisabled && !guts. focSysGranted) {
+		if ( !guts. sys_focus_disabled && !guts. sys_focus_granted) {
 			Handle hf = Application_map_focus( prima_guts.application, self);
 			if ( hf != self) {
 				PostMessage( win, WM_FORCEFOCUS, 0, ( LPARAM) hf);
@@ -1424,7 +1427,7 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
 			Point sz = CWidget(parent)-> get_size( parent);
 			ev. cmd = cmMove;
 			ev. gen . P. x = ( short) LOWORD( mp2);
-			ev. gen . P. y = sz. y - ( short) HIWORD( mp2) - sys yOverride;
+			ev. gen . P. y = sz. y - ( short) HIWORD( mp2) - sys y_override;
 		}
 		break;
 	}
@@ -1433,7 +1436,7 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
 		if ( mp1 == TID_USERMAX) {
 			POINT p;
 			HWND wp;
-			if ( lastMouseOver && !GetCapture() && ( PObject( lastMouseOver)-> stage == csNormal)) {
+			if ( last_mouse_over && !GetCapture() && ( PObject( last_mouse_over)-> stage == csNormal)) {
 				HWND desktop = HWND_DESKTOP;
 				GetCursorPos( &p);
 				wp = WindowFromPoint( p);
@@ -1443,20 +1446,20 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
 					wp = ChildWindowFromPointEx( wp, xp, CWP_SKIPINVISIBLE);
 				} else
 					wp = ChildWindowFromPointEx( wp, p, CWP_SKIPINVISIBLE);
-				if ( wp != ( HWND)(( PWidget) lastMouseOver)-> handle)
+				if ( wp != ( HWND)(( PWidget) last_mouse_over)-> handle)
 				{
-					HWND old = ( HWND)(( PWidget) lastMouseOver)-> handle;
+					HWND old = ( HWND)(( PWidget) last_mouse_over)-> handle;
 					Handle s;
-					lastMouseOver = NULL_HANDLE;
+					last_mouse_over = NULL_HANDLE;
 					SendMessage( old, WM_MOUSEEXIT, 0, 0);
 					s = hwnd_to_view( wp);
 					if ( s && ( HWND)(( PWidget) s)-> handle == wp)
 					{
 						MapWindowPoints( desktop, wp, &p, 1);
 						SendMessage( wp, WM_MOUSEENTER, 0, MAKELPARAM( p. x, p. y));
-						lastMouseOver = s;
-					} else if ( guts. mouseTimer) {
-						guts. mouseTimer = 0;
+						last_mouse_over = s;
+					} else if ( guts. mouse_timer) {
+						guts. mouse_timer = 0;
 						if ( !KillTimer( dsys(prima_guts.application)handle, TID_USERMAX)) apiErr;
 					}
 				}
@@ -1464,8 +1467,8 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
 			return 0;
 		} else {
 			int id = mp1 - 1;
-			if ( id >= 0 && id < timeDefsCount) {
-				ev. gen. H = ( Handle) timeDefs[ id]. item;
+			if ( id >= 0 && id < time_defs_count) {
+				ev. gen. H = ( Handle) time_defs[ id]. item;
 				if ( ev. gen. H) {
 					v = ( PWidget)( self = ev. gen. H);
 					ev. cmd = cmTimer;
@@ -1477,9 +1480,9 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
 		LPMINMAXINFO l = ( LPMINMAXINFO) mp2;
 		Point min = var self-> get_sizeMin( self);
 		Point max = var self-> get_sizeMax( self);
-		Point bor = get_window_borders( sys s. window. borderStyle);
+		Point bor = get_window_borders( sys s. window. border_style);
 		int   dy  = 0 +
-			(( sys s. window. borderIcons & biTitleBar) ? GetSystemMetrics( SM_CYCAPTION) : 0) +
+			(( sys s. window. border_icons & biTitleBar) ? GetSystemMetrics( SM_CYCAPTION) : 0) +
 			( PWindow(self)-> menu ? GetSystemMetrics( SM_CYMENU) : 0);
 		l-> ptMinTrackSize. x = min. x + bor.x * 2;
 		l-> ptMinTrackSize. y = min. y + bor.y * 2 + dy;
@@ -1495,7 +1498,7 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
 			if (( l-> flags & SWP_NOSIZE) == 0) {
 				RECT r;
 				GetClientRect( win, &r);
-				sys yOverride = r. bottom - r. top;
+				sys y_override = r. bottom - r. top;
 				SendMessage( win, WM_SYNCMOVE, 0, 0);
 			}
 			if ( l-> flags & SWP_HIDEWINDOW) SendMessage( win, WM_SETVISIBLE, 0, 0);
@@ -1519,7 +1522,7 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
 	switch ( orgMsg) {
 	case WM_CLOSE:
 		if ( ev. cmd) {
-			if ( sys className == WC_FRAME && PWindow(self)->modal) {
+			if ( sys class_name == WC_FRAME && PWindow(self)->modal) {
 				CWindow( self)-> cancel( self);
 				return 0;
 			} else {
@@ -1545,7 +1548,7 @@ update_layered_frame(Handle self)
 	Point delta_upper_left, delta_lower_right, move;
 	HWND win = HANDLE;
 
-	delta_lower_right = get_window_borders( sys s. window. borderStyle);
+	delta_lower_right = get_window_borders( sys s. window. border_style);
 	GetWindowRect(win, &frame);
 	GetClientRect(win, &client);
 	frame_size. x = frame. right  - frame. left;
@@ -1598,7 +1601,7 @@ LRESULT CALLBACK layered_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
 			updated = true;
 
 			GetClientRect( win, &r);
-			sys yOverride = r. bottom - r. top;
+			sys y_override = r. bottom - r. top;
 			SendMessage( win, WM_SYNCMOVE, 0, 0);
 		}
 		if (( l-> flags & SWP_NOMOVE) == 0) {
@@ -1644,24 +1647,24 @@ LRESULT CALLBACK generic_app_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM mp
 	switch ( msg) {
 		case WM_DISPLAYCHANGE: {
 			HDC dc = dc_alloc();
-			int oldBPP = guts. displayBMInfo. bmiHeader. biBitCount;
+			int oldBPP = guts. display_bm_info. bmiHeader. biBitCount;
 			HBITMAP hbm;
 
 			if ( dc) {
-				guts. displayBMInfo. bmiHeader. biBitCount = 0;
-				guts. displayBMInfo. bmiHeader. biSize = sizeof( BITMAPINFO);
+				guts. display_bm_info. bmiHeader. biBitCount = 0;
+				guts. display_bm_info. bmiHeader. biSize = sizeof( BITMAPINFO);
 				if ( !( hbm = GetCurrentObject( dc, OBJ_BITMAP))) apiErr;
 
-				if ( !GetDIBits( dc, hbm, 0, 0, NULL, &guts. displayBMInfo, DIB_PAL_COLORS)) {
-					guts. displayBMInfo. bmiHeader. biBitCount = ( int) mp1;
-					guts. displayBMInfo. bmiHeader. biPlanes   = GetDeviceCaps( dc, PLANES);
+				if ( !GetDIBits( dc, hbm, 0, 0, NULL, &guts. display_bm_info, DIB_PAL_COLORS)) {
+					guts. display_bm_info. bmiHeader. biBitCount = ( int) mp1;
+					guts. display_bm_info. bmiHeader. biPlanes   = GetDeviceCaps( dc, PLANES);
 				};
 			}
-			dsys( prima_guts.application) lastSize. x = ( short) LOWORD( mp2);
-			dsys( prima_guts.application) lastSize. y = ( short) HIWORD( mp2);
+			dsys( prima_guts.application) last_size. x = ( short) LOWORD( mp2);
+			dsys( prima_guts.application) last_size. y = ( short) HIWORD( mp2);
 			if ( dc) {
-				if ( oldBPP != guts. displayBMInfo. bmiHeader. biBitCount)
-					hash_first_that( imageMan, kill_img_cache, (void*)1, NULL, NULL);
+				if ( oldBPP != guts. display_bm_info. bmiHeader. biBitCount)
+					hash_first_that( mgr_images, kill_img_cache, (void*)1, NULL, NULL);
 				dc_free();
 			}
 			break;
@@ -1682,9 +1685,9 @@ LRESULT CALLBACK generic_app_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM mp
 			stylus_clean();
 			font_clean();
 			destroy_font_hash();
-			hash_first_that( imageMan, kill_img_cache, NULL, NULL, NULL);
-			hash_destroy( regnodeMan, false);
-			regnodeMan = hash_create();
+			hash_first_that( mgr_images, kill_img_cache, NULL, NULL, NULL);
+			hash_destroy( mgr_registry, false);
+			mgr_registry = hash_create();
 			break;
 		case WM_QUERYNEWPALETTE:
 		case WM_PALETTECHANGED:

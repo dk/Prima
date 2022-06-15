@@ -22,7 +22,7 @@ Bool
 apc_gp_init( Handle self)
 {
 	objCheck false;
-	sys lineWidth = 1.0;
+	sys line_width = 1.0;
 	return true;
 }
 
@@ -42,7 +42,7 @@ apc_gp_done( Handle self)
 	}
 	if ( sys ps) {
 		if ( is_apt( aptWinPS) && is_apt( aptWM_PAINT)) {
-			if ( !EndPaint(( HWND) var handle, &sys paintStruc)) apiErr;
+			if ( !EndPaint(( HWND) var handle, &sys paint_struct)) apiErr;
 		} else if ( is_apt( aptWinPS)) {
 			if ( self == prima_guts.application)
 				dc_free();
@@ -51,7 +51,7 @@ apc_gp_done( Handle self)
 			}
 		}
 	}
-	if ( sys linePatternLen  > sizeof(sys linePattern)) free( sys linePattern);
+	if ( sys line_pattern_len  > sizeof(sys line_pattern)) free( sys line_pattern);
 	stylus_release( self );
 	font_free( sys dc_font, false);
 	if ( sys p256) free( sys p256);
@@ -61,7 +61,7 @@ apc_gp_done( Handle self)
 	sys bm = NULL;
 	sys p256 = NULL;
 	sys dc_font = NULL;
-	sys linePattern = NULL;
+	sys line_pattern = NULL;
 	return true;
 }
 
@@ -190,12 +190,12 @@ gp_Pie(
 							(int)(x + cos( angleEnd / GRAD) * dX / 2 + 1.5),   (int)(y - sin( angleEnd / GRAD) * dY / 2 + 1.5)
 
 #define EMULATE_OPAQUE_LINE \
-(sys rq_pen.logpen.lopnStyle == PS_USERSTYLE && sys currentROP2 == ropCopyPut)
+(sys rq_pen.logpen.lopnStyle == PS_USERSTYLE && sys current_rop2 == ropCopyPut)
 #define STYLUS_USE_OPAQUE_LINE \
 	SelectObject(sys ps, stylus_get_pen(PS_SOLID, sys rq_pen.logpen.lopnWidth.x, sys rq_brush.back_color));\
 	STYLUS_FREE_PEN;\
-	if (sys currentROP != R2_COPYPEN) SetROP2( sys ps, R2_COPYPEN)
-#define STYLUS_RESTORE_OPAQUE_LINE if (sys currentROP != R2_COPYPEN) SetROP2( sys ps, sys currentROP)
+	if (sys current_rop != R2_COPYPEN) SetROP2( sys ps, R2_COPYPEN)
+#define STYLUS_RESTORE_OPAQUE_LINE if (sys current_rop != R2_COPYPEN) SetROP2( sys ps, sys current_rop)
 
 Bool
 apc_gp_arc( Handle self, int x, int y, int dX, int dY, double angleStart, double angleEnd)
@@ -235,7 +235,7 @@ apc_gp_bar( Handle self, int x1, int y1, int x2, int y2)
 	SHIFT_XY(x2,y2);
 
 	STYLUS_USE_BRUSH;
-	SelectObject( ps, hPenHollow);
+	SelectObject( ps, std_hollow_pen);
 	STYLUS_FREE_PEN;
 
 	if ( !( ok = Rectangle( ps, x1, y2, x2 + 1, y1 + 1)))
@@ -252,7 +252,7 @@ apc_gp_bars( Handle self, int nr, Rect *rr)
 	int i;
 
 	STYLUS_USE_BRUSH;
-	SelectObject( ps, hPenHollow);
+	SelectObject( ps, std_hollow_pen);
 	STYLUS_FREE_PEN;
 
 	for ( i = 0; i < nr; i++, rr++) {
@@ -288,8 +288,8 @@ apc_gp_alpha( Handle self, int alpha, int x1, int y1, int x2, int y2)
 
 	if ( x1 < 0 && y1 < 0 && x2 < 0 && y2 < 0) {
 		x1 = y1 = 0;
-		x2 = sys lastSize. x - 1;
-		y2 = sys lastSize. y - 1;
+		x2 = sys last_size. x - 1;
+		y2 = sys last_size. y - 1;
 	}
 	check_swap( x1, x2);
 	check_swap( y1, y2);
@@ -354,13 +354,13 @@ apc_gp_clear( Handle self, int x1, int y1, int x2, int y2)
 	HDC      ps   = sys ps;
 	HGDIOBJ  o1, o2;
 
-	o1 = SelectObject( ps, hPenHollow);
+	o1 = SelectObject( ps, std_hollow_pen);
 	o2 = SelectObject( ps, stylus_get_solid_brush(sys bg));
 
 	if ( x1 < 0 && y1 < 0 && x2 < 0 && y2 < 0) {
 		x1 = y1 = 0;
-		x2 = sys lastSize. x - 1;
-		y2 = sys lastSize. y - 1;
+		x2 = sys last_size. x - 1;
+		y2 = sys last_size. y - 1;
 	}
 	check_swap( x1, x2);
 	check_swap( y1, y2);
@@ -385,7 +385,7 @@ apc_gp_chord( Handle self, int x, int y, int dX, int dY, double angleStart, doub
 	compl = arc_completion( &angleStart, &angleEnd, &needf);
 
 	SHIFT_XY(x,y);
-	old = SelectObject( ps, hBrushHollow);
+	old = SelectObject( ps, std_hollow_brush);
 
 	if (EMULATE_OPAQUE_LINE) {
 		STYLUS_USE_OPAQUE_LINE;
@@ -481,7 +481,7 @@ apc_gp_ellipse( Handle self, int x, int y, int dX, int dY)
 	HDC     ps = sys ps;
 	HGDIOBJ old;
 
-	old = SelectObject( ps, hBrushHollow);
+	old = SelectObject( ps, std_hollow_brush);
 	SHIFT_XY(x,y);
 
 	if (EMULATE_OPAQUE_LINE) {
@@ -506,12 +506,12 @@ apc_gp_fill_chord( Handle self, int x, int y, int dX, int dY, double angleStart,
 	int compl, needf;
 
 	compl = arc_completion( &angleStart, &angleEnd, &needf);
-	comp = ((sys psFillMode & fmOverlay) == 0) || stylus_is_complex( self);
+	comp = ((sys ps_fill_mode & fmOverlay) == 0) || stylus_is_complex( self);
 	SHIFT_XY(x,y);
 	STYLUS_USE_BRUSH;
 
 	if ( comp) {
-		SelectObject( ps, hPenHollow);
+		SelectObject( ps, std_hollow_pen);
 		while ( compl--)
 			if ( !( ok = Ellipse( ps, ELLIPSE_RECT_SUPERINCLUSIVE))) apiErr;
 		if ( !( ok = !needf || gp_Chord(
@@ -535,11 +535,11 @@ apc_gp_fill_ellipse( Handle self, int x, int y, int dX, int dY)
 {objCheck false;{
 	Bool ok = true;
 	HDC     ps  = sys ps;
-	Bool    comp = ((sys psFillMode & fmOverlay) == 0) || stylus_is_complex(self);
+	Bool    comp = ((sys ps_fill_mode & fmOverlay) == 0) || stylus_is_complex(self);
 	STYLUS_USE_BRUSH;
 	SHIFT_XY(x,y);
 	if ( comp) {
-		SelectObject( ps, hPenHollow);
+		SelectObject( ps, std_hollow_pen);
 		if ( !( ok = Ellipse( ps, ELLIPSE_RECT_SUPERINCLUSIVE))) apiErr;
 	} else {
 		SelectObject( ps, stylus_get_pen( PS_SOLID, 1, sys rq_brush.logbrush.lbColor));
@@ -587,8 +587,8 @@ apc_gp_fill_poly( Handle self, int numPts, Point * points)
 		adjust_line_end_LONG( p[0].x, p[0].y, &p[1].x, &p[1].y);
 
 	STYLUS_USE_BRUSH;
-	if (( sys psFillMode & fmOverlay) == 0) {
-		SelectObject( ps, hPenHollow);
+	if (( sys ps_fill_mode & fmOverlay) == 0) {
+		SelectObject( ps, std_hollow_pen);
 		if ( !( ok = Polygon( ps, p, numPts))) apiErr;
 		STYLUS_FREE_PEN;
 	} else if ( !stylus_is_complex(self)) {
@@ -596,8 +596,8 @@ apc_gp_fill_poly( Handle self, int numPts, Point * points)
 		if ( !( ok = Polygon( ps, p, numPts))) apiErr;
 		STYLUS_FREE_PEN;
 	} else {
-		int dx       = sys lastSize.x;
-		int dy       = sys lastSize.y;
+		int dx       = sys last_size.x;
+		int dy       = sys last_size.y;
 		int rop      = ctx_remap_def( GetROP2( ps), ctx_R22R4, true, SRCCOPY);
 		Point bound  = {0,0};
 		Point trans;
@@ -653,7 +653,7 @@ apc_gp_fill_poly( Handle self, int numPts, Point * points)
 		}
 		bmJ = SelectObject( dc, bmSrc);
 		old1 = SelectObject( dc, CURRENT_BRUSH);
-		oldelta = SelectObject( dc, hPenHollow);
+		oldelta = SelectObject( dc, std_hollow_pen);
 		Rectangle( dc, 0, 0, bound. x, bound. y);
 		SelectObject( dc, oldelta);
 		SelectObject( dc, old1);
@@ -683,7 +683,7 @@ apc_gp_fill_sector( Handle self, int x, int y, int dX, int dY, double angleStart
 	int compl, needf;
 
 	compl = arc_completion( &angleStart, &angleEnd, &needf);
-	comp = ((sys psFillMode & fmOverlay) == 0) || stylus_is_complex(self);
+	comp = ((sys ps_fill_mode & fmOverlay) == 0) || stylus_is_complex(self);
 
 	SHIFT_XY(x,y);
 	pts[0].x = x + cos( angleEnd   / GRAD) * dX / 2 + 0.5;
@@ -693,7 +693,7 @@ apc_gp_fill_sector( Handle self, int x, int y, int dX, int dY, double angleStart
 
 	STYLUS_USE_BRUSH;
 	if ( comp) {
-		SelectObject( ps, hPenHollow);
+		SelectObject( ps, std_hollow_pen);
 		while ( compl--)
 			if ( !( ok = Ellipse( ps, ELLIPSE_RECT_SUPERINCLUSIVE))) apiErr;
 		if ( !( ok = !needf || gp_Pie(
@@ -786,7 +786,7 @@ apc_gp_rectangle( Handle self, int x1, int y1, int x2, int y2)
 	check_swap( x1, x2);
 	check_swap( y1, y2);
 
-	old = SelectObject( ps, hBrushHollow);
+	old = SelectObject( ps, std_hollow_brush);
 	if ( sys rq_pen.logpen.lopnWidth.x > 1 &&
 		(sys rq_pen.logpen.lopnWidth.x % 2) == 0
 		) {
@@ -820,7 +820,7 @@ apc_gp_sector( Handle self, int x, int y, int dX, int dY, double angleStart, dou
 	HGDIOBJ old;
 
 	compl = arc_completion( &angleStart, &angleEnd, &needf);
-	old = SelectObject( ps, hBrushHollow);
+	old = SelectObject( ps, std_hollow_brush);
 
 	pts[0].x = x + cos(angleEnd   / GRAD) * dX / 2 + 0.5;
 	pts[0].y = y - sin(angleEnd   / GRAD) * dY / 2 + 0.5;
@@ -894,7 +894,7 @@ int
 apc_gp_get_fill_mode( Handle self)
 {
 	objCheck 0;
-	return sys ps ? sys psFillMode : sys fillMode;
+	return sys ps ? sys ps_fill_mode : sys fill_mode;
 }
 
 static Handle ctx_le2PS_ENDCAP[] = {
@@ -908,7 +908,7 @@ int
 apc_gp_get_line_end( Handle self)
 {
 	objCheck 0;
-	if ( !sys ps) return sys lineEnd;
+	if ( !sys ps) return sys line_end;
 	return ctx_remap_def( sys rq_pen.line_end, ctx_le2PS_ENDCAP, false, leRound);
 }
 
@@ -923,7 +923,7 @@ int
 apc_gp_get_line_join( Handle self)
 {
 	objCheck 0;
-	if ( !sys ps) return sys lineJoin;
+	if ( !sys ps) return sys line_join;
 	return ctx_remap_def( sys rq_pen.line_join, ctx_lj2PS_JOIN, false, ljRound);
 }
 
@@ -931,7 +931,7 @@ float
 apc_gp_get_line_width( Handle self)
 {
 	objCheck 0;
-	return sys ps ? sys rq_pen.logpen.lopnWidth.x : sys lineWidth;
+	return sys ps ? sys rq_pen.logpen.lopnWidth.x : sys line_width;
 }
 
 int
@@ -941,10 +941,10 @@ apc_gp_get_line_pattern( Handle self, unsigned char * buffer)
 	if ( !sys ps) {
 		memcpy(
 			( char *) buffer,
-			(char*)(( sys linePatternLen > sizeof(sys linePattern)) ? sys linePattern : (Byte*)(&sys linePattern)),
-			sys linePatternLen
+			(char*)(( sys line_pattern_len > sizeof(sys line_pattern)) ? sys line_pattern : (Byte*)(&sys line_pattern)),
+			sys line_pattern_len
 		);
-		return sys linePatternLen;
+		return sys line_pattern_len;
 	}
 
 	switch ( sys rq_pen.logpen.lopnStyle) {
@@ -975,7 +975,7 @@ apc_gp_get_miter_limit( Handle self)
 {
 	FLOAT ml;
 	objCheck 0;
-	if ( !sys ps) return sys miterLimit;
+	if ( !sys ps) return sys miter_limit;
 	if (! GetMiterLimit( sys ps, &ml)) return 0;
 	return (float)ml;
 }
@@ -1094,7 +1094,7 @@ apc_gp_get_physical_palette( Handle self, int * color)
 Point
 apc_gp_get_resolution( Handle self)
 {
-	Point p = guts. displayResolution;
+	Point p = guts. display_resolution;
 	if ( !self) return p;
 	objCheck p;
 	return is_apt( aptPrinter ) ? sys res : p;
@@ -1190,23 +1190,23 @@ apc_gp_set_color( Handle self, Color color)
 			STYLUS_FREE_BRUSH;
 			STYLUS_FREE_GP_BRUSH;
 		}
-		if ( sys alphaArenaPalette ) {
-			free(sys alphaArenaPalette);
-			sys alphaArenaPalette = NULL;
+		if ( sys alpha_arena_palette ) {
+			free(sys alpha_arena_palette);
+			sys alpha_arena_palette = NULL;
 		}
 	}
 	return true;
 }
 
 Bool
-apc_gp_set_fill_mode( Handle self, int fillMode)
+apc_gp_set_fill_mode( Handle self, int fill_mode)
 {
 	objCheck false;
 	if ( sys ps) {
-		SetPolyFillMode( sys ps, ((fillMode & fmWinding) == fmAlternate) ? ALTERNATE : WINDING);
-		sys psFillMode = fillMode;
+		SetPolyFillMode( sys ps, ((fill_mode & fmWinding) == fmAlternate) ? ALTERNATE : WINDING);
+		sys ps_fill_mode = fill_mode;
 	} else
-		sys fillMode = fillMode;
+		sys fill_mode = fill_mode;
 	return true;
 }
 
@@ -1221,11 +1221,11 @@ apc_gp_set_fill_pattern( Handle self, FillPattern pattern)
 	uint32_t *p2 = p1 + 1;
 
 	if ( !ps) {
-		memcpy( &sys fillPattern2, pattern, sizeof( FillPattern));
+		memcpy( &sys fill_pattern2, pattern, sizeof( FillPattern));
 		return true;
 	}
 
-	memcpy( &sys fillPattern, pattern, sizeof( FillPattern));
+	memcpy( &sys fill_pattern, pattern, sizeof( FillPattern));
 	if (( *p1 == 0) && ( *p2 == 0)) {
 		b-> logbrush.lbStyle = BS_SOLID;
 		b-> logbrush.lbColor = GetBkColor( ps);
@@ -1274,7 +1274,7 @@ apc_gp_set_fill_pattern_offset( Handle self, Point offset)
 			GdipTranslateTextureTransform(CURRENT_GP_BRUSH,offset.x,-offset.y,MatrixOrderPrepend);
 		}
 	} else
-		sys fillPatternOffset = offset;
+		sys fill_pattern_offset = offset;
 	return true;
 }
 
@@ -1310,7 +1310,7 @@ FillPattern *
 apc_gp_get_fill_pattern( Handle self)
 {
 	objCheck NULL;
-	return sys ps ? &sys fillPattern : &sys fillPattern2;
+	return sys ps ? &sys fill_pattern : &sys fill_pattern2;
 }
 
 Point
@@ -1320,7 +1320,7 @@ apc_gp_get_fill_pattern_offset( Handle self)
 	POINT wp;
 	objCheck p;
 	if ( !sys ps)
-		return sys fillPatternOffset;
+		return sys fill_pattern_offset;
 	GetBrushOrgEx( sys ps, &wp);
 	p. x = wp. x;
 	p. y = 8 - wp. y;
@@ -1328,13 +1328,13 @@ apc_gp_get_fill_pattern_offset( Handle self)
 }
 
 Bool
-apc_gp_set_line_end( Handle self, int lineEnd)
+apc_gp_set_line_end( Handle self, int line_end)
 {
 	objCheck false;
 	if ( !sys ps) {
-		sys lineEnd = lineEnd;
+		sys line_end = line_end;
 	} else {
-		sys rq_pen.line_end = ctx_remap_def( lineEnd, ctx_le2PS_ENDCAP, true, PS_ENDCAP_ROUND);
+		sys rq_pen.line_end = ctx_remap_def( line_end, ctx_le2PS_ENDCAP, true, PS_ENDCAP_ROUND);
 		if (( sys rq_pen.geometric = stylus_is_geometric(self)))
 			sys rq_pen.style = stylus_get_extpen_style(self);
 		STYLUS_FREE_PEN;
@@ -1344,13 +1344,13 @@ apc_gp_set_line_end( Handle self, int lineEnd)
 }
 
 Bool
-apc_gp_set_line_join( Handle self, int lineJoin)
+apc_gp_set_line_join( Handle self, int line_join)
 {
 	objCheck false;
 	if ( !sys ps) {
-		sys lineJoin = lineJoin;
+		sys line_join = line_join;
 	} else {
-		sys rq_pen.line_join = ctx_remap_def( lineJoin, ctx_lj2PS_JOIN, true, PS_JOIN_ROUND);
+		sys rq_pen.line_join = ctx_remap_def( line_join, ctx_lj2PS_JOIN, true, PS_JOIN_ROUND);
 		if (( sys rq_pen.geometric = stylus_is_geometric(self)))
 			sys rq_pen.style = stylus_get_extpen_style(self);
 		STYLUS_FREE_PEN;
@@ -1360,18 +1360,18 @@ apc_gp_set_line_join( Handle self, int lineJoin)
 }
 
 Bool
-apc_gp_set_line_width( Handle self, float lineWidth)
+apc_gp_set_line_width( Handle self, float line_width)
 {
 	objCheck false;
 	if ( sys ps) {
-		if ( lineWidth < 0.0 || lineWidth > 8192.0) lineWidth = 0.0;
-		sys rq_pen.logpen.lopnWidth.x = lineWidth + .5;
+		if ( line_width < 0.0 || line_width > 8192.0) line_width = 0.0;
+		sys rq_pen.logpen.lopnWidth.x = line_width + .5;
 		if (( sys rq_pen.geometric = stylus_is_geometric(self)))
 			sys rq_pen.style = stylus_get_extpen_style(self);
 		STYLUS_FREE_PEN;
 		STYLUS_FREE_GP_PEN;
 	}
-	sys lineWidth = lineWidth;
+	sys line_width = line_width;
 	return true;
 }
 
@@ -1380,21 +1380,21 @@ apc_gp_set_line_pattern( Handle self, unsigned char * pattern, int len)
 {
 	objCheck false;
 	if ( !sys ps) {
-		if ( sys linePatternLen > sizeof(sys linePattern))
-			free( sys linePattern);
-		if ( len > sizeof(sys linePattern)) {
-			sys linePattern = ( unsigned char *) malloc( len);
-			if ( !sys linePattern) {
-				sys linePatternLen = 0;
+		if ( sys line_pattern_len > sizeof(sys line_pattern))
+			free( sys line_pattern);
+		if ( len > sizeof(sys line_pattern)) {
+			sys line_pattern = ( unsigned char *) malloc( len);
+			if ( !sys line_pattern) {
+				sys line_pattern_len = 0;
 				return false;
 			}
-			memcpy( sys linePattern, pattern, len);
+			memcpy( sys line_pattern, pattern, len);
 		} else
-			memcpy( &sys linePattern, pattern, len);
-		sys linePatternLen = len;
+			memcpy( &sys line_pattern, pattern, len);
+		sys line_pattern_len = len;
 	} else {
 		sys rq_pen.logpen.lopnStyle  = patres_user( pattern, len);
-		sys rq_pen.line_pattern = &hPatHollow;
+		sys rq_pen.line_pattern = &std_hollow_line_pattern;
 		if (( sys rq_pen.geometric = stylus_is_geometric(self))) {
 			sys rq_pen.style = stylus_get_extpen_style(self);
 			if ( sys rq_pen.logpen.lopnStyle == PS_USERSTYLE)
@@ -1411,7 +1411,7 @@ apc_gp_set_miter_limit( Handle self, float miter_limit)
 {
 	objCheck false;
 	if ( !sys ps) {
-		sys miterLimit = miter_limit;
+		sys miter_limit = miter_limit;
 		return true;
 	} else 
 		return SetMiterLimit( sys ps, (FLOAT) miter_limit, NULL);
@@ -1434,7 +1434,7 @@ apc_gp_set_palette( Handle self)
 		if ( pal)
 			SelectPalette( sys ps, pal, 0);
 		else
-			SelectPalette( sys ps, sys stockPalette, 1);
+			SelectPalette( sys ps, sys stock_palette, 1);
 		RealizePalette( sys ps);
 	}
 	if ( sys pal) DeleteObject( sys pal);
@@ -1447,8 +1447,8 @@ apc_gp_set_rop( Handle self, int rop)
 {
 	objCheck false;
 	if ( !sys ps) { sys rop = rop; return true; }
-	sys currentROP = ctx_remap_def( rop, ctx_rop2R2, true, R2_COPYPEN);
-	if ( !SetROP2( sys ps, sys currentROP)) apiErr;
+	sys current_rop = ctx_remap_def( rop, ctx_rop2R2, true, R2_COPYPEN);
+	if ( !SetROP2( sys ps, sys current_rop)) apiErr;
 	return true;
 }
 
@@ -1458,7 +1458,7 @@ apc_gp_set_rop2( Handle self, int rop)
 	objCheck false;
 	if ( !sys ps) { sys rop2 = rop; return true; }
 	if ( rop != ropCopyPut) rop = ropNoOper;
-	sys currentROP2 = rop;
+	sys current_rop2 = rop;
 	if ( !SetBkMode( sys ps, ( rop == ropCopyPut) ? OPAQUE : TRANSPARENT)) apiErr;
 	STYLUS_FREE_GP_BRUSH;
 	return true;
@@ -1515,30 +1515,30 @@ apc_gp_push(Handle self, GCStorageFunction * destructor, void * user_data, unsig
 		state->paint.font_sin  = sys font_sin;
 		state->paint.font_cos  = sys font_cos;
 
-		memcpy( state->common.fill_pattern, sys fillPattern, sizeof(FillPattern));
-		state->common.fill_mode  = sys psFillMode;
-		state->common.rop        = sys currentROP;
-		state->common.rop2       = sys currentROP2;
+		memcpy( state->common.fill_pattern, sys fill_pattern, sizeof(FillPattern));
+		state->common.fill_mode  = sys ps_fill_mode;
+		state->common.rop        = sys current_rop;
+		state->common.rop2       = sys current_rop2;
 		state->common.transform  = sys gp_transform;
 		state->common.antialias  = is_apt(aptGDIPlus);
 
 		state->paint.rq_pen      = sys rq_pen;
 		state->paint.rq_brush    = sys rq_brush;
 	} else {
-		state->common.fill_mode  = sys fillMode;
-		memcpy( state->common.fill_pattern, sys fillPattern2, sizeof(FillPattern));
-		state->common.fill_pattern_offset = sys fillPatternOffset;
-		state->common.line_end    = sys lineEnd;
-		state->common.line_join   = sys lineJoin;
-		state->common.miter_limit = sys miterLimit;
-		state->common.line_pattern_len = sys linePatternLen;
-		if ( state->common.line_pattern_len > sizeof(sys linePattern)) {
+		state->common.fill_mode  = sys fill_mode;
+		memcpy( state->common.fill_pattern, sys fill_pattern2, sizeof(FillPattern));
+		state->common.fill_pattern_offset = sys fill_pattern_offset;
+		state->common.line_end    = sys line_end;
+		state->common.line_join   = sys line_join;
+		state->common.miter_limit = sys miter_limit;
+		state->common.line_pattern_len = sys line_pattern_len;
+		if ( state->common.line_pattern_len > sizeof(sys line_pattern)) {
 			if (( state->common.line_pattern = malloc(state->common.line_pattern_len)) != NULL)
-				memcpy( state->common.line_pattern, sys linePattern, state->common.line_pattern_len);
+				memcpy( state->common.line_pattern, sys line_pattern, state->common.line_pattern_len);
 			else
 				state->common.line_pattern_len = 0;
 		} else
-			state->common.line_pattern = sys linePattern;
+			state->common.line_pattern = sys line_pattern;
 		state->nonpaint.palette = palette_create(self);
 		state->common.rop         = sys rop;
 		state->common.rop2        = sys rop2;
@@ -1549,7 +1549,7 @@ apc_gp_push(Handle self, GCStorageFunction * destructor, void * user_data, unsig
 	state->common.fg            = sys fg;
 	state->common.bg            = sys bg;
 	state->common.font          = var font;
-	state->common.line_width    = sys lineWidth;
+	state->common.line_width    = sys line_width;
 	state->common.text_out_baseline = is_apt( aptTextOutBaseline);
 	state->common.text_opaque   = is_apt( aptTextOpaque);
 	if ( var fillPatternImage )
@@ -1581,11 +1581,11 @@ apc_gp_pop( Handle self, void * user_data)
 		sys rq_pen           = state-> paint.rq_pen;
 		sys rq_brush         = state-> paint.rq_brush;
 
-		memcpy( sys fillPattern, state->common.fill_pattern, sizeof(FillPattern));
-		sys psFillMode       = state->common.fill_mode;
+		memcpy( sys fill_pattern, state->common.fill_pattern, sizeof(FillPattern));
+		sys ps_fill_mode       = state->common.fill_mode;
 		sys pal              = GetCurrentObject(sys ps, OBJ_PAL);
-		sys currentROP       = state->common.rop;
-		sys currentROP2      = state->common.rop2;
+		sys current_rop       = state->common.rop;
+		sys current_rop2      = state->common.rop2;
 		sys gp_transform     = state->common.transform;
 
 		if (sys graphics) {
@@ -1596,7 +1596,7 @@ apc_gp_pop( Handle self, void * user_data)
 			if ( res <= 0 ) {
 				if ( res < 0 ) apiErr;
 				DeleteObject(rgn);
-				rgn = CreateRectRgn(0,0,sys lastSize.x,sys lastSize.y);
+				rgn = CreateRectRgn(0,0,sys last_size.x,sys last_size.y);
 			}
 			GPCALL GdipSetClipHrgn(sys graphics, rgn, CombineModeReplace);
 			apiGPErrCheck;
@@ -1609,17 +1609,17 @@ apc_gp_pop( Handle self, void * user_data)
 			GdipTranslateTextureTransform(CURRENT_GP_BRUSH,offset.x,offset.y,MatrixOrderPrepend);
 		}
 	} else {
-		sys fillMode = state->common.fill_mode;
-		memcpy( sys fillPattern2, state->common.fill_pattern, sizeof(FillPattern));
-		sys fillPatternOffset = state->common.fill_pattern_offset;
-		sys lineEnd        = state->common.line_end;
-		sys lineJoin       = state->common.line_join;
-		sys lineWidth      = state->common.line_width;
-		sys miterLimit     = state->common.miter_limit;
-		if ( sys linePatternLen > sizeof(sys linePattern)) 
-			free(sys linePattern);
-		sys linePatternLen = state->common.line_pattern_len;
-		sys linePattern    = state->common.line_pattern;
+		sys fill_mode = state->common.fill_mode;
+		memcpy( sys fill_pattern2, state->common.fill_pattern, sizeof(FillPattern));
+		sys fill_pattern_offset = state->common.fill_pattern_offset;
+		sys line_end        = state->common.line_end;
+		sys line_join       = state->common.line_join;
+		sys line_width      = state->common.line_width;
+		sys miter_limit     = state->common.miter_limit;
+		if ( sys line_pattern_len > sizeof(sys line_pattern)) 
+			free(sys line_pattern);
+		sys line_pattern_len = state->common.line_pattern_len;
+		sys line_pattern    = state->common.line_pattern;
 		if ( sys pal ) DeleteObject( sys pal);
 		sys pal            = state-> nonpaint.palette;
 		sys rop            = state-> common.rop;
@@ -1637,9 +1637,9 @@ apc_gp_pop( Handle self, void * user_data)
 	var fillPatternImage = state-> fill_image;
 	apt_assign(aptTextOutBaseline, state->common.text_out_baseline);
 	apt_assign(aptTextOpaque,      state->common.text_opaque);
-	if ( sys alphaArenaPalette ) {
-		free(sys alphaArenaPalette);
-		sys alphaArenaPalette = NULL;
+	if ( sys alpha_arena_palette ) {
+		free(sys alpha_arena_palette);
+		sys alpha_arena_palette = NULL;
 	}
 
 	free(state);

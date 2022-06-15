@@ -69,7 +69,7 @@ get_view_ex( Handle self, PViewProfile p)
 	if ( !p) return;
 	p-> capture   = apc_widget_is_captured( self);
 	for ( i = 0; i <= ciMaxId; i++) p-> colors[ i] = apc_widget_get_color( self, i);
-	if ( sys className == WC_FRAME) {
+	if ( sys class_name == WC_FRAME) {
 		p-> pos       = apc_window_get_client_pos( self);
 		p-> size      = apc_window_get_client_size( self);
 	} else {
@@ -81,7 +81,7 @@ get_view_ex( Handle self, PViewProfile p)
 	p-> focused   = apc_widget_is_focused( self);
 	p-> visible   = apc_widget_is_visible( self);
 	p-> shape = CreateRectRgn(0,0,0,0);
-	if ( sys className == WC_FRAME && is_apt(aptLayered))
+	if ( sys class_name == WC_FRAME && is_apt(aptLayered))
 		i = GetWindowRgn((HWND) var handle, p->shape);
 	else
 		i = GetWindowRgn( HANDLE, p->shape);
@@ -96,14 +96,14 @@ set_view_ex( Handle self, PViewProfile p)
 {
 	int i;
 	Bool clip_by_children;
-	if ( sys className == WC_FRAME && is_apt(aptLayered)) {
+	if ( sys class_name == WC_FRAME && is_apt(aptLayered)) {
 		SetWindowRgn((HWND) var handle, p-> shape, true);
 	} else
 		SetWindowRgn( HANDLE, p-> shape, true);
 	apc_widget_set_visible( self, false);
 	for ( i = 0; i <= ciMaxId; i++) apc_widget_set_color( self, p-> colors[i], i);
 	apc_widget_set_font( self, &var font);
-	if ( sys className == WC_FRAME) {
+	if ( sys class_name == WC_FRAME) {
 		apc_window_set_client_rect( self, p-> pos. x, p-> pos. y, p-> size.x, p-> size.y);
 	} else {
 		apc_widget_set_rect( self, p-> pos. x, p-> pos. y, p-> size.x, p-> size.y);
@@ -130,9 +130,9 @@ static Bool repost_msgs( PostMsg * msg, Handle self)
 
 static Bool
 create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
-				Bool taskListed, int className, DWORD style, DWORD exstyle,
+				Bool taskListed, int class_name, DWORD style, DWORD exstyle,
 				Bool usePos, Bool useSize,
-				ViewProfile * vprf, HWND parentHandle)
+				ViewProfile * vprf, HWND parent_handle)
 {
 	HWND ret = NULL;
 	HWND old        = HANDLE;
@@ -164,10 +164,10 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
 		var self-> end_paint( self);
 		reset = true;
 		for( i = 0; i < count; i++)
-			get_view_ex( list[ i], ( ViewProfile*)( dsys( list[ i]) recreateData = malloc( sizeof( ViewProfile))));
+			get_view_ex( list[ i], ( ViewProfile*)( dsys( list[ i]) recreate_data = malloc( sizeof( ViewProfile))));
 	}
 
-	switch (( int) className)
+	switch (( int) class_name)
 	{
 	case WC_FRAME:
 		{
@@ -211,20 +211,20 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
 						guts. instance, NULL)))
 					apiErr;
 			}
-			sys lastSize. x = r. right  - r. left;
-			sys yOverride = sys lastSize. y = r. bottom - r. top;
+			sys last_size. x = r. right  - r. left;
+			sys y_override = sys last_size. y = r. bottom - r. top;
 			sys handle = frame;
 			SetWindowLongPtr( frame, GWLP_USERDATA, ( LONG) self);
 		}
 		break;
 	case WC_CUSTOM:
-		if ( !parentHandle && ( !clipOwner || owner == prima_guts.application)) {
+		if ( !parent_handle && ( !clipOwner || owner == prima_guts.application)) {
 				style &= ~WS_CHILD;
 				style |= WS_POPUP;
 				exstyle |= WS_EX_TOOLWINDOW;
 		}
-		if ( parentHandle) parentView = parentHandle;
-		sys parentHandle = parentHandle;
+		if ( parent_handle) parentView = parent_handle;
+		sys parent_handle = parent_handle;
 
 		if ( old )
 			SetWindowLongPtr( old, GWLP_USERDATA, 0);
@@ -243,7 +243,7 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
 	apt_set( aptEnabled);
 	apt_clear( aptRepaintPending );
 	apt_clear( aptMovePending );
-	sys className = className;
+	sys class_name = class_name;
 	sys parent  = ret;
 	var handle  = ( Handle) ret;
 	sys owner   = ownerView;
@@ -255,14 +255,14 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
 	{
 		int i;
 		Handle oldOwner = var owner; var owner = owner;
-		if ( sys className == WC_FRAME) {
+		if ( sys class_name == WC_FRAME) {
 			apc_window_set_client_rect( self, vprf-> pos. x, vprf-> pos. y, vprf-> size. x, vprf-> size. y);
 		} else {
 			apc_widget_set_rect( self, vprf-> pos. x, vprf-> pos. y, vprf-> size. x, vprf-> size. y);
 		}
 		var owner = oldOwner;
 		for ( i = 0; i < count; i++) ((( PComponent) list[ i])-> self)-> recreate( list[ i]);
-		if ( sys className == WC_FRAME)
+		if ( sys class_name == WC_FRAME)
 		{
 			SetMenu( HANDLE, GetMenu( old));
 			SetMenu( old, NULL);
@@ -316,8 +316,8 @@ notify_sys_handle( Handle self )
 
 // Window
 Bool
-apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
-						int borderStyle, Bool taskList, int windowState,
+apc_window_create( Handle self, Handle owner, Bool syncPaint, int border_icons,
+						int border_style, Bool taskList, int windowState,
 						int on_top, Bool usePos, Bool useSize, Bool layered)
 {
 	Bool reset = false;
@@ -328,30 +328,30 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
 	HICON icon = (HICON) NULL_HANDLE;
 	WINDOWPLACEMENT wp = {sizeof(WINDOWPLACEMENT)};
 	DWORD style = WS_CLIPCHILDREN | WS_OVERLAPPED
-		| (( borderIcons &  biSystemMenu) ? WS_SYSMENU     : 0)
-		| (( borderIcons &  biMinimize)   ? WS_MINIMIZEBOX : 0)
-		| (( borderIcons &  biMaximize)   ? WS_MAXIMIZEBOX : 0)
-		| (( borderIcons &  biTitleBar)   ? 0              : WS_POPUP)
-		| (( borderStyle == bsSizeable)   ? WS_THICKFRAME  : 0)
-		| (( borderStyle == bsSingle  )   ? WS_BORDER      : 0)
-		| (( borderStyle == bsDialog  )   ? WS_BORDER      : 0)
+		| (( border_icons &  biSystemMenu) ? WS_SYSMENU     : 0)
+		| (( border_icons &  biMinimize)   ? WS_MINIMIZEBOX : 0)
+		| (( border_icons &  biMaximize)   ? WS_MAXIMIZEBOX : 0)
+		| (( border_icons &  biTitleBar)   ? 0              : WS_POPUP)
+		| (( border_style == bsSizeable)   ? WS_THICKFRAME  : 0)
+		| (( border_style == bsSingle  )   ? WS_BORDER      : 0)
+		| (( border_style == bsDialog  )   ? WS_BORDER      : 0)
 		| (( windowState == wsMinimized)  ? WS_MINIMIZE    : 0)
 		| (( windowState == wsMaximized)  ? WS_MAXIMIZE    : 0)
 	;
 	DWORD exstyle = 0
-		| (( borderStyle == bsDialog  )   ? WS_EX_DLGMODALFRAME : 0)
+		| (( border_style == bsDialog  )   ? WS_EX_DLGMODALFRAME : 0)
 	;
 
 	objCheck false;
 	dobjCheck( owner) false;
-	if ( guts. displayBMInfo. bmiHeader. biBitCount <= 8) layered = false;
+	if ( guts. display_bm_info. bmiHeader. biBitCount <= 8) layered = false;
 
 	if ( !kind_of( self, CWidget)) apcErrRet( errInvObject);
 	apcErrClear;
 	if (( var handle != NULL_HANDLE) && (
 			( DHANDLE( owner) != sys owner)
-		|| ( borderStyle != sys s. window. borderStyle)
-		|| ( borderIcons != sys s. window. borderIcons)
+		|| ( border_style != sys s. window. border_style)
+		|| ( border_icons != sys s. window. border_icons)
 		|| ( taskList    != is_apt( aptTaskList))
 		|| ( layered     != is_apt( aptLayered))
 	))
@@ -365,10 +365,10 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
 		apc_window_set_window_state( self, windowState);
 		apt_clear( aptIgnoreSizeMessages );
 		// prevent cmSize/cmWindowStage message loss if recreate goes with WS_XXX change.
-		if ( sys recreateData) {
-			memcpy( &vprf, sys recreateData, sizeof( vprf));
-			free( sys recreateData);
-			sys recreateData = NULL;
+		if ( sys recreate_data) {
+			memcpy( &vprf, sys recreate_data, sizeof( vprf));
+			free( sys recreate_data);
+			sys recreate_data = NULL;
 		} else
 			get_view_ex( self, &vprf);
 		ws = sys s. window;
@@ -379,7 +379,7 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
 		icon = ( HICON) SendMessage( HANDLE, WM_GETICON, ICON_BIG, 0);
 		reset = true;
 	}
-	HWND_lock( true);
+	hwnd_lock( true);
 
 	if ( !reset) apt_set( aptClipByChildren );
 	apt_assign( aptLayeredRequested, layered );
@@ -394,12 +394,12 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
 					SetWindowPos( sys handle, HWND_TOPMOST, 0, 0, 0, 0,
 						SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
 			}
-			HWND_lock( false);
+			hwnd_lock( false);
 			if ( saved_caption ) free( saved_caption );
 			return false;
 		}
-	ws. borderStyle = sys s. window. borderStyle = borderStyle;
-	ws. borderIcons = sys s. window. borderIcons = borderIcons;
+	ws. border_style = sys s. window. border_style = border_style;
+	ws. border_icons = sys s. window. border_icons = border_icons;
 	ws. state       = sys s. window. state       = windowState;
 	apt_assign( aptSyncPaint, syncPaint);
 	apt_assign( aptTaskList,  taskList);
@@ -420,7 +420,7 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
 		if ( icon) SendMessage( HANDLE, WM_SETICON, ICON_BIG, ( LPARAM) icon);
 	}
 	else {
-		guts. topWindows++;
+		guts. top_windows++;
 	}
 	if ( on_top >= 0) {
 		apt_assign( aptOnTop, on_top);
@@ -430,12 +430,12 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
 	}
 	SetWindowTextW( HANDLE, saved_caption );
 	if ( saved_caption ) free( saved_caption );
-	HWND_lock( false);
+	hwnd_lock( false);
 	if ( reset ) {
 		notify_sys_handle( self );
 		if ( layered ) hwnd_repaint_layered(self, false);
 	}
-	return guts.apcError == 0;
+	return guts.apc_error == 0;
 }
 
 Bool
@@ -464,7 +464,7 @@ apc_window_get_active( void)
 	Handle self = hwnd_to_view( GetActiveWindow());
 	if ( !self)
 		return NULL_HANDLE;
-	if ( sys className == WC_FRAME)
+	if ( sys class_name == WC_FRAME)
 		return self;
 	else if ( !is_apt( aptClipOwner)) {
 		return hwnd_top_level( self);
@@ -484,14 +484,14 @@ int
 apc_window_get_border_icons( Handle self)
 {
 	objCheck 0;
-	return sys s. window. borderIcons;
+	return sys s. window. border_icons;
 }
 
 int
 apc_window_get_border_style( Handle self)
 {
 	objCheck 0;
-	return sys s. window. borderStyle;
+	return sys s. window. border_style;
 }
 
 ApiHandle
@@ -504,7 +504,7 @@ apc_window_get_client_handle( Handle self)
 Point
 apc_window_get_client_pos( Handle self)
 {
-	Point delta = get_window_borders( sys s. window. borderStyle);
+	Point delta = get_window_borders( sys s. window. border_style);
 	Handle parent = var self-> get_parent( self);
 	Point p = {0,0}, sz   = CWidget( parent)-> get_size( parent);
 	RECT  r;
@@ -532,9 +532,9 @@ apc_window_get_client_size( Handle self)
 	if ( apc_window_get_window_state( self) == wsMinimized) {
 		// cannot acquire client extension at this time. Using euristic calculations.
 		WINDOWPLACEMENT w = {sizeof(WINDOWPLACEMENT)};
-		Point delta = get_window_borders( sys s. window. borderStyle);
+		Point delta = get_window_borders( sys s. window. border_style);
 		int   menuY  = (( PWindow) self)-> menu ? GetSystemMetrics( SM_CYMENU) : 0;
-		int   titleY = ( sys s. window. borderIcons & biTitleBar) ?
+		int   titleY = ( sys s. window. border_icons & biTitleBar) ?
 							GetSystemMetrics( SM_CYCAPTION) : 0;
 		if ( !GetWindowPlacement( HANDLE, &w)) apiErr;
 		p. x = w. rcNormalPosition. right  - w. rcNormalPosition. left - delta. x * 2;
@@ -608,7 +608,7 @@ apc_window_set_caption( Handle self, const char * caption, Bool utf8)
 Bool
 apc_window_set_client_pos( Handle self, int x, int y)
 {
-	Point delta = get_window_borders( sys s. window. borderStyle);
+	Point delta = get_window_borders( sys s. window. border_style);
 	RECT  r;
 	Handle parent = var self-> get_parent( self);
 	Point sz = CWidget( parent)-> get_size( parent);
@@ -648,7 +648,7 @@ apc_window_set_client_size( Handle self, int x, int y)
 	h = HANDLE;
 	if (( var stage == csConstructing && ws != wsNormal) || ws == wsMinimized) {
 		WINDOWPLACEMENT w = {sizeof(WINDOWPLACEMENT)};
-		Point delta = get_window_borders( sys s. window. borderStyle);
+		Point delta = get_window_borders( sys s. window. border_style);
 
 		var virtualSize. x = x;
 		var virtualSize. y = y;
@@ -662,7 +662,7 @@ apc_window_set_client_size( Handle self, int x, int y)
 		else {
 			// cannot acquire client extension at this time. Using euristic calculations.
 			int  menuY = (( PWindow) self)-> menu ? GetSystemMetrics( SM_CYMENU) : 0;
-			int   titleY = ( sys s. window. borderIcons & biTitleBar) ?
+			int   titleY = ( sys s. window. border_icons & biTitleBar) ?
 								GetSystemMetrics( SM_CYCAPTION) : 0;
 			c = c2;
 			c. right  -= delta. x * 2;
@@ -675,7 +675,7 @@ apc_window_set_client_size( Handle self, int x, int y)
 	} else {
 		if ( !GetWindowRect( h, &r)) apiErr;
 		if ( !GetClientRect( h, &c)) apiErr;
-		sys sizeLockLevel++;
+		sys size_lock_level++;
 		var virtualSize. x = x;
 		var virtualSize. y = y;
 		if ( x < 0) x = 0;
@@ -688,7 +688,7 @@ apc_window_set_client_size( Handle self, int x, int y)
 			SWP_NOZORDER | SWP_NOACTIVATE |
 				( is_apt( aptWinPosDetermined) ? 0 : SWP_NOMOVE)
 			);
-		sys sizeLockLevel--;
+		sys size_lock_level--;
 	}
 	return true;
 }
@@ -699,7 +699,7 @@ apc_window_set_client_rect( Handle self, int x, int y, int width, int height)
 	RECT r, c, c2;
 	HWND h;
 	int  ws = apc_window_get_window_state( self);
-	Point delta = get_window_borders( sys s. window. borderStyle);
+	Point delta = get_window_borders( sys s. window. border_style);
 	Handle parent = var self-> get_parent( self);
 	Point sz = CWidget( parent)-> get_size( parent);
 
@@ -711,7 +711,7 @@ apc_window_set_client_rect( Handle self, int x, int y, int width, int height)
 	h = HANDLE;
 	if (( var stage == csConstructing && ws != wsNormal) || ws == wsMinimized) {
 		WINDOWPLACEMENT w = {sizeof(WINDOWPLACEMENT)};
-		Point delta = get_window_borders( sys s. window. borderStyle);
+		Point delta = get_window_borders( sys s. window. border_style);
 
 		var virtualSize. x = width;
 		var virtualSize. y = height;
@@ -725,7 +725,7 @@ apc_window_set_client_rect( Handle self, int x, int y, int width, int height)
 		else {
 			// cannot acquire client extension at this time. Using euristic calculations.
 			int  menuY = (( PWindow) self)-> menu ? GetSystemMetrics( SM_CYMENU) : 0;
-			int   titleY = ( sys s. window. borderIcons & biTitleBar) ?
+			int   titleY = ( sys s. window. border_icons & biTitleBar) ?
 								GetSystemMetrics( SM_CYCAPTION) : 0;
 			c = c2;
 			c. right  -= delta. x * 2;
@@ -740,7 +740,7 @@ apc_window_set_client_rect( Handle self, int x, int y, int width, int height)
 	} else {
 		if ( !GetWindowRect( h, &r)) apiErr;
 		if ( !GetClientRect( h, &c)) apiErr;
-		sys sizeLockLevel++;
+		sys size_lock_level++;
 		x -= delta. x;
 		y  = sz. y - y - height - ( r. bottom - r. top  - c. bottom + c. top) + delta. y;
 		var virtualSize. x = width;
@@ -752,7 +752,7 @@ apc_window_set_client_rect( Handle self, int x, int y, int width, int height)
 			width + r. right  - r. left - c. right + c. left,
 			height + r. bottom - r. top  - c. bottom + c. top,
 			SWP_NOZORDER | SWP_NOACTIVATE);
-		sys sizeLockLevel--;
+		sys size_lock_level--;
 	}
 	return true;
 }
@@ -768,7 +768,7 @@ apc_window_set_menu( Handle self, Handle menu)
 	DrawMenuBar( HANDLE);
 	if ( apc_window_get_window_state( self) == wsNormal)
 		var self-> set_size( self, size);
-	return guts.apcError == 0;
+	return guts.apc_error == 0;
 }
 
 Bool
@@ -782,7 +782,7 @@ apc_window_set_icon( Handle self, Handle icon)
 {
 	HICON i;
 	objCheck false;
-	i = icon ? image_make_icon_handle( icon, guts. iconSizeLarge, NULL) : NULL;
+	i = icon ? image_make_icon_handle( icon, guts. icon_size_large, NULL) : NULL;
 	i = ( HICON) SendMessage( HANDLE, WM_SETICON, ICON_BIG, ( LPARAM) i);
 	if ( i) DestroyIcon( i);
 	return true;
@@ -815,14 +815,14 @@ window_start_modal( Handle self, Bool shared, Handle insertBefore)
 
 	objCheck false;
 	wnd = HANDLE;
-	if ( sys className != WC_FRAME) { apcErr( errInvParams); return false; }
+	if ( sys class_name != WC_FRAME) { apcErr( errInvParams); return false; }
 
-	sys s. window. oldFoc = apc_widget_get_focused();
-	if ( sys s. window. oldFoc) protect_object( sys s. window. oldFoc);
-	sys s. window. oldActive = active;
+	sys s. window. old_foc = apc_widget_get_focused();
+	if ( sys s. window. old_foc) protect_object( sys s. window. old_foc);
+	sys s. window. old_active = active;
 
 	// setting window up
-	guts. focSysDisabled = 1;
+	guts. sys_focus_disabled = 1;
 	CWindow( self)-> exec_enter_proc( self, shared, insertBefore);
 	apc_widget_set_enabled( self, 1);
 	SetWindowPos( wnd, 0, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE|SWP_NOZORDER|SWP_SHOWWINDOW);
@@ -842,7 +842,7 @@ window_start_modal( Handle self, Bool shared, Handle insertBefore)
 	}
 	objCheck false;
 	PostMessage( wnd, WM_DLGENTERMODAL, 1, 0);
-	guts. focSysDisabled = 0;
+	guts. sys_focus_disabled = 0;
 	return true;
 }
 
@@ -858,7 +858,7 @@ apc_window_execute( Handle self, Handle insertBefore)
 		while ( GetMessage( &msg, NULL, 0, 0)) {
 			if ( !process_msg( &msg)) {
 				if ( !prima_guts.app_is_dead)
-					PostThreadMessage( guts. mainThreadId, WM_TERMINATE, 0, 0);
+					PostThreadMessage( guts. main_thread_id, WM_TERMINATE, 0, 0);
 				break;
 			}
 			if ( self && !(( PWindow) self)-> modal)
@@ -882,7 +882,7 @@ apc_window_end_modal( Handle self)
 	HWND wnd;
 	objCheck false;
 	wnd = HANDLE;
-	guts. focSysDisabled = 1;
+	guts. sys_focus_disabled = 1;
 	CWindow( self)-> exec_leave_proc( self);
 	WinHideWindow( wnd);
 	objCheck false;
@@ -890,17 +890,17 @@ apc_window_end_modal( Handle self)
 	objCheck false;
 	if ( prima_guts.application) {
 		Handle who = Application_popup_modal( prima_guts.application);
-		if ( sys s. window. oldActive)
-			SetActiveWindow( sys s. window. oldActive);
+		if ( sys s. window. old_active)
+			SetActiveWindow( sys s. window. old_active);
 		if ( !who && var owner)
 			CWidget( var owner)-> set_selected( var owner, 1);
-		if (( who = sys s. window. oldFoc)) {
+		if (( who = sys s. window. old_foc)) {
 			if ( PWidget( who)-> stage == csNormal)
 				CWidget( who)-> set_focused( who, 1);
 			unprotect_object( who);
 		}
 	}
-	guts. focSysDisabled = 0;
+	guts. sys_focus_disabled = 0;
 	return true;
 }
 
@@ -942,7 +942,7 @@ apc_widget_map_color( Handle self, Color color)
 
 Bool
 apc_widget_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
-						Bool transparent, ApiHandle parentHandle, Bool layered)
+						Bool transparent, ApiHandle parent_handle, Bool layered)
 {
 	Bool reset = false, redraw = false;
 	ViewProfile vprf;
@@ -955,11 +955,11 @@ apc_widget_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
 	if ( !kind_of( self, CWidget)) apcErr( errInvObject);
 	apcErrClear;
 
-	if ( parentHandle && !IsWindow(( HWND) parentHandle))
+	if ( parent_handle && !IsWindow(( HWND) parent_handle))
 		return false;
 
 	exstyle = 0;
-	if ( guts. displayBMInfo. bmiHeader. biBitCount <= 8) layered = false;
+	if ( guts. display_bm_info. bmiHeader. biBitCount <= 8) layered = false;
 
 	redraw = is_apt( aptLayeredRequested ) != layered;
 	apt_assign( aptLayeredRequested, layered );
@@ -971,14 +971,14 @@ apc_widget_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
 
 	if (( var handle != NULL_HANDLE) &&
 			(( DHANDLE( owner) != sys owner)                 ||
-			(( HWND) parentHandle != sys parentHandle)       ||
+			(( HWND) parent_handle != sys parent_handle)       ||
 			( clipOwner       != is_apt( aptClipOwner))
 		))
 	{
-		if ( sys recreateData) {
-			memcpy( &vprf, sys recreateData, sizeof( vprf));
-			free( sys recreateData);
-			sys recreateData = NULL;
+		if ( sys recreate_data) {
+			memcpy( &vprf, sys recreate_data, sizeof( vprf));
+			free( sys recreate_data);
+			sys recreate_data = NULL;
 		} else
 			get_view_ex( self, &vprf);
 		reset = true;
@@ -986,7 +986,7 @@ apc_widget_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
 	if ( !reset) apt_set( aptClipByChildren );
 	if ( reset || ( var handle == NULL_HANDLE))
 		create_group( self, owner, syncPaint, clipOwner, 0, WC_CUSTOM,
-			WS_CHILD, exstyle, 1, 1, &vprf, ( HWND) parentHandle);
+			WS_CHILD, exstyle, 1, 1, &vprf, ( HWND) parent_handle);
 	apt_set( aptWinPosDetermined);
 	if ( reset)
 	{
@@ -1003,7 +1003,7 @@ apc_widget_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
 		notify_sys_handle( self );
 		apc_widget_redraw( self);
 	}
-	return guts.apcError == 0;
+	return guts.apc_error == 0;
 }
 
 Bool
@@ -1014,7 +1014,7 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
 	apcErrClear;
 
 	if ( is_apt( aptLayeredPaint )) {
-		sys transform2 = sys layeredPaintOffset;
+		sys transform2 = sys layered_paint_offset;
 	} else if ( is_apt( aptTransparent)) {
 		if ( IsWindowVisible(( HWND) var handle)) {
 			HWND parent = GetParent( HANDLE);
@@ -1046,7 +1046,7 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
 	apt_assign( aptWM_PAINT, insideOnPaint);
 
 	if ( is_apt( aptLayeredPaint )) {
-		sys ps = sys layeredPaintSurface;
+		sys ps = sys layered_paint_surface;
 	} else if ( is_apt( aptLayered )) {
 		RECT r;
 
@@ -1055,9 +1055,9 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
 		sys ps2     = GetDC(NULL);
 		sys ps      = CreateCompatibleDC(sys ps2);
 		sys bm      = CreateCompatibleBitmap(sys ps2, r. right - r. left, r. bottom - r. top);
-		sys stockBM = SelectObject(sys ps, sys bm);
+		sys stock_bitmap = SelectObject(sys ps, sys bm);
 	} else if ( insideOnPaint) {
-		if ( !( sys ps = BeginPaint(( HWND) var handle, &sys paintStruc))) apiErrRet;
+		if ( !( sys ps = BeginPaint(( HWND) var handle, &sys paint_struct))) apiErrRet;
 	} else {
 		if ( !( sys ps = GetDC(( HWND) var handle))) apiErrRet;
 	}
@@ -1072,7 +1072,7 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
 		var h = r. bottom - r. top;
 
 		if ( var w == 0 || var h == 0) {
-			if ( !EndPaint(( HWND) var handle, &sys paintStruc)) apiErr;
+			if ( !EndPaint(( HWND) var handle, &sys paint_struct)) apiErr;
 			apt_clear( aptWinPS);
 			apt_clear( aptWM_PAINT);
 			apt_clear( aptCompatiblePS);
@@ -1083,13 +1083,13 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
 		if ( !( dc = CreateCompatibleDC( sys ps))) apiErr;
 
 		if ( sys pal) {
-			sys stockPalette = SelectPalette( dc, sys pal, 1);
+			sys stock_palette = SelectPalette( dc, sys pal, 1);
 			RealizePalette( dc);
 			sys pal2 = SelectPalette( sys ps, sys pal, 1);
 			RealizePalette( sys ps);
 		}
 
-		if ( guts. displayBMInfo. bmiHeader. biBitCount == 8)
+		if ( guts. display_bm_info. bmiHeader. biBitCount == 8)
 			apt_clear( aptCompatiblePS);
 
 		bm = CreateCompatibleBitmap( sys ps, var w, var h);
@@ -1097,7 +1097,7 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
 		if ( bm) {
 			sys ps2 = sys ps;
 			sys ps  = dc;
-			sys stockBM = SelectObject( dc, bm);
+			sys stock_bitmap = SelectObject( dc, bm);
 			sys bm = bm;
 			SetBrushOrgEx( dc, -r. left, -r. top, NULL);
 			apc_gp_set_transform( self, -r. left, -r. top);
@@ -1108,7 +1108,7 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
 			apiErr;
 	} else if ( !is_apt(aptLayered) && !is_apt(aptLayeredPaint)) {
 		if ( sys pal) {
-			sys stockPalette = SelectPalette( sys ps, sys pal, 1);
+			sys stock_palette = SelectPalette( sys ps, sys pal, 1);
 			RealizePalette( sys ps);
 		}
 	}
@@ -1170,8 +1170,8 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
 		Rect r;
 		r. left   = 0;
 		r. bottom = 0;
-		r. right  = sys lastSize. x - 1;
-		r. top    = sys lastSize. y - 1;
+		r. right  = sys last_size. x - 1;
+		r. top    = sys last_size. y - 1;
 		apc_gp_set_clip_rect(self, r);
 	}
 
@@ -1205,13 +1205,13 @@ apc_widget_destroy( Handle self)
 		if ( sys pointer2 == sys pointer) SetCursor( NULL); // un-use resource first
 		if ( !DestroyCursor( sys pointer2)) apiErr;
 	}
-	if ( sys recreateData) free( sys recreateData);
-	if ( self == lastMouseOver) lastMouseOver = NULL_HANDLE;
-	if ( self == guts.dragTarget) guts.dragTarget = NULL_HANDLE;
+	if ( sys recreate_data) free( sys recreate_data);
+	if ( self == last_mouse_over) last_mouse_over = NULL_HANDLE;
+	if ( self == guts.drag_target) guts.drag_target = NULL_HANDLE;
 	if ( var handle == NULL_HANDLE) return true;
 
-	if ( sys className == WC_FRAME)
-		guts. topWindows--;
+	if ( sys class_name == WC_FRAME)
+		guts. top_windows--;
 
 	if ( !DestroyWindow( HANDLE)) apiErrRet;
 	return true;
@@ -1220,7 +1220,7 @@ apc_widget_destroy( Handle self)
 PFont
 apc_widget_default_font( PFont copyTo)
 {
-	*copyTo = guts. windowFont;
+	*copyTo = guts. window_font;
 	copyTo-> pitch = fpDefault;
 	return copyTo;
 }
@@ -1254,9 +1254,9 @@ subpaint_layered_widgets( HWND self, HDC ps, HDC alpha_dc, POINT screen_offset, 
 		child_offset. y = r. top;
 
 		dsys(h) options. aptLayeredPaint = 1;
-		dsys(h) layeredPaintOffset. x = -r. left;
-		dsys(h) layeredPaintOffset. y = -r. top;
-		dsys(h) layeredPaintSurface   = ps;
+		dsys(h) layered_paint_offset. x = -r. left;
+		dsys(h) layered_paint_offset. y = -r. top;
+		dsys(h) layered_paint_surface   = ps;
 
 		shape = CreateRectRgn(0,0,0,0);
 		if ( GetWindowRgn( child, shape)) {
@@ -1269,7 +1269,7 @@ subpaint_layered_widgets( HWND self, HDC ps, HDC alpha_dc, POINT screen_offset, 
 		}
 		OffsetRgn( shape, child_offset. x, child_offset. y);
 		if ( parent_shape ) CombineRgn( shape, shape, parent_shape, RGN_AND );
-		dsys(h) layeredParentRegion = shape;
+		dsys(h) layered_parent_region = shape;
 
 		ev. cmd = cmPaint;
 		CWidget(h)-> message( h, &ev);
@@ -1332,32 +1332,32 @@ apc_widget_end_paint( Handle self)
 		bf. BlendFlags          = 0;
 		bf. BlendOp             = AC_SRC_OVER;
 		if (is_apt(aptMovePending)) {
-			pos. x = sys layeredPos. x;
-			pos. y = sys layeredPos. y;
+			pos. x = sys layered_pos. x;
+			pos. y = sys layered_pos. y;
 			ppos = &pos;
 			apt_clear(aptMovePending);
 		}
 		if ( !UpdateLayeredWindow((HWND) var handle, NULL, ppos, &size, sys ps, &src, 0, &bf, ULW_ALPHA))
 			apiErr;
 	SKIP_ALPHA:
-		SelectObject(sys ps, sys stockBM);
+		SelectObject(sys ps, sys stock_bitmap);
 		DeleteObject(sys bm);
 		DeleteDC(sys ps);
 		ReleaseDC(( HWND) var handle, sys ps2);
 		sys ps = sys ps2 = NULL;
-		sys bm = sys stockBM = NULL;
+		sys bm = sys stock_bitmap = NULL;
 	} else if ( is_opt( optBuffered)) {
 		apt_clear( aptBitmap);
 		if ( sys bm != NULL) {
 			if ( !BitBlt( sys ps2, sys transform2. x, sys transform2. y, var w, var h, sys ps, 0, 0, SRCCOPY)) apiErr;
-			if ( sys stockBM)
-				SelectObject( sys ps, sys stockBM);
+			if ( sys stock_bitmap)
+				SelectObject( sys ps, sys stock_bitmap);
 			DeleteObject( sys bm);
 		}
 
 		if ( sys pal) {
 			SelectPalette( sys ps2, sys pal2, 1);
-			SelectPalette( sys ps, sys stockPalette, 1);
+			SelectPalette( sys ps, sys stock_palette, 1);
 			RealizePalette( sys ps2);
 			sys pal2 = NULL;
 		}
@@ -1366,12 +1366,12 @@ apc_widget_end_paint( Handle self)
 		sys ps = sys ps2;
 		sys bm = NULL;
 		sys ps2 = NULL;
-		sys stockBM = NULL;
+		sys stock_bitmap = NULL;
 	}
 
 	if ( !is_apt(aptLayeredPaint) && sys ps != NULL) {
 		if ( is_apt( aptWinPS) && is_apt( aptWM_PAINT)) {
-			if ( !EndPaint(( HWND) var handle, &sys paintStruc)) apiErr;
+			if ( !EndPaint(( HWND) var handle, &sys paint_struct)) apiErr;
 		} else if ( is_apt( aptWinPS))
 			if ( !ReleaseDC(( HWND) var handle, sys ps)) apiErr;
 	}
@@ -1414,7 +1414,7 @@ Color
 apc_widget_get_color( Handle self, int index)
 {
 	objCheck clInvalid;
-	return sys viewColors[ index];
+	return sys view_colors[ index];
 }
 
 Bool
@@ -1477,7 +1477,7 @@ ApiHandle
 apc_widget_get_parent_handle( Handle self)
 {
 	objCheck 0;
-	return ( ApiHandle) sys parentHandle;
+	return ( ApiHandle) sys parent_handle;
 }
 
 
@@ -1518,15 +1518,15 @@ apc_widget_get_pos( Handle self)
 	objCheck sz;
 	parent = is_apt( aptClipOwner) ? var owner : prima_guts.application;
 	sz = ((( PWidget) parent)-> self)-> get_size( parent);
-	if ( sys className == WC_FRAME && apc_window_get_window_state( self) == wsMinimized) {
+	if ( sys class_name == WC_FRAME && apc_window_get_window_state( self) == wsMinimized) {
 		WINDOWPLACEMENT w = {sizeof(WINDOWPLACEMENT)};
 		if ( !GetWindowPlacement( HANDLE, &w)) apiErr;
 		p. x = w. rcNormalPosition. left;
 		p. y = sz. y - w. rcNormalPosition. bottom;
 	} else if ( is_apt( aptMovePending)) {
 		GetWindowRect( HANDLE, &r);
-		p. x = sys layeredPos. x;
-		p. y = sys layeredPos. y + r. bottom - r.top;
+		p. x = sys layered_pos. x;
+		p. y = sys layered_pos. y + r. bottom - r.top;
 	} else {
 		GetWindowRect( HANDLE, &r);
 		if ( is_apt( aptClipOwner) && ( var owner != prima_guts.application))
@@ -1543,7 +1543,7 @@ apc_widget_get_size( Handle self)
 	RECT r;
 	Point p = {0,0};
 	objCheck p;
-	if ( sys className == WC_FRAME && apc_window_get_window_state( self) == wsMinimized) {
+	if ( sys class_name == WC_FRAME && apc_window_get_window_state( self) == wsMinimized) {
 		WINDOWPLACEMENT w = {sizeof(WINDOWPLACEMENT)};
 		if ( !GetWindowPlacement( HANDLE, &w)) apiErr;
 		p. x = w. rcNormalPosition. right  - w. rcNormalPosition. left;
@@ -1619,8 +1619,8 @@ apc_widget_get_shape( Handle self, Handle mask)
 		return false;
 
 	GetRgnBox(rgn, &rect);
-	OffsetRgn( rgn, -sys extraPos. x, -sys extraPos. y);
-	GET_REGION(mask)-> aperture = sys lastSize. y - rect.top;
+	OffsetRgn( rgn, -sys extra_pos. x, -sys extra_pos. y);
+	GET_REGION(mask)-> aperture = sys last_size. y - rect.top;
 
 	return true;
 }
@@ -1815,7 +1815,7 @@ apc_widget_set_clip_by_children( Handle self, Bool clip_by_children)
 	if ( is_clipped == clip_by_children )
 		return true;
 
-	if ( sys className == WC_FRAME) {
+	if ( sys class_name == WC_FRAME) {
 		f = GetWindowLong(( HWND ) var handle, GWL_STYLE);
 		if ( clip_by_children )
 			f |= WS_CLIPCHILDREN;
@@ -1840,7 +1840,7 @@ apc_widget_set_color( Handle self, Color color, int index)
 {
 	Event ev = {cmColorChanged};
 	objCheck false;
-	sys viewColors[ index] = color;
+	sys view_colors[ index] = color;
 
 	ev. gen. source = self;
 	ev. gen. i      = index;
@@ -1853,7 +1853,7 @@ apc_widget_set_enabled( Handle self, Bool enable)
 {
 	objCheck false;
 	apt_assign( aptEnabled, enable);
-	if (( sys className == WC_FRAME) || ( var owner == prima_guts.application))
+	if (( sys class_name == WC_FRAME) || ( var owner == prima_guts.application))
 		EnableWindow( HANDLE, enable);
 	else
 		SendMessage( HANDLE, WM_ENABLE, ( WPARAM) enable, 0);
@@ -1873,9 +1873,9 @@ apc_widget_set_focused( Handle self)
 {
 	if ( self && ( self != Application_map_focus( prima_guts.application, self)))
 		return false;
-	guts. focSysGranted++;
+	guts. sys_focus_granted++;
 	SetFocus( self ? (( HWND) var handle) : NULL);
-	guts. focSysGranted--;
+	guts. sys_focus_granted--;
 	return true;
 }
 
@@ -1894,7 +1894,7 @@ apc_widget_set_palette( Handle self)
 {
 	objCheck false;
 	apc_gp_set_palette( self);
-	if ( guts. displayBMInfo. bmiHeader. biBitCount == 8)
+	if ( guts. display_bm_info. bmiHeader. biBitCount == 8)
 		palette_change( self);
 	return true;
 }
@@ -1913,7 +1913,7 @@ apc_widget_set_pos( Handle self, int x, int y)
 	sz = ((( PWidget) parent)-> self)-> get_size( parent);
 	apt_set( aptWinPosDetermined);
 
-	if ( sys className == WC_FRAME) {
+	if ( sys class_name == WC_FRAME) {
 		HWND h = HANDLE;
 		int  ws = apc_window_get_window_state( self);
 		if (( var stage == csConstructing && ws != wsNormal) || ( ws == wsMinimized)) {
@@ -1931,12 +1931,12 @@ apc_widget_set_pos( Handle self, int x, int y)
 	if ( !GetWindowRect( HANDLE, &r)) apiErrRet;
 	if ( is_apt( aptClipOwner) && ( var owner != prima_guts.application))
 		MapWindowPoints( NULL, ( HWND)((( PWidget) var owner)-> handle), ( LPPOINT)&r, 2);
-	if ( sys parentHandle) {
+	if ( sys parent_handle) {
 		POINT ppos;
 		ppos. x = x;
-		ppos. y = dsys( prima_guts.application) lastSize. y - y;
-		MapWindowPoints( NULL, sys parentHandle, ( LPPOINT)&ppos, 1);
-		GetWindowRect( sys parentHandle, &r);
+		ppos. y = dsys( prima_guts.application) last_size. y - y;
+		MapWindowPoints( NULL, sys parent_handle, ( LPPOINT)&ppos, 1);
+		GetWindowRect( sys parent_handle, &r);
 		x = ppos. x;
 		y = ppos. y;
 	} else
@@ -1944,8 +1944,8 @@ apc_widget_set_pos( Handle self, int x, int y)
 
 	if ( is_apt(aptLayered) && is_apt(aptRepaintPending)) {
 		apt_set(aptMovePending);
-		sys layeredPos. x = x;
-		sys layeredPos. y = y;
+		sys layered_pos. x = x;
+		sys layered_pos. y = y;
 	} else {
 		if ( !SetWindowPos( HANDLE, 0, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE)) apiErrRet;
 	}
@@ -1961,7 +1961,7 @@ apc_widget_set_size( Handle self, int width, int height)
 
 	if ( !hwnd_check_limits( width, height, false)) apcErrRet( errInvParams);
 	h = HANDLE;
-	if ( sys className == WC_FRAME) {
+	if ( sys class_name == WC_FRAME) {
 		int  ws = apc_window_get_window_state( self);
 		if (( var stage == csConstructing && ws != wsNormal) || ( ws == wsMinimized)) {
 			WINDOWPLACEMENT w = {sizeof(WINDOWPLACEMENT)};
@@ -1978,11 +1978,11 @@ apc_widget_set_size( Handle self, int width, int height)
 	if ( !GetWindowRect( h, &r)) apiErrRet;
 	if ( is_apt( aptClipOwner) && ( var owner != prima_guts.application))
 		MapWindowPoints( NULL, ( HWND)((( PWidget) var owner)-> handle), ( LPPOINT)&r, 2);
-	if ( sys parentHandle)
-		MapWindowPoints( NULL, sys parentHandle, ( LPPOINT)&r, 2);
+	if ( sys parent_handle)
+		MapWindowPoints( NULL, sys parent_handle, ( LPPOINT)&r, 2);
 
-	if ( sys className != WC_FRAME) {
-		sys sizeLockLevel++;
+	if ( sys class_name != WC_FRAME) {
+		sys size_lock_level++;
 		var virtualSize. x = width;
 		var virtualSize. y = height;
 	}
@@ -1991,8 +1991,8 @@ apc_widget_set_size( Handle self, int width, int height)
 	if ( is_apt(aptMovePending)) {
 		int dx = r. right  - r. left;
 		int dy = r. bottom - r. top;
-		r. left = sys layeredPos. x;
-		r. top  = sys layeredPos. y;
+		r. left = sys layered_pos. x;
+		r. top  = sys layered_pos. y;
 		r. right  = r. left + dx;
 		r. bottom = r. top  + dy;
 		apt_clear(aptMovePending);
@@ -2004,7 +2004,7 @@ apc_widget_set_size( Handle self, int width, int height)
 			( is_apt( aptWinPosDetermined) ? 0 : SWP_NOMOVE)
 		)) apiErrRet;
 	hwnd_repaint_layered( self, false );
-	if ( sys className != WC_FRAME) sys sizeLockLevel--;
+	if ( sys class_name != WC_FRAME) sys size_lock_level--;
 	return true;
 }
 
@@ -2024,7 +2024,7 @@ apc_widget_set_rect( Handle self, int x, int y, int width, int height)
 	apt_set( aptWinPosDetermined);
 
 	h = HANDLE;
-	if ( sys className == WC_FRAME) {
+	if ( sys class_name == WC_FRAME) {
 		int  ws = apc_window_get_window_state( self);
 		if (( var stage == csConstructing && ws != wsNormal) || ( ws == wsMinimized)) {
 			WINDOWPLACEMENT w = {sizeof(WINDOWPLACEMENT)};
@@ -2041,18 +2041,18 @@ apc_widget_set_rect( Handle self, int x, int y, int width, int height)
 		}
 	}
 
-	if ( sys className != WC_FRAME) {
-		sys sizeLockLevel++;
+	if ( sys class_name != WC_FRAME) {
+		sys size_lock_level++;
 		var virtualSize. x = width;
 		var virtualSize. y = height;
 	}
 	if ( height < 0) height = 0;
 	if ( width  < 0) width  = 0;
-	if ( sys parentHandle) {
+	if ( sys parent_handle) {
 		POINT ppos;
 		ppos. x = x;
-		ppos. y = dsys( prima_guts.application) lastSize. y - y;
-		MapWindowPoints( NULL, sys parentHandle, ( LPPOINT)&ppos, 1);
+		ppos. y = dsys( prima_guts.application) last_size. y - y;
+		MapWindowPoints( NULL, sys parent_handle, ( LPPOINT)&ppos, 1);
 		x = ppos. x;
 		y = ppos. y;
 	} else
@@ -2062,7 +2062,7 @@ apc_widget_set_rect( Handle self, int x, int y, int width, int height)
 	if ( !SetWindowPos( h, 0, x, y, width, height, SWP_NOZORDER | SWP_NOACTIVATE))
 		apiErrRet;
 	hwnd_repaint_layered( self, false );
-	if ( sys className != WC_FRAME) sys sizeLockLevel--;
+	if ( sys class_name != WC_FRAME) sys size_lock_level--;
 	return true;
 }
 
@@ -2081,7 +2081,7 @@ apc_widget_set_shape( Handle self, Handle mask)
 	objCheck false;
 
 	if ( !mask) {
-		if ( sys className == WC_FRAME && is_apt(aptLayered))
+		if ( sys class_name == WC_FRAME && is_apt(aptLayered))
 			SetWindowRgn((HWND) var handle, NULL, true);
 		else
 			SetWindowRgn( HANDLE, NULL, true);
@@ -2093,17 +2093,17 @@ apc_widget_set_shape( Handle self, Handle mask)
 	rgn = CreateRectRgn(0,0,0,0);
 	CombineRgn( rgn, GET_REGION(mask)->region, NULL, RGN_COPY);
 	GetRgnBox( rgn, &xr);
-	sys extraBounds. x = xr. right - 1;
-	sys extraBounds. y = GET_REGION(mask)->aperture;
-	if ( sys className == WC_FRAME && !is_apt(aptLayered)) {
-		Point delta = get_window_borders( sys s. window. borderStyle);
+	sys extra_bounds. x = xr. right - 1;
+	sys extra_bounds. y = GET_REGION(mask)->aperture;
+	if ( sys class_name == WC_FRAME && !is_apt(aptLayered)) {
+		Point delta = get_window_borders( sys s. window. border_style);
 		Point sz    = apc_widget_get_size( self);
-		Point p     = sys extraBounds;
+		Point p     = sys extra_bounds;
 		HRGN  r1, r2;
 
 		OffsetRgn( rgn, delta.x, sz. y - p.y - delta.y);
-		sys extraPos. x = delta.x;
-		sys extraPos. y = sz. y - p.y - delta.y;
+		sys extra_pos. x = delta.x;
+		sys extra_pos. y = sz. y - p.y - delta.y;
 		r1 = CreateRectRgn( 0, 0, 8192, 8192);
 		r2 = CreateRectRgn( delta. x, sz. y - delta. y - p.y,
 			delta.x + p.x, sz. y - delta. y);
@@ -2114,12 +2114,12 @@ apc_widget_set_shape( Handle self, Handle mask)
 		if ( !SetWindowRgn( HANDLE, rgn, true))
 			apiErrRet;
 		DeleteObject(rgn);
-	} else if ( sys className == WC_FRAME ) {
-		sys extraPos. x = sys extraPos. y = 0;
+	} else if ( sys class_name == WC_FRAME ) {
+		sys extra_pos. x = sys extra_pos. y = 0;
 		if ( !SetWindowRgn((HWND) var handle, rgn, true))
 			apiErrRet;
 	} else {
-		sys extraPos. x = sys extraPos. y = 0;
+		sys extra_pos. x = sys extra_pos. y = 0;
 		if ( !SetWindowRgn( HANDLE, rgn, true))
 			apiErrRet;
 	}
@@ -2127,7 +2127,7 @@ apc_widget_set_shape( Handle self, Handle mask)
 
 	if ( is_apt(aptMovePending)) {
 		apt_clear(aptMovePending);
-		if ( !SetWindowPos( HANDLE, 0, sys layeredPos. x, sys layeredPos. y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE))
+		if ( !SetWindowPos( HANDLE, 0, sys layered_pos. x, sys layered_pos. y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE))
 			apiErrRet;
 	}
 	hwnd_repaint_layered( self, false );

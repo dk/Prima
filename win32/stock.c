@@ -84,15 +84,15 @@ stylus_fetch( void * key )
 	PDCObject cached;
 	int type = *((int*) key);
 	int size = stylus_get_key_size(type);
-	if (( cached = (PDCObject) hash_fetch( stylusMan, key, size)) != NULL )
+	if (( cached = (PDCObject) hash_fetch( mgr_styli, key, size)) != NULL )
 		return cached;
 	if (( cached = stylus_alloc(type)) == NULL)
 		return NULL;
 	cached-> cached = true;
-	if ( hash_count( stylusMan) > 128)
+	if ( hash_count( mgr_styli) > 128)
 		stylus_clean();
 	memcpy( cached-> rq, key, size );
-	hash_store( stylusMan, key, size, cached);
+	hash_store( mgr_styli, key, size, cached);
 	return cached;
 }
 
@@ -142,7 +142,7 @@ stylus_free( PDCObject res, Bool permanent)
 			res-> refcnt = 0;
 			return;
 		}
-		p = hash_delete( stylusMan, res->rq, res-> rq_size, false);
+		p = hash_delete( mgr_styli, res->rq, res-> rq_size, false);
 		if ( p && p != res ) {
 			warn("panic: bad stylus hash %p ne %p\n", p, res);
 			return;
@@ -173,10 +173,10 @@ stylus_release_current( Handle self, int index, Bool force_deselect )
 		if ( !sys current_dc_obj[index]->cached || force_deselect ) {
 			switch ( index ) {
 			case DCO_PEN:
-				SelectObject( sys ps, sys stockPen );
+				SelectObject( sys ps, sys stock_pen );
 				break;
 			case DCO_BRUSH:
-				SelectObject( sys ps, sys stockBrush );
+				SelectObject( sys ps, sys stock_brush );
 				break;
 			}
 		}
@@ -213,7 +213,7 @@ stylus_cleaner( PDCObject s, int keyLen, void * key, void * dummy)
 void
 stylus_clean()
 {
-	hash_first_that( stylusMan, stylus_cleaner, NULL, NULL, NULL);
+	hash_first_that( mgr_styli, stylus_cleaner, NULL, NULL, NULL);
 }
 
 Bool
@@ -449,14 +449,14 @@ select_gp_brush(Handle self)
 	g = (fg & 0xff00) >> 8;
 	r = fg & 0xff;
 	key.fg = (sys alpha << 24) | (r << 16) | (g << 8) | b;
-	key.opaque = sys currentROP2 == ropCopyPut;
+	key.opaque = sys current_rop2 == ropCopyPut;
 	if ( !is_solid ) {
-		key.opaque = (sys currentROP2 == ropCopyPut) ? 1 : 0;
+		key.opaque = (sys current_rop2 == ropCopyPut) ? 1 : 0;
 		b = (bg >> 16) & 0xff;
 		g = (bg & 0xff00) >> 8;
 		r =  bg & 0xff;
 		key.bg = (sys alpha << 24) | (r << 16) | (g << 8) | b;
-		*key.fill_pattern = *sys fillPattern;
+		*key.fill_pattern = *sys fill_pattern;
 	}
 
 	if ((ret = stylus_fetch(&key)) == NULL)
@@ -478,7 +478,7 @@ select_gp_brush(Handle self)
 		bg = key.opaque ? key.bg : 0x00000000;
 		for ( y = 0, fpp = fp; y < 8; y++) {
 			int yy = (y + 8) % 8;
-			Byte src = sys fillPattern[yy];
+			Byte src = sys fill_pattern[yy];
 			for ( x = 0; x < 8; x++) {
 				int xx = x % 8;
 				*(fpp++) = (src & ( 1 << xx )) ? key.fg : bg;
@@ -505,7 +505,7 @@ SUCCESS:
 	return true;
 
 FAIL:
-	hash_delete( stylusMan, &key, sizeof(key), true);
+	hash_delete( mgr_styli, &key, sizeof(key), true);
 	return false;
 }
 
@@ -532,7 +532,7 @@ stylus_gp_get_pen(int line_width, uint32_t color)
 	return (GpPen*) cached->handle;
 
 FAIL:
-	hash_delete( stylusMan, &key, sizeof(key), true);
+	hash_delete( mgr_styli, &key, sizeof(key), true);
 	return NULL;
 }
 
@@ -540,12 +540,12 @@ PLinePattern
 patres_fetch( unsigned char * pattern, int len)
 {
 	int i;
-	PLinePattern r = ( PLinePattern) hash_fetch( patMan, pattern, len);
+	PLinePattern r = ( PLinePattern) hash_fetch( mgr_patterns, pattern, len);
 	if ( r)
 		return r;
 
 	r = ( PLinePattern) malloc( sizeof( LinePattern) + sizeof( DWORD) * len);
-	if ( !r) return &hPatHollow;
+	if ( !r) return &std_hollow_line_pattern;
 
 	r-> count = len;
 	r-> ptr   = r-> dots;
@@ -557,7 +557,7 @@ patres_fetch( unsigned char * pattern, int len)
 			if ( x > 0) x--;
 		r-> dots[i] = x;
 	}
-	hash_store( patMan, pattern, len, r);
+	hash_store( mgr_patterns, pattern, len, r);
 	return r;
 }
 
@@ -772,13 +772,13 @@ font_alloc( Font * data)
 {
 	char key[sizeof(Font)];
 	int keyLen = build_dcfont_key( data, (unsigned char*)key);
-	PDCFont ret = ( PDCFont) hash_fetch( fontMan, key, keyLen);
+	PDCFont ret = ( PDCFont) hash_fetch( mgr_fonts, key, keyLen);
 
 	if ( ret == NULL) {
 		LOGFONTW logfont;
 		PFont   f;
 
-		if ( hash_count( fontMan) > 128)
+		if ( hash_count( mgr_fonts) > 128)
 			font_clean();
 
 		ret = ( PDCFont) malloc( sizeof( DCFont));
@@ -794,7 +794,7 @@ font_alloc( Font * data)
 			ret-> hfont = CreateFontIndirectW( &lf);
 		}
 		keyLen = build_dcfont_key( &ret-> font, (unsigned char*)key);
-		hash_store( fontMan, key, keyLen, ret);
+		hash_store( mgr_fonts, key, keyLen, ret);
 	}
 	ret-> refcnt++;
 	return ret;
@@ -816,7 +816,7 @@ font_free( PDCFont res, Bool permanent)
 		res-> hfont = NULL;
 	}
 	keyLen = build_dcfont_key( &res-> font, (unsigned char*)key);
-	hash_delete( fontMan, key, keyLen, true);
+	hash_delete( mgr_fonts, key, keyLen, true);
 }
 
 void
@@ -826,12 +826,12 @@ font_change( Handle self, Font * font)
 	PDCFont newP;
 	if ( is_apt( aptDCChangeLock)) return;
 
-	sys alphaArenaFontChanged = true;
+	sys alpha_arena_font_changed = true;
 	p    = sys dc_font;
 	newP = ( sys dc_font = font_alloc( font));
-	if ( sys alphaArenaStockFont ) {
-		SelectObject( sys alphaArenaDC, sys alphaArenaStockFont );
-		sys alphaArenaFontChanged = true;
+	if ( sys alpha_arena_stock_font ) {
+		SelectObject( sys alpha_arena_dc, sys alpha_arena_stock_font );
+		sys alpha_arena_font_changed = true;
 	}
 	font_free( p, false);
 	if ( sys ps)
@@ -841,7 +841,7 @@ font_change( Handle self, Font * font)
 void
 font_clean()
 {
-	hash_first_that( fontMan, _ft_cleaner, NULL, NULL, NULL);
+	hash_first_that( mgr_fonts, _ft_cleaner, NULL, NULL, NULL);
 }
 
 static char* encodings[] = {
@@ -995,7 +995,7 @@ register_mapper_fonts(void)
 	LOGFONTW elf;
 
 	/* MS Shell Dlg is a virtual font, not reported by enum */
-	prima_font_mapper_save_font(guts.windowFont.name, 0);
+	prima_font_mapper_save_font(guts.window_font.name, 0);
 
 	if ( !( dc = dc_alloc()))
 		return;
@@ -1008,18 +1008,18 @@ register_mapper_fonts(void)
 void
 reset_system_fonts(void)
 {
-	memset( &guts. windowFont, 0, sizeof( Font));
-	strcpy( guts. windowFont. name, DEFAULT_WIDGET_FONT);
-	guts. windowFont. size  = DEFAULT_WIDGET_FONT_SIZE;
-	guts. windowFont. undef. width = guts. windowFont. undef. height = guts. windowFont. undef. vector = 1;
-	apc_font_pick( NULL_HANDLE, &guts. windowFont, &guts. windowFont);
+	memset( &guts. window_font, 0, sizeof( Font));
+	strcpy( guts. window_font. name, DEFAULT_WIDGET_FONT);
+	guts. window_font. size  = DEFAULT_WIDGET_FONT_SIZE;
+	guts. window_font. undef. width = guts. window_font. undef. height = guts. window_font. undef. vector = 1;
+	apc_font_pick( NULL_HANDLE, &guts. window_font, &guts. window_font);
 
 	guts. ncmData. cbSize = sizeof( NONCLIENTMETRICSW);
 	if ( !SystemParametersInfoW( SPI_GETNONCLIENTMETRICS, sizeof( NONCLIENTMETRICSW),
 		( PVOID) &guts. ncmData, 0)) apiErr;
-	font_logfont2font( &guts.ncmData.lfMenuFont,    &guts.menuFont, &guts.displayResolution);
-	font_logfont2font( &guts.ncmData.lfMessageFont, &guts.msgFont,  &guts.displayResolution);
-	font_logfont2font( &guts.ncmData.lfCaptionFont, &guts.capFont,  &guts.displayResolution);
+	font_logfont2font( &guts.ncmData.lfMenuFont,    &guts.menu_font, &guts.display_resolution);
+	font_logfont2font( &guts.ncmData.lfMessageFont, &guts.msg_font,  &guts.display_resolution);
+	font_logfont2font( &guts.ncmData.lfCaptionFont, &guts.cap_font,  &guts.display_resolution);
 }
 
 void
@@ -1036,7 +1036,7 @@ font_logfont2font( LOGFONTW * lf, Font * f, Point * res)
 	DeleteObject( SelectObject( dc, hf));
 	dc_free();
 
-	if ( !res) res = &guts. displayResolution;
+	if ( !res) res = &guts. display_resolution;
 	bzero( f, sizeof(Font));
 	f-> height              = tm. tmHeight;
 	f-> size                = ( f-> height - tm. tmInternalLeading) * 72.0 / res-> y + 0.5;
@@ -1077,7 +1077,7 @@ void
 font_textmetric2font( TEXTMETRICW * tm, Font * fm, Bool readonly)
 {
 	if ( !readonly) {
-		fm-> size            = ( tm-> tmHeight - tm-> tmInternalLeading) * 72.0 / guts. displayResolution.y + 0.5;
+		fm-> size            = ( tm-> tmHeight - tm-> tmInternalLeading) * 72.0 / guts. display_resolution.y + 0.5;
 		fm-> width           = tm-> tmAveCharWidth;
 		fm-> height          = tm-> tmHeight;
 		fm-> style           = 0 |
@@ -1137,7 +1137,7 @@ font_pp2font( char * presParam, Font * f)
 PFont
 apc_font_default( PFont font)
 {
-	*font = guts. windowFont;
+	*font = guts. window_font;
 	font-> pitch = fpDefault;
 	font-> vector = fvDefault;
 	return font;
@@ -1147,7 +1147,7 @@ int
 apc_font_load( Handle self, char* filename)
 {
 	int ret = AddFontResource(( LPCTSTR) filename );
-	if (ret) hash_store( myfontMan, filename, strlen(filename), (void*)NULL);
+	if (ret) hash_store( mgr_myfonts, filename, strlen(filename), (void*)NULL);
 	return ret;
 }
 
@@ -1434,10 +1434,10 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
 		if ( es. usePitch) {
 			switch ( font->pitch ) {
 			case fpFixed:
-				strcpy( font-> name, guts. defaultFixedFont);
+				strcpy( font-> name, guts. default_fixed_font);
 				break;
 			case fpVariable:
-				strcpy( font-> name, guts. defaultVariableFont);
+				strcpy( font-> name, guts. default_variable_font);
 				break;
 			}
 			font-> pitch = fpDefault;
@@ -1450,7 +1450,7 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
 		ret = font_font2gp( font, res, forceSize, dc);
 		// if that alternative match succeeded with name subplaced again, skip
 		// that result and use DEFAULT_SYSTEM_FONT match
-		if (( ogp == fpFixed) && ( strcmp( font-> name, guts. defaultFixedFont) != 0)) {
+		if (( ogp == fpFixed) && ( strcmp( font-> name, guts. default_fixed_font) != 0)) {
 			strcpy( font-> name, DEFAULT_SYSTEM_FONT);
 			font-> pitch = fpDefault;
 			ret = font_font2gp( font, res, forceSize, dc);
@@ -1460,7 +1460,7 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
 	}
 
 	// font not found, so use general representation for height and width
-	strcpy( font-> name, guts. defaultSystemFont);
+	strcpy( font-> name, guts. default_system_font);
 	if ( recursiveFF == 0)
 	{
 		// trying to catch default font with correct values
@@ -1473,7 +1473,7 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
 		int r;
 		// if not succeeded, to avoid recursive call use "wild guess".
 		// This could be achieved if system does not have "System" font
-		*font = guts. windowFont;
+		*font = guts. window_font;
 		font-> pitch = fpDefault;
 		recursiveFF++;
 		r = ( recursiveFF < 3) ? font_font2gp( font, res, forceSize, dc) : fvBitmap;
@@ -1940,11 +1940,11 @@ hwnd_enter_paint( Handle self)
 	Point res;
 	Color fore, back;
 	SetGraphicsMode( sys ps, GM_ADVANCED);
-	sys stockPen   = GetCurrentObject( sys ps, OBJ_PEN);
-	sys stockBrush = GetCurrentObject( sys ps, OBJ_BRUSH);
-	sys stockFont  = GetCurrentObject( sys ps, OBJ_FONT);
-	if ( !sys stockPalette)
-		sys stockPalette = GetCurrentObject( sys ps, OBJ_PAL);
+	sys stock_pen   = GetCurrentObject( sys ps, OBJ_PEN);
+	sys stock_brush = GetCurrentObject( sys ps, OBJ_BRUSH);
+	sys stock_font  = GetCurrentObject( sys ps, OBJ_FONT);
+	if ( !sys stock_palette)
+		sys stock_palette = GetCurrentObject( sys ps, OBJ_PAL);
 	font_free( sys dc_font, false);
 	stylus_release(self);
 	sys dc_font   = NULL;
@@ -1954,8 +1954,8 @@ hwnd_enter_paint( Handle self)
 	fore = sys fg;
 	back = sys bg;
 	if ( is_apt( aptWinPS) && self != prima_guts.application) {
-		apc_gp_set_color( self, sys viewColors[ ciFore]);
-		apc_gp_set_back_color( self, sys viewColors[ ciBack]);
+		apc_gp_set_color( self, sys view_colors[ ciFore]);
+		apc_gp_set_back_color( self, sys view_colors[ ciBack]);
 	} else {
 		apc_gp_set_color( self, remap_color(sys fg,false));
 		apc_gp_set_back_color( self, remap_color(sys bg,false));
@@ -1968,34 +1968,34 @@ hwnd_enter_paint( Handle self)
 	apc_gp_set_antialias( self, is_apt( aptGDIPlus));
 	apc_gp_set_text_opaque( self, is_apt( aptTextOpaque));
 	apc_gp_set_text_out_baseline( self, is_apt( aptTextOutBaseline));
-	apc_gp_set_fill_mode( self, sys fillMode);
-	apc_gp_set_fill_pattern_offset( self, sys fillPatternOffset);
-	apc_gp_set_line_width( self, sys lineWidth);
-	apc_gp_set_line_end( self, sys lineEnd);
-	apc_gp_set_line_join( self, sys lineJoin);
+	apc_gp_set_fill_mode( self, sys fill_mode);
+	apc_gp_set_fill_pattern_offset( self, sys fill_pattern_offset);
+	apc_gp_set_line_width( self, sys line_width);
+	apc_gp_set_line_end( self, sys line_end);
+	apc_gp_set_line_join( self, sys line_join);
 	apc_gp_set_line_pattern( self,
-		( Byte*)(( sys linePatternLen > sizeof(sys linePattern)) ? sys linePattern : ( Byte*)&sys linePattern),
-		sys linePatternLen);
-	apc_gp_set_miter_limit( self, sys miterLimit);
+		( Byte*)(( sys line_pattern_len > sizeof(sys line_pattern)) ? sys line_pattern : ( Byte*)&sys line_pattern),
+		sys line_pattern_len);
+	apc_gp_set_miter_limit( self, sys miter_limit);
 	apc_gp_set_rop( self, sys rop);
 	apc_gp_set_rop2( self, sys rop2);
 	apc_gp_set_transform( self, sys transform. x, sys transform. y);
 	if ( var fillPatternImage )
 		apc_gp_set_fill_image( self, var fillPatternImage);
 	else
-		apc_gp_set_fill_pattern( self, sys fillPattern2);
+		apc_gp_set_fill_pattern( self, sys fill_pattern2);
 	sys psd-> alpha               = sys alpha;
 	sys psd-> antialias           = is_apt( aptGDIPlus);
 	sys psd-> font                = var font;
-	sys psd-> fill_mode           = sys fillMode;
-	sys psd-> fill_pattern_offset = sys fillPatternOffset;
+	sys psd-> fill_mode           = sys fill_mode;
+	sys psd-> fill_pattern_offset = sys fill_pattern_offset;
 	sys psd-> fg                  = fore;
 	sys psd-> bg                  = back;
-	sys psd-> line_width          = sys lineWidth;
-	sys psd-> line_end            = sys lineEnd;
-	sys psd-> line_join           = sys lineJoin;
-	sys psd-> line_pattern        = sys linePattern;
-	sys psd-> line_pattern_len    = sys linePatternLen;
+	sys psd-> line_width          = sys line_width;
+	sys psd-> line_end            = sys line_end;
+	sys psd-> line_join           = sys line_join;
+	sys psd-> line_pattern        = sys line_pattern;
+	sys psd-> line_pattern_len    = sys line_pattern_len;
 	sys psd-> rop                 = sys rop;
 	sys psd-> rop2                = sys rop2;
 	sys psd-> transform           = sys transform;
@@ -2062,27 +2062,27 @@ hwnd_leave_paint( Handle self)
 		GdipDeleteGraphics(sys graphics);
 		sys graphics = NULL;
 	}
-	SelectObject( sys ps,  sys stockPen);
-	SelectObject( sys ps,  sys stockBrush);
-	SelectObject( sys ps,  sys stockFont);
-	SelectPalette( sys ps, sys stockPalette, 0);
-	sys stockPen = NULL;
-	sys stockBrush = NULL;
-	sys stockFont = NULL;
-	sys stockPalette = NULL;
+	SelectObject( sys ps,  sys stock_pen);
+	SelectObject( sys ps,  sys stock_brush);
+	SelectObject( sys ps,  sys stock_font);
+	SelectPalette( sys ps, sys stock_palette, 0);
+	sys stock_pen = NULL;
+	sys stock_brush = NULL;
+	sys stock_font = NULL;
+	sys stock_palette = NULL;
 	stylus_release(self);
 	if ( sys psd != NULL) {
 		sys fg                        = sys psd-> fg;
 		sys bg                        = sys psd-> bg;
 		var font                      = sys psd-> font;
 		sys alpha                     = sys psd-> alpha;
-		sys fillMode                  = sys psd-> fill_mode;
-		sys fillPatternOffset         = sys psd-> fill_pattern_offset;
-		sys lineWidth                 = sys psd-> line_width;
-		sys lineEnd                   = sys psd-> line_end;
-		sys lineJoin                  = sys psd-> line_join;
-		sys linePattern               = sys psd-> line_pattern;
-		sys linePatternLen            = sys psd-> line_pattern_len;
+		sys fill_mode                  = sys psd-> fill_mode;
+		sys fill_pattern_offset         = sys psd-> fill_pattern_offset;
+		sys line_width                 = sys psd-> line_width;
+		sys line_end                   = sys psd-> line_end;
+		sys line_join                  = sys psd-> line_join;
+		sys line_pattern               = sys psd-> line_pattern;
+		sys line_pattern_len            = sys psd-> line_pattern_len;
 		sys rop                       = sys psd-> rop;
 		sys rop2                      = sys psd-> rop2;
 		sys transform                 = sys psd-> transform;
@@ -2126,7 +2126,7 @@ Handle
 hwnd_top_level( Handle self)
 {
 	while ( self) {
-		if ( sys className == WC_FRAME) return self;
+		if ( sys class_name == WC_FRAME) return self;
 		self = var owner;
 	}
 	return NULL_HANDLE;
@@ -2136,7 +2136,7 @@ Handle
 hwnd_frame_top_level( Handle self)
 {
 	while ( self && ( self != prima_guts.application)) {
-		if (( sys className == WC_FRAME) ||
+		if (( sys class_name == WC_FRAME) ||
 			( !is_apt( aptClipOwner) && ( var owner != prima_guts.application))) return self;
 		self = var owner;
 	}
@@ -2147,7 +2147,7 @@ Handle
 hwnd_layered_top_level( Handle self)
 {
 	while ( self && ( self != prima_guts.application)) {
-		if (( sys className == WC_FRAME) ||
+		if (( sys class_name == WC_FRAME) ||
 			(!is_apt( aptClipOwner) || (var owner == prima_guts.application))) return self;
 		self = var owner;
 	}
@@ -2178,8 +2178,8 @@ mod_select( int mod)
 	ks-> ks[ VK_CONTROL] = ( mod & kmCtrl ) ? 0x80 : 0;
 	ks-> ks[ VK_SHIFT  ] = ( mod & kmShift) ? 0x80 : 0;
 	SetKeyboardState( ks-> ks);
-	ks-> gks = guts. currentKeyState;
-	guts. currentKeyState = ks-> ks;
+	ks-> gks = guts. current_key_state;
+	guts. current_key_state = ks-> ks;
 	return ( BYTE*) ks;
 }
 
@@ -2193,7 +2193,7 @@ mod_free( BYTE * modState)
 	ks-> ks[ VK_CONTROL] = ks-> kss[ 1];
 	ks-> ks[ VK_SHIFT  ] = ks-> kss[ 2];
 	SetKeyboardState( ks-> ks);
-	guts. currentKeyState = ks-> gks;
+	guts. current_key_state = ks-> gks;
 	free( ks);
 }
 
@@ -2260,8 +2260,8 @@ palette_change( Handle self)
 	PRGBColor p;
 	PRGBColor d;
 	int nColors = ( 1 << (
-		guts. displayBMInfo. bmiHeader. biBitCount *
-		guts. displayBMInfo. bmiHeader. biPlanes
+		guts. display_bm_info. bmiHeader. biBitCount *
+		guts. display_bm_info. bmiHeader. biPlanes
 	)) & 0x1FF;
 	int i;
 	HPALETTE pal;
@@ -2336,13 +2336,13 @@ palette_change( Handle self)
 }
 
 int
-palette_match_color( XLOGPALETTE * lp, long clr, int * diffFactor)
+palette_match_color( XLOGPALETTE * lp, long clr, int * diff_factor)
 {
 	int diff = 0x10000, cdiff = 0, ret = 0, nCol = lp-> palNumEntries;
 	RGBColor color;
 
 	if ( nCol == 0) {
-		if ( diffFactor) *diffFactor = 0;
+		if ( diff_factor) *diff_factor = 0;
 		return clr;
 	}
 
@@ -2363,7 +2363,7 @@ palette_match_color( XLOGPALETTE * lp, long clr, int * diffFactor)
 		}
 	}
 
-	if ( diffFactor) *diffFactor = cdiff;
+	if ( diff_factor) *diff_factor = cdiff;
 	return ret;
 }
 

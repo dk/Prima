@@ -37,9 +37,9 @@ region_create( Handle mask)
 
 	w = PImage( mask)-> w;
 	h = PImage( mask)-> h;
-	if ( dsys( mask) s. image. imgCachedRegion) {
+	if ( dsys( mask) s. image. img_cached_region) {
 		rgn = CreateRectRgn(0,0,0,0);
-		CombineRgn( rgn, dsys( mask) s. image. imgCachedRegion, NULL, RGN_COPY);
+		CombineRgn( rgn, dsys( mask) s. image. img_cached_region, NULL, RGN_COPY);
 		return rgn;
 	}
 
@@ -103,10 +103,10 @@ region_create( Handle mask)
 			apcErr( 900);
 		}
 
-		dsys( mask) s. image. imgCachedRegion = CreateRectRgn(0,0,0,0);
-		CombineRgn( dsys( mask) s. image. imgCachedRegion, rgn, NULL, RGN_COPY);
+		dsys( mask) s. image. img_cached_region = CreateRectRgn(0,0,0,0);
+		CombineRgn( dsys( mask) s. image. img_cached_region, rgn, NULL, RGN_COPY);
 	} else {
-		dsys( mask) s. image. imgCachedRegion = rgn = CreateRectRgn(0,0,0,0);
+		dsys( mask) s. image. img_cached_region = rgn = CreateRectRgn(0,0,0,0);
 	}
 	free( rdata);
 
@@ -443,8 +443,8 @@ apc_gp_get_clip_rect( Handle self)
 	if ( IsRectEmpty( &r)) return rr;
 	rr. left   = r. left;
 	rr. right  = r. right - 1;
-	rr. bottom = sys lastSize. y - r. bottom;
-	rr. top    = sys lastSize. y - r. top    - 1;
+	rr. bottom = sys last_size. y - r. bottom;
+	rr. top    = sys last_size. y - r. top    - 1;
 
 	p = apc_gp_get_transform(self);
 	rr. left   += p.x;
@@ -474,11 +474,11 @@ apc_gp_set_clip_rect( Handle self, Rect c)
 	check_swap( c. top, c. bottom);
 	check_swap( c. left, c. right);
 	if ( !( rgn = CreateRectRgn(
-		c. left,  sys lastSize. y - c. top,
-		c. right + 1, sys lastSize. y - c. bottom - 1))
+		c. left,  sys last_size. y - c. top,
+		c. right + 1, sys last_size. y - c. bottom - 1))
 		) apiErrRet;
-	if ( is_apt(aptLayeredPaint) && sys layeredParentRegion )
-		CombineRgn( rgn, rgn, sys layeredParentRegion, RGN_AND);
+	if ( is_apt(aptLayeredPaint) && sys layered_parent_region )
+		CombineRgn( rgn, rgn, sys layered_parent_region, RGN_AND);
 	if ( !SelectClipRgn( sys ps, rgn)) apiErr;
 	if ( sys graphics ) {
 		GPCALL GdipSetClipHrgn(sys graphics, rgn, CombineModeReplace);
@@ -511,7 +511,7 @@ apc_gp_get_region( Handle self, Handle mask)
 		return false;
 	GetRgnBox(rgn, &rect);
 	OffsetRgn( rgn, sys transform2. x, sys transform2. y - rect.top);
-	GET_REGION(mask)-> aperture = sys lastSize. y - rect.top;
+	GET_REGION(mask)-> aperture = sys last_size. y - rect.top;
 	return true;
 }
 
@@ -530,9 +530,9 @@ apc_gp_set_region( Handle self, Handle region)
 	rgn = CreateRectRgn(0,0,0,0);
 	CombineRgn(rgn, GET_REGION(region)->region, NULL, RGN_COPY);
 	OffsetRgn( rgn, -sys transform2. x, -sys transform2. y);
-	OffsetRgn( rgn, 0, sys lastSize.y - GET_REGION(region)->aperture);
-	if ( is_apt(aptLayeredPaint) && sys layeredParentRegion )
-		CombineRgn( rgn, rgn, sys layeredParentRegion, RGN_AND);
+	OffsetRgn( rgn, 0, sys last_size.y - GET_REGION(region)->aperture);
+	if ( is_apt(aptLayeredPaint) && sys layered_parent_region )
+		CombineRgn( rgn, rgn, sys layered_parent_region, RGN_AND);
 	SelectClipRgn( sys ps, rgn);
 	if ( sys graphics ) {
 		GPCALL GdipSetClipHrgn(sys graphics, rgn, CombineModeReplace);

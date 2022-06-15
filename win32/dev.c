@@ -215,8 +215,8 @@ apc_prn_select( Handle self, const char* printer)
 	if ( !( dc = prn_info_dc( self))) return false;
 	sys res.      x = ( float) GetDeviceCaps( dc, LOGPIXELSX);
 	sys res.      y = ( float) GetDeviceCaps( dc, LOGPIXELSY);
-	sys lastSize. x = GetDeviceCaps( dc, HORZRES);
-	sys lastSize. y = GetDeviceCaps( dc, VERTRES);
+	sys last_size. x = GetDeviceCaps( dc, HORZRES);
+	sys last_size. y = GetDeviceCaps( dc, VERTRES);
 	if ( !DeleteDC( dc)) apiErr;
 	return true;
 }
@@ -233,7 +233,7 @@ apc_prn_get_size( Handle self)
 {
 	Point p = {0,0};
 	objCheck p;
-	return sys lastSize;
+	return sys last_size;
 }
 
 Point
@@ -249,8 +249,8 @@ apc_prn_get_default( Handle self)
 {
 	objCheck "";
 
-	GetProfileString("windows", "device", ",,,", sys s. prn. defPrnBuf, 255);
-	if (( sys s. prn. device = strtok( sys s. prn. defPrnBuf, (const char *) ","))
+	GetProfileString("windows", "device", ",,,", sys s. prn. def_prn_buf, 255);
+	if (( sys s. prn. device = strtok( sys s. prn. def_prn_buf, (const char *) ","))
 				&& ( sys s. prn. driver = strtok((char *) NULL,
 					(const char *) ", "))
 				&& ( sys s. prn. port = strtok ((char *) NULL,
@@ -300,8 +300,8 @@ apc_prn_setup( Handle self)
 	if ( !( dc = prn_info_dc( self))) return false;
 	sys res.      x = ( float) GetDeviceCaps( dc, LOGPIXELSX);
 	sys res.      y = ( float) GetDeviceCaps( dc, LOGPIXELSY);
-	sys lastSize. x = GetDeviceCaps( dc, HORZRES);
-	sys lastSize. y = GetDeviceCaps( dc, VERTRES);
+	sys last_size. x = GetDeviceCaps( dc, HORZRES);
+	sys last_size. y = GetDeviceCaps( dc, VERTRES);
 	if ( !DeleteDC( dc)) apiErr;
 
 	return true;
@@ -753,7 +753,7 @@ apc_prn_end_doc( Handle self)
 	DeleteDC( sys ps);
 	sys pal = NULL;
 	sys ps = NULL;
-	return guts.apcError == errOk;
+	return guts.apc_error == errOk;
 }
 
 Bool
@@ -764,7 +764,7 @@ apc_prn_end_paint_info( Handle self)
 	hwnd_leave_paint( self);
 	DeleteDC( sys ps);
 	sys ps = NULL;
-	return guts.apcError == errOk;
+	return guts.apc_error == errOk;
 }
 
 Bool
@@ -774,7 +774,7 @@ apc_prn_new_page( Handle self)
 	objCheck false;
 	if ( EndPage( sys ps) < 0) apiPrnErr;
 	if ( StartPage( sys ps) < 0) apiPrnErr;
-	return guts.apcError == errOk;
+	return guts.apc_error == errOk;
 }
 
 Bool
@@ -787,7 +787,7 @@ apc_prn_abort_doc( Handle self)
 	DeleteDC( sys ps);
 	sys pal = NULL;
 	sys ps = NULL;
-	return guts.apcError == errOk;
+	return guts.apc_error == errOk;
 }
 
 #ifdef __cplusplus

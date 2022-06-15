@@ -71,7 +71,7 @@ apc_application_create( Handle self)
 	sys parent = sys owner = HWND_DESKTOP;
 	SetWindowLongPtr( sys handle, GWLP_USERDATA, self);
 	PostMessage( sys handle, WM_PRIMA_CREATE, 0, 0);
-	sys className = WC_APPLICATION;
+	sys class_name = WC_APPLICATION;
 	// if ( !SetTimer( h, TID_USERMAX, 100, NULL)) apiErr;
 	GetClientRect( h, &r);
 	if ( !( var handle = ( Handle) CreateWindowExW( 0,  L"Generic", &wnull, WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN,
@@ -79,7 +79,7 @@ apc_application_create( Handle self)
 		guts. instance, NULL))) apiErrRet;
 	SetWindowLongPtr(( HWND) var handle, GWLP_USERDATA, self);
 	apt_set( aptEnabled);
-	sys lastSize = apc_application_get_size( self);
+	sys last_size = apc_application_get_size( self);
 	return true;
 }
 
@@ -96,13 +96,13 @@ apc_application_destroy( Handle self)
 	objCheck false;
 	SetWindowLongPtr( sys handle, GWLP_USERDATA, 0);
 	if ( IsWindow( sys handle))  {
-		if ( guts. mouseTimer) {
-			guts. mouseTimer = 0;
+		if ( guts. mouse_timer) {
+			guts. mouse_timer = 0;
 			if ( !KillTimer( sys handle, TID_USERMAX)) apiErr;
 		}
 		if ( !DestroyWindow( sys handle)) apiErr;
 	}
-	PostThreadMessage( guts. mainThreadId, WM_TERMINATE, 0, 0);
+	PostThreadMessage( guts. main_thread_id, WM_TERMINATE, 0, 0);
 	PostQuitMessage(0);
 	prima_guts.application = NULL_HANDLE;
 	return true;
@@ -183,7 +183,7 @@ apc_application_get_bitmap( Handle self, Handle image, int x, int y, int xLen, i
 		return false;
 	}
 	bm2 = SelectObject( dc2, bm);
-	BitBlt( dc2, 0, 0, xLen, yLen, dc, x, sys lastSize.y - y - yLen, SRCCOPY);
+	BitBlt( dc2, 0, 0, xLen, yLen, dc, x, sys last_size.y - y - yLen, SRCCOPY);
 	SelectObject( dc2, bm2);
 	SelectPalette( dc2, hp2, 1);
 	DeleteObject( hp);
@@ -210,7 +210,7 @@ hwnd_to_view( HWND win)
 	LONG_PTR ll;
 	if (( !win) || ( !IsWindow( win)))
 		return NULL_HANDLE;
-	if ( GetWindowThreadProcessId( win, NULL) != guts. mainThreadId)
+	if ( GetWindowThreadProcessId( win, NULL) != guts. main_thread_id)
 		return NULL_HANDLE;
 	h = GetWindowLongPtr( win, GWLP_USERDATA);
 	if ( !h) return NULL_HANDLE;
@@ -228,11 +228,12 @@ hwnd_to_view( HWND win)
 
 
 int
-apc_application_get_os_info( char *system, int slen,
-									char *release, int rlen,
-									char *vendor, int vlen,
-									char *arch, int alen)
-{
+apc_application_get_os_info(
+	char *system,  int slen,
+	char *release, int rlen,
+	char *vendor,  int vlen,
+	char *arch,    int alen
+) {
 	SYSTEM_INFO si;
 	OSVERSIONINFO os = { sizeof( OSVERSIONINFO)};
 	DWORD  version;
@@ -409,7 +410,7 @@ process_msg( MSG * msg)
 	case WM_SYSKEYUP:
 	case WM_KEYDOWN:
 	case WM_KEYUP:
-		GetKeyboardState( guts. keyState);
+		GetKeyboardState( guts. key_state);
 		break;
 	case WM_KEYPACKET: {
 		KeyPacket * kp = ( KeyPacket *) msg-> lParam;
@@ -422,33 +423,33 @@ process_msg( MSG * msg)
 		exception_check_raise();
 		break;
 	}
-	case WM_LBUTTONDOWN:  musClk. emsg = WM_LBUTTONUP; goto MUS1;
-	case WM_MBUTTONDOWN:  musClk. emsg = WM_MBUTTONUP; goto MUS1;
-	case WM_RBUTTONDOWN:  musClk. emsg = WM_RBUTTONUP; goto MUS1;
-	case WM_XBUTTONDOWN:  musClk. emsg = WM_XBUTTONUP; goto MUS1;
+	case WM_LBUTTONDOWN:  mouse_click. emsg = WM_LBUTTONUP; goto MUS1;
+	case WM_MBUTTONDOWN:  mouse_click. emsg = WM_MBUTTONUP; goto MUS1;
+	case WM_RBUTTONDOWN:  mouse_click. emsg = WM_RBUTTONUP; goto MUS1;
+	case WM_XBUTTONDOWN:  mouse_click. emsg = WM_XBUTTONUP; goto MUS1;
 	MUS1:
-		musClk. pending = 1;
-		musClk. msg     = *msg;
-		musClk. msg. wParam &=  MK_CONTROL|MK_SHIFT;
+		mouse_click. pending = 1;
+		mouse_click. msg     = *msg;
+		mouse_click. msg. wParam &=  MK_CONTROL|MK_SHIFT;
 		break;
-	case WM_LBUTTONUP:   musClk. msg. message = WM_LMOUSECLICK; goto MUS2;
-	case WM_MBUTTONUP:   musClk. msg. message = WM_MMOUSECLICK; goto MUS2;
-	case WM_RBUTTONUP:   musClk. msg. message = WM_RMOUSECLICK; goto MUS2;
-	case WM_XBUTTONUP:   musClk. msg. message = WM_XMOUSECLICK; goto MUS2;
+	case WM_LBUTTONUP:   mouse_click. msg. message = WM_LMOUSECLICK; goto MUS2;
+	case WM_MBUTTONUP:   mouse_click. msg. message = WM_MMOUSECLICK; goto MUS2;
+	case WM_RBUTTONUP:   mouse_click. msg. message = WM_RMOUSECLICK; goto MUS2;
+	case WM_XBUTTONUP:   mouse_click. msg. message = WM_XMOUSECLICK; goto MUS2;
 	MUS2:
-		if ( musClk. pending &&
-			( musClk. emsg         == msg-> message) &&
-			( musClk. msg. hwnd    == msg-> hwnd)    &&
-			( musClk. msg. wParam  == ( msg-> wParam & ( MK_CONTROL|MK_SHIFT))) &&
-			( abs( musClk. msg. time  - msg-> time) < 200)
+		if ( mouse_click. pending &&
+			( mouse_click. emsg         == msg-> message) &&
+			( mouse_click. msg. hwnd    == msg-> hwnd)    &&
+			( mouse_click. msg. wParam  == ( msg-> wParam & ( MK_CONTROL|MK_SHIFT))) &&
+			( abs( mouse_click. msg. time  - msg-> time) < 200)
 			)
-			PostMessage( msg-> hwnd, musClk. msg. message, msg-> wParam, msg-> lParam);
-		musClk. pending = 0;
+			PostMessage( msg-> hwnd, mouse_click. msg. message, msg-> wParam, msg-> lParam);
+		mouse_click. pending = 0;
 		break;
 	case WM_LBUTTONDBLCLK:
 	case WM_MBUTTONDBLCLK:
 	case WM_RBUTTONDBLCLK:
-		musClk. pending = 0;
+		mouse_click. pending = 0;
 		break;
 	case WM_SOCKET: {
 		int i;
@@ -464,12 +465,12 @@ process_msg( MSG * msg)
 				break;
 			}
 		}
-		guts. socketPostSync = 0; // clear semaphore
+		guts. socket_post_sync = 0; // clear semaphore
 		return true;
 	}
 	case WM_SOCKET_REHASH:
 		socket_rehash();
-		guts. socketPostSync = 0; // clear semaphore
+		guts. socket_post_sync = 0; // clear semaphore
 		return true;
 	case WM_FILE:
 		if ( msg-> wParam == 0) {
@@ -530,15 +531,12 @@ apc_application_go( Handle self)
 }
 
 Bool
-HWND_lock( Bool lock)
+hwnd_lock( Bool lock)
 {
-	if ( lock)
-	{
-		if ( guts. appLock++ == 0) return LockWindowUpdate( HWND_DESKTOP);
-	}
-	else
-	{
-		if ( --guts. appLock == 0) return LockWindowUpdate( NULL);
+	if ( lock) {
+		if ( guts. app_lock++ == 0) return LockWindowUpdate( HWND_DESKTOP);
+	} else {
+		if ( --guts. app_lock == 0) return LockWindowUpdate( NULL);
 	}
 	return true;
 }
@@ -546,13 +544,13 @@ HWND_lock( Bool lock)
 Bool
 apc_application_lock( Handle self)
 {
-	return HWND_lock( true);
+	return hwnd_lock( true);
 }
 
 Bool
 apc_application_unlock( Handle self)
 {
-	return HWND_lock( false);
+	return hwnd_lock( false);
 }
 
 Bool
@@ -578,7 +576,7 @@ apc_application_yield(Bool wait_for_event)
 	while ( !guts. application_stop_signal && PeekMessage( &msg, NULL, 0, 0, PM_REMOVE)) {
 		got_events = true;
 		if ( !process_msg( &msg)) {
-			PostThreadMessage( guts. mainThreadId, prima_guts.app_is_dead ? WM_QUIT : WM_TERMINATE, 0, 0);
+			PostThreadMessage( guts. main_thread_id, prima_guts.app_is_dead ? WM_QUIT : WM_TERMINATE, 0, 0);
 			return false;
 		}
 	}
@@ -604,7 +602,7 @@ apc_application_get_widget_from_point( Handle self, Point point)
 
 	objCheck NULL_HANDLE;
 	pt.x = point. x;
-	pt.y = sys lastSize. y - point. y - 1;
+	pt.y = sys last_size. y - point. y - 1;
 	p    =  WindowFromPoint( pt);
 
 	if ( p) {
@@ -616,7 +614,7 @@ apc_application_get_widget_from_point( Handle self, Point point)
 
 	if ( !p) return NULL_HANDLE;
 	if ( !( tid = GetWindowThreadProcessId( p, &pid))) apiErr;
-	if ( tid != guts. mainThreadId) return NULL_HANDLE;
+	if ( tid != guts. main_thread_id) return NULL_HANDLE;
 	return ( Handle) GetWindowLongPtr( p, GWLP_USERDATA);
 }
 
@@ -798,7 +796,7 @@ apc_message( Handle self, PEvent ev, Bool post)
 			apc_message( self, &newEvent, post);
 		}
 	general: {
-		LPARAM mp2 = MAKELPARAM( ev-> pos. where. x, sys lastSize. y - ev-> pos. where. y - 1);
+		LPARAM mp2 = MAKELPARAM( ev-> pos. where. x, sys last_size. y - ev-> pos. where. y - 1);
 		WPARAM mp1 = mp1s |
 			(( ev-> pos. mod & kmShift) ? MK_SHIFT   : 0) |
 			(( ev-> pos. mod & kmCtrl ) ? MK_CONTROL : 0);
@@ -842,7 +840,7 @@ apc_message( Handle self, PEvent ev, Bool post)
 			} else {
 				SHORT c = VkKeyScan(( CHAR ) ev-> key. code);
 				if ( c == -1) {
-					HKL kl = guts. keyLayout ? guts. keyLayout : GetKeyboardLayout( 0);
+					HKL kl = guts. key_layout ? guts. key_layout : GetKeyboardLayout( 0);
 					c = VkKeyScanEx(( CHAR) ev-> key. code, kl);
 					if ( c == -1) return false;
 					scan = MapVirtualKeyEx( LOBYTE( c), 0, kl);
@@ -1083,7 +1081,7 @@ win32_openfile( const char * params)
 		Bool ret;
 		WCHAR filename[20480] = L"";
 
-		guts. focSysDialog = 1;
+		guts. sys_focus_dialog = 1;
 		o. lpstrFile = filename;
 		ret = (strncmp( params, "open", 4) == 0) ?
 			GetOpenFileNameW( &o) :
@@ -1099,7 +1097,7 @@ win32_openfile( const char * params)
 				);
 			}
 		}
-		guts. focSysDialog = 0;
+		guts. sys_focus_dialog = 0;
 		if ( !ret) return 0;
 		wcsncpy( directory, o. lpstrFile, o. nFileOffset);
 		if ( o. Flags & OFN_ALLOWMULTISELECT) {
@@ -1122,7 +1120,7 @@ find_console( HWND w, LPARAM ptr)
 	DWORD pid;
 	char buf[256];
 	DWORD tid = GetWindowThreadProcessId( w, &pid);
-	if ( tid != guts. mainThreadId) return TRUE;
+	if ( tid != guts. main_thread_id) return TRUE;
 	if ( GetClassName( w, buf, 255) == 0) return TRUE;
 	if ( strcmp( buf, "ConsoleWindowClass") != 0) return TRUE;
 	*(HWND*)(ptr) = w;
@@ -1155,8 +1153,8 @@ apc_system_action( const char * params)
 				warn("Bad resolution\n");
 				return 0;
 			}
-			guts. displayResolution. x = dx;
-			guts. displayResolution. y = dy;
+			guts. display_resolution. x = dx;
+			guts. display_resolution. y = dy;
 			reset_system_fonts();
 			destroy_font_hash();
 			font_clean();

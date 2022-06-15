@@ -126,21 +126,21 @@ apc_show_message( const char * message, Bool utf8)
 Bool
 apc_sys_get_insert_mode()
 {
-	return guts. insertMode;
+	return guts. insert_mode;
 }
 
 Bool
 apc_sys_set_insert_mode( Bool insMode)
 {
-	guts. insertMode = insMode;
+	guts. insert_mode = insMode;
 	return true;
 }
 
 Point
-get_window_borders( int borderStyle)
+get_window_borders( int border_style)
 {
 	Point ret = { 0, 0};
-	switch ( borderStyle)
+	switch ( border_style)
 	{
 		case bsSizeable:
 			ret. x = GetSystemMetrics( SM_CXFRAME);
@@ -190,18 +190,18 @@ apc_sys_get_value( int sysValue)
 		RegCloseKey( hKey);
 		return atol( buf);
 	case svWheelPresent    : return GetSystemMetrics( SM_MOUSEWHEELPRESENT);
-	case svXIcon           : return guts. iconSizeLarge. x;
-	case svYIcon           : return guts. iconSizeLarge. y;
-	case svXSmallIcon      : return guts. iconSizeSmall. x;
-	case svYSmallIcon      : return guts. iconSizeSmall. y;
-	case svXPointer        : return guts. pointerSize. x;
-	case svYPointer        : return guts. pointerSize. y;
+	case svXIcon           : return guts. icon_size_large. x;
+	case svYIcon           : return guts. icon_size_large. y;
+	case svXSmallIcon      : return guts. icon_size_small. x;
+	case svYSmallIcon      : return guts. icon_size_small. y;
+	case svXPointer        : return guts. pointer_size. x;
+	case svYPointer        : return guts. pointer_size. y;
 	case svXScrollbar      : return GetSystemMetrics( SM_CXHSCROLL);
 	case svYScrollbar      : return GetSystemMetrics( SM_CYVSCROLL);
 	case svXCursor         : return GetSystemMetrics( SM_CXBORDER);
 	case svAutoScrollFirst : return 200;
 	case svAutoScrollNext  : return 50;
-	case svInsertMode      : return guts. insertMode;
+	case svInsertMode      : return guts. insert_mode;
 	case svXbsNone         : return 0;
 	case svYbsNone         : return 0;
 	case svXbsSizeable     : return GetSystemMetrics( SM_CXFRAME);
@@ -211,11 +211,11 @@ apc_sys_get_value( int sysValue)
 	case svXbsDialog       : return GetSystemMetrics( SM_CXDLGFRAME);
 	case svYbsDialog       : return GetSystemMetrics( SM_CYDLGFRAME);
 	case svShapeExtension  : return 1;
-	case svColorPointer    : return guts. displayBMInfo. bmiHeader. biBitCount > 4;
+	case svColorPointer    : return guts. display_bm_info. bmiHeader. biBitCount > 4;
 	case svCanUTF8_Input   : return 1;
 	case svCanUTF8_Output  : return 1;
 	case svCompositeDisplay: return is_dwm_enabled();
-	case svLayeredWidgets: return guts. displayBMInfo. bmiHeader. biBitCount > 8;
+	case svLayeredWidgets: return guts. display_bm_info. bmiHeader. biBitCount > 8;
 	case svFixedPointerSize: return 0;
 	case svMenuCheckSize   : return GetSystemMetrics( SM_CXMENUCHECK );
 	case svFriBidi         : return prima_guts.use_fribidi;
@@ -230,7 +230,7 @@ apc_sys_get_value( int sysValue)
 PFont
 apc_sys_get_msg_font( PFont copyTo)
 {
-	*copyTo = guts. msgFont;
+	*copyTo = guts. msg_font;
 	copyTo-> pitch = fpDefault;
 	return copyTo;
 }
@@ -238,7 +238,7 @@ apc_sys_get_msg_font( PFont copyTo)
 PFont
 apc_sys_get_caption_font( PFont copyTo)
 {
-	*copyTo = guts. capFont;
+	*copyTo = guts. cap_font;
 	copyTo-> pitch = fpDefault;
 	return copyTo;
 }
@@ -263,14 +263,14 @@ prf_exists( HKEY hk, char * path, int * info)
 {
 	HKEY hKey;
 	Handle cache;
-	if (( cache = ( Handle) hash_fetch( regnodeMan, path, strlen( path)))) {
+	if (( cache = ( Handle) hash_fetch( mgr_registry, path, strlen( path)))) {
 		if ( info) *info = cache;
 		return cache & rgxExists;
 	}
 
 	if ( RegOpenKeyEx( hk, path, 0,
 							KEY_READ, &hKey) != ERROR_SUCCESS) {
-		hash_store( regnodeMan, path, strlen( path), (void*) rgxNotExists);
+		hash_store( mgr_registry, path, strlen( path), (void*) rgxNotExists);
 		return false;
 	}
 
@@ -285,7 +285,7 @@ prf_exists( HKEY hk, char * path, int * info)
 		if ( values  > 0) cache |= rgxHasValues;
 		*info = cache;
 	}
-	hash_store( regnodeMan, path, strlen( path), (void*) cache);
+	hash_store( mgr_registry, path, strlen( path), (void*) cache);
 	RegCloseKey( hKey);
 	return true;
 }
@@ -331,11 +331,11 @@ prf_find( HKEY hk, char * path, List * ids, int firstName, char * result)
 
 
 Bool
-apc_fetch_resource( const char *className, const char *name,
-						const char *resClass, const char *resName,
-						Handle owner, int resType,
-						void *val)
-{
+apc_fetch_resource( const char *class_name, const char *name,
+	const char *resClass, const char *resName,
+	Handle owner, int resType,
+	void *val
+) {
 	Bool res = true;
 	HKEY hKey;
 	char buf[ MAXREGLEN];
@@ -345,7 +345,7 @@ apc_fetch_resource( const char *className, const char *name,
 	i = 2; while( i--) list_create(&ids[i], 8, 8);
 
 	list_add(&ids[1], ( Handle) duplicate_string( name));
-	list_add(&ids[0], ( Handle) duplicate_string( className));
+	list_add(&ids[0], ( Handle) duplicate_string( class_name));
 
 	while ( owner) {
 		list_insert_at(&ids[1],   ( Handle) prima_normalize_resource_string(
