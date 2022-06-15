@@ -425,7 +425,8 @@ prima_make_brush( Handle self, int colorIndex)
 				XSetBackground( DISP, XX-> gc, XX-> back. primary);
 				XX->flags.brush_back = 1;
 			}
-			XSetFillStyle( DISP, XX-> gc, FillOpaqueStippled);
+			XSetFillStyle( DISP, XX-> gc,
+				XX->flags.use_stipple_transparency ? FillStippled : FillOpaqueStippled);
 		} else {
 			XSetTile( DISP, XX-> gc, XX-> fp_tile);
 			XCHECKPOINT;
@@ -451,7 +452,7 @@ prima_make_brush( Handle self, int colorIndex)
 			XSetFillStyle( DISP, XX-> gc, FillOpaqueStippled);
 		} else
 			XSetFillStyle( DISP, XX-> gc, FillSolid);
-	} else if ( XX-> flags. brush_null_hatch) {
+	} else if ( XX-> flags. brush_null_hatch && !XX-> flags. use_stipple_transparency) {
 		if ( colorIndex > 0) return false;
 		if ( XX-> fore. balance) {
 			p = prima_get_hatch( &guts. ditherPatterns[ XX-> fore. balance]);
@@ -472,7 +473,9 @@ prima_make_brush( Handle self, int colorIndex)
 		if ( colorIndex > 0) return false;
 
 		p = prima_get_hatch( &XX-> fill_pattern);
-		XSetFillStyle( DISP, XX-> gc, p ? FillOpaqueStippled : FillSolid);
+		XSetFillStyle( DISP, XX-> gc, p ?
+			(XX->flags.use_stipple_transparency ? FillStippled : FillOpaqueStippled) :
+			FillSolid);
 		if ( p) XSetStipple( DISP, XX-> gc, p);
 		if (!XX->flags.brush_fore) {
 			XSetForeground( DISP, XX-> gc, XX-> fore. primary);
@@ -1869,8 +1872,7 @@ apc_gp_set_back_color( Handle self, Color color)
 	if ( XF_IN_PAINT(XX)) {
 		prima_allocate_color( self, color, &XX-> back);
 		XX-> flags. brush_back = 0;
-		if ( !XX-> flags. brush_null_hatch)
-			guts.xrender_pen_dirty = true;
+		guts.xrender_pen_dirty = true;
 	} else
 		XX-> saved_back = color;
 	return true;
@@ -1905,7 +1907,7 @@ create_tile( Handle self, Handle image, Bool mono )
 		flag = CACHE_BITMAP;
 	} else if ( XF_LAYERED(XX) ) {
 		depth = guts.argb_depth;
-		flag = CACHE_LAYERED;
+		flag = X(image)->type.icon ? CACHE_LAYERED_ALPHA : CACHE_LAYERED;
 	} else {
 		depth = guts.depth;
 		flag = CACHE_PIXMAP;
@@ -1943,7 +1945,7 @@ apc_gp_set_fill_image( Handle self, Handle image)
 	if ( i->stage != csNormal ) return false;
 
 	cleanup_stipples(self);
-	if ( i->type == imBW )
+	if ( i->type == imBW && !X(image)->type.icon)
 		XX->fp_stipple = create_tile(self, image, 1);
 	else
 		XX->fp_tile    = create_tile(self, image, 0);
@@ -2004,8 +2006,7 @@ apc_gp_set_fill_pattern_offset( Handle self, Point fpo)
 		gcv. ts_y_origin = fpo. y;
 		XChangeGC( DISP, XX-> gc, GCTileStipXOrigin | GCTileStipYOrigin, &gcv);
 		XCHECKPOINT;
-		if ( !XX-> flags. brush_null_hatch)
-			guts.xrender_pen_dirty = true;
+		guts.xrender_pen_dirty = true;
 	} else {
 		XX-> gcv. ts_x_origin = fpo. x;
 		XX-> gcv. ts_y_origin = fpo. y;
