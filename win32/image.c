@@ -377,49 +377,71 @@ GpTexture*
 image_create_gp_pattern( Handle self, Handle image )
 {
 	Handle copy;
-	PImage i;
+	PIcon i;
 	PixelFormat format;
 	GpBitmap *b = NULL;
 	GpTexture *ret = NULL;
+	BitmapData bd;
 
-	if ( !( copy = CImage(image)->dup(image)))
+	if ( !( copy = CIcon(image)->dup(image)))
 		return NULL;
-	i = ( PImage ) copy;
+	i = ( PIcon ) copy;
 
-	switch ( i->type & imBPP ) {
-	case 1:
-		format = PixelFormat1bppIndexed;
-		break;
-	case 4:
-		format = PixelFormat8bppIndexed;
-		i->self->set_type( copy, imbpp8 );
-		break;
-	case 8:
-		format = PixelFormat8bppIndexed;
-		break;
-	case 24:
-		format = PixelFormat24bppRGB;
-		break;
-	default:
-		if ( i-> type & imGrayScale ) {
-			format = PixelFormat8bppIndexed;
-			i->self->set_type( copy, imByte );
-		} else {
-			format = PixelFormat24bppRGB;
+	if ( dsys(image)options.aptIcon) {
+		if ( i-> type != imRGB )
 			i->self->set_type( copy, imRGB );
+		if ( i-> maskType != 8 )
+			i->self->set_maskType( copy, 8 );
+		format = PixelFormat32bppARGB;
+
+		GPCALL GdipCreateBitmapFromScan0(i->w, i-> h, i->w * 4, format, NULL, &b);
+		apiGPErrCheck;
+		if ( rc ) goto FAIL;
+
+		GPCALL GdipBitmapLockBits( b, NULL, ImageLockModeWrite, format, &bd);
+		apiGPErrCheck;
+		if ( rc ) goto FAIL;
+
+		icon2argb( i, bd.Scan0 );
+		GdipBitmapUnlockBits(b, &bd);
+	} else {
+		switch ( i->type & imBPP ) {
+		case 1:
+			format = PixelFormat1bppIndexed;
+			break;
+		case 4:
+			format = PixelFormat8bppIndexed;
+			i->self->set_type( copy, imbpp8 );
+			break;
+		case 8:
+			format = PixelFormat8bppIndexed;
+			break;
+		case 24:
+			format = PixelFormat24bppRGB;
+			break;
+		default:
+			if ( i-> type & imGrayScale ) {
+				format = PixelFormat8bppIndexed;
+				i->self->set_type( copy, imByte );
+			} else {
+				format = PixelFormat24bppRGB;
+				i->self->set_type( copy, imRGB );
+			}
 		}
+		i->self->mirror( copy, true);
+
+		GPCALL GdipCreateBitmapFromScan0(i->w, i-> h, LINE_SIZE(i->w, i->type), format, i->data, &b);
+		apiGPErrCheck;
+		if ( rc ) goto FAIL;
 	}
 
-	i->self->mirror( copy, true);
-
-	GPCALL GdipCreateBitmapFromScan0(i->w, i-> h, LINE_SIZE(i->w, i->type), format, i->data, &b);
-	apiGPErrCheck;
-	if ( rc ) goto FAIL;
 
 	if (( i->type & imBPP ) != 24 ) {
 		XColorPalette palette = { 0, i-> palSize };
-		if ( i->type == imBW ) {
-			palette.entries[0] = 0xff000000 | remap_color(sys bg, false);
+		if ( i->type == imBW && !dsys(i)options.aptIcon) {
+			palette.entries[0] = remap_color(sys bg, false);
+			if ( sys currentROP2 == ropCopyPut )
+				palette.entries[0] |= 0xff000000;
 			palette.entries[1] = 0xff000000 | remap_color(sys fg, false);
 		} else {
 			int j;

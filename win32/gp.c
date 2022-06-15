@@ -1152,7 +1152,7 @@ apc_gp_get_transform( Handle self)
 
 #define pal_ok ((sys bpp <= 8) && ( sys pal))
 
-#define COLOR_CHANGE_FREE_BRUSH ( var fillPatternImage ? PImage(var fillPatternImage)->type == imBW : true )
+#define COLOR_CHANGE_FREE_BRUSH (var fillPatternImage ? ((PImage(var fillPatternImage)->type == imBW) && !dsys(var fillPatternImage)options.aptIcon) : true )
 
 Bool
 apc_gp_set_back_color( Handle self, Color color)
