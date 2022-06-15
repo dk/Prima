@@ -358,7 +358,6 @@ SUCCESS:
 	return true;
 }
 
-
 Bool
 stylus_is_geometric( Handle self )
 {
