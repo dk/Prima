@@ -135,8 +135,8 @@ cursor_update( Handle self)
 		return true;
 	DestroyCaret();
 	if ( is_apt( aptCursorVis)) {
-		if ( !CreateCaret(( HWND) var handle, NULL, sys cursorSize. x, sys cursorSize. y)) apiErrRet;
-		if ( !SetCaretPos( sys cursorPos. x, sys lastSize. y - sys cursorPos. y - sys cursorSize. y)) apiErrRet;
+		if ( !CreateCaret(( HWND) var handle, NULL, sys cursor_size. x, sys cursor_size. y)) apiErrRet;
+		if ( !SetCaretPos( sys cursor_pos. x, sys last_size. y - sys cursor_pos. y - sys cursor_size. y)) apiErrRet;
 		if ( !ShowCaret(( HWND) var handle)) apiErrRet;
 	}
 	return true;
@@ -147,8 +147,8 @@ apc_cursor_set_pos( Handle self, int x, int y)
 {
 	objCheck false;
 	if ( !hwnd_check_limits( x, y, true)) apcErrRet( errInvParams);
-	sys cursorPos. x = x;
-	sys cursorPos. y = y;
+	sys cursor_pos. x = x;
+	sys cursor_pos. y = y;
 	return cursor_update( self);
 }
 
@@ -157,8 +157,8 @@ apc_cursor_set_size( Handle self, int x, int y)
 {
 	objCheck false;
 	if ( !hwnd_check_limits( x, y, false)) apcErrRet( errInvParams);
-	sys cursorSize. x = x;
-	sys cursorSize. y = y;
+	sys cursor_size. x = x;
+	sys cursor_size. y = y;
 	return cursor_update( self);
 }
 
@@ -175,7 +175,7 @@ apc_cursor_get_pos( Handle self)
 {
 	Point p = {0,0};
 	objCheck p;
-	return sys cursorPos;
+	return sys cursor_pos;
 }
 
 Point
@@ -183,7 +183,7 @@ apc_cursor_get_size( Handle self)
 {
 	Point p = {0,0};
 	objCheck p;
-	return sys cursorSize;
+	return sys cursor_size;
 }
 
 Bool
@@ -209,7 +209,7 @@ apc_pointer_get_hot_spot( Handle self)
 		else if ( GetObject( ii.hbmMask, sizeof( BITMAP), ( LPSTR) &bitmap))
 			y = bitmap.bmHeight / 2;
 		else
-			y = guts. pointerSize. y;
+			y = guts. pointer_size. y;
 		r. x = ii. xHotspot;
 		r. y = y - ii. yHotspot - 1;
 		DeleteObject( ii. hbmMask);
@@ -234,13 +234,13 @@ int
 apc_pointer_get_shape( Handle self)
 {
 	objCheck 0;
-	return sys pointerId;
+	return sys pointer_id;
 }
 
 Point
 apc_pointer_get_size( Handle self)
 {
-	return guts. pointerSize;
+	return guts. pointer_size;
 }
 
 Bool
@@ -254,8 +254,8 @@ apc_pointer_get_bitmap( Handle self, Handle icon)
 	}};
 	BITMAP bitmap;
 
-	bi. header.biWidth = guts. pointerSize. x;
-	bi. header.biHeight = guts. pointerSize. y;
+	bi. header.biWidth = guts. pointer_size. x;
+	bi. header.biHeight = guts. pointer_size. y;
 
 	if ( icon == NULL_HANDLE)
 		apcErrRet( errInvParams);
@@ -268,7 +268,7 @@ apc_pointer_get_bitmap( Handle self, Handle icon)
 	else if ( GetObject( ii.hbmMask, sizeof( BITMAP), ( LPSTR) &bitmap))
 		i-> self-> create_empty( icon, bitmap.bmWidth, bitmap.bmHeight / 2, 1);
 	else
-		i-> self-> create_empty( icon, guts. pointerSize. x, guts. pointerSize. y, 1);
+		i-> self-> create_empty( icon, guts. pointer_size. x, guts. pointer_size. y, 1);
 	if (!( dc = dc_alloc())) return false;
 	if ( ii. hbmColor) {
 		HDC ops = dsys( icon) ps;
@@ -294,7 +294,7 @@ Bool
 apc_pointer_get_visible( Handle self)
 {
 	objCheck false;
-	return !guts. pointerInvisible;
+	return !guts. pointer_invisible;
 }
 
 Bool
@@ -341,7 +341,7 @@ direct_pointer_change( Handle self)
 {
 	Point p;
 	if ( var stage != csNormal) return false;
-	if ( guts.dragSource != NULL ) return true;
+	if ( guts.drag_source != NULL ) return true;
 	if ( !IsWindowVisible( HANDLE)) return false;
 	p = apc_pointer_get_pos( prima_guts.application);
 	return self == apc_application_get_widget_from_point( prima_guts.application, p);
@@ -355,13 +355,13 @@ apc_pointer_set_shape( Handle self, int sysPtrId)
 	objCheck false;
 	user = sys pointer2;
 	if ( sysPtrId < crDefault || sysPtrId > crUser) return false;
-	sys pointerId = sysPtrId;
+	sys pointer_id = sysPtrId;
 	if ( sysPtrId == crDefault)
 	{
 		Handle owner = var owner;
 		while( owner)
 		{
-			sysPtrId = dsys( owner) pointerId;
+			sysPtrId = dsys( owner) pointer_id;
 			if ( sysPtrId != crDefault) break;
 			owner = (( PComponent) owner)-> owner;
 		}
@@ -384,7 +384,7 @@ apc_pointer_set_shape( Handle self, int sysPtrId)
 }
 
 Bool
-apc_pointer_set_user( Handle self, Handle icon, Point hotSpot)
+apc_pointer_set_user( Handle self, Handle icon, Point hot_spot)
 {
 	Bool direct;
 	HCURSOR cursor;
@@ -394,9 +394,9 @@ apc_pointer_set_user( Handle self, Handle icon, Point hotSpot)
 	direct = direct_pointer_change( self);
 	if (icon) {
 		Point sz = { PImage(icon)->w, PImage(icon)-> h };
-		hotSpot. y = sz.y - hotSpot. y - 1;
-		cursor = image_make_icon_handle( icon, sz, &hotSpot);
-		if ( guts.apcError) return false;
+		hot_spot. y = sz.y - hot_spot. y - 1;
+		cursor = image_make_icon_handle( icon, sz, &hot_spot);
+		if ( guts.apc_error) return false;
 	} else
 		cursor = NULL;
 
@@ -406,7 +406,7 @@ apc_pointer_set_user( Handle self, Handle icon, Point hotSpot)
 	}
 	sys pointer2 = cursor;
 
-	if ( sys pointerId == crUser)
+	if ( sys pointer_id == crUser)
 	{
 		sys pointer = sys pointer2;
 		if ( direct) SetCursor( sys pointer);
@@ -418,9 +418,9 @@ Bool
 apc_pointer_set_visible( Handle self, Bool visible)
 {
 	if ( var stage == csNormal) {
-		guts. pointerInvisible = !visible;
+		guts. pointer_invisible = !visible;
 		ShowCursor( visible);
-		guts. pointerLock += visible ? 1 : -1;
+		guts. pointer_lock += visible ? 1 : -1;
 	}
 	return true;
 }

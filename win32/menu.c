@@ -140,7 +140,7 @@ build_bitmap_key( HMENU menu, PMenuItemReg m, BitmapKey * key)
 }
 
 static HBITMAP
-unchecked_bitmap(void)
+get_unchecked_bitmap(void)
 {
 	int cx, x1, y1, x2, y2, i, sz;
 	HDC dc;
@@ -149,28 +149,28 @@ unchecked_bitmap(void)
 	HPEN stock_brush;
 	HBITMAP stock_bm;
 
-	if ( uncheckedBitmap == (HBITMAP)(-1)) return NULL;
-	if ( uncheckedBitmap != NULL) return uncheckedBitmap;
+	if ( std_unchecked_bitmap == (HBITMAP)(-1)) return NULL;
+	if ( std_unchecked_bitmap != NULL) return std_unchecked_bitmap;
 
-	uncheckedBitmap = (HBITMAP) -1;
+	std_unchecked_bitmap = (HBITMAP) -1;
 
 	cx = GetSystemMetrics( SM_CXMENUCHECK ) - 1;
 	dc = GetDC(NULL);
-	if ( !( uncheckedBitmap = image_create_argb_dib_section( dc, cx, cx, &ptr))) {
+	if ( !( std_unchecked_bitmap = image_create_argb_dib_section( dc, cx, cx, &ptr))) {
 		ReleaseDC(NULL, dc);
 		return NULL;
 	}
 	ReleaseDC(NULL, dc);
 
 	dc = CreateCompatibleDC(NULL);
-	stock_bm = SelectObject( dc, uncheckedBitmap);
+	stock_bm = SelectObject( dc, std_unchecked_bitmap);
 
 	sz = cx * cx;
 	bzero(ptr, sz * 4);
 	x1 = y1 = (cx > 10) ? cx / 4 : 0;
 	x2 = y2 = cx - x1;
 
-	stock_brush = SelectObject( dc, hBrushHollow);
+	stock_brush = SelectObject( dc, std_hollow_brush);
 
 	stock_pen = SelectObject( dc, CreatePen( PS_SOLID, 0, 0x404040));
 	MoveToEx( dc, x1, y2, NULL);
@@ -201,7 +201,7 @@ unchecked_bitmap(void)
 	SelectObject(dc, stock_bm);
 	DeleteDC(dc);
 
-	return uncheckedBitmap;
+	return std_unchecked_bitmap;
 }
 
 static HMENU
@@ -230,7 +230,7 @@ add_item( Bool menuType, Handle menu, PMenuItemReg i)
 	}
 	mwd-> menu = menu;
 	first      = i;
-	hash_store( menuMan, &m, sizeof(HMENU), mwd);
+	hash_store( mgr_menu, &m, sizeof(HMENU), mwd);
 
 	while ( i != NULL)
 	{
@@ -262,12 +262,12 @@ add_item( Bool menuType, Handle menu, PMenuItemReg i)
 				BitmapKey key;
 				HBITMAP bitmap = create_menu_bitmap( i-> icon);
 				build_bitmap_key(m, i, &key);
-				hash_store( menuBitmapMan, &key, sizeof(key), (void*) bitmap);
+				hash_store( mgr_menu_bitmaps, &key, sizeof(key), (void*) bitmap);
 				mii. fMask |= MIIM_CHECKMARKS;
 				mii. hbmpChecked = mii. hbmpUnchecked = bitmap;
 			} else if ( i-> flags. autotoggle ) {
 				mii. fMask |= MIIM_CHECKMARKS;
-				mii. hbmpUnchecked = unchecked_bitmap();
+				mii. hbmpUnchecked = get_unchecked_bitmap();
 			}
 			InsertMenuItemW( m, -1, true, &mii);
 			if ( i-> text && mii.dwTypeData)
@@ -286,7 +286,7 @@ apc_menu_create( Handle self, Handle owner)
 {
 	objCheck false;
 	dobjCheck( owner) false;
-	sys className = WC_MENU;
+	sys class_name = WC_MENU;
 	sys owner     = DHANDLE( owner);
 	return true;
 }
@@ -295,7 +295,7 @@ static Bool
 clear_menus( PMenuWndData item, int keyLen, void * key, void * params)
 {
 	if ( item-> menu == ( Handle) params)
-		hash_delete( menuMan, key, keyLen, true);
+		hash_delete( mgr_menu, key, keyLen, true);
 	return false;
 }
 
@@ -303,7 +303,7 @@ static Bool
 clear_bitmaps(void * bm, int keyLen, BitmapKey * key, void * menu)
 {
 	if ( key-> menu == ( HMENU) menu)
-		hash_delete( menuBitmapMan, key, keyLen, true);
+		hash_delete( mgr_menu_bitmaps, key, keyLen, true);
 	return false;
 }
 
@@ -312,8 +312,8 @@ apc_menu_destroy( Handle self)
 {
 	if ( var handle) {
 		objCheck false;
-		hash_first_that( menuMan, clear_menus, ( void *) self, NULL, NULL);
-		hash_first_that( menuBitmapMan, clear_bitmaps, ( void *) var handle, NULL, NULL);
+		hash_first_that( mgr_menu, clear_menus, ( void *) self, NULL, NULL);
+		hash_first_that( mgr_menu_bitmaps, clear_bitmaps, ( void *) var handle, NULL, NULL);
 		if ( IsMenu(( HMENU) var handle) && !DestroyMenu(( HMENU) var handle)) apiErrRet;
 		return true;
 	}
@@ -323,7 +323,7 @@ apc_menu_destroy( Handle self)
 PFont
 apc_menu_default_font( PFont copyTo)
 {
-	*copyTo = guts. menuFont;
+	*copyTo = guts. menu_font;
 	copyTo-> pitch = fpDefault;
 	return copyTo;
 }
@@ -357,7 +357,7 @@ free_bitmaps( BitmapKey *key, PMenuItemReg m)
 {
 	if ( m-> icon ) {
 		key-> id = m-> id;
-		hash_delete( menuBitmapMan, &key, sizeof(key), false);
+		hash_delete( mgr_menu_bitmaps, &key, sizeof(key), false);
 	}
 	if ( m-> next )
 		free_bitmaps( key, m-> next);
@@ -369,7 +369,7 @@ static void
 free_submenus(HMENU menu)
 {
 	int i, n;
-	hash_delete( menuMan, &menu, sizeof(HMENU), true);
+	hash_delete( mgr_menu, &menu, sizeof(HMENU), true);
 	n = GetMenuItemCount(menu);
 	for ( i = 0; i < n; i++) {
 		HMENU submenu = GetSubMenu(menu, i);
@@ -462,7 +462,7 @@ update_check_icons( Handle self, PMenuItemReg m)
 	if ( flags == 0xFFFFFFFF) return false;
 
 	build_bitmap_key((HMENU) var handle, m, &key);
-	hash_delete( menuBitmapMan, &key, sizeof(key), false);
+	hash_delete( mgr_menu_bitmaps, &key, sizeof(key), false);
 
 	bzero(&mii, sizeof(mii));
 	mii.cbSize = sizeof(mii);
@@ -470,14 +470,14 @@ update_check_icons( Handle self, PMenuItemReg m)
 
 	if ( m-> icon ) {
 		if ( ( bitmap = create_menu_bitmap( m-> icon)) != NULL)
-			hash_store( menuBitmapMan, &key, sizeof(key), (void*) bitmap);
+			hash_store( mgr_menu_bitmaps, &key, sizeof(key), (void*) bitmap);
 		else {
 			apiErr;
 			ret = false;
 		}
 		mii.hbmpChecked = mii.hbmpUnchecked = bitmap;
 	} else if ( m-> flags.autotoggle ) {
-		mii. hbmpUnchecked = unchecked_bitmap();
+		mii. hbmpUnchecked = get_unchecked_bitmap();
 	}
 
 
@@ -577,10 +577,10 @@ apc_menu_update( Handle self, PMenuItemReg oldBranch, PMenuItemReg newBranch)
 		PWindow owner = ( PWindow) var owner;
 		Point size = owner-> self-> get_size( var owner);
 		if ( h) {
-			hash_first_that( menuBitmapMan, clear_bitmaps, ( void *) h, NULL, NULL);
+			hash_first_that( mgr_menu_bitmaps, clear_bitmaps, ( void *) h, NULL, NULL);
 			DestroyMenu( h);
 		}
-		hash_first_that( menuMan, clear_menus, ( void *) self, NULL, NULL);
+		hash_first_that( mgr_menu, clear_menus, ( void *) self, NULL, NULL);
 		var handle = ( Handle) add_item( kind_of( self, CMenu), self, (( PMenu) self)-> tree);
 		SetMenu( DHANDLE( var owner), self ? ( HMENU) var handle : NULL);
 		DrawMenuBar( DHANDLE( var owner));
@@ -588,10 +588,10 @@ apc_menu_update( Handle self, PMenuItemReg oldBranch, PMenuItemReg newBranch)
 			owner-> self-> set_size( var owner, size);
 	} else {
 		if ( var handle) {
-			hash_first_that( menuBitmapMan, clear_bitmaps, ( void *) var handle, NULL, NULL);
+			hash_first_that( mgr_menu_bitmaps, clear_bitmaps, ( void *) var handle, NULL, NULL);
 			DestroyMenu(( HMENU) var handle);
 		}
-		hash_first_that( menuMan, clear_menus, ( void *) self, NULL, NULL);
+		hash_first_that( mgr_menu, clear_menus, ( void *) self, NULL, NULL);
 		var handle = ( Handle) add_item( kind_of( self, CMenu), self, (( PMenu) self)-> tree);
 	}
 	return true;
@@ -603,7 +603,7 @@ apc_popup_create( Handle self, Handle owner)
 	objCheck false;
 	dobjCheck( owner) false;
 	sys owner = DHANDLE( owner);
-	sys className = WC_MENU;
+	sys class_name = WC_MENU;
 	return true;
 }
 
@@ -621,9 +621,9 @@ apc_popup( Handle self, int x, int y, Rect * anchor)
 	Bool ret = true;
 	objCheck false;
 
-	if ( guts. popupActive) return false;
+	if ( guts. popup_active) return false;
 
-	y = dsys( var owner) lastSize. y - y;
+	y = dsys( var owner) last_size. y - y;
 	owner = ( HWND)(( PComponent) var owner)-> handle;
 	if ( var owner != prima_guts.application) {
 		POINT pt;
@@ -651,11 +651,11 @@ apc_popup( Handle self, int x, int y, Rect * anchor)
 	} else
 		anchor = NULL;
 
-	guts. popupActive = 1;
+	guts. popup_active = 1;
 	ret = TrackPopupMenuEx(
 		( HMENU) var handle, TPM_LEFTBUTTON|TPM_LEFTALIGN|TPM_RIGHTBUTTON,
 		x, y, owner, anchor ? &tpm : NULL);
-	guts. popupActive = 0;
+	guts. popup_active = 0;
 	return ret;
 }
 
@@ -670,7 +670,7 @@ apc_menu_item_begin_paint( Handle self, PEvent event)
 	sys transform2. y = 0;
 	apt_set( aptCompatiblePS);
 	sys ps = (HDC) event->gen.p;
-	sys lastSize = event->gen.P;
+	sys last_size = event->gen.P;
 	sys s.menuitem.saved_dc = SaveDC(sys ps);
 	hwnd_enter_paint( self);
 	return true;

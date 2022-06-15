@@ -45,14 +45,14 @@ extern "C" {
 
 #endif
 
-static Bool            socketThreadStarted = false;
-static Bool            socketSetChanged    = false;
-static struct timeval  socketTimeout       = {0, 200000};
-static char            socketErrBuf [ 256];
+static Bool            socket_thread_started = false;
+static Bool            socket_set_changed    = false;
+static struct timeval  socket_timeout        = {0, 200000};
+static char            socket_err_buf[256];
 
-static fd_set socketSet1[3];
-static fd_set socketSet2[3];
-static int    socketCommands[3] = { feRead, feWrite, feException};
+static fd_set socket_set1[3];
+static fd_set socket_set2[3];
+static int    socket_commands[3] = { feRead, feWrite, feException};
 
 void
 #ifdef __CYGWIN__
@@ -62,30 +62,30 @@ socket_select( void *dummy)
 {
 	int count;
 	while ( !prima_guts.app_is_dead) {
-		if ( socketSetChanged) {
+		if ( socket_set_changed) {
 			// updating  handles
 			int i;
-			if ( WaitForSingleObject( guts. socketMutex, INFINITE) != WAIT_OBJECT_0) {
-				strcpy( socketErrBuf, "Failed to obtain socket mutex ownership for thread #2");
-				PostThreadMessage( guts. mainThreadId, WM_CROAK, 1, ( LPARAM) &socketErrBuf);
+			if ( WaitForSingleObject( guts. socket_mutex, INFINITE) != WAIT_OBJECT_0) {
+				strcpy( socket_err_buf, "Failed to obtain socket mutex ownership for thread #2");
+				PostThreadMessage( guts. main_thread_id, WM_CROAK, 1, ( LPARAM) &socket_err_buf);
 				break;
 			}
 			for ( i = 0; i < 3; i++)
-				memcpy( socketSet1+i, socketSet2+i, sizeof( fd_set));
-			socketSetChanged = false;
-			ReleaseMutex( guts. socketMutex);
+				memcpy( socket_set1+i, socket_set2+i, sizeof( fd_set));
+			socket_set_changed = false;
+			ReleaseMutex( guts. socket_mutex);
 		}
 
 		// calling select()
 #ifndef __CYGWIN__
-		count = socketSet1[0]. fd_count + socketSet1[1]. fd_count + socketSet1[2]. fd_count;
+		count = socket_set1[0]. fd_count + socket_set1[1]. fd_count + socket_set1[2]. fd_count;
 #else
 		count = 0;
 		{
 			int i,j;
 			for ( i = 0; i < FD_SETSIZE; i++)
 				for ( j = 0; j < 3; i++)
-					if ( FD_ISSET( i, socketSet1+j)) {
+					if ( FD_ISSET( i, socket_set1+j)) {
 						count++;
 						goto END;
 					}
@@ -93,8 +93,8 @@ END:;
 		}
 #endif
 		if ( count > 0) {
-			int i, j, result = select( FD_SETSIZE-1, &socketSet1[0], &socketSet1[1], &socketSet1[2], &socketTimeout);
-			socketSetChanged = true;
+			int i, j, result = select( FD_SETSIZE-1, &socket_set1[0], &socket_set1[1], &socket_set1[2], &socket_timeout);
+			socket_set_changed = true;
 			if ( result == 0) continue;
 			if ( result < 0) {
 				int err;
@@ -105,46 +105,46 @@ END:;
 #endif
 				{
 					// possibly some socket was closed
-					guts. socketPostSync = 1;
-					PostThreadMessage( guts. mainThreadId, WM_SOCKET_REHASH, 0, 0);
-					while( guts. socketPostSync) Sleep(1);
+					guts. socket_post_sync = 1;
+					PostThreadMessage( guts. main_thread_id, WM_SOCKET_REHASH, 0, 0);
+					while( guts. socket_post_sync) Sleep(1);
 				} else {
 					// some error
 					char * msg;
 #ifndef __CYGWIN__
-					msg = err_msg( err, socketErrBuf);
+					msg = err_msg( err, socket_err_buf);
 #else
-					strlcpy( msg = socketErrBuf, strerror(err), 255);
+					strlcpy( msg = socket_err_buf, strerror(err), 255);
 #endif
-					PostThreadMessage( guts. mainThreadId, WM_CROAK, 0, (LPARAM) msg);
+					PostThreadMessage( guts. main_thread_id, WM_CROAK, 0, (LPARAM) msg);
 				}
 				continue;
 			}
 			// posting select() results
 			for ( j = 0; j < 3; j++)
 #ifndef __CYGWIN__
-				for ( i = 0; i < socketSet1[j]. fd_count; i++) {
+				for ( i = 0; i < socket_set1[j]. fd_count; i++) {
 #else
 				for ( i = 0; i < FD_SETSIZE; i++) {
-					if ( !FD_ISSET( i, socketSet1 + j)) continue;
+					if ( !FD_ISSET( i, socket_set1 + j)) continue;
 #endif
-					guts. socketPostSync = 1;
-					PostThreadMessage( guts. mainThreadId, WM_SOCKET, socketCommands[j],
+					guts. socket_post_sync = 1;
+					PostThreadMessage( guts. main_thread_id, WM_SOCKET, socket_commands[j],
 #ifndef __CYGWIN__
-						( LPARAM) socketSet1[j]. fd_array[i]
+						( LPARAM) socket_set1[j]. fd_array[i]
 #else
 						( LPARAM) i
 #endif
 					);
-					while( guts. socketPostSync) Sleep(1);
+					while( guts. socket_post_sync) Sleep(1);
 				}
 		} else
 			// nothing to 'select', sleeping
-			Sleep( socketTimeout. tv_sec * 1000 + socketTimeout. tv_usec / 1000);
+			Sleep( socket_timeout. tv_sec * 1000 + socket_timeout. tv_usec / 1000);
 	}
 
 	// if somehow failed, making restart possible
-	socketThreadStarted = false;
+	socket_thread_started = false;
 #ifdef __CYGWIN__
 	return NULL;
 #endif
@@ -157,41 +157,41 @@ reset_sockets( void)
 	int i;
 
 	// enter section
-	if ( socketThreadStarted) {
-		if ( WaitForSingleObject( guts. socketMutex, INFINITE) != WAIT_OBJECT_0)
+	if ( socket_thread_started) {
+		if ( WaitForSingleObject( guts. socket_mutex, INFINITE) != WAIT_OBJECT_0)
 			croak("Failed to obtain socket mutex ownership for thread #1");
 	}
 
 	// copying handles
 	for ( i = 0; i < 3; i++)
-		FD_ZERO( &socketSet2[i]);
+		FD_ZERO( &socket_set2[i]);
 
 	for ( i = 0; i < guts. sockets. count; i++) {
 		Handle self = guts. sockets. items[i];
 		if ( var eventMask & feRead)
-			FD_SET( sys s. file. object, &socketSet2[0]);
+			FD_SET( sys s. file. object, &socket_set2[0]);
 		if ( var eventMask & feWrite)
-			FD_SET( sys s. file. object, &socketSet2[1]);
+			FD_SET( sys s. file. object, &socket_set2[1]);
 		if ( var eventMask & feException)
-			FD_SET( sys s. file. object, &socketSet2[2]);
+			FD_SET( sys s. file. object, &socket_set2[2]);
 	}
 
-	socketSetChanged = true;
+	socket_set_changed = true;
 
 	// leave section and start the thread, if needed
-	if ( !socketThreadStarted) {
-		if ( !( guts. socketMutex = CreateMutex( NULL, FALSE, NULL))) {
+	if ( !socket_thread_started) {
+		if ( !( guts. socket_mutex = CreateMutex( NULL, FALSE, NULL))) {
 			apiErr;
 			croak("Failed to create socket mutex object");
 		}
 #ifndef __CYGWIN__
-		guts. socketThread = ( HANDLE) _beginthread( socket_select, 40960, NULL);
+		guts. socket_thread = ( HANDLE) _beginthread( socket_select, 40960, NULL);
 #else
-		pthread_create(( pthread_t*) &guts. socketThread, 0, socket_select, NULL);
+		pthread_create(( pthread_t*) &guts. socket_thread, 0, socket_select, NULL);
 #endif
-		socketThreadStarted = true;
+		socket_thread_started = true;
 	} else
-		ReleaseMutex( guts. socketMutex);
+		ReleaseMutex( guts. socket_mutex);
 }
 
 void
@@ -388,7 +388,7 @@ apc_getdir( const char *dirname, Bool is_utf8)
 		free(dirname_w);
 		return NULL;
 	}
-		
+
 	/* check to see if filename is a directory */
 	fattrs = GetFileAttributesW( dirname_w);
 	if ( fattrs == 0xFFFFFFFF || ( fattrs & FILE_ATTRIBUTE_DIRECTORY) == 0) {

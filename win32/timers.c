@@ -18,45 +18,45 @@ extern "C" {
 #define OWNER DHANDLE(prima_guts.application)
 
 static int
-add_timer( Handle timerObject)
+add_timer( Handle timer_object)
 {
 	PItemRegRec pTime;
 	int i;
-	if ( timerObject == NULL_HANDLE) {
+	if ( timer_object == NULL_HANDLE) {
 		apcErr( errInvObject);
 		return 0;
 	}
-	if ( timeDefsCount >= TID_USERMAX - 1 )
+	if ( time_defs_count >= TID_USERMAX - 1 )
 		return 0;
 
-	if ( timeDefs) for ( i = 0; i < timeDefsCount; i++)
-	if ( timeDefs[ i]. item == NULL)
+	if ( time_defs) for ( i = 0; i < time_defs_count; i++)
+	if ( time_defs[ i]. item == NULL)
 	{
-		timeDefs[ i]. item = ( void*) timerObject;
+		time_defs[ i]. item = ( void*) timer_object;
 		return i + 1;
 	}
 
-	if ( !(pTime = ( PItemRegRec) malloc (( timeDefsCount + 1) * sizeof( ItemRegRec))))
+	if ( !(pTime = ( PItemRegRec) malloc (( time_defs_count + 1) * sizeof( ItemRegRec))))
 		return 0;
 
-	if ( timeDefs) {
-		memcpy( pTime, timeDefs, timeDefsCount * sizeof( ItemRegRec));
-		free( timeDefs);
+	if ( time_defs) {
+		memcpy( pTime, time_defs, time_defs_count * sizeof( ItemRegRec));
+		free( time_defs);
 	}
-	timeDefs = pTime;
-	pTime += timeDefsCount++;
-	pTime-> item = ( void*) timerObject;
-	return timeDefsCount;
+	time_defs = pTime;
+	pTime += time_defs_count++;
+	pTime-> item = ( void*) timer_object;
+	return time_defs_count;
 }
 
 static void
-remove_timer( Handle timerObject)
+remove_timer( Handle timer_object)
 {
 	int i;
-	PItemRegRec list = timeDefs;
-	for ( i = 0; i < timeDefsCount; i++)
+	PItemRegRec list = time_defs;
+	for ( i = 0; i < time_defs_count; i++)
 	{
-		if (( Handle)( list-> item) == timerObject)
+		if (( Handle)( list-> item) == timer_object)
 		{
 			list-> item = NULL;
 			break;

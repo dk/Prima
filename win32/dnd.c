@@ -16,7 +16,7 @@ extern "C" {
 #define var (( PWidget) self)->
 #define DHANDLE(x) dsys(x) handle
 
-#define DEFCC IDataObject* data = (IDataObject*) ( guts.dndInsideEvent ? guts.dndDataReceiver : guts.dndDataSender );
+#define DEFCC IDataObject* data = (IDataObject*) ( guts.dnd_inside_event ? guts.dnd_data_receiver : guts.dnd_data_sender );
 
 static PList formats = NULL;
 
@@ -145,7 +145,7 @@ DropTarget__DragEnter(PDropTarget self, IDataObject *data, DWORD modmap, POINTL 
 		return S_OK;
 	}
 
-	guts.dndDataReceiver = data;
+	guts.dnd_data_receiver = data;
 	bzero(&(self->pad), sizeof(self->pad));
 	self->last_action  = DROPEFFECT_NONE;
 	self->first_action = *effect & dndMask;
@@ -155,21 +155,21 @@ DropTarget__DragEnter(PDropTarget self, IDataObject *data, DWORD modmap, POINTL 
 	ev.dnd.action = convert_effect(*effect);
 	ev.dnd.modmap = convert_modmap(modmap);
 	ev.dnd.where  = convert_position(w, pt);
-	ev.dnd.counterpart = guts.dragSourceWidget;
+	ev.dnd.counterpart = guts.drag_source_widget;
 	if ( ev.dnd.where.x < 0 ) {
 		*effect = DROPEFFECT_NONE;
 		return S_OK;
 	}
 
 	protect_object(w);
-	guts.dndInsideEvent = true;
+	guts.dnd_inside_event = true;
 	CWidget(w)->message(w, &ev);
-	guts.dndInsideEvent = false;
+	guts.dnd_inside_event = false;
 	stage = PObject(w)-> stage;
 	unprotect_object(w);
 	if ( stage == csDead ) {
 		self->widget = NULL_HANDLE;
-		guts. dndDataReceiver = NULL;
+		guts. dnd_data_receiver = NULL;
 		*effect = DROPEFFECT_NONE;
 		return S_OK;
 	}
@@ -198,7 +198,7 @@ DropTarget__DragOver(PDropTarget self, DWORD modmap, POINTL pt, DWORD *effect)
 	ev.dnd.action    = convert_effect(*effect);
 	ev.dnd.modmap    = convert_modmap(modmap);
 	ev.dnd.where     = convert_position(w, pt);
-	ev.dnd.counterpart = guts.dragSourceWidget;
+	ev.dnd.counterpart = guts.drag_source_widget;
 	if ( ev.dnd.where.x < 0 ) {
 		*effect = self-> last_action;
 		return S_OK;
@@ -218,14 +218,14 @@ DropTarget__DragOver(PDropTarget self, DWORD modmap, POINTL pt, DWORD *effect)
 	}
 
 	protect_object(w);
-	guts.dndInsideEvent = true;
+	guts.dnd_inside_event = true;
 	CWidget(w)->message(w, &ev);
-	guts.dndInsideEvent = false;
+	guts.dnd_inside_event = false;
 	stage = PObject(w)-> stage;
 	unprotect_object(w);
 	if ( stage == csDead ) {
 		self->widget = NULL_HANDLE;
-		guts. dndDataReceiver = NULL;
+		guts. dnd_data_receiver = NULL;
 		*effect = DROPEFFECT_NONE;
 		return S_OK;
 	}
@@ -243,7 +243,7 @@ DropTarget__DragLeave(PDropTarget self)
 	Handle w;
 	Event ev = { cmDragEnd };
 
-	guts. dndDataReceiver = NULL;
+	guts. dnd_data_receiver = NULL;
 	if (
 		self->widget == NULL_HANDLE ||
 		guts.clipboards[CLIPBOARD_DND] == NULL_HANDLE || 
@@ -257,10 +257,10 @@ DropTarget__DragLeave(PDropTarget self)
 	ev.dnd.modmap    = apc_kbd_get_state(self->widget) | apc_pointer_get_state(self->widget);
 	ev.dnd.where     = apc_pointer_get_pos(self->widget);
 	ev.dnd.action    = dndNone;
-	ev.dnd.counterpart = guts.dragSourceWidget;
-	guts.dndInsideEvent = true;
+	ev.dnd.counterpart = guts.drag_source_widget;
+	guts.dnd_inside_event = true;
 	CWidget(w)->message(w, &ev);
-	guts.dndInsideEvent = false;
+	guts.dnd_inside_event = false;
 	return S_OK;
 }
 
@@ -276,7 +276,7 @@ DropTarget__Drop(PDropTarget self, IDataObject *data, DWORD modmap, POINTL pt, D
 		!dsys(self->widget)options.aptEnabled
 	) {
 		*effect = DROPEFFECT_NONE;
-		guts. dndDataReceiver = NULL;
+		guts. dnd_data_receiver = NULL;
 		return S_OK;
 	}
 
@@ -286,23 +286,23 @@ DropTarget__Drop(PDropTarget self, IDataObject *data, DWORD modmap, POINTL pt, D
 	ev.dnd.action = convert_effect(*effect);
 	ev.dnd.modmap = convert_modmap(modmap);
 	ev.dnd.where  = convert_position(w, pt);
-	ev.dnd.counterpart = guts.dragSourceWidget;
+	ev.dnd.counterpart = guts.drag_source_widget;
 	if ( ev.dnd.where.x < 0 ) {
 		*effect = DROPEFFECT_NONE;
 		return S_OK;
 	}
 
 	/* DROPEFFECT_XXX and dndXXX constants are directly mapped to each other, except DROPEFFECT_SCROLL */
-	guts.dndInsideEvent = true;
+	guts.dnd_inside_event = true;
 	CWidget(w)->message(w, &ev);
 
-	guts.dndInsideEvent = false;
+	guts.dnd_inside_event = false;
 	*effect          = ev.dnd.allow ? (ev.dnd.action & self->first_action) : DROPEFFECT_NONE;
 	if ( *effect & dndCopy ) *effect = dndCopy;
 	else if ( *effect & dndMove ) *effect = dndMove;
 	else if ( *effect & dndLink ) *effect = dndLink;
 	
-	guts.dragTarget = w;
+	guts.drag_target = w;
 
 	return S_OK;
 }
@@ -363,9 +363,9 @@ DropSource__GiveFeedback(PDropSource self, DWORD effect)
 	ev.dnd.allow  = ev.dnd.action != dndNone;
 	CWidget(self->widget)->message(self->widget, &ev);
 	/* Force our cursor again, otherwise a standart IDC_NO will be slapped on */
-	if ( !guts.dndDefaultCursors && ev.dnd.action == dndNone)
+	if ( !guts.dnd_default_cursors && ev.dnd.action == dndNone)
 		PostMessage( DHANDLE(self->widget), WM_DRAG_RESPONSE, 0, 0);
-	return guts.dndDefaultCursors ? DRAGDROP_S_USEDEFAULTCURSORS : S_OK;
+	return guts.dnd_default_cursors ? DRAGDROP_S_USEDEFAULTCURSORS : S_OK;
 }
 
 static IDropSourceVtbl DropSourceVMT = {
@@ -467,7 +467,7 @@ static void
 dataobject_clear()
 {
 	int i;
-	PDataObject data = (PDataObject) guts.dndDataSender;
+	PDataObject data = (PDataObject) guts.dnd_data_sender;
 	if ( !data ) return;
 	for ( i = 0; i < data->list.count; i++)
 		dataobject_free_entry((PDataObjectEntry) data->list.items[i]);
@@ -707,21 +707,21 @@ get_formats(void)
 Bool
 dnd_clipboard_create( void)
 {
-	if (guts.dndDataSender) return false;
-	if (!(guts.dndDataSender = CreateObject(DataObject)))
+	if (guts.dnd_data_sender) return false;
+	if (!(guts.dnd_data_sender = CreateObject(DataObject)))
 		return false;
-	list_create(&((PDataObject) guts.dndDataSender)->list, 8, 8);
+	list_create(&((PDataObject) guts.dnd_data_sender)->list, 8, 8);
 	return true;
 }
 
 void
 dnd_clipboard_destroy( void)
 {
-	if (!guts.dndDataSender) return;
+	if (!guts.dnd_data_sender) return;
 	dataobject_clear();
-	list_destroy(&((PDataObject) guts.dndDataSender)->list);
-	free(guts.dndDataSender);
-	guts.dndDataSender = NULL;
+	list_destroy(&((PDataObject) guts.dnd_data_sender)->list);
+	free(guts.dnd_data_sender);
+	guts.dnd_data_sender = NULL;
 }
 
 Bool
@@ -748,7 +748,7 @@ Bool
 dnd_clipboard_clear( void)
 {
 	DEFCC;
-	if ( guts.dndInsideEvent ) return false;
+	if ( guts.dnd_inside_event ) return false;
 	if (data == NULL) return false;
 	dataobject_clear();
 	return true;
@@ -803,7 +803,7 @@ dnd_clipboard_get_data( Handle id, PClipboardDataRec c)
 		return false;
 
 	/* copy cached data directly */
-	if ( !guts. dndInsideEvent ) {
+	if ( !guts. dnd_inside_event ) {
 		PDataObjectEntry entry;
 		if (( dataobject_find_entry((PDataObject) data, id, &entry)) < 0)
 			return false;
@@ -871,7 +871,7 @@ dnd_clipboard_has_format( Handle id)
 	int i;
 	PList cf_formats;
 
-	if ( !guts. dndInsideEvent ) {
+	if ( !guts. dnd_inside_event ) {
 		if ( !data )
 			return false;
 		if (( dataobject_find_entry((PDataObject)data, id, NULL)) < 0)
@@ -893,10 +893,10 @@ Bool
 dnd_clipboard_set_data( Handle id, PClipboardDataRec c)
 {
 	int index;
-	PDataObject data = (PDataObject) guts.dndDataSender;
+	PDataObject data = (PDataObject) guts.dnd_data_sender;
 	PDataObjectEntry entry;
 
-	if ( guts. dndInsideEvent )
+	if ( guts. dnd_inside_event )
 		return false;
 	if (data == NULL)
 		return false;
@@ -927,13 +927,13 @@ dnd_clipboard_set_data( Handle id, PClipboardDataRec c)
 Bool
 apc_dnd_get_aware( Handle self )
 {
-	return sys dropTarget != NULL;
+	return sys drop_target != NULL;
 }
 
 Bool
 apc_dnd_set_aware( Handle self, Bool is_target )
 {
-	if ( is_target == (sys dropTarget != NULL )) return true;
+	if ( is_target == (sys drop_target != NULL )) return true;
 
 	if ( is_target ) {
 		PDropTarget target;
@@ -945,11 +945,11 @@ apc_dnd_set_aware( Handle self, Bool is_target )
 			free(target);
 			return false;
 		}
-		sys dropTarget = target;
+		sys drop_target = target;
 	} else {
 		RevokeDragDrop(sys handle);
-		free(sys dropTarget);
-		sys dropTarget = NULL;
+		free(sys drop_target);
+		sys drop_target = NULL;
 	}
 
 	return true;
@@ -971,25 +971,25 @@ apc_dnd_start( Handle self, int actions, Bool default_pointers, Handle * counter
 
 	if ( actions == 0 )
 		return -1;
-	if ( guts.dragSource )
+	if ( guts.drag_source )
 		return -1;
-	if (!(guts.dragSource = CreateObject(DropSource)))
+	if (!(guts.drag_source = CreateObject(DropSource)))
 		return -1;
-	guts.dragSourceWidget = self;
+	guts.drag_source_widget = self;
 	if ( counterpart ) *counterpart = NULL_HANDLE;
-	guts.dragTarget = NULL_HANDLE;
-	guts.dndDefaultCursors = default_pointers;
-	((PDropSource)guts.dragSource)->widget       = self;
-	((PDropSource)guts.dragSource)->first_modmap =
+	guts.drag_target = NULL_HANDLE;
+	guts.dnd_default_cursors = default_pointers;
+	((PDropSource)guts.drag_source)->widget       = self;
+	((PDropSource)guts.drag_source)->first_modmap =
 		apc_kbd_get_state(self) | apc_pointer_get_state(self);
-	((PDropSource)guts.dragSource)->last_action = -1;
+	((PDropSource)guts.drag_source)->last_action = -1;
 
 	protect_object(self);
 	old_pointer = apc_pointer_get_shape(self);
 
 	rc = DoDragDrop(
-		(LPDATAOBJECT) guts.dndDataSender,
-		(LPDROPSOURCE) guts.dragSource,
+		(LPDATAOBJECT) guts.dnd_data_sender,
+		(LPDROPSOURCE) guts.drag_source,
 		actions,
 		&effect
 	);
@@ -1010,10 +1010,10 @@ apc_dnd_start( Handle self, int actions, Bool default_pointers, Handle * counter
 		apcWarn;
 	}
 
-	free(guts.dragSource);
-	guts.dragSource    = NULL;
-	guts.dragSourceWidget = NULL_HANDLE;
-	if ( counterpart ) *counterpart = guts.dragTarget;
+	free(guts.drag_source);
+	guts.drag_source    = NULL;
+	guts.drag_source_widget = NULL_HANDLE;
+	if ( counterpart ) *counterpart = guts.drag_target;
 
 	return ret;
 }
