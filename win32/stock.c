@@ -281,7 +281,7 @@ select_brush( Handle self)
 	if ( var fillPatternImage ) {
 		b.lbHatch = (LONG_PTR) 0;
 
-		if ( PImage(var fillPatternImage)->type == imBW ) {
+		if ( PImage(var fillPatternImage)->type == imBW && !dsys(var fillPatternImage)options.aptIcon ) {
 			if ( sys rq_brush.back_color == fg )
 				mono_workaround = true;
 			else
@@ -311,7 +311,7 @@ select_brush( Handle self)
 	key = sys rq_brush;
 	if ( key.logbrush.lbStyle == BS_DIBPATTERNPT)
 		key.logbrush.lbHatch = (LONG_PTR)0;
-	if ( key.logbrush.lbStyle == BS_DIBPATTERNPT && key.back_color == fg )
+	if ( key.logbrush.lbStyle == BS_DIBPATTERNPT && key.back_color == fg)
 		mono_workaround = true;
 	if ( mono_workaround ) {
 		/* workaround Win32 bug with mono bitmaps -
