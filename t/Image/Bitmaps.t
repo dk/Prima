@@ -374,8 +374,25 @@ SKIP: {
     reset_flag;
     $dst = Prima::Widget->create( width => 4, height => 2, buffered => 1, layered => 1, onPaint => sub {
 	return if get_flag;
+	my $self = shift;
+	my $ok;
+	my @sz = $self-> size;
+	return unless $sz[0] == 4 && $sz[1] == 2;
+	for ( 0..4 ) {
+		$self->color(cl::Black);
+		$self->bar(0,0,$self->size);
+		goto AGAIN unless $self->pixel(0,0) == 0;
+		$self->color(cl::White);
+		$self->bar(0,0,$self->size);
+		goto AGAIN unless $self->pixel(3,1) != 0;
+		$ok = 1;
+		last;
+	AGAIN:
+		select(undef,undef,undef,0.1);
+	}
+	return unless $ok;
 	set_flag;
-        test_dst("argb widget");
+	test_dst("argb widget");
     });
 
     $dst->bring_to_front;
