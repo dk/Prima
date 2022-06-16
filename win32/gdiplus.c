@@ -116,7 +116,37 @@ apc_gp_aa_bar( Handle self, double x1, double y1, double x2, double y2)
 	objCheck false;
 
 	if (( is_apt(aptDeviceBitmap) && ((PDeviceBitmap)self)->type == dbtBitmap)) {
+		PImage pt;
 		if ( sys alpha < 127 ) return true;
+
+		/* emulate transparency on a bitmap by xor/and */
+		if (
+			sys current_rop2 == ropNoOper &&
+			sys rq_brush.logbrush.lbStyle == BS_DIBPATTERNPT && (
+				(( pt = (PImage) var fillPatternImage ) == NULL_HANDLE) ||
+				(
+					( pt-> type == imBW ) &&
+					!dsys(pt)options.aptIcon
+				)
+			)
+		) {
+			Bool ok;
+			Color fg, bg;
+			int rop = apc_gp_get_rop(self);
+			fg = apc_gp_get_color(self);
+			bg = apc_gp_get_back_color(self);
+			apc_gp_set_color(self, 0);
+			apc_gp_set_back_color(self, 0xffffff);
+			apc_gp_set_rop(self, ropAndPut);
+			ok = apc_gp_bar(self, x1 + .5, y1 + .5, x2 + .5, y2 + .5);
+			apc_gp_set_rop(self, ropXor);
+			apc_gp_set_color(self, fg);
+			apc_gp_set_back_color(self, 0);
+			ok |= apc_gp_bar(self, x1 + .5, y1 + .5, x2 + .5, y2 + .5);
+			apc_gp_set_rop(self, rop);
+			apc_gp_set_back_color(self, bg);
+			return ok;
+		}
 		return apc_gp_bar(self, x1 + .5, y1 + .5, x2 + .5, y2 + .5);
 	}
 
@@ -149,13 +179,44 @@ apc_gp_aa_fill_poly( Handle self, int numPts, NPoint * points)
 	if (( is_apt(aptDeviceBitmap) && ((PDeviceBitmap)self)->type == dbtBitmap)) {
 		Bool ok;
 		Point *p;
+		PImage pt;
 		if ( sys alpha < 127 ) return true;
+
 		if ( !( p = malloc(( numPts + 1) * sizeof( Point)))) return false;
 		for ( i = 0; i < numPts; i++) {
 			p[i].x = points[i].x + .5;
 			p[i].y = points[i].y + .5;
 		}
-		ok = apc_gp_fill_poly( self, numPts, p );
+
+		/* emulate transparency on a bitmap by xor/and */
+		if (
+			sys current_rop2 == ropNoOper &&
+			sys rq_brush.logbrush.lbStyle == BS_DIBPATTERNPT && (
+				(( pt = (PImage) var fillPatternImage ) == NULL_HANDLE) ||
+				(
+					( pt-> type == imBW ) &&
+					!dsys(pt)options.aptIcon
+				)
+			)
+		) {
+			Bool ok;
+			Color fg, bg;
+			int rop = apc_gp_get_rop(self);
+			fg = apc_gp_get_color(self);
+			bg = apc_gp_get_back_color(self);
+			apc_gp_set_color(self, 0);
+			apc_gp_set_back_color(self, 0xffffff);
+			apc_gp_set_rop(self, ropAndPut);
+			ok = apc_gp_fill_poly( self, numPts, p );
+			apc_gp_set_rop(self, ropXor);
+			apc_gp_set_color(self, fg);
+			apc_gp_set_back_color(self, 0);
+			ok |= apc_gp_fill_poly( self, numPts, p );
+			apc_gp_set_rop(self, rop);
+			apc_gp_set_back_color(self, bg);
+			return ok;
+		} else
+			ok = apc_gp_fill_poly( self, numPts, p );
 		free(p);
 		return ok;
 	}

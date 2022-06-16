@@ -136,7 +136,7 @@ for my $subtype ( dbt::Bitmap, dbt::Pixmap, dbt::Layered ) {
 	check( "fpXm WW", 4, $fp0m, color => cl::White, backColor => cl::White );
 	check( "fpXm BB", 0, $fp1m, color => cl::Black, backColor => cl::Black );
 
-	if ( $aa && $subtest !~ /^bitmap/ ) {
+	if ( $aa ) {
 		$x->rop2(rop::NoOper);
 		$x->backColor(cl::White);
 		$x->clear;
