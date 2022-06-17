@@ -91,7 +91,7 @@ get_window( Handle self, PMenuItemReg m)
 		wx-> next = w;
 	} else
 		XX-> w = w;
-	CREATE_ARGB_PICTURE(w->w, X(self)->flags.layered ? 32 : 0, w->argb_picture);
+	CREATE_ARGB_PICTURE(w->w, 0, w->argb_picture);
 	return w;
 }
 
@@ -1117,6 +1117,7 @@ DECL_DRAW(image)
 	dummy_s.drawable.argb_picture = w-> argb_picture;
 #endif
 
+	XCHECKPOINT;
 	if ( bm-> is_mono ) {
 		if ( m-> flags. disabled ) {
 			dummy_s.drawable.back.primary = 0x00000000;
@@ -1161,6 +1162,7 @@ DECL_DRAW(image)
 			XSetFillStyle ( DISP, draw-> gc, FillSolid);
 		}
 	}
+	XCHECKPOINT;
 
 	return true;
 }
@@ -1304,6 +1306,7 @@ handle_menu_expose( XEvent *ev, XWindow win, Handle self)
 #ifdef USE_XFT
 	if ( draw. xft_drawable) XftDrawSetClip(( XftDraw*) draw.xft_drawable, rgn);
 #endif
+	XCHECKPOINT;
 	CLIP_ARGB_PICTURE(w->argb_picture, rgn);
 
 #ifdef USE_XFT
@@ -2378,7 +2381,7 @@ apc_window_set_menu( Handle self, Handle menu)
 		M(m)-> w-> w = m-> handle = XCreateWindow( DISP, X_WINDOW,
 			0, 0, 1, 1, 0, CopyFromParent,
 			InputOutput, CopyFromParent, valuemask, &attrs);
-		CREATE_ARGB_PICTURE(M(m)->w->w, 0, M(m)->w->argb_picture);
+		CREATE_ARGB_PICTURE(M(m)->w->w, X(self)->flags.layered ? 32 : 0, M(m)->w->argb_picture);
 		hash_store( guts. menu_windows, &m-> handle, sizeof( m-> handle), m);
 		XResizeWindow( DISP, m-> handle, XX-> size.x, y);
 		XMapRaised( DISP, m-> handle);
@@ -2434,6 +2437,7 @@ apc_menu_item_begin_paint( Handle self, PEvent event)
 	YY-> visual        = pe->layered ? &guts. argb_visual : &guts. visual;
 	YY-> colormap      = pe->layered ? guts. argbColormap : guts. defaultColormap;
 	prima_prepare_drawable_for_painting(event-> gen.H, false );
+	XCHECKPOINT;
 
 	return true;
 
@@ -2442,6 +2446,12 @@ apc_menu_item_begin_paint( Handle self, PEvent event)
 Bool
 apc_menu_item_end_paint( Handle self, PEvent event)
 {
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+	PaintEvent * pe = (PaintEvent*) event-> gen.p;
+	if ( &M(pe->self)->wstatic == M(self)-> w)
+		X(event->gen.H)->argb_picture = 0;
+#endif
+
 	prima_cleanup_drawable_after_painting(event->gen.H);
 	return true;
 }
