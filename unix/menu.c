@@ -1978,17 +1978,7 @@ prima_end_menu(void)
 static unsigned long
 argb_color(Color color)
 {
-	int a[3];
-
-	a[0] = COLOR_R(color);
-	a[1] = COLOR_G(color);
-	a[2] = COLOR_B(color);
-
-	return
-		(((a[0] << guts. argb_bits. red_range  ) >> 8) << guts. argb_bits.   red_shift) |
-		(((a[1] << guts. argb_bits. green_range) >> 8) << guts. argb_bits. green_shift) |
-		(((a[2] << guts. argb_bits. blue_range ) >> 8) << guts. argb_bits.  blue_shift) |
-		(((0xff << guts. argb_bits. alpha_range ) >> 8) << guts. argb_bits. alpha_shift);
+	return COLOR2DEV_RGBA(&guts.argb_bits,color,0xff);
 }
 
 Bool

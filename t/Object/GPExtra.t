@@ -106,7 +106,7 @@ sub check
 	$x->set(%opt, fillPattern => $fp);
 	$x->bar(0,0,7,7);
 	my $xsum = $x->image->extract(0,0,2,2)->clone(type => im::Byte)->sum / 255;
-	$xsum = int($xsum * 100 + .5) / 100;
+	$xsum = int($xsum * 10 + .5) / 10;
 	is( $xsum, $sum, "$test on $subtest");
 }
 

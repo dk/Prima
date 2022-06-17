@@ -1102,10 +1102,7 @@ color_to_pixel( Handle self, Color color, int depth)
 		case 16:
 		case 24:
 		case 32:
-			pv =
-				(((COLOR_R(color) << bd-> red_range  ) >> 8) << bd->   red_shift) |
-				(((COLOR_G(color) << bd-> green_range) >> 8) << bd-> green_shift) |
-				(((COLOR_B(color) << bd-> blue_range ) >> 8) << bd->  blue_shift);
+			pv = COLOR2DEV_RGB(bd,color);
 			if ( guts.machine_byte_order != guts.byte_order)
 				switch( depth) {
 				case 16:
@@ -1928,6 +1925,7 @@ create_tile( Handle self, Handle image, Bool mono )
 		XFreePixmap(DISP, px);
 		return 0;
 	}
+	XCHECKPOINT;
 
 	prima_put_ximage( px, gc, cache->image, 0,0,0,0, i->w, i->h);
 	XFreeGC(DISP, gc);
