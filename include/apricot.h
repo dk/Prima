@@ -3739,9 +3739,6 @@ apc_gp_get_font_languages( Handle self);
 extern int
 apc_gp_get_fill_mode( Handle self);
 
-extern Handle
-apc_gp_get_fill_image( Handle self);
-
 extern FillPattern *
 apc_gp_get_fill_pattern( Handle self);
 

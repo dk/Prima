@@ -1334,6 +1334,7 @@ apc_gp_set_fill_pattern_offset( Handle self, Point offset)
 	objCheck false;
 	if ( sys ps) {
 <<<<<<< HEAD
+<<<<<<< HEAD
 		SetBrushOrgEx( sys ps, offset.x % 8, 8 - offset.y % 8, NULL);
 		if ( CURRENT_GP_BRUSH != NULL ) {
 			GdipResetTextureTransform(CURRENT_GP_BRUSH);
@@ -1343,6 +1344,9 @@ apc_gp_set_fill_pattern_offset( Handle self, Point offset)
 		sys fill_pattern_offset = offset;
 =======
 		SetBrushOrgEx( sys ps, offset.x, 8 - offset.y, NULL);
+=======
+		SetBrushOrgEx( sys ps, offset.x % 8, 8 - offset.y % 8, NULL);
+>>>>>>> 3e818d51 (apply graphic_context())
 		sys stylusFlags &= ~stbGPBrush;
 	} else
 		sys fillPatternOffset = offset;
@@ -1805,6 +1809,21 @@ apc_gp_pop( Handle self)
 		free(sys alphaArenaPalette);
 		sys alphaArenaPalette = NULL;
 >>>>>>> e700564f (first shot at graphic_context push and pop)
+	}
+
+	if (sys graphics) {
+		HRGN rgn;
+		int res;
+		rgn = CreateRectRgn(0,0,0,0);
+		res = GetClipRgn( sys ps, rgn );
+		if ( res <= 0 ) {
+			if ( res < 0 ) apiErr;
+			DeleteObject(rgn);
+			rgn = CreateRectRgn(0,0,sys lastSize.x,sys lastSize.y);
+		}
+		GPCALL GdipSetClipHrgn(sys graphics, rgn, CombineModeReplace);
+		apiGPErrCheck;
+		DeleteObject(rgn);
 	}
 
 	free(state);
