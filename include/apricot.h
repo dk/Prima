@@ -3739,6 +3739,9 @@ apc_gp_get_font_languages( Handle self);
 extern int
 apc_gp_get_fill_mode( Handle self);
 
+extern Handle
+apc_gp_get_fill_image( Handle self);
+
 extern FillPattern *
 apc_gp_get_fill_pattern( Handle self);
 
@@ -3827,6 +3830,12 @@ apc_gp_push(Handle self, GCStorageFunction * destructor, void * user_data, unsig
 
 extern Bool
 apc_gp_pop(Handle self, void *user_data);
+
+extern Bool
+apc_gp_push(Handle self);
+
+extern Bool
+apc_gp_pop(Handle self);
 
 extern Bool
 apc_gp_set_alpha( Handle self, int alpha);

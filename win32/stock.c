@@ -426,11 +426,17 @@ Bool
 select_gp_brush(Handle self)
 {
 	int r,g,b;
+<<<<<<< HEAD
 	COLORREF fg, bg;
 	RQGPBrush key;
 	PDCObject ret;
 	Bool is_solid;
 	POINT offset;
+=======
+	PStylus s = & sys stylus;
+	POINT offset;
+	GetBrushOrgEx( sys ps, &offset);
+>>>>>>> e700564f (first shot at graphic_context push and pop)
 
 	is_solid = sys rq_brush.logbrush.lbStyle == BS_SOLID;
 
@@ -456,7 +462,12 @@ select_gp_brush(Handle self)
 		g = (bg & 0xff00) >> 8;
 		r =  bg & 0xff;
 		key.bg = (sys alpha << 24) | (r << 16) | (g << 8) | b;
+<<<<<<< HEAD
 		*key.fill_pattern = *sys fill_pattern;
+=======
+		*key.fill = *sys fillPattern;
+		key.offset = offset;
+>>>>>>> e700564f (first shot at graphic_context push and pop)
 	}
 
 	if ((ret = stylus_fetch(&key)) == NULL)
@@ -475,6 +486,7 @@ select_gp_brush(Handle self)
 		GpTexture * t;
 		uint32_t x, y, fp[64], *fpp, bg;
 
+<<<<<<< HEAD
 		bg = key.opaque ? key.bg : 0x00000000;
 		for ( y = 0, fpp = fp; y < 8; y++) {
 			int yy = (y + 8) % 8;
@@ -482,6 +494,16 @@ select_gp_brush(Handle self)
 			for ( x = 0; x < 8; x++) {
 				int xx = x % 8;
 				*(fpp++) = (src & ( 1 << xx )) ? key.fg : bg;
+=======
+			bg = key.opaque ? key.bg : 0x00000000;
+			for ( y = 0, fpp = fp; y < 8; y++) {
+				int yy = (y + 8 - offset.y) % 8;
+				Byte src = sys fillPattern[yy];
+				for ( x = 0; x < 8; x++) {
+					int xx = (x + offset.x) % 8;
+					*(fpp++) = (src & ( 1 << xx )) ? key.fg : bg;
+				}
+>>>>>>> e700564f (first shot at graphic_context push and pop)
 			}
 		}
 
@@ -1983,6 +2005,7 @@ hwnd_enter_paint( Handle self)
 	if ( var fillPatternImage )
 		apc_gp_set_fill_image( self, var fillPatternImage);
 	else
+<<<<<<< HEAD
 		apc_gp_set_fill_pattern( self, sys fill_pattern2);
 	sys psd-> alpha               = sys alpha;
 	sys psd-> antialias           = is_apt( aptGDIPlus);
@@ -2001,6 +2024,25 @@ hwnd_enter_paint( Handle self)
 	sys psd-> transform           = sys transform;
 	sys psd-> text_opaque         = is_apt( aptTextOpaque);
 	sys psd-> text_out_baseline   = is_apt( aptTextOutBaseline);
+=======
+		apc_gp_set_fill_pattern( self, sys fillPattern2);
+	sys psd-> alpha          = sys alpha;
+	sys psd-> antialias      = is_apt( aptGDIPlus);
+	sys psd-> font           = var font;
+	sys psd-> fillMode       = sys fillMode;
+	sys psd-> fillPatternOffset = sys fillPatternOffset;
+	sys psd-> lineWidth      = sys lineWidth;
+	sys psd-> lineEnd        = sys lineEnd;
+	sys psd-> lineJoin       = sys lineJoin;
+	sys psd-> linePattern    = sys linePattern;
+	sys psd-> linePatternLen = sys linePatternLen;
+	sys psd-> rop            = sys rop;
+	sys psd-> rop2           = sys rop2;
+	sys psd-> transform      = sys transform;
+	sys psd-> textOpaque     = is_apt( aptTextOpaque);
+	sys psd-> textOutB       = is_apt( aptTextOutBaseline);
+	sys psd-> antialias      = is_apt( aptGDIPlus);
+>>>>>>> e700564f (first shot at graphic_context push and pop)
 
 	apt_clear( aptDCChangeLock);
 	sys stylus_flags = 0;

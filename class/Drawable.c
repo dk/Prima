@@ -197,13 +197,24 @@ Drawable_set( Handle self, HV * profile)
 Bool
 Drawable_graphic_context_push(Handle self)
 {
+<<<<<<< HEAD
 	return apc_gp_push(self, NULL, NULL, 0);
+=======
+	if (!opt_InPaint) return false;
+	return apc_gp_push(self);
+>>>>>>> e700564f (first shot at graphic_context push and pop)
 }
 
 Bool
 Drawable_graphic_context_pop(Handle self)
 {
+<<<<<<< HEAD
 	Bool ok = apc_gp_pop(self, NULL);
+=======
+	Bool ok;
+	if (!opt_InPaint) return false;
+	ok = apc_gp_pop(self);
+>>>>>>> e700564f (first shot at graphic_context push and pop)
 	if ( var-> fillPatternImage && PObject(var-> fillPatternImage)->stage != csNormal) {
 		unprotect_object(var-> fillPatternImage);
 		var-> fillPatternImage = NULL_HANDLE;

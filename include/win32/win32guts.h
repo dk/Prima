@@ -378,6 +378,7 @@ typedef struct _DCFont
 #define DCO_GP_BRUSH      3
 #define DCO_COUNT         4
 
+<<<<<<< HEAD
 typedef struct {
 	int            type;
 	int            refcnt;
@@ -387,6 +388,15 @@ typedef struct {
 	void          *rq;
 	char           rq_buf[1];
 } DCObject, *PDCObject;
+=======
+typedef struct _GPStylus
+{
+	int type, opaque;
+	uint32_t fg, bg;
+	FillPattern fill;
+	POINT offset;
+} GPStylus, *PGPStylus;
+>>>>>>> e700564f (first shot at graphic_context push and pop)
 
 typedef struct {
 	int            type;
@@ -442,15 +452,42 @@ typedef struct _PaintState
 } PaintState, *PPaintState;
 
 
+typedef struct _PaintState
+{
+	int stylusFlags;
+	Stylus stylus;
+	PDCStylus stylusResource;
+	PDCGPStylus stylusGPResource;
+	PDCFont fontResource;
+	Color back_color;
+	int antialias, alpha, fill_mode;
+	FillPattern fill_pattern;
+	Font font;
+	int rop, rop2;
+	Point transform;
+	Handle fill_image;
+	float font_sin, font_cos;
+	Bool text_opaque, text_baseline;
+} PaintState, *PPaintState;
+
 typedef struct _DrawableData
 {
 	/* Drawable basic data*/
+<<<<<<< HEAD
 	HDC            ps;                  // general HDC
 	GpGraphics    *graphics;            // GDI+ context
 	PAINTSTRUCT    paint_struct;        // HDC counterpart
 	HBITMAP        bm;                  // cached bitmap
 	HPALETTE       pal;                 // cached palette
 	PList          gc_stack;            // push/pop
+=======
+	HDC            ps;                      // general HDC
+	GpGraphics    *graphics;                // GDI+ context
+	PAINTSTRUCT    paintStruc;              // HDC counterpart
+	HBITMAP        bm;                      // cached bitmap
+	HPALETTE       pal;                     // cached palette
+	PList          gc_stack;                // push/pop
+>>>>>>> e700564f (first shot at graphic_context push and pop)
 
 	/* pen, brush, and font hash management fields */
 	int            stylus_flags;        // stylus resource cache( stbXXXX)
