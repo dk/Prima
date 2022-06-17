@@ -213,10 +213,7 @@ prima_allocate_color( Handle self, Color color, Brush * brush)
 	a[2] = COLOR_B(color);
 
 	if ( self && XF_LAYERED(XX) )
-		return brush->primary =
-			(((a[0] << guts. argb_bits. red_range  ) >> 8) << guts. argb_bits.   red_shift) |
-			(((a[1] << guts. argb_bits. green_range) >> 8) << guts. argb_bits. green_shift) |
-			(((a[2] << guts. argb_bits. blue_range ) >> 8) << guts. argb_bits.  blue_shift);
+		return brush->primary = DEV_RGB(&guts.argb_bits,a[0],a[1],a[2]);
 
 	if ( guts. grayScale) {
 		a[0] = a[1] = a[2] = ( a[0] + a[1] + a[2]) / 3;
@@ -384,10 +381,7 @@ ENOUGH:;
 					prima_color_add_ref( self, brush-> secondary, RANK_NORMAL);
 			}
 		} else
-			brush-> primary =
-				(((a[0] << guts. screen_bits. red_range  ) >> 8) << guts. screen_bits.   red_shift) |
-				(((a[1] << guts. screen_bits. green_range) >> 8) << guts. screen_bits. green_shift) |
-				(((a[2] << guts. screen_bits. blue_range ) >> 8) << guts. screen_bits.  blue_shift);
+			brush-> primary = DEV_RGB(&guts.screen_bits, a[0],a[1],a[2]);
 	}
 	return brush-> primary;
 }

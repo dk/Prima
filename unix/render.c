@@ -284,15 +284,13 @@ pen_create_stipple(Handle self, Pixmap stipple)
 	GC gc;
 	XGCValues gcv;
 	Point sz;
-	uint32_t a255;
 
 	sz = get_pixmap_size( stipple );
 	if ( !( XX-> fp_render_pen = XCreatePixmap( DISP, guts.root, sz.x, sz.y, guts.argb_depth)))
 		return;
 
-	a255 = (((uint32_t) 255 << guts.argb_bits.alpha_range) >> 8) << guts.argb_bits.alpha_shift;
-	gcv.foreground = XX-> fore.primary | a255;
-	gcv.background = XX-> back.primary | ((XX-> paint_rop2 == ropNoOper) ? 0 : a255);
+	gcv.foreground = COLOR2DEV_RGBA( &guts.argb_bits, XX->fore.color, 255 );
+	gcv.background = COLOR2DEV_RGBA( &guts.argb_bits, XX->back.color, ( XX->paint_rop2 == ropNoOper) ? 0 : 255 );
 	if ( !( gc = XCreateGC(DISP, XX-> fp_render_pen, GCForeground|GCBackground, &gcv))) {
 		XFreePixmap( DISP, XX-> fp_render_pen );
 		XX-> fp_render_pen = 0;

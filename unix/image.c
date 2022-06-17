@@ -593,10 +593,7 @@ create_rgb_to_8_lut( int ncolors, const PRGBColor pal, Pixel8 *lut)
 {
 	int i;
 	for ( i = 0; i < ncolors; i++)
-		lut[i] =
-			(((pal[i].r << guts. screen_bits. red_range  ) >> 8) << guts. screen_bits.   red_shift) |
-			(((pal[i].g << guts. screen_bits. green_range) >> 8) << guts. screen_bits. green_shift) |
-			(((pal[i].b << guts. screen_bits. blue_range ) >> 8) << guts. screen_bits.  blue_shift);
+		lut[i] = PALETTE2DEV_RGB( &guts.screen_bits, pal[i]);
 }
 
 static void
@@ -604,10 +601,7 @@ create_rgb_to_16_lut( int ncolors, const PRGBColor pal, Pixel16 *lut)
 {
 	int i;
 	for ( i = 0; i < ncolors; i++)
-		lut[i] =
-			(((pal[i].r << guts. screen_bits. red_range  ) >> 8) << guts. screen_bits.   red_shift) |
-			(((pal[i].g << guts. screen_bits. green_range) >> 8) << guts. screen_bits. green_shift) |
-			(((pal[i].b << guts. screen_bits. blue_range ) >> 8) << guts. screen_bits.  blue_shift);
+		lut[i] = PALETTE2DEV_RGB( &guts.screen_bits, pal[i]);
 	if ( guts.machine_byte_order != guts.byte_order)
 		for ( i = 0; i < ncolors; i++)
 			lut[i] = REVERSE_BYTES_16(lut[i]);
@@ -651,10 +645,7 @@ create_rgb_to_xpixel_lut( int ncolors, const PRGBColor pal, XPixel *lut)
 {
 	int i;
 	for ( i = 0; i < ncolors; i++)
-		lut[i] =
-			(((pal[i].r << guts. screen_bits. red_range  ) >> 8) << guts. screen_bits.   red_shift) |
-			(((pal[i].g << guts. screen_bits. green_range) >> 8) << guts. screen_bits. green_shift) |
-			(((pal[i].b << guts. screen_bits. blue_range ) >> 8) << guts. screen_bits.  blue_shift);
+		lut[i] = PALETTE2DEV_RGB( &guts.screen_bits, pal[i]);
 	if ( guts.machine_byte_order != guts.byte_order)
 		for ( i = 0; i < ncolors; i++)
 			lut[i] = REVERSE_BYTES_32(lut[i]);
@@ -1105,10 +1096,7 @@ create_rgb_to_argb_xpixel_lut( int ncolors, const PRGBColor pal, XPixel *lut)
 {
 	int i;
 	for ( i = 0; i < ncolors; i++)
-		lut[i] =
-			(((pal[i].r << guts. argb_bits. red_range  ) >> 8) << guts. argb_bits.   red_shift) |
-			(((pal[i].g << guts. argb_bits. green_range) >> 8) << guts. argb_bits. green_shift) |
-			(((pal[i].b << guts. argb_bits. blue_range ) >> 8) << guts. argb_bits.  blue_shift);
+		lut[i] = PALETTE2DEV_RGB( &guts.argb_bits, pal[i]);
 	if ( guts.machine_byte_order != guts.byte_order)
 		for ( i = 0; i < ncolors; i++)
 			lut[i] = REVERSE_BYTES_32(lut[i]);
@@ -1854,14 +1842,8 @@ img_put_image_on_widget( Handle self, Handle image, PutImageRequest * req)
 				RGB_COMPOSITE( img-> palette[0].r, img-> palette[0].g, img-> palette[0].b),
 				-1, NULL, RANK_NORMAL);
 		} else {
-			fore =
-				(((img-> palette[1].r << guts. screen_bits. red_range  ) >> 8) << guts. screen_bits.   red_shift) |
-				(((img-> palette[1].g << guts. screen_bits. green_range) >> 8) << guts. screen_bits. green_shift) |
-				(((img-> palette[1].b << guts. screen_bits. blue_range ) >> 8) << guts. screen_bits.  blue_shift);
-			back =
-				(((img-> palette[0].r << guts. screen_bits. red_range  ) >> 8) << guts. screen_bits.   red_shift) |
-				(((img-> palette[0].g << guts. screen_bits. green_range) >> 8) << guts. screen_bits. green_shift) |
-				(((img-> palette[0].b << guts. screen_bits. blue_range ) >> 8) << guts. screen_bits.  blue_shift);
+			fore = PALETTE2DEV_RGB( &guts.screen_bits, img->palette[1]);
+			back = PALETTE2DEV_RGB( &guts.screen_bits, img->palette[0]);
 		}
 		XSetBackground( DISP, XX-> gc, back);
 		XSetForeground( DISP, XX-> gc, fore);
@@ -2654,14 +2636,8 @@ prima_std_pixmap( Handle self, int type)
 			RGB_COMPOSITE( img-> palette[0].r, img-> palette[0].g, img-> palette[0].b),
 			-1, NULL, RANK_NORMAL);
 	} else {
-		fore =
-			(((img-> palette[1].r << guts. screen_bits. red_range  ) >> 8) << guts. screen_bits.   red_shift) |
-			(((img-> palette[1].g << guts. screen_bits. green_range) >> 8) << guts. screen_bits. green_shift) |
-			(((img-> palette[1].b << guts. screen_bits. blue_range ) >> 8) << guts. screen_bits.  blue_shift);
-		back =
-			(((img-> palette[0].r << guts. screen_bits. red_range  ) >> 8) << guts. screen_bits.   red_shift) |
-			(((img-> palette[0].g << guts. screen_bits. green_range) >> 8) << guts. screen_bits. green_shift) |
-			(((img-> palette[0].b << guts. screen_bits. blue_range ) >> 8) << guts. screen_bits.  blue_shift);
+		fore = PALETTE2DEV_RGB( &guts.screen_bits, img->palette[1]);
+		back = PALETTE2DEV_RGB( &guts.screen_bits, img->palette[0]);
 	}
 
 	XSetForeground( DISP, gc, fore);
