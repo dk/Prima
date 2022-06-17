@@ -3829,12 +3829,6 @@ extern Bool
 apc_gp_pop(Handle self, void *user_data);
 
 extern Bool
-apc_gp_push(Handle self);
-
-extern Bool
-apc_gp_pop(Handle self);
-
-extern Bool
 apc_gp_set_alpha( Handle self, int alpha);
 
 extern Bool

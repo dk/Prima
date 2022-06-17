@@ -26,35 +26,11 @@ apc_gp_init( Handle self)
 	return true;
 }
 
-static Bool
-gc_stack_free( Handle item, void * params)
-{
-	PPaintState state = ( PPaintState ) item;
-	if ( state-> fill_image )
-		unprotect_object( state-> fill_image );
-	if ( state->fontResource)
-		state->fontResource    ->refcnt--;
-	if ( state->stylusResource)
-		state->stylusResource  ->refcnt--;
-	if ( state->stylusGPResource)
-		state->stylusGPResource->refcnt--;
-	free(state);
-	return false;
-}
-
 Bool
 apc_gp_done( Handle self)
 {
 	objCheck false;
-<<<<<<< HEAD
 	cleanup_gc_stack(self, 1);
-=======
-	if ( sys gc_stack ) {
-		list_first_that(sys gc_stack, &gc_stack_free, NULL);
-		plist_destroy(sys gc_stack);
-		sys gc_stack = NULL;
-	}
->>>>>>> e700564f (first shot at graphic_context push and pop)
 	aa_free_arena(self, 0);
 	if ( sys bm)
 		if ( !DeleteObject( sys bm)) apiErr;
@@ -975,7 +951,6 @@ apc_gp_get_line_pattern( Handle self, unsigned char * buffer)
 	case PS_NULL:
 		strcpy(( char *) buffer, "");
 		return 0;
-<<<<<<< HEAD
 	case PS_USERSTYLE: {
 		int i;
 		int len = sys rq_pen.line_pattern->count;
@@ -986,33 +961,6 @@ apc_gp_get_line_pattern( Handle self, unsigned char * buffer)
 				buffer[i]--;
 			else
 				buffer[i]++;
-=======
-	case PS_DASH:
-		strcpy(( char *) buffer, psDash);
-		return 2;
-	case PS_DOT:
-		strcpy(( char *) buffer, psDot);
-		return 2;
-	case PS_DASHDOT:
-		strcpy(( char *) buffer, psDashDot);
-		return 4;
-	case PS_DASHDOTDOT:
-		strcpy(( char *) buffer, psDashDotDot);
-		return 6;
-	case PS_USERSTYLE:
-		{
-			int i;
-			int len = sys stylus. extPen. patResource-> dotsCount;
-			if ( len > 255) len = 255;
-			for ( i = 0; i < len; i++) {
-				buffer[ i] = sys stylus. extPen. patResource-> dots[ i];
-				if ( i & 1 )
-					buffer[i]--;
-				else
-					buffer[i]++;
-			}
-			return len;
->>>>>>> e700564f (first shot at graphic_context push and pop)
 		}
 		return len;
 	}
@@ -1307,7 +1255,6 @@ Bool
 apc_gp_set_fill_image( Handle self, Handle image)
 {
 	objCheck false;
-<<<<<<< HEAD
 	if ( !sys ps || !image)
 		return false;
 	sys rq_brush.logbrush.lbStyle = BS_DIBPATTERNPT; /* for stylus_is_complex */
@@ -1315,26 +1262,12 @@ apc_gp_set_fill_image( Handle self, Handle image)
 	STYLUS_FREE_GP_BRUSH;
 	return true;
 }
-=======
-{
-	PImage i;
-	if ( !sys ps || !image)
-		return false;
-	i = PImage(image);
-	if ( i-> type == imBW ) {
-	} else {
-	}
-	return true;
-}}
->>>>>>> e700564f (first shot at graphic_context push and pop)
 
 Bool
 apc_gp_set_fill_pattern_offset( Handle self, Point offset)
 {
 	objCheck false;
 	if ( sys ps) {
-<<<<<<< HEAD
-<<<<<<< HEAD
 		SetBrushOrgEx( sys ps, offset.x % 8, 8 - offset.y % 8, NULL);
 		if ( CURRENT_GP_BRUSH != NULL ) {
 			GdipResetTextureTransform(CURRENT_GP_BRUSH);
@@ -1342,15 +1275,6 @@ apc_gp_set_fill_pattern_offset( Handle self, Point offset)
 		}
 	} else
 		sys fill_pattern_offset = offset;
-=======
-		SetBrushOrgEx( sys ps, offset.x, 8 - offset.y, NULL);
-=======
-		SetBrushOrgEx( sys ps, offset.x % 8, 8 - offset.y % 8, NULL);
->>>>>>> 3e818d51 (apply graphic_context())
-		sys stylusFlags &= ~stbGPBrush;
-	} else
-		sys fillPatternOffset = offset;
->>>>>>> e700564f (first shot at graphic_context push and pop)
 	return true;
 }
 
@@ -1555,7 +1479,6 @@ apc_gp_set_transform( Handle self, int x, int y)
 }
 
 Bool
-<<<<<<< HEAD
 apc_gp_push(Handle self, GCStorageFunction * destructor, void * user_data, unsigned int user_data_size)
 {
 	int size;
@@ -1629,74 +1552,20 @@ apc_gp_push(Handle self, GCStorageFunction * destructor, void * user_data, unsig
 	state->common.line_width    = sys line_width;
 	state->common.text_out_baseline = is_apt( aptTextOutBaseline);
 	state->common.text_opaque   = is_apt( aptTextOpaque);
-=======
-apc_gp_push(Handle self)
-{
-	PPaintState state;
-
-	if ( !sys ps ) return false;
-	if ( !sys gc_stack ) {
-		if ( !( sys gc_stack = plist_create(4,4))) return false;
-	}
-	if ( !( state = malloc(sizeof(PaintState)))) return false;
-	if ( list_add( sys gc_stack, (Handle) state) < 0) return false;
-
-	bzero(state, sizeof(PaintState));
-	if ( !( SaveDC(sys ps))) {
-		list_delete_at( sys gc_stack, sys gc_stack->count - 1);
-		free(state);
-		return false;
-	}
-
-	state->stylus           = sys stylus;
-	state->stylusFlags      = sys stylusFlags;
-	state->stylusResource   = sys stylusResource;
-	state->stylusGPResource = sys stylusGPResource;
-	state->fontResource     = sys fontResource;
-	if ( state->stylusResource)
-		state->stylusResource  ->refcnt++;
-	if ( state->stylusGPResource)
-		state->stylusGPResource->refcnt++;
-	if ( state->fontResource)
-		state->fontResource    ->refcnt++;
-	state->font      = var font;
-	state->font_sin  = sys font_sin;
-	state->font_cos  = sys font_cos;
-
-	memcpy( state->fill_pattern, sys fillPattern, sizeof(FillPattern));
-	state->back_color = sys lbs[1];
-	state->fill_mode  = sys psFillMode;
-	state->rop        = sys currentROP;
-	state->rop2       = sys currentROP2;
-	state->transform  = sys gp_transform;
-	state->antialias  = is_apt(aptGDIPlus);
-	state->alpha      = sys alpha;
-
-	state->text_baseline = is_apt( aptTextOutBaseline);
-	state->text_opaque   = is_apt( aptTextOpaque);
->>>>>>> e700564f (first shot at graphic_context push and pop)
 	if ( var fillPatternImage )
 		protect_object( state->fill_image = var fillPatternImage );
 	return true;
 }
 
 Bool
-<<<<<<< HEAD
 apc_gp_pop( Handle self, void * user_data)
 {
 	PPaintState state;
 
-=======
-apc_gp_pop( Handle self)
-{
-	PPaintState state;
-	if ( !sys ps ) return false;
->>>>>>> e700564f (first shot at graphic_context push and pop)
 	if ( !sys gc_stack ) return false;
 	if ( sys gc_stack-> count <= 0 ) return false;
 	if ( !( state = ( PPaintState) list_at( sys gc_stack, sys gc_stack-> count - 1))) return false;
 	list_delete_at( sys gc_stack, sys gc_stack->count - 1);
-<<<<<<< HEAD
 
 	if ( user_data )
 		memcpy( user_data, state->user_data, state->user_data_size);
@@ -1771,59 +1640,6 @@ apc_gp_pop( Handle self)
 	if ( sys alpha_arena_palette ) {
 		free(sys alpha_arena_palette);
 		sys alpha_arena_palette = NULL;
-=======
-	RestoreDC( sys ps, -1);
-
-	if ( state->fontResource)
-		state->fontResource    ->refcnt--;
-	if ( state->stylusResource)
-		state->stylusResource  ->refcnt--;
-	if ( state->stylusGPResource)
-		state->stylusGPResource->refcnt--;
-	sys stylus           = state-> stylus;
-	sys stylusFlags      = state-> stylusFlags;
-	sys stylusResource   = state-> stylusResource;
-	sys stylusGPResource = state-> stylusGPResource;
-	sys fontResource     = state-> fontResource;
-	var font = state->font;
-	sys font_sin = state->font_sin;
-	sys font_cos = state->font_cos;
-
-	memcpy( sys fillPattern, state->fill_pattern, sizeof(FillPattern));
-	sys lbs[1]       = state->back_color;
-	sys psFillMode   = state->fill_mode;
-	sys pal          = GetCurrentObject(sys ps, OBJ_PAL);
-	sys currentROP   = state->rop;
-	sys currentROP2  = state->rop2;
-	sys gp_transform = state->transform;
-	apt_assign(aptTextOutBaseline, state->text_baseline);
-	apt_assign(aptTextOpaque,      state->text_opaque);
-
-	if (var fillPatternImage)
-		unprotect_object(var fillPatternImage);
-	var fillPatternImage = state-> fill_image;
-
-	apc_gp_set_antialias( self, state->antialias );
-	sys alpha         = state-> alpha;
-	if ( sys alphaArenaPalette ) {
-		free(sys alphaArenaPalette);
-		sys alphaArenaPalette = NULL;
->>>>>>> e700564f (first shot at graphic_context push and pop)
-	}
-
-	if (sys graphics) {
-		HRGN rgn;
-		int res;
-		rgn = CreateRectRgn(0,0,0,0);
-		res = GetClipRgn( sys ps, rgn );
-		if ( res <= 0 ) {
-			if ( res < 0 ) apiErr;
-			DeleteObject(rgn);
-			rgn = CreateRectRgn(0,0,sys lastSize.x,sys lastSize.y);
-		}
-		GPCALL GdipSetClipHrgn(sys graphics, rgn, CombineModeReplace);
-		apiGPErrCheck;
-		DeleteObject(rgn);
 	}
 
 	free(state);

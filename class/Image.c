@@ -2249,19 +2249,11 @@ Image_clear(Handle self, double x1, double y1, double x2, double y2)
 		return inherited clear( self, x1, y1, x2, y2);
 	else if ( !full && var->antialias ) {
 		Bool ok;
-<<<<<<< HEAD
 		if ( !my->graphic_context_push(self)) return false;
 		apc_gp_set_color(self, apc_gp_get_back_color(self));
 		apc_gp_set_fill_pattern(self, fillPatterns[fpSolid]);
 		ok = primitive( self, 1, "snnnn", "rectangle", x1, y1, x2, y2);
 		my->graphic_context_pop(self);
-=======
-		if ( !apc_gp_push(self)) return false;
-		apc_gp_set_color(self, apc_gp_get_back_color(self));
-		apc_gp_set_fill_pattern(self, fillPatterns[fpSolid]);
-		ok = primitive( self, 1, "snnnn", "rectangle", x1, y1, x2, y2);
-		apc_gp_pop(self);
->>>>>>> 3e818d51 (apply graphic_context())
 		return ok;
 	} else {
 		_x1 = x1;

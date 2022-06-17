@@ -1955,12 +1955,6 @@ apc_gp_set_fill_image( Handle self, Handle image)
 }
 
 Bool
-apc_gp_set_fill_image( Handle self, Handle image)
-{
-	return false;
-}
-
-Bool
 apc_gp_set_fill_mode( Handle self, int fillMode)
 {
 	DEFXX;
@@ -2236,7 +2230,6 @@ apc_gp_get_handle( Handle self)
 }
 
 Bool
-<<<<<<< HEAD
 apc_gp_push(Handle self, GCStorageFunction * destructor, void * user_data, unsigned int user_data_size)
 {
 	DEFXX;
@@ -2414,16 +2407,5 @@ apc_gp_pop( Handle self, void * user_data)
 
 	free(state);
 	return true;
-=======
-apc_gp_push( Handle self)
-{
-	return false;
-}
-
-Bool
-apc_gp_pop( Handle self)
-{
-	return false;
->>>>>>> 3e818d51 (apply graphic_context())
 }
 

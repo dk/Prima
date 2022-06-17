@@ -110,19 +110,11 @@ Drawable_clear( Handle self, double x1, double y1, double x2, double y2)
 	if ( !var->antialias ) TRUNC4(x1,y1,x2,y2);
 	if ( !full && IS_AA) {
 		Bool ok;
-<<<<<<< HEAD
 		if ( !my->graphic_context_push(self)) return false;
 		apc_gp_set_color(self, apc_gp_get_back_color(self));
 		apc_gp_set_fill_pattern(self, fillPatterns[fpSolid]);
 		ok = apc_gp_aa_bar( self, x1, y1, x2, y2);
 		my->graphic_context_pop(self);
-=======
-		if ( !apc_gp_push(self)) return false;
-		apc_gp_set_color(self, apc_gp_get_back_color(self));
-		apc_gp_set_fill_pattern(self, fillPatterns[fpSolid]);
-		ok = apc_gp_aa_bar( self, x1, y1, x2, y2);
-		apc_gp_pop(self);
->>>>>>> 3e818d51 (apply graphic_context())
 		return ok;
 	} else return apc_gp_clear(self,
 		x1,y1,x2,y2
