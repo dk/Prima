@@ -197,6 +197,15 @@ gp_Pie(
 	if (sys current_rop != R2_COPYPEN) SetROP2( sys ps, R2_COPYPEN)
 #define STYLUS_RESTORE_OPAQUE_LINE if (sys current_rop != R2_COPYPEN) SetROP2( sys ps, sys current_rop)
 
+static Rect
+fill_ellipse_rect(int x1, int x2, int x3, int x4)
+{
+	Rect r = { x1, x2, x3, x4 };
+	return r;
+}
+
+#define EXPAND_ELLIPSE_RECT(r) r.left,r.bottom,r.right,r.top
+
 Bool
 apc_gp_arc( Handle self, int x, int y, int dX, int dY, double angleStart, double angleEnd)
 { objCheck false; {
@@ -223,25 +232,77 @@ apc_gp_arc( Handle self, int x, int y, int dX, int dY, double angleStart, double
 	return true;
 }}
 
+/* emulate transparent mono patterns with xor/and stippling */
+static Bool
+make_brush(Handle self, int* mix)
+{
+	switch (*mix) {
+	case 0: {
+		(*mix)++;
+		if (
+			sys current_rop != R2_COPYPEN ||
+			sys current_rop2 != ropNoOper ||
+			sys rq_brush.logbrush.lbStyle != BS_DIBPATTERNPT || (
+				var fillPatternImage &&
+				PImage(var fillPatternImage)->type != imBW &&
+				dsys(var fillPatternImage)options.aptIcon
+			)
+		) {
+			STYLUS_USE_BRUSH;
+			return true;
+		}
+		if ( !apc_gp_push(self, NULL, NULL, 0))
+			return false;
+		apc_gp_set_rop( self, ropAndPut );
+		apc_gp_set_color( self, 0);
+		apc_gp_set_back_color( self, 0xffffff);
+		STYLUS_USE_BRUSH;
+		(*mix) = 10;
+		return true;
+	}
+	case 1:
+		return false;
+	case 10:
+		(*mix)++;
+		if ( !apc_gp_pop( self, NULL ))
+			return false;
+		if ( !apc_gp_push(self, NULL, NULL, 0))
+			return false;
+		apc_gp_set_rop( self, ropXorPut );
+		apc_gp_set_back_color( self, 0);
+		STYLUS_USE_BRUSH;
+		return true;
+	case 11:
+		apc_gp_pop( self, NULL );
+		return false;
+	default:
+		return false;
+	}
+}
+
+
 Bool
 apc_gp_bar( Handle self, int x1, int y1, int x2, int y2)
 {objCheck false;{
 	HDC  ps = sys ps;
-	Bool ok;
+	int mix = 0;
 
 	check_swap( x1, x2);
 	check_swap( y1, y2);
 	SHIFT_XY(x1,y1);
 	SHIFT_XY(x2,y2);
 
-	STYLUS_USE_BRUSH;
-	SelectObject( ps, std_hollow_pen);
+	SelectObject( sys ps, std_hollow_pen);
 	STYLUS_FREE_PEN;
 
-	if ( !( ok = Rectangle( ps, x1, y2, x2 + 1, y1 + 1)))
-		apiErr;
+	while ( make_brush(self, &mix)) {
+		if ( !Rectangle( ps, x1, y2, x2 + 1, y1 + 1)) {
+			apiErr;
+			return false;
+		}
+	}
 
-	return ok;
+	return true;
 }}
 
 Bool
@@ -250,20 +311,22 @@ apc_gp_bars( Handle self, int nr, Rect *rr)
 	HDC     ps = sys ps;
 	Bool ok = true;
 	int i;
+	int mix = 0;
 
-	STYLUS_USE_BRUSH;
 	SelectObject( ps, std_hollow_pen);
 	STYLUS_FREE_PEN;
 
-	for ( i = 0; i < nr; i++, rr++) {
-		Rect xr = *rr;
-		check_swap( xr.left, xr.right);
-		check_swap( xr.bottom, xr.top);
-		SHIFT_XY( xr.left, xr.bottom);
-		SHIFT_XY( xr.right, xr.top);
-		if ( !( ok = Rectangle( ps, xr.left, xr.top, xr.left + 1, xr.bottom + 1))) {
-			apiErr;
-			break;
+	while ( make_brush(self, &mix)) {
+		for ( i = 0; i < nr; i++, rr++) {
+			Rect xr = *rr;
+			check_swap( xr.left, xr.right);
+			check_swap( xr.bottom, xr.top);
+			SHIFT_XY( xr.left, xr.bottom);
+			SHIFT_XY( xr.right, xr.top);
+			if ( !( ok = Rectangle( ps, xr.left, xr.top, xr.left + 1, xr.bottom + 1))) {
+				apiErr;
+				break;
+			}
 		}
 	}
 
@@ -503,28 +566,31 @@ apc_gp_fill_chord( Handle self, int x, int y, int dX, int dY, double angleStart,
 	Bool ok = true;
 	HDC     ps = sys ps;
 	Bool   comp;
-	int compl, needf;
+	int compl0, needf;
+	int mix = 0;
+	Rect r;
 
-	compl = arc_completion( &angleStart, &angleEnd, &needf);
+	compl0 = arc_completion( &angleStart, &angleEnd, &needf);
 	comp = ((sys ps_fill_mode & fmOverlay) == 0) || stylus_is_complex( self);
 	SHIFT_XY(x,y);
-	STYLUS_USE_BRUSH;
 
 	if ( comp) {
 		SelectObject( ps, std_hollow_pen);
-		while ( compl--)
-			if ( !( ok = Ellipse( ps, ELLIPSE_RECT_SUPERINCLUSIVE))) apiErr;
-		if ( !( ok = !needf || gp_Chord(
-			self, ELLIPSE_RECT_SUPERINCLUSIVE, ARC_ANGLED_SUPERINCLUSIVE, angleStart, angleEnd, true
-		))) apiErr;
+		r = fill_ellipse_rect( ELLIPSE_RECT_SUPERINCLUSIVE );
 	} else {
 		SelectObject( ps, stylus_get_pen( PS_SOLID, 1, sys rq_brush.logbrush.lbColor));
+		r = fill_ellipse_rect( ELLIPSE_RECT );
+	}
+
+	while ( make_brush(self, &mix)) {
+		int compl = compl0;
 		while ( compl--)
-			if ( !( ok = Ellipse( ps, ELLIPSE_RECT))) apiErr;
+			if ( !( ok = Ellipse( ps, EXPAND_ELLIPSE_RECT(r)))) apiErr;
 		if ( !( ok = !needf || gp_Chord(
-			self, ELLIPSE_RECT, ARC_ANGLED_SUPERINCLUSIVE, angleStart, angleEnd, true
+			self, EXPAND_ELLIPSE_RECT(r), ARC_ANGLED_SUPERINCLUSIVE, angleStart, angleEnd, true
 		))) apiErr;
 	}
+
 	STYLUS_FREE_PEN;
 
 	return ok;
@@ -536,15 +602,23 @@ apc_gp_fill_ellipse( Handle self, int x, int y, int dX, int dY)
 	Bool ok = true;
 	HDC     ps  = sys ps;
 	Bool    comp = ((sys ps_fill_mode & fmOverlay) == 0) || stylus_is_complex(self);
-	STYLUS_USE_BRUSH;
+	Rect r;
+	int mix = 0;
 	SHIFT_XY(x,y);
+
 	if ( comp) {
 		SelectObject( ps, std_hollow_pen);
+		r = fill_ellipse_rect( ELLIPSE_RECT_SUPERINCLUSIVE );
 		if ( !( ok = Ellipse( ps, ELLIPSE_RECT_SUPERINCLUSIVE))) apiErr;
 	} else {
 		SelectObject( ps, stylus_get_pen( PS_SOLID, 1, sys rq_brush.logbrush.lbColor));
-		if ( !( ok = Ellipse( ps, ELLIPSE_RECT))) apiErr;
+		r = fill_ellipse_rect( ELLIPSE_RECT );
 	}
+
+	while ( make_brush( self, &mix )) {
+		if ( !( ok = Ellipse( ps, EXPAND_ELLIPSE_RECT(r)))) apiErr;
+	}
+
 	STYLUS_FREE_PEN;
 	return ok;
 }}
@@ -575,6 +649,7 @@ apc_gp_fill_poly( Handle self, int numPts, Point * points)
 	HDC     ps = sys ps;
 	int i;
 	POINT *p;
+	int mix = 0;
 
 	if ((p = malloc( sizeof(POINT) * numPts)) == NULL)
 		return false;
@@ -586,14 +661,17 @@ apc_gp_fill_poly( Handle self, int numPts, Point * points)
 	if ( numPts == 2 )
 		adjust_line_end_LONG( p[0].x, p[0].y, &p[1].x, &p[1].y);
 
-	STYLUS_USE_BRUSH;
 	if (( sys ps_fill_mode & fmOverlay) == 0) {
 		SelectObject( ps, std_hollow_pen);
-		if ( !( ok = Polygon( ps, p, numPts))) apiErr;
+		while ( make_brush(self, &mix)) {
+			if ( !( ok = Polygon( ps, p, numPts))) apiErr;
+		}
 		STYLUS_FREE_PEN;
 	} else if ( !stylus_is_complex(self)) {
 		SelectObject( ps, stylus_get_pen( PS_SOLID, 1, sys rq_brush.logbrush.lbColor));
-		if ( !( ok = Polygon( ps, p, numPts))) apiErr;
+		while ( make_brush(self, &mix)) {
+			if ( !( ok = Polygon( ps, p, numPts))) apiErr;
+		}
 		STYLUS_FREE_PEN;
 	} else {
 		int dx       = sys last_size.x;
@@ -652,16 +730,40 @@ apc_gp_fill_poly( Handle self, int numPts, Point * points)
 			return false;
 		}
 		bmJ = SelectObject( dc, bmSrc);
-		old1 = SelectObject( dc, CURRENT_BRUSH);
 		oldelta = SelectObject( dc, std_hollow_pen);
+
+		STYLUS_USE_BRUSH;
+		old1 = SelectObject(dc, CURRENT_BRUSH);
 		Rectangle( dc, 0, 0, bound. x, bound. y);
 		SelectObject( dc, oldelta);
 		SelectObject( dc, old1);
 		SelectObject( dc, bmMask);
 		SetROP2( dc, R2_WHITE);
 		Rectangle( dc, 0, 0, bound. x, bound. y);
-		SetROP2( dc, R2_BLACK);
-		if ( !( ok = Polygon( dc, p, numPts))) apiErr;
+		if (
+			sys current_rop == R2_COPYPEN &&
+			sys current_rop2 == ropNoOper &&
+			sys rq_brush.logbrush.lbStyle == BS_DIBPATTERNPT && (
+				var fillPatternImage &&
+				PImage(var fillPatternImage)->type == imBW &&
+				!dsys(var fillPatternImage)options.aptIcon
+			)
+		) {
+			HDC savedc = sys ps;
+			sys ps = dc;
+			apc_gp_push( self, NULL, NULL, 0 );
+			apc_gp_set_color( self, 0xffffff );
+			apc_gp_set_back_color( self, 0 );
+			apc_gp_set_rop( self, ropCopyPut );
+			STYLUS_USE_BRUSH;
+			SelectObject( dc, std_hollow_pen);
+			if ( !( ok = Polygon( dc, p, numPts))) apiErr;
+			apc_gp_pop( self, NULL );
+			sys ps = savedc;
+		} else {
+			SetROP2( dc, R2_BLACK);
+			if ( !( ok = Polygon( dc, p, numPts))) apiErr;
+		}
 		SelectObject( dc, bmSrc);
 		if ( !( ok &= MaskBlt( ps, trans. x, trans. y, bound. x, bound. y, dc, 0, 0, bmMask, 0, 0,
 					MAKEROP4( 0x00AA0029, rop)))) apiErr;
@@ -680,9 +782,11 @@ apc_gp_fill_sector( Handle self, int x, int y, int dX, int dY, double angleStart
 	HDC     ps = sys ps;
 	POINT   pts[ 3];
 	Bool comp;
-	int compl, needf;
+	int compl0, needf;
+	Rect r;
+	int mix = 0;
 
-	compl = arc_completion( &angleStart, &angleEnd, &needf);
+	compl0 = arc_completion( &angleStart, &angleEnd, &needf);
 	comp = ((sys ps_fill_mode & fmOverlay) == 0) || stylus_is_complex(self);
 
 	SHIFT_XY(x,y);
@@ -691,29 +795,28 @@ apc_gp_fill_sector( Handle self, int x, int y, int dX, int dY, double angleStart
 	pts[1].x = x + cos( angleStart / GRAD) * dX / 2 + 0.5;
 	pts[1].y = y - sin( angleStart / GRAD) * dY / 2 + 0.5;
 
-	STYLUS_USE_BRUSH;
 	if ( comp) {
 		SelectObject( ps, std_hollow_pen);
+		r = fill_ellipse_rect( ELLIPSE_RECT_SUPERINCLUSIVE );
+	} else {
+		SelectObject( ps, stylus_get_pen( PS_SOLID, 1, sys rq_brush.logbrush.lbColor));
+		r = fill_ellipse_rect( ELLIPSE_RECT );
+	}
+
+	while ( make_brush( self, &mix )) {
+		int compl = compl0;
 		while ( compl--)
-			if ( !( ok = Ellipse( ps, ELLIPSE_RECT_SUPERINCLUSIVE))) apiErr;
+			if ( !( ok = Ellipse( ps, EXPAND_ELLIPSE_RECT(r)))) apiErr;
 		if ( !( ok = !needf || gp_Pie(
-			self, ELLIPSE_RECT_SUPERINCLUSIVE,
+			self, EXPAND_ELLIPSE_RECT(r),
 			pts[1].x, pts[1].y,
 			pts[0].x, pts[0].y,
 			angleStart, angleEnd, true
 		))) apiErr;
-	} else {
-		SelectObject( ps, stylus_get_pen( PS_SOLID, 1, sys rq_brush.logbrush.lbColor));
-		while ( compl--)
-			if ( !( ok = Ellipse( ps, ELLIPSE_RECT))) apiErr;
-		if ( !( ok = !needf || gp_Pie(
-			self, ELLIPSE_RECT,
-			pts[ 1]. x, pts[ 1]. y,
-			pts[ 0]. x, pts[ 0]. y,
-			angleStart, angleEnd, true
-		))) apiErr;
 	}
+
 	STYLUS_FREE_PEN;
+
 	return ok;
 }}
 

@@ -45,6 +45,7 @@ $x-> lineWidth( 1);
 is( $x-> pixel( 2, 4), 0, "lineWidth");
 is( $x-> pixel( 5, 3), 0, "lineWidth");
 
+$x->rop2(rop::CopyPut);
 $x-> color( cl::White);
 $x-> bar( 0, 0, 7, 7);
 $x-> color( cl::Black);
@@ -136,13 +137,11 @@ for my $subtype ( dbt::Bitmap, dbt::Pixmap, dbt::Layered ) {
 	check( "fpXm WW", 4, $fp0m, color => cl::White, backColor => cl::White );
 	check( "fpXm BB", 0, $fp1m, color => cl::Black, backColor => cl::Black );
 
-	if ( $aa ) {
-		$x->rop2(rop::NoOper);
-		$x->backColor(cl::White);
-		$x->clear;
-		check( "fpXm BT", 1, $fp1m, color => cl::Black, backColor => cl::Black );
-		$x->rop2(rop::CopyPut);
-	}
+	$x->rop2(rop::NoOper);
+	$x->backColor(cl::White);
+	$x->clear;
+	check( "fpXm BT", 1, $fp1m, color => cl::Black, backColor => cl::Black );
+	$x->rop2(rop::CopyPut);
 
 	check( "fp0a", 1, $fp0a, color => cl::White, backColor => cl::Black );
 	check( "fp1a", 3, $fp1a, color => cl::White, backColor => cl::Black );

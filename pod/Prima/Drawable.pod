@@ -859,10 +859,12 @@ bar(), fill_chord(), fill_ellipse(), fillpoly(), fill_sector(), floodfill().
 
 Accepts either a C<fp::> constant or a reference to an array of 8 integers, or
 an image reference. In all cases, except where the image is colored, treats 0s
-in the pattern as the curently selected C<backColor>, and 1s as C<color>. In
-addition in the render mode, will respect C<rop2> when set to C<rop::NoOper>,
-treating 0s as fully transparent pixels, and the C<alpha> property. Note:
-Drawing over monochome bitmap or image will not respect its C<rop> on Win32.
+in the pattern as the curently selected C<backColor>, and 1s as C<color>. When
+C<rop2> is set to C<rop::NoOper>, treats 0s as fully transparent pixels.
+Additionally, in the render mode respects the C<alpha> property.
+
+Note: Drawing
+over monochome bitmap or image will not respect its C<rop> on Win32.
 
 Depending on the parameters, treats the input as follows:
 

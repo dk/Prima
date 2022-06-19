@@ -108,8 +108,10 @@ stylus_get_pen( DWORD style, DWORD line_width, COLORREF color )
 	ss.logpen.lopnColor   = color;
 	if (( dcobj = stylus_fetch(&ss)) == NULL)
 		return 0;
-	if ( !dcobj-> handle )
-		dcobj-> handle = CreatePen( style, line_width, color );
+	if ( !dcobj-> handle ) {
+		if (( dcobj-> handle = CreatePen( style, line_width, color )) == 0)
+			apiErr;
+	}
 	return (HPEN) dcobj->handle;
 }
 
@@ -125,8 +127,11 @@ stylus_get_solid_brush( COLORREF color )
 	ss.logbrush.lbHatch = (LONG_PTR) 0;
 	if (( dcobj = stylus_fetch(&ss)) == NULL)
 		return 0;
-	if ( !dcobj-> handle )
-		dcobj-> handle = CreateSolidBrush( color );
+	if ( !dcobj-> handle ) {
+		if (( dcobj-> handle = CreateSolidBrush( color )) == 0)
+			apiErr;
+	}
+
 	return (HBRUSH) dcobj->handle;
 }
 
