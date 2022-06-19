@@ -23,22 +23,22 @@
 #define COLOR_B16(x) (((x)<<8)&0xFF00)
 
 static int rop_map[] = {
-	GXcopy	/* ropCopyPut */,		/* dest  = src */
-	GXxor	/* ropXorPut */,		/* dest ^= src */
-	GXand	/* ropAndPut */,		/* dest &= src */
-	GXor		/* ropOrPut */,			/* dest |= src */
-	GXcopyInverted /* ropNotPut */,		/* dest = !src */
-	GXinvert	/* ropInvert */,		/* dest = !dest */
-	GXclear	/* ropBlackness */,		/* dest = 0 */
-	GXandReverse	/* ropNotDestAnd */,		/* dest = (!dest) & src */
-	GXorReverse	/* ropNotDestOr */,		/* dest = (!dest) | src */
-	GXset	/* ropWhiteness */,		/* dest = 1 */
-	GXandInverted /* ropNotSrcAnd */,		/* dest &= !src */
-	GXorInverted	/* ropNotSrcOr */,		/* dest |= !src */
-	GXequiv	/* ropNotXor */,		/* dest ^= !src */
-	GXnand	/* ropNotAnd */,		/* dest = !(src & dest) */
-	GXnor	/* ropNotOr */,			/* dest = !(src | dest) */
-	GXnoop	/* ropNoOper */			/* dest = dest */
+	GXcopy	       /* ropCopyPut    */, /* dest  = src          */
+	GXxor	       /* ropXorPut     */, /* dest ^= src          */
+	GXand	       /* ropAndPut     */, /* dest &= src          */
+	GXor	       /* ropOrPut      */, /* dest |= src          */
+	GXcopyInverted /* ropNotPut     */, /* dest = !src          */
+	GXinvert       /* ropInvert     */, /* dest = !dest         */
+	GXclear	       /* ropBlackness  */, /* dest = 0             */
+	GXandReverse   /* ropNotDestAnd */, /* dest = (!dest) & src */
+	GXorReverse    /* ropNotDestOr  */, /* dest = (!dest) | src */
+	GXset          /* ropWhiteness  */, /* dest = 1             */
+	GXandInverted  /* ropNotSrcAnd  */, /* dest &= !src         */
+	GXorInverted   /* ropNotSrcOr   */, /* dest |= !src         */
+	GXequiv        /* ropNotXor     */, /* dest ^= !src         */
+	GXnand         /* ropNotAnd     */, /* dest = !(src & dest) */
+	GXnor          /* ropNotOr      */, /* dest = !(src | dest) */
+	GXnoop         /* ropNoOper     */  /* dest = dest          */
 };
 
 int
@@ -426,7 +426,7 @@ prima_make_brush( Handle self, int colorIndex)
 				XX->flags.brush_back = 1;
 			}
 			XSetFillStyle( DISP, XX-> gc,
-				XX->flags.use_stipple_transparency ? FillStippled : FillOpaqueStippled);
+				(XX->paint_rop2 == ropNoOper) ? FillStippled : FillOpaqueStippled);
 		} else {
 			XSetTile( DISP, XX-> gc, XX-> fp_tile);
 			XCHECKPOINT;
@@ -435,24 +435,54 @@ prima_make_brush( Handle self, int colorIndex)
 	} else if ( XT_IS_BITMAP(XX) || ( guts. idepth == 1)) {
 		int i;
 		FillPattern mix, *p1, *p2;
-		if ( colorIndex > 0) return false;
-		p1 = &guts. ditherPatterns[ 64 - (XX-> fore. primary ? 64 : XX-> fore. balance)];
-		p2 = &guts. ditherPatterns[ 64 - (XX-> back. primary ? 64 : XX-> back. balance)];
-		for ( i = 0; i < sizeof( FillPattern); i++)
-			mix[i] = ((*p1)[i] & XX-> fill_pattern[i]) | ((*p2)[i] & ~XX-> fill_pattern[i]);
-		XSetForeground( DISP, XX-> gc, 1);
-		XSetBackground( DISP, XX-> gc, 0);
-		XX-> flags. brush_fore = 0;
-		XX-> flags. brush_back = 0;
-		if (
-			( memcmp( mix, fillPatterns[ fpSolid], sizeof( FillPattern)) != 0) &&
-			( p = prima_get_hatch( &mix))
+
+		switch (colorIndex) {
+		case 0:
+			if (
+				(XX->paint_rop2 == ropCopyPut) ||
+				( memcmp( XX->fill_pattern, fillPatterns[ fpSolid], sizeof( FillPattern)) == 0)
 			) {
-			XSetStipple( DISP, XX-> gc, p);
-			XSetFillStyle( DISP, XX-> gc, FillOpaqueStippled);
-		} else
-			XSetFillStyle( DISP, XX-> gc, FillSolid);
-	} else if ( XX-> flags. brush_null_hatch && !XX-> flags. use_stipple_transparency) {
+				p1 = &guts. ditherPatterns[ 64 - (XX-> fore. primary ? 64 : XX-> fore. balance)];
+				p2 = &guts. ditherPatterns[ 64 - (XX-> back. primary ? 64 : XX-> back. balance)];
+				for ( i = 0; i < sizeof( FillPattern); i++)
+					mix[i] = ((*p1)[i] & XX-> fill_pattern[i]) | ((*p2)[i] & ~XX-> fill_pattern[i]);
+				XSetForeground( DISP, XX-> gc, 1);
+				XSetBackground( DISP, XX-> gc, 0);
+				XX-> flags. brush_fore = 0;
+				XX-> flags. brush_back = 0;
+				if (
+					( memcmp( mix, fillPatterns[ fpSolid], sizeof( FillPattern)) != 0) &&
+					( p = prima_get_hatch( &mix))
+				) {
+					XSetStipple( DISP, XX-> gc, p);
+					XSetFillStyle( DISP, XX-> gc, FillOpaqueStippled);
+				} else
+					XSetFillStyle( DISP, XX-> gc, FillSolid);
+			} else {
+				p1 = &guts. ditherPatterns[ 64 - (XX-> fore. primary ? 64 : XX-> fore. balance)];
+				for ( i = 0; i < sizeof( FillPattern); i++)
+					mix[i] = (*p1)[i] & XX-> fill_pattern[i];
+				XSetForeground( DISP, XX-> gc, 1);
+				XX-> flags. brush_fore = 0;
+				XSetFillStyle( DISP, XX-> gc, FillOpaqueStippled);
+			}
+			break;
+		case 1:
+			if (
+				(XX->paint_rop2 == ropCopyPut) ||
+				( memcmp( XX->fill_pattern, fillPatterns[ fpSolid], sizeof( FillPattern)) == 0)
+			)
+				return false;
+
+			p1 = &guts. ditherPatterns[ 64 - (XX-> back. primary ? 64 : XX-> back. balance)];
+			for ( i = 0; i < sizeof( FillPattern); i++)
+				mix[i] = (*p1)[i] & XX-> fill_pattern[i];
+			XSetForeground( DISP, XX-> gc, 0);
+			break;
+		default:
+			return false;
+		}
+	} else if ( XX-> flags. brush_null_hatch ) {
 		if ( colorIndex > 0) return false;
 		if ( XX-> fore. balance) {
 			p = prima_get_hatch( &guts. ditherPatterns[ XX-> fore. balance]);
@@ -474,7 +504,7 @@ prima_make_brush( Handle self, int colorIndex)
 
 		p = prima_get_hatch( &XX-> fill_pattern);
 		XSetFillStyle( DISP, XX-> gc, p ?
-			(XX->flags.use_stipple_transparency ? FillStippled : FillOpaqueStippled) :
+			((XX->paint_rop2 == ropNoOper) ? FillStippled : FillOpaqueStippled) :
 			FillSolid);
 		if ( p) XSetStipple( DISP, XX-> gc, p);
 		if (!XX->flags.brush_fore) {
@@ -488,6 +518,11 @@ prima_make_brush( Handle self, int colorIndex)
 	} else {
 		switch ( colorIndex) {
 		case 0: /* back mix */
+			if ( XX->paint_rop2 == ropNoOper) {
+				XSetFunction( DISP, XX-> gc, GXnoop);
+				return true;
+			}
+
 			if ( XX-> back. balance) {
 				p = prima_get_hatch( &guts. ditherPatterns[ XX-> back. balance]);
 				if ( p) {
@@ -502,6 +537,9 @@ prima_make_brush( Handle self, int colorIndex)
 			XX-> flags. brush_back = 0;
 			break;
 		case 1: /* fore mix */
+			if ( XX->paint_rop2 == ropNoOper)
+				XSetFillStyle( DISP, XX-> gc, rop_map[XX->paint_rop]);
+
 			if ( memcmp( XX-> fill_pattern, fillPatterns[fpEmpty], sizeof(FillPattern))==0)
 				return false;
 			if ( XX-> fore. balance) {
