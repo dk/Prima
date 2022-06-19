@@ -744,9 +744,10 @@ apc_gp_fill_poly( Handle self, int numPts, Point * points)
 			sys current_rop == R2_COPYPEN &&
 			sys current_rop2 == ropNoOper &&
 			sys rq_brush.logbrush.lbStyle == BS_DIBPATTERNPT && (
-				var fillPatternImage &&
-				PImage(var fillPatternImage)->type == imBW &&
-				!dsys(var fillPatternImage)options.aptIcon
+				!var fillPatternImage || (
+					PImage(var fillPatternImage)->type == imBW &&
+					!dsys(var fillPatternImage)options.aptIcon
+				)
 			)
 		) {
 			HDC savedc = sys ps;
