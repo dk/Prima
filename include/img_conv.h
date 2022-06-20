@@ -288,6 +288,18 @@ typedef struct {
 	Point translate;
 } ImgPaintContext, *PImgPaintContext;
 
+typedef void BitBltProc( Byte * src, Byte * dst, int count);
+typedef BitBltProc *PBitBltProc;
+
+#define dBLEND_FUNC(name) void name( \
+	const Byte * src, const Byte src_inc, \
+	const Byte * src_a, const Byte src_a_inc,\
+	Byte * dst, \
+	const Byte * dst_a, const Byte dst_a_inc,\
+	int bytes)
+
+typedef dBLEND_FUNC(BlendFunc);
+
 extern void ibc_repad( Byte * source, Byte * dest, int srcLineSize, int dstLineSize, int srcDataSize, int dstDataSize, int srcBPP, int dstBPP, void * bit_conv_proc, Bool reverse);
 extern void img_fill_dummy( PImage dummy, int w, int h, int type, Byte * data, RGBColor * palette);
 extern Bool img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int dstW, int dstH, int srcW, int srcH, int rop, PBoxRegionRec region, Byte * color);
@@ -301,6 +313,11 @@ extern void img_premultiply_alpha_constant( Handle self, int alpha);
 extern void img_premultiply_alpha_map( Handle self, Handle alpha);
 extern Bool img_polyline( Handle dest, int n_points, Point * points, PImgPaintContext ctx);
 extern Bool img_flood_fill( Handle self, int x, int y, ColorPixel color, Bool single_border, PImgPaintContext ctx);
+extern PBitBltProc img_find_blt_proc( int rop );
+extern void img_find_blend_proc( int rop, BlendFunc ** blend1, BlendFunc ** blend2 );
+extern Bool img_resample_colors( Handle dest, int bpp, PImgPaintContext ctx);
+extern void img_fill_alpha_buf( Byte * dst, Byte * src, int width, int bpp);
+
 
 /* regions */
 typedef Bool RegionCallbackFunc( int x, int y, int w, int h, void * param);
