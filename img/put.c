@@ -273,7 +273,7 @@ NOSCALE:
 				if ( !src) goto EXIT;
 				newObject = true;
 			}
-			PImage(src)-> self-> reset( dest, imbpp1, NULL, 0);
+			PImage(src)-> self-> reset( src, imbpp1, NULL, 0);
 			retval = img_put( dest, src, dstX, dstY, 0, 0, dstW, dstH, PImage(src)-> w, PImage(src)-> h, rop, region, color);
 			goto EXIT;
 		} else {
