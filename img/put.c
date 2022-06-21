@@ -268,9 +268,13 @@ NOSCALE:
 
 	if (( PImage( dest)-> type & imBPP) == 1) {
 		if (( PImage(src)-> type & imBPP ) != 1 ) {
-			Handle b1 = CImage(src)->dup(src);
-			retval = img_put( dest, b1, dstX, dstY, 0, 0, dstW, dstH, PImage(b1)-> w, PImage(b1)-> h, rop, region, color);
-			Object_destroy(b1);
+			if ( !newObject) {
+				src = CImage( src)-> dup( src);
+				if ( !src) goto EXIT;
+				newObject = true;
+			}
+			PImage(src)-> self-> reset( dest, imbpp1, NULL, 0);
+			retval = img_put( dest, src, dstX, dstY, 0, 0, dstW, dstH, PImage(src)-> w, PImage(src)-> h, rop, region, color);
 			goto EXIT;
 		} else {
 			PImage i  = (PImage) dest;
