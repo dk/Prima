@@ -359,25 +359,14 @@ $dst->end_paint;
 # .buffered is also not guaranteed, but for 8 pixel widget that shouldn't be a problem
 #
 # also, do test inside onPaint to make sure it's on the buffer, not on the screen
-$dst = Prima::Widget->create( width => 4, height => 2, buffered => 1, onPaint => sub {
-	return if get_flag;
-	set_flag;
-	test_dst("widget");
-});
-$dst->bring_to_front;
-SKIP: {
-	skip "cannot get widget to paint", 226 unless wait_flag;
-}
 
-SKIP: {
-    skip "no argb capability", 226 unless $can_argb;
-    reset_flag;
-    $dst = Prima::Widget->create( width => 4, height => 2, buffered => 1, layered => 1, onPaint => sub {
-	return if get_flag;
+sub ready_to_paint
+{
+	return 0 if get_flag;
 	my $self = shift;
 	my $ok;
 	my @sz = $self-> size;
-	return unless $sz[0] == 4 && $sz[1] == 2;
+	return 0 unless $sz[0] == 4 && $sz[1] == 2;
 	for ( 0..4 ) {
 		$self->color(cl::Black);
 		$self->bar(0,0,$self->size);
@@ -390,8 +379,25 @@ SKIP: {
 	AGAIN:
 		select(undef,undef,undef,0.1);
 	}
-	return unless $ok;
+	return 0 unless $ok;
 	set_flag;
+	return 1;
+}
+
+$dst = Prima::Widget->create( width => 4, height => 2, buffered => 1, onPaint => sub {
+	return unless ready_to_paint(@_);
+	test_dst("widget");
+});
+$dst->bring_to_front;
+SKIP: {
+	skip "cannot get widget to paint", 226 unless wait_flag;
+}
+
+SKIP: {
+    skip "no argb capability", 226 unless $can_argb;
+    reset_flag;
+    $dst = Prima::Widget->create( width => 4, height => 2, buffered => 1, layered => 1, onPaint => sub {
+	return unless ready_to_paint(@_);
 	test_dst("argb widget");
     });
 
