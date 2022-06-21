@@ -493,6 +493,98 @@ img_fill_alpha_buf( Byte * dst, Byte * src, int width, int bpp)
 		memcpy( dst, src, width * bpp);
 }
 
+Byte
+rop_1bit_transform(Byte fore, Byte back, Byte rop)
+{
+	/*
+	Special case with current foreground and background colors for 1-bit bitmaps/pixmaps, see also
+	L<pod/Prima/Drawable.pod | Monochrome bitmaps>.
+
+	Raster ops can be identified by a fingerprint.  For example, Or's is 14
+	and Noop's is 10:
+
+        0 | 0 =    0                      0 | 0 =    0
+        0 | 1 =   1                       0 | 1 =   1
+        1 | 0 =  1                        1 | 0 =  0
+        1 | 1 = 1                         1 | 1 = 1
+        ---     ----                      ---     ----
+                1110 = 14                         1010 = 10
+
+	when this special case uses not actual 0s and 1s, but bit values of
+	foreground and background color instead, the resulting operation can
+	still be expressed in rops, but these needs to be adjusted. Let's
+	consider a case where both colors are 0, and rop = OrPut:
+
+        0 | 0 =    0
+        0 | 1 =   1
+        0 | 0 =  0
+        0 | 1 = 1
+        ---     ----
+                1010 = 10
+
+	this means that in these conditions, Or (as well as Xor and AndInverted) becomes Noop.
+
+	*/
+	if ( fore == 0 && back == 0 ) {
+		switch( rop) {
+			case ropAndPut:
+			case ropNotDestAnd:
+			case ropBlackness:
+			case ropCopyPut:       return ropBlackness;
+			case ropNotXor:
+			case ropInvert:
+			case ropNotOr:
+			case ropNotDestOr:     return ropInvert;
+			case ropNotSrcAnd:
+			case ropNoOper:
+			case ropOrPut:
+			case ropXorPut:        return ropNoOper;
+			case ropNotAnd:
+			case ropNotPut:
+			case ropNotSrcOr:
+			case ropWhiteness:     return ropWhiteness;
+		}
+	} else if ( fore == 1 && back == 0 ) {
+		switch( rop) {
+			case ropAndPut:        return ropNotSrcAnd;
+			case ropNotSrcAnd:     return ropAndPut;
+			case ropNotDestAnd:    return ropNotOr;
+			case ropBlackness:     return ropBlackness;
+			case ropCopyPut:       return ropNotPut;
+			case ropNotPut:        return ropCopyPut;
+			case ropNotXor:        return ropXorPut;
+			case ropInvert:        return ropInvert;
+			case ropNotAnd:        return ropNotDestOr;
+			case ropNoOper:        return ropNoOper;
+			case ropNotOr:         return ropNotDestAnd;
+			case ropOrPut:         return ropNotSrcOr;
+			case ropNotSrcOr:      return ropOrPut;
+			case ropNotDestOr:     return ropNotAnd;
+			case ropWhiteness:     return ropWhiteness;
+			case ropXorPut:        return ropNotXor;
+		}
+	} else if ( fore == 1 && back == 1 ) {
+		switch( rop) {
+			case ropAndPut:
+			case ropNotSrcOr:
+			case ropNotXor:
+			case ropNoOper:        return ropNoOper;
+			case ropNotSrcAnd:
+			case ropBlackness:
+			case ropNotPut:
+			case ropNotOr:         return ropBlackness;
+			case ropInvert:
+			case ropNotAnd:
+			case ropNotDestAnd:
+			case ropXorPut:        return ropInvert;
+			case ropOrPut:
+			case ropNotDestOr:
+			case ropWhiteness:
+			case ropCopyPut:       return ropWhiteness;
+		}
+	}
+	return rop;
+}
 
 #ifdef __cplusplus
 }

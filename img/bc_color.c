@@ -1228,6 +1228,56 @@ bc_mono_copy( Byte * source, Byte * dest, unsigned int from, unsigned int width)
 		memcpy( dest, source + ( from >> 3), ( width >> 3) + (( width & 7) > 0 ? 1 : 0));
 }
 
+void
+bc_mono_put( Byte * source, unsigned int from, unsigned int width, Byte * dest, unsigned int to, BitBltProc * blt)
+{
+#define BUFSZ 256
+	Byte ltail = to & 7;
+	Byte ftail = from & 7;
+	unsigned int rtail = (to + width) & 7;
+	unsigned int lbyte = to >> 3;
+	unsigned int rbyte = (to + width -1 ) >> 3;
+	unsigned int blen  = rbyte - lbyte + 1;
+	Byte lmask = 0xff << (8 - ltail);
+	Byte rmask = 0xff >> rtail;
+	Byte lsave = dest[lbyte] & lmask;
+	Byte rsave = dest[rbyte] & rmask;
+	Byte lshift, rshift, L, R, buf[BUFSZ], *d = dest + lbyte;
+
+	source += from >> 3;
+	if ( ftail == ltail ) {
+		blt( source, d, blen);
+		goto FINALIZE;
+	} else if ( ftail > ltail ) {
+		lshift = ftail - ltail;
+		rshift = 8 - lshift;
+	} else {
+		rshift = ltail - ftail;
+		lshift = 8 - rshift;
+	}
+
+	L = *(source++);
+	while ( blen > 0 ) {
+		int i, sz = (blen > BUFSZ) ? BUFSZ : blen;
+		Byte *p = buf;
+		blen -= sz;
+		for ( i = 0; i < sz; i++) {
+			R = *(source++);
+			*(p++) = ( ftail > ltail ) ?
+				( L << lshift ) | ( R >> rshift ) :
+				( L >> rshift ) | ( R << rshift );
+			R = L;
+		}
+		blt( buf, d, sz);
+		d += sz;
+	}
+
+FINALIZE:
+	if ( lmask != 0x00 ) dest[lbyte] = lsave | (dest[lbyte] & ~lmask);
+	if ( rmask != 0xff ) dest[rbyte] = rsave | (dest[rbyte] & ~rmask);
+#undef BUFSZ
+}
+
 #ifdef __cplusplus
 }
 #endif

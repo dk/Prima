@@ -16,6 +16,32 @@
 extern "C" {
 #endif
 
+typedef void SimpleConvProc( Byte * srcData, Byte * dstData, int count);
+typedef SimpleConvProc *PSimpleConvProc;
+
+typedef struct {
+	ColorPixel color;
+	ColorPixel backColor;
+	int rop;
+	Bool transparent;
+	FillPattern pattern;
+	Point patternOffset;
+	unsigned char * linePattern;
+	PBoxRegionRec region;
+	Point translate;
+} ImgPaintContext, *PImgPaintContext;
+
+typedef void BitBltProc( Byte * src, Byte * dst, int count);
+typedef BitBltProc *PBitBltProc;
+
+#define dBLEND_FUNC(name) void name( \
+	const Byte * src, const Byte src_inc, \
+	const Byte * src_a, const Byte src_a_inc,\
+	Byte * dst, \
+	const Byte * dst_a, const Byte dst_a_inc,\
+	int bytes)
+
+typedef dBLEND_FUNC(BlendFunc);
 
 /* initializer routine */
 extern void init_image_support(void);
@@ -28,6 +54,7 @@ extern void ic_type_convert( Handle self, Byte * dstData, PRGBColor dstPal, int 
 extern Bool itype_supported( int type);
 extern Bool itype_importable( int type, int *newtype, void **from_proc, void **to_proc);
 extern Bool iconvtype_supported( int conv);
+extern Byte rop_1bit_transform(Byte fore, Byte back, Byte rop);
 
 /* palette routines */
 extern void cm_init_colormap( void);
@@ -140,6 +167,7 @@ extern void bs_DComplex_out( DComplex * srcData, DComplex * dstData, int w, int 
 /* bitstroke copy routines */
 extern void bc_nibble_copy( Byte * source, Byte * dest, unsigned int from, unsigned int width);
 extern void bc_mono_copy( Byte * source, Byte * dest, unsigned int from, unsigned int width);
+extern void bc_mono_put( Byte * source, unsigned int from, unsigned int width, Byte * dest, unsigned int to, BitBltProc * blt);
 
 /* image conversion routines */
 #define BC(from,to,conv) void ic_##from##_##to##_ict##conv( Handle self, Byte * dstData, PRGBColor dstPal, int dstType, int * dstPalSize, Bool palSize_only)
@@ -273,32 +301,6 @@ extern void bc_bgr_a_rgba( Byte * bgr_source, Byte * a_source, Byte * rgba_dest,
 
 
 /* misc */
-typedef void SimpleConvProc( Byte * srcData, Byte * dstData, int count);
-typedef SimpleConvProc *PSimpleConvProc;
-
-typedef struct {
-	ColorPixel color;
-	ColorPixel backColor;
-	int rop;
-	Bool transparent;
-	FillPattern pattern;
-	Point patternOffset;
-	unsigned char * linePattern;
-	PBoxRegionRec region;
-	Point translate;
-} ImgPaintContext, *PImgPaintContext;
-
-typedef void BitBltProc( Byte * src, Byte * dst, int count);
-typedef BitBltProc *PBitBltProc;
-
-#define dBLEND_FUNC(name) void name( \
-	const Byte * src, const Byte src_inc, \
-	const Byte * src_a, const Byte src_a_inc,\
-	Byte * dst, \
-	const Byte * dst_a, const Byte dst_a_inc,\
-	int bytes)
-
-typedef dBLEND_FUNC(BlendFunc);
 
 extern void ibc_repad( Byte * source, Byte * dest, int srcLineSize, int dstLineSize, int srcDataSize, int dstDataSize, int srcBPP, int dstBPP, void * bit_conv_proc, Bool reverse);
 extern void img_fill_dummy( PImage dummy, int w, int h, int type, Byte * data, RGBColor * palette);

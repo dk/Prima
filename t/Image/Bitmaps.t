@@ -5,7 +5,7 @@ use Test::More;
 use Prima::sys::Test;
 use Prima qw(Application);
 
-plan tests => 1835;
+plan tests => 1907;
 
 my ($src, $mask, $dst);
 my $can_argb = $::application->get_system_value(sv::LayeredWidgets);
@@ -176,7 +176,7 @@ sub test_dst
 	$mask = Prima::Image->create( width => 4, height => 1, type => im::BW);
 	$src = Prima::Image->create( width => 4, height => 1, type => im::BW);
 	test_mask( "1-bit grayscale xor mask / 1-bit and mask on $target");
-	for my $bit ( 4, 8, 24) {
+	for my $bit ( 1, 4, 8, 24) {
 		$src = Prima::Image->create( width => 4, height => 1, type => $bit);
 		test_mask( "$bit-bit xor mask / 1-bit and mask on $target");
 	}

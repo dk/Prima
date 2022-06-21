@@ -12,7 +12,8 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
 typedef struct {
 	int srcX;
 	int srcY;
-	int bpp;
+	int bits;
+	int bytes;
 	int srcLS;
 	int dstLS;
 	int dX;
@@ -27,11 +28,21 @@ img_put_single( int x, int y, int w, int h, ImgPutCallbackRec * ptr)
 {
 	int i, count;
 	Byte *dptr, *sptr;
-	sptr  = ptr->src + ptr->srcLS * (ptr->dY + y) + ptr->bpp * (ptr->dX + x);
-	dptr  = ptr->dst + ptr->dstLS * y + ptr->bpp * x;
-	count = w * ptr->bpp;
-	for ( i = 0; i < h; i++, sptr += ptr->srcLS, dptr += ptr->dstLS)
-		ptr->proc( sptr, dptr, count);
+	switch ( ptr-> bits ) {
+	case 1:
+		sptr  = ptr->src + ptr->srcLS * (ptr->dY + y);
+		dptr  = ptr->dst + ptr->dstLS * y;
+		for ( i = 0; i < h; i++, sptr += ptr->srcLS, dptr += ptr->dstLS)
+			bc_mono_put( sptr, ptr->dX + x, w, dptr, x, ptr->proc);
+		break;
+	default:
+		sptr  = ptr->src + ptr->srcLS * (ptr->dY + y) + ptr->bytes * (ptr->dX + x);
+		dptr  = ptr->dst + ptr->dstLS * y + ptr->bytes * x;
+		count = w * ptr->bytes;
+		for ( i = 0; i < h; i++, sptr += ptr->srcLS, dptr += ptr->dstLS)
+			ptr->proc( sptr, dptr, count);
+	}
+
 	return true;
 }
 
@@ -51,7 +62,7 @@ img_put(
 ) {
 	Point srcSz, dstSz;
 	int asrcW, asrcH;
-	Bool newObject = false;
+	Bool newObject = false, retval = true;
 
 	if ( dest == NULL_HANDLE || src == NULL_HANDLE) return false;
 	if ( rop == ropNoOper) return false;
@@ -222,7 +233,7 @@ img_put(
 
 			if ( srcX < 0) dsx = asrcW - dsw;
 			if ( srcY < 0) dsy = asrcH - dsh;
-			img_put( dx, x, dsx, dsy, 0, 0, dsw, dsh, dsw, dsh, ropCopyPut, region, color);
+			retval = img_put( dx, x, dsx, dsy, 0, 0, dsw, dsh, dsw, dsh, ropCopyPut, region, color);
 			Object_destroy( x);
 			x = dx;
 		}
@@ -255,7 +266,20 @@ img_put(
 
 NOSCALE:
 
-	if (( PImage( dest)-> type & imBPP) < 8) {
+	if (( PImage( dest)-> type & imBPP) == 1) {
+		if (( PImage(src)-> type & imBPP ) != 1 ) {
+			Handle b1 = CImage(src)->dup(src);
+			retval = img_put( dest, b1, dstX, dstY, 0, 0, dstW, dstH, PImage(b1)-> w, PImage(b1)-> h, rop, region, color);
+			Object_destroy(b1);
+			goto EXIT;
+		} else {
+			PImage i  = (PImage) dest;
+			PImage s  = (PImage) src;
+			Byte fore = cm_nearest_color(s->palette[0], i->palSize, i->palette);
+			Byte back = cm_nearest_color(s->palette[1], i->palSize, i->palette);
+			rop = rop_1bit_transform( fore, back, rop );
+		}
+	} else if (( PImage( dest)-> type & imBPP) < 8) {
 		PImage i = ( PImage) dest;
 		int type = i-> type;
 		if (rop != ropCopyPut || i-> conversion == ictNone) {
@@ -273,23 +297,19 @@ NOSCALE:
 				if ( *dj == mask) *dj = 0xff;
 				dj++;
 			}
-			img_put( b8, src, dstX, dstY, 0, 0, dstW, dstH, PImage(src)-> w, PImage(src)-> h, rop, region, color);
+			retval = img_put( b8, src, dstX, dstY, 0, 0, dstW, dstH, PImage(src)-> w, PImage(src)-> h, rop, region, color);
 			for ( sz = 0; sz < 256; sz++) colorref[sz] = ( sz > mask) ? mask : sz;
 			dj = j-> data;
 			di = i-> data;
 
-			for ( sz = 0; sz < i-> h; sz++, dj += j-> lineSize, di += i-> lineSize) {
-				if (( type & imBPP) == 1)
-					bc_byte_mono_cr( dj, di, i-> w, colorref);
-				else
-					bc_byte_nibble_cr( dj, di, i-> w, colorref);
-			}
+			for ( sz = 0; sz < i-> h; sz++, dj += j-> lineSize, di += i-> lineSize)
+				bc_byte_nibble_cr( dj, di, i-> w, colorref);
 			Object_destroy( b8);
 		} else {
 			int conv = i-> conversion;
 			i-> conversion = PImage( src)-> conversion;
 			i-> self-> reset( dest, imbpp8, NULL, 0);
-			img_put( dest, src, dstX, dstY, 0, 0, dstW, dstH, PImage(src)-> w, PImage(src)-> h, rop, region, color);
+			retval = img_put( dest, src, dstX, dstY, 0, 0, dstW, dstH, PImage(src)-> w, PImage(src)-> h, rop, region, color);
 			i-> self-> reset( dest, type, NULL, 0);
 			i-> conversion = conv;
 		}
@@ -361,10 +381,12 @@ NOSCALE:
 
 	/* checks done, do put_image */
 	{
+		int bpp = PImage( dest)-> type & imBPP;
 		ImgPutCallbackRec rec = {
 			/* srcX  */ srcX,
 			/* srcY  */ srcY,
-			/* bpp   */ ( PImage( dest)-> type & imBPP ) / 8,
+			/* bits */  bpp,
+			/* bytes */ bpp / 8,
 			/* srcLS */ PImage( src)-> lineSize,
 			/* dstLS */ PImage( dest)-> lineSize,
 			/* dX    */ srcX - dstX,
@@ -384,7 +406,7 @@ NOSCALE:
 EXIT:
 	if ( newObject) Object_destroy( src);
 
-	return true;
+	return retval;
 }
 
 typedef struct {
