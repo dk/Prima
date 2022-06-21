@@ -166,6 +166,7 @@ extern void bs_DComplex_out( DComplex * srcData, DComplex * dstData, int w, int 
 
 /* bitstroke copy routines */
 extern void bc_nibble_copy( Byte * source, Byte * dest, unsigned int from, unsigned int width);
+extern void bc_nibble_put( Byte * source, unsigned int from, unsigned int width, Byte * dest, unsigned int to, BitBltProc * blt);
 extern void bc_mono_copy( Byte * source, Byte * dest, unsigned int from, unsigned int width);
 extern void bc_mono_put( Byte * source, unsigned int from, unsigned int width, Byte * dest, unsigned int to, BitBltProc * blt);
 
