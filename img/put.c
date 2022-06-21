@@ -212,7 +212,7 @@ img_put(
 				}
 			}
 
-			if (( type & imBPP) < 8) type = imbpp8;
+			if (( type & imBPP) == imbpp4) type = imbpp8;
 
 			profile = newHV();
 			pset_i( type,        type);
