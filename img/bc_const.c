@@ -184,6 +184,26 @@ cm_fill_colorref( PRGBColor fromPalette, int fromColorCount, PRGBColor toPalette
 	}
 }
 
+void
+cm_colorref_4to8( Byte * src16, Byte * dst256 )
+{
+	int i;
+	Byte srcx[16];
+	if ( src16 == NULL ) {
+		for ( i = 0; i < 16; i++ ) srcx[i] = i;
+		src16 = srcx;
+	}
+	if ( dst256 == src16 ) {
+		Byte dstx[256];
+		for ( i = 0; i < 256; i++)
+			dstx[i] = (src16[ i >> 4 ] << 4) | src16[ i & 15 ];
+		memcpy( dst256, dstx, 256 );
+	} else {
+		for ( i = 0; i < 256; i++)
+			dst256[i] = (src16[ i >> 4 ] << 4) | src16[ i & 15 ];
+	}
+}
+
 /*
 
 cm_study_palette scans a RGB palette and builds a special structure that allows
@@ -666,7 +686,7 @@ img_fill_dummy( PImage dummy, int w, int h, int type, Byte * data, RGBColor * pa
 	} else if ( type & ( imRealNumber|imComplexNumber|imTrigComplexNumber)) {
 		dummy-> palSize = 256;
 	} else {
-		dummy-> palSize = type & imBPP;
+		dummy-> palSize = 1 << (type & imBPP);
 	}
 }
 

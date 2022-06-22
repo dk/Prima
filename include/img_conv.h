@@ -62,6 +62,7 @@ extern void cm_reverse_palette( PRGBColor source, PRGBColor dest, int colors);
 extern void cm_squeeze_palette( PRGBColor source, int srcColors, PRGBColor dest, int destColors);
 extern Byte cm_nearest_color( RGBColor color, int palSize, PRGBColor palette);
 extern void cm_fill_colorref( PRGBColor fromPalette, int fromColorCount, PRGBColor toPalette, int toColorCount, Byte * colorref);
+extern void cm_colorref_4to8( Byte * src16, Byte * dst256 );
 extern U16* cm_study_palette( RGBColor * palette, int pal_size);
 extern Bool cm_optimized_palette( Byte * data, int lineSize, int width, int height, RGBColor * palette, int * max_pal_size);
 extern void cm_reduce_palette4( Byte * srcData, int srcLine, int width, int height, RGBColor * srcPalette, int srcPalSize, RGBColor * dstPalette, int * dstPalSize);
@@ -165,8 +166,9 @@ extern void bs_Complex_out( Complex * srcData, Complex * dstData, int w, int x, 
 extern void bs_DComplex_out( DComplex * srcData, DComplex * dstData, int w, int x, int absx, long step);
 
 /* bitstroke copy routines */
+extern void bc_byte_put( Byte * source, Byte * dest, unsigned int count, BitBltProc * blt, Byte * colorref);
 extern void bc_nibble_copy( Byte * source, Byte * dest, unsigned int from, unsigned int width);
-extern void bc_nibble_put( Byte * source, unsigned int from, unsigned int width, Byte * dest, unsigned int to, BitBltProc * blt);
+extern void bc_nibble_put( Byte * source, unsigned int from, unsigned int width, Byte * dest, unsigned int to, BitBltProc * blt, Byte * colorref8to4);
 extern void bc_mono_copy( Byte * source, Byte * dest, unsigned int from, unsigned int width);
 extern void bc_mono_put( Byte * source, unsigned int from, unsigned int width, Byte * dest, unsigned int to, BitBltProc * blt);
 

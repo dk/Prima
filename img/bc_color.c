@@ -1191,6 +1191,25 @@ bc_rgb_byte_nop( RGBColor * src, Byte * dest, int count, U16 * tree, RGBColor * 
 
 /* bitstroke copiers */
 void
+bc_byte_put( Byte * source, Byte * dest, unsigned int count, BitBltProc * blt, Byte * colorref)
+{
+#define BUFSZ 256
+	Byte buf[BUFSZ];
+	register Byte *c = colorref;
+	while ( count > 0 ) {
+		unsigned int sz = (count > 256) ? 256 : count;
+		register Byte *s = source, *d = buf;
+		register unsigned int n = sz;
+		while (n-- > 0) *(d++) = c[ *(s++) ];
+		blt( buf, dest, sz);
+		source += sz;
+		dest   += sz;
+		count  -= sz;
+	}
+#undef BUFSZ
+}
+
+void
 bc_nibble_copy( Byte * source, Byte * dest, unsigned int from, unsigned int width)
 {
 	if ( from & 1) {
@@ -1208,8 +1227,16 @@ bc_nibble_copy( Byte * source, Byte * dest, unsigned int from, unsigned int widt
 		memcpy( dest, source + ( from >> 1), ( width >> 1) + ( width & 1));
 }
 
+/* colorref8to4 should come from cm_colorref_4to8 or have a similar format */
+static void
+apply_colorref8to4( register Byte * src, register Byte * dst, register unsigned int bytes, register Byte * colorref8to4)
+{
+	while ( bytes-- > 0 )
+		*(dst++) = colorref8to4[ *(src++) ];
+}
+
 void
-bc_nibble_put( Byte * source, unsigned int from, unsigned int width, Byte * dest, unsigned int to, BitBltProc * blt)
+bc_nibble_put( Byte * source, unsigned int from, unsigned int width, Byte * dest, unsigned int to, BitBltProc * blt, Byte * colorref8to4)
 {
 #define BUFSZ 256
 	Byte ltail = to & 1;
@@ -1226,7 +1253,19 @@ bc_nibble_put( Byte * source, unsigned int from, unsigned int width, Byte * dest
 
 	source += from >> 1;
 	if ( ftail == ltail ) {
-		blt( source, d, blen);
+		if ( colorref8to4 ) {
+			unsigned int size = blen;
+			Byte *src = source, *dst = d;
+			while ( size > 0 ) {
+				unsigned int bufsize = (size > BUFSZ) ? BUFSZ : size;
+				apply_colorref8to4( src, dst, bufsize, colorref8to4 );
+				blt( src, dst, bufsize);
+				src  += bufsize;
+				dst  += bufsize;
+				size -= bufsize;
+			}
+		} else
+			blt( source, d, blen);
 		goto FINALIZE;
 	} else if ( ftail > ltail ) {
 		lshift = ftail - ltail;
@@ -1248,6 +1287,8 @@ bc_nibble_put( Byte * source, unsigned int from, unsigned int width, Byte * dest
 				( L >> rshift ) | ( R << rshift );
 			R = L;
 		}
+		if ( colorref8to4 )
+			apply_colorref8to4( buf, buf, sz, colorref8to4);
 		blt( buf, d, sz);
 		d += sz;
 	}

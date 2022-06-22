@@ -20,6 +20,7 @@ typedef struct {
 	int dY;
 	Byte * src;
 	Byte * dst;
+	Byte * colorref;
 	PBitBltProc proc;
 } ImgPutCallbackRec;
 
@@ -28,16 +29,31 @@ img_put_single( int x, int y, int w, int h, ImgPutCallbackRec * ptr)
 {
 	int i, count;
 	Byte *dptr, *sptr;
+
+	sptr  = ptr->src + ptr->srcLS * (ptr->dY + y);
+	dptr  = ptr->dst + ptr->dstLS * y;
+
 	switch ( ptr-> bits ) {
 	case 1:
-		sptr  = ptr->src + ptr->srcLS * (ptr->dY + y);
-		dptr  = ptr->dst + ptr->dstLS * y;
 		for ( i = 0; i < h; i++, sptr += ptr->srcLS, dptr += ptr->dstLS)
 			bc_mono_put( sptr, ptr->dX + x, w, dptr, x, ptr->proc);
 		break;
+	case 4:
+		for ( i = 0; i < h; i++, sptr += ptr->srcLS, dptr += ptr->dstLS)
+			bc_nibble_put( sptr, ptr->dX + x, w, dptr, x, ptr->proc, ptr->colorref);
+		break;
+	case 8:
+		if ( ptr-> colorref ) {
+			sptr  += ptr->bytes * (ptr->dX + x);
+			dptr  += ptr->bytes * x;
+			for ( i = 0; i < h; i++, sptr += ptr->srcLS, dptr += ptr->dstLS)
+				bc_byte_put( sptr, dptr, ptr->bytes, ptr->proc, ptr->colorref);
+			break;
+		}
+		/* fall through */
 	default:
-		sptr  = ptr->src + ptr->srcLS * (ptr->dY + y) + ptr->bytes * (ptr->dX + x);
-		dptr  = ptr->dst + ptr->dstLS * y + ptr->bytes * x;
+		sptr  += ptr->bytes * (ptr->dX + x);
+		dptr  += ptr->bytes * x;
 		count = w * ptr->bytes;
 		for ( i = 0; i < h; i++, sptr += ptr->srcLS, dptr += ptr->dstLS)
 			ptr->proc( sptr, dptr, count);
@@ -62,7 +78,8 @@ img_put(
 ) {
 	Point srcSz, dstSz;
 	int asrcW, asrcH;
-	Bool newObject = false, retval = true;
+	Bool newObject = false, retval = true, use_colorref = false;
+	Byte colorref[256];
 
 	if ( dest == NULL_HANDLE || src == NULL_HANDLE) return false;
 	if ( rop == ropNoOper) return false;
@@ -98,7 +115,7 @@ img_put(
 		}
 
 		i = (PIcon) dest;
-		img_fill_dummy( &dummy, i-> w, i-> h, imByte, i-> mask, NULL);
+		img_fill_dummy( &dummy, i-> w, i-> h, imByte, i-> mask, std256gray_palette);
 		return img_put((Handle)&dummy, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, ropCopyPut, region, color);
 	} else if ( color != NULL ) {
 		Bool ok;
@@ -265,103 +282,36 @@ img_put(
 	}
 
 NOSCALE:
-
-	if (( PImage( dest)-> type & imBPP) == 1) {
-		if (( PImage(src)-> type & imBPP ) != 1 ) {
-			if ( !newObject) {
-				src = CImage( src)-> dup( src);
-				if ( !src) goto EXIT;
-				newObject = true;
-			}
-			PImage(src)-> self-> reset( src, imbpp1, NULL, 0);
-			retval = img_put( dest, src, dstX, dstY, 0, 0, dstW, dstH, PImage(src)-> w, PImage(src)-> h, rop, region, color);
-			goto EXIT;
-		} else {
-			PImage i  = (PImage) dest;
-			PImage s  = (PImage) src;
-			Byte fore = cm_nearest_color(s->palette[0], i->palSize, i->palette);
-			Byte back = cm_nearest_color(s->palette[1], i->palSize, i->palette);
-			rop = rop_1bit_transform( fore, back, rop );
+	if (( PImage(src)-> type & imBPP ) != ( PImage( dest)-> type & imBPP )) {
+		if ( !newObject) {
+			src = CImage( src)-> dup( src);
+			if ( !src) goto EXIT;
+			newObject = true;
 		}
-	} else if (( PImage( dest)-> type & imBPP) < 8) {
-		PImage i = ( PImage) dest;
-		int type = i-> type;
-		if (rop != ropCopyPut || i-> conversion == ictNone) {
-			Handle b8 = i-> self-> dup( dest);
-			PImage j  = ( PImage) b8;
-			int mask  = (1 << (type & imBPP)) - 1;
-			int sz;
-			Byte *dj, *di;
-			Byte colorref[256];
-			j-> self-> reset( b8, imbpp8, NULL, 0);
-			sz = j-> dataSize;
-			dj = j-> data;
-			/* change 0/1 to 0x000/0xfff for correct masking */
-			while ( sz--) {
-				if ( *dj == mask) *dj = 0xff;
-				dj++;
-			}
-			retval = img_put( b8, src, dstX, dstY, 0, 0, dstW, dstH, PImage(src)-> w, PImage(src)-> h, rop, region, color);
-			for ( sz = 0; sz < 256; sz++) colorref[sz] = ( sz > mask) ? mask : sz;
-			dj = j-> data;
-			di = i-> data;
-
-			for ( sz = 0; sz < i-> h; sz++, dj += j-> lineSize, di += i-> lineSize)
-				bc_byte_nibble_cr( dj, di, i-> w, colorref);
-			Object_destroy( b8);
-		} else {
-			int conv = i-> conversion;
-			i-> conversion = PImage( src)-> conversion;
-			i-> self-> reset( dest, imbpp8, NULL, 0);
-			retval = img_put( dest, src, dstX, dstY, 0, 0, dstW, dstH, PImage(src)-> w, PImage(src)-> h, rop, region, color);
-			i-> self-> reset( dest, type, NULL, 0);
-			i-> conversion = conv;
-		}
+		PImage(src)-> self-> reset( src, PImage(dest)-> type, PImage(dest)->palette, PImage(dest)->palSize);
+		retval = img_put( dest, src, dstX, dstY, 0, 0, dstW, dstH, PImage(src)-> w, PImage(src)-> h, rop, region, color);
 		goto EXIT;
 	}
 
-	if ( PImage( dest)-> type != PImage( src)-> type) {
-		int type = PImage( src)-> type & imBPP;
-		int mask = (1 << type) - 1;
-		/* equalize type */
-		if ( !newObject) {
-			src = CImage( src)-> dup( src);
-			if ( !src) goto EXIT;
-			newObject = true;
-		}
-		CImage( src)-> reset( src, PImage( dest)-> type, NULL, 0);
-		if ( type < 8 && rop != ropCopyPut) {
-			/* change 0/1 to 0x000/0xfff for correct masking */
-			int sz   = PImage( src)-> dataSize;
-			Byte * d = PImage( src)-> data;
-			while ( sz--) {
-				if ( *d == mask) *d = 0xff;
-				d++;
-			}
-			memset( PImage( src)-> palette + 255, 0xff, sizeof(RGBColor));
-		}
-	}
-
-	if ( PImage( dest)-> type == imbpp8) {
+	if (( PImage( dest)-> type & imBPP) == 1) {
+		PImage i  = (PImage) dest;
+		PImage s  = (PImage) src;
+		Byte fore = cm_nearest_color(s->palette[0], i->palSize, i->palette);
+		Byte back = cm_nearest_color(s->palette[1], i->palSize, i->palette);
+		rop = rop_1bit_transform( fore, back, rop );
+	} else if (( PImage( dest)-> type & imBPP) <= 8 ) {
 		/* equalize palette */
-		Byte colorref[256], *s;
-		int sz, i = PImage( src)-> dataSize;
-		if ( !newObject) {
-			src = CImage( src)-> dup( src);
-			if ( !src) goto EXIT;
-			newObject = true;
-		}
-		cm_fill_colorref(
-			PImage( src)-> palette, PImage( src)-> palSize,
-			PImage( dest)-> palette, PImage( dest)-> palSize,
-			colorref);
-		s = PImage( src)-> data;
-		/* identity transform for padded ( 1->xfff, see above ) pixels */
-		for ( sz = PImage( src)-> palSize; sz < 256; sz++)
-			colorref[sz] = sz;
-		while ( i--) {
-			*s = colorref[ *s];
-			s++;
+		if ( rop == ropCopyPut && (
+			PImage(dest)->palSize != PImage(src)->palSize ||
+			memcmp( PImage(dest)->palette, PImage(src)->palette, PImage(dest)->palSize * 3) != 0
+		)) {
+			cm_fill_colorref(
+				PImage( src)-> palette, PImage( src)-> palSize,
+				PImage( dest)-> palette, PImage( dest)-> palSize,
+				colorref);
+			use_colorref = true;
+			if (( PImage( dest)-> type & imBPP) == 4 )
+				cm_colorref_4to8( colorref, colorref );
 		}
 	}
 
@@ -397,6 +347,7 @@ NOSCALE:
 			/* dY    */ srcY - dstY,
 			/* src   */ PImage( src )-> data,
 			/* dst   */ PImage( dest )-> data,
+			/* cr    */ use_colorref ? colorref : NULL,
 			/* proc  */ img_find_blt_proc(rop)
 		};
 		if ( rop == ropCopyPut && dest == src) /* incredible */
