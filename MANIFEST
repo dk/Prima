@@ -374,6 +374,7 @@ t/Image/Path.t
 t/Image/ROP.t
 t/Image/Stream.t
 t/Image/Stretch.t
+t/Image/Tile.t
 t/Image/Transform.t
 t/Object/Application.t
 t/Object/Clipboard.t
