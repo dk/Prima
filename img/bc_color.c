@@ -1258,8 +1258,8 @@ bc_nibble_put( Byte * source, unsigned int from, unsigned int width, Byte * dest
 			Byte *src = source, *dst = d;
 			while ( size > 0 ) {
 				unsigned int bufsize = (size > BUFSZ) ? BUFSZ : size;
-				apply_colorref8to4( src, dst, bufsize, colorref8to4 );
-				blt( src, dst, bufsize);
+				apply_colorref8to4( src, buf, bufsize, colorref8to4 );
+				blt( buf, dst, bufsize);
 				src  += bufsize;
 				dst  += bufsize;
 				size -= bufsize;
