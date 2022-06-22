@@ -1957,6 +1957,7 @@ create_tile( Handle self, Handle image, Bool mono )
 		return 0;
 	}
 
+	gcv.graphics_exposures = 0;
 	gcv.foreground = 0xffffffff;
 	gcv.background = 0;
 	if ( !( gc = XCreateGC( DISP, px, GCGraphicsExposures|GCForeground|GCBackground, &gcv))) {
