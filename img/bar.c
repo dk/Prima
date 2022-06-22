@@ -5,283 +5,8 @@
 extern "C" {
 #endif
 
-typedef struct {
-	int bpp;
-	int count;
-	int ls;
-	int step;
-	int pat_x_offset;
-	Bool solid;
-	Byte * data;
-	Byte * buf;
-	PBitBltProc proc;
-} ImgBarCallbackRec;
-
 #define FILL_PATTERN_SIZE 8
 #define BLT_BUFSIZE ((MAX_SIZEOF_PIXEL * FILL_PATTERN_SIZE * FILL_PATTERN_SIZE) * 2)
-
-static Bool
-img_bar_single( int x, int y, int w, int h, ImgBarCallbackRec * ptr)
-{
-	int j, blt_bytes, blt_step, offset;
-	Byte lmask, rmask;
-	Byte * data, *pat_ptr;
-
-	switch ( ptr->bpp ) {
-	case 1:
-		blt_bytes = (( x + w - 1) >> 3) - (x >> 3) + 1;
-		lmask = ( x & 7 ) ? 255 << ( 8 - (x & 7)) : 0;
-		rmask = (( x + w) & 7 ) ? 255 >> ((x + w) & 7) : 0;
-		offset = x >> 3;
-		break;
-	case 4:
-		blt_bytes = (( x + w - 1) >> 1) - (x >> 1) + 1;
-		lmask = ( x & 1 )       ? 0xf0 : 0;
-		rmask = (( x + w) & 1 ) ? 0x0f : 0;
-		offset = x >> 1;
-		break;
-	case 8:
-		blt_bytes = w;
-		lmask = rmask = 0;
-		offset = x;
-		break;
-	default:
-		blt_bytes = w * ptr->count;
-		lmask = rmask = 0;
-		offset = x * ptr->count;
-	}
-
-	blt_step = ptr->step;
-	if (!ptr->solid && (( ptr-> pat_x_offset % FILL_PATTERN_SIZE ) != (x % FILL_PATTERN_SIZE))) {
-		int dx = (x % FILL_PATTERN_SIZE) - ( ptr-> pat_x_offset % FILL_PATTERN_SIZE );
-		if ( dx < 0 ) dx += FILL_PATTERN_SIZE;
-
-		switch ( ptr->bpp ) {
-		case 1:
-			pat_ptr = ptr->buf;
-			break;
-		case 4:
-			if ( dx > 1 ) {
-				pat_ptr = ptr->buf + dx / 2;
-				if ( dx > 0 || blt_step + FILL_PATTERN_SIZE / 2 > BLT_BUFSIZE )
-					blt_step -= FILL_PATTERN_SIZE / 2;
-			} else
-				pat_ptr = ptr->buf;
-			break;
-		default:
-			pat_ptr = ptr->buf + dx * ptr->bpp / 8;
-			if ( dx > 0 || blt_step + FILL_PATTERN_SIZE * ptr->count > BLT_BUFSIZE )
-				blt_step -= FILL_PATTERN_SIZE * ptr->count;
-		}
-	} else {
-		pat_ptr = ptr->buf;
-	}
-
-	if (blt_bytes < blt_step) blt_step = blt_bytes;
-
-	data = ptr->data + ptr->ls * y + offset;
-
-	for ( j = 0; j < h; j++) {
-		int bytes = blt_bytes;
-		Byte lsave = *data, rsave = data[blt_bytes - 1], *p = data;
-		Byte * src = pat_ptr + ((y + j) % FILL_PATTERN_SIZE) * ptr->step;
-		while ( bytes > 0 ) {
-			ptr->proc( src, p, ( bytes > blt_step ) ? blt_step : bytes );
-			bytes -= blt_step;
-			p += blt_step;
-		}
-		if ( lmask ) *data = (lsave & lmask) | (*data & ~lmask);
-		if ( rmask ) data[blt_bytes-1] = (rsave & rmask) | (data[blt_bytes-1] & ~rmask);
-		data += ptr->ls;
-	}
-	return true;
-}
-
-static Bool
-img_bar_alpha( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx);
-
-Bool
-img_bar( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
-{
-	PImage i     = (PImage) dest;
-	int pixSize  = (i->type & imBPP) / 8;
-	Byte blt_buffer[BLT_BUFSIZE];
-	int j, k, blt_bytes, blt_step;
-	Bool solid;
-
-	/* check boundaries */
-	if ( ctx->rop == ropNoOper) return true;
-
-	if ( x < 0 ) {
-		w += x;
-		x = 0;
-	}
-	if ( y < 0 ) {
-		h += y;
-		y = 0;
-	}
-	if ( x + w > i->w ) w = i->w - x;
-	if ( y + h > i->h ) h = i->h - y;
-	if ( w <= 0 || h <= 0 ) return true;
-
-	while ( ctx->patternOffset.x < 0 ) ctx-> patternOffset.x += FILL_PATTERN_SIZE;
-	while ( ctx->patternOffset.y < 0 ) ctx-> patternOffset.y += FILL_PATTERN_SIZE;
-
-
-	if ( ctx-> rop & ropConstantAlpha )
-		return img_bar_alpha(dest, x, y, w, h, ctx);
-
-	if ( memcmp( ctx->pattern, fillPatterns[fpSolid], sizeof(FillPattern)) == 0) {
-		/* do nothing */
-	} else if (memcmp( ctx->pattern, fillPatterns[fpEmpty], sizeof(FillPattern)) == 0) {
-		if ( ctx->transparent ) return true;
-		/* still do nothing */
-	} else if ( ctx->transparent ) {
-	/* transparent stippling: if rop is simple enough, adjust parameters to
-	execute it as another rop with adjusted input. Otherwise make it into
-	two-step operation, such as CopyPut stippling is famously executed by
-	And and Xor rops */
-		#define FILL(who,val) memset( ctx->who, val, MAX_SIZEOF_PIXEL)
-		switch ( ctx-> rop ) {
-		case ropBlackness:
-			FILL(color,0x00);
-			FILL(backColor,0xff);
-			ctx->rop = ropAndPut;
-			break;
-		case ropWhiteness:
-			FILL(color,0xff);
-			FILL(backColor,0x00);
-			ctx->rop = ropOrPut;
-			break;
-		case ropInvert:
-			FILL(color,0xff);
-			FILL(backColor,0x00);
-			ctx->rop = ropXorPut;
-			break;
-		case ropNotSrcAnd:
-		case ropXorPut:
-			FILL(backColor,0x00);
-			break;
-		default: {
-			static int rop1[16] = {
-				ropNotOr, ropXorPut, ropInvert, ropNotOr,
-				ropNotSrcAnd, ropXorPut, ropNotSrcAnd, ropXorPut,
-				ropNotOr, ropNotOr, ropNotSrcAnd, ropInvert,
-				ropInvert, ropXorPut, ropNotSrcAnd, ropInvert
-			};
-			static int rop2[16] = {
-				ropNotDestAnd, ropNoOper, ropNotDestAnd, ropInvert,
-				ropNotSrcOr, ropNotXor, ropAndPut, ropAndPut,
-				ropXorPut, ropNotAnd, ropNoOper, ropNotAnd,
-				ropXorPut, ropNotSrcOr, ropNotXor, ropInvert
-			};
-			int rop = ctx->rop;
-			FILL(backColor,0x00);
-			ctx->rop = rop1[rop];
-			ctx->transparent = false;
-			img_bar( dest, x, y, w, h, ctx);
-			FILL(backColor,0xff);
-			ctx->rop = rop2[rop];
-			break;
-		}}
-	}
-
-	/* render a 8x8xPIXEL matrix with pattern, then horizontally
-	replicate it over blt_buffer as much as possible, to streamline
-	byte operations */
-	switch ( i->type & imBPP) {
-	case imbpp1:
-		blt_bytes = (( x + w - 1) >> 3) - (x >> 3) + 1;
-		if ( blt_bytes < FILL_PATTERN_SIZE ) blt_bytes = FILL_PATTERN_SIZE;
-		break;
-	case imbpp4:
-		blt_bytes = (( x + w - 1) >> 1) - (x >> 1) + 1;
-		if ( blt_bytes < FILL_PATTERN_SIZE / 2 ) blt_bytes = FILL_PATTERN_SIZE / 2;
-		break;
-	default:
-		blt_bytes = w * pixSize;
-		if ( blt_bytes < FILL_PATTERN_SIZE * pixSize ) blt_bytes = FILL_PATTERN_SIZE * pixSize;
-	}
-	blt_bytes *= FILL_PATTERN_SIZE;
-	blt_step = ((blt_bytes > BLT_BUFSIZE) ? BLT_BUFSIZE : blt_bytes) / FILL_PATTERN_SIZE;
-	if ( pixSize > 1 )
-		blt_step = (blt_step / pixSize / FILL_PATTERN_SIZE) * pixSize * FILL_PATTERN_SIZE;
-	solid = (memcmp( ctx->pattern, fillPatterns[fpSolid], sizeof(FillPattern)) == 0);
-	for ( j = 0; j < FILL_PATTERN_SIZE; j++) {
-		unsigned int pat, strip_size;
-		Byte matrix[MAX_SIZEOF_PIXEL * FILL_PATTERN_SIZE], *buffer;
-		if ( solid ) {
-			pat = 0xff;
-		} else {
-			pat = (unsigned int) ctx->pattern[(j + ctx->patternOffset. y) % FILL_PATTERN_SIZE];
-			pat = (((pat << 8) | pat) >> ((ctx->patternOffset. x + 8 - (x % 8)) % FILL_PATTERN_SIZE)) & 0xff;
-		}
-		buffer = blt_buffer + j * blt_step;
-		switch ( i->type & imBPP) {
-		case 1:
-			strip_size = 1;
-			matrix[0] = ctx->color[0] ? 
-				(ctx->backColor[0] ? 0xff : pat) :
-				(ctx->backColor[0] ? ~pat : 0);
-			memset( buffer, matrix[0], blt_step);
-			break;
-		case 4: 
-			strip_size = FILL_PATTERN_SIZE / 2;
-			for ( k = 0; k < FILL_PATTERN_SIZE; ) {
-				Byte c1 = *((pat & (0x80 >> k++)) ? ctx->color : ctx->backColor);
-				Byte c2 = *((pat & (0x80 >> k++)) ? ctx->color : ctx->backColor);
-				matrix[ (k / 2) - 1] = (c1 << 4) | (c2 & 0xf);
-			}
-			break;
-		case 8: 
-			strip_size = FILL_PATTERN_SIZE;
-			for ( k = 0; k < FILL_PATTERN_SIZE; k++)
-				matrix[k] = *((pat & (0x80 >> k)) ? ctx->color : ctx->backColor);
-			break;
-		default: 
-			strip_size = FILL_PATTERN_SIZE * pixSize;
-			for ( k = 0; k < FILL_PATTERN_SIZE; k++) {
-				Byte * color = (pat & (0x80 >> k)) ? ctx->color : ctx->backColor;
-				memcpy( matrix + k * pixSize, color, pixSize);
-			}
-		}
-		if ( strip_size > 1 ) {
-			Byte * buf = buffer; 
-			for ( k = 0; k < blt_step / strip_size; k++, buf += strip_size)
-				memcpy( buf, matrix, strip_size);
-			if ( blt_step % strip_size != 0)
-				memcpy( buf, matrix, blt_step % strip_size);
-		}
-	}
-	/*
-	printf("pxs:%d step:%d\n", pixSize, blt_step);
-	for ( j = 0; j < 8; j++) {
-		printf("%d: ", j);
-		for ( k = 0; k < blt_step; k++) {
-			printf("%02x", blt_buffer[ j * blt_step + k]);
-		}
-		printf("\n");
-	} */
-	{
-		ImgBarCallbackRec rec = {
-			/* bpp          */ (i->type & imBPP),
-			/* count        */ (i->type & imBPP) / 8,
-			/* ls           */ i->lineSize,
-			/* step         */ blt_step,
-			/* pat_x_offset */ x,
-			/* solid        */ solid,
-			/* data         */ i->data,
-			/* buf          */ blt_buffer,
-			/* proc         */ img_find_blt_proc(ctx->rop),
-		};
-		img_region_foreach( ctx->region,
-			x, y, w, h,
-			(RegionCallbackFunc*)img_bar_single, &rec
-		);
-	}
-
-	return true;
-}
 
 typedef struct {
 	int bpp, als, dls, step, pat_x_offset;
@@ -580,6 +305,387 @@ img_bar_alpha( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 
 	return true;
 }
+
+typedef struct {
+	int bpp;
+	int count;
+	int ls;
+	int step;
+	int pat_x_offset;
+	Bool solid;
+	Byte * data;
+	Byte * buf;
+	PBitBltProc proc;
+} ImgBarCallbackRec;
+
+static Bool
+img_bar_single( int x, int y, int w, int h, ImgBarCallbackRec * ptr)
+{
+	int j, blt_bytes, blt_step, offset;
+	Byte lmask, rmask;
+	Byte * data, *pat_ptr;
+
+	switch ( ptr->bpp ) {
+	case 1:
+		blt_bytes = (( x + w - 1) >> 3) - (x >> 3) + 1;
+		lmask = ( x & 7 ) ? 255 << ( 8 - (x & 7)) : 0;
+		rmask = (( x + w) & 7 ) ? 255 >> ((x + w) & 7) : 0;
+		offset = x >> 3;
+		break;
+	case 4:
+		blt_bytes = (( x + w - 1) >> 1) - (x >> 1) + 1;
+		lmask = ( x & 1 )       ? 0xf0 : 0;
+		rmask = (( x + w) & 1 ) ? 0x0f : 0;
+		offset = x >> 1;
+		break;
+	case 8:
+		blt_bytes = w;
+		lmask = rmask = 0;
+		offset = x;
+		break;
+	default:
+		blt_bytes = w * ptr->count;
+		lmask = rmask = 0;
+		offset = x * ptr->count;
+	}
+
+	blt_step = ptr->step;
+	if (!ptr->solid && (( ptr-> pat_x_offset % FILL_PATTERN_SIZE ) != (x % FILL_PATTERN_SIZE))) {
+		int dx = (x % FILL_PATTERN_SIZE) - ( ptr-> pat_x_offset % FILL_PATTERN_SIZE );
+		if ( dx < 0 ) dx += FILL_PATTERN_SIZE;
+
+		switch ( ptr->bpp ) {
+		case 1:
+			pat_ptr = ptr->buf;
+			break;
+		case 4:
+			if ( dx > 1 ) {
+				pat_ptr = ptr->buf + dx / 2;
+				if ( dx > 0 || blt_step + FILL_PATTERN_SIZE / 2 > BLT_BUFSIZE )
+					blt_step -= FILL_PATTERN_SIZE / 2;
+			} else
+				pat_ptr = ptr->buf;
+			break;
+		default:
+			pat_ptr = ptr->buf + dx * ptr->bpp / 8;
+			if ( dx > 0 || blt_step + FILL_PATTERN_SIZE * ptr->count > BLT_BUFSIZE )
+				blt_step -= FILL_PATTERN_SIZE * ptr->count;
+		}
+	} else {
+		pat_ptr = ptr->buf;
+	}
+
+	if (blt_bytes < blt_step) blt_step = blt_bytes;
+
+	data = ptr->data + ptr->ls * y + offset;
+
+	for ( j = 0; j < h; j++) {
+		int bytes = blt_bytes;
+		Byte lsave = *data, rsave = data[blt_bytes - 1], *p = data;
+		Byte * src = pat_ptr + ((y + j) % FILL_PATTERN_SIZE) * ptr->step;
+		while ( bytes > 0 ) {
+			ptr->proc( src, p, ( bytes > blt_step ) ? blt_step : bytes );
+			bytes -= blt_step;
+			p += blt_step;
+		}
+		if ( lmask ) *data = (lsave & lmask) | (*data & ~lmask);
+		if ( rmask ) data[blt_bytes-1] = (rsave & rmask) | (data[blt_bytes-1] & ~rmask);
+		data += ptr->ls;
+	}
+	return true;
+}
+
+typedef struct {
+	PImage dest;
+	PImgPaintContext ctx;
+	BitBltProc* blt;
+} TileCallbackRec;
+
+typedef Bool TileCallbackFunc( int x, int y, int w, int h, TileCallbackRec* param);
+
+static Bool
+tile( int x, int y, int w, int h, TileCallbackFunc *tiler, TileCallbackRec* tx)
+{
+	Point offset         = tx->ctx->patternOffset;
+	PBoxRegionRec region = tx->ctx->region;
+	int i, j, dx, dy, tw = PImage(tx->ctx->tile)->w, th = PImage(tx->ctx->tile)->h;
+
+	for (
+		i = 0, dy = y - offset.y;
+		i < h;
+		i += th, dy += th
+	)
+	for (
+		j = 0,
+		dx = x - offset.x;
+		j < w;
+		j += tw, dx += tw
+	) {
+		if ( !img_region_foreach( region, dx, dy,
+			(j + tw > w) ? w - j : tw,
+			(i + th > h) ? h - i : th,
+			(RegionCallbackFunc*) tiler, tx))
+			return false;
+	}
+
+	return true;
+}
+
+static Bool
+put1( int x, int y, int w, int h, TileCallbackRec* tx)
+{
+	PImage dest = tx->dest;
+	PImage tile = (PImage) tx->ctx->tile;
+	int i;
+	int src_stride = PImage(tile)-> lineSize;
+	int dst_stride = PImage(dest)-> lineSize;
+	Byte * src = PImage(tile)->data;
+	Byte * dst = PImage(dest)->data + y * dst_stride;
+	for ( i = 0; i < h; i++) {
+		bc_mono_put( src, 0, w, dst, x, tx-> blt);
+		src += src_stride;
+		dst += dst_stride;
+	}
+	return true;
+}
+
+/* strictly imBW stipple */
+Bool
+img_bar_stipple( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
+{
+	TileCallbackRec tx = { (PImage)dest, ctx };
+
+	if (( PImage(dest)-> type & imBPP ) == 1) {
+		/* special case */
+		if ( ctx->transparent ) {
+		} else {
+			int rop = rop_1bit_transform( ctx->color[0] > 0, ctx->backColor[0] > 0, ctx-> rop);
+			tx.blt = img_find_blt_proc(rop);
+			return tile( x, y, w, h, put1, &tx);
+		}
+	} else {
+		/* general case */
+		if ( ctx->transparent ) {
+		} else {
+		}
+	}
+	return false;
+}
+
+Bool
+img_bar_tile( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
+{
+	return false;
+}
+
+Bool
+img_bar_stipple_alpha( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
+{
+	return false;
+}
+
+Bool
+img_bar_tile_alpha( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
+{
+	return false;
+}
+
+Bool
+img_bar( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
+{
+	PImage i     = (PImage) dest;
+	int pixSize  = (i->type & imBPP) / 8;
+	Byte blt_buffer[BLT_BUFSIZE];
+	int j, k, blt_bytes, blt_step;
+	Bool solid;
+
+	/* check boundaries */
+	if ( ctx->rop == ropNoOper) return true;
+
+	if ( x < 0 ) {
+		w += x;
+		x = 0;
+	}
+	if ( y < 0 ) {
+		h += y;
+		y = 0;
+	}
+	if ( x + w > i->w ) w = i->w - x;
+	if ( y + h > i->h ) h = i->h - y;
+	if ( w <= 0 || h <= 0 ) return true;
+
+	if ( ctx-> tile ) {
+		if ( PImage(ctx->tile)->type == imBW && !kind_of(ctx->tile, CIcon)) {
+			if ( ctx-> rop & ropConstantAlpha )
+				return img_bar_stipple_alpha( dest, x, y, w, h, ctx);
+			else
+				return img_bar_stipple( dest, x, y, w, h, ctx);
+		} else {
+			if ( ctx-> rop & ropConstantAlpha )
+				return img_bar_tile_alpha( dest, x, y, w, h, ctx);
+			else
+				return img_bar_tile( dest, x, y, w, h, ctx);
+		}
+	}
+
+	while ( ctx->patternOffset.x < 0 ) ctx-> patternOffset.x += FILL_PATTERN_SIZE;
+	while ( ctx->patternOffset.y < 0 ) ctx-> patternOffset.y += FILL_PATTERN_SIZE;
+
+	if ( ctx-> rop & ropConstantAlpha )
+		return img_bar_alpha(dest, x, y, w, h, ctx);
+
+	if ( memcmp( ctx->pattern, fillPatterns[fpSolid], sizeof(FillPattern)) == 0) {
+		/* do nothing */
+	} else if (memcmp( ctx->pattern, fillPatterns[fpEmpty], sizeof(FillPattern)) == 0) {
+		if ( ctx->transparent ) return true;
+		/* still do nothing */
+	} else if ( ctx->transparent ) {
+	/* transparent stippling: if rop is simple enough, adjust parameters to
+	execute it as another rop with adjusted input. Otherwise make it into
+	two-step operation, such as CopyPut stippling is famously executed by
+	And and Xor rops */
+		#define FILL(who,val) memset( ctx->who, val, MAX_SIZEOF_PIXEL)
+		switch ( ctx-> rop ) {
+		case ropBlackness:
+			FILL(color,0x00);
+			FILL(backColor,0xff);
+			ctx->rop = ropAndPut;
+			break;
+		case ropWhiteness:
+			FILL(color,0xff);
+			FILL(backColor,0x00);
+			ctx->rop = ropOrPut;
+			break;
+		case ropInvert:
+			FILL(color,0xff);
+			FILL(backColor,0x00);
+			ctx->rop = ropXorPut;
+			break;
+		case ropNotSrcAnd:
+		case ropXorPut:
+			FILL(backColor,0x00);
+			break;
+		default: {
+			static int rop1[16] = {
+				ropNotOr, ropXorPut, ropInvert, ropNotOr,
+				ropNotSrcAnd, ropXorPut, ropNotSrcAnd, ropXorPut,
+				ropNotOr, ropNotOr, ropNotSrcAnd, ropInvert,
+				ropInvert, ropXorPut, ropNotSrcAnd, ropInvert
+			};
+			static int rop2[16] = {
+				ropNotDestAnd, ropNoOper, ropNotDestAnd, ropInvert,
+				ropNotSrcOr, ropNotXor, ropAndPut, ropAndPut,
+				ropXorPut, ropNotAnd, ropNoOper, ropNotAnd,
+				ropXorPut, ropNotSrcOr, ropNotXor, ropInvert
+			};
+			int rop = ctx->rop;
+			FILL(backColor,0x00);
+			ctx->rop = rop1[rop];
+			ctx->transparent = false;
+			img_bar( dest, x, y, w, h, ctx);
+			FILL(backColor,0xff);
+			ctx->rop = rop2[rop];
+			break;
+		}}
+	}
+
+	/* render a 8x8xPIXEL matrix with pattern, then horizontally
+	replicate it over blt_buffer as much as possible, to streamline
+	byte operations */
+	switch ( i->type & imBPP) {
+	case imbpp1:
+		blt_bytes = (( x + w - 1) >> 3) - (x >> 3) + 1;
+		if ( blt_bytes < FILL_PATTERN_SIZE ) blt_bytes = FILL_PATTERN_SIZE;
+		break;
+	case imbpp4:
+		blt_bytes = (( x + w - 1) >> 1) - (x >> 1) + 1;
+		if ( blt_bytes < FILL_PATTERN_SIZE / 2 ) blt_bytes = FILL_PATTERN_SIZE / 2;
+		break;
+	default:
+		blt_bytes = w * pixSize;
+		if ( blt_bytes < FILL_PATTERN_SIZE * pixSize ) blt_bytes = FILL_PATTERN_SIZE * pixSize;
+	}
+	blt_bytes *= FILL_PATTERN_SIZE;
+	blt_step = ((blt_bytes > BLT_BUFSIZE) ? BLT_BUFSIZE : blt_bytes) / FILL_PATTERN_SIZE;
+	if ( pixSize > 1 )
+		blt_step = (blt_step / pixSize / FILL_PATTERN_SIZE) * pixSize * FILL_PATTERN_SIZE;
+	solid = (memcmp( ctx->pattern, fillPatterns[fpSolid], sizeof(FillPattern)) == 0);
+	for ( j = 0; j < FILL_PATTERN_SIZE; j++) {
+		unsigned int pat, strip_size;
+		Byte matrix[MAX_SIZEOF_PIXEL * FILL_PATTERN_SIZE], *buffer;
+		if ( solid ) {
+			pat = 0xff;
+		} else {
+			pat = (unsigned int) ctx->pattern[(j + ctx->patternOffset. y) % FILL_PATTERN_SIZE];
+			pat = (((pat << 8) | pat) >> ((ctx->patternOffset. x + 8 - (x % 8)) % FILL_PATTERN_SIZE)) & 0xff;
+		}
+		buffer = blt_buffer + j * blt_step;
+		switch ( i->type & imBPP) {
+		case 1:
+			strip_size = 1;
+			matrix[0] = ctx->color[0] ? 
+				(ctx->backColor[0] ? 0xff : pat) :
+				(ctx->backColor[0] ? ~pat : 0);
+			memset( buffer, matrix[0], blt_step);
+			break;
+		case 4: 
+			strip_size = FILL_PATTERN_SIZE / 2;
+			for ( k = 0; k < FILL_PATTERN_SIZE; ) {
+				Byte c1 = *((pat & (0x80 >> k++)) ? ctx->color : ctx->backColor);
+				Byte c2 = *((pat & (0x80 >> k++)) ? ctx->color : ctx->backColor);
+				matrix[ (k / 2) - 1] = (c1 << 4) | (c2 & 0xf);
+			}
+			break;
+		case 8: 
+			strip_size = FILL_PATTERN_SIZE;
+			for ( k = 0; k < FILL_PATTERN_SIZE; k++)
+				matrix[k] = *((pat & (0x80 >> k)) ? ctx->color : ctx->backColor);
+			break;
+		default: 
+			strip_size = FILL_PATTERN_SIZE * pixSize;
+			for ( k = 0; k < FILL_PATTERN_SIZE; k++) {
+				Byte * color = (pat & (0x80 >> k)) ? ctx->color : ctx->backColor;
+				memcpy( matrix + k * pixSize, color, pixSize);
+			}
+		}
+		if ( strip_size > 1 ) {
+			Byte * buf = buffer; 
+			for ( k = 0; k < blt_step / strip_size; k++, buf += strip_size)
+				memcpy( buf, matrix, strip_size);
+			if ( blt_step % strip_size != 0)
+				memcpy( buf, matrix, blt_step % strip_size);
+		}
+	}
+	/*
+	printf("pxs:%d step:%d\n", pixSize, blt_step);
+	for ( j = 0; j < 8; j++) {
+		printf("%d: ", j);
+		for ( k = 0; k < blt_step; k++) {
+			printf("%02x", blt_buffer[ j * blt_step + k]);
+		}
+		printf("\n");
+	} */
+	{
+		ImgBarCallbackRec rec = {
+			/* bpp          */ (i->type & imBPP),
+			/* count        */ (i->type & imBPP) / 8,
+			/* ls           */ i->lineSize,
+			/* step         */ blt_step,
+			/* pat_x_offset */ x,
+			/* solid        */ solid,
+			/* data         */ i->data,
+			/* buf          */ blt_buffer,
+			/* proc         */ img_find_blt_proc(ctx->rop),
+		};
+		img_region_foreach( ctx->region,
+			x, y, w, h,
+			(RegionCallbackFunc*)img_bar_single, &rec
+		);
+	}
+
+	return true;
+}
+
 
 
 #ifdef __cplusplus

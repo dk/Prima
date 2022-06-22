@@ -26,6 +26,7 @@ typedef struct {
 	Bool transparent;
 	FillPattern pattern;
 	Point patternOffset;
+	Handle tile;
 	unsigned char * linePattern;
 	PBoxRegionRec region;
 	Point translate;
