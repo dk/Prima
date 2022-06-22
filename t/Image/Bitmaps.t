@@ -5,8 +5,6 @@ use Test::More;
 use Prima::sys::Test;
 use Prima qw(Application);
 
-plan tests => 1907;
-
 my ($src, $mask, $dst);
 my $can_argb = $::application->get_system_value(sv::LayeredWidgets);
 
@@ -410,3 +408,27 @@ SKIP: {
     $dst = Prima::DeviceBitmap->create( width => 4, height => 2, type => dbt::Layered);
     test_dst("layered");
 }
+
+sub test_palette
+{
+	my $bits = shift;
+	$src = Prima::Image->create( width => 2, height => 2, type => $bits | im::GrayScale);
+	$dst = Prima::Image->create( width => 2, height => 2, type => $bits, palette => [ reverse @{ $src->palette } ] );
+	$src->pixel(0,0,0x00);
+	$src->pixel(0,1,0x30);
+	$src->pixel(1,0,0x80);
+	$src->pixel(1,1,0xff);
+	$src->type(8);
+	$dst->preserveType(0);
+	$dst->put_image( 0,0,$src );
+	is( $dst->type, $bits, "$bits bits, type preserved");
+	is( $dst->pixel(0,0), 0x000000, "$bits bits, case1");
+	is( $dst->pixel(0,1), ($bits == 4) ? 0x333333 : 0x303030, "$bits bits, case2");
+	is( $dst->pixel(1,0), ($bits == 4) ? 0x888888 : 0x808080, "$bits bits, case3");
+	is( $dst->pixel(1,1), 0xffffff, "$bits bits, case4");
+}
+
+test_palette(4);
+test_palette(8);
+
+done_testing;

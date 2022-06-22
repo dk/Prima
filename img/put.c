@@ -47,7 +47,7 @@ img_put_single( int x, int y, int w, int h, ImgPutCallbackRec * ptr)
 			sptr  += ptr->bytes * (ptr->dX + x);
 			dptr  += ptr->bytes * x;
 			for ( i = 0; i < h; i++, sptr += ptr->srcLS, dptr += ptr->dstLS)
-				bc_byte_put( sptr, dptr, ptr->bytes, ptr->proc, ptr->colorref);
+				bc_byte_put( sptr, dptr, w, ptr->proc, ptr->colorref);
 			break;
 		}
 		/* fall through */
