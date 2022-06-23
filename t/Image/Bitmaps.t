@@ -418,16 +418,24 @@ sub test_palette
 	$src->pixel(0,1,0x30);
 	$src->pixel(1,0,0x80);
 	$src->pixel(1,1,0xff);
-	$src->type(8);
 	$dst->preserveType(0);
 	$dst->put_image( 0,0,$src );
 	is( $dst->type, $bits, "$bits bits, type preserved");
 	is( $dst->pixel(0,0), 0x000000, "$bits bits, case1");
-	is( $dst->pixel(0,1), ($bits == 4) ? 0x222222 : 0x303030, "$bits bits, case2");
-	is( $dst->pixel(1,0), ($bits == 4) ? 0x777777 : 0x808080, "$bits bits, case3");
+	is( $dst->pixel(0,1), ($bits == 4) ? 0x222222 : ($bits == 1 ? 0 : 0x303030), "$bits bits, case2");
+	is( $dst->pixel(1,0), ($bits == 4) ? 0x777777 : ($bits == 1 ? 0 : 0x808080), "$bits bits, case3");
 	is( $dst->pixel(1,1), 0xffffff, "$bits bits, case4");
+
+	$dst->put_image(1,0,$src);
+	is($dst->pixel(0,0),$dst->pixel(1,0), "$bits bits, offset 1,0");
+	is($dst->pixel(0,1),$dst->pixel(1,1), "$bits bits, offset 1,1");
+	$dst->put_image_indirect($src,0,0,1,0,1,2,1,2,rop::CopyPut);
+	my @cm = $src->colormap;
+	is($dst->pixel(0,0),$cm[$src->pixel(1,0) * ((1 << $bits) - 1) / 255], "$bits bits, offset 0,1");
+	is($dst->pixel(0,1),$cm[$src->pixel(1,1) * ((1 << $bits) - 1) / 255], "$bits bits, offset 1,1");
 }
 
+test_palette(1);
 test_palette(4);
 test_palette(8);
 

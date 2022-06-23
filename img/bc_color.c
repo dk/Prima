@@ -1249,7 +1249,7 @@ bc_nibble_put( Byte * source, unsigned int from, unsigned int width, Byte * dest
 	Byte rmask = (rtail != 0) ? 0x0f : 0xff;
 	Byte lsave = dest[lbyte] & lmask;
 	Byte rsave = dest[rbyte] & rmask;
-	Byte lshift, rshift, L, R, buf[BUFSZ], *d = dest + lbyte;
+	Byte L, R, buf[BUFSZ], *d = dest + lbyte;
 
 	source += from >> 1;
 	if ( ftail == ltail ) {
@@ -1267,12 +1267,6 @@ bc_nibble_put( Byte * source, unsigned int from, unsigned int width, Byte * dest
 		} else
 			blt( source, d, blen);
 		goto FINALIZE;
-	} else if ( ftail > ltail ) {
-		lshift = ftail - ltail;
-		rshift = 8 - lshift;
-	} else {
-		rshift = ltail - ftail;
-		lshift = 8 - rshift;
 	}
 
 	L = *(source++);
@@ -1283,8 +1277,8 @@ bc_nibble_put( Byte * source, unsigned int from, unsigned int width, Byte * dest
 		for ( i = 0; i < sz; i++) {
 			R = *(source++);
 			*(p++) = ( ftail > ltail ) ?
-				( L << lshift ) | ( R >> rshift ) :
-				( L >> rshift ) | ( R << rshift );
+				( L << 4 ) | ( R >> 4 ) :
+				( L >> 4 ) | ( R << 4 );
 			R = L;
 		}
 		if ( colorref8to4 )
