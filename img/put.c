@@ -229,8 +229,6 @@ img_put(
 				}
 			}
 
-			if (( type & imBPP) == imbpp4) type = imbpp8;
-
 			profile = newHV();
 			pset_i( type,        type);
 			pset_i( width,       asrcW);
@@ -289,8 +287,6 @@ NOSCALE:
 			newObject = true;
 		}
 		PImage(src)-> self-> reset( src, PImage(dest)-> type, PImage(dest)->palette, PImage(dest)->palSize);
-		retval = img_put( dest, src, dstX, dstY, 0, 0, dstW, dstH, PImage(src)-> w, PImage(src)-> h, rop, region, color);
-		goto EXIT;
 	}
 
 	if (( PImage( dest)-> type & imBPP) == 1) {

@@ -238,6 +238,7 @@ draw_poly( Handle self, int n_points, Point * pts, int dx, int dy)
 		ropCopyPut, false,
 		{0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff },
 		{0,0},
+		NULL_HANDLE,
 		lpSolid,
 		NULL,
 		{dx,dy}

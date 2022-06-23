@@ -423,8 +423,8 @@ sub test_palette
 	$dst->put_image( 0,0,$src );
 	is( $dst->type, $bits, "$bits bits, type preserved");
 	is( $dst->pixel(0,0), 0x000000, "$bits bits, case1");
-	is( $dst->pixel(0,1), ($bits == 4) ? 0x333333 : 0x303030, "$bits bits, case2");
-	is( $dst->pixel(1,0), ($bits == 4) ? 0x888888 : 0x808080, "$bits bits, case3");
+	is( $dst->pixel(0,1), ($bits == 4) ? 0x222222 : 0x303030, "$bits bits, case2");
+	is( $dst->pixel(1,0), ($bits == 4) ? 0x777777 : 0x808080, "$bits bits, case3");
 	is( $dst->pixel(1,1), 0xffffff, "$bits bits, case4");
 }
 

@@ -741,6 +741,7 @@ Icon_bar_alpha( Handle self, int alpha, int x1, int y1, int x2, int y2)
 	t = my->get_translate(self);
 	x1 += t.x;
 	y1 += t.y;
+	bzero(&ctx, sizeof(ctx));
 	ctx. color[0] = alpha & 0xff;
 	ctx. rop = ropCopyPut;
 	ctx. region = var->regionData ? &var->regionData-> data. box : NULL;

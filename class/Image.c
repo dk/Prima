@@ -1171,7 +1171,7 @@ Image_pixel( Handle self, Bool set, int x, int y, SV * pixel)
 			case imbpp4: {
 				Byte p=var->data[var->lineSize*y+(x>>1)];
 				p=(x&1) ? p & 0x0f : p>>4;
-				return newSViv(((var->type & imGrayScale) ? (p << 4) : BGRto32(p)));
+				return newSViv(((var->type & imGrayScale) ? (p*255L)/15 : BGRto32(p)));
 			}
 			case imbpp8: {
 				Byte p=var->data[var->lineSize*y+x];
@@ -1263,7 +1263,7 @@ Image_pixel( Handle self, Bool set, int x, int y, SV * pixel)
 			break;
 		case imbpp4  :
 			{
-				Byte p=((var->type & imGrayScale) ? (color >> 4) : cm_nearest_color(LONGtoBGR(color,rgb),var->palSize,var->palette));
+				Byte p=((var->type & imGrayScale) ? (color*15)/255 : cm_nearest_color(LONGtoBGR(color,rgb),var->palSize,var->palette));
 				Byte *pd=var->data+(var->lineSize*y+(x>>1));
 				if (x&1) {
 					*pd&=0xf0;
@@ -1732,6 +1732,7 @@ prepare_fill_context(Handle self, Point translate, PImgPaintContext ctx)
 {
 	FillPattern * p = &ctx->pattern;
 
+	bzero(ctx, sizeof(ImgPaintContext));
 	color2pixel( self, my->get_color(self), ctx->color);
 	color2pixel( self, my->get_backColor(self), ctx->backColor);
 
@@ -1776,6 +1777,7 @@ prepare_fill_context(Handle self, Point translate, PImgPaintContext ctx)
 static void
 prepare_line_context( Handle self, unsigned char * lp, ImgPaintContext * ctx)
 {
+	bzero(ctx, sizeof(ImgPaintContext));
 	color2pixel( self, my->get_color(self), ctx->color);
 	color2pixel( self, my->get_backColor(self), ctx->backColor);
 	ctx-> rop = var-> extraROP |
@@ -2270,6 +2272,7 @@ Image_clear(Handle self, double x1, double y1, double x2, double y2)
 			_x2 = var-> w - 1;
 			_y2 = var-> h - 1;
 		}
+		bzero(&ctx, sizeof(ctx));
 		t = my->get_translate(self);
 		_x1 += t.x;
 		_y1 += t.y;

@@ -38,5 +38,6 @@ $dst->clear;
 $dst->rop2(rop::CopyPut);
 $dst->fillPattern($tile);
 $dst->bar(0,0,2,2);
+ok(1);
 
-
+done_testing;

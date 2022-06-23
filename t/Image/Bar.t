@@ -4,6 +4,78 @@ use warnings;
 use Test::More;
 use Prima::sys::Test qw(noX11);
 
+# patterned ROPs
+my @alu = qw(
+   Blackness
+   NotOr
+   NotSrcAnd
+   NotPut
+   NotDestAnd
+   Invert
+   XorPut
+   NotAnd
+   AndPut
+   NotXor
+   NoOper
+   NotSrcOr
+   CopyPut
+   NotDestOr
+   OrPut
+   Whiteness
+);
+my %alunames;
+for (my $i = 0; $i < @alu; $i++) { $alunames{$alu[$i]} = $i }
+
+my @ops = (
+	sub {0},                # Blackness
+	sub {!($_[0]|$_[1])},   # NotOr
+	sub {!$_[0] & $_[1]},   # NotSrcAnd
+	sub {!$_[0]},           # NotPut
+	sub {$_[0] & !$_[1]},   # NotDestAnd
+	sub {!$_[1]},           # Invert
+	sub {$_[0] ^ $_[1]},    # XorPut
+	sub {!($_[0] & $_[1])}, # NotAnd
+	sub {$_[0] & $_[1]},    # AndPut
+	sub {!($_[0] ^ $_[1])}, # NotXor
+	sub {$_[1]},            # NoOper
+	sub {!$_[0] | $_[1]},   # NotSrcOr
+	sub {$_[0]},            # CopyPut
+	sub {$_[0] | !$_[1]},   # NotDestOr
+	sub {$_[0] | $_[1]},    # OrPut
+	sub {1},                # Whiteness
+);
+
+sub alu { $ops[$_[0]]->( $_[1], $_[2] ) }
+sub aln { $ops[$alunames{$_[0]}]->( $_[1], $_[2]) }
+sub mbits($$) { map { ($_[1] >> $_) & 1 } 0..($_[0]-1)}
+sub val {
+	my $r = 0;
+	for ( my $i = 0; $i < @_; $i++) {
+		$r |= ($_[$i] & 1) << $i;
+	}
+	return $r;
+}
+sub alx {
+	my $n = shift;
+	my $nn = ($n < 8) ? 8 : $n;
+	my @src = mbits $nn, $_[1];
+	my @dst = mbits $nn, $_[2];
+	my $val = val( map { aln($_[0], $src[$_], $dst[$_] ) } 0..$#src);
+	return ($n > 1) ? $val : (($val >= 0x80) ? 0xff : 0);
+}
+
+sub h_is
+{
+	my ( $act, $exp, $name) = @_;
+	if ( $act == $exp ) {
+		ok(1, $name);
+	} else {
+		ok(0, $name);
+		diag( sprintf("actual(%0x) != expected(%0x)\n", $act, $exp));
+	}
+}
+
+
 sub bits  { join ':', map { sprintf "%08b", ord } split '', shift }
 sub bytes { unpack('H*', shift ) }
 
@@ -161,83 +233,11 @@ $i->set(
 $i->bar(0,0,3,0);
 is( $i->pixel(0,0), 0x123456, "imLong");
 
-# patterned ROPs
-my @alu = qw(
-   Blackness
-   NotOr
-   NotSrcAnd
-   NotPut
-   NotDestAnd
-   Invert
-   XorPut
-   NotAnd
-   AndPut
-   NotXor
-   NoOper
-   NotSrcOr
-   CopyPut
-   NotDestOr
-   OrPut
-   Whiteness
-);
-my %alunames;
-for (my $i = 0; $i < @alu; $i++) { $alunames{$alu[$i]} = $i }
-
-my @ops = (
-	sub {0},                # Blackness
-	sub {!($_[0]|$_[1])},   # NotOr
-	sub {!$_[0] & $_[1]},   # NotSrcAnd
-	sub {!$_[0]},           # NotPut
-	sub {$_[0] & !$_[1]},   # NotDestAnd
-	sub {!$_[1]},           # Invert
-	sub {$_[0] ^ $_[1]},    # XorPut
-	sub {!($_[0] & $_[1])}, # NotAnd
-	sub {$_[0] & $_[1]},    # AndPut
-	sub {!($_[0] ^ $_[1])}, # NotXor
-	sub {$_[1]},            # NoOper
-	sub {!$_[0] | $_[1]},   # NotSrcOr
-	sub {$_[0]},            # CopyPut
-	sub {$_[0] | !$_[1]},   # NotDestOr
-	sub {$_[0] | $_[1]},    # OrPut
-	sub {1},         # Whiteness
-);
-
-sub alu { $ops[$_[0]]->( $_[1], $_[2] ) }
-sub aln { $ops[$alunames{$_[0]}]->( $_[1], $_[2]) }
-sub mbits($$) { map { ($_[1] >> $_) & 1 } 0..($_[0]-1)}
-sub val {
-	my $r = 0;
-	for ( my $i = 0; $i < @_; $i++) {
-		$r |= ($_[$i] & 1) << $i;
-	}
-	return $r;
-}
-sub alx {
-	my $n = shift;
-	my $nn = ($n < 8) ? 8 : $n;
-	my @src = mbits $nn, $_[1];
-	my @dst = mbits $nn, $_[2];
-	my $val = val( map { aln($_[0], $src[$_], $dst[$_] ) } 0..$#src);
-	return ($n > 1) ? $val : (($val >= 0x80) ? 0xff : 0);
-}
-
-sub h_is
-{
-	my ( $act, $exp, $name) = @_;
-	if ( $act == $exp ) {
-		ok(1, $name);
-	} else {
-		ok(0, $name);
-		diag( sprintf("actual(%0x) != expected(%0x)\n", $act, $exp));
-	}
-}
-
 for my $bpp ( 1, 4, 8, 24) {
 for my $alu ( @alu ) {
 	my ($src, $dst, $bk) = (0xcccccc, 0xaaaaaa, 0x333333);
 	my $p = Prima::Image->new( type => $bpp | (($bpp < 24) ? im::GrayScale : 0), size => [20,20]);
 	my $fun = $rop::{$alu}->();
-
 
 	my $xbpp = $bpp;
 	$xbpp = 8 if $xbpp == 4 || $xbpp == 1;
