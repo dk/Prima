@@ -113,6 +113,11 @@ bitblt_invert( Byte * src, Byte * dst, int count)
 	}
 }
 
+static void
+bitblt_nooper( Byte * src, Byte * dst, int count)
+{
+}
+
 PBitBltProc
 img_find_blt_proc( int rop )
 {
@@ -162,6 +167,9 @@ img_find_blt_proc( int rop )
 		break;
 	case ropInvert:
 		proc = bitblt_invert;
+		break;
+	case ropNoOper:
+		proc = bitblt_nooper;
 		break;
 	default:
 		proc = bitblt_copy;

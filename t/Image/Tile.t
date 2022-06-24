@@ -28,21 +28,22 @@ sub is_pict
 	return 0;
 }
 
-my ($tile,$i);
+my ($mtile,$mdest,$tile,$i);
 
-$tile = Prima::Image->new( size => [2,2], type => im::BW );
-$tile->clear;
-$tile->pixel(0,0,0);
-$tile->pixel(1,1,0);
+$mtile = Prima::Image->new( size => [2,2], type => im::BW );
+$mtile->clear;
+$mtile->pixel(0,0,0);
+$mtile->pixel(1,1,0);
 
-$i = Prima::Image->new( size => [4,4], type => im::bpp1 );
-$i->rop2(rop::CopyPut);
-$i->fillPattern($tile);
+$mdest = Prima::Image->new( size => [4,4], type => im::bpp1 );
 
 sub test_pat
 {
 	my $src_bpp = $tile->type & im::BPP;
 	my $dst_bpp = $i->type & im::BPP;
+
+	$i->rop2(rop::CopyPut);
+
 	$i->clear;
 	$i->bar(0,0,3,3);
 	is_pict($i, "[$src_bpp/$dst_bpp] 4x0",
@@ -88,13 +89,70 @@ sub test_pat
 		" * *".
 		"* * "
 	);
+
+	$i->backColor(0);
+	$i->color(0xffffff);
+	if ( $i->type == im::BW) {
+		$i->clear;
+		$i->bar(0,0,2,2);
+		is_pict($i, "[$src_bpp/$dst_bpp] inv",
+			"    ".
+			" *  ".
+			"* * ".
+			" *  "
+		);
+	}
+
+	$i->clear;
+	$i->rop(rop::NotPut);
+	$i->bar(0,0,2,2);
+	is_pict($i, "[$src_bpp/$dst_bpp] not",
+		"    ".
+		"* * ".
+		" *  ".
+		"* * "
+	);
+	$i->rop(rop::CopyPut);
+
+	$i->backColor(0xffffff);
+	$i->color(0);
+	$i->clear;
+	$i->bar(0,0,3,3);
+	$i->rop2(rop::NoOper);
+	$i->fillPatternOffset(0,0);
+	$i->bar(0,2,3,3);
+	is_pict($i, "[$src_bpp/$dst_bpp] transparent",
+		"    ".
+		"    ".
+		" * *".
+		"* * "
+	);
+
+#	$i->clear;
+#	$i->rop2(rop::CopyPut);
+#	$i->fillPatternOffset(1,0);
+#	$i->bar(0,0,3,3);
+#	$i->fillPatternOffset(0,0);
+#	$i->rop2(rop::NoOper);
+#	$i->color(0xffffff);
+#	$i->backColor(0);
+#	$i->bar(0,2,3,3);
+#	is_pict($i, "[$src_bpp/$dst_bpp] 4x0",
+#		"    ".
+#		"    ".
+#		"* * ".
+#		" * *"
+#	);
 }
 
-for my $src_bpp ( 1, 4, 8, 24 ) {
-	next unless $src_bpp == 1;
-for my $dst_bpp ( 1, 4, 8, 24 ) {
-	next unless $dst_bpp == 1;
-	test_pat();
-}}
+for my $src_bpp ( im::BW, 4, 8, 24 ) {
+	next unless $src_bpp == im::BW;
+	$tile = $mtile->clone( type => $src_bpp );
+	for my $dst_bpp ( 1, 4, 8, 24 ) {
+		next unless $dst_bpp == 1;
+		$i = $mdest->clone( type => $dst_bpp, fillPattern => $tile);
+		test_pat();
+	}
+}
 
 done_testing;

@@ -471,13 +471,20 @@ put1( int x, int y, int w, int h, TileCallbackRec* tx)
 Bool
 img_bar_stipple( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 {
+	PImage i = (PImage) dest;
 	TileCallbackRec tx = { (PImage)dest, ctx };
 
-	if (( PImage(dest)-> type & imBPP ) == 1) {
+	if (( i->type & imBPP ) == 1) {
 		/* special case */
+		int rop;
 		if ( ctx->transparent ) {
+			tx.blt = img_find_blt_proc(ropAndPut);
+			if (!tile( x, y, w, h, put1, &tx)) return false;
+			rop = rop_1bit_transform( ctx->color[0] > 0, 0, ropXorPut);
+			tx.blt = img_find_blt_proc(rop);
+			return tile( x, y, w, h, put1, &tx);
 		} else {
-			int rop = rop_1bit_transform( ctx->color[0] > 0, ctx->backColor[0] > 0, ctx-> rop);
+			rop = rop_1bit_transform( ctx->color[0] > 0, ctx->backColor[0] > 0, ctx-> rop);
 			tx.blt = img_find_blt_proc(rop);
 			return tile( x, y, w, h, put1, &tx);
 		}
