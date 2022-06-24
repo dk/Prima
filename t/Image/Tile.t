@@ -4,40 +4,97 @@ use warnings;
 use Test::More;
 use Prima::sys::Test qw(noX11);
 
-sub bits  { join ':', map { sprintf "%08b", ord } split '', shift }
-sub bytes { unpack('H*', shift ) }
-
-sub is_bits
+sub is_pict
 {
-	my ( $bits_actual, $bits_expected, $name ) = @_;
-	my $ok = $bits_actual eq $bits_expected;
+	my ( $i, $name, $pict ) = @_;
+	my $ok = 1;
+	ALL: for ( my $y = 0; $y < $i->height; $y++) {
+		for ( my $x = 0; $x < $i->width; $x++) {
+			my $actual   = ( $i->pixel($x,$y) > 0) ? 1 : 0;
+			my $expected = (substr($pict, ($i->height-$y-1) * $i->width + $x, 1) eq ' ') ? 0 : 1;
+			next if $actual == $expected;
+			$ok = 0;
+			last ALL;
+		}
+	}
 	ok( $ok, $name );
-	warn "#   " . bits($bits_actual) . " (actual)\n#   " . bits($bits_expected) . " (expected)\n" unless $ok;
-#	exit unless $ok;
+	return 1 if $ok;
+	warn "# Actual vs expected:\n";
+	for ( my $y = 0; $y < $i->height; $y++) {
+		my $actual   = join '', map { ($i->pixel($_,$i->height-$y-1) > 0) ? '*' : ' ' } 0..$i->width-1;
+		my $expected = substr($pict, $y * $i->width, $i->width);
+		warn "$actual  | $expected\n";
+	}
+	return 0;
 }
 
-sub is_bytes
-{
-	my ( $bytes_actual, $bytes_expected, $name ) = @_;
-	my $ok = $bytes_actual eq $bytes_expected;
-	ok( $ok, $name );
-	warn "#   " . bytes($bytes_actual) . " (actual)\n#   " . bytes($bytes_expected) . " (expected)\n" unless $ok;
-#	exit unless $ok;
-}
-
-my $tile;
-my $dst;
+my ($tile,$i);
 
 $tile = Prima::Image->new( size => [2,2], type => im::BW );
 $tile->clear;
 $tile->pixel(0,0,0);
 $tile->pixel(1,1,0);
 
-$dst  = Prima::Image->new( size => [4,4], type => im::bpp1 );
-$dst->clear;
-$dst->rop2(rop::CopyPut);
-$dst->fillPattern($tile);
-$dst->bar(0,0,2,2);
-ok(1);
+$i = Prima::Image->new( size => [4,4], type => im::bpp1 );
+$i->rop2(rop::CopyPut);
+$i->fillPattern($tile);
+
+sub test_pat
+{
+	my $src_bpp = $tile->type & im::BPP;
+	my $dst_bpp = $i->type & im::BPP;
+	$i->clear;
+	$i->bar(0,0,3,3);
+	is_pict($i, "[$src_bpp/$dst_bpp] 4x0",
+		"* * ".
+		" * *".
+		"* * ".
+		" * *"
+	);
+
+	$i->clear;
+	$i->bar(0,0,2,2);
+	is_pict($i, "[$src_bpp/$dst_bpp] 3x0",
+		"****".
+		" * *".
+		"* **".
+		" * *"
+	);
+
+	$i->clear;
+	$i->bar(1,1,3,3);
+	is_pict($i, "[$src_bpp/$dst_bpp] 3x1",
+		"* * ".
+		"** *".
+		"* * ".
+		"****"
+	);
+
+	$i->clear;
+	$i->bar(1,1,2,2);
+	is_pict($i, "[$src_bpp/$dst_bpp] 2x2",
+		"****".
+		"** *".
+		"* **".
+		"****"
+	);
+
+	$i->clear;
+	$i->fillPatternOffset(1,0);
+	$i->bar(0,0,3,3);
+	is_pict($i, "[$src_bpp/$dst_bpp] 3x0/1.0",
+		" * *".
+		"* * ".
+		" * *".
+		"* * "
+	);
+}
+
+for my $src_bpp ( 1, 4, 8, 24 ) {
+	next unless $src_bpp == 1;
+for my $dst_bpp ( 1, 4, 8, 24 ) {
+	next unless $dst_bpp == 1;
+	test_pat();
+}}
 
 done_testing;

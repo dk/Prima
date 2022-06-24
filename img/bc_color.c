@@ -1247,9 +1247,11 @@ bc_nibble_put( Byte * source, unsigned int from, unsigned int width, Byte * dest
 	unsigned int blen  = rbyte - lbyte + 1;
 	Byte lmask = (ltail != 0) ? 0xf0 : 0x00;
 	Byte rmask = (rtail != 0) ? 0x0f : 0xff;
-	Byte lsave = dest[lbyte] & lmask;
-	Byte rsave = dest[rbyte] & rmask;
-	Byte L, R, buf[BUFSZ], *d = dest + lbyte;
+	Byte lsave, rsave, L, R, buf[BUFSZ], *d = dest + lbyte;
+
+	if ( width == 0 ) return;
+	lsave = dest[lbyte] & lmask;
+	rsave = dest[rbyte] & rmask;
 
 	source += from >> 1;
 	if ( ftail == ltail ) {
@@ -1296,6 +1298,7 @@ FINALIZE:
 void
 bc_mono_copy( Byte * source, Byte * dest, unsigned int from, unsigned int width)
 {
+	if ( width == 0 ) return;
 	if (( from & 7) != 0) {
 		register Byte a;
 		short    lShift = from & 7;
@@ -1325,9 +1328,11 @@ bc_mono_put( Byte * source, unsigned int from, unsigned int width, Byte * dest, 
 	unsigned int blen  = rbyte - lbyte + 1;
 	Byte lmask = 0xff << (8 - ltail);
 	Byte rmask = 0xff >> rtail;
-	Byte lsave = dest[lbyte] & lmask;
-	Byte rsave = dest[rbyte] & rmask;
-	Byte lshift, rshift, L, R, buf[BUFSZ], *d = dest + lbyte;
+	Byte lsave, rsave, lshift, rshift, L, R, buf[BUFSZ], *d = dest + lbyte;
+
+	if ( width == 0 ) return;
+	lsave = dest[lbyte] & lmask;
+	rsave = dest[rbyte] & rmask;
 
 	source += from >> 3;
 	if ( ftail == ltail ) {

@@ -399,6 +399,9 @@ typedef struct {
 	PImage dest;
 	PImgPaintContext ctx;
 	BitBltProc* blt;
+	int src_x, src_y;
+	unsigned int src_stride, dst_stride;
+	Byte *src, *dst;
 } TileCallbackRec;
 
 typedef Bool TileCallbackFunc( int x, int y, int w, int h, TileCallbackRec* param);
@@ -406,24 +409,43 @@ typedef Bool TileCallbackFunc( int x, int y, int w, int h, TileCallbackRec* para
 static Bool
 tile( int x, int y, int w, int h, TileCallbackFunc *tiler, TileCallbackRec* tx)
 {
+	PImage dest          = (PImage) tx->dest;
+	PImage tile          = (PImage) tx->ctx->tile;
 	Point offset         = tx->ctx->patternOffset;
 	PBoxRegionRec region = tx->ctx->region;
-	int i, j, dx, dy, tw = PImage(tx->ctx->tile)->w, th = PImage(tx->ctx->tile)->h;
+	int dx, dy, tw = tile->w, th = tile->h, X2 = w + x, Y2 = h + y;
 
+	tx->src_stride       = PImage(tile)-> lineSize;
+	tx->dst_stride       = dest-> lineSize;
+	tx->dst              = dest-> data;
 	for (
-		i = 0, dy = y - offset.y;
-		i < h;
-		i += th, dy += th
+		dy = y - offset.y;
+		dy < Y2;
+		dy += th
 	)
 	for (
-		j = 0,
 		dx = x - offset.x;
-		j < w;
-		j += tw, dx += tw
+		dx < X2;
+		dx += tw
 	) {
-		if ( !img_region_foreach( region, dx, dy,
-			(j + tw > w) ? w - j : tw,
-			(i + th > h) ? h - i : th,
+		int x1 = dx, y1 = dy, x2 = dx + tw - 1, y2 = dy + th - 1;
+		tx->src_x = tx->src_y = 0;
+		if ( x1 < 0 ) {
+			tx->src_x -= x1;
+			x1 = 0;
+		}
+		if ( y1 < 0 ) {
+			tx->src_y -= y1;
+			y1 = 0;
+		}
+		if ( x2 >= X2 ) x2 = X2 - 1;
+		if ( y2 >= Y2 ) y2 = Y2 - 1;
+		if ( x2 < 0 || y2 < 0 || x1 > w || y1 > h || x2 < x1 || y2 < y1 )
+			continue;
+
+		tx->src = tile->data + tx->src_y * tx->src_stride;
+		if ( !img_region_foreach( region,
+			x1, y1, x2 - x1 + 1, y2 - y1 + 1,
 			(RegionCallbackFunc*) tiler, tx))
 			return false;
 	}
@@ -434,17 +456,13 @@ tile( int x, int y, int w, int h, TileCallbackFunc *tiler, TileCallbackRec* tx)
 static Bool
 put1( int x, int y, int w, int h, TileCallbackRec* tx)
 {
-	PImage dest = tx->dest;
-	PImage tile = (PImage) tx->ctx->tile;
 	int i;
-	int src_stride = PImage(tile)-> lineSize;
-	int dst_stride = PImage(dest)-> lineSize;
-	Byte * src = PImage(tile)->data;
-	Byte * dst = PImage(dest)->data + y * dst_stride;
-	for ( i = 0; i < h; i++) {
-		bc_mono_put( src, 0, w, dst, x, tx-> blt);
-		src += src_stride;
-		dst += dst_stride;
+	Byte * src = tx->src;
+	Byte * dst = tx->dst + y * tx->dst_stride;
+	for ( i = tx->src_y; i < h; i++) {
+		bc_mono_put( src, tx->src_x, w, dst, x, tx-> blt);
+		src += tx->src_stride;
+		dst += tx->dst_stride;
 	}
 	return true;
 }
