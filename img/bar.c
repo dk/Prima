@@ -402,6 +402,7 @@ typedef struct {
 	int src_x, src_y;
 	unsigned int src_stride, dst_stride, bytes;
 	Byte *src, *dst;
+	Byte *colormap;
 } TileCallbackRec;
 
 typedef Bool TileCallbackFunc( int x, int y, int w, int h, TileCallbackRec* param);
@@ -504,6 +505,19 @@ rop1_inverse(int rop)
 	return ropNoOper;
 }
 
+static int ropX_step1[16] = {
+	ropNotOr, ropXorPut, ropInvert, ropNotOr,
+	ropNotSrcAnd, ropXorPut, ropNotSrcAnd, ropXorPut,
+	ropNotOr, ropNotOr, ropNotSrcAnd, ropInvert,
+	ropInvert, ropXorPut, ropNotSrcAnd, ropInvert
+};
+static int ropX_step2[16] = {
+	ropNotDestAnd, ropNoOper, ropNotDestAnd, ropInvert,
+	ropNotSrcOr, ropNotXor, ropAndPut, ropAndPut,
+	ropXorPut, ropNotAnd, ropNoOper, ropNotAnd,
+	ropXorPut, ropNotSrcOr, ropNotXor, ropInvert
+};
+
 static Bool
 put1( int x, int y, int w, int h, TileCallbackRec* tx)
 {
@@ -526,7 +540,7 @@ put4( int x, int y, int w, int h, TileCallbackRec* tx)
 	Byte * src = tx->src;
 	Byte * dst = tx->dst + y * tx->dst_stride;
 	for ( i = tx->src_y; i < h; i++) {
-		bc_nibble_put( src, tx->src_x, w, dst, x, tx-> blt, NULL);
+		bc_nibble_put( src, tx->src_x, w, dst, x, tx-> blt, tx->colormap);
 		src += tx->src_stride;
 		dst += tx->dst_stride;
 	}
@@ -540,7 +554,10 @@ put8x( int x, int y, int w, int h, TileCallbackRec* tx)
 	Byte * src = tx->src + tx->bytes * tx->src_x;
 	Byte * dst = tx->dst + y * tx->dst_stride + x * tx->bytes;
 	for ( i = tx->src_y; i < h; i++) {
-		tx->blt(src, dst, w);
+		if ( tx->colormap )
+			bc_byte_put( src, dst, w, tx->blt, tx->colormap);
+		else
+			tx->blt(src, dst, w);
 		src += tx->src_stride;
 		dst += tx->dst_stride;
 	}
@@ -551,7 +568,12 @@ Bool
 img_bar_stipple( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 {
 	PImage i = (PImage) dest;
-	TileCallbackRec tx = { (PImage)dest, ctx };
+	TileCallbackRec tx;
+	Byte colormap[256];
+
+	bzero(&tx, sizeof(tx));
+	tx.dest = (PImage)dest;
+	tx.ctx  = ctx;
 
 	if (( i->type & imBPP ) == 1) {
 		/* special case */
@@ -565,6 +587,7 @@ img_bar_stipple( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 		/* general case */
 		Bool ok;
 		PImage t;
+		TileCallbackFunc *tiler;
 		if (( ctx->tile = CImage(ctx->tile)->dup(ctx->tile)) == NULL_HANDLE)
 			return false;
 		t = (PImage)ctx->tile;
@@ -589,15 +612,33 @@ img_bar_stipple( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 			CImage(t)->reset((Handle)t, i->type, NULL, 0);
 		}
 
+		tiler = (( i-> type & imBPP ) == 4) ? put4 : put8x;
+
 		if ( ctx->transparent ) {
-		} else {
-			tx.blt = img_find_blt_proc(ctx->rop);
-			if (( i-> type & imBPP ) == 4)
-				ok = tile( x, y, w, h, put4, &tx);
-			else
-				ok = tile( x, y, w, h, put8x, &tx);
+			tx.blt = img_find_blt_proc(ropX_step1[ctx->rop]);
+			if ( !( ok = tile( x, y, w, h, tiler, &tx)))
+				goto FAIL;
+			if (( i-> type & imBPP ) == 4) {
+				int k;
+				for ( k = 0; k < 16; k++) colormap[k] = k;
+				colormap[ ctx->backColor[0] ] = 15;
+				cm_colorref_4to8(colormap, colormap);
+				tx.colormap = colormap;
+			} else if (( i-> type & imBPP ) == 8) {
+				int k;
+				for ( k = 0; k < 256; k++) colormap[k] = k;
+				colormap[ ctx->backColor[0] ] = 255;
+				tx.colormap = colormap;
+			} else {
+				/* XXX */
+			}
+			ctx->rop = ropX_step2[ctx->rop];
 		}
 
+		tx.blt = img_find_blt_proc(ctx->rop);
+		ok = tile( x, y, w, h, tiler, &tx);
+
+	FAIL:
 		Object_destroy((Handle) t);
 		ctx-> tile = NULL_HANDLE;
 
@@ -700,25 +741,13 @@ img_bar( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 			FILL(backColor,0x00);
 			break;
 		default: {
-			static int rop1[16] = {
-				ropNotOr, ropXorPut, ropInvert, ropNotOr,
-				ropNotSrcAnd, ropXorPut, ropNotSrcAnd, ropXorPut,
-				ropNotOr, ropNotOr, ropNotSrcAnd, ropInvert,
-				ropInvert, ropXorPut, ropNotSrcAnd, ropInvert
-			};
-			static int rop2[16] = {
-				ropNotDestAnd, ropNoOper, ropNotDestAnd, ropInvert,
-				ropNotSrcOr, ropNotXor, ropAndPut, ropAndPut,
-				ropXorPut, ropNotAnd, ropNoOper, ropNotAnd,
-				ropXorPut, ropNotSrcOr, ropNotXor, ropInvert
-			};
 			int rop = ctx->rop;
 			FILL(backColor,0x00);
-			ctx->rop = rop1[rop];
+			ctx->rop = ropX_step1[rop];
 			ctx->transparent = false;
 			img_bar( dest, x, y, w, h, ctx);
 			FILL(backColor,0xff);
-			ctx->rop = rop2[rop];
+			ctx->rop = ropX_step2[rop];
 			break;
 		}}
 	}
@@ -772,8 +801,9 @@ img_bar( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 			break;
 		case 8: 
 			strip_size = FILL_PATTERN_SIZE;
-			for ( k = 0; k < FILL_PATTERN_SIZE; k++)
+			for ( k = 0; k < FILL_PATTERN_SIZE; k++) {
 				matrix[k] = *((pat & (0x80 >> k)) ? ctx->color : ctx->backColor);
+			}
 			break;
 		default: 
 			strip_size = FILL_PATTERN_SIZE * pixSize;

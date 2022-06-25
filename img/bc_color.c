@@ -1197,8 +1197,9 @@ bc_byte_put( Byte * source, Byte * dest, unsigned int count, BitBltProc * blt, B
 	Byte buf[BUFSZ];
 	register Byte *c = colorref;
 	while ( count > 0 ) {
-		unsigned int sz = (count > 256) ? 256 : count;
-		register Byte *s = source, *d = buf;
+		unsigned int         sz = (count > BUFSZ) ? BUFSZ : count;
+		register Byte        *s = source;
+		register Byte        *d = buf;
 		register unsigned int n = sz;
 		while (n-- > 0) *(d++) = c[ *(s++) ];
 		blt( buf, dest, sz);

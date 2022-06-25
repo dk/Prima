@@ -208,8 +208,7 @@ sub test_pat
 	for my $alu (@alu) {
 		my $rop = $rop::{$alu}->();
 		cmp_check_1(rop => $rop, rop2 => rop::CopyPut, id => "$alu/CopyPut");
-		cmp_check_1(rop => $rop, rop2 => rop::NoOper , id => "$alu/NoOper")
-			if $dst_bpp == 1;
+		cmp_check_1(rop => $rop, rop2 => rop::NoOper , id => "$alu/NoOper");
 	}
 
 }
@@ -217,7 +216,7 @@ sub test_pat
 for my $src_bpp ( im::BW, 4, 8, 24 ) {
 	next unless $src_bpp == im::BW;
 	$tile = $mtile->clone( type => $src_bpp );
-	for my $dst_bpp ( 1, 4, 8, 24 ) {
+	for my $dst_bpp ( 1, 4, 8 ) {
 		$i = $mdest->clone( type => $dst_bpp | im::GrayScale, fillPattern => $tile);
 		test_pat();
 	}
