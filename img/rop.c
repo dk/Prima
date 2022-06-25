@@ -552,7 +552,7 @@ rop_1bit_transform(Byte fore, Byte back, Byte rop)
 			case ropNotSrcOr:
 			case ropWhiteness:     return ropWhiteness;
 		}
-	} else if ( fore == 1 && back == 0 ) {
+	} else if ( fore == 0 && back == 1 ) {
 		switch( rop) {
 			case ropAndPut:        return ropNotSrcAnd;
 			case ropNotSrcAnd:     return ropAndPut;

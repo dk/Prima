@@ -292,8 +292,8 @@ NOSCALE:
 	if (( PImage( dest)-> type & imBPP) == 1) {
 		PImage i  = (PImage) dest;
 		PImage s  = (PImage) src;
-		Byte fore = cm_nearest_color(s->palette[0], i->palSize, i->palette);
-		Byte back = cm_nearest_color(s->palette[1], i->palSize, i->palette);
+		Byte fore = cm_nearest_color(s->palette[1], i->palSize, i->palette);
+		Byte back = cm_nearest_color(s->palette[0], i->palSize, i->palette);
 		rop = rop_1bit_transform( fore, back, rop );
 	} else if (( PImage( dest)-> type & imBPP) <= 8 ) {
 		/* equalize palette */

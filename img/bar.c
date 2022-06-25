@@ -468,6 +468,55 @@ put1( int x, int y, int w, int h, TileCallbackRec* tx)
 }
 
 /* strictly imBW stipple */
+
+static int
+rop1_direct(int rop)
+{
+	switch(rop) {
+	case ropBlackness:
+	case ropNotOr:
+	case ropNotSrcAnd:
+	case ropNotPut: return ropNotSrcAnd;
+	case ropNotDestAnd:
+	case ropInvert:
+	case ropXorPut:
+	case ropNotAnd: return ropXorPut;
+	case ropAndPut:
+	case ropNotXor:
+	case ropNoOper:
+	case ropNotSrcOr: return ropNoOper;
+	case ropCopyPut:
+	case ropNotDestOr:
+	case ropOrPut:
+	case ropWhiteness: return ropOrPut;
+	}
+	return ropNoOper;
+}
+
+static int
+rop1_inverse(int rop)
+{
+	switch(rop) {
+	case ropBlackness: return ropNotSrcAnd;
+	case ropNotOr: return ropXorPut;
+	case ropNotSrcAnd: return ropNoOper;
+	case ropNotPut: return ropOrPut;
+	case ropNotDestAnd: return ropNotSrcAnd;
+	case ropInvert: return ropXorPut;
+	case ropXorPut: return ropNoOper;
+	case ropNotAnd: return ropOrPut;
+	case ropAndPut: return ropNotSrcAnd;
+	case ropNotXor: return ropXorPut;
+	case ropNoOper: return ropNoOper;
+	case ropNotSrcOr: return ropOrPut;
+	case ropCopyPut: return ropNotSrcAnd;
+	case ropNotDestOr: return ropXorPut;
+	case ropOrPut: return ropNoOper;
+	case ropWhiteness: return ropOrPut;
+	}
+	return ropNoOper;
+}
+
 Bool
 img_bar_stipple( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 {
@@ -476,18 +525,12 @@ img_bar_stipple( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 
 	if (( i->type & imBPP ) == 1) {
 		/* special case */
-		int rop;
-		if ( ctx->transparent ) {
-			tx.blt = img_find_blt_proc(ropAndPut);
-			if (!tile( x, y, w, h, put1, &tx)) return false;
-			rop = rop_1bit_transform( ctx->color[0] > 0, 0, ropXorPut);
-			tx.blt = img_find_blt_proc(rop);
-			return tile( x, y, w, h, put1, &tx);
-		} else {
-			rop = rop_1bit_transform( ctx->color[0] > 0, ctx->backColor[0] > 0, ctx-> rop);
-			tx.blt = img_find_blt_proc(rop);
-			return tile( x, y, w, h, put1, &tx);
-		}
+		int rop = ctx->transparent ?
+			(( ctx->color[0] > 0 ) ? rop1_direct(ctx->rop) : rop1_inverse(ctx->rop)) :
+			rop_1bit_transform( ctx->color[0] > 0, ctx->backColor[0] > 0, ctx-> rop)
+			;
+		tx.blt = img_find_blt_proc(rop);
+		return tile( x, y, w, h, put1, &tx);
 	} else {
 		/* general case */
 		if ( ctx->transparent ) {
