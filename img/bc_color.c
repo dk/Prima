@@ -1271,17 +1271,15 @@ bc_nibble_put( Byte * source, unsigned int from, unsigned int width, Byte * dest
 		goto FINALIZE;
 	}
 
-	L = *(source++);
+	R = L = *(source++);
 	while ( blen > 0 ) {
 		int i, sz = (blen > BUFSZ) ? BUFSZ : blen;
 		Byte *p = buf;
 		blen -= sz;
 		for ( i = 0; i < sz; i++) {
+			*(p++) = ( L << 4 ) | ( R >> 4 );
+			L = R;
 			R = *(source++);
-			*(p++) = ( ftail > ltail ) ?
-				( L << 4 ) | ( R >> 4 ) :
-				( L >> 4 ) | ( R << 4 );
-			R = L;
 		}
 		if ( colorref8to4 )
 			apply_colorref8to4( buf, buf, sz, colorref8to4);
@@ -1290,6 +1288,7 @@ bc_nibble_put( Byte * source, unsigned int from, unsigned int width, Byte * dest
 	}
 
 FINALIZE:
+
 	if ( lmask != 0x00 ) dest[lbyte] = lsave | (dest[lbyte] & ~lmask);
 	if ( rmask != 0xff ) dest[rbyte] = rsave | (dest[rbyte] & ~rmask);
 #undef BUFSZ
@@ -1346,17 +1345,15 @@ bc_mono_put( Byte * source, unsigned int from, unsigned int width, Byte * dest, 
 		lshift = 8 - rshift;
 	}
 
-	L = *(source++);
+	L = R = *(source++);
 	while ( blen > 0 ) {
 		int i, sz = (blen > BUFSZ) ? BUFSZ : blen;
 		Byte *p = buf;
 		blen -= sz;
 		for ( i = 0; i < sz; i++) {
+			*(p++) = ( L << lshift ) | ( R >> rshift );
+			L = R;
 			R = *(source++);
-			*(p++) = ( ftail > ltail ) ?
-				( L << lshift ) | ( R >> rshift ) :
-				( L >> rshift ) | ( R << rshift );
-			R = L;
 		}
 		blt( buf, d, sz);
 		d += sz;

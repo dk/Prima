@@ -400,7 +400,7 @@ typedef struct {
 	PImgPaintContext ctx;
 	BitBltProc* blt;
 	int src_x, src_y;
-	unsigned int src_stride, dst_stride;
+	unsigned int src_stride, dst_stride, bytes;
 	Byte *src, *dst;
 } TileCallbackRec;
 
@@ -418,6 +418,7 @@ tile( int x, int y, int w, int h, TileCallbackFunc *tiler, TileCallbackRec* tx)
 	tx->src_stride       = PImage(tile)-> lineSize;
 	tx->dst_stride       = dest-> lineSize;
 	tx->dst              = dest-> data;
+	tx->bytes            = (dest->type & imBPP) / 8;
 	for (
 		dy = y - offset.y;
 		dy < Y2;
@@ -450,20 +451,6 @@ tile( int x, int y, int w, int h, TileCallbackFunc *tiler, TileCallbackRec* tx)
 			return false;
 	}
 
-	return true;
-}
-
-static Bool
-put1( int x, int y, int w, int h, TileCallbackRec* tx)
-{
-	int i;
-	Byte * src = tx->src;
-	Byte * dst = tx->dst + y * tx->dst_stride;
-	for ( i = tx->src_y; i < h; i++) {
-		bc_mono_put( src, tx->src_x, w, dst, x, tx-> blt);
-		src += tx->src_stride;
-		dst += tx->dst_stride;
-	}
 	return true;
 }
 
@@ -517,6 +504,49 @@ rop1_inverse(int rop)
 	return ropNoOper;
 }
 
+static Bool
+put1( int x, int y, int w, int h, TileCallbackRec* tx)
+{
+	int i;
+	Byte * src = tx->src;
+	Byte * dst = tx->dst + y * tx->dst_stride;
+	for ( i = tx->src_y; i < h; i++) {
+		bc_mono_put( src, tx->src_x, w, dst, x, tx-> blt);
+		src += tx->src_stride;
+		dst += tx->dst_stride;
+	}
+	return true;
+}
+
+
+static Bool
+put4( int x, int y, int w, int h, TileCallbackRec* tx)
+{
+	int i;
+	Byte * src = tx->src;
+	Byte * dst = tx->dst + y * tx->dst_stride;
+	for ( i = tx->src_y; i < h; i++) {
+		bc_nibble_put( src, tx->src_x, w, dst, x, tx-> blt, NULL);
+		src += tx->src_stride;
+		dst += tx->dst_stride;
+	}
+	return true;
+}
+
+static Bool
+put8x( int x, int y, int w, int h, TileCallbackRec* tx)
+{
+	int i;
+	Byte * src = tx->src + tx->bytes * tx->src_x;
+	Byte * dst = tx->dst + y * tx->dst_stride + x * tx->bytes;
+	for ( i = tx->src_y; i < h; i++) {
+		tx->blt(src, dst, w);
+		src += tx->src_stride;
+		dst += tx->dst_stride;
+	}
+	return true;
+}
+
 Bool
 img_bar_stipple( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 {
@@ -533,9 +563,45 @@ img_bar_stipple( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 		return tile( x, y, w, h, put1, &tx);
 	} else {
 		/* general case */
+		Bool ok;
+		PImage t;
+		if (( ctx->tile = CImage(ctx->tile)->dup(ctx->tile)) == NULL_HANDLE)
+			return false;
+		t = (PImage)ctx->tile;
+
+		if ( t->type != imBW ) {
+			warn("panic: bad tile type");
+			return false;
+		}
+		t->type = imbpp1;
+
+		t->palSize = 2;
+		if (( i-> type & imBPP ) == 4 ||( i-> type & imBPP ) == 8) {
+			t->palette[0] = i->palette[ ctx->backColor[0] ];
+			t->palette[1] = i->palette[ ctx->color[0] ];
+			CImage(t)->reset((Handle)t, i->type, i->palette, i->palSize);
+		} else {
+			memcpy(t->palette + 0, ctx->color, 3);
+			if ( ctx->transparent )
+				bzero(t->palette + 1, 3);
+			else
+				memcpy(t->palette + 1, ctx->backColor, 3);
+			CImage(t)->reset((Handle)t, i->type, NULL, 0);
+		}
+
 		if ( ctx->transparent ) {
 		} else {
+			tx.blt = img_find_blt_proc(ctx->rop);
+			if (( i-> type & imBPP ) == 4)
+				ok = tile( x, y, w, h, put4, &tx);
+			else
+				ok = tile( x, y, w, h, put8x, &tx);
 		}
+
+		Object_destroy((Handle) t);
+		ctx-> tile = NULL_HANDLE;
+
+		return ok;
 	}
 	return false;
 }

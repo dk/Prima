@@ -79,6 +79,9 @@ $mdest = Prima::Image->new( size => [4,4], type => im::bpp1 );
 
 sub cmp_check_1
 {
+	my $src_bpp = $tile->type & im::BPP;
+	my $dst_bpp = $i->type & im::BPP;
+
 	my %t = @_;
 	my $id = delete $t{id};
 	$id =~ /^(\w+)/;
@@ -98,9 +101,7 @@ sub cmp_check_1
 		fillPattern       => $tile,
 	);
 	$j->colormap($j->backColor, $j->color);
-	$j->save('0.bmp');
 	$j->bar(0,0,1,1);
-	$j->save('1.bmp');
 
 	my $c = $j->dup;
 	$c->set(
@@ -121,10 +122,10 @@ sub cmp_check_1
 			$c->pixel($x,$y,$z) if $s || $t{rop2} == rop::CopyPut;
 		}
 	}
-	is($j->pixel(0,0), $c->pixel(0,0), "1/1 00 $id");
-	is($j->pixel(0,1), $c->pixel(0,1), "1/1 01 $id");
-	is($j->pixel(1,0), $c->pixel(1,0), "1/1 10 $id");
-	is($j->pixel(1,1), $c->pixel(1,1), "1/1 11 $id");
+	is($j->pixel(0,0), $c->pixel(0,0), "$src_bpp/$dst_bpp 00 $id");
+	is($j->pixel(0,1), $c->pixel(0,1), "$src_bpp/$dst_bpp 01 $id");
+	is($j->pixel(1,0), $c->pixel(1,0), "$src_bpp/$dst_bpp 10 $id");
+	is($j->pixel(1,1), $c->pixel(1,1), "$src_bpp/$dst_bpp 11 $id");
 }
 
 sub test_pat
@@ -191,7 +192,7 @@ sub test_pat
 		" * *".
 		"* **".
 		" * *"
-	) if $tile->type == im::BW;
+	);
 
 	$i->clear;
 	$i->rop(rop::NotPut);
@@ -207,7 +208,8 @@ sub test_pat
 	for my $alu (@alu) {
 		my $rop = $rop::{$alu}->();
 		cmp_check_1(rop => $rop, rop2 => rop::CopyPut, id => "$alu/CopyPut");
-		cmp_check_1(rop => $rop, rop2 => rop::NoOper , id => "$alu/NoOper");
+		cmp_check_1(rop => $rop, rop2 => rop::NoOper , id => "$alu/NoOper")
+			if $dst_bpp == 1;
 	}
 
 }
@@ -216,8 +218,7 @@ for my $src_bpp ( im::BW, 4, 8, 24 ) {
 	next unless $src_bpp == im::BW;
 	$tile = $mtile->clone( type => $src_bpp );
 	for my $dst_bpp ( 1, 4, 8, 24 ) {
-		next unless $dst_bpp == 1;
-		$i = $mdest->clone( type => $dst_bpp, fillPattern => $tile);
+		$i = $mdest->clone( type => $dst_bpp | im::GrayScale, fillPattern => $tile);
 		test_pat();
 	}
 }
