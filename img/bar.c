@@ -519,6 +519,7 @@ put8x( int x, int y, int w, int h, TileCallbackRec* tx)
 	int i;
 	Byte * src = tx->src + tx->bytes * tx->src_x;
 	Byte * dst = tx->dst + y * tx->dst_stride + x * tx->bytes;
+	w *= tx-> bytes;
 	for ( i = tx->src_y; i < h; i++) {
 		if ( tx->colormap )
 			bc_byte_put( src, dst, w, tx->blt, tx->colormap);
@@ -536,6 +537,7 @@ img_bar_stipple( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 	PImage i = (PImage) dest;
 	TileCallbackRec tx;
 	Byte colormap[256];
+	Handle tt = ctx->tile;
 
 	bzero(&tx, sizeof(tx));
 	tx.dest = (PImage)dest;
@@ -591,8 +593,6 @@ img_bar_stipple( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 			} else if (( i-> type & imBPP ) == 8) {
 				colormap[ ctx->backColor[0] ] = 0;
 				tx.colormap = colormap;
-			} else {
-				/* XXX */
 			}
 			tx.blt = img_find_blt_proc(ropX_step1[ctx->rop]);
 			if ( !( ok = tile( x, y, w, h, tiler, &tx)))
@@ -606,7 +606,15 @@ img_bar_stipple( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 				colormap[ ctx->backColor[0] ] = 255;
 				tx.colormap = colormap;
 			} else {
-				/* XXX */
+				Object_destroy((Handle) t);
+				if ((ctx->tile = CImage(tt)->dup(tt)) == NULL_HANDLE)
+					return false;
+				t = (PImage)ctx->tile;
+				t->type = imbpp1;
+				t->palSize = 2;
+				memcpy(t->palette + 1, ctx->color, 3);
+				memset(t->palette, 0xff, 3);
+				CImage(t)->reset((Handle)t, i->type, NULL, 0);
 			}
 			ctx->rop = ropX_step2[ctx->rop];
 		}

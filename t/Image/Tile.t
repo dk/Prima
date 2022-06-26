@@ -100,7 +100,6 @@ sub cmp_check_1
 		%t,
 		fillPatternOffset => [0,0],
 		fillPattern       => $tile,
-		#fillPattern       => [(0x55,0xAA)x4],
 	);
 	$j->set(
 		backColor         => 0xffffff,
@@ -140,7 +139,6 @@ sub test_pat
 	my $dst_bpp = $i->type & im::BPP;
 
 	$i->rop2(rop::CopyPut);
-goto XE;
 
 	$i->backColor(0);
 	$i->color(cl::White);
@@ -212,7 +210,6 @@ goto XE;
 	);
 	$i->rop(rop::CopyPut);
 
-XE:
 	for my $alu (@alu) {
 		my $rop = $rop::{$alu}->();
 		cmp_check_1(rop => $rop, rop2 => rop::CopyPut, inv => 0, id => "$alu/CopyPut");
@@ -225,9 +222,12 @@ XE:
 
 for my $src_bpp ( im::BW, 4, 8, 24 ) {
 	next unless $src_bpp == im::BW;
+	#for my $dst_bpp ( 1, 4, 8 ) {
 	$tile = $mtile->clone( type => $src_bpp );
-	for my $dst_bpp ( 1, 4, 8 ) {
-		$i = $mdest->clone( type => $dst_bpp | im::GrayScale, fillPattern => $tile);
+	for my $dst_bpp ( 1, 4, 8, 24 ) {
+		my $d = $dst_bpp;
+		$d |= im::GrayScale if $d < 24;
+		$i = $mdest->clone( type => $d, fillPattern => $tile);
 		test_pat();
 	}
 }
