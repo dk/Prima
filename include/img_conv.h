@@ -115,6 +115,10 @@ extern void bc_rgb_byte_ed( Byte * source, Byte * dest, int count, int * err_buf
 extern void bc_rgb_byte_op( RGBColor * src, Byte * dest, int count, U16 * tree, RGBColor * palette, int * err_buf);
 extern void bc_rgb_byte_nop( RGBColor * src, Byte * dest, int count, U16 * tree, RGBColor * palette);
 extern void bc_rgb_graybyte( Byte * source, register Byte * dest, register int count);
+extern void bc_mono_Short( Byte * source, Byte * dest, register unsigned int count, Short fore, Short back);
+extern void bc_mono_Long( Byte * source, Byte * dest, register unsigned int count, Long fore, Long back);
+extern void bc_mono_float( Byte * source, Byte * dest, register unsigned int count, float fore, float back);
+extern void bc_mono_double( Byte * source, Byte * dest, register unsigned int count, double fore, double back);
 
 /* bitstroke stretching types */
 

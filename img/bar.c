@@ -29,7 +29,7 @@ img_bar_alpha_single_opaque( int x, int y, int w, int h, ImgBarAlphaCallbackRec 
 	const Byte * a = (als > 0) ? ptr->dstMask + y * als + x : NULL;
 	int blt_step = (blt_bytes > ptr->step) ? ptr->step : blt_bytes;
 	Byte * pat_ptr;
-	
+
 	if (!ptr->solid && (( ptr-> pat_x_offset % FILL_PATTERN_SIZE ) != (x % FILL_PATTERN_SIZE))) {
 		int dx = (x % FILL_PATTERN_SIZE) - ( ptr-> pat_x_offset % FILL_PATTERN_SIZE );
 		if ( dx < 0 ) dx += FILL_PATTERN_SIZE;
@@ -531,104 +531,185 @@ put8x( int x, int y, int w, int h, TileCallbackRec* tx)
 	return true;
 }
 
+typedef void MonoExpandFunc( Byte * source, Byte * dest, register unsigned int count, Byte * fore, Byte * back);
+
+#define MONO_EXPANDER(type)                   \
+static void                                   \
+expand_##type(                                \
+	Byte * source, Byte * dest,           \
+	register unsigned int count,          \
+	Byte * fore, Byte * back)             \
+{                                             \
+	bc_mono_##type(                       \
+		source, dest, count,          \
+		*((type*)fore), *((type*)back)\
+	);                                    \
+}
+
+MONO_EXPANDER(float);
+MONO_EXPANDER(double);
+MONO_EXPANDER(Short);
+MONO_EXPANDER(Long);
+
+static void
+expand_rgb(
+	Byte * source, Byte * dest,
+	register unsigned int count,
+	Byte * fore, Byte * back)
+{
+	RGBColor pal[2] = {*((PRGBColor)back),*((PRGBColor)fore)};
+	bc_mono_rgb( source, dest, count, pal);
+}
+
+static void
+fill_mef( MonoExpandFunc * mef, Handle tile, Handle expanded_tile, Byte *fore, Byte *back)
+{
+	Byte * src = PImage(tile)->data;
+	Byte * dst = PImage(expanded_tile)->data;
+	unsigned int src_stride = PImage(tile)->lineSize;
+	unsigned int dst_stride = PImage(expanded_tile)->lineSize;
+	unsigned int y;
+	for ( y = 0; y < PImage(tile)->h; y++) {
+		mef( src, dst, PImage(tile)->w, fore, back);
+		src += src_stride;
+		dst += dst_stride;
+	}
+}
+
+/* special case */
 Bool
-img_bar_stipple( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
+img_bar_stipple_1bit( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
+{
+	int rop;
+	TileCallbackRec tx;
+
+	bzero(&tx, sizeof(tx));
+	tx.dest = (PImage)dest;
+	tx.ctx  = ctx;
+	rop     = ctx->transparent ?
+		(( ctx->color[0] > 0 ) ? rop1_direct[ctx->rop] : rop1_inverse[ctx->rop]) :
+		rop_1bit_transform( ctx->color[0] > 0, ctx->backColor[0] > 0, ctx-> rop)
+		;
+	tx.blt  = img_find_blt_proc(rop);
+	return tile( x, y, w, h, put1, &tx);
+}
+
+Bool
+img_bar_stipple_generic( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 {
 	PImage i = (PImage) dest;
 	TileCallbackRec tx;
 	Byte colormap[256];
-	Handle tt = ctx->tile;
+	Handle orig_tile = ctx->tile;
+	MonoExpandFunc *mef = NULL;
+	Bool ok;
+	PImage t;
+	TileCallbackFunc *tiler;
 
 	bzero(&tx, sizeof(tx));
 	tx.dest = (PImage)dest;
 	tx.ctx  = ctx;
 
-	if (( i->type & imBPP ) == 1) {
-		/* special case */
-		int rop = ctx->transparent ?
-			(( ctx->color[0] > 0 ) ? rop1_direct[ctx->rop] : rop1_inverse[ctx->rop]) :
-			rop_1bit_transform( ctx->color[0] > 0, ctx->backColor[0] > 0, ctx-> rop)
-			;
-		tx.blt = img_find_blt_proc(rop);
-		return tile( x, y, w, h, put1, &tx);
-	} else {
-		/* general case */
-		Bool ok;
-		PImage t;
-		TileCallbackFunc *tiler;
-		if (( ctx->tile = CImage(ctx->tile)->dup(ctx->tile)) == NULL_HANDLE)
-			return false;
-		t = (PImage)ctx->tile;
+	if (( ctx->tile = CImage(ctx->tile)->dup(ctx->tile)) == NULL_HANDLE)
+		return false;
+	t = (PImage)ctx->tile;
 
-		if ( t->type != imBW ) {
-			warn("panic: bad tile type");
-			return false;
-		}
-		t->type = imbpp1;
+	if ( t->type != imBW ) {
+		warn("panic: bad tile type");
+		return false;
+	}
+	t->type = imbpp1;
 
-		t->palSize = 2;
-		if (( i-> type & imBPP ) == 4 ||( i-> type & imBPP ) == 8) {
-			t->palette[0] = i->palette[ ctx->backColor[0] ];
-			t->palette[1] = i->palette[ ctx->color[0] ];
-			CImage(t)->reset((Handle)t, i->type, i->palette, i->palSize);
-		} else {
-			memcpy(t->palette + 1, ctx->color, 3);
-			if ( ctx->transparent )
-				bzero(t->palette, 3);
-			else
-				memcpy(t->palette, ctx->backColor, 3);
-			CImage(t)->reset((Handle)t, i->type, NULL, 0);
-		}
-
-		tiler = (( i-> type & imBPP ) == 4) ? put4 : put8x;
-
+	t->palSize = 2;
+	switch ( i-> type ) {
+	case 4:
+	case 4 | imGrayScale:
+	case 8:
+	case 8 | imGrayScale:
+		t->palette[0] = i->palette[ ctx->backColor[0] ];
+		t->palette[1] = i->palette[ ctx->color[0] ];
+		CImage(t)->reset((Handle)t, i->type, i->palette, i->palSize);
+		break;
+	case 24:
+		memcpy(t->palette + 1, ctx->color, 3);
 		if ( ctx->transparent ) {
-			int k;
-			/* see explanation in the similar code in apc_bar */
-			for ( k = 0; k < 256; k++) colormap[k] = k;
-			if (( i-> type & imBPP ) == 4) {
-				colormap[ ctx->backColor[0] ] = 0;
-				cm_colorref_4to8(colormap, colormap);
-				tx.colormap = colormap;
-			} else if (( i-> type & imBPP ) == 8) {
-				colormap[ ctx->backColor[0] ] = 0;
-				tx.colormap = colormap;
-			}
-			tx.blt = img_find_blt_proc(ropX_step1[ctx->rop]);
-			if ( !( ok = tile( x, y, w, h, tiler, &tx)))
-				goto FAIL;
-
-			if (( i-> type & imBPP ) == 4) {
-				colormap[ ctx->backColor[0] ] = 15;
-				cm_colorref_4to8(colormap, colormap);
-				tx.colormap = colormap;
-			} else if (( i-> type & imBPP ) == 8) {
-				colormap[ ctx->backColor[0] ] = 255;
-				tx.colormap = colormap;
-			} else {
-				Object_destroy((Handle) t);
-				if ((ctx->tile = CImage(tt)->dup(tt)) == NULL_HANDLE)
-					return false;
-				t = (PImage)ctx->tile;
-				t->type = imbpp1;
-				t->palSize = 2;
-				memcpy(t->palette + 1, ctx->color, 3);
-				memset(t->palette, 0xff, 3);
-				CImage(t)->reset((Handle)t, i->type, NULL, 0);
-			}
-			ctx->rop = ropX_step2[ctx->rop];
-		}
-
-		tx.blt = img_find_blt_proc(ctx->rop);
-		ok = tile( x, y, w, h, tiler, &tx);
-
-	FAIL:
+			bzero(t->palette, 3);
+			mef = expand_rgb;
+		} else
+			memcpy(t->palette, ctx->backColor, 3);
+		CImage(t)->reset((Handle)t, i->type, NULL, 0);
+		break;
+	case imFloat :
+	case imDouble:
+	case imShort :
+	case imLong  :
+		CImage(t)->reset((Handle)t, i->type, NULL, 0);
+		break;
+	default:
 		Object_destroy((Handle) t);
 		ctx-> tile = NULL_HANDLE;
-
-		return ok;
+		warn("Stippling for image type %x is not implemented yet", i->type);
+		return false;
 	}
-	return false;
+
+	switch ( i-> type ) {
+	case imFloat : mef = expand_float  ; break;
+	case imDouble: mef = expand_double ; break;
+	case imShort : mef = expand_Short  ; break;
+	case imLong  : mef = expand_Long   ; break;
+	}
+	if (mef && i-> type != 24 ) { /* 24 is already converted */
+		if ( ctx->transparent ) {
+			Byte zero[MAX_SIZEOF_PIXEL];
+			bzero(zero, MAX_SIZEOF_PIXEL);
+			fill_mef( mef, orig_tile, ctx->tile, ctx->color, zero );
+		} else
+			fill_mef( mef, orig_tile, ctx->tile, ctx->color, ctx->backColor );
+	}
+
+	tiler = (( i-> type & imBPP ) == 4) ? put4 : put8x;
+
+	if ( ctx->transparent ) {
+		int k;
+		/* see explanation in the similar code in apc_bar */
+		for ( k = 0; k < 256; k++) colormap[k] = k;
+		if (( i-> type & imBPP ) == 4) {
+			colormap[ ctx->backColor[0] ] = 0;
+			cm_colorref_4to8(colormap, colormap);
+			tx.colormap = colormap;
+		} else if (( i-> type & imBPP ) == 8) {
+			colormap[ ctx->backColor[0] ] = 0;
+			tx.colormap = colormap;
+		}
+		tx.blt = img_find_blt_proc(ropX_step1[ctx->rop]);
+		if ( !( ok = tile( x, y, w, h, tiler, &tx)))
+			goto FAIL;
+
+		if (( i-> type & imBPP ) == 4) {
+			colormap[ ctx->backColor[0] ] = 15;
+			cm_colorref_4to8(colormap, colormap);
+			tx.colormap = colormap;
+		} else if (( i-> type & imBPP ) == 8) {
+			colormap[ ctx->backColor[0] ] = 255;
+			tx.colormap = colormap;
+		} else if ( mef ) {
+			Byte ones[MAX_SIZEOF_PIXEL];
+			memset(ones, 0xff, MAX_SIZEOF_PIXEL);
+			fill_mef( mef, orig_tile, ctx->tile, ctx->color, ones );
+		} else {
+			warn("panic: no encoder");
+		}
+		ctx->rop = ropX_step2[ctx->rop];
+	}
+
+	tx.blt = img_find_blt_proc(ctx->rop);
+	ok = tile( x, y, w, h, tiler, &tx);
+
+FAIL:
+	Object_destroy((Handle) t);
+	ctx-> tile = NULL_HANDLE;
+
+	return ok;
 }
 
 Bool
@@ -677,8 +758,10 @@ img_bar( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 		if ( PImage(ctx->tile)->type == imBW && !kind_of(ctx->tile, CIcon)) {
 			if ( ctx-> rop & ropConstantAlpha )
 				return img_bar_stipple_alpha( dest, x, y, w, h, ctx);
+			else if (( i->type & imBPP ) == 1)
+				return img_bar_stipple_1bit( dest, x, y, w, h, ctx);
 			else
-				return img_bar_stipple( dest, x, y, w, h, ctx);
+				return img_bar_stipple_generic( dest, x, y, w, h, ctx);
 		} else {
 			if ( ctx-> rop & ropConstantAlpha )
 				return img_bar_tile_alpha( dest, x, y, w, h, ctx);

@@ -1366,6 +1366,46 @@ FINALIZE:
 #undef BUFSZ
 }
 
+#define DECL_MONO_POLYBYTE(type) \
+void                                                               \
+bc_mono_##type(                                                    \
+	Byte * source, Byte * dest,                                \
+	register unsigned int count,                               \
+	type fore, type back                                       \
+) {                                                                \
+	register Byte tailsize   = count & 7;                      \
+	register type * rdest = (type*) dest;                      \
+	rdest   += count - 1;                                      \
+	count    = count >> 3;                                     \
+	source  += count;                                          \
+	if ( tailsize) {                                           \
+		register Byte tail = (*source) >> (8 - tailsize);  \
+		while( tailsize--)                                 \
+		{                                                  \
+			*rdest-- = (tail & 1) ? fore : back;       \
+			tail >>= 1;                                \
+		}                                                  \
+	}                                                          \
+	source--;                                                  \
+	while( count--)                                            \
+	{                                                          \
+		register Byte c = *source--;                       \
+		*rdest-- = (c & 1) ? fore : back;      c >>= 1;    \
+		*rdest-- = (c & 1) ? fore : back;      c >>= 1;    \
+		*rdest-- = (c & 1) ? fore : back;      c >>= 1;    \
+		*rdest-- = (c & 1) ? fore : back;      c >>= 1;    \
+		*rdest-- = (c & 1) ? fore : back;      c >>= 1;    \
+		*rdest-- = (c & 1) ? fore : back;      c >>= 1;    \
+		*rdest-- = (c & 1) ? fore : back;                  \
+		*rdest-- = (c>> 1) ? fore : back;                  \
+	}                                                          \
+}
+
+DECL_MONO_POLYBYTE(Short)
+DECL_MONO_POLYBYTE(Long)
+DECL_MONO_POLYBYTE(float)
+DECL_MONO_POLYBYTE(double)
+
 #ifdef __cplusplus
 }
 #endif

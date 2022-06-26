@@ -107,6 +107,7 @@ sub cmp_check_1
 	) if $inverse;
 	$j->colormap($j->backColor, $j->color);
 	$j->bar(0,0,1,1);
+	$j->resample(0, 32767, 0, -1) if $j->type == im::Short; # -1::IV is 0xffff::short but 0xffffff::IV is 32767::short
 
 	my $c = $j->dup;
 	$c->set(
@@ -117,13 +118,15 @@ sub cmp_check_1
 	);
 	$c->clear;
 	$c->bar(0,0,1,0);
+	$c->resample(0, 32767, 0, -1) if $c->type == im::Short;
 	my $cb = $ops[ $alunames{ $aluname }];
+	my $white = ($i->type & im::SignedInt) ? -1 : 0xffffff;
 	for my $x (0,1) {
 		for my $y (0,1) {
 			my $s = $tile->pixel($x,$y) ? 1 : 0;
 			my $d = $c->pixel($x,$y)    ? 1 : 0;
-			my $z = $cb->(($inverse ? !$s : $s), $d) ? 0xffffff : 0;
-#			warn "+$x $y = $z \n" if $s || $t{rop2} == rop::CopyPut;
+			my $z = $cb->(($inverse ? !$s : $s), $d) ? $white : 0;
+	#		warn "+$x $y = $z \n" if $s || $t{rop2} == rop::CopyPut;
 			$c->pixel($x,$y,$z) if $s || $t{rop2} == rop::CopyPut;
 		}
 	}
@@ -207,11 +210,12 @@ sub test_pat
 		"* **".
 		" * *".
 		"* **"
-	);
+	) if $i->type != im::Short; # binops on uint16_t are meaningless to be checked arithmetically
 	$i->rop(rop::CopyPut);
 
 	for my $alu (@alu) {
 		my $rop = $rop::{$alu}->();
+		next if $i->type == im::Short and $alu ne 'CopyPut'; # makes no sense on binops
 		cmp_check_1(rop => $rop, rop2 => rop::CopyPut, inv => 0, id => "$alu/CopyPut");
 		cmp_check_1(rop => $rop, rop2 => rop::NoOper , inv => 0, id => "$alu/NoOper");
 		cmp_check_1(rop => $rop, rop2 => rop::CopyPut, inv => 1, id => "$alu/CopyPut inv");
@@ -224,7 +228,7 @@ for my $src_bpp ( im::BW, 4, 8, 24 ) {
 	next unless $src_bpp == im::BW;
 	#for my $dst_bpp ( 1, 4, 8 ) {
 	$tile = $mtile->clone( type => $src_bpp );
-	for my $dst_bpp ( 1, 4, 8, 24 ) {
+	for my $dst_bpp ( 1, 4, 8, 24, im::Short ) {
 		my $d = $dst_bpp;
 		$d |= im::GrayScale if $d < 24;
 		$i = $mdest->clone( type => $d, fillPattern => $tile);

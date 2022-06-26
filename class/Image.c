@@ -1286,14 +1286,25 @@ Image_pixel( Handle self, Bool set, int x, int y, SV * pixel)
 			}
 			break;
 		case imbpp16 :
-			*(Short*)(var->data+(var->lineSize*y+(x<<1)))=color;
+			{
+				int32_t color = SvIV( pixel);
+				Short c;
+				if ( color > INT16_MAX ) color = INT16_MAX;
+				if ( color < INT16_MIN ) color = INT16_MIN;
+				*(Short*)(var->data+(var->lineSize*y+(x<<1)))=color;
+			}
 			break;
 		case imbpp24 :
 			(void) LONGtoBGR(color,rgb);
 			memcpy((var->data + (var->lineSize*y+x*3)),&rgb,sizeof(RGBColor));
 			break;
 		case imbpp32 :
-			*(Long*)(var->data+(var->lineSize*y+(x<<2)))=color;
+			{
+				IV color = SvIV(pixel);
+				if ( color > INT32_MAX ) color = INT32_MAX;
+				if ( color < INT32_MIN ) color = INT32_MIN;
+				*(Long*)(var->data+(var->lineSize*y+(x<<2)))=color;
+			}
 			break;
 		default:
 			return NULL_SV;
@@ -1714,13 +1725,31 @@ color2pixel( Handle self, Color color, Byte * pixel)
 		pixel[0] = cm_nearest_color(rgb,var->palSize,var->palette);
 		break;
 	case imShort :
+		if ( color > INT16_MAX ) color = INT16_MAX;
 		*((Short*)pixel) = color;
 		break;
 	case imRGB :
 		memcpy( pixel, &rgb, 3);
 		break;
 	case imLong :
+		if ( color > INT32_MAX ) color = INT32_MAX;
 		*((Long*)pixel) = color;
+		break;
+	case imFloat:
+		*((float*)pixel) = color;
+		break;
+	case imDouble:
+		*((double*)pixel) = color;
+		break;
+	case imComplex:
+	case imTrigComplex:
+		((float*)pixel)[0] = color;
+		((float*)pixel)[1] = color;
+		break;
+	case imDComplex:
+	case imTrigDComplex:
+		((double*)pixel)[0] = color;
+		((double*)pixel)[1] = color;
 		break;
 	default:
 		croak("Not implemented yet");
