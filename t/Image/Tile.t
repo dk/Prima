@@ -86,6 +86,7 @@ sub cmp_check_1
 	my $id = delete $t{id};
 	$id =~ /^(\w+)/;
 	my $aluname = $1;
+	my $inverse = delete $t{inv};
 	my $j = $i->extract(0,0,2,2)->dup;
 	$j->set(
 		backColor         => 0x0,
@@ -99,7 +100,12 @@ sub cmp_check_1
 		%t,
 		fillPatternOffset => [0,0],
 		fillPattern       => $tile,
+		#fillPattern       => [(0x55,0xAA)x4],
 	);
+	$j->set(
+		backColor         => 0xffffff,
+		color             => 0x0
+	) if $inverse;
 	$j->colormap($j->backColor, $j->color);
 	$j->bar(0,0,1,1);
 
@@ -117,7 +123,7 @@ sub cmp_check_1
 		for my $y (0,1) {
 			my $s = $tile->pixel($x,$y) ? 1 : 0;
 			my $d = $c->pixel($x,$y)    ? 1 : 0;
-			my $z = $cb->($s, $d) ? 0xffffff : 0;
+			my $z = $cb->(($inverse ? !$s : $s), $d) ? 0xffffff : 0;
 #			warn "+$x $y = $z \n" if $s || $t{rop2} == rop::CopyPut;
 			$c->pixel($x,$y,$z) if $s || $t{rop2} == rop::CopyPut;
 		}
@@ -134,6 +140,7 @@ sub test_pat
 	my $dst_bpp = $i->type & im::BPP;
 
 	$i->rop2(rop::CopyPut);
+goto XE;
 
 	$i->backColor(0);
 	$i->color(cl::White);
@@ -205,10 +212,13 @@ sub test_pat
 	);
 	$i->rop(rop::CopyPut);
 
+XE:
 	for my $alu (@alu) {
 		my $rop = $rop::{$alu}->();
-		cmp_check_1(rop => $rop, rop2 => rop::CopyPut, id => "$alu/CopyPut");
-		cmp_check_1(rop => $rop, rop2 => rop::NoOper , id => "$alu/NoOper");
+		cmp_check_1(rop => $rop, rop2 => rop::CopyPut, inv => 0, id => "$alu/CopyPut");
+		cmp_check_1(rop => $rop, rop2 => rop::NoOper , inv => 0, id => "$alu/NoOper");
+		cmp_check_1(rop => $rop, rop2 => rop::CopyPut, inv => 1, id => "$alu/CopyPut inv");
+		cmp_check_1(rop => $rop, rop2 => rop::NoOper , inv => 1, id => "$alu/NoOper inv");
 	}
 
 }

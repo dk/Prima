@@ -457,53 +457,19 @@ tile( int x, int y, int w, int h, TileCallbackFunc *tiler, TileCallbackRec* tx)
 
 /* strictly imBW stipple */
 
-static int
-rop1_direct(int rop)
-{
-	switch(rop) {
-	case ropBlackness:
-	case ropNotOr:
-	case ropNotSrcAnd:
-	case ropNotPut: return ropNotSrcAnd;
-	case ropNotDestAnd:
-	case ropInvert:
-	case ropXorPut:
-	case ropNotAnd: return ropXorPut;
-	case ropAndPut:
-	case ropNotXor:
-	case ropNoOper:
-	case ropNotSrcOr: return ropNoOper;
-	case ropCopyPut:
-	case ropNotDestOr:
-	case ropOrPut:
-	case ropWhiteness: return ropOrPut;
-	}
-	return ropNoOper;
-}
+static int rop1_direct[16] = {
+	ropOrPut,ropXorPut,ropNoOper,ropOrPut,
+	ropNotSrcAnd,ropXorPut,ropNotSrcAnd,ropXorPut,
+	ropOrPut,ropOrPut,ropNotSrcAnd,ropNoOper,
+	ropNoOper,ropXorPut,ropNotSrcAnd,ropNoOper
+};
 
-static int
-rop1_inverse(int rop)
-{
-	switch(rop) {
-	case ropBlackness: return ropNotSrcAnd;
-	case ropNotOr: return ropXorPut;
-	case ropNotSrcAnd: return ropNoOper;
-	case ropNotPut: return ropOrPut;
-	case ropNotDestAnd: return ropNotSrcAnd;
-	case ropInvert: return ropXorPut;
-	case ropXorPut: return ropNoOper;
-	case ropNotAnd: return ropOrPut;
-	case ropAndPut: return ropNotSrcAnd;
-	case ropNotXor: return ropXorPut;
-	case ropNoOper: return ropNoOper;
-	case ropNotSrcOr: return ropOrPut;
-	case ropCopyPut: return ropNotSrcAnd;
-	case ropNotDestOr: return ropXorPut;
-	case ropOrPut: return ropNoOper;
-	case ropWhiteness: return ropOrPut;
-	}
-	return ropNoOper;
-}
+static int rop1_inverse[16] = {
+	ropNotSrcAnd,ropNoOper,ropNotSrcAnd,ropNoOper,
+	ropOrPut,ropXorPut,ropNotSrcAnd,ropNotSrcAnd,
+	ropXorPut,ropOrPut,ropNoOper,ropOrPut,
+	ropXorPut,ropOrPut,ropXorPut,ropNoOper
+};
 
 static int ropX_step1[16] = {
 	ropNotOr, ropXorPut, ropInvert, ropNotOr,
@@ -578,7 +544,7 @@ img_bar_stipple( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 	if (( i->type & imBPP ) == 1) {
 		/* special case */
 		int rop = ctx->transparent ?
-			(( ctx->color[0] > 0 ) ? rop1_direct(ctx->rop) : rop1_inverse(ctx->rop)) :
+			(( ctx->color[0] > 0 ) ? rop1_direct[ctx->rop] : rop1_inverse[ctx->rop]) :
 			rop_1bit_transform( ctx->color[0] > 0, ctx->backColor[0] > 0, ctx-> rop)
 			;
 		tx.blt = img_find_blt_proc(rop);
@@ -604,29 +570,39 @@ img_bar_stipple( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 			t->palette[1] = i->palette[ ctx->color[0] ];
 			CImage(t)->reset((Handle)t, i->type, i->palette, i->palSize);
 		} else {
-			memcpy(t->palette + 0, ctx->color, 3);
+			memcpy(t->palette + 1, ctx->color, 3);
 			if ( ctx->transparent )
-				bzero(t->palette + 1, 3);
+				bzero(t->palette, 3);
 			else
-				memcpy(t->palette + 1, ctx->backColor, 3);
+				memcpy(t->palette, ctx->backColor, 3);
 			CImage(t)->reset((Handle)t, i->type, NULL, 0);
 		}
 
 		tiler = (( i-> type & imBPP ) == 4) ? put4 : put8x;
 
 		if ( ctx->transparent ) {
+			int k;
+			/* see explanation in the similar code in apc_bar */
+			for ( k = 0; k < 256; k++) colormap[k] = k;
+			if (( i-> type & imBPP ) == 4) {
+				colormap[ ctx->backColor[0] ] = 0;
+				cm_colorref_4to8(colormap, colormap);
+				tx.colormap = colormap;
+			} else if (( i-> type & imBPP ) == 8) {
+				colormap[ ctx->backColor[0] ] = 0;
+				tx.colormap = colormap;
+			} else {
+				/* XXX */
+			}
 			tx.blt = img_find_blt_proc(ropX_step1[ctx->rop]);
 			if ( !( ok = tile( x, y, w, h, tiler, &tx)))
 				goto FAIL;
+
 			if (( i-> type & imBPP ) == 4) {
-				int k;
-				for ( k = 0; k < 16; k++) colormap[k] = k;
 				colormap[ ctx->backColor[0] ] = 15;
 				cm_colorref_4to8(colormap, colormap);
 				tx.colormap = colormap;
 			} else if (( i-> type & imBPP ) == 8) {
-				int k;
-				for ( k = 0; k < 256; k++) colormap[k] = k;
 				colormap[ ctx->backColor[0] ] = 255;
 				tx.colormap = colormap;
 			} else {
