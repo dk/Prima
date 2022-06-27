@@ -138,6 +138,54 @@ sub cmp_check_1
 	is($j->pixel(1,1), $c->pixel(1,1), "$src_bpp/$dst_bpp 11 $id");
 }
 
+sub cmp_check_icon
+{
+	my $src_bpp = $tile->type & im::BPP;
+	my $dst_bpp = $i->type & im::BPP;
+
+
+	my $j = $i->extract(0,0,2,2)->dup;
+	$j->set(
+		backColor         => 0x0,
+		color             => 0xffffff,
+		rop               => rop::CopyPut,
+		rop2              => rop::CopyPut,
+	);
+	$j->clear;
+	$j->bar(0,0,1,0);
+	$j->set(
+		fillPatternOffset => [0,0],
+		fillPattern       => $tile,
+	);
+	$j->colormap($j->backColor, $j->color);
+	$j->bar(0,0,1,1);
+
+	my $c = $j->dup;
+	$c->set(
+		color             => 0xffffff,
+		backColor         => 0x0,
+		rop               => rop::CopyPut,
+		rop2              => rop::CopyPut,
+	);
+	$c->clear;
+	$c->bar(0,0,1,0);
+	my ( $xor, $and ) = $tile->split;
+	for my $x (0,1) {
+		for my $y (0,1) {
+			my $m = $and->pixel($x,$y) ? 1 : 0;
+			my $d = $c->pixel($x,$y)   ? 1 : 0;
+			my $s = $xor->pixel($x,$y) ? 1 : 0;
+			my $z = (($m & $d) ^ $s) ? 0xffffff : 0;
+			# warn "+$x $y = ($s ^ $d) = $z \n";
+			$c->pixel($x,$y,$z);
+		}
+	}
+	is($j->pixel(0,0), $c->pixel(0,0), "$src_bpp/$dst_bpp 00 1-bit icon");
+	is($j->pixel(0,1), $c->pixel(0,1), "$src_bpp/$dst_bpp 01 1-bit icon");
+	is($j->pixel(1,0), $c->pixel(1,0), "$src_bpp/$dst_bpp 10 1-bit icon");
+	is($j->pixel(1,1), $c->pixel(1,1), "$src_bpp/$dst_bpp 11 1-bit icon");
+}
+
 sub test_pat
 {
 	my $src_bpp = $tile->type & im::BPP;
@@ -243,14 +291,38 @@ sub test_pat
 
 }
 
-for my $src_bpp ( im::BW, 4, 8, 24 ) {
-	$tile = $mtile->clone( type => $src_bpp );
-	for my $dst_bpp ( 1, 4, 8, 24, im::Short ) {
-		my $d = $dst_bpp;
-		$d |= im::GrayScale if $d < 24;
-		$i = $mdest->clone( type => $d, fillPattern => $tile);
-		test_pat();
+sub test_stipple_and_simple_tile_noaa
+{
+	for my $src_bpp ( im::BW, 4, 8, 24 ) {
+		$tile = $mtile->clone( type => $src_bpp );
+		for my $dst_bpp ( 1, 4, 8, 24, im::Short ) {
+			my $d = $dst_bpp;
+			$d |= im::GrayScale if $d < 24;
+			$i = $mdest->clone( type => $d, fillPattern => $tile);
+			test_pat();
+		}
 	}
 }
+
+sub test_icon_noaa
+{
+	my $and = $mtile->dup;
+	$and->pixel(0,0,0);
+	$and->pixel(0,1,0);
+	$and->pixel(1,0,0xffffff);
+	$and->pixel(1,1,0xffffff);
+	for my $src_bpp ( 1, 4, 8, 24 ) {
+		$tile = Prima::Icon->create_combined( $mtile->clone( type => $src_bpp ), $and);
+		for my $dst_bpp ( 1, 4, 8, 24 ) { # bit xoring doesn't work for imShort
+			my $d = $dst_bpp;
+			$d |= im::GrayScale if $d < 24;
+			$i = $mdest->clone( type => $d, fillPattern => $tile);
+			cmp_check_icon();
+		}
+	}
+}
+
+test_stipple_and_simple_tile_noaa();
+test_icon_noaa();
 
 done_testing;

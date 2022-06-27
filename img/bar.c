@@ -713,6 +713,13 @@ FAIL:
 }
 
 Bool
+img_bar_tile_alpha( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
+{
+	return false;
+}
+
+
+Bool
 img_bar_tile( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 {
 	PImage i = (PImage) dest;
@@ -722,6 +729,21 @@ img_bar_tile( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 	Handle orig_tile = ctx->tile;
 	Bool ok;
 	TileCallbackFunc *tiler;
+
+	if (kind_of(ctx->tile, CIcon)) {
+		Image dummy;
+		PIcon s = (PIcon) ctx->tile;
+		if ( s-> maskType != imbpp1) {
+			if ( s-> maskType != imbpp8) croak("panic: bad icon mask type");
+			return img_bar_tile_alpha( dest, x, y, w, h, ctx);
+		}
+		img_fill_dummy( &dummy, s-> w, s-> h, imBW, s-> mask, stdmono_palette);
+		ctx->rop  = ropAndPut;
+		ctx->tile = (Handle) &dummy;
+		img_bar_tile( dest, x, y, w, h, ctx);
+		ctx->rop  = ropXorPut;
+		ctx->tile = orig_tile;
+	}
 
 	bzero(&tx, sizeof(tx));
 	tx.dest = (PImage)dest;
@@ -770,12 +792,6 @@ img_bar_tile( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 
 Bool
 img_bar_stipple_alpha( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
-{
-	return false;
-}
-
-Bool
-img_bar_tile_alpha( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 {
 	return false;
 }
