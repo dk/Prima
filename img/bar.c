@@ -715,7 +715,57 @@ FAIL:
 Bool
 img_bar_tile( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 {
-	return false;
+	PImage i = (PImage) dest;
+	PImage t = (PImage)ctx->tile;
+	TileCallbackRec tx;
+	Byte colormap[256];
+	Handle orig_tile = ctx->tile;
+	Bool ok;
+	TileCallbackFunc *tiler;
+
+	bzero(&tx, sizeof(tx));
+	tx.dest = (PImage)dest;
+	tx.ctx  = ctx;
+
+	if (( t->type & imBPP ) != ( i->type & imBPP )) {
+		if (( ctx->tile = CImage(ctx->tile)->dup(ctx->tile)) == NULL_HANDLE)
+			return false;
+		CImage(ctx->tile)->reset(ctx-> tile, i->type, i->palette, i->palSize);
+		t = (PImage) ctx->tile;
+	}
+
+	switch (i-> type & imBPP ) {
+	case 1:
+		tiler = put1;
+		break;
+	case 4:
+		tiler = put4;
+		break;
+	default:
+		tiler = put8x;
+	}
+
+	if (
+		i->palSize != t->palSize ||
+		memcmp( t->palette, i->palette, i->palSize * 3) != 0
+	) {
+		cm_fill_colorref(
+			t-> palette, t-> palSize,
+			i-> palette, i-> palSize,
+			colormap);
+		if (( PImage( dest)-> type & imBPP) == 4 )
+			cm_colorref_4to8( colormap, colormap );
+		tx.colormap = colormap;
+	}
+
+	tx.blt = img_find_blt_proc(ctx->rop);
+	ok = tile( x, y, w, h, tiler, &tx);
+
+	if ( ctx->tile != orig_tile ) {
+		Object_destroy(ctx->tile);
+		ctx->tile = NULL_HANDLE;
+	}
+	return ok;
 }
 
 Bool

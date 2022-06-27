@@ -82,6 +82,7 @@ sub cmp_check_1
 	my $src_bpp = $tile->type & im::BPP;
 	my $dst_bpp = $i->type & im::BPP;
 
+
 	my %t = @_;
 	my $id = delete $t{id};
 	$id =~ /^(\w+)/;
@@ -107,7 +108,8 @@ sub cmp_check_1
 	) if $inverse;
 	$j->colormap($j->backColor, $j->color);
 	$j->bar(0,0,1,1);
-	$j->resample(0, 32767, 0, -1) if $j->type == im::Short; # -1::IV is 0xffff::short but 0xffffff::IV is 32767::short
+
+	$j->resample(0, $j->rangeHi, 0, -1) if $j->type == im::Short; # -1::IV is 0xffff::short but 0xffffff::IV is 32767::short
 
 	my $c = $j->dup;
 	$c->set(
@@ -200,33 +202,48 @@ sub test_pat
 		" * *".
 		"* **".
 		" * *"
-	);
+	) if $tile->type == im::BW;
 
 	$i->clear;
 	$i->rop(rop::NotPut);
 	$i->bar(0,0,2,2);
-	is_pict($i, "[$src_bpp/$dst_bpp] not",
+	is_pict($i, "[$src_bpp/$dst_bpp] inv not",
 		"****".
 		"* **".
 		" * *".
 		"* **"
-	) if $i->type != im::Short; # binops on uint16_t are meaningless to be checked arithmetically
+	) if $i->type != im::Short && $tile->type == im::BW; # binops on uint16_t are meaningless to be checked arithmetically
+
+	$i->rop(rop::CopyPut);
+	$i->clear;
+	$i->rop(rop::NotPut);
+	$i->backColor(0);
+	$i->color(cl::White);
+	$i->bar(0,0,2,2);
+	$i->backColor(0);
+	is_pict($i, "[$src_bpp/$dst_bpp] not",
+		"****".
+		" * *".
+		"* **".
+		" * *"
+	) if $i->type != im::Short && $tile->type == im::BW; # binops on uint16_t are meaningless to be checked arithmetically
 	$i->rop(rop::CopyPut);
 
 	for my $alu (@alu) {
 		my $rop = $rop::{$alu}->();
+
 		next if $i->type == im::Short and $alu ne 'CopyPut'; # makes no sense on binops
 		cmp_check_1(rop => $rop, rop2 => rop::CopyPut, inv => 0, id => "$alu/CopyPut");
-		cmp_check_1(rop => $rop, rop2 => rop::NoOper , inv => 0, id => "$alu/NoOper");
+
+		next if $tile->type != im::BW; # NoOper and coloring is for stippling only
 		cmp_check_1(rop => $rop, rop2 => rop::CopyPut, inv => 1, id => "$alu/CopyPut inv");
+		cmp_check_1(rop => $rop, rop2 => rop::NoOper , inv => 0, id => "$alu/NoOper");
 		cmp_check_1(rop => $rop, rop2 => rop::NoOper , inv => 1, id => "$alu/NoOper inv");
 	}
 
 }
 
 for my $src_bpp ( im::BW, 4, 8, 24 ) {
-	next unless $src_bpp == im::BW;
-	#for my $dst_bpp ( 1, 4, 8 ) {
 	$tile = $mtile->clone( type => $src_bpp );
 	for my $dst_bpp ( 1, 4, 8, 24, im::Short ) {
 		my $d = $dst_bpp;
