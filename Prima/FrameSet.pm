@@ -493,6 +493,7 @@ sub on_paint
 {
 	my ($me, $canvas) = @_;
 
+	$canvas->rop2(rop::CopyPut);
 	$canvas-> fillPattern(fp::Interleave);
 	$canvas-> bar(0, 0, $me-> size);
 }

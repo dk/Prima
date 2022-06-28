@@ -224,6 +224,7 @@ sub _visible
 				visible     => 0,
 				onPaint     => sub {
 					my ( $self, $canvas ) = @_;
+					$canvas->rop2(rop::CopyPut);
 					$canvas->fillPattern(
 						($self->left % 2) ?
 							[ (0xaa, 0x55) x 4 ] :

@@ -693,9 +693,11 @@ sub on_paint
 	my ( $self, $canvas) = @_;
 	$canvas-> backColor( $self-> backColor);
 	$canvas-> color( cl::Blue);
+	$canvas-> rop2(rop::CopyPut);
 	$canvas-> fillPattern([0,0,0,0,4,0,0,0]);
 	my @sz = $canvas-> size;
 	$canvas-> bar(0,0,@sz);
+	$canvas-> rop2(rop::NoOper);
 	$canvas-> fillPattern( fp::Solid);
 	$canvas-> linePattern( lp::Dash);
 	$canvas-> line( $self-> {guidelineX}, 0, $self-> {guidelineX}, $sz[1]);

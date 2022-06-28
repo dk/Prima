@@ -716,6 +716,7 @@ sub InputLine_Paint
 	$canvas-> rectangle( 1, 1, $w - 2, $h - 2);
 	$canvas-> rectangle( 2, 2, $w - 3, $h - 3);
 	$canvas-> color( $clr);
+	$canvas-> rop2(rop::CopyPut);
 	$canvas-> fillPattern([(0xEE, 0xBB) x 4]) unless $self-> enabled;
 	$canvas-> bar( 3, 3, $w - 4, $h - 4);
 	$canvas-> rect_focus(2, 2, $w - 3, $h - 3) if $focused;

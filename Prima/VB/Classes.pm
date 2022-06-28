@@ -312,13 +312,12 @@ sub common_paint
 	} elsif ( $self-> {locked}) {
 		my $x = $VB::form->{guidelineX} - $self-> left;
 		my $y = $VB::form->{guidelineY} - $self-> bottom;
+		$canvas-> rop2(rop::CopyPut);
 		$canvas-> fillPattern([0,0,0,0,4,0,0,0]);
 		$canvas-> backColor( cl::Clear);
-		$canvas-> color( cl::Set);
-		$canvas-> rop( rop::XorPut);
-		$canvas-> bar( 0, 0, @sz);
-		$canvas-> rop( rop::CopyPut);
 		$canvas-> color( cl::Blue);
+		$canvas-> rop2(rop::NoOper);
+		$canvas-> bar( 0, 0, @sz);
 		$canvas-> linePattern( lp::Dash);
 		$canvas-> line( $x, 0, $x, $sz[1]);
 		$canvas-> line( 0, $y, $sz[0], $y);
