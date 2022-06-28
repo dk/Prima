@@ -810,8 +810,8 @@ sub _imgpaint
 	$dy *= $res[1] / 72;
 	$canvas-> stretch_image( $x, $y, $dx, $dy, $img);
 	$canvas-> graphic_context(
-		rop               => rop::AndPut,
-		fillPattern       => fp::Borland,
+		color             => $canvas->backColor,
+		fillPattern       => fp::SimpleDots,
 		fillPatternOffset => [$x, $y],
 		sub { $canvas-> bar( $x, $y, $x + $dx - 1, $y + $dy - 1) }
 	) if $self-> {selectionPaintMode};

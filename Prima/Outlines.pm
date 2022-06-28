@@ -310,6 +310,7 @@ sub on_paint
 		fillPattern => fp::SimpleDots,
 		color       => cl::White,
 		backColor   => cl::Black,
+		rop2        => rop::CopyPut,
 	);
 
 
@@ -415,6 +416,7 @@ sub on_paint
 		fillPattern => fp::Solid,
 		color       => $clr[0],
 		backColor   => $clr[1],
+		rop2        => rop::NoOper,
 	);
 
 #
