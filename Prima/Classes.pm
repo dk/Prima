@@ -1638,12 +1638,12 @@ sub begin_drag
 			$flyback->bring_to_front;
 			my @targ = map { $_ / 2 } $flyback->size;
 			while (abs( $npp[0] - $opp[0]) > $targ[0] || abs($npp[1] - $opp[1]) > $targ[1]) {
-				@npp = map { ( $npp[$_] + $opp[$_] ) / 2 } 0, 1;
+				@npp = map { $npp[$_] * 0.8 + $opp[$_] * 0.2 } 0, 1;
 				my $max_wait = 10;
 				$::application->yield while !$paint_flag && $max_wait--;
 				last unless $flyback;
 				$paint_flag = 0;
-				CORE::select(undef, undef, undef, 0.1);
+				CORE::select(undef, undef, undef, 0.02);
 				$flyback->origin(@npp);
 				$flyback->bring_to_front;
 			}
