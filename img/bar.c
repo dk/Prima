@@ -938,7 +938,6 @@ FAIL:
 	return ok;
 }
 
-
 Bool
 img_bar_tile( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 {
@@ -1013,7 +1012,89 @@ img_bar_tile( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 Bool
 img_bar_stipple_alpha( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 {
-	return false;
+	Bool ok;
+	Handle tt = ctx->tile;
+	PIcon t;
+	PImage i;
+	int bpp;
+
+	i = (PImage) dest;
+
+	/* create alpha channel */
+	if ( ctx->transparent ) {
+		Byte *src, *dst;
+		int masklen;
+
+		t = (PIcon) ctx->tile;
+		ctx->tile = (Handle) create_object("Prima::Icon", "iiiii",
+			"width",       t->w,
+			"height",      t->h,
+			"type",        imBW,
+			"maskType",    1,
+			"autoMasking", amNone
+		);
+		if ( ctx->tile == NULL_HANDLE)
+			return false;
+		t = (PIcon) ctx->tile;
+
+		memcpy( t->data, PImage(tt)->data, t->dataSize);
+		src     = PImage(tt)->data;
+		dst     = t->mask;
+		masklen = t->dataSize;
+		while (masklen--) *(dst++) = ~*(src++);
+		t->self->set_maskType(ctx->tile, imbpp8);
+
+	} else {
+		ctx->tile = CImage(ctx->tile)->dup(ctx->tile);
+		if ( ctx->tile == NULL_HANDLE)
+			return false;
+		t = (PIcon) ctx->tile;
+	}
+
+	/* fix colors (also with alpha) */
+	bpp = ( i->type & imGrayScale) ? imByte : imRGB;
+	if ( i->type != bpp )
+		img_resample_colors( dest, bpp, ctx );
+
+	ctx->rop &= ~ropPremultiply;
+	if (ctx->rop & ropSrcAlpha) {
+		int i;
+		Byte src_alpha;
+		src_alpha = (ctx->rop >> ropSrcAlphaShift) & 0xff;
+		if ( src_alpha < 255 ) {
+			for ( i = 0; i < 3; i++) {
+				ctx->color[i]     = (ctx->color[i]     * src_alpha) / 255.0 + .5;
+				ctx->backColor[i] = (ctx->backColor[i] * src_alpha) / 255.0 + .5;
+			}
+
+			if ( ctx->transparent ) { /* mask(0,255) -> (0,src_alpha) */
+				register Byte *mask = t->mask;
+				register int size = t->maskSize;
+				while (size--) {
+					if (*mask) *mask = src_alpha;
+					mask++;
+				}
+			}
+		}
+	}
+
+	/* apply colors to pixels */
+	if ( bpp == imByte ) {
+		t->type = imbpp1;
+		memset(t->palette + 1, ctx->color[0], 3);
+		memset(t->palette, ctx->backColor[0], 3);
+		t->self->set_type(ctx->tile, imByte);
+	} else {
+		memcpy(t->palette + 1, ctx->color, 3);
+		memcpy(t->palette, ctx->backColor, 3);
+		t->self->set_type(ctx->tile, imRGB);
+	}
+
+	ok = img_bar_tile_alpha( dest, x, y, w, h, ctx);
+
+	Object_destroy(ctx->tile);
+	ctx->tile = NULL_HANDLE;
+	return ok;
 }
 
 Bool

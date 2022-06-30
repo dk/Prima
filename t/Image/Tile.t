@@ -351,9 +351,9 @@ sub cmp_srcover
 	my $src = $res->fillPattern;
 	$res->bar(0,0,3,3);
 
-	unless ( defined $alpha ) {
-		(undef, $alpha) = $src->split;
-	}
+	my $is_stipple = $src->type == im::BW;
+	my $is_transparent = $is_stipple && $res->rop2 == rop::NoOper;
+	(undef, $alpha) = $src->split unless defined $alpha;
 
 	my $ok = 1;
 	my @expected = ('','','','');
@@ -362,8 +362,17 @@ sub cmp_srcover
 			my $s = $src->pixel( $x % 2, $y % 2);
 			my $d = $dst->pixel( $x, $y );
 			my $r = $res->pixel( $x, $y );
-			my $A = ref($alpha) ? $alpha->pixel($x % 2, $y % 2) : $alpha;
-			my $w = srcover($s, $d, $A);
+			my $w;
+			if ( $is_stipple ) {
+				if ( !$is_transparent || $src->pixel( $x % 2, $y % 2 ) ) {
+					$w = srcover($s, $d, $alpha);
+				} else {
+					$w = $d;
+				}
+			} else {
+				my $A = ref($alpha) ? $alpha->pixel($x % 2, $y % 2) : $alpha;
+				$w = srcover($s, $d, $A);
+			}
 			$ok = 0 if $w != $r;
 			$expected[$y] .= sprintf("%02x", $w);
 		}
@@ -398,13 +407,21 @@ sub test_aa_tile
 	cmp_srcover($dst, undef, "icon8/icon");
 }
 
-test_stipple_and_simple_tile_noaa();
-test_icon_noaa();
+sub test_aa_stipple
+{
+#	my $dst = $mdest->clone( alpha => 128, fillPattern => $mtile, rop => rop::SrcOver, rop2 => rop::CopyPut, color => 0xc0c0c0, backColor => 0x404040 );
+#	cmp_srcover($dst, 128, "opaque/a128");
+}
 
-$mtile->type(im::Byte);
+#test_stipple_and_simple_tile_noaa();
+#test_icon_noaa();
+
 $mdest->color(cl::White);
 $mdest->bar(0,0,3,1);
 $mdest->type(im::Byte);
+test_aa_stipple();
+
+$mtile->type(im::Byte);
 test_aa_tile();
 
 done_testing;
