@@ -1288,7 +1288,6 @@ Image_pixel( Handle self, Bool set, int x, int y, SV * pixel)
 		case imbpp16 :
 			{
 				int32_t color = SvIV( pixel);
-				Short c;
 				if ( color > INT16_MAX ) color = INT16_MAX;
 				if ( color < INT16_MIN ) color = INT16_MIN;
 				*(Short*)(var->data+(var->lineSize*y+(x<<1)))=color;
@@ -1765,11 +1764,11 @@ prepare_fill_context(Handle self, Point translate, PImgPaintContext ctx)
 	color2pixel( self, my->get_color(self), ctx->color);
 	color2pixel( self, my->get_backColor(self), ctx->backColor);
 
-	ctx-> rop = var-> extraROP |
-		(( var-> alpha < 255 ) ?
-			ropSrcAlpha | ( var-> alpha << ropSrcAlphaShift ) :
-			0
-		);
+	ctx-> rop = var-> extraROP;
+	if ( var->alpha < 255 ) {
+		ctx-> rop &= ~(0xff << ropSrcAlphaShift);
+		ctx-> rop |= ropSrcAlpha | ( var-> alpha << ropSrcAlphaShift );
+	}
 	ctx-> region = var->regionData ? &var->regionData-> data. box : NULL;
 	ctx-> patternOffset = my->get_fillPatternOffset(self);
 	ctx-> patternOffset.x -= translate.x;
@@ -1809,11 +1808,11 @@ prepare_line_context( Handle self, unsigned char * lp, ImgPaintContext * ctx)
 	bzero(ctx, sizeof(ImgPaintContext));
 	color2pixel( self, my->get_color(self), ctx->color);
 	color2pixel( self, my->get_backColor(self), ctx->backColor);
-	ctx-> rop = var-> extraROP |
-		(( var-> alpha < 255 ) ?
-			ropSrcAlpha | ( var-> alpha << ropSrcAlphaShift ) :
-			0
-		);
+	ctx-> rop = var-> extraROP;
+	if ( var->alpha < 255 ) {
+		ctx-> rop &= ~(0xff << ropSrcAlphaShift);
+		ctx-> rop |= ropSrcAlpha | ( var-> alpha << ropSrcAlphaShift );
+	}
 	ctx->region = var->regionData ? &var->regionData-> data. box : NULL;
 	ctx->transparent = my->get_rop2(self) == ropNoOper;
 	ctx->translate = my->get_translate(self);
@@ -2034,22 +2033,6 @@ Image_premultiply_alpha( Handle self, SV * alpha)
 		my-> set_type( self, oldType );
 	else
 		my-> update_change( self );
-}
-
-int
-Image_alpha( Handle self, Bool set, int alpha)
-{
-	if ( is_opt(optInDraw) || is_opt(optInDrawInfo))
-		return inherited alpha(self,set,alpha);
-
-	if (set) {
-		if ( alpha < 0 ) alpha = 0;
-		if ( alpha > 255 ) alpha = 255;
-		if (( alpha < 255 ) && !my->can_draw_alpha(self))
-			alpha = 255;
-		inherited alpha(self,set,alpha);
-	}
-	return var->alpha;
 }
 
 Bool
