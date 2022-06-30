@@ -443,7 +443,7 @@ img_put_alpha_single( int x, int y, int w, int h, ImgPutAlphaCallbackRec * ptr)
 			d_ptr,
 			adbuf_ptr, ptr->use_dst_alpha ? 0 : 1,
 			bytes);
-		if (a == NULL) 
+		if (a == NULL)
 			continue;
 
 #define BLEND_ALPHA(src,step)\
@@ -465,7 +465,7 @@ img_put_alpha_single( int x, int y, int w, int h, ImgPutAlphaCallbackRec * ptr)
 			BLEND_ALPHA(ptr->asbuf,0);
 		else
 			BLEND_ALPHA(m_ptr,1);
-#undef BLEND2
+#undef BLEND_ALPHA
 	}
 	return true;
 }
@@ -603,8 +603,6 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
 		use_dst_alpha = true;
 		dst_alpha = 0xff;
 	}
-	if ( use_pms && !use_src_alpha && mls == 0 )
-		use_pms = false;
 
 	/* make buffers */
 	bytes = dstW * bpp;

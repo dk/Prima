@@ -7,10 +7,11 @@ use Prima::sys::Test qw(noX11);
 sub is_pict
 {
 	my ( $i, $name, $pict ) = @_;
+	$i = $i->clone(type => im::Byte);
 	my $ok = 1;
 	ALL: for ( my $y = 0; $y < $i->height; $y++) {
 		for ( my $x = 0; $x < $i->width; $x++) {
-			my $actual   = ( $i->pixel($x,$y) > 0) ? 1 : 0;
+			my $actual   = ( $i->pixel($x,$y) == 0xff) ? 1 : 0;
 			my $expected = (substr($pict, ($i->height-$y-1) * $i->width + $x, 1) eq ' ') ? 0 : 1;
 			next if $actual == $expected;
 			$ok = 0;
@@ -204,6 +205,19 @@ sub test_pat
 		" * *"
 	);
 
+	$i->backColor(0);
+	$i->color(cl::White);
+	$i->clear;
+	$i->region( Prima::Region->new( polygon => [0,1,2,3,2,1] ));
+	$i->bar(0,0,3,3);
+	is_pict($i, "[$src_bpp/$dst_bpp] 4x0 region",
+		"  * ".
+		" *  ".
+		"* * ".
+		"    "
+	);
+	$i->region( undef );
+
 	$i->clear;
 	$i->bar(0,0,2,2);
 	is_pict($i, "[$src_bpp/$dst_bpp] 3x0",
@@ -322,7 +336,75 @@ sub test_icon_noaa
 	}
 }
 
+sub srcover
+{
+	my ( $s, $d, $as ) = @_;
+	my $dst = int(($s * $as + $d * (255 - $as)) / 255.0 + .5);
+	# print "srcover($s,$d,$as) = $dst\n";
+	return $dst;
+}
+
+sub cmp_srcover
+{
+	my ($res, $alpha, $name) = @_;
+	my $dst = $res->dup;
+	my $src = $res->fillPattern;
+	$res->bar(0,0,3,3);
+
+	unless ( defined $alpha ) {
+		(undef, $alpha) = $src->split;
+	}
+
+	my $ok = 1;
+	my @expected = ('','','','');
+	for ( my $x = 0; $x < 4; $x++) {
+		for ( my $y = 0; $y < 4; $y++) {
+			my $s = $src->pixel( $x % 2, $y % 2);
+			my $d = $dst->pixel( $x, $y );
+			my $r = $res->pixel( $x, $y );
+			my $A = ref($alpha) ? $alpha->pixel($x % 2, $y % 2) : $alpha;
+			my $w = srcover($s, $d, $A);
+			$ok = 0 if $w != $r;
+			$expected[$y] .= sprintf("%02x", $w);
+		}
+	}
+	ok( $ok, $name );
+	return 1 if $ok;
+
+	warn "# Actual vs expected:\n";
+	for ( my $y = 0; $y < 4; $y++) {
+		my $actual   = unpack("H*", $res->scanline($y));
+		warn "$actual  | $expected[$y]\n";
+	}
+}
+
+sub test_aa_tile
+{
+	my $dst = $mdest->clone( alpha => 128, fillPattern => $mtile, rop => rop::Premultiply | rop::SrcOver );
+	cmp_srcover($dst, 128, "8/a128");
+
+	my $mask = $mtile->clone;
+	$mask->resample(0,255,0,128);
+	my $itile = Prima::Icon->create_combined( $mtile, $mask );
+	$dst = $mdest->clone( fillPattern => $itile, rop => rop::Premultiply | rop::SrcOver );
+	cmp_srcover($dst, undef, "8/icon");
+
+	$mask = $mdest->clone;
+	$mask->resample(0,255,0,128);
+	$dst = Prima::Icon->create_combined( $mdest->dup, $mask, alpha => 128, fillPattern => $mtile, rop => rop::Premultiply | rop::SrcOver );
+	cmp_srcover($dst, 128, "icon8/a128");
+
+	$dst = Prima::Icon->create_combined( $mdest->dup, $mask, fillPattern => $itile, rop => rop::Premultiply | rop::SrcOver );
+	cmp_srcover($dst, undef, "icon8/icon");
+}
+
 test_stipple_and_simple_tile_noaa();
 test_icon_noaa();
+
+$mtile->type(im::Byte);
+$mdest->color(cl::White);
+$mdest->bar(0,0,3,1);
+$mdest->type(im::Byte);
+test_aa_tile();
 
 done_testing;

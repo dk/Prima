@@ -8,11 +8,20 @@ extern "C" {
 #define FILL_PATTERN_SIZE 8
 #define BLT_BUFSIZE ((MAX_SIZEOF_PIXEL * FILL_PATTERN_SIZE * FILL_PATTERN_SIZE) * 2)
 
+static void
+multiply( Byte * src, Byte * alpha, int alpha_step, Byte * dst, int bytes)
+{
+	while (bytes--) {
+		*(dst++) = *(src++) * *alpha / 255.0 + .5;
+		alpha += alpha_step;
+	}
+}
+
 typedef struct {
 	int bpp, als, dls, step, pat_x_offset;
 	Byte * dst, *dstMask, *pattern_buf, *adbuf;
 	Bool use_dst_alpha, solid;
-	Byte src_alpha;
+	Byte src_alpha, dst_alpha_mul;
 	PImgPaintContext ctx;
 	BlendFunc * blend1, * blend2;
 } ImgBarAlphaCallbackRec;
@@ -26,7 +35,7 @@ img_bar_alpha_single_opaque( int x, int y, int w, int h, ImgBarAlphaCallbackRec 
 	const int dls = ptr->dls;
 	const int als = ptr->als;
 	const Byte * d = ptr->dst + y * ptr->dls + x * bpp;
-	const Byte * a = (als > 0) ? ptr->dstMask + y * als + x : NULL;
+	Byte * a = (als > 0) ? ptr->dstMask + y * als + x : NULL;
 	int blt_step = (blt_bytes > ptr->step) ? ptr->step : blt_bytes;
 	Byte * pat_ptr;
 
@@ -65,6 +74,8 @@ img_bar_alpha_single_opaque( int x, int y, int w, int h, ImgBarAlphaCallbackRec 
 		d += dls;
 
 		if ( a ) {
+			if ( ptr->dst_alpha_mul < 255 )
+				multiply( a, &ptr->dst_alpha_mul, 0, a, w);
 			ptr->blend2(
 				&ptr->src_alpha, 0,
 				&ptr->src_alpha, 0,
@@ -87,7 +98,7 @@ img_bar_alpha_single_transparent( int x, int y, int w, int h, ImgBarAlphaCallbac
 	const int dls = ptr->dls;
 	const int als = ptr->als;
 	const Byte * d = ptr->dst + y * ptr->dls + x * bpp;
-	const Byte * a = (als > 0) ? ptr->dstMask + y * als + x : NULL;
+	Byte * a = (als > 0) ? ptr->dstMask + y * als + x : NULL;
 
 	for ( i = 0; i < h; i++) {
 		unsigned int pat;
@@ -109,13 +120,17 @@ img_bar_alpha_single_transparent( int x, int y, int w, int h, ImgBarAlphaCallbac
 				(Byte*)d,
 				adbuf_ptr, ptr->use_dst_alpha ? 0 : 1,
 				blt_bytes);
-			if ( a ) ptr->blend2(
-				&ptr->src_alpha, 0,
-				&ptr->src_alpha, 0,
-				(Byte*)a,
-				a, ptr->use_dst_alpha ? 0 : 1,
-				w
-			);
+			if ( a ) {
+				if ( ptr->dst_alpha_mul < 255 )
+					multiply( a, &ptr->dst_alpha_mul, 0, a, w);
+				ptr->blend2(
+					&ptr->src_alpha, 0,
+					&ptr->src_alpha, 0,
+					(Byte*)a,
+					a, ptr->use_dst_alpha ? 0 : 1,
+					w
+				);
+			}
 			goto NEXT_LINE;
 		}
 
@@ -157,7 +172,7 @@ img_bar_alpha( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 	int bpp, als;
 	unsigned int src_alpha = 0xff, dst_alpha = 0;
 	Bool use_dst_alpha = false, solid;
-	Byte blt_buffer[BLT_BUFSIZE], *adbuf;
+	Byte blt_buffer[BLT_BUFSIZE], *adbuf, dst_alpha_mul = 255;
 	int j, k, blt_bytes, blt_step = -1;
 
 	if ( ctx->transparent && (memcmp( ctx->pattern, fillPatterns[fpEmpty], sizeof(FillPattern)) == 0))
@@ -202,6 +217,8 @@ img_bar_alpha( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 		als = PIcon(dest)-> maskLine;
 		if ( PIcon(dest)-> maskType != imbpp8)
 			croak("panic: assert failed for img_bar_alpha: %s", "dst mask type");
+		if ( use_dst_alpha )
+			dst_alpha_mul = dst_alpha;
 		use_dst_alpha = false;
 	} else {
 		als = 0;
@@ -291,6 +308,7 @@ img_bar_alpha( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 			/* use_dst_alpha */ use_dst_alpha,
 			/* solid         */ solid,
 			/* src_alpha     */ src_alpha,
+			/* dst_alpha_mul */ dst_alpha_mul,
 			/* ctx           */ ctx
 		};
 		img_find_blend_proc(ctx->rop, &rec.blend1, &rec.blend2);
@@ -396,13 +414,33 @@ img_bar_single( int x, int y, int w, int h, ImgBarCallbackRec * ptr)
 }
 
 typedef struct {
+	/* common stuff */
 	PImage dest;
 	PImgPaintContext ctx;
+
+	/* non-alpha */
+	Byte *colormap;
 	BitBltProc* blt;
-	int src_x, src_y;
+
+	/* alpha */
+	int bpp;
+	int src_mask_stride;
+	int dst_mask_stride;
+	Byte * src_mask;
+	Byte * dst_mask;
+	Bool use_src_alpha;
+	Bool use_dst_alpha;
+	Byte src_alpha_mul;
+	Byte dst_alpha_mul;
+	Byte * asbuf;
+	Byte * adbuf;
+	BlendFunc * blend1, * blend2;
+
+	/* do not fill this */
+	int src_x, src_y, orig_x, orig_y;
 	unsigned int src_stride, dst_stride, bytes;
 	Byte *src, *dst;
-	Byte *colormap;
+
 } TileCallbackRec;
 
 typedef Bool TileCallbackFunc( int x, int y, int w, int h, TileCallbackRec* param);
@@ -446,6 +484,8 @@ tile( int x, int y, int w, int h, TileCallbackFunc *tiler, TileCallbackRec* tx)
 			continue;
 
 		tx->src = tile->data + tx->src_y * tx->src_stride;
+		tx->orig_x = x1;
+		tx->orig_y = y1;
 		if ( !img_region_foreach( region,
 			x1, y1, x2 - x1 + 1, y2 - y1 + 1,
 			(RegionCallbackFunc*) tiler, tx))
@@ -488,10 +528,10 @@ static Bool
 put1( int x, int y, int w, int h, TileCallbackRec* tx)
 {
 	int i;
-	Byte * src = tx->src;
+	Byte * src = tx->src + ( y - tx->orig_y ) * tx->src_stride;
 	Byte * dst = tx->dst + y * tx->dst_stride;
 	for ( i = tx->src_y; i < h; i++) {
-		bc_mono_put( src, tx->src_x, w, dst, x, tx-> blt);
+		bc_mono_put( src, tx->src_x + x - tx->orig_x, w, dst, x, tx-> blt);
 		src += tx->src_stride;
 		dst += tx->dst_stride;
 	}
@@ -503,10 +543,10 @@ static Bool
 put4( int x, int y, int w, int h, TileCallbackRec* tx)
 {
 	int i;
-	Byte * src = tx->src;
+	Byte * src = tx->src + ( y - tx->orig_y ) * tx->src_stride;
 	Byte * dst = tx->dst + y * tx->dst_stride;
 	for ( i = tx->src_y; i < h; i++) {
-		bc_nibble_put( src, tx->src_x, w, dst, x, tx-> blt, tx->colormap);
+		bc_nibble_put( src, tx->src_x + x - tx->orig_x, w, dst, x, tx-> blt, tx->colormap);
 		src += tx->src_stride;
 		dst += tx->dst_stride;
 	}
@@ -517,7 +557,7 @@ static Bool
 put8x( int x, int y, int w, int h, TileCallbackRec* tx)
 {
 	int i;
-	Byte * src = tx->src + tx->bytes * tx->src_x;
+	Byte * src = tx->src + ( y - tx->orig_y ) * tx->src_stride + ( tx->src_x + x - tx->orig_x ) * tx->bytes;
 	Byte * dst = tx->dst + y * tx->dst_stride + x * tx->bytes;
 	w *= tx-> bytes;
 	for ( i = tx->src_y; i < h; i++) {
@@ -712,10 +752,190 @@ FAIL:
 	return ok;
 }
 
+static Bool
+alpha_tiler( int x, int y, int w, int h, TileCallbackRec* ptr)
+{
+	int i;
+	const int bpp = ptr->bpp;
+	int bytes     = w * bpp;
+	const Byte *s =
+		ptr->src      + (y - ptr->orig_y) * ptr->src_stride + (ptr->src_x + x - ptr->orig_x) * bpp;
+	const Byte *m = (ptr->src_mask_stride > 0) ?
+		ptr->src_mask + (ptr->src_y + y - ptr->orig_y) * ptr->src_mask_stride + (ptr->src_x + x - ptr->orig_x)
+		: NULL;
+	Byte *d = ptr->dst + y * ptr->dst_stride + x * bpp;
+	Byte *a = (ptr->dst_mask_stride > 0) ? ptr->dst_mask + y * ptr->dst_mask_stride + x : NULL;
+
+	for ( i = 0; i < h; i++) {
+		if ( !ptr->use_dst_alpha ) {
+			img_fill_alpha_buf( ptr->adbuf, a, w, bpp);
+			if ( ptr-> dst_alpha_mul < 255 )
+				multiply( ptr->adbuf, &ptr->dst_alpha_mul, 0, ptr->adbuf, bytes);
+		}
+
+		/* printf("%02x%02x/%02x%02x + %02x%02x/%02x", s[0], s[1],
+			ptr->use_src_alpha ? ptr->src_alpha_mul : m[0],
+			ptr->use_src_alpha ? ptr->src_alpha_mul : m[1],
+			d[0], d[1], ptr->adbuf[0]); */
+		ptr->blend1(
+			s, 1,
+			ptr->use_src_alpha ? &ptr->src_alpha_mul : m,
+			ptr->use_src_alpha ? 0 : 1,
+			d,
+			ptr->adbuf,
+			ptr->use_dst_alpha ? 0 : 1,
+			bytes);
+		/* printf("=> %02x%02x\n", d[0], d[1]); */
+
+		if (a != NULL) {
+			if ( ptr->dst_alpha_mul < 255 )
+				multiply( a, &ptr->dst_alpha_mul, 0, a, w);
+			ptr->blend2(
+				ptr->use_src_alpha ? &ptr->src_alpha_mul : m,
+				ptr->use_src_alpha ? 0 : 1,
+				ptr->use_src_alpha ? &ptr->src_alpha_mul : m,
+				ptr->use_src_alpha ? 0 : 1,
+				(Byte*)a,
+				a, ptr->use_dst_alpha ? 0 : 1,
+				w);
+		}
+
+		s += ptr->src_stride;
+		d += ptr->dst_stride;
+		if ( m ) m += ptr->src_mask_stride;
+		if ( a ) a += ptr->dst_mask_stride;
+	}
+	return true;
+}
+
 Bool
 img_bar_tile_alpha( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 {
-	return false;
+	TileCallbackRec tx;
+	PIcon i = (PIcon) dest;
+	PIcon t = (PIcon) ctx->tile;
+	unsigned int bpp, als, mls, bytes;
+	unsigned int src_alpha = 0xff, dst_alpha = 0xff;
+	Bool ok = false, src_is_icon, dst_is_icon, use_src_alpha = false, use_dst_alpha = false, premultiply = false;
+	Byte *asbuf = NULL, *adbuf = NULL;
+
+	src_is_icon = kind_of( ctx-> tile, CIcon );
+	dst_is_icon = kind_of( dest, CIcon );
+
+	/* align types and geometry - can only operate over imByte and imRGB, and imbpp8 mask */
+	bpp = ( i->type & imGrayScale) ? imByte : imRGB;
+	if ( i->type != bpp || ( dst_is_icon && i->maskType != imbpp8 )) {
+		int type = i->type;
+		int mask = dst_is_icon ? i->maskType : 0;
+		if ( type != bpp )
+			CIcon(dest)-> set_type( dest, bpp );
+		if ( dst_is_icon && mask != imbpp8 )
+			CIcon(dest)-> set_maskType( dest, imbpp8 );
+		ok = img_bar_tile_alpha( dest, x, y, w, h, ctx);
+		if ( i-> options. optPreserveType ) {
+			if ( type != bpp )
+				CImage(dest)-> set_type( dest, type );
+			if ( dst_is_icon && mask != imbpp8 )
+				CIcon(dest)-> set_maskType( dest, mask );
+		}
+		return ok;
+	}
+
+	/* differentiate between per-pixel alpha and a global value */
+	if (!src_is_icon && ctx->rop & ropSrcAlpha)
+		src_alpha = (ctx->rop >> ropSrcAlphaShift) & 0xff;
+	if ( !dst_is_icon && (ctx->rop & ropDstAlpha) )
+		dst_alpha = (ctx->rop >> ropDstAlphaShift) & 0xff;
+	if ((ctx->rop & ropPremultiply) && (( src_alpha < 255) || src_is_icon))
+		premultiply = true;
+
+	if ( src_is_icon ) {
+		mls = t-> maskLine;
+		if ( t-> maskType != imbpp8)
+			croak("panic: assert failed for img_put_alpha: %s", "src mask type");
+	} else {
+		mls = 0;
+		use_src_alpha = true;
+	}
+
+	if ( dst_is_icon ) {
+		als = i-> maskLine;
+		if ( i-> maskType != imbpp8)
+			croak("panic: assert failed for img_bar_tile_alpha: %s", "dst mask type");
+	} else {
+		als = 0;
+		use_dst_alpha = true;
+	}
+
+	/* premultiply the tile */
+	if (
+		premultiply ||
+		(src_is_icon && t->maskType != imbpp8)
+	) {
+		Bool ok;
+		if (( ctx->tile = CImage(ctx->tile)->dup(ctx->tile)) == NULL_HANDLE)
+			return false;
+		t = (PIcon) ctx->tile;
+		if (src_is_icon && t-> maskType != imbpp8)
+			CIcon(ctx->tile)->set_maskType(ctx->tile, imbpp8);
+
+		if ( premultiply ) {
+			if ( src_is_icon ) {
+				Image dummy;
+				img_fill_dummy( &dummy, t->w, t->h, imByte, t->mask, std256gray_palette);
+				img_premultiply_alpha_map( ctx->tile, (Handle) &dummy);
+			}
+			if ( src_alpha < 255 )
+				img_premultiply_alpha_constant( ctx->tile, src_alpha);
+			if ( src_is_icon && src_alpha < 255 ) {
+				Image dummy;
+				img_fill_dummy( &dummy, t->w, t->h, imByte, t->mask, std256gray_palette);
+				img_premultiply_alpha_constant(( Handle )&dummy, src_alpha);
+			}
+		}
+
+		ctx->rop &= ~ropPremultiply;
+		ok = img_bar_tile_alpha( dest, x, y, w, h, ctx);
+		Object_destroy( ctx-> tile);
+		ctx-> tile = NULL_HANDLE;
+		return ok;
+	}
+
+	ctx->rop &= ropPorterDuffMask;
+	if ( ctx->rop > ropMaxPDFunc || ctx->rop < 0 ) ctx->rop = ropSrcOver;
+
+	/* make buffers */
+	bpp   = ( bpp == imByte ) ? 1 : 3;
+	bytes = w * bpp;
+	if ( !(adbuf = malloc(use_dst_alpha ? 1 : bytes))) {
+		warn("not enough memory");
+		goto FAIL;
+	}
+	if ( use_dst_alpha ) adbuf[0] = dst_alpha;
+
+	/* run */
+	bzero(&tx, sizeof(tx));
+	tx.dest            = (PImage)dest;
+	tx.ctx             = ctx;
+	tx.bpp             = bpp;
+	tx.src_mask_stride = mls;
+	tx.dst_mask_stride = als;
+	tx.src_mask        = (mls > 0) ? t->mask : NULL;
+	tx.dst_mask        = (als > 0) ? i->mask : NULL;
+	tx.use_src_alpha   = use_src_alpha;
+	tx.use_dst_alpha   = use_dst_alpha;
+	tx.src_alpha_mul   = src_alpha;
+	tx.dst_alpha_mul   = dst_alpha;
+	tx.asbuf           = asbuf;
+	tx.adbuf           = adbuf;
+	img_find_blend_proc(ctx->rop, &tx.blend1, &tx.blend2);
+	ok = tile(x, y, w, h, alpha_tiler, &tx);
+
+FAIL:
+	if ( adbuf) free(adbuf);
+	if ( asbuf) free(asbuf);
+
+	return ok;
 }
 
 
@@ -822,14 +1042,14 @@ img_bar( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 
 	if ( ctx-> tile ) {
 		if ( PImage(ctx->tile)->type == imBW && !kind_of(ctx->tile, CIcon)) {
-			if ( ctx-> rop & ropConstantAlpha )
+			if ( ctx-> rop & ropConstantAlpha)
 				return img_bar_stipple_alpha( dest, x, y, w, h, ctx);
 			else if (( i->type & imBPP ) == 1)
 				return img_bar_stipple_1bit( dest, x, y, w, h, ctx);
 			else
 				return img_bar_stipple_generic( dest, x, y, w, h, ctx);
 		} else {
-			if ( ctx-> rop & ropConstantAlpha )
+			if ( ctx-> rop & ropConstantAlpha)
 				return img_bar_tile_alpha( dest, x, y, w, h, ctx);
 			else
 				return img_bar_tile( dest, x, y, w, h, ctx);
