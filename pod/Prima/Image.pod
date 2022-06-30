@@ -703,6 +703,12 @@ is used as a transparency value.
 When C<::autoMasking> set to C<am::MaskIndex>, INDEXth
 color in teh current palette is used as a transparency value.
 
+=item maskLineSize INTEGER
+
+A read-only property, returning the length of mask row in bytes, as
+represented internally in memory. Data returned by C<::mask> property are
+aligned with C<::maskLineSize> bytes per row.
+
 =item maskType INTEGER
 
 Is either C<im::bpp1> (1) or C<im::bpp8> (8). The latter can be used
@@ -884,6 +890,10 @@ See L<Prima::image-load> for details.
 
 NB! When saving to streams on win32, mind C<binmode>.
 
+=item scanline Y
+
+Returns a scaline from Y in the same raw format as C<data>
+
 =item shear X, Y
 
 Applies shearing to the image. If the shearing is needed only for one axis, set
@@ -959,21 +969,24 @@ Copies information from DATA and MASK images into C<::data>
 and C<::mask> property. DATA and MASK are expected to be images
 of same dimension.
 
-=item create_combined DATA, MASK
+=item create_combined DATA, MASK, %SET
 
-Same as C<combine>, but to be called as constructor.
+Same as C<combine>, but to be called as constructor, and sets properties in C<%SET>
 
 =item image %opt
 
 Renders icon graphics on a newly created I<Prima::Image> object instance
 upon black background.  If C<$opt{background}> is given, it is used instead.
 
+=item maskline Y
+
+Returns a mask scanline from Y in the same raw format as C<mask>
 
 =item premultiply_alpha CONSTANT_OR_IMAGE = undef
 
 Applies premultiplication formula to each pixel
 
-   pixel = pixel * alpha / 256
+   pixel = pixel * alpha / 255
 
 where alpha is the corresponding alpha value for each coordinate.
 Only applicable when C<maskType> is <im::bpp8>.

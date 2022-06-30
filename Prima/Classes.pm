@@ -736,9 +736,9 @@ sub ui_scale
 	return $self;
 }
 
+sub scanline  { substr( $_[0]->data, $_[0]->lineSize * $_[1], $_[0]-> lineSize ) }
+sub shear     { $_[0]->transform(1,@_[2,1],1) }
 sub to_region { Prima::Region->new( image => shift ) }
-
-sub shear { $_[0]->transform(1,@_[2,1],1) }
 
 package Prima::Icon;
 use vars qw( @ISA);
@@ -769,6 +769,7 @@ sub profile_check_in
 }
 
 sub maskLineSize { int(( $_[0]->width * $_[0]->maskType + 31 ) / 32 ) * 4 }
+sub maskline     { substr( $_[0]->mask, $_[0]->maskLineSize * $_[1], $_[0]-> maskLineSize ) }
 
 sub mirror
 {
@@ -781,8 +782,9 @@ sub mirror
 
 sub create_combined
 {
-	my $self = shift->new( autoMasking => am::None );
-	$self->combine(@_);
+	my ( $class, $xor, $and, @rest ) = @_;
+	my $self = $class->new( autoMasking => am::None, @rest );
+	$self->combine($xor, $and);
 	return $self;
 }
 
