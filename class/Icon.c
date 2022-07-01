@@ -392,6 +392,59 @@ Icon_maskIndex( Handle self, Bool set, int index)
 	return -1;
 }
 
+SV *
+Icon_maskPixel( Handle self, Bool set, int x, int y, SV * pixel)
+{
+	if (!set) {
+		if ( opt_InPaint)
+			return inherited pixel(self,false,x,y,pixel);
+		if (x >= var->w || x < 0 || y >= var->h || y < 0)
+			return newSViv(clInvalid);
+
+		switch (var->maskType) {
+		case imbpp1: {
+			Byte p = var->mask[ var->maskLine * y + ( x>>3 )];
+			p = (p >> (7 - (x & 7))) & 1;
+			return newSViv(p);
+		}
+		case imbpp8: {
+			Byte p = var->mask[ var->lineSize * y + x];
+			return newSViv(p);
+		}
+		default:
+			return newSViv(clInvalid);
+		}
+	} else {
+		IV color;
+		if ( is_opt( optInDraw))
+			return inherited pixel(self,true,x,y,pixel);
+
+		if ( x >= var->w || x < 0 || y >= var->h || y < 0)
+			return NULL_SV;
+
+		color = SvIV( pixel);
+		if ( color < 0 ) color = 0;
+		if ( color > 255 ) color = 255;
+		switch (var->maskType) {
+		case imbpp1 : {
+			int x1 = 7 - ( x & 7 );
+			Byte p = (color > 0) ? 1 : 0;
+			Byte *pd = var->mask + (var->maskLine * y + ( x >> 3));
+			*pd &= ~(1 << x1);
+			*pd |= p << x1;
+			break;
+		}
+		case imbpp8:
+			var->mask[var->maskLine * y + x] = color;
+			break;
+		default:
+			return NULL_SV;
+		}
+		my->update_change( self);
+		return NULL_SV;
+	}
+}
+
 void
 Icon_update_change( Handle self)
 {

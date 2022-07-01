@@ -736,9 +736,24 @@ sub ui_scale
 	return $self;
 }
 
+sub dataSize  { $_[0]->lineSize * $_[0]->height }
 sub scanline  { substr( $_[0]->data, $_[0]->lineSize * $_[1], $_[0]-> lineSize ) }
 sub shear     { $_[0]->transform(1,@_[2,1],1) }
 sub to_region { Prima::Region->new( image => shift ) }
+
+sub to_icon
+{
+	my ( $self, %set ) = @_;
+	my $fill = delete $set{fill};
+	my $and = Prima::Icon->new(
+		size => [ $self-> size ],
+		%set,
+	);
+	if ( defined $fill ) {
+		$and->data(( $fill ) x ( $and->dataSize / (length $fill)));
+	}
+	return Prima::Icon->create_combined( $self, $and );
+}
 
 package Prima::Icon;
 use vars qw( @ISA);
@@ -769,7 +784,9 @@ sub profile_check_in
 }
 
 sub maskLineSize { int(( $_[0]->width * $_[0]->maskType + 31 ) / 32 ) * 4 }
+sub maskSize     { $_[0]->maskLineSize * $_[0]->height }
 sub maskline     { substr( $_[0]->mask, $_[0]->maskLineSize * $_[1], $_[0]-> maskLineSize ) }
+sub maskImage    { my ( undef, $mask ) = shift->split; $mask }
 
 sub mirror
 {
@@ -858,7 +875,7 @@ sub profile_check_in
 
 sub has_alpha_layer { shift->type == dbt::Layered }
 
-sub dup 
+sub dup
 {
 	my $self = shift;
 	my $dup = ref($self)->new(
@@ -867,7 +884,7 @@ sub dup
 	);
 	$dup->backColor(0);
 	$dup->clear;
-	$dup->put_image(0,0,$self,rop::SrcOver);
+	$dup->put_image(0,0,$self,rop::Blend);
 	return $dup;
 }
 
