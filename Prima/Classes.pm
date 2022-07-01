@@ -745,14 +745,15 @@ sub to_icon
 {
 	my ( $self, %set ) = @_;
 	my $fill = delete $set{fill};
+	my $type = delete $set{maskType} // 1;
 	my $and = Prima::Icon->new(
 		size => [ $self-> size ],
-		%set,
+		type => $type,
 	);
-	if ( defined $fill ) {
-		$and->data(( $fill ) x ( $and->dataSize / (length $fill)));
+	if ( defined $fill && length $fill ) {
+		$and->data( $fill  x ( $and->dataSize / (length $fill)));
 	}
-	return Prima::Icon->create_combined( $self, $and );
+	return Prima::Icon->create_combined( $self, $and, %set );
 }
 
 package Prima::Icon;
