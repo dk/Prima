@@ -811,7 +811,7 @@ img_bar_tile_alpha( Handle dest, int x, int y, int w, int h, PImgPaintContext ct
 	unsigned int bpp, als, mls, bytes;
 	unsigned int src_alpha = 0xff, dst_alpha = 0xff;
 	Bool ok = false, src_is_icon, dst_is_icon, use_src_alpha = false, use_dst_alpha = false;
-	Byte *asbuf = NULL, *adbuf = NULL;
+	Byte *asbuf = NULL, *adbuf = NULL, *ambuf = NULL;
 
 	src_is_icon = kind_of( ctx-> tile, CIcon );
 	dst_is_icon = kind_of( dest, CIcon );
@@ -836,9 +836,9 @@ img_bar_tile_alpha( Handle dest, int x, int y, int w, int h, PImgPaintContext ct
 	}
 
 	/* differentiate between per-pixel alpha and a global value */
-	if (!src_is_icon && ctx->rop & ropSrcAlpha)
+	if (ctx->rop & ropSrcAlpha)
 		src_alpha = (ctx->rop >> ropSrcAlphaShift) & 0xff;
-	if ( !dst_is_icon && (ctx->rop & ropDstAlpha) )
+	if (ctx->rop & ropDstAlpha)
 		dst_alpha = (ctx->rop >> ropDstAlphaShift) & 0xff;
 
 	if ( src_is_icon ) {
@@ -874,6 +874,19 @@ img_bar_tile_alpha( Handle dest, int x, int y, int w, int h, PImgPaintContext ct
 		return ok;
 	}
 
+	/* respect ropSrcAlpha for icons, if additional alpha is requested */
+	if ( src_is_icon && src_alpha < 255 ) {
+		Byte *src, *dst;
+		unsigned int sz;
+		if (( ambuf = malloc( t-> maskSize )) == NULL)
+			goto FAIL;
+		src = t->mask;
+		dst = ambuf;
+		sz  = t->maskSize;
+		while (sz--) *(dst++) = (int)(*(src++)) * (int)src_alpha / 255.0 + .5;
+
+	}
+
 	ctx->rop &= ropPorterDuffMask;
 	if ( ctx->rop > ropMaxPDFunc || ctx->rop < 0 ) ctx->rop = ropSrcOver;
 
@@ -893,7 +906,7 @@ img_bar_tile_alpha( Handle dest, int x, int y, int w, int h, PImgPaintContext ct
 	tx.bpp             = bpp;
 	tx.src_mask_stride = mls;
 	tx.dst_mask_stride = als;
-	tx.src_mask        = (mls > 0) ? t->mask : NULL;
+	tx.src_mask        = (mls > 0) ? ( ambuf ? ambuf : t->mask ) : NULL;
 	tx.dst_mask        = (als > 0) ? i->mask : NULL;
 	tx.use_src_alpha   = use_src_alpha;
 	tx.use_dst_alpha   = use_dst_alpha;
@@ -905,6 +918,7 @@ img_bar_tile_alpha( Handle dest, int x, int y, int w, int h, PImgPaintContext ct
 	ok = tile(x, y, w, h, alpha_tiler, &tx);
 
 FAIL:
+	if ( ambuf) free(ambuf);
 	if ( adbuf) free(adbuf);
 	if ( asbuf) free(asbuf);
 

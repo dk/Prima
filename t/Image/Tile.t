@@ -339,6 +339,7 @@ sub test_icon_noaa
 sub srcover
 {
 	my ( $s, $d, $as ) = @_;
+	$as = int($as + .5);
 	my $dst = int(($s * $as + $d * (255 - $as)) / 255.0 + .5);
 	# print "srcover($s,$d,$as) = $dst\n";
 	return $dst;
@@ -353,7 +354,10 @@ sub cmp_srcover
 
 	my $is_stipple = $src->type == im::BW;
 	my $is_transparent = $is_stipple && $res->rop2 == rop::NoOper;
-	(undef, $alpha) = $src->split unless defined $alpha;
+	my $aimg;
+	if ( !defined $alpha || $alpha < 0 ) {
+		(undef, $aimg) = $src->split;
+	}
 
 	my $ok = 1;
 	my @expected = ('','','','');
@@ -370,7 +374,13 @@ sub cmp_srcover
 					$w = $d;
 				}
 			} else {
-				my $A = ref($alpha) ? $alpha->pixel($x % 2, $y % 2) : $alpha;
+				my $A;
+				if ( $aimg ) {
+					$A = $aimg->pixel($x % 2, $y % 2);
+					$A *= -$alpha/255 if ($alpha // 0) < 0;
+				} else {
+					$A = $alpha;
+				};
 				$w = srcover($s, $d, $A);
 			}
 			$ok = 0 if $w != $r;
@@ -405,6 +415,9 @@ sub test_aa_tile
 
 	$dst = Prima::Icon->create_combined( $mdest->dup, $mask, fillPattern => $itile, rop => rop::SrcOver );
 	cmp_srcover($dst, undef, "icon8/icon");
+
+	$dst = Prima::Icon->create_combined( $mdest->dup, $mask, alpha => 128, fillPattern => $itile, rop => rop::SrcOver );
+	cmp_srcover($dst, -128, "icon8/icon/a128");
 }
 
 sub test_aa_stipple
@@ -413,8 +426,8 @@ sub test_aa_stipple
 #	cmp_srcover($dst, 128, "opaque/a128");
 }
 
-#test_stipple_and_simple_tile_noaa();
-#test_icon_noaa();
+test_stipple_and_simple_tile_noaa();
+test_icon_noaa();
 
 $mdest->color(cl::White);
 $mdest->bar(0,0,3,1);
