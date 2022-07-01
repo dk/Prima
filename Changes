@@ -4,6 +4,9 @@ Revision history for Perl module Prima
  - Add HEIF image support
  - rop2(rop::NoOper) on fillPattern is now fully supported, but breaks the old code.
    Prepend rop2(rop::CopyPut) to fix.
+ - fillPattern(Image/Icon) can be used for tile and stipple fills
+ - rop::Blend replaces rop::SrcOver as a default ROP for OS surfaces.
+   Breaks the old code.
 
 1.65 2022-04-21
  - Fix broken 1.64 distro

@@ -939,11 +939,13 @@ canvas color and backColor, when rendered.
 
 =item Color image
 
-Ignores color and backColor, just uses the tiles and the current C<alpha> value.
+Ignores color, and backColor, and rop2.
+Just uses the tiles and the current C<alpha> value.
 
 =item Icon
 
-Ignores color, backColor, and alpha, uses the alpha pixel values from the icon's mask.
+Ignores color, backColor, and rop2. Uses the alpha pixel values from the
+icon's mask and the current C<alpha> value.
 
 =back
 
