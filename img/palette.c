@@ -667,29 +667,6 @@ REPEAT_CALC:
 	return true;
 }
 
-void
-img_fill_dummy( PImage dummy, int w, int h, int type, Byte * data, RGBColor * palette)
-{
-	bzero( dummy, sizeof(Image));
-	dummy-> self     = CImage;
-	dummy-> w        = w;
-	dummy-> h        = h;
-	dummy-> type     = type;
-	dummy-> data     = data;
-	dummy-> lineSize = LINE_SIZE(w, type);
-	dummy-> dataSize = dummy-> lineSize * h;
-	dummy-> palette  = palette;
-	dummy-> updateLock = true; /* just in case */
-
-	if ( type == imRGB ) {
-		dummy-> palSize = 0;
-	} else if ( type & ( imRealNumber|imComplexNumber|imTrigComplexNumber)) {
-		dummy-> palSize = 256;
-	} else {
-		dummy-> palSize = 1 << (type & imBPP);
-	}
-}
-
 #ifdef __cplusplus
 }
 #endif
