@@ -123,7 +123,7 @@ apc_gp_aa_bar( Handle self, double x1, double y1, double x2, double y2)
 		if (
 			sys current_rop2 == ropNoOper &&
 			sys rq_brush.logbrush.lbStyle == BS_DIBPATTERNPT && (
-				(( pt = (PImage) var fillPatternImage ) == NULL_HANDLE) ||
+				(( pt = (PImage) var fillPatternImage ) == NULL ) ||
 				(
 					( pt-> type == imBW ) &&
 					!dsys(pt)options.aptIcon
@@ -192,7 +192,7 @@ apc_gp_aa_fill_poly( Handle self, int numPts, NPoint * points)
 		if (
 			sys current_rop2 == ropNoOper &&
 			sys rq_brush.logbrush.lbStyle == BS_DIBPATTERNPT && (
-				(( pt = (PImage) var fillPatternImage ) == NULL_HANDLE) ||
+				(( pt = (PImage) var fillPatternImage ) == NULL) ||
 				(
 					( pt-> type == imBW ) &&
 					!dsys(pt)options.aptIcon
