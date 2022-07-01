@@ -767,10 +767,12 @@ alpha_tiler( int x, int y, int w, int h, TileCallbackRec* ptr)
 				multiply( ptr->adbuf, &ptr->dst_alpha_mul, 0, ptr->adbuf, bytes);
 		}
 
-		/* printf("%02x%02x/%02x%02x + %02x%02x/%02x", s[0], s[1],
+		/*
+		printf("%02x%02x/%02x%02x + %02x%02x/%02x", s[0], s[1],
 			ptr->use_src_alpha ? ptr->src_alpha_mul : m[0],
 			ptr->use_src_alpha ? ptr->src_alpha_mul : m[1],
-			d[0], d[1], ptr->adbuf[0]); */
+			d[0], d[1], ptr->adbuf[0]);
+		*/
 		ptr->blend1(
 			s, 1,
 			ptr->use_src_alpha ? &ptr->src_alpha_mul : m,
@@ -779,7 +781,9 @@ alpha_tiler( int x, int y, int w, int h, TileCallbackRec* ptr)
 			ptr->adbuf,
 			ptr->use_dst_alpha ? 0 : 1,
 			bytes);
-		/* printf("=> %02x%02x\n", d[0], d[1]); */
+		/*
+			printf("=> %02x%02x\n", d[0], d[1]);
+		*/
 
 		if (a != NULL) {
 			if ( ptr->dst_alpha_mul < 255 )
@@ -835,6 +839,28 @@ img_bar_tile_alpha( Handle dest, int x, int y, int w, int h, PImgPaintContext ct
 		return ok;
 	}
 
+	/* fix the tile */
+	if (
+		(t->type & imBPP) != (bpp & imBPP) ||
+		( src_is_icon && t->maskType != imbpp8 )
+	) {
+		Bool ok;
+		if (( ctx->tile = CImage(ctx->tile)->dup(ctx->tile)) == NULL_HANDLE)
+			return false;
+		t = (PIcon) ctx->tile;
+		if ((t->type & imBPP) != (bpp & imBPP))
+			CIcon(ctx->tile)->set_type(ctx->tile, bpp);
+		if (src_is_icon && t-> maskType != imbpp8)
+			CIcon(ctx->tile)->set_maskType(ctx->tile, imbpp8);
+
+		ok = img_bar_tile_alpha( dest, x, y, w, h, ctx);
+		Object_destroy( ctx-> tile);
+		ctx-> tile = NULL_HANDLE;
+		return ok;
+	}
+
+	bpp = ( bpp == imByte ) ? 1 : 3;
+
 	/* differentiate between per-pixel alpha and a global value */
 	if (ctx->rop & ropSrcAlpha)
 		src_alpha = (ctx->rop >> ropSrcAlphaShift) & 0xff;
@@ -859,39 +885,42 @@ img_bar_tile_alpha( Handle dest, int x, int y, int w, int h, PImgPaintContext ct
 		use_dst_alpha = true;
 	}
 
-	/* fix the tile */
-	if (src_is_icon && t->maskType != imbpp8) {
-		Bool ok;
-		if (( ctx->tile = CImage(ctx->tile)->dup(ctx->tile)) == NULL_HANDLE)
-			return false;
-		t = (PIcon) ctx->tile;
-		if (src_is_icon && t-> maskType != imbpp8)
-			CIcon(ctx->tile)->set_maskType(ctx->tile, imbpp8);
-
-		ok = img_bar_tile_alpha( dest, x, y, w, h, ctx);
-		Object_destroy( ctx-> tile);
-		ctx-> tile = NULL_HANDLE;
-		return ok;
-	}
-
-	/* respect ropSrcAlpha for icons, if additional alpha is requested */
-	if ( src_is_icon && src_alpha < 255 ) {
-		Byte *src, *dst;
-		unsigned int sz;
-		if (( ambuf = malloc( t-> maskSize )) == NULL)
+	/* respect ropSrcAlpha for icons, adjust mask buffer */
+	if ( src_is_icon && ( bpp == 3 || src_alpha < 255 )) {
+		register Byte *src, *dst;
+		register unsigned int len;
+		if (( ambuf = malloc( bpp * t-> maskSize )) == NULL)
 			goto FAIL;
 		src = t->mask;
+		len = t->maskSize;
 		dst = ambuf;
-		sz  = t->maskSize;
-		while (sz--) *(dst++) = (int)(*(src++)) * (int)src_alpha / 255.0 + .5;
-
+		if ( bpp == 3 && src_alpha < 255 ) {
+			while (len--) {
+				register Byte a;
+				a = (int)(*(src++)) * (int)src_alpha / 255.0 + .5;
+				*(dst++) = a;
+				*(dst++) = a;
+				*(dst++) = a;
+			}
+		} else if ( bpp == 3 ) {
+			while (len--) {
+				register Byte a;
+				a = *(src++);
+				*(dst++) = a;
+				*(dst++) = a;
+				*(dst++) = a;
+			}
+		} else {
+			while (len--)
+				*(dst++) = (int)(*(src++)) * (int)src_alpha / 255.0 + .5;
+		}
+		mls *= bpp;
 	}
 
 	ctx->rop &= ropPorterDuffMask;
 	if ( ctx->rop > ropMaxPDFunc || ctx->rop < 0 ) ctx->rop = ropSrcOver;
 
 	/* make buffers */
-	bpp   = ( bpp == imByte ) ? 1 : 3;
 	bytes = w * bpp;
 	if ( !(adbuf = malloc(use_dst_alpha ? 1 : bytes))) {
 		warn("not enough memory");
@@ -1038,12 +1067,11 @@ img_bar_stipple_alpha( Handle dest, int x, int y, int w, int h, PImgPaintContext
 		t = (PIcon) ctx->tile;
 	}
 
-	/* fix colors (also with alpha) */
+	/* apply colors to pixels */
 	bpp = ( i->type & imGrayScale) ? imByte : imRGB;
 	if ( i->type != bpp )
 		img_resample_colors( dest, bpp, ctx );
 
-	/* apply colors to pixels */
 	if ( bpp == imByte ) {
 		t->type = imbpp1;
 		memset(t->palette + 1, ctx->color[0], 3);

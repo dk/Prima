@@ -351,9 +351,18 @@ sub cmp_srcover
 	my $dst = $res->dup;
 	my $src = $res->fillPattern;
 	$res->bar(0,0,3,3);
+	$src = $src->clone(type => im::Byte) if $src->type != im::BW;
+
+	$res->type(im::Byte);
+	$dst->type(im::Byte);
 
 	my $is_stipple = $src->type == im::BW;
 	my $is_transparent = $is_stipple && $res->rop2 == rop::NoOper;
+	my ( $fore, $back);
+	if ( $is_stipple ) {
+		$fore = $res->color & 0xff;
+		$back = $res->backColor & 0xff;
+	}
 	my $aimg;
 	if ( !defined $alpha || $alpha < 0 ) {
 		(undef, $aimg) = $src->split;
@@ -369,6 +378,7 @@ sub cmp_srcover
 			my $w;
 			if ( $is_stipple ) {
 				if ( !$is_transparent || $src->pixel( $x % 2, $y % 2 ) ) {
+					$s = $s ? $fore : $back;
 					$w = srcover($s, $d, $alpha);
 				} else {
 					$w = $d;
@@ -399,31 +409,37 @@ sub cmp_srcover
 
 sub test_aa_tile
 {
+	my $mtype = $mtile->get_bpp;
 	my $dst = $mdest->clone( alpha => 128, fillPattern => $mtile, rop => rop::SrcOver );
-	cmp_srcover($dst, 128, "8/a128");
+	cmp_srcover($dst, 128, "8/$mtype/a128");
 
 	my $mask = $mtile->clone;
+	$mask->type(im::Byte);
 	$mask->resample(0,255,0,128);
 	my $itile = Prima::Icon->create_combined( $mtile, $mask );
 	$dst = $mdest->clone( fillPattern => $itile, rop => rop::SrcOver );
-	cmp_srcover($dst, undef, "8/icon");
+	cmp_srcover($dst, undef, "8/$mtype/icon");
 
 	$mask = $mdest->clone;
 	$mask->resample(0,255,0,128);
 	$dst = Prima::Icon->create_combined( $mdest->dup, $mask, alpha => 128, fillPattern => $mtile, rop => rop::SrcOver );
-	cmp_srcover($dst, 128, "icon8/a128");
+	cmp_srcover($dst, 128, "icon8/$mtype/a128");
 
 	$dst = Prima::Icon->create_combined( $mdest->dup, $mask, fillPattern => $itile, rop => rop::SrcOver );
-	cmp_srcover($dst, undef, "icon8/icon");
+	cmp_srcover($dst, undef, "icon8/$mtype/icon");
 
 	$dst = Prima::Icon->create_combined( $mdest->dup, $mask, alpha => 128, fillPattern => $itile, rop => rop::SrcOver );
-	cmp_srcover($dst, -128, "icon8/icon/a128");
+	cmp_srcover($dst, -128, "icon8/$mtype/icon/a128");
 }
 
 sub test_aa_stipple
 {
-#	my $dst = $mdest->clone( alpha => 128, fillPattern => $mtile, rop => rop::SrcOver, rop2 => rop::CopyPut, color => 0xc0c0c0, backColor => 0x404040 );
-#	cmp_srcover($dst, 128, "opaque/a128");
+	my $bpp = $mdest->get_bpp;
+	my $dst = $mdest->clone( alpha => 128, fillPattern => $mtile, rop => rop::SrcOver, rop2 => rop::CopyPut, color => 0xc0c0c0, backColor => 0x404040 );
+	cmp_srcover($dst, 128, "bpp=$bpp opaque/a128");
+
+	$dst = $mdest->clone( alpha => 128, fillPattern => $mtile, rop => rop::SrcOver, rop2 => rop::NoOper, color => 0xc0c0c0, backColor => 0x404040 );
+	cmp_srcover($dst, 128, "bpp=$bpp transparent/a128");
 }
 
 test_stipple_and_simple_tile_noaa();
@@ -431,10 +447,14 @@ test_icon_noaa();
 
 $mdest->color(cl::White);
 $mdest->bar(0,0,3,1);
+$mdest->type(im::RGB);
+test_aa_stipple();
 $mdest->type(im::Byte);
 test_aa_stipple();
 
 $mtile->type(im::Byte);
+test_aa_tile();
+$mtile->type(im::RGB);
 test_aa_tile();
 
 done_testing;
