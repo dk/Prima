@@ -611,7 +611,7 @@ fill_mef( MonoExpandFunc * mef, Handle tile, Handle expanded_tile, Byte *fore, B
 }
 
 /* special case */
-Bool
+static Bool
 img_bar_stipple_1bit( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 {
 	int rop;
@@ -628,7 +628,7 @@ img_bar_stipple_1bit( Handle dest, int x, int y, int w, int h, PImgPaintContext 
 	return tile( x, y, w, h, put1, &tx);
 }
 
-Bool
+static Bool
 img_bar_stipple_generic( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 {
 	PImage i = (PImage) dest;
@@ -806,7 +806,90 @@ alpha_tiler( int x, int y, int w, int h, TileCallbackRec* ptr)
 	return true;
 }
 
-Bool
+static Bool
+img_bar_tile_alpha( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx);
+
+/* fix the tile to be either imByte or imRGB [ / imbpp8 ] */
+static Bool
+img_bar_tile_alpha_fix_src( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx, Bool src_is_icon, int bpp)
+{
+	Bool ok;
+	PIcon t;
+	if (( ctx->tile = CImage(ctx->tile)->dup(ctx->tile)) == NULL_HANDLE)
+		return false;
+	t = (PIcon) ctx->tile;
+	if ((t->type & imBPP) != (bpp & imBPP))
+		CIcon(ctx->tile)->set_type(ctx->tile, bpp);
+	if (src_is_icon && t-> maskType != imbpp8)
+		CIcon(ctx->tile)->set_maskType(ctx->tile, imbpp8);
+
+	ok = img_bar_tile_alpha( dest, x, y, w, h, ctx);
+	Object_destroy( ctx-> tile);
+	ctx-> tile = NULL_HANDLE;
+	return ok;
+}
+
+/* align types and geometry - can only operate over imByte and imRGB, and imbpp8 mask */
+static Bool
+img_bar_tile_alpha_fix_dest( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx, Bool dst_is_icon, int bpp)
+{
+	Bool ok;
+	int type = PIcon(dest)->type;
+	int mask = dst_is_icon ? PIcon(dest)->maskType : 0;
+	if ( type != bpp )
+		CIcon(dest)-> set_type( dest, bpp );
+	if ( dst_is_icon && mask != imbpp8 )
+		CIcon(dest)-> set_maskType( dest, imbpp8 );
+	ok = img_bar_tile_alpha( dest, x, y, w, h, ctx);
+	if ( PIcon(dest)-> options. optPreserveType ) {
+		if ( type != bpp )
+			CImage(dest)-> set_type( dest, type );
+		if ( dst_is_icon && mask != imbpp8 )
+			CIcon(dest)-> set_maskType( dest, mask );
+	}
+	return ok;
+}
+
+/* respect ropSrcAlpha for icons, adjust mask buffer */
+static Byte*
+img_fill_alpha( Handle tile, int bpp, int src_alpha )
+{
+	PIcon t = (PIcon) tile;
+	register Byte *src, *dst, *res;
+	register unsigned int len;
+
+	if (( res = malloc( bpp * t-> maskSize )) == NULL)
+		return NULL;
+
+	src = t->mask;
+	len = t->maskSize;
+	dst = res;
+
+	if ( bpp == 3 && src_alpha < 255 ) {
+		while (len--) {
+			register Byte a;
+			a = (int)(*(src++)) * (int)src_alpha / 255.0 + .5;
+			*(dst++) = a;
+			*(dst++) = a;
+			*(dst++) = a;
+		}
+	} else if ( bpp == 3 ) {
+		while (len--) {
+			register Byte a;
+			a = *(src++);
+			*(dst++) = a;
+			*(dst++) = a;
+			*(dst++) = a;
+		}
+	} else {
+		while (len--)
+			*(dst++) = (int)(*(src++)) * (int)src_alpha / 255.0 + .5;
+	}
+
+	return res;
+}
+
+static Bool
 img_bar_tile_alpha( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 {
 	TileCallbackRec tx;
@@ -822,42 +905,15 @@ img_bar_tile_alpha( Handle dest, int x, int y, int w, int h, PImgPaintContext ct
 
 	/* align types and geometry - can only operate over imByte and imRGB, and imbpp8 mask */
 	bpp = ( i->type & imGrayScale) ? imByte : imRGB;
-	if ( i->type != bpp || ( dst_is_icon && i->maskType != imbpp8 )) {
-		int type = i->type;
-		int mask = dst_is_icon ? i->maskType : 0;
-		if ( type != bpp )
-			CIcon(dest)-> set_type( dest, bpp );
-		if ( dst_is_icon && mask != imbpp8 )
-			CIcon(dest)-> set_maskType( dest, imbpp8 );
-		ok = img_bar_tile_alpha( dest, x, y, w, h, ctx);
-		if ( i-> options. optPreserveType ) {
-			if ( type != bpp )
-				CImage(dest)-> set_type( dest, type );
-			if ( dst_is_icon && mask != imbpp8 )
-				CIcon(dest)-> set_maskType( dest, mask );
-		}
-		return ok;
-	}
+	if ( i->type != bpp || ( dst_is_icon && i->maskType != imbpp8 ))
+		return img_bar_tile_alpha_fix_dest( dest, x, y, w, h, ctx, dst_is_icon, bpp);
 
 	/* fix the tile */
 	if (
 		(t->type & imBPP) != (bpp & imBPP) ||
 		( src_is_icon && t->maskType != imbpp8 )
-	) {
-		Bool ok;
-		if (( ctx->tile = CImage(ctx->tile)->dup(ctx->tile)) == NULL_HANDLE)
-			return false;
-		t = (PIcon) ctx->tile;
-		if ((t->type & imBPP) != (bpp & imBPP))
-			CIcon(ctx->tile)->set_type(ctx->tile, bpp);
-		if (src_is_icon && t-> maskType != imbpp8)
-			CIcon(ctx->tile)->set_maskType(ctx->tile, imbpp8);
-
-		ok = img_bar_tile_alpha( dest, x, y, w, h, ctx);
-		Object_destroy( ctx-> tile);
-		ctx-> tile = NULL_HANDLE;
-		return ok;
-	}
+	)
+		return img_bar_tile_alpha_fix_src( dest, x, y, w, h, ctx, src_is_icon, bpp);
 
 	bpp = ( bpp == imByte ) ? 1 : 3;
 
@@ -887,33 +943,8 @@ img_bar_tile_alpha( Handle dest, int x, int y, int w, int h, PImgPaintContext ct
 
 	/* respect ropSrcAlpha for icons, adjust mask buffer */
 	if ( src_is_icon && ( bpp == 3 || src_alpha < 255 )) {
-		register Byte *src, *dst;
-		register unsigned int len;
-		if (( ambuf = malloc( bpp * t-> maskSize )) == NULL)
+		if (( ambuf = img_fill_alpha( ctx->tile, bpp, src_alpha)) == NULL)
 			goto FAIL;
-		src = t->mask;
-		len = t->maskSize;
-		dst = ambuf;
-		if ( bpp == 3 && src_alpha < 255 ) {
-			while (len--) {
-				register Byte a;
-				a = (int)(*(src++)) * (int)src_alpha / 255.0 + .5;
-				*(dst++) = a;
-				*(dst++) = a;
-				*(dst++) = a;
-			}
-		} else if ( bpp == 3 ) {
-			while (len--) {
-				register Byte a;
-				a = *(src++);
-				*(dst++) = a;
-				*(dst++) = a;
-				*(dst++) = a;
-			}
-		} else {
-			while (len--)
-				*(dst++) = (int)(*(src++)) * (int)src_alpha / 255.0 + .5;
-		}
 		mls *= bpp;
 	}
 
