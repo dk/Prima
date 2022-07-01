@@ -389,21 +389,21 @@ sub cmp_srcover
 
 sub test_aa_tile
 {
-	my $dst = $mdest->clone( alpha => 128, fillPattern => $mtile, rop => rop::Premultiply | rop::SrcOver );
+	my $dst = $mdest->clone( alpha => 128, fillPattern => $mtile, rop => rop::SrcOver );
 	cmp_srcover($dst, 128, "8/a128");
 
 	my $mask = $mtile->clone;
 	$mask->resample(0,255,0,128);
 	my $itile = Prima::Icon->create_combined( $mtile, $mask );
-	$dst = $mdest->clone( fillPattern => $itile, rop => rop::Premultiply | rop::SrcOver );
+	$dst = $mdest->clone( fillPattern => $itile, rop => rop::SrcOver );
 	cmp_srcover($dst, undef, "8/icon");
 
 	$mask = $mdest->clone;
 	$mask->resample(0,255,0,128);
-	$dst = Prima::Icon->create_combined( $mdest->dup, $mask, alpha => 128, fillPattern => $mtile, rop => rop::Premultiply | rop::SrcOver );
+	$dst = Prima::Icon->create_combined( $mdest->dup, $mask, alpha => 128, fillPattern => $mtile, rop => rop::SrcOver );
 	cmp_srcover($dst, 128, "icon8/a128");
 
-	$dst = Prima::Icon->create_combined( $mdest->dup, $mask, fillPattern => $itile, rop => rop::Premultiply | rop::SrcOver );
+	$dst = Prima::Icon->create_combined( $mdest->dup, $mask, fillPattern => $itile, rop => rop::SrcOver );
 	cmp_srcover($dst, undef, "icon8/icon");
 }
 

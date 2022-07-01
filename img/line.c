@@ -142,7 +142,7 @@ hline_init( ImgHLineRec * rec, Handle dest, PImgPaintContext ctx, char * method)
 
 	/* deal with alpha request */
 	if ( ctx-> rop & ropConstantAlpha ) {
-		int j, rop = ctx->rop;
+		int rop = ctx->rop;
 		/* differentiate between per-pixel alpha and a global value */
 		if ( ctx->rop & ropSrcAlpha )
 			rec->src_alpha = (rop >> ropSrcAlphaShift) & 0xff;
@@ -186,12 +186,6 @@ hline_init( ImgHLineRec * rec, Handle dest, PImgPaintContext ctx, char * method)
 			rec->dst_alpha = 0xff;
 		}
 		rec->proc = NULL;
-
-		/* premultiply colors */
-		for ( j = 0; j < bpp / 8; j++) {
-			ctx->color[j] = (float)(ctx->color[j] * rec->src_alpha) / 255.0 + .5;
-			ctx->backColor[j] = (float)(ctx->backColor[j] * rec->src_alpha) / 255.0 + .5;
-		}
 	} else {
 		rec->blend1 = rec->blend2 = NULL;
 		rec->proc = img_find_blt_proc(ctx->rop);

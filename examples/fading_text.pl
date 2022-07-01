@@ -99,7 +99,7 @@ sub repaint
 		$dx += $xangle;
 		$dy ++;
 	}
-	$canvas->put_image(0,0,$fader,rop::Premultiply);
+	$canvas->put_image(0,0,$fader,rop::SrcOver);
 
 	$yofs += $ch / 100; 
 	$w->Image->repaint;

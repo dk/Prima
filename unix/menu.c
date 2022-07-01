@@ -1149,7 +1149,7 @@ DECL_DRAW(image)
 		} else {
 			apc_gp_put_image((Handle) &dummy_p, bm->xor,
 				x, w-> sz.y - H - Y,
-				0, 0, W, H, ropSrcOver);
+				0, 0, W, H, ropBlend);
 		}
 		if ( bm-> use_stippling ) {
 			XSetStipple   ( DISP, draw-> gc, prima_get_hatch( &fillPatterns[fpSimpleDots] ));

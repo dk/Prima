@@ -234,12 +234,6 @@ img_bar_alpha( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 	}
 	if ( use_dst_alpha ) adbuf[0] = dst_alpha;
 
-	/* premultiply colors */
-	for ( j = 0; j < bpp; j++) {
-		ctx->color[j] = (float)(ctx->color[j] * src_alpha) / 255.0 + .5;
-		ctx->backColor[j] = (float)(ctx->backColor[j] * src_alpha) / 255.0 + .5;
-	}
-
 	solid = (memcmp( ctx->pattern, fillPatterns[fpSolid], sizeof(FillPattern)) == 0);
 	if ( solid || !ctx->transparent ) {
 		/* render a (minimum) 8x8xPIXEL matrix with pattern, then
@@ -816,7 +810,7 @@ img_bar_tile_alpha( Handle dest, int x, int y, int w, int h, PImgPaintContext ct
 	PIcon t = (PIcon) ctx->tile;
 	unsigned int bpp, als, mls, bytes;
 	unsigned int src_alpha = 0xff, dst_alpha = 0xff;
-	Bool ok = false, src_is_icon, dst_is_icon, use_src_alpha = false, use_dst_alpha = false, premultiply = false;
+	Bool ok = false, src_is_icon, dst_is_icon, use_src_alpha = false, use_dst_alpha = false;
 	Byte *asbuf = NULL, *adbuf = NULL;
 
 	src_is_icon = kind_of( ctx-> tile, CIcon );
@@ -846,8 +840,6 @@ img_bar_tile_alpha( Handle dest, int x, int y, int w, int h, PImgPaintContext ct
 		src_alpha = (ctx->rop >> ropSrcAlphaShift) & 0xff;
 	if ( !dst_is_icon && (ctx->rop & ropDstAlpha) )
 		dst_alpha = (ctx->rop >> ropDstAlphaShift) & 0xff;
-	if ((ctx->rop & ropPremultiply) && (( src_alpha < 255) || src_is_icon))
-		premultiply = true;
 
 	if ( src_is_icon ) {
 		mls = t-> maskLine;
@@ -867,11 +859,8 @@ img_bar_tile_alpha( Handle dest, int x, int y, int w, int h, PImgPaintContext ct
 		use_dst_alpha = true;
 	}
 
-	/* premultiply the tile */
-	if (
-		premultiply ||
-		(src_is_icon && t->maskType != imbpp8)
-	) {
+	/* fix the tile */
+	if (src_is_icon && t->maskType != imbpp8) {
 		Bool ok;
 		if (( ctx->tile = CImage(ctx->tile)->dup(ctx->tile)) == NULL_HANDLE)
 			return false;
@@ -879,22 +868,6 @@ img_bar_tile_alpha( Handle dest, int x, int y, int w, int h, PImgPaintContext ct
 		if (src_is_icon && t-> maskType != imbpp8)
 			CIcon(ctx->tile)->set_maskType(ctx->tile, imbpp8);
 
-		if ( premultiply ) {
-			if ( src_is_icon ) {
-				Image dummy;
-				img_fill_dummy( &dummy, t->w, t->h, imByte, t->mask, std256gray_palette);
-				img_premultiply_alpha_map( ctx->tile, (Handle) &dummy);
-			}
-			if ( src_alpha < 255 )
-				img_premultiply_alpha_constant( ctx->tile, src_alpha);
-			if ( src_is_icon && src_alpha < 255 ) {
-				Image dummy;
-				img_fill_dummy( &dummy, t->w, t->h, imByte, t->mask, std256gray_palette);
-				img_premultiply_alpha_constant(( Handle )&dummy, src_alpha);
-			}
-		}
-
-		ctx->rop &= ~ropPremultiply;
 		ok = img_bar_tile_alpha( dest, x, y, w, h, ctx);
 		Object_destroy( ctx-> tile);
 		ctx-> tile = NULL_HANDLE;
@@ -1055,28 +1028,6 @@ img_bar_stipple_alpha( Handle dest, int x, int y, int w, int h, PImgPaintContext
 	bpp = ( i->type & imGrayScale) ? imByte : imRGB;
 	if ( i->type != bpp )
 		img_resample_colors( dest, bpp, ctx );
-
-	ctx->rop &= ~ropPremultiply;
-	if (ctx->rop & ropSrcAlpha) {
-		int i;
-		Byte src_alpha;
-		src_alpha = (ctx->rop >> ropSrcAlphaShift) & 0xff;
-		if ( src_alpha < 255 ) {
-			for ( i = 0; i < 3; i++) {
-				ctx->color[i]     = (ctx->color[i]     * src_alpha) / 255.0 + .5;
-				ctx->backColor[i] = (ctx->backColor[i] * src_alpha) / 255.0 + .5;
-			}
-
-			if ( ctx->transparent ) { /* mask(0,255) -> (0,src_alpha) */
-				register Byte *mask = t->mask;
-				register int size = t->maskSize;
-				while (size--) {
-					if (*mask) *mask = src_alpha;
-					mask++;
-				}
-			}
-		}
-	}
 
 	/* apply colors to pixels */
 	if ( bpp == imByte ) {

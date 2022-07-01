@@ -969,8 +969,8 @@ See L<Prima::Drawable/Raster operations>
 
         rop::Clear       # = 0
         rop::Xor         # = src ( 1 - dstA ) + dst ( 1 - srcA )
-        rop::SrcOver     # = src + dst (1 - srcA) 
-        rop::DstOver     # = dst + src (1 - dstA)
+        rop::SrcOver     # = src srcA + dst (1 - srcA)
+        rop::DstOver     # = dst srcA + src (1 - dstA)
         rop::SrcCopy     # = src
         rop::DstCopy     # = dst
         rop::SrcIn       # = src dstA
@@ -979,6 +979,9 @@ See L<Prima::Drawable/Raster operations>
         rop::DstOut      # = dst ( 1 - srcA )
         rop::SrcAtop     # = src dstA + dst ( 1 - srcA )
         rop::DstAtop     # = dst srcA + src ( 1 - dstA )
+
+        rop::Blend       # src + dst (1 - srcA)
+	                 # same as rop::SrcOver but assumes premultiplied source
 
         rop::PorterDuffMask - masks out all bits but the constants above
 
@@ -1008,7 +1011,6 @@ Constant alpha flags
 Others
 
         rop::AlphaCopy
-	rop::Premultiply
 	rop::ConstantColor
 
 =head2 sbmp:: - system bitmaps indices

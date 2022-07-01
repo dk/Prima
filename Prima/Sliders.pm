@@ -2519,8 +2519,8 @@ sub create_tab
 	)->bar(0, 0, $y * 2, 1, 1);
 	my $tabend = mask2icon( $tabend_mask, cl::Black );
 
-	$tab_mask-> put_image_indirect( $tabend_mask, 0, 0, $y, 0, $y, 1, $y, 1, rop::SrcOver | rop::ConstantColor | rop::Premultiply);
-	$tab_mask-> put_image_indirect( $tabend_mask, $tab_mask-> width - $y, 0, 0, 0, $y, 1, $y, 1, rop::SrcOver | rop::ConstantColor | rop::Premultiply);
+	$tab_mask-> put_image_indirect( $tabend_mask, 0, 0, $y, 0, $y, 1, $y, 1, rop::SrcOver | rop::ConstantColor);
+	$tab_mask-> put_image_indirect( $tabend_mask, $tab_mask-> width - $y, 0, 0, 0, $y, 1, $y, 1, rop::SrcOver | rop::ConstantColor);
 
 	$self->{cache}->{tab}  = mask2icon( $tab_mask, cl::White )-> bitmap;
 	$self->{cache}->{tabx} = $tab_mask-> width;
@@ -2631,7 +2631,7 @@ sub on_paint
 
 	if ( $self->{tabmode} eq 'show' && $xa1 > 0) {
 		$canvas->clipRect(0, 0, $xa2, $sz[1]);
-		$canvas->put_image( $self->{tabpos}, $_, $self->{cache}->{tab}, rop::SrcOver ) for 0 .. $sz[1];
+		$canvas->put_image( $self->{tabpos}, $_, $self->{cache}->{tab}, rop::Blend ) for 0 .. $sz[1];
 	}
 }
 

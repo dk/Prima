@@ -95,17 +95,16 @@ sub repaint
 	my $sa = $w->SliderA;
 	my $sb = $w->SliderB;
 	if ( $sa->enabled ) {
-		$precanvas->put_image(0,0,$ia, rop::alpha( rop::SrcCopy | rop::Premultiply, $sa->value));
-		$precanvas->put_image(0,0,$ib, rop::alpha( $rop_val     | rop::Premultiply, $sb->value));
 		$canvas->put_image(0,0,$base);
-		$canvas->put_image(0,0,$precanvas);
+		$canvas->put_image(0,0,$ia, rop::alpha( rop::SrcOver, $sa->value));
+		$canvas->put_image(0,0,$ib, rop::alpha( $rop_val, $sb->value));
 	} else {
 		$canvas->put_image(0,0,$a);
 		$canvas->put_image(0,0,$b,$rop_val);
 	}
 
 	my $fader = $w->Fader;
-	$canvas->put_image(2, 2, $fader->{banner}, rop::alpha( rop::SrcOver | rop::Premultiply, $fader->{alpha} ))
+	$canvas->put_image(2, 2, $fader->{banner}, rop::alpha( rop::SrcOver, $fader->{alpha} ))
 		if $fader->{banner};
 	$w-> ImageViewer1->repaint;
 }

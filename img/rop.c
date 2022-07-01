@@ -225,15 +225,17 @@ static dBLEND_FUNC(blend_clear)
 	memset( dst, 0, bytes);
 }
 
-dBLEND_FUNCx(blend_src_over,  UP(S) + UP(D) * INVSA / 255)
+dBLEND_FUNCx(blend_blend,    UP(S) + UP(D) * INVSA / 255)
+
+dBLEND_FUNCx(blend_src_over, (UP(S) * SA    + UP(D) * INVSA) / 255)
 dBLEND_FUNCx(blend_xor,      (UP(S) * INVDA + UP(D) * INVSA) / 255)
-dBLEND_FUNCx(blend_dst_over,  UP(D) + UP(S) * INVDA / 255)
-dBLEND_FUNCx(blend_src_in,    UP(S) * DA / 255)
-dBLEND_FUNCx(blend_dst_in,    UP(D) * SA / 255)
+dBLEND_FUNCx(blend_dst_over, (UP(D) * DA    + UP(S) * INVDA) / 255)
+dBLEND_FUNCx(blend_src_in,    UP(S) * DA    / 255)
+dBLEND_FUNCx(blend_dst_in,    UP(D) * SA    / 255)
 dBLEND_FUNCx(blend_src_out,   UP(S) * INVDA / 255)
 dBLEND_FUNCx(blend_dst_out,   UP(D) * INVSA / 255)
-dBLEND_FUNCx(blend_src_atop, (UP(S) * DA + UP(D) * INVSA) / 255)
-dBLEND_FUNCx(blend_dst_atop, (UP(D) * SA + UP(S) * INVDA) / 255)
+dBLEND_FUNCx(blend_src_atop, (UP(S) * DA    + UP(D) * INVSA) / 255)
+dBLEND_FUNCx(blend_dst_atop, (UP(D) * SA    + UP(S) * INVDA) / 255)
 
 /* sss + ddd */
 static dBLEND_FUNC(blend_add)
@@ -344,8 +346,9 @@ static dBLEND_FUNC(blend_difference)
 dBLEND_FUNCx(blend_exclusion, SEPARABLE( UP(S) * (DA - 2 * D) + UP(D) * SA ))
 
 static BlendFunc* blend_functions[] = {
-	blend_src_over,
+	blend_blend,
 	blend_xor,
+	blend_src_over,
 	blend_dst_over,
 	blend_src_copy,
 	blend_dst_copy,

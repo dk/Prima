@@ -228,7 +228,7 @@ $dst = Prima::Image->new(
 	color     => 0x202020,
 );
 $dst->clear;
-$dst->put_image( 0,0,$dst->dup, rop::ConstantColor | rop::SrcOver | rop::Premultiply );
+$dst->put_image( 0,0,$dst->dup, rop::ConstantColor | rop::SrcOver );
 is_bits( $dst->data, "PPPP", "rop::ConstantColor ( 0x80 + 0x20 ) / 2 = 0x50");
 
 # test porter-duff
@@ -238,8 +238,9 @@ sub pd_color
 
 	my $dst;
 
-	   if ( $rop == rop::SrcOver ) {  $dst = $s + ($d * (255 - $as)) / 255.0               }
-	elsif ( $rop == rop::DstOver ) {  $dst = $s * (255 - $ad) / 255.0 + $d                 }
+	   if ( $rop == rop::Blend   ) {  $dst = $s + $d * (255 - $as) / 255.0                 }
+	elsif ( $rop == rop::SrcOver ) {  $dst = (($s * $as ) + $d * (255 - $as)) / 255.0      }
+	elsif ( $rop == rop::DstOver ) {  $dst = (($d * $ad ) + $s * (255 - $ad)) / 255.0      }
 	elsif ( $rop == rop::DstCopy ) {  $dst = $d                                            }
 	elsif ( $rop == rop::Clear   ) {  $dst = 0                                             }
 	elsif ( $rop == rop::SrcIn   ) {  $dst = $s * $ad / 255.0                              }
@@ -298,7 +299,6 @@ sub test_rop
 		$dst->put_image_indirect($src,0,0,0,0,4,2,4,2,$rop);
 		$dst->put_image_indirect($src,0,2,0,2,4,1,4,1,rop::alpha( $rop, 128 ));
 		$dst->put_image_indirect($src,0,3,0,3,4,1,4,1,rop::alpha( $rop, undef, 128 ));
-		$dst->put_image_indirect($src,0,4,0,4,4,1,4,1,$rop | rop::Premultiply);
 
 		my ( $cc, $aa ) = $dst->split;
 		$cc->type(im::Byte);
@@ -320,7 +320,7 @@ sub test_rop
 			$pa = $aa->pixel($i, 1);
 			is( $pc, $c, "C (($q/$q) $name ($q2/$q2)) = $c $subname");
 			is( $pa, $a, "A (($q/$q) $name ($q2/$q2)) = $a $subname");
-			
+
 			my $q_half = int( $q / 2 + .5);
 			$c = pd_color( $rop, $q, $q_half, $q, $q);
 			$a = pd_alpha( $rop, $q_half, $q);
@@ -328,7 +328,7 @@ sub test_rop
 			$pa = $aa->pixel($i, 2);
 			is( $pc, $c, "C (($q/{$q/2}) $name ($q/$q)) = $c $subname");
 			is( $pa, $a, "A (($q/{$q/2}) $name ($q/$q)) = $a $subname");
-			
+
 			my $q2_half = int( $q2 / 2 + .5);
 			$c = pd_color( $rop, $q, $q, $q2, $q2_half);
 			$a = pd_alpha( $rop, $q, $q2_half);
@@ -336,19 +336,12 @@ sub test_rop
 			$pa = $aa->pixel($i, 3);
 			is( $pc, $c, "C (($q/$q) $name ($q/{$q/2})) = $c $subname");
 			is( $pa, $a, "A (($q/$q) $name ($q/{$q/2})) = $a $subname");
-
-			my $qm = int($q * $q / 255 + .5);
-			$c = pd_color( $rop, $qm, $q, $q, $q );
-			$a = pd_alpha( $rop, $q, $q );
-			$pc = $cc->pixel($i, 4);
-			$pa = $aa->pixel($i, 4);
-			is( $pc, $c, "C*(($q/$q) $name ($q/$q)) = $c $subname");
-			is( $pa, $a, "A*(($q/$q) $name ($q/$q)) = $a $subname");
 		}
 	}
 }
 
 test_rop( $_ ) for qw(
+	Blend
 	SrcOver DstOver DstCopy Clear  SrcIn  DstIn
 	SrcOut DstOut SrcAtop DstAtop Xor    SrcCopy
 );

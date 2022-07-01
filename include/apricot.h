@@ -2780,8 +2780,9 @@ typedef enum {
 	ropNoOper,           /* dest = dest */
 
 	/* Porter-Duff operators for 32-bit ARGB image operations */
-	ropSrcOver = 0, /* save value as ropCopy, to serve as a default */
-	ropXor = ropXorPut, /* so they have same value */
+	ropBlend = ropCopyPut,/* save value as ropCopy, to serve as a default */
+	ropXor = ropXorPut,  /* so they have same value */
+	ropSrcOver,
 	ropDstOver,
 	ropSrcCopy,
 	ropDstCopy,
@@ -2818,7 +2819,6 @@ typedef enum {
 	ropDstAlpha           = 0x2000000,
 	ropDstAlphaShift      = 16,
 	ropConstantAlpha      = 0x3000000,
-	ropPremultiply        = 0x4000000,
 	ropConstantColor      = 0x8000000
 } ROP;
 
@@ -2834,10 +2834,12 @@ ROP(Invert) ROP(XorPut) ROP(NotAnd) ROP(AndPut) ROP(NotXor) ROP(NoOper)
 ROP(NotSrcOr) ROP(CopyPut) ROP(NotDestOr) ROP(OrPut) ROP(Whiteness)
 ROP(NotSrcXor) ROP(NotDestXor)
 
+ROP(Blend)
+
 ROP(SrcOver) ROP(SrcCopy) ROP(SrcIn) ROP(SrcOut) ROP(SrcAtop)
 ROP(DstOver) ROP(DstCopy) ROP(DstIn) ROP(DstOut) ROP(DstAtop)
 ROP(Xor) ROP(Clear)
-	
+
 ROP(Add) ROP(Multiply) ROP(Screen) ROP(Overlay)
 ROP(Darken) ROP(Lighten) ROP(ColorDodge) ROP(ColorBurn)
 ROP(HardLight) ROP(SoftLight) ROP(Difference) ROP(Exclusion)
@@ -2845,7 +2847,7 @@ ROP(HardLight) ROP(SoftLight) ROP(Difference) ROP(Exclusion)
 ROP(SrcAlpha) ROP(SrcAlphaShift)
 ROP(DstAlpha) ROP(DstAlphaShift)
 ROP(PorterDuffMask) ROP(ConstantAlpha) ROP(AlphaCopy)
-ROP(Premultiply) ROP(ConstantColor)
+ROP(ConstantColor)
 END_TABLE(rop,UV)
 #undef ROP
 

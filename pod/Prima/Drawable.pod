@@ -655,18 +655,31 @@ supports only Copy and NoOp.
 The raster operations apply to all graphic primitives except SetPixel.
 
 Note for layering: using layered images and device bitmaps with
-C<put_image> and C<stretch_image> can only use C<rop::SrcCopy> and C<rop::SrcOver>
-raster operations on OS-provided surfaces.
+C<put_image> and C<stretch_image> can only use C<rop::SrcCopy> and C<rop::Blend>
+raster operations on OS-provided surfaces. See more on C<rop::Blend> below.
 
 Also, C<rop::AlphaCopy> operation is available for accessing alpha bits only.
 When used, the source image is treated as alpha mask, and therefore it has to
 be grayscale.  It can be used to apply the alpha bits independently, without
 need to construct an Icon object.
 
+=head3 rop::Blend
+
+C<rop::Blend> is same as C<rop::SrcCopy> except the source pixels are assumed
+to be already premultiplied with the source alpha. This is the default ROP
+when drawing with 8-bit icon masks or on layered surfaces, and it reflects the
+expectation of the OS that images come premultiplied.
+
+This is the only blending operator supported on the widgets and bitmaps, and it
+is advised to premultiply image pixels prior to drawing images using it with
+calls to C<Image.premultiply_alpha>. Image drawing supports this operator in
+case these premultiplied images are to be used not only on native surfaces but
+also on Prima images.
+
 =head3 Additional ROPs
 
 Prima implements extra features for compositing on images outside the
-begin_paint/end_paint brackets. It supports the following 12 Porter-Duff
+begin_paint/end_paint brackets. It supports the following 12+1 Porter-Duff
 operators and some selected Photoshop blend operators:
 
 =for podview 
@@ -678,6 +691,7 @@ operators and some selected Photoshop blend operators:
 <img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/rop3.png">
 <!--
 
+   rop::Blend
    rop::Clear            rop::Add
    rop::Xor              rop::Multiply
    rop::SrcOver          rop::Screen
@@ -726,21 +740,16 @@ images outside begin_paint/end_paint with all Porter-Duff and Photoshop raster o
    $image->rop( rop::alpha( rop::SrcOver, 128 ));
    $image->ellipse( 5, 5, 5, 5 );
 
-Note that when the raster operation is set to C<rop::SrcOver> (default), the
+Note that when the raster operation is set to C<rop::SrcOver>, the
 fully identical effect can be achieved by
 
    $image->alpha(128);
    $image->ellipse( 5, 5, 5, 5 );
 
-as well. In both cases, the values of C<color> and C<backColor> are internally
-premultiplied with the alpha.
+as well.
 
 When used with icons, their source and/or destination alpha channels are additionally
 multiplied with these values.
-
-=item rop::Premultiply
-
-When this bit is set, source pixels will be multiplied with alpha before blending
 
 =item rop::ConstantColor
 
@@ -751,9 +760,7 @@ solid green shade with a mask loaded from file.
 
     $src->load('8-bit gray mask.png');
     $dst->color(cl::LightGreen);
-    $dst->put_image( 0,0,$src,rop::SrcOver | rop::ConstantColor | rop::Premultiply);
-
-Also, remember C<rop::Premultiply> for proper results.
+    $dst->put_image( 0,0,$src,rop::SrcOver | rop::ConstantColor);
 
 =back
 

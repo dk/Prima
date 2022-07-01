@@ -191,10 +191,10 @@ sub draw_background
                         size     => [1,1],
                         type     => im::RGB,
                         maskType => im::bpp8,
-                        data     => join('', map { chr } cl::to_bgr($self->bgColor)),
+                        data     => join('', map { chr } cl::premultiply(cl::to_bgr($self->bgColor))),
                         mask     => chr($a),
                 );
-                $canvas->stretch_image( $x, $y, $self->{screenWidth}, $self->{screenHeight}, $px, rop::SrcOver);
+                $canvas->stretch_image( $x, $y, $self->{screenWidth}, $self->{screenHeight}, $px, rop::Blend);
         }
         return 1;
 }
@@ -507,7 +507,7 @@ sub next
 		$info-> {rect}-> {left},
 		$info-> {rect}-> {bottom},
 		$self-> {image},
-		(( $info-> {blendMethod} eq 'blend') ? rop::SrcOver : rop::SrcCopy)
+		(( $info-> {blendMethod} eq 'blend') ? rop::Blend : rop::SrcCopy)
 	);
 
 	$ret{$_} ||= 0 for qw(left bottom right top);
@@ -544,7 +544,7 @@ sub image { shift->{canvas}->image }
 sub draw
 {
 	my ( $self, $canvas, $x, $y) = @_;
-	$canvas-> put_image( $x, $y, $self-> {canvas}, rop::SrcOver) if $self->{canvas};
+	$canvas-> put_image( $x, $y, $self-> {canvas}, rop::Blend) if $self->{canvas};
 }
 
 package Prima::Image::Animate::WebP;

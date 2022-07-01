@@ -376,7 +376,6 @@ typedef struct {
 	Bool use_dst_alpha;
 	Byte src_alpha_mul;
 	Byte dst_alpha_mul;
-	Byte * pmsbuf;
 	Byte * asbuf;
 	Byte * adbuf;
 	BlendFunc * blend1, * blend2;
@@ -432,11 +431,6 @@ img_put_alpha_single( int x, int y, int w, int h, ImgPutAlphaCallbackRec * ptr)
 		} else
 			adbuf_ptr = ptr->adbuf;
 
-		if ( ptr-> pmsbuf ) {
-			Byte *pmsbuf = ptr-> pmsbuf + bytes * OMP_THREAD_NUM;
-			multiply( s_ptr, asbuf_ptr, ptr->use_src_alpha ? 0 : 1, pmsbuf, bytes);
-			s_ptr = pmsbuf;
-		} 
 		ptr->blend1(
 			s_ptr, 1,
 			asbuf_ptr, ptr->use_src_alpha ? 0 : 1,
@@ -456,7 +450,6 @@ img_put_alpha_single( int x, int y, int w, int h, ImgPutAlphaCallbackRec * ptr)
 
 		if ( ptr->dst_alpha_mul < 255 )
 			multiply( a_ptr, &ptr->dst_alpha_mul, 0, a_ptr, w);
-
 		if ( ptr-> src_alpha_mul < 255 ) {
 			if ( bpp == 3 ) /* reuse the old values from multiply() otherwise */
 				multiply( m_ptr, &ptr->src_alpha_mul, 0, asbuf_ptr, w);
@@ -479,8 +472,8 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
 {
 	int bpp, bytes, mls, als, xrop;
 	unsigned int src_alpha = 0, dst_alpha = 0;
-	Bool use_src_alpha = false, use_dst_alpha = false, use_pms = false;
-	Byte *asbuf, *adbuf, *pmsbuf = NULL, src_alpha_mul = 255, dst_alpha_mul = 255;
+	Bool use_src_alpha = false, use_dst_alpha = false;
+	Byte *asbuf, *adbuf, src_alpha_mul = 255, dst_alpha_mul = 255;
 
 	xrop = rop;
 
@@ -493,8 +486,6 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
 		use_dst_alpha = true;
 		dst_alpha = (rop >> ropDstAlphaShift) & 0xff;
 	}
-	if ( rop & ropPremultiply )
-		use_pms = true;
 	rop &= ropPorterDuffMask;
 	if ( rop > ropMaxPDFunc || rop < 0 ) return false;
 
@@ -615,14 +606,6 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
 		warn("not enough memory");
 		return false;
 	}
-	if ( use_pms ) {
-		if ( !(pmsbuf = malloc( bytes * OMP_MAX_THREADS))) {
-			free(adbuf);
-			free(asbuf);
-			warn("not enough memory");
-			return false;
-		}
-	}
 
 	if ( use_src_alpha ) asbuf[0] = src_alpha;
 	if ( use_dst_alpha ) adbuf[0] = dst_alpha;
@@ -645,7 +628,6 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
 			/* use_dst_alpha */ use_dst_alpha,
 			/* src_alpha_mul */ src_alpha_mul,
 			/* dst_alpha_mul */ dst_alpha_mul,
-			/* pmsbuf        */ pmsbuf,
 			/* asbuf         */ asbuf,
 			/* adbuf         */ adbuf,
 		};
@@ -659,7 +641,6 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
 	/* cleanup */
 	free(adbuf);
 	free(asbuf);
-	if (pmsbuf) free(pmsbuf);
 
 	return true;
 }

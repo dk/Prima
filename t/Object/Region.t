@@ -344,7 +344,7 @@ $j->color(cl::White);
 $j->bar(0,0,$j->size);
 $j->mask( "\xff" x length($i->mask));
 $i->region($r);
-$i->put_image(0,0,$j,rop::SrcOver);
+$i->put_image(0,0,$j,rop::Blend);
 is( $i->data, $xr->data, 'put_image(region).rgb == region.image');
 is( $i->mask, $xr->data, 'put_image(region).a8  == region.image');
 

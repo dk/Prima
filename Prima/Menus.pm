@@ -165,7 +165,8 @@ sub draw_bitmap
 				if ( $disabled ) {
 					$and->set(
 						color => 0,
-						rop   => rop::alpha(rop::SrcOver, 0x80),
+						alpha => 0x80,
+						rop   => rop::SrcOver,
 					);
 					$and->bar(0,0,$and->size);
 				}
