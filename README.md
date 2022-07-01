@@ -28,7 +28,7 @@ Debian/Ubuntu
 -------------
 
   apt-get install libgtk2.0-dev libgif-dev libjpeg-dev libtiff-dev libxpm-dev
-      libwebp-dev libfribidi-dev libharfbuzz-dev libthai0-dev
+      libwebp-dev libfribidi-dev libharfbuzz-dev libthai-dev
 
 OpenSUSE
 --------
