@@ -2017,8 +2017,11 @@ Bool
 apc_gp_set_fill_pattern( Handle self, FillPattern pattern)
 {
 	DEFXX;
-	if ( memcmp( pattern, XX-> fill_pattern, sizeof(FillPattern)) == 0)
+	if ( memcmp( pattern, XX-> fill_pattern, sizeof(FillPattern)) == 0) {
+		if ( XF_IN_PAINT(XX))
+			cleanup_stipples(self);
 		return true;
+	}
 	XX-> flags. brush_null_hatch =
 	( memcmp( pattern, fillPatterns[fpSolid], sizeof(FillPattern)) == 0);
 	memcpy( XX-> fill_pattern, pattern, sizeof( FillPattern));
