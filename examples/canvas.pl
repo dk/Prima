@@ -2110,7 +2110,7 @@ sub set_text_flags
 }
 
 insert( $c, 'Button', origin => [ 0, 0]);
-insert( $c, 'Rectangle', linePattern => lp::DotDot, lineWidth => 10, origin => [ 50, 50]);
+insert( $c, 'Rectangle', linePattern => lp::DotDot, lineWidth => 10, origin => [ 50, 50], fillPattern => $logo);
 insert( $c, 'Line', origin => [ 200, 200], antialias => 1);
 insert( $c, 'Polygon', origin => [ 150, 150]);
 insert( $c, 'Bitmap', origin => [ 350, 350], backColor => cl::LightGreen, color => cl::Green);
