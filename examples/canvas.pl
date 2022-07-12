@@ -1757,12 +1757,35 @@ menuItems => [
 				sort grep { !m/AUTOLOAD|constant|BEGIN|END/ } keys %le:: ]],
 		['Line ~join' => [ map { [ "lj:lineJoin=$_", $_, \&set_constant ] }
 				sort grep { !m/AUTOLOAD|constant|BEGIN|END/ } keys %lj:: ]],
-		['Fill ~pattern' => [ map { [ "fp:fillPattern=$_", $_, \&set_constant ] }
-				sort grep { !m/AUTOLOAD|constant|BEGIN|END/ } keys %fp:: ]],
-		['~Rop' => [ map { [ "rop:rop=$_", $_, \&set_constant ] }
-				sort grep { !m/AUTOLOAD|constant|BEGIN|END/ } keys %rop:: ]],
-		['Rop~2' => [ map { [ "rop:rop2=$_", $_, \&set_constant ] }
-				sort grep { !m/AUTOLOAD|constant|BEGIN|END/ } keys %rop:: ]],
+		['Fill ~pattern' => [
+				[ Icon   => Icon   => \&set_fill_pattern ],
+				[ Bitmap => Bitmap => \&set_fill_pattern ],
+				[],
+				map { [ "fp:fillPattern=$_", $_, \&set_fill_pattern ] }
+					sort grep { !m/AUTOLOAD|constant|BEGIN|END/ } keys %fp::
+		]],
+		['~Rop' => [ map { [ "rop:rop=$_", $_, \&set_constant ] } qw(
+				CopyPut
+				XorPut
+				AndPut
+				OrPut
+				NotPut
+				Invert
+				Blackness
+				NotDestAnd
+				NotDestOr
+				Whiteness
+				NotSrcAnd
+				NotSrcOr
+				NotXor
+				NotAnd
+				NotOr
+				NoOper
+		)]],
+		['Rop~2' => [ map { [ "rop:rop2=$_", $_, \&set_constant ] } qw(
+				CopyPut
+				NoOper
+		)]],
 		['Fill r~ule' => [ map { [ "fm:fillMode=$_", $_, \&set_constant ] }
 				sort grep { !m/AUTOLOAD|constant|BEGIN|END/ } keys %fm:: ]],
 		[],
@@ -1926,6 +1949,22 @@ sub set_font
 	$fontdialog = Prima::Dialog::FontDialog-> create unless $fontdialog;
 	$fontdialog-> logFont( $obj-> font);
 	$obj-> font( $fontdialog-> logFont) if $fontdialog-> execute != mb::Cancel;
+}
+
+sub set_fill_pattern
+{
+	my ( $self, $fp) = @_;
+	my $obj;
+	return unless $obj = $self-> Canvas-> focused_object;
+
+	if ( $fp eq 'Icon') {
+		$obj-> fillPattern($logo);
+	} elsif ( $fp eq 'Bitmap') {
+		$obj-> fillPattern($bitmap->image);
+	} else {
+		return unless $fp =~ /^(\w+)\:(\w+)\=(.*)$/;
+		$obj-> $2( eval "$1::$3");
+	}
 }
 
 sub set_line_width
