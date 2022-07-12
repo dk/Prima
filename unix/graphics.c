@@ -2141,7 +2141,7 @@ apc_gp_set_line_pattern( Handle self, unsigned char *pattern, int len)
 			gcv. line_style = LineSolid;
 			XChangeGC( DISP, XX-> gc, GCLineStyle, &gcv);
 		} else {
-			dDASH_FIX(XX-> line_width, pattern, len);
+			dDASH_FIX(XX-> paint_line_width, pattern, len);
 			DASH_FIX;
 			gcv. line_style = ( XX-> paint_rop2 == ropNoOper) ? LineOnOffDash : LineDoubleDash;
 			XSetDashes( DISP, XX-> gc, 0, DASHES);
