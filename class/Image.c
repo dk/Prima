@@ -1771,8 +1771,6 @@ prepare_fill_context(Handle self, Point translate, PImgPaintContext ctx)
 	}
 	ctx-> region = var->regionData ? &var->regionData-> data. box : NULL;
 	ctx-> patternOffset = my->get_fillPatternOffset(self);
-	ctx-> patternOffset.x -= translate.x;
-	ctx-> patternOffset.y -= translate.y;
 	ctx-> transparent = my->get_rop2(self) == ropNoOper;
 
 	ctx-> tile = NULL_HANDLE;

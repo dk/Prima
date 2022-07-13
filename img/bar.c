@@ -103,7 +103,7 @@ img_bar_alpha_single_transparent( int x, int y, int w, int h, ImgBarAlphaCallbac
 	for ( i = 0; i < h; i++) {
 		unsigned int pat;
 		Byte *d_ptr, *a_ptr, *adbuf_ptr, *adbuf_ptr2;
-		pat = (unsigned int) ptr->ctx->pattern[(i + ptr->ctx->patternOffset. y) % FILL_PATTERN_SIZE];
+		pat = (unsigned int) ptr->ctx->pattern[(i + FILL_PATTERN_SIZE - ptr->ctx->patternOffset. y) % FILL_PATTERN_SIZE];
 		if ( pat == 0 ) goto NEXT_LINE;
 		pat = (((pat << 8) | pat) >> ((ptr->ctx->patternOffset. x + 8 - (x % 8)) % FILL_PATTERN_SIZE)) & 0xff;
 
@@ -251,7 +251,7 @@ img_bar_alpha( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 			if ( solid ) {
 				pat = 0xff;
 			} else {
-				pat = (unsigned int) ctx->pattern[(j + ctx->patternOffset. y) % FILL_PATTERN_SIZE];
+				pat = (unsigned int) ctx->pattern[(j + FILL_PATTERN_SIZE - ctx->patternOffset. y) % FILL_PATTERN_SIZE];
 				pat = (((pat << 8) | pat) >> ((ctx->patternOffset. x + 8 - (x % 8)) % FILL_PATTERN_SIZE)) & 0xff;
 			}
 			buffer = blt_buffer + j * blt_step;
@@ -453,28 +453,28 @@ tile( int x, int y, int w, int h, TileCallbackFunc *tiler, TileCallbackRec* tx)
 	tx->dst              = dest-> data;
 	tx->bytes            = (dest->type & imBPP) / 8;
 	for (
-		dy = y - offset.y;
+		dy = y - th + offset.y;
 		dy < Y2;
 		dy += th
 	)
 	for (
-		dx = x - offset.x;
+		dx = x - tw + offset.x;
 		dx < X2;
 		dx += tw
 	) {
 		int x1 = dx, y1 = dy, x2 = dx + tw - 1, y2 = dy + th - 1;
 		tx->src_x = tx->src_y = 0;
-		if ( x1 < 0 ) {
-			tx->src_x -= x1;
-			x1 = 0;
+		if ( x1 < x ) {
+			tx->src_x += x - x1;
+			x1 = x;
 		}
-		if ( y1 < 0 ) {
-			tx->src_y -= y1;
-			y1 = 0;
+		if ( y1 < y ) {
+			tx->src_y += y - y1;
+			y1 = y;
 		}
 		if ( x2 >= X2 ) x2 = X2 - 1;
 		if ( y2 >= Y2 ) y2 = Y2 - 1;
-		if ( x2 < 0 || y2 < 0 || x1 > w || y1 > h || x2 < x1 || y2 < y1 )
+		if ( x2 < x || y2 < y || x1 > w || y1 > h || x2 < x1 || y2 < y1 )
 			continue;
 
 		tx->src = tile->data + tx->src_y * tx->src_stride;
@@ -524,7 +524,7 @@ put1( int x, int y, int w, int h, TileCallbackRec* tx)
 	int i;
 	Byte * src = tx->src + ( y - tx->orig_y ) * tx->src_stride;
 	Byte * dst = tx->dst + y * tx->dst_stride;
-	for ( i = tx->src_y; i < h; i++) {
+	for ( i = 0; i < h; i++) {
 		bc_mono_put( src, tx->src_x + x - tx->orig_x, w, dst, x, tx-> blt);
 		src += tx->src_stride;
 		dst += tx->dst_stride;
@@ -539,7 +539,7 @@ put4( int x, int y, int w, int h, TileCallbackRec* tx)
 	int i;
 	Byte * src = tx->src + ( y - tx->orig_y ) * tx->src_stride;
 	Byte * dst = tx->dst + y * tx->dst_stride;
-	for ( i = tx->src_y; i < h; i++) {
+	for ( i = 0; i < h; i++) {
 		bc_nibble_put( src, tx->src_x + x - tx->orig_x, w, dst, x, tx-> blt, tx->colormap);
 		src += tx->src_stride;
 		dst += tx->dst_stride;
@@ -554,7 +554,7 @@ put8x( int x, int y, int w, int h, TileCallbackRec* tx)
 	Byte * src = tx->src + ( y - tx->orig_y ) * tx->src_stride + ( tx->src_x + x - tx->orig_x ) * tx->bytes;
 	Byte * dst = tx->dst + y * tx->dst_stride + x * tx->bytes;
 	w *= tx-> bytes;
-	for ( i = tx->src_y; i < h; i++) {
+	for ( i = 0; i < h; i++) {
 		if ( tx->colormap )
 			bc_byte_put( src, dst, w, tx->blt, tx->colormap);
 		else
@@ -1146,6 +1146,13 @@ img_bar( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 	if ( w <= 0 || h <= 0 ) return true;
 
 	if ( ctx-> tile ) {
+		int W = PImage(ctx->tile)->w;
+		int H = PImage(ctx->tile)->h;
+		while ( ctx->patternOffset.x < 0 ) ctx-> patternOffset.x += W;
+		while ( ctx->patternOffset.y < 0 ) ctx-> patternOffset.y += H;
+		ctx-> patternOffset.x %= W;
+		ctx-> patternOffset.y %= H;
+
 		if ( PImage(ctx->tile)->type == imBW && !kind_of(ctx->tile, CIcon)) {
 			if ( ctx-> rop & ropConstantAlpha)
 				return img_bar_stipple_alpha( dest, x, y, w, h, ctx);
@@ -1237,7 +1244,7 @@ img_bar( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 		if ( solid ) {
 			pat = 0xff;
 		} else {
-			pat = (unsigned int) ctx->pattern[(j + ctx->patternOffset. y) % FILL_PATTERN_SIZE];
+			pat = (unsigned int) ctx->pattern[(j + FILL_PATTERN_SIZE - ctx->patternOffset. y) % FILL_PATTERN_SIZE];
 			pat = (((pat << 8) | pat) >> ((ctx->patternOffset. x + 8 - (x % 8)) % FILL_PATTERN_SIZE)) & 0xff;
 		}
 		buffer = blt_buffer + j * blt_step;

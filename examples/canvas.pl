@@ -69,6 +69,7 @@ sub on_paint
 		);
 		%props = map { $_ => 1 } @uses;
 
+		$canvas-> fillPatternOffset( @r[0,1] );
 		$canvas-> translate( @r[4,5]);
 		$canvas-> clipRect( @r[0..3]);
 		$obj-> on_paint( $canvas, $r[6]-$r[4], $r[7]-$r[5]);

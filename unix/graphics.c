@@ -82,6 +82,29 @@ prima_get_gc( PDrawableSysData selfxx)
 }
 
 void
+prima_get_fill_pattern_offsets( Handle self, int * x, int * y )
+{
+	DEFXX;
+	int w, h;
+	int Y = XX-> size.y;
+	if ( XX-> fp_stipple || XX-> fp_tile ) {
+		Handle i = PDrawable(self)->fillPatternImage;
+		h = PDrawable(i)-> h;
+		w = PDrawable(i)-> w;
+	} else {
+		h = 8;
+		w = 8;
+	}
+
+	*x = XX->fill_pattern_offset.x + XX->btransform.x;
+	*y = Y - XX->fill_pattern_offset.y - XX->btransform.y;
+	while (*x < 0) *x += w;
+	while (*y < 0) *y += h;
+	*x %= w;
+	*y %= h;
+}
+
+void
 prima_release_gc( PDrawableSysData selfxx)
 {
 	Bool bitmap, layered;
@@ -141,7 +164,6 @@ prima_prepare_drawable_for_painting( Handle self, Bool inside_on_paint)
 
 	XF_IN_PAINT(XX) = true;
 	XX-> btransform. x = XX-> btransform. y = 0;
-	XX-> gcv. ts_x_origin = XX-> gcv. ts_y_origin = 0;
 	if ( inside_on_paint && XX-> udrawable && is_opt( optBuffered) && !is_opt( optInDrawInfo) ) {
 		if ( XX-> invalid_region) {
 			XClipBox( XX-> invalid_region, &r);
@@ -158,8 +180,6 @@ prima_prepare_drawable_for_painting( Handle self, Bool inside_on_paint)
 		XX-> gdrawable = XCreatePixmap( DISP, XX-> udrawable, w, h, XX->visual->depth);
 		XCHECKPOINT;
 		if (!XX-> gdrawable) goto Unbuffered;
-		XX-> gcv. ts_x_origin = -r.x;
-		XX-> gcv. ts_y_origin = -r.y;
 	} else if ( XX-> udrawable && !XX-> gdrawable) {
 Unbuffered:
 		XX-> gdrawable = XX-> udrawable;
@@ -228,6 +248,7 @@ Unbuffered:
 	}
 	XX-> clip_mask_extent. x = XX-> clip_mask_extent. y = 0;
 	XX-> flags. xft_clip = 0;
+	XX-> saved_fill_pattern_offset = XX-> fill_pattern_offset;
 
 	apc_gp_set_antialias( self, XX-> flags.saved_antialias);
 	apc_gp_set_color( self, XX-> saved_fore);
@@ -235,7 +256,6 @@ Unbuffered:
 	memcpy( XX-> saved_fill_pattern, XX-> fill_pattern, sizeof( FillPattern));
 	XX-> fill_pattern[0]++; /* force  */
 	apc_gp_set_fill_pattern( self, XX-> saved_fill_pattern);
-	XX-> saved_fill_pattern_offset = XX-> fill_pattern_offset;
 	apc_gp_set_fill_pattern_offset( self, XX-> saved_fill_pattern_offset);
 
 	if ( !XX-> flags. reload_font && XX-> font && XX-> font-> id) {
@@ -405,183 +425,236 @@ if (!XX->flags.brush_back && XX-> paint_rop2 == ropCopyPut) {\
 }\
 XSetFillStyle( DISP, XX-> gc, FillSolid);\
 
+static Bool
+make_tiled_brush( Handle self, int colorIndex)
+{
+	DEFXX;
+	/* custom image */
+	if ( colorIndex > 0) return false;
+	XCHECKPOINT;
+	if ( XX-> fp_stipple) {
+		XSetStipple( DISP, XX-> gc, XX-> fp_stipple);
+		XCHECKPOINT;
+		if (!XX->flags.brush_fore) {
+			XSetForeground( DISP, XX-> gc, XX-> fore. primary);
+			XX->flags.brush_fore = 1;
+		}
+		if (!XX->flags.brush_back) {
+			XSetBackground( DISP, XX-> gc, XX-> back. primary);
+			XX->flags.brush_back = 1;
+		}
+		XSetFillStyle( DISP, XX-> gc,
+			(XX->paint_rop2 == ropNoOper) ? FillStippled : FillOpaqueStippled);
+	} else {
+		XSetTile( DISP, XX-> gc, XX-> fp_tile);
+		XCHECKPOINT;
+		XSetFillStyle( DISP, XX-> gc, FillTiled);
+	}
+	return true;
+}
+
+
+static Bool
+make_mono_brush( Handle self, int colorIndex)
+{
+	DEFXX;
+	int i, mode = -1;
+	FillPattern mix, *p1, *p2;
+	Pixmap p;
+
+	switch (colorIndex) {
+	case 0:
+		if (
+			(XX->paint_rop2 == ropCopyPut) ||
+			( memcmp( XX->fill_pattern, fillPatterns[ fpSolid], sizeof( FillPattern)) == 0)
+		) {
+			p1 = &guts. ditherPatterns[ 64 - (XX-> fore. primary ? 64 : XX-> fore. balance)];
+			p2 = &guts. ditherPatterns[ 64 - (XX-> back. primary ? 64 : XX-> back. balance)];
+			for ( i = 0; i < sizeof( FillPattern); i++)
+				mix[i] = ((*p1)[i] & XX-> fill_pattern[i]) | ((*p2)[i] & ~XX-> fill_pattern[i]);
+			XSetForeground( DISP, XX-> gc, 1);
+			XSetBackground( DISP, XX-> gc, 0);
+			XX-> flags. brush_fore = 0;
+			XX-> flags. brush_back = 0;
+			if ( memcmp( mix, fillPatterns[ fpSolid], sizeof( FillPattern)) == 0) {
+				XSetFillStyle( DISP, XX-> gc, FillSolid);
+				return true;
+			}
+			mode = FillOpaqueStippled;
+		} else {
+			XSetForeground( DISP, XX-> gc, XX->fore.primary);
+			XX-> flags. brush_fore = 0;
+
+			p1 = &guts. ditherPatterns[XX-> fore.balance];
+			for ( i = 0; i < sizeof( FillPattern); i++)
+				mix[i] = (*p1)[i] & XX-> fill_pattern[i];
+			mode = FillStippled;
+		}
+		break;
+	case 1:
+		if (
+			(XX->paint_rop2 == ropCopyPut) ||
+			( memcmp( XX->fill_pattern, fillPatterns[ fpSolid], sizeof( FillPattern)) == 0) ||
+			! XX-> fore.balance
+		)
+			return false;
+
+		XSetForeground( DISP, XX-> gc, XX->fore.secondary);
+
+		p1 = &guts. ditherPatterns[64 - XX-> fore.balance];
+		for ( i = 0; i < sizeof( FillPattern); i++)
+			mix[i] = (*p1)[i] & XX-> fill_pattern[i];
+
+		mode = FillStippled;
+		break;
+	default:
+		return false;
+	}
+
+	if (( p = prima_get_hatch( &mix)) != 0 ) {
+		XSetStipple( DISP, XX-> gc, p);
+		XSetFillStyle( DISP, XX-> gc, mode);
+	} else
+		XSetFillStyle( DISP, XX-> gc, FillSolid);
+
+	return true;
+}
+
+static Bool
+make_null_brush( Handle self, int colorIndex )
+{
+	DEFXX;
+	Pixmap p;
+	if ( colorIndex > 0) return false;
+	if ( XX-> fore. balance) {
+		p = prima_get_hatch( &guts. ditherPatterns[ XX-> fore. balance]);
+		if ( p) {
+			XSetStipple( DISP, XX-> gc, p);
+			XSetFillStyle( DISP, XX-> gc, FillOpaqueStippled);
+			XSetBackground( DISP, XX-> gc, XX-> fore. secondary);
+			XX-> flags. brush_back = 0;
+		} else /* failure */
+			XSetFillStyle( DISP, XX-> gc, FillSolid);
+	} else
+		XSetFillStyle( DISP, XX-> gc, FillSolid);
+	if (!XX->flags.brush_fore) {
+		XSetForeground( DISP, XX-> gc, XX-> fore. primary);
+		XX->flags.brush_fore = 1;
+	}
+	return true;
+}
+
+
+static Bool
+make_solid_brush( Handle self, int colorIndex )
+{
+	DEFXX;
+	Pixmap p;
+	if ( colorIndex > 0) return false;
+
+	p = prima_get_hatch( &XX-> fill_pattern);
+	XSetFillStyle( DISP, XX-> gc, p ?
+		((XX->paint_rop2 == ropNoOper) ? FillStippled : FillOpaqueStippled) :
+		FillSolid);
+	if ( p) XSetStipple( DISP, XX-> gc, p);
+	if (!XX->flags.brush_fore) {
+		XSetForeground( DISP, XX-> gc, XX-> fore. primary);
+		XX->flags.brush_fore = 1;
+	}
+	if (p && !XX->flags.brush_back) {
+		XSetBackground( DISP, XX-> gc, XX-> back. primary);
+		XX->flags.brush_back = 1;
+	}
+	return true;
+}
+
+static Bool
+make_dithered_brush( Handle self, int colorIndex )
+{
+	DEFXX;
+	Pixmap p;
+
+	switch ( colorIndex) {
+	case 0: /* back mix */
+		if ( XX->paint_rop2 == ropNoOper) {
+			XSetFunction( DISP, XX-> gc, GXnoop);
+			return true;
+		}
+
+		if ( XX-> back. balance) {
+			p = prima_get_hatch( &guts. ditherPatterns[ XX-> back. balance]);
+			if ( p) {
+				XSetStipple( DISP, XX-> gc, p);
+				XSetFillStyle( DISP, XX-> gc, FillOpaqueStippled);
+				XSetBackground( DISP, XX-> gc, XX-> back. secondary);
+			} else  /* failure */
+				XSetFillStyle( DISP, XX-> gc, FillSolid);
+		} else
+			XSetFillStyle( DISP, XX-> gc, FillSolid);
+		XSetForeground( DISP, XX-> gc, XX-> back. primary);
+		XX-> flags. brush_back = 0;
+		break;
+	case 1: /* fore mix */
+		if ( memcmp( XX-> fill_pattern, fillPatterns[fpEmpty], sizeof(FillPattern))==0)
+			return false;
+		if ( XX-> fore. balance) {
+			int i;
+			FillPattern fp;
+			memcpy( &fp, &guts. ditherPatterns[ XX-> fore. balance], sizeof(FillPattern));
+			for ( i = 0; i < 8; i++)
+				fp[i] &= XX-> fill_pattern[i];
+			p = prima_get_hatch( &fp);
+		} else
+			p = prima_get_hatch( &XX-> fill_pattern);
+		if ( !p) return false;
+
+		XSetStipple( DISP, XX-> gc, p);
+		XSetFillStyle( DISP, XX-> gc, FillStippled);
+		if ( !XX-> flags. brush_fore) {
+			XSetForeground( DISP, XX-> gc, XX-> fore. primary);
+			XX-> flags. brush_fore = 1;
+		}
+		break;
+	case 2: /* fore mix with fill pattern */
+		if ( memcmp( XX-> fill_pattern, fillPatterns[fpEmpty], sizeof(FillPattern))==0)
+			return false;
+		if ( XX-> fore. balance ) {
+			int i;
+			FillPattern fp;
+			memcpy( &fp, &guts. ditherPatterns[ XX-> fore. balance], sizeof(FillPattern));
+			for ( i = 0; i < 8; i++)
+				fp[i] = (~fp[i]) & XX-> fill_pattern[i];
+			p = prima_get_hatch( &fp);
+			if ( !p) return false;
+			XSetStipple( DISP, XX-> gc, p);
+			XSetFillStyle( DISP, XX-> gc, FillStippled);
+			XSetForeground( DISP, XX-> gc, XX-> fore. secondary);
+			XX-> flags. brush_fore = 0;
+			break;
+		} else
+			return false;
+	default:
+		return false;
+	}
+
+	return true;
+}
+
 Bool
 prima_make_brush( Handle self, int colorIndex)
 {
 	DEFXX;
-	Pixmap p;
 	if ( XX-> fp_stipple || XX-> fp_tile ) {
-		/* custom image */
-		if ( colorIndex > 0) return false;
-		XCHECKPOINT;
-		if ( XX-> fp_stipple) {
-			XSetStipple( DISP, XX-> gc, XX-> fp_stipple);
-			XCHECKPOINT;
-			if (!XX->flags.brush_fore) {
-				XSetForeground( DISP, XX-> gc, XX-> fore. primary);
-				XX->flags.brush_fore = 1;
-			}
-			if (!XX->flags.brush_back) {
-				XSetBackground( DISP, XX-> gc, XX-> back. primary);
-				XX->flags.brush_back = 1;
-			}
-			XSetFillStyle( DISP, XX-> gc,
-				(XX->paint_rop2 == ropNoOper) ? FillStippled : FillOpaqueStippled);
-		} else {
-			XSetTile( DISP, XX-> gc, XX-> fp_tile);
-			XCHECKPOINT;
-			XSetFillStyle( DISP, XX-> gc, FillTiled);
-		}
+		return make_tiled_brush( self, colorIndex );
 	} else if ( XT_IS_BITMAP(XX) || ( guts. idepth == 1)) {
-		int i;
-		FillPattern mix, *p1, *p2;
-
-		switch (colorIndex) {
-		case 0:
-			if (
-				(XX->paint_rop2 == ropCopyPut) ||
-				( memcmp( XX->fill_pattern, fillPatterns[ fpSolid], sizeof( FillPattern)) == 0)
-			) {
-				p1 = &guts. ditherPatterns[ 64 - (XX-> fore. primary ? 64 : XX-> fore. balance)];
-				p2 = &guts. ditherPatterns[ 64 - (XX-> back. primary ? 64 : XX-> back. balance)];
-				for ( i = 0; i < sizeof( FillPattern); i++)
-					mix[i] = ((*p1)[i] & XX-> fill_pattern[i]) | ((*p2)[i] & ~XX-> fill_pattern[i]);
-				XSetForeground( DISP, XX-> gc, 1);
-				XSetBackground( DISP, XX-> gc, 0);
-				XX-> flags. brush_fore = 0;
-				XX-> flags. brush_back = 0;
-				if (
-					( memcmp( mix, fillPatterns[ fpSolid], sizeof( FillPattern)) != 0) &&
-					( p = prima_get_hatch( &mix))
-				) {
-					XSetStipple( DISP, XX-> gc, p);
-					XSetFillStyle( DISP, XX-> gc, FillOpaqueStippled);
-				} else
-					XSetFillStyle( DISP, XX-> gc, FillSolid);
-			} else {
-				p1 = &guts. ditherPatterns[ 64 - (XX-> fore. primary ? 64 : XX-> fore. balance)];
-				for ( i = 0; i < sizeof( FillPattern); i++)
-					mix[i] = (*p1)[i] & XX-> fill_pattern[i];
-				XSetForeground( DISP, XX-> gc, 1);
-				XX-> flags. brush_fore = 0;
-				XSetFillStyle( DISP, XX-> gc, FillOpaqueStippled);
-			}
-			break;
-		case 1:
-			if (
-				(XX->paint_rop2 == ropCopyPut) ||
-				( memcmp( XX->fill_pattern, fillPatterns[ fpSolid], sizeof( FillPattern)) == 0)
-			)
-				return false;
-
-			p1 = &guts. ditherPatterns[ 64 - (XX-> back. primary ? 64 : XX-> back. balance)];
-			for ( i = 0; i < sizeof( FillPattern); i++)
-				mix[i] = (*p1)[i] & XX-> fill_pattern[i];
-			XSetForeground( DISP, XX-> gc, 0);
-			break;
-		default:
-			return false;
-		}
+		return make_mono_brush( self, colorIndex );
 	} else if ( XX-> flags. brush_null_hatch ) {
-		if ( colorIndex > 0) return false;
-		if ( XX-> fore. balance) {
-			p = prima_get_hatch( &guts. ditherPatterns[ XX-> fore. balance]);
-			if ( p) {
-				XSetStipple( DISP, XX-> gc, p);
-				XSetFillStyle( DISP, XX-> gc, FillOpaqueStippled);
-				XSetBackground( DISP, XX-> gc, XX-> fore. secondary);
-				XX-> flags. brush_back = 0;
-			} else /* failure */
-				XSetFillStyle( DISP, XX-> gc, FillSolid);
-		} else
-			XSetFillStyle( DISP, XX-> gc, FillSolid);
-		if (!XX->flags.brush_fore) {
-			XSetForeground( DISP, XX-> gc, XX-> fore. primary);
-			XX->flags.brush_fore = 1;
-		}
+		return make_null_brush( self, colorIndex );
 	} else if ( XX->fore.balance == 0 && XX->back.balance == 0) {
-		if ( colorIndex > 0) return false;
-
-		p = prima_get_hatch( &XX-> fill_pattern);
-		XSetFillStyle( DISP, XX-> gc, p ?
-			((XX->paint_rop2 == ropNoOper) ? FillStippled : FillOpaqueStippled) :
-			FillSolid);
-		if ( p) XSetStipple( DISP, XX-> gc, p);
-		if (!XX->flags.brush_fore) {
-			XSetForeground( DISP, XX-> gc, XX-> fore. primary);
-			XX->flags.brush_fore = 1;
-		}
-		if (p && !XX->flags.brush_back) {
-			XSetBackground( DISP, XX-> gc, XX-> back. primary);
-			XX->flags.brush_back = 1;
-		}
+		return make_solid_brush( self, colorIndex );
 	} else {
-		switch ( colorIndex) {
-		case 0: /* back mix */
-			if ( XX->paint_rop2 == ropNoOper) {
-				XSetFunction( DISP, XX-> gc, GXnoop);
-				return true;
-			}
-
-			if ( XX-> back. balance) {
-				p = prima_get_hatch( &guts. ditherPatterns[ XX-> back. balance]);
-				if ( p) {
-					XSetStipple( DISP, XX-> gc, p);
-					XSetFillStyle( DISP, XX-> gc, FillOpaqueStippled);
-					XSetBackground( DISP, XX-> gc, XX-> back. secondary);
-				} else  /* failure */
-					XSetFillStyle( DISP, XX-> gc, FillSolid);
-			} else
-				XSetFillStyle( DISP, XX-> gc, FillSolid);
-			XSetForeground( DISP, XX-> gc, XX-> back. primary);
-			XX-> flags. brush_back = 0;
-			break;
-		case 1: /* fore mix */
-			if ( XX->paint_rop2 == ropNoOper)
-				XSetFillStyle( DISP, XX-> gc, rop_map[XX->paint_rop]);
-
-			if ( memcmp( XX-> fill_pattern, fillPatterns[fpEmpty], sizeof(FillPattern))==0)
-				return false;
-			if ( XX-> fore. balance) {
-				int i;
-				FillPattern fp;
-				memcpy( &fp, &guts. ditherPatterns[ XX-> fore. balance], sizeof(FillPattern));
-				for ( i = 0; i < 8; i++)
-					fp[i] &= XX-> fill_pattern[i];
-				p = prima_get_hatch( &fp);
-			} else
-				p = prima_get_hatch( &XX-> fill_pattern);
-			if ( !p) return false;
-			XSetStipple( DISP, XX-> gc, p);
-			XSetFillStyle( DISP, XX-> gc, FillStippled);
-			if ( !XX-> flags. brush_fore) {
-				XSetForeground( DISP, XX-> gc, XX-> fore. primary);
-				XX-> flags. brush_fore = 1;
-			}
-			break;
-		case 2: /* fore mix with fill pattern */
-			if ( memcmp( XX-> fill_pattern, fillPatterns[fpEmpty], sizeof(FillPattern))==0)
-				return false;
-			if ( XX-> fore. balance ) {
-				int i;
-				FillPattern fp;
-				memcpy( &fp, &guts. ditherPatterns[ XX-> fore. balance], sizeof(FillPattern));
-				for ( i = 0; i < 8; i++)
-					fp[i] = (~fp[i]) & XX-> fill_pattern[i];
-				p = prima_get_hatch( &fp);
-				if ( !p) return false;
-				XSetStipple( DISP, XX-> gc, p);
-				XSetFillStyle( DISP, XX-> gc, FillStippled);
-				XSetForeground( DISP, XX-> gc, XX-> fore. secondary);
-				XX-> flags. brush_fore = 0;
-				break;
-			} else
-				return false;
-		default:
-			return false;
-		}
+		return make_dithered_brush( self, colorIndex );
 	}
-	return true;
 }
 
 Bool
@@ -1706,9 +1779,7 @@ apc_gp_get_fill_pattern( Handle self)
 Point
 apc_gp_get_fill_pattern_offset( Handle self)
 {
-	Point fpo = X(self)-> fill_pattern_offset;
-	fpo.y = 8 - fpo.y;
-	return fpo;
+	return X(self)-> fill_pattern_offset;
 }
 
 int
@@ -2025,10 +2096,17 @@ apc_gp_set_fill_pattern( Handle self, FillPattern pattern)
 	XX-> flags. brush_null_hatch =
 	( memcmp( pattern, fillPatterns[fpSolid], sizeof(FillPattern)) == 0);
 	memcpy( XX-> fill_pattern, pattern, sizeof( FillPattern));
+
 	if ( XF_IN_PAINT(XX)) {
+		XGCValues gcv;
 		cleanup_stipples(self);
 		guts.xrender_pen_dirty = true;
+
+		prima_get_fill_pattern_offsets(self, &gcv.ts_x_origin, &gcv.ts_y_origin);
+		XChangeGC( DISP, XX-> gc, GCTileStipXOrigin | GCTileStipYOrigin, &gcv);
+		XCHECKPOINT;
 	}
+
 	return true;
 }
 
@@ -2038,18 +2116,13 @@ apc_gp_set_fill_pattern_offset( Handle self, Point fpo)
 	DEFXX;
 	XGCValues gcv;
 
-	fpo. y = 8 - fpo.y;
 	XX-> fill_pattern_offset = fpo;
 
 	if ( XF_IN_PAINT(XX)) {
-		gcv. ts_x_origin = fpo. x;
-		gcv. ts_y_origin = fpo. y;
+		prima_get_fill_pattern_offsets(self, &gcv.ts_x_origin, &gcv.ts_y_origin);
 		XChangeGC( DISP, XX-> gc, GCTileStipXOrigin | GCTileStipYOrigin, &gcv);
 		XCHECKPOINT;
 		guts.xrender_pen_dirty = true;
-	} else {
-		XX-> gcv. ts_x_origin = fpo. x;
-		XX-> gcv. ts_y_origin = fpo. y;
 	}
 	return true;
 }

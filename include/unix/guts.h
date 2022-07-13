@@ -1152,6 +1152,9 @@ extern struct gc_head*
 prima_get_gc( PDrawableSysData);
 
 extern void
+prima_get_fill_pattern_offsets( Handle self, int * x, int * y );
+
+extern void
 prima_rebuild_watchers( void);
 
 extern void

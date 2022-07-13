@@ -218,8 +218,7 @@ pen_update(Handle self)
 	pen.gcv.foreground |= alpha;
 	pen.gcv.background |= alpha;
 
-	pen.gcv.ts_x_origin = XX-> fill_pattern_offset.x;
-	pen.gcv.ts_y_origin = XX-> fill_pattern_offset.y;
+	prima_get_fill_pattern_offsets(self, &pen.gcv.ts_x_origin, &pen.gcv.ts_y_origin);
 	pen.gcv.stipple = prima_get_hatch( &XX-> fill_pattern);
 	if ( pen.gcv.stipple ) {
 		if ( XX-> paint_rop2 == ropNoOper )

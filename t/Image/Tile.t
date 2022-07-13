@@ -246,7 +246,7 @@ sub test_pat
 	);
 
 	$i->clear;
-	$i->fillPatternOffset(1,0);
+	$i->fillPatternOffset(-1,0);
 	$i->bar(0,0,3,3);
 	is_pict($i, "[$src_bpp/$dst_bpp] 3x0/1.0",
 		" * *".
