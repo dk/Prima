@@ -1394,6 +1394,7 @@ apc_gp_set_fill_image( Handle self, Handle image)
 	objCheck false;
 	if ( !sys ps || !image)
 		return false;
+	sys rq_brush.back_color = GetBkColor(sys ps);
 	sys rq_brush.logbrush.lbStyle = BS_DIBPATTERNPT; /* for stylus_is_complex */
 	STYLUS_FREE_BRUSH;
 	STYLUS_FREE_GP_BRUSH;
