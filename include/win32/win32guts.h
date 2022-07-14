@@ -492,6 +492,7 @@ typedef struct _DrawableData
 	FillPattern    fill_pattern;
 	FillPattern    fill_pattern2;
 	Point          fill_pattern_offset;
+	Point          fill_pattern_offset2;
 	int            rop;
 	int            rop2;
 	float          miter_limit;

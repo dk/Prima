@@ -1099,7 +1099,6 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
 			sys ps  = dc;
 			sys stock_bitmap = SelectObject( dc, bm);
 			sys bm = bm;
-			SetBrushOrgEx( dc, -r. left, -r. top, NULL);
 			apc_gp_set_transform( self, -r. left, -r. top);
 			sys transform2. x = r. left;
 			sys transform2. y = r. top;

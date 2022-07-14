@@ -1974,7 +1974,7 @@ hwnd_enter_paint( Handle self)
 	apc_gp_set_text_opaque( self, is_apt( aptTextOpaque));
 	apc_gp_set_text_out_baseline( self, is_apt( aptTextOutBaseline));
 	apc_gp_set_fill_mode( self, sys fill_mode);
-	apc_gp_set_fill_pattern_offset( self, sys fill_pattern_offset);
+	apc_gp_set_fill_pattern_offset( self, sys fill_pattern_offset2);
 	apc_gp_set_line_width( self, sys line_width);
 	apc_gp_set_line_end( self, sys line_end);
 	apc_gp_set_line_join( self, sys line_join);
@@ -1993,7 +1993,7 @@ hwnd_enter_paint( Handle self)
 	sys psd-> antialias           = is_apt( aptGDIPlus);
 	sys psd-> font                = var font;
 	sys psd-> fill_mode           = sys fill_mode;
-	sys psd-> fill_pattern_offset = sys fill_pattern_offset;
+	sys psd-> fill_pattern_offset = sys fill_pattern_offset2;
 	sys psd-> fg                  = fore;
 	sys psd-> bg                  = back;
 	sys psd-> line_width          = sys line_width;
@@ -2081,13 +2081,13 @@ hwnd_leave_paint( Handle self)
 		sys bg                        = sys psd-> bg;
 		var font                      = sys psd-> font;
 		sys alpha                     = sys psd-> alpha;
-		sys fill_mode                  = sys psd-> fill_mode;
-		sys fill_pattern_offset         = sys psd-> fill_pattern_offset;
-		sys line_width                 = sys psd-> line_width;
-		sys line_end                   = sys psd-> line_end;
-		sys line_join                  = sys psd-> line_join;
-		sys line_pattern               = sys psd-> line_pattern;
-		sys line_pattern_len            = sys psd-> line_pattern_len;
+		sys fill_mode                 = sys psd-> fill_mode;
+		sys fill_pattern_offset2      = sys psd-> fill_pattern_offset;
+		sys line_width                = sys psd-> line_width;
+		sys line_end                  = sys psd-> line_end;
+		sys line_join                 = sys psd-> line_join;
+		sys line_pattern              = sys psd-> line_pattern;
+		sys line_pattern_len          = sys psd-> line_pattern_len;
 		sys rop                       = sys psd-> rop;
 		sys rop2                      = sys psd-> rop2;
 		sys transform                 = sys psd-> transform;

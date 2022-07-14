@@ -1314,6 +1314,31 @@ apc_gp_set_fill_mode( Handle self, int fill_mode)
 	return true;
 }
 
+static Point
+apply_fill_pattern_offset( Handle self )
+{
+	Point o = sys fill_pattern_offset;
+	int w, h;
+	if ( var fillPatternImage ) {
+		Handle i = PDrawable(self)->fillPatternImage;
+		h = PDrawable(i)-> h;
+		w = PDrawable(i)-> w;
+	} else {
+		h = 8;
+		w = 8;
+	}
+
+	o.y = sys last_size.y - o.y;
+	o.x -= sys transform2.x;
+	o.y -= sys transform2.y;
+	while (o.x < 0) o.x += w;
+	while (o.y < 0) o.y += h;
+	o.x %= w;
+	o.y %= h;
+
+	return o;
+}
+
 Bool
 apc_gp_set_fill_pattern( Handle self, FillPattern pattern)
 {
@@ -1343,11 +1368,19 @@ apc_gp_set_fill_pattern( Handle self, FillPattern pattern)
 		b-> back_color       = 0;
 		memset( b-> fill_pattern, 0, sizeof(FillPattern) );
 	} else {
+		Point offset;
 		b-> logbrush.lbStyle = BS_DIBPATTERNPT;
 		b-> logbrush.lbColor = DIB_RGB_COLORS;
 		b-> logbrush.lbHatch = (LONG_PTR) 0;
 		b-> back_color       = GetBkColor( ps);
 		memcpy( b-> fill_pattern, pattern, sizeof( FillPattern));
+
+		offset = apply_fill_pattern_offset(self);
+		SetBrushOrgEx( sys ps, offset.x, offset.y, NULL);
+		if ( CURRENT_GP_BRUSH != NULL ) {
+			GdipResetTextureTransform(CURRENT_GP_BRUSH);
+			GdipTranslateTextureTransform(CURRENT_GP_BRUSH,offset.x,offset.y,MatrixOrderPrepend);
+		}
 	}
 	STYLUS_FREE_BRUSH;
 	STYLUS_FREE_GP_BRUSH;
@@ -1372,13 +1405,15 @@ apc_gp_set_fill_pattern_offset( Handle self, Point offset)
 {
 	objCheck false;
 	if ( sys ps) {
-		SetBrushOrgEx( sys ps, offset.x % 8, 8 - offset.y % 8, NULL);
+		sys fill_pattern_offset = offset;
+		offset = apply_fill_pattern_offset(self);
+		SetBrushOrgEx( sys ps, offset.x, offset.y, NULL);
 		if ( CURRENT_GP_BRUSH != NULL ) {
 			GdipResetTextureTransform(CURRENT_GP_BRUSH);
-			GdipTranslateTextureTransform(CURRENT_GP_BRUSH,offset.x,-offset.y,MatrixOrderPrepend);
+			GdipTranslateTextureTransform(CURRENT_GP_BRUSH,offset.x,offset.y,MatrixOrderPrepend);
 		}
 	} else
-		sys fill_pattern_offset = offset;
+		sys fill_pattern_offset2 = offset;
 	return true;
 }
 
@@ -1421,14 +1456,8 @@ Point
 apc_gp_get_fill_pattern_offset( Handle self)
 {
 	Point p = {0,0};
-	POINT wp;
 	objCheck p;
-	if ( !sys ps)
-		return sys fill_pattern_offset;
-	GetBrushOrgEx( sys ps, &wp);
-	p. x = wp. x;
-	p. y = 8 - wp. y;
-	return p;
+	return sys ps ? sys fill_pattern_offset : sys fill_pattern_offset2;
 }
 
 Bool
@@ -1620,6 +1649,7 @@ apc_gp_push(Handle self, GCStorageFunction * destructor, void * user_data, unsig
 		state->paint.font_cos  = sys font_cos;
 
 		memcpy( state->common.fill_pattern, sys fill_pattern, sizeof(FillPattern));
+		state->common.fill_pattern_offset = sys fill_pattern_offset;
 		state->common.fill_mode  = sys ps_fill_mode;
 		state->common.rop        = sys current_rop;
 		state->common.rop2       = sys current_rop2;
@@ -1631,7 +1661,7 @@ apc_gp_push(Handle self, GCStorageFunction * destructor, void * user_data, unsig
 	} else {
 		state->common.fill_mode  = sys fill_mode;
 		memcpy( state->common.fill_pattern, sys fill_pattern2, sizeof(FillPattern));
-		state->common.fill_pattern_offset = sys fill_pattern_offset;
+		state->common.fill_pattern_offset = sys fill_pattern_offset2;
 		state->common.line_end    = sys line_end;
 		state->common.line_join   = sys line_join;
 		state->common.miter_limit = sys miter_limit;
@@ -1678,19 +1708,20 @@ apc_gp_pop( Handle self, void * user_data)
 		stylus_release(self);
 		RestoreDC( sys ps, -1);
 		memcpy( sys current_dc_obj, state->paint.dc_obj, sizeof(sys current_dc_obj));
-		sys stylus_flags     = state-> paint.stylus_flags;
-		sys dc_font          = state-> paint.dc_font;
-		sys font_sin         = state-> paint.font_sin;
-		sys font_cos         = state-> paint.font_cos;
-		sys rq_pen           = state-> paint.rq_pen;
-		sys rq_brush         = state-> paint.rq_brush;
+		sys stylus_flags        = state-> paint.stylus_flags;
+		sys dc_font             = state-> paint.dc_font;
+		sys font_sin            = state-> paint.font_sin;
+		sys font_cos            = state-> paint.font_cos;
+		sys rq_pen              = state-> paint.rq_pen;
+		sys rq_brush            = state-> paint.rq_brush;
 
 		memcpy( sys fill_pattern, state->common.fill_pattern, sizeof(FillPattern));
-		sys ps_fill_mode       = state->common.fill_mode;
-		sys pal              = GetCurrentObject(sys ps, OBJ_PAL);
-		sys current_rop       = state->common.rop;
-		sys current_rop2      = state->common.rop2;
-		sys gp_transform     = state->common.transform;
+		sys fill_pattern_offset = state->common.fill_pattern_offset;
+		sys ps_fill_mode        = state->common.fill_mode;
+		sys pal                 = GetCurrentObject(sys ps, OBJ_PAL);
+		sys current_rop         = state->common.rop;
+		sys current_rop2        = state->common.rop2;
+		sys gp_transform        = state->common.transform;
 
 		if (sys graphics) {
 			HRGN rgn;
@@ -1715,7 +1746,7 @@ apc_gp_pop( Handle self, void * user_data)
 	} else {
 		sys fill_mode = state->common.fill_mode;
 		memcpy( sys fill_pattern2, state->common.fill_pattern, sizeof(FillPattern));
-		sys fill_pattern_offset = state->common.fill_pattern_offset;
+		sys fill_pattern_offset2 = state->common.fill_pattern_offset;
 		sys line_end        = state->common.line_end;
 		sys line_join       = state->common.line_join;
 		sys line_width      = state->common.line_width;
