@@ -742,7 +742,7 @@ extern HBITMAP      image_create_bitmap_by_type( Handle self, HPALETTE pal, XBIT
 extern HBITMAP      image_create_bitmap( Handle self );
 extern BITMAPINFO*  image_create_color_pattern_dib( Handle self);
 extern void *       image_create_dib(Handle image, Bool global_alloc);
-extern GpTexture*   image_create_gp_pattern( Handle self, Handle image );
+extern GpTexture*   image_create_gp_pattern( Handle self, Handle image, unsigned int alpha );
 extern BITMAPINFO*  image_create_mono_pattern_dib(Handle self, COLORREF fg, COLORREF bg);
 extern HPALETTE     image_create_palette( Handle self);
 extern void         image_destroy_cache( Handle self);

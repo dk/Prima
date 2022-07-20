@@ -415,7 +415,7 @@ alloc_gp_image_brush( Handle self )
 	GpTexture *t;
 	PDCObject ret;
 
-	if (( t = image_create_gp_pattern( self, var fillPatternImage )) == NULL)
+	if (( t = image_create_gp_pattern( self, var fillPatternImage, sys alpha )) == NULL)
 		return NULL;
 
 	if (( ret = stylus_alloc(DCO_GP_BRUSH)) == NULL) {

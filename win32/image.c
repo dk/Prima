@@ -125,7 +125,7 @@ image_create_palette( Handle self)
 }
 
 static Bool
-icon2argb( PIcon i, uint32_t * argb_bits, Bool invert)
+icon2argb( PIcon i, uint32_t * argb_bits, Bool invert, unsigned int alpha)
 {
 	Byte * rgb_bits, *a_bits, *mask;
 	int y, maskLineSize, free_mask, argb_stride;
@@ -165,7 +165,7 @@ icon2argb( PIcon i, uint32_t * argb_bits, Bool invert)
 			*argb_ptr++ = *rgb_ptr++;
 			*argb_ptr++ = *rgb_ptr++;
 			*argb_ptr++ = *rgb_ptr++;
-			*argb_ptr++ = *a_ptr++;
+			*argb_ptr++ = *a_ptr++ * alpha / 255;
 		}
 	}
 
@@ -218,7 +218,7 @@ image_create_argb_bitmap( Handle self, uint32_t ** argb_bits_ptr )
 		goto EXIT;
 	}
 
-	if ( !icon2argb(i, *argb_bits_ptr, false)) {
+	if ( !icon2argb(i, *argb_bits_ptr, false, 255)) {
 		DeleteObject(bm);
 		bm = NULL;
 	}
@@ -381,7 +381,7 @@ FAIL:
 }
 
 GpTexture*
-image_create_gp_pattern( Handle self, Handle image )
+image_create_gp_pattern( Handle self, Handle image, unsigned int alpha )
 {
 	Handle copy;
 	PIcon i;
@@ -409,7 +409,7 @@ image_create_gp_pattern( Handle self, Handle image )
 		apiGPErrCheck;
 		if ( rc ) goto FAIL;
 
-		icon2argb( i, bd.Scan0, true );
+		icon2argb( i, bd.Scan0, true, alpha );
 		GdipBitmapUnlockBits(b, &bd);
 	} else {
 		switch ( i->type & imBPP ) {
@@ -1921,7 +1921,7 @@ image_create_dib(Handle image, Bool global_alloc)
 	data += offset;
 
 	if ( bi. header.biBitCount == 32 ) {
-		if ( !icon2argb(i, (uint32_t*)data, false)) {
+		if ( !icon2argb(i, (uint32_t*)data, false, 255)) {
 			if ( global_alloc ) {
 				GlobalUnlock( ret );
 				GlobalFree( ret );
