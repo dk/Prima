@@ -1813,6 +1813,10 @@ menuItems => [
 				map {["arrow=$_", $_, \&set_arrowhead]} 1,2,3,4,5
 			]],
 		]],
+		['Filled shapes' => [
+			['fillBackColor'    => '~Fill back color' => \&set_color],
+			['outlineBackColor' => '~Outline back color' => \&set_color],
+		]],
 		['Te~xt' => [
 			['font' => '~Font' => \&set_font],
 			[],
@@ -1937,6 +1941,7 @@ sub set_color
 	my ( $self, $property) = @_;
 	my $obj;
 	return unless $obj = $self-> Canvas-> focused_object;
+	return unless $obj->can($property);
 	$colordialog = Prima::Dialog::ColorDialog-> create unless $colordialog;
 	$colordialog-> value( $obj-> $property());
 	$obj-> $property( $colordialog-> value) if $colordialog-> execute != mb::Cancel;
