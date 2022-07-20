@@ -125,10 +125,10 @@ image_create_palette( Handle self)
 }
 
 static Bool
-icon2argb( PIcon i, uint32_t * argb_bits)
+icon2argb( PIcon i, uint32_t * argb_bits, Bool invert)
 {
 	Byte * rgb_bits, *a_bits, *mask;
-	int y, maskLineSize, free_mask;
+	int y, maskLineSize, free_mask, argb_stride;
 
 	if ( i-> maskType != imbpp8 ) {
 		free_mask    = true;
@@ -142,6 +142,13 @@ icon2argb( PIcon i, uint32_t * argb_bits)
 		maskLineSize = i-> maskLine;
 	}
 
+	if ( invert ) {
+		argb_stride = -i-> w;
+		argb_bits += ( i-> h - 1 ) * i-> w;
+	} else {
+		argb_stride = i-> w;
+	}
+
 	for (
 		y = 0,
 			rgb_bits  = i->data,
@@ -150,7 +157,7 @@ icon2argb( PIcon i, uint32_t * argb_bits)
 		y++,
 			rgb_bits  += i-> lineSize,
 			a_bits    += maskLineSize,
-			argb_bits += i-> w
+			argb_bits += argb_stride
 	) {
 		register Byte *rgb_ptr = rgb_bits, *a_ptr = a_bits, *argb_ptr = (Byte*) argb_bits;
 		register int x = i->w;
@@ -211,7 +218,7 @@ image_create_argb_bitmap( Handle self, uint32_t ** argb_bits_ptr )
 		goto EXIT;
 	}
 
-	if ( !icon2argb(i, *argb_bits_ptr)) {
+	if ( !icon2argb(i, *argb_bits_ptr, false)) {
 		DeleteObject(bm);
 		bm = NULL;
 	}
@@ -402,7 +409,7 @@ image_create_gp_pattern( Handle self, Handle image )
 		apiGPErrCheck;
 		if ( rc ) goto FAIL;
 
-		icon2argb( i, bd.Scan0 );
+		icon2argb( i, bd.Scan0, true );
 		GdipBitmapUnlockBits(b, &bd);
 	} else {
 		switch ( i->type & imBPP ) {
@@ -1914,7 +1921,7 @@ image_create_dib(Handle image, Bool global_alloc)
 	data += offset;
 
 	if ( bi. header.biBitCount == 32 ) {
-		if ( !icon2argb(i, (uint32_t*)data)) {
+		if ( !icon2argb(i, (uint32_t*)data, false)) {
 			if ( global_alloc ) {
 				GlobalUnlock( ret );
 				GlobalFree( ret );
