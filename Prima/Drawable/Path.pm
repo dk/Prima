@@ -363,6 +363,7 @@ sub points
 		}
 		for my $ppp ( @{$self->{points}}) {
 			@$ppp = grep { @$_ > 2 } @$ppp;
+			Prima::array::deduplicate($_,2) for @$ppp;
 		}
 		$self->{last_matrix} = $self->{curr}->{matrix};
 	}

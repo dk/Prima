@@ -66,6 +66,7 @@ XS( Component_event_hook_FROMPERL);
 XS(Utils_getdir_FROMPERL);
 XS(Utils_stat_FROMPERL);
 XS(Utils_closedir_FROMPERL);
+XS(Prima_array_deduplicate_FROMPERL);
 
 extern PRGBColor prima_read_palette( int * palSize, SV * palette);
 extern Bool prima_read_point( SV *rvav, int * pt, int number, char * error);

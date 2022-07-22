@@ -51,7 +51,7 @@ prima_array_parse( SV * sv, void ** ref, size_t * length, char ** letter)
 	AV * av;
 	int cur;
 
-	if ( !SvROK(sv) || SvTYPE( SvRV( sv)) != SVt_PVAV)
+	if ( !sv || !SvOK(sv) ||  !SvROK(sv) || SvTYPE( SvRV( sv)) != SVt_PVAV)
 		return false;
 	av = (AV *) SvRV(sv);
 
@@ -137,7 +137,8 @@ prima_read_array( SV * points, char * procName, char type, int div, int min, int
 	void * p;
 
 	switch(type) {
-	case 's': psize = sizeof(uint16_t); break;
+	case 'S': psize = sizeof(uint16_t); break;
+	case 's': psize = sizeof(int16_t);  break;
 	case 'i': psize = sizeof(int);      break;
 	case 'd': psize = sizeof(double);   break;
 	default: croak("Bad type %c", type);
@@ -190,19 +191,29 @@ prima_read_array( SV * points, char * procName, char type, int div, int min, int
 			case 'i':
 				switch (type) {
 				case 'd': xmovi(int,double);
-				case 's': xmovi(int,uint16_t);
+				case 's': xmovi(int,int16_t);
+				case 'S': xmovi(int,uint16_t);
+				}
+				break;
+			case 'S':
+				switch (type) {
+				case 'd': xmovi(uint16_t,double);
+				case 'i': xmovi(uint16_t,int);
+				case 's': xmovi(uint16_t,int16_t);
 				}
 				break;
 			case 's':
 				switch (type) {
-				case 'd': xmovi(uint16_t,double);
-				case 'i': xmovi(uint16_t,int);
+				case 'd': xmovi(int16_t,double);
+				case 'i': xmovi(int16_t,int);
+				case 'S': xmovi(int16_t,uint16_t);
 				}
 				break;
 			case 'd':
 				switch (type) {
 				case 'i': xmovd(double,int);
-				case 's': xmovd(double,uint16_t);
+				case 's': xmovd(double,int16_t);
+				case 'S': xmovd(double,uint16_t);
 				}
 				break;
 			}
@@ -232,7 +243,10 @@ prima_read_array( SV * points, char * procName, char type, int div, int min, int
 			*(((double*)p) + i) = SvNV( *psv);
 			break;
 		case 's':
-			*(((uint16_t*)p) + i) = SvIV( *psv);
+			*(((int16_t*)p) + i) = SvIV( *psv);
+			break;
+		case 'S':
+			*(((uint16_t*)p) + i) = SvUV( *psv);
 			break;
 		}
 	}
@@ -242,6 +256,82 @@ prima_read_array( SV * points, char * procName, char type, int div, int min, int
 
 	return p;
 }
+
+XS(Prima_array_deduplicate_FROMPERL)
+{
+	dXSARGS;
+	void *ref, *cmp;
+	char * letter;
+	size_t i, new_size, length, orig_length, item_size, cmp_length;
+	if ( items != 2)
+		croak ("Invalid usage of ::deduplicate");
+
+	if ( !prima_array_parse( ST(0), &ref, &length, &letter)) {
+		warn("invalid array passed to %s", "Prima::array::deduplicate");
+		goto EXIT;
+	}
+	orig_length = length;
+
+	cmp_length = SvIV(ST(1));
+	if ( cmp_length < 1 )
+		goto EXIT;
+
+	if ( length < 2 * cmp_length )
+		goto EXIT;
+
+	switch (*letter) {
+	case 'i':
+		item_size = sizeof(int);
+		break;
+	case 'd':
+		item_size = sizeof(double);
+		break;
+	case 's':
+		item_size = sizeof(int16_t);
+		break;
+	case 'S':
+		item_size = sizeof(uint16_t);
+		break;
+	default:
+		warn("invalid array passed to %s", "Prima::array::deduplicate");
+		goto EXIT;
+	}
+
+
+	for (
+		i = cmp_length, cmp = ref, new_size = cmp_length;
+		i <= length - cmp_length;
+		i += cmp_length )
+	{
+		void *new_ref = ((Byte*)ref) + i * item_size;
+		if ( memcmp( cmp, new_ref, cmp_length * item_size ) != 0 ) {
+			new_size += cmp_length;
+			cmp = new_ref;
+		} else {
+			memmove( cmp, new_ref, (length - i) * item_size);
+			length -= cmp_length;
+			i -= cmp_length;
+		}
+	}
+
+	if ( length != orig_length ) {
+		SV * tied;
+		const MAGIC * mg;
+		SV ** ssv;
+		AV * av;
+
+		av   = (AV *) SvRV(ST(0));
+		mg   = SvTIED_mg(( SV*) av, PERL_MAGIC_tied );
+		tied = SvTIED_obj(( SV* ) av, mg );
+		av   = (AV*) SvRV(tied);
+		ssv   = av_fetch( av, 0, 0);
+		prima_array_truncate( *ssv, new_size * item_size);
+	}
+
+EXIT:
+	XSRETURN_EMPTY;
+}
+
 
 #ifdef __cplusplus
 }

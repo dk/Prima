@@ -202,7 +202,6 @@ XS( destroy_mate)
 	XSRETURN_EMPTY;
 }
 
-
 static void
 register_constants( void)
 {
@@ -298,6 +297,7 @@ register_xsubs( void)
 	newXS( "Prima::Object::create",  create_from_Perl, "Prima::Object");
 	newXS( "Prima::Object::destroy", destroy_from_Perl, "Prima::Object");
 	newXS( "Prima::Object::alive", Object_alive_FROMPERL, "Prima::Object");
+	newXS( "Prima::array::deduplicate", Prima_array_deduplicate_FROMPERL, "Prima::array");
 	newXS( "Prima::Component::event_hook", Component_event_hook_FROMPERL, "Prima::Component");
 	newXS( "Prima::message", Prima_message_FROMPERL, "Prima");
 	newXS( "Prima::dl_export", Prima_dl_export, "Prima");
