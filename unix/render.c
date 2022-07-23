@@ -352,11 +352,7 @@ apc_gp_aa_bar( Handle self, double x1, double y1, double x2, double y2)
 
 	if ( XT_IS_BITMAP(XX)) {
 		if ( XX->paint_alpha < 0x7f ) return true;
-		if ( XX-> paint_rop2 == ropNoOper )
-			XX-> flags.use_stipple_transparency = 1;
-		ok = apc_gp_bar(self, x1 + .5, y1 + .5, x2 + .5, y2 + .5);
-		XX-> flags.use_stipple_transparency = 0;
- 		return ok;
+		return apc_gp_bar(self, x1 + .5, y1 + .5, x2 + .5, y2 + .5);
 	}
 
 	x1 += XX-> gtransform. x + XX-> btransform. x;
@@ -405,10 +401,7 @@ apc_gp_aa_fill_poly( Handle self, int numPts, NPoint * points)
 			p[i].x = points[i].x + .5;
 			p[i].y = points[i].y + .5;
 		}
-		if ( XX-> paint_rop2 == ropNoOper )
-			XX-> flags.use_stipple_transparency = 1;
 		ok = apc_gp_fill_poly( self, numPts, p );
-		XX-> flags.use_stipple_transparency = 0;
 		free(p);
 		return ok;
 	}

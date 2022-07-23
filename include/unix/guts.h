@@ -909,7 +909,6 @@ typedef struct _drawable_sys_data
 		unsigned title_utf8               : 1;
 		unsigned transparent              : 1;
 		unsigned transparent_busy         : 1;
-		unsigned use_stipple_transparency : 1;
 		unsigned want_visible             : 1;
 		unsigned withdrawn                : 1;
 		unsigned zoomed                   : 1;
