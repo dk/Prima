@@ -544,10 +544,10 @@ typedef struct
 	unsigned int red_mask,  green_mask,  blue_mask,  alpha_mask;
 } RGBABitDescription, *PRGBABitDescription;
 
-#define DEV_R(descr,val) ((((uint32_t)(val) << (descr)->red_range  ) >> 8) << (descr)->red_shift)
-#define DEV_G(descr,val) ((((uint32_t)(val) << (descr)->green_range) >> 8) << (descr)->green_shift)
-#define DEV_B(descr,val) ((((uint32_t)(val) << (descr)->blue_range ) >> 8) << (descr)->blue_shift )
-#define DEV_A(descr,val) ((((uint32_t)(val) << (descr)->alpha_range) >> 8) << (descr)->alpha_shift)
+#define DEV_R(descr,val) (((((uint32_t)(val)) << (descr)->red_range  ) >> 8) << (descr)->red_shift)
+#define DEV_G(descr,val) (((((uint32_t)(val)) << (descr)->green_range) >> 8) << (descr)->green_shift)
+#define DEV_B(descr,val) (((((uint32_t)(val)) << (descr)->blue_range ) >> 8) << (descr)->blue_shift )
+#define DEV_A(descr,val) (((((uint32_t)(val)) << (descr)->alpha_range) >> 8) << (descr)->alpha_shift)
 #define DEV_RGB(descr,r,g,b)        ( DEV_R(descr,r) | DEV_G(descr,g) | DEV_B(descr,b) )
 #define DEV_RGBA(descr,r,g,b,a)     ( DEV_RGB(descr,r,g,b) | DEV_A(descr,a) )
 #define COLOR2DEV_RGB(descr,color)  ( DEV_RGB(descr,COLOR_R(color),COLOR_G(color),COLOR_B(color) ) )
