@@ -824,7 +824,8 @@ typedef struct _drawable_sys_data
 	XDrawable gdrawable;
 	XWindow parent;
 	Point origin, size, bsize;
-	Point transform, gtransform, btransform;
+	//Point transform, gtransform, btransform;
+	Point transform, btransform;
 	Point ackOrigin, ackSize, ackFrameSize;
 	int menuHeight;
 	int menuColorImmunity;
@@ -842,25 +843,26 @@ typedef struct _drawable_sys_data
 	ColorSet colors;
 	Region invalid_region, paint_region, current_region, cached_region;
 	XRectangle clip_rect;
-	FillPattern fill_pattern, saved_fill_pattern;
-	Point fill_pattern_offset, saved_fill_pattern_offset;
-	int fill_mode, saved_fill_mode;
+	FillPattern fill_pattern;//, saved_fill_pattern;
+	Point fill_pattern_offset;//, saved_fill_pattern_offset;
+	int fill_mode;//, saved_fill_mode;
 	Pixmap fp_tile, fp_stipple, fp_render_pen;
 	XID fp_render_picture;
 #if defined(sgi) && !defined(__GNUC__)
 /* multiple compilation and runtime errors otherwise. must be some alignment tricks */
 	char dummy_b_1[2];
 #endif
-	int rop, paint_rop;
-	int rop2, paint_rop2;
-	int alpha, paint_alpha;
+	int rop;//, paint_rop;
+	int rop2;//, paint_rop2;
+	int alpha;//, paint_alpha;
 	int line_style;
-	float line_width, paint_line_width, miter_limit;
-	unsigned char *dashes, *paint_dashes;
-	int ndashes, paint_ndashes;
+	//float line_width, paint_line_width, miter_limit;
+	float line_width, miter_limit;
+	unsigned char *dashes; // *paint_dashes;
+	int ndashes; // paint_ndashes;
 	Point clip_mask_extent, shape_extent, shape_offset;
 	PCachedFont font;
-	Font saved_font;
+//	Font saved_font;
 	Point cursor_pos;
 	Point cursor_size;
 	CustomPointer user_pointer;
@@ -870,7 +872,7 @@ typedef struct _drawable_sys_data
 	XWindow client;
 	struct {
 		unsigned antialias                : 1;
-		unsigned saved_antialias          : 1;
+//		unsigned saved_antialias          : 1;
 		unsigned base_line                : 1;
 		unsigned brush_fore               : 1;
 		unsigned brush_back               : 1;
@@ -896,8 +898,8 @@ typedef struct _drawable_sys_data
 		unsigned kill_current_region      : 1;
 		unsigned opaque                   : 1;
 		unsigned paint                    : 1;
-		unsigned paint_base_line          : 1;
-		unsigned paint_opaque             : 1;
+//		unsigned paint_base_line          : 1;
+//		unsigned paint_opaque             : 1;
 		unsigned paint_pending            : 1;
 		unsigned pointer_obscured         : 1;
 		unsigned position_determined      : 1;

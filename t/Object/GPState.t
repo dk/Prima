@@ -90,6 +90,13 @@ is( $d-> textOpaque, 1, "textOpaque" );
 is( $d-> textOutBaseline, 1, "textOutBaseline" );
 is( $d-> fillMode, fm::Alternate, "fillMode");
 
+my $x = Prima::Image->new( size => [1,1]);
+$x->fillPattern($fpx1);
+$x-> begin_paint;
+$x-> fillPattern(0);
+$x-> end_paint;
+is( ref($x->fillPattern), 'Prima::Image', 'fillPatternImage restored after end_paint');
+
 $d = Prima::DeviceBitmap-> new( width => 8, height => 8, type => dbt::Pixmap);
 
 sub bits

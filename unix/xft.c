@@ -1385,7 +1385,7 @@ get_box( Handle self, Point * ovx, int advance )
 	pt[3].x = pt[2]. x = advance + ovx->y;
 	pt[0].x = pt[1]. x = - ovx->x;
 
-	if ( !XX-> flags. paint_base_line) {
+	if ( !XX-> flags. base_line) {
 		int i;
 		for ( i = 0; i < 4; i++) pt[i]. y += XX-> font-> font. descent;
 	}
@@ -1436,8 +1436,8 @@ create_no_aa_font( XftFont * font)
 
 #define SORT(a,b)       { int swp; if ((a) > (b)) { swp=(a); (a)=(b); (b)=swp; }}
 #define REVERT(a)       (XX-> size. y - (a) - 1)
-#define SHIFT(a,b)      { (a) += XX-> gtransform. x + XX-> btransform. x; \
-									(b) += XX-> gtransform. y + XX-> btransform. y; }
+#define SHIFT(a,b)      { (a) += XX-> transform. x + XX-> btransform. x; \
+			(b) += XX-> transform. y + XX-> btransform. y; }
 #define RANGE(a)        { if ((a) < -16383) (a) = -16383; else if ((a) > 16383) a = 16383; }
 #define RANGE2(a,b)     RANGE(a) RANGE(b)
 #define RANGE4(a,b,c,d) RANGE(a) RANGE(b) RANGE(c) RANGE(d)
@@ -1665,7 +1665,7 @@ setup_alpha(PDrawableSysData selfxx, XftColor * xftcolor, XftFont ** font)
 {
 	if ( XX-> flags. layered || !XX->type.bitmap) {
 		if ( selfxx->flags.antialias ) {
-			float div = 65535.0 / (float)(xftcolor->color.alpha = (selfxx->paint_alpha << 8));
+			float div = 65535.0 / (float)(xftcolor->color.alpha = (selfxx->alpha << 8));
 			xftcolor->color.red   = (float) xftcolor->color.red   / div;
 			xftcolor->color.green = (float) xftcolor->color.green / div;
 			xftcolor->color.blue  = (float) xftcolor->color.blue  / div;
@@ -1708,7 +1708,7 @@ paint_text_background( Handle self, Point * p, int x, int y )
 	i = p[2].y; p[2].y = p[3].y; p[3].y = i;
 
 	apc_gp_fill_poly( self, 4, p);
-	apc_gp_set_rop( self, XX-> paint_rop);
+	apc_gp_set_rop( self, XX-> rop);
 	apc_gp_set_color( self, XX-> fore. color);
 	apc_gp_set_fill_pattern( self, fp);
 }
@@ -1880,7 +1880,7 @@ prima_xft_text_out( Handle self, const char * text, int x, int y, int len, int f
 	FcChar32 *ucs4;
 	XftColor xftcolor;
 	XftFont *font = XX-> font-> xft;
-	int rop = XX-> paint_rop;
+	int rop = XX-> rop;
 	Point baseline;
 
 	if ( len == 0) return true;
@@ -1889,7 +1889,7 @@ prima_xft_text_out( Handle self, const char * text, int x, int y, int len, int f
 	setup_alpha( XX, &xftcolor, &font );
 
 	/* paint background if opaque */
-	if ( XX-> flags. paint_opaque) {
+	if ( XX-> flags. opaque) {
 		Point * p = prima_xft_get_text_box( self, text, len, flags);
 		paint_text_background( self, p, x, y );
 		free( p);
@@ -1901,7 +1901,7 @@ prima_xft_text_out( Handle self, const char * text, int x, int y, int len, int f
 	baseline.x = - PDrawable(self)-> font. descent * XX-> xft_font_sin;
 	baseline.y = - PDrawable(self)-> font. descent * ( 1 - XX-> xft_font_cos )
 					+ XX-> font-> font. descent;
-	if ( !XX-> flags. paint_base_line) {
+	if ( !XX-> flags. base_line) {
 		x += baseline.x;
 		y += baseline.y;
 	}
@@ -1950,7 +1950,7 @@ prima_xft_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 	DEFXX;
 	XftColor xftcolor;
 	XftFont *font = XX-> font-> xft;
-	int rop = XX-> paint_rop;
+	int rop = XX-> rop;
 	Point baseline;
 		
 	t-> flags |= toAddOverhangs; /* for overstriking etc */
@@ -1961,7 +1961,7 @@ prima_xft_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 	setup_alpha( XX, &xftcolor, &font );
 
 	/* paint background if opaque */
-	if ( XX-> flags. paint_opaque) {
+	if ( XX-> flags. opaque) {
 		Point * p = prima_xft_get_glyphs_box( self, t);
 		paint_text_background( self, p, x, y );
 		free( p);
@@ -1973,7 +1973,7 @@ prima_xft_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 	baseline.x = - PDrawable(self)-> font. descent * XX-> xft_font_sin;
 	baseline.y = - PDrawable(self)-> font. descent * ( 1 - XX-> xft_font_cos )
 					+ XX-> font-> font. descent;
-	if ( !XX-> flags. paint_base_line) {
+	if ( !XX-> flags. base_line) {
 		x += baseline.x;
 		y += baseline.y;
 	}

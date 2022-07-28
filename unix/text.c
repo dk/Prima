@@ -9,8 +9,8 @@
 
 #define SORT(a,b)	{ int swp; if ((a) > (b)) { swp=(a); (a)=(b); (b)=swp; }}
 #define REVERT(a)	(XX-> size. y - (a) - 1)
-#define SHIFT(a,b)	{ (a) += XX-> gtransform. x + XX-> btransform. x; \
-			(b) += XX-> gtransform. y + XX-> btransform. y; }
+#define SHIFT(a,b)	{ (a) += XX-> transform. x + XX-> btransform. x; \
+			(b) += XX-> transform. y + XX-> btransform. y; }
 #define RANGE(a)        { if ((a) < -16383) (a) = -16383; else if ((a) > 16383) a = 16383; }
 #define RANGE2(a,b)     RANGE(a) RANGE(b)
 
@@ -117,7 +117,7 @@ gp_text_out_rotated(
 	int i;
 	PRotatedFont r;
 	XCharStruct *cs;
-	int px, py = ( XX-> flags. paint_base_line) ?  XX-> font-> font. descent : 0;
+	int px, py = ( XX-> flags. base_line) ?  XX-> font-> font. descent : 0;
 	int ax = 0, ay = 0;
 	int psx, psy, dsx, dsy;
 	Fixed rx, ry;
@@ -189,7 +189,7 @@ gp_text_out_rotated(
 /*   GXnor          ropNotOr */		/* dest = !(src | dest) */
 /*   GXinvert       ropInvert */		/* dest = !dest */
 
-		switch ( XX-> paint_rop) { /* XXX Limited set edition - either expand to full list or find new way to display bitmaps */
+		switch ( XX-> rop) { /* XXX Limited set edition - either expand to full list or find new way to display bitmaps */
 		case ropXorPut:
 			XSetBackground( DISP, XX-> gc, 0);
 			XSetFunction( DISP, XX-> gc, GXxor);
@@ -222,7 +222,7 @@ gp_text_out_rotated(
 			r-> map[(index. byte1 - r-> first1) * r-> width + index. byte2 - r-> first2]-> image,
 			0, 0, dsx, dsy, r-> dimension.x, r-> dimension.y);
 		XCHECKPOINT;
-		switch ( XX-> paint_rop) {
+		switch ( XX-> rop) {
 		case ropAndPut:
 		case ropOrPut:
 		case ropXorPut:
@@ -246,7 +246,7 @@ gp_text_out_rotated(
 		}
 		ax += advances ? advances[i] : cs-> width;
 	}
-	apc_gp_set_rop( self, XX-> paint_rop);
+	apc_gp_set_rop( self, XX-> rop);
 	XSetFillStyle( DISP, XX-> gc, FillSolid);
 	XSetForeground( DISP, XX-> gc, XX-> fore. primary);
 	XSetBackground( DISP, XX-> gc, XX-> back. primary);
@@ -263,7 +263,7 @@ gp_text_out_rotated(
 			apc_gp_set_line_width( self, XX-> font-> underlineThickness);
 
 		if ( PDrawable( self)-> font. style & fsUnderlined) {
-			ay = d + ( XX-> flags. paint_base_line ? 0 : XX-> font-> font. descent);
+			ay = d + ( XX-> flags. base_line ? 0 : XX-> font-> font. descent);
 			rx. l = -ovx.x * r-> cos2. l - ay * r-> sin2. l + 0.5;
 			ry. l = -ovx.x * r-> sin2. l + ay * r-> cos2. l + 0.5;
 			x1 = x + rx. i. i;
@@ -278,7 +278,7 @@ gp_text_out_rotated(
 
 		if ( PDrawable( self)-> font. style & fsStruckOut) {
 			ay = (PDrawable( self)-> font.ascent - PDrawable( self)-> font.internalLeading)/2 +
-				+ ( XX-> flags. paint_base_line ? 0 : XX-> font-> font. descent);
+				+ ( XX-> flags. base_line ? 0 : XX-> font-> font. descent);
 			rx. l = -ovx.x * r-> cos2. l - ay * r-> sin2. l + 0.5;
 			ry. l = -ovx.x * r-> sin2. l + ay * r-> cos2. l + 0.5;
 			x1 = x + rx. i. i;
@@ -322,7 +322,7 @@ paint_text_background( Handle self, const char * text, int x, int y, int len, in
 	i = p[2].y; p[2].y = p[3].y; p[3].y = i;
 
 	apc_gp_fill_poly( self, 4, p);
-	apc_gp_set_rop( self, XX-> paint_rop);
+	apc_gp_set_rop( self, XX-> rop);
 	apc_gp_set_color( self, XX-> fore. color);
 	apc_gp_set_fill_pattern( self, fp);
 	free( p);
@@ -354,7 +354,7 @@ static Bool
 text_out( Handle self, const char * text, int x, int y, int len, int flags)
 {
 	DEFXX;
-	if ( !XX-> flags. paint_base_line)
+	if ( !XX-> flags. base_line)
 		y += XX-> font-> font. descent;
 
 	XSetFillStyle( DISP, XX-> gc, FillSolid);
@@ -379,7 +379,7 @@ glyphs_out_with_advances( Handle self, PGlyphsOutRec t, int x, int y)
 	uint16_t * glyphs, *advances, *run_glyphs;
 	int16_t * positions;
 	CharStructABC s;
-	if ( !XX-> flags. paint_base_line)
+	if ( !XX-> flags. base_line)
 		y += XX-> font-> font. descent;
 
 	XSetFillStyle( DISP, XX-> gc, FillSolid);
@@ -454,7 +454,7 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flag
 	if ( flags & toUTF8 )
 		if ( !( text = ( char *) prima_alloc_utf8_to_wchar( text, len))) return false;
 
-	if ( XX-> flags. paint_opaque)
+	if ( XX-> flags. opaque)
 		paint_text_background( self, text, x, y, len, flags);
 
 	SHIFT(x, y);
@@ -497,7 +497,7 @@ apc_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 #endif
 
 	SWAP_BYTES(t->glyphs,t->len);
-	if ( XX-> flags. paint_opaque)
+	if ( XX-> flags. opaque)
 		paint_text_background( self, (const char*) t->glyphs, x, y, t->len, toUnicode);
 
 	SHIFT(x, y);
@@ -784,7 +784,7 @@ gp_get_text_box( Handle self, const char * text, int len, int flags)
 	pt[3].x = pt[2]. x = x + ovx. y;
 	pt[0].x = pt[1]. x = - ovx. x;
 
-	if ( !XX-> flags. paint_base_line) {
+	if ( !XX-> flags. base_line) {
 		int i;
 		for ( i = 0; i < 4; i++) pt[i]. y += XX-> font-> font. descent;
 	}

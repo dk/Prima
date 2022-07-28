@@ -11,8 +11,8 @@
 
 #define SORT(a,b)	{ int swp; if ((a) > (b)) { swp=(a); (a)=(b); (b)=swp; }}
 #define REVERT(a)	(XX-> size. y - (a) - 1)
-#define SHIFT(a,b)	{ (a) += XX-> gtransform. x + XX-> btransform. x; \
-									(b) += XX-> gtransform. y + XX-> btransform. y; }
+#define SHIFT(a,b)	{ (a) += XX-> transform. x + XX-> btransform. x; \
+			(b) += XX-> transform. y + XX-> btransform. y; }
 #define RANGE(a)        { if ((a) < -16383) (a) = -16383; else if ((a) > 16383) a = 16383; }
 #define RANGE2(a,b)     RANGE(a) RANGE(b)
 #define RANGE4(a,b,c,d) RANGE(a) RANGE(b) RANGE(c) RANGE(d)
@@ -173,9 +173,9 @@ pen_update(Handle self)
 		GCTileStipXOrigin | GCTileStipYOrigin |
 		GCForeground      | GCFillStyle       |
 		0;
-	int alpha = XX->paint_alpha, red, green, blue;
+	int alpha = XX->alpha, red, green, blue;
 
-	switch ( XX-> paint_rop) {
+	switch ( XX-> rop) {
 	case ropNotPut:
 		pen.gcv.foreground = ~XX-> fore.primary;
 		pen.gcv.background = ~XX-> back.primary;
@@ -221,7 +221,7 @@ pen_update(Handle self)
 	prima_get_fill_pattern_offsets(self, &pen.gcv.ts_x_origin, &pen.gcv.ts_y_origin);
 	pen.gcv.stipple = prima_get_hatch( &XX-> fill_pattern);
 	if ( pen.gcv.stipple ) {
-		if ( XX-> paint_rop2 == ropNoOper )
+		if ( XX-> rop2 == ropNoOper )
 			pen.gcv.background = 0x00000000;
 		pen.gcv.fill_style = FillOpaqueStippled;
 		flags |= GCStipple | GCBackground;
@@ -262,7 +262,7 @@ pen_create_tile(Handle self, Pixmap tile)
 		GC gc;
 		XGCValues gcv;
 
-		gcv.foreground = ((XX->paint_alpha << guts. argb_bits. alpha_range) >> 8) << guts. argb_bits. alpha_shift;
+		gcv.foreground = ((XX->alpha << guts. argb_bits. alpha_range) >> 8) << guts. argb_bits. alpha_shift;
 		if ( ( gc = XCreateGC(DISP, tile, GCForeground, &gcv))) {
 			Point sz = get_pixmap_size( tile );
 			XSetPlaneMask( DISP, gc, guts.argb_bits.alpha_mask);
@@ -289,15 +289,15 @@ pen_create_stipple(Handle self, Pixmap stipple)
 		return;
 
 	gcv.foreground = DEV_RGBA(&guts.argb_bits,
-		COLOR_R(XX->fore.color) * XX->paint_alpha / 255,
-		COLOR_G(XX->fore.color) * XX->paint_alpha / 255,
-		COLOR_B(XX->fore.color) * XX->paint_alpha / 255,
-		XX->paint_alpha);
+		COLOR_R(XX->fore.color) * XX->alpha / 255,
+		COLOR_G(XX->fore.color) * XX->alpha / 255,
+		COLOR_B(XX->fore.color) * XX->alpha / 255,
+		XX->alpha);
 	gcv.background = DEV_RGBA(&guts.argb_bits,
-		COLOR_R(XX->back.color) * XX->paint_alpha / 255,
-		COLOR_G(XX->back.color) * XX->paint_alpha / 255,
-		COLOR_B(XX->back.color) * XX->paint_alpha / 255,
-		(XX->paint_rop2 == ropNoOper) ? 0 : XX->paint_alpha);
+		COLOR_R(XX->back.color) * XX->alpha / 255,
+		COLOR_G(XX->back.color) * XX->alpha / 255,
+		COLOR_B(XX->back.color) * XX->alpha / 255,
+		(XX->rop2 == ropNoOper) ? 0 : XX->alpha);
 	if ( !( gc = XCreateGC(DISP, XX-> fp_render_pen, GCForeground|GCBackground, &gcv))) {
 		XFreePixmap( DISP, XX-> fp_render_pen );
 		XX-> fp_render_pen = 0;
@@ -359,14 +359,14 @@ apc_gp_aa_bar( Handle self, double x1, double y1, double x2, double y2)
 	if ( !XF_IN_PAINT(XX)) return false;
 
 	if ( XT_IS_BITMAP(XX)) {
-		if ( XX->paint_alpha < 0x7f ) return true;
+		if ( XX->alpha < 0x7f ) return true;
 		return apc_gp_bar(self, x1 + .5, y1 + .5, x2 + .5, y2 + .5);
 	}
 
-	x1 += XX-> gtransform. x + XX-> btransform. x;
-	y1 = REVERT(y1 + XX-> gtransform. y + XX-> btransform. y) + 1;
-	x2 += XX-> gtransform. x + XX-> btransform. x + 1;
-	y2 = REVERT(y2 + XX-> gtransform. y + XX-> btransform. y);
+	x1 += XX-> transform. x + XX-> btransform. x;
+	y1 = REVERT(y1 + XX-> transform. y + XX-> btransform. y) + 1;
+	x2 += XX-> transform. x + XX-> btransform. x + 1;
+	y2 = REVERT(y2 + XX-> transform. y + XX-> btransform. y);
 	RANGE2(x2, y2);
 	p[0].x = x1;
 	p[0].y = y1;
@@ -403,7 +403,7 @@ apc_gp_aa_fill_poly( Handle self, int numPts, NPoint * points)
 
 	if ( XT_IS_BITMAP(XX)) {
 		Point *p;
-		if ( XX->paint_alpha < 0x7f ) return true;
+		if ( XX->alpha < 0x7f ) return true;
 		if ( !( p = malloc(( numPts + 1) * sizeof( Point)))) return false;
 		for ( i = 0; i < numPts; i++) {
 			p[i].x = points[i].x + .5;
@@ -417,12 +417,12 @@ apc_gp_aa_fill_poly( Handle self, int numPts, NPoint * points)
 	if ( !( p = malloc(( numPts + 1) * sizeof( XPointDouble)))) return false;
 
 	for ( i = 0; i < numPts; i++) {
-		p[i].x = points[i]. x + XX-> gtransform. x + XX-> btransform. x;
-		p[i].y = REVERT(points[i]. y + XX-> gtransform. y + XX-> btransform. y);
+		p[i].x = points[i]. x + XX-> transform. x + XX-> btransform. x;
+		p[i].y = REVERT(points[i]. y + XX-> transform. y + XX-> btransform. y);
 		RANGE2(p[i].x, p[i].y);
 	}
-	p[numPts].x = points[0]. x + XX-> gtransform. x + XX-> btransform. x;
-	p[numPts].y = REVERT(points[0]. y + XX-> gtransform. y + XX-> btransform. y);
+	p[numPts].x = points[0]. x + XX-> transform. x + XX-> btransform. x;
+	p[numPts].y = REVERT(points[0]. y + XX-> transform. y + XX-> btransform. y);
 	RANGE2(p[numPts].x, p[numPts].y);
 
 	ok = my_XRenderCompositeDoublePoly(
