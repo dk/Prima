@@ -190,12 +190,12 @@ gp_Pie(
 							(int)(x + cos( angleEnd / GRAD) * dX / 2 + 1.5),   (int)(y - sin( angleEnd / GRAD) * dY / 2 + 1.5)
 
 #define EMULATE_OPAQUE_LINE \
-(sys rq_pen.logpen.lopnStyle == PS_USERSTYLE && sys current_rop2 == ropCopyPut)
+(sys rq_pen.logpen.lopnStyle == PS_USERSTYLE && sys rop2 == ropCopyPut)
 #define STYLUS_USE_OPAQUE_LINE \
 	SelectObject(sys ps, stylus_get_pen(PS_SOLID, sys rq_pen.logpen.lopnWidth.x, sys rq_brush.back_color));\
 	STYLUS_FREE_PEN;\
-	if (sys current_rop != R2_COPYPEN) SetROP2( sys ps, R2_COPYPEN)
-#define STYLUS_RESTORE_OPAQUE_LINE if (sys current_rop != R2_COPYPEN) SetROP2( sys ps, sys current_rop)
+	if (sys rop != R2_COPYPEN) SetROP2( sys ps, R2_COPYPEN)
+#define STYLUS_RESTORE_OPAQUE_LINE if (sys rop != R2_COPYPEN) SetROP2( sys ps, sys rop)
 
 static Rect
 fill_ellipse_rect(int x1, int x2, int x3, int x4)
@@ -240,8 +240,8 @@ make_brush(Handle self, int* mix)
 	case 0: {
 		(*mix)++;
 		if (
-			sys current_rop != R2_COPYPEN ||
-			sys current_rop2 != ropNoOper ||
+			sys rop != R2_COPYPEN ||
+			sys rop2 != ropNoOper ||
 			sys rq_brush.logbrush.lbStyle != BS_DIBPATTERNPT || (
 				var fillPatternImage &&
 				PImage(var fillPatternImage)->type != imBW &&
@@ -571,7 +571,7 @@ apc_gp_fill_chord( Handle self, int x, int y, int dX, int dY, double angleStart,
 	Rect r;
 
 	compl0 = arc_completion( &angleStart, &angleEnd, &needf);
-	comp = ((sys ps_fill_mode & fmOverlay) == 0) || stylus_is_complex( self);
+	comp = ((sys fill_mode & fmOverlay) == 0) || stylus_is_complex( self);
 	SHIFT_XY(x,y);
 
 	if ( comp) {
@@ -601,7 +601,7 @@ apc_gp_fill_ellipse( Handle self, int x, int y, int dX, int dY)
 {objCheck false;{
 	Bool ok = true;
 	HDC     ps  = sys ps;
-	Bool    comp = ((sys ps_fill_mode & fmOverlay) == 0) || stylus_is_complex(self);
+	Bool    comp = ((sys fill_mode & fmOverlay) == 0) || stylus_is_complex(self);
 	Rect r;
 	int mix = 0;
 	SHIFT_XY(x,y);
@@ -661,7 +661,7 @@ apc_gp_fill_poly( Handle self, int numPts, Point * points)
 	if ( numPts == 2 )
 		adjust_line_end_LONG( p[0].x, p[0].y, &p[1].x, &p[1].y);
 
-	if (( sys ps_fill_mode & fmOverlay) == 0) {
+	if (( sys fill_mode & fmOverlay) == 0) {
 		SelectObject( ps, std_hollow_pen);
 		while ( make_brush(self, &mix)) {
 			if ( !( ok = Polygon( ps, p, numPts))) apiErr;
@@ -741,8 +741,8 @@ apc_gp_fill_poly( Handle self, int numPts, Point * points)
 		SetROP2( dc, R2_WHITE);
 		Rectangle( dc, 0, 0, bound. x, bound. y);
 		if (
-			sys current_rop == R2_COPYPEN &&
-			sys current_rop2 == ropNoOper &&
+			sys rop == R2_COPYPEN &&
+			sys rop2 == ropNoOper &&
 			sys rq_brush.logbrush.lbStyle == BS_DIBPATTERNPT && (
 				!var fillPatternImage || (
 					PImage(var fillPatternImage)->type == imBW &&
@@ -788,7 +788,7 @@ apc_gp_fill_sector( Handle self, int x, int y, int dX, int dY, double angleStart
 	int mix = 0;
 
 	compl0 = arc_completion( &angleStart, &angleEnd, &needf);
-	comp = ((sys ps_fill_mode & fmOverlay) == 0) || stylus_is_complex(self);
+	comp = ((sys fill_mode & fmOverlay) == 0) || stylus_is_complex(self);
 
 	SHIFT_XY(x,y);
 	pts[0].x = x + cos( angleEnd   / GRAD) * dX / 2 + 0.5;
@@ -998,7 +998,7 @@ int
 apc_gp_get_fill_mode( Handle self)
 {
 	objCheck 0;
-	return sys ps ? sys ps_fill_mode : sys fill_mode;
+	return sys fill_mode;
 }
 
 static Handle ctx_le2PS_ENDCAP[] = {
@@ -1306,11 +1306,9 @@ Bool
 apc_gp_set_fill_mode( Handle self, int fill_mode)
 {
 	objCheck false;
-	if ( sys ps) {
+	sys fill_mode = fill_mode;
+	if ( sys ps)
 		SetPolyFillMode( sys ps, ((fill_mode & fmWinding) == fmAlternate) ? ALTERNATE : WINDING);
-		sys ps_fill_mode = fill_mode;
-	} else
-		sys fill_mode = fill_mode;
 	return true;
 }
 
@@ -1349,12 +1347,9 @@ apc_gp_set_fill_pattern( Handle self, FillPattern pattern)
 	uint32_t *p1 = ( uint32_t*) pattern;
 	uint32_t *p2 = p1 + 1;
 
-	if ( !ps) {
-		memcpy( &sys fill_pattern2, pattern, sizeof( FillPattern));
-		return true;
-	}
-
 	memcpy( &sys fill_pattern, pattern, sizeof( FillPattern));
+	if ( !ps) return true;
+
 	if (( *p1 == 0) && ( *p2 == 0)) {
 		b-> logbrush.lbStyle = BS_SOLID;
 		b-> logbrush.lbColor = GetBkColor( ps);
@@ -1405,16 +1400,15 @@ Bool
 apc_gp_set_fill_pattern_offset( Handle self, Point offset)
 {
 	objCheck false;
+	sys fill_pattern_offset = offset;
 	if ( sys ps) {
-		sys fill_pattern_offset = offset;
 		offset = apply_fill_pattern_offset(self);
 		SetBrushOrgEx( sys ps, offset.x, offset.y, NULL);
 		if ( CURRENT_GP_BRUSH != NULL ) {
 			GdipResetTextureTransform(CURRENT_GP_BRUSH);
 			GdipTranslateTextureTransform(CURRENT_GP_BRUSH,offset.x,offset.y,MatrixOrderPrepend);
 		}
-	} else
-		sys fill_pattern_offset2 = offset;
+	}
 	return true;
 }
 
@@ -1450,7 +1444,7 @@ FillPattern *
 apc_gp_get_fill_pattern( Handle self)
 {
 	objCheck NULL;
-	return sys ps ? &sys fill_pattern : &sys fill_pattern2;
+	return &sys fill_pattern;
 }
 
 Point
@@ -1458,7 +1452,7 @@ apc_gp_get_fill_pattern_offset( Handle self)
 {
 	Point p = {0,0};
 	objCheck p;
-	return sys ps ? sys fill_pattern_offset : sys fill_pattern_offset2;
+	return sys fill_pattern_offset;
 }
 
 Bool
@@ -1581,8 +1575,8 @@ apc_gp_set_rop( Handle self, int rop)
 {
 	objCheck false;
 	if ( !sys ps) { sys rop = rop; return true; }
-	sys current_rop = ctx_remap_def( rop, ctx_rop2R2, true, R2_COPYPEN);
-	if ( !SetROP2( sys ps, sys current_rop)) apiErr;
+	sys rop = ctx_remap_def( rop, ctx_rop2R2, true, R2_COPYPEN);
+	if ( !SetROP2( sys ps, sys rop)) apiErr;
 	return true;
 }
 
@@ -1592,7 +1586,7 @@ apc_gp_set_rop2( Handle self, int rop)
 	objCheck false;
 	if ( !sys ps) { sys rop2 = rop; return true; }
 	if ( rop != ropCopyPut) rop = ropNoOper;
-	sys current_rop2 = rop;
+	sys rop2 = rop;
 	if ( !SetBkMode( sys ps, ( rop == ropCopyPut) ? OPAQUE : TRANSPARENT)) apiErr;
 	STYLUS_FREE_GP_BRUSH;
 	return true;
@@ -1649,20 +1643,10 @@ apc_gp_push(Handle self, GCStorageFunction * destructor, void * user_data, unsig
 		state->paint.font_sin  = sys font_sin;
 		state->paint.font_cos  = sys font_cos;
 
-		memcpy( state->common.fill_pattern, sys fill_pattern, sizeof(FillPattern));
-		state->common.fill_pattern_offset = sys fill_pattern_offset;
-		state->common.fill_mode  = sys ps_fill_mode;
-		state->common.rop        = sys current_rop;
-		state->common.rop2       = sys current_rop2;
-		state->common.transform  = sys gp_transform;
-		state->common.antialias  = is_apt(aptGDIPlus);
-
 		state->paint.rq_pen      = sys rq_pen;
 		state->paint.rq_brush    = sys rq_brush;
+		state->common.transform  = sys gp_transform;
 	} else {
-		state->common.fill_mode  = sys fill_mode;
-		memcpy( state->common.fill_pattern, sys fill_pattern2, sizeof(FillPattern));
-		state->common.fill_pattern_offset = sys fill_pattern_offset2;
 		state->common.line_end    = sys line_end;
 		state->common.line_join   = sys line_join;
 		state->common.miter_limit = sys miter_limit;
@@ -1675,11 +1659,15 @@ apc_gp_push(Handle self, GCStorageFunction * destructor, void * user_data, unsig
 		} else
 			state->common.line_pattern = sys line_pattern;
 		state->nonpaint.palette = palette_create(self);
-		state->common.rop         = sys rop;
-		state->common.rop2        = sys rop2;
-		state->common.transform   = sys transform;
+		state->common.transform = sys transform;
 	}
 
+	memcpy( state->common.fill_pattern, sys fill_pattern, sizeof(FillPattern));
+	state->common.fill_pattern_offset = sys fill_pattern_offset;
+	state->common.fill_mode     = sys fill_mode;
+	state->common.rop           = sys rop;
+	state->common.rop2          = sys rop2;
+	state->common.antialias     = is_apt(aptGDIPlus);
 	state->common.alpha         = sys alpha;
 	state->common.fg            = sys fg;
 	state->common.bg            = sys bg;
@@ -1716,12 +1704,7 @@ apc_gp_pop( Handle self, void * user_data)
 		sys rq_pen              = state-> paint.rq_pen;
 		sys rq_brush            = state-> paint.rq_brush;
 
-		memcpy( sys fill_pattern, state->common.fill_pattern, sizeof(FillPattern));
-		sys fill_pattern_offset = state->common.fill_pattern_offset;
-		sys ps_fill_mode        = state->common.fill_mode;
 		sys pal                 = GetCurrentObject(sys ps, OBJ_PAL);
-		sys current_rop         = state->common.rop;
-		sys current_rop2        = state->common.rop2;
 		sys gp_transform        = state->common.transform;
 
 		if (sys graphics) {
@@ -1745,9 +1728,6 @@ apc_gp_pop( Handle self, void * user_data)
 			GdipTranslateTextureTransform(CURRENT_GP_BRUSH,offset.x,offset.y,MatrixOrderPrepend);
 		}
 	} else {
-		sys fill_mode = state->common.fill_mode;
-		memcpy( sys fill_pattern2, state->common.fill_pattern, sizeof(FillPattern));
-		sys fill_pattern_offset2 = state->common.fill_pattern_offset;
 		sys line_end        = state->common.line_end;
 		sys line_join       = state->common.line_join;
 		sys line_width      = state->common.line_width;
@@ -1758,10 +1738,14 @@ apc_gp_pop( Handle self, void * user_data)
 		sys line_pattern    = state->common.line_pattern;
 		if ( sys pal ) DeleteObject( sys pal);
 		sys pal            = state-> nonpaint.palette;
-		sys rop            = state-> common.rop;
-		sys rop2           = state-> common.rop2;
 		sys transform      = state-> common.transform;
 	}
+
+	memcpy( sys fill_pattern, state->common.fill_pattern, sizeof(FillPattern));
+	sys fill_pattern_offset = state->common.fill_pattern_offset;
+	sys fill_mode           = state->common.fill_mode;
+	sys rop                 = state->common.rop;
+	sys rop2                = state->common.rop2;
 
 	sys alpha  = state->common.alpha;
 	apc_gp_set_antialias( self, state->common.antialias );

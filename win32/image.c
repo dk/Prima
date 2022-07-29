@@ -447,7 +447,7 @@ image_create_gp_pattern( Handle self, Handle image, unsigned int alpha )
 		XColorPalette palette = { 0, i-> palSize };
 		if ( i->type == imBW && !dsys(i)options.aptIcon) {
 			palette.entries[0] = remap_color(sys bg, false);
-			if ( sys current_rop2 == ropCopyPut )
+			if ( sys rop2 == ropCopyPut )
 				palette.entries[0] |= 0xff000000;
 			palette.entries[1] = 0xff000000 | remap_color(sys fg, false);
 		} else {
@@ -1237,7 +1237,7 @@ img_draw_black_rect( Handle self, PutImageRequest * req)
 	HGDIOBJ  oldh = SelectObject( sys ps, CreateSolidBrush( RGB(0,0,0 )));
 	if ( !SetROP2( sys ps, R2_COPYPEN)) apiErr;
 	if ( !Rectangle( sys ps, req-> dst_x, req-> dst_y, req-> dst_x + req-> dst_w, req-> dst_y + req-> dst_h)) apiErr;
-	if ( !SetROP2( sys ps, sys current_rop)) apiErr;
+	if ( !SetROP2( sys ps, sys rop)) apiErr;
 	SelectObject( sys ps, oldp);
 	DeleteObject( SelectObject( sys ps, oldh));
 }

@@ -471,8 +471,6 @@ typedef struct _DrawableData
 	Point          res;                 // resolution
 
 	/* for opaque stroke emulation */
-	int            current_rop;
-	int            current_rop2;
 	int            alpha;
 
 	/* cached GetTextMetrics */
@@ -483,22 +481,19 @@ typedef struct _DrawableData
 
 	/* HDC attributes storage outside paint mode */
 	Color          fg, bg;
-	int            fill_mode, ps_fill_mode;
+	int            fill_mode;
 	float          line_width;
 	int            line_end;
 	int            line_join;
 	unsigned char *line_pattern;
 	int            line_pattern_len;
 	FillPattern    fill_pattern;
-	FillPattern    fill_pattern2;
 	Point          fill_pattern_offset;
-	Point          fill_pattern_offset2;
 	int            rop;
 	int            rop2;
 	float          miter_limit;
 	Point          transform;
 	Point          gp_transform;
-	PPaintSaveData psd;                 // Their values during paint saved in sys psd
 
 	/* Basic widget fields */
 	HWND           handle;              // Windows handle of a widget

@@ -121,7 +121,7 @@ apc_gp_aa_bar( Handle self, double x1, double y1, double x2, double y2)
 
 		/* emulate transparency on a bitmap by xor/and */
 		if (
-			sys current_rop2 == ropNoOper &&
+			sys rop2 == ropNoOper &&
 			sys rq_brush.logbrush.lbStyle == BS_DIBPATTERNPT && (
 				(( pt = (PImage) var fillPatternImage ) == NULL ) ||
 				(
@@ -190,7 +190,7 @@ apc_gp_aa_fill_poly( Handle self, int numPts, NPoint * points)
 
 		/* emulate transparency on a bitmap by xor/and */
 		if (
-			sys current_rop2 == ropNoOper &&
+			sys rop2 == ropNoOper &&
 			sys rq_brush.logbrush.lbStyle == BS_DIBPATTERNPT && (
 				(( pt = (PImage) var fillPatternImage ) == NULL) ||
 				(
@@ -235,7 +235,7 @@ apc_gp_aa_fill_poly( Handle self, int numPts, NPoint * points)
 		sys graphics,
 		CURRENT_GP_BRUSH,
 		p, numPts,
-		((sys ps_fill_mode & fmWinding) == fmAlternate) ?
+		((sys fill_mode & fmWinding) == fmAlternate) ?
 			FillModeAlternate : FillModeWinding
 	);
 	apiGPErrCheckRet(false);

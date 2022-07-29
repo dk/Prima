@@ -454,9 +454,9 @@ select_gp_brush(Handle self)
 	g = (fg & 0xff00) >> 8;
 	r = fg & 0xff;
 	key.fg = (sys alpha << 24) | (r << 16) | (g << 8) | b;
-	key.opaque = sys current_rop2 == ropCopyPut;
+	key.opaque = sys rop2 == ropCopyPut;
 	if ( !is_solid ) {
-		key.opaque = (sys current_rop2 == ropCopyPut) ? 1 : 0;
+		key.opaque = (sys rop2 == ropCopyPut) ? 1 : 0;
 		b = (bg >> 16) & 0xff;
 		g = (bg & 0xff00) >> 8;
 		r =  bg & 0xff;
@@ -1943,7 +1943,13 @@ void
 hwnd_enter_paint( Handle self)
 {
 	Point res;
-	Color fore, back;
+	HDC save_ps;
+
+	save_ps = sys ps;
+	sys ps = 0;
+	apc_gp_push(self, NULL, NULL, 0);
+	sys ps = save_ps;
+
 	SetGraphicsMode( sys ps, GM_ADVANCED);
 	sys stock_pen   = GetCurrentObject( sys ps, OBJ_PEN);
 	sys stock_brush = GetCurrentObject( sys ps, OBJ_BRUSH);
@@ -1956,8 +1962,6 @@ hwnd_enter_paint( Handle self)
 	sys stylus_flags    = 0;
 	apt_set( aptDCChangeLock);
 	sys bpp = GetDeviceCaps( sys ps, BITSPIXEL);
-	fore = sys fg;
-	back = sys bg;
 	if ( is_apt( aptWinPS) && self != prima_guts.application) {
 		apc_gp_set_color( self, sys view_colors[ ciFore]);
 		apc_gp_set_back_color( self, sys view_colors[ ciBack]);
@@ -1966,15 +1970,12 @@ hwnd_enter_paint( Handle self)
 		apc_gp_set_back_color( self, remap_color(sys bg,false));
 	}
 
-	if ( sys psd == NULL) sys psd = ( PPaintSaveData) malloc( sizeof( PaintSaveData));
-	if ( sys psd == NULL) return;
-
 	apc_gp_set_alpha( self, sys alpha);
 	apc_gp_set_antialias( self, is_apt( aptGDIPlus));
 	apc_gp_set_text_opaque( self, is_apt( aptTextOpaque));
 	apc_gp_set_text_out_baseline( self, is_apt( aptTextOutBaseline));
 	apc_gp_set_fill_mode( self, sys fill_mode);
-	apc_gp_set_fill_pattern_offset( self, sys fill_pattern_offset2);
+	apc_gp_set_fill_pattern_offset( self, sys fill_pattern_offset);
 	apc_gp_set_line_width( self, sys line_width);
 	apc_gp_set_line_end( self, sys line_end);
 	apc_gp_set_line_join( self, sys line_join);
@@ -1988,24 +1989,7 @@ hwnd_enter_paint( Handle self)
 	if ( var fillPatternImage )
 		apc_gp_set_fill_image( self, var fillPatternImage);
 	else
-		apc_gp_set_fill_pattern( self, sys fill_pattern2);
-	sys psd-> alpha               = sys alpha;
-	sys psd-> antialias           = is_apt( aptGDIPlus);
-	sys psd-> font                = var font;
-	sys psd-> fill_mode           = sys fill_mode;
-	sys psd-> fill_pattern_offset = sys fill_pattern_offset2;
-	sys psd-> fg                  = fore;
-	sys psd-> bg                  = back;
-	sys psd-> line_width          = sys line_width;
-	sys psd-> line_end            = sys line_end;
-	sys psd-> line_join           = sys line_join;
-	sys psd-> line_pattern        = sys line_pattern;
-	sys psd-> line_pattern_len    = sys line_pattern_len;
-	sys psd-> rop                 = sys rop;
-	sys psd-> rop2                = sys rop2;
-	sys psd-> transform           = sys transform;
-	sys psd-> text_opaque         = is_apt( aptTextOpaque);
-	sys psd-> text_out_baseline   = is_apt( aptTextOutBaseline);
+		apc_gp_set_fill_pattern( self, sys fill_pattern);
 
 	apt_clear( aptDCChangeLock);
 	sys stylus_flags = 0;
@@ -2062,6 +2046,7 @@ cleanup_gc_stack(Handle self, Bool all)
 void
 hwnd_leave_paint( Handle self)
 {
+	HDC save_ps;
 	cleanup_gc_stack(self, 0);
 	if ( sys graphics) {
 		GdipDeleteGraphics(sys graphics);
@@ -2076,28 +2061,12 @@ hwnd_leave_paint( Handle self)
 	sys stock_font = NULL;
 	sys stock_palette = NULL;
 	stylus_release(self);
-	if ( sys psd != NULL) {
-		sys fg                        = sys psd-> fg;
-		sys bg                        = sys psd-> bg;
-		var font                      = sys psd-> font;
-		sys alpha                     = sys psd-> alpha;
-		sys fill_mode                 = sys psd-> fill_mode;
-		sys fill_pattern_offset2      = sys psd-> fill_pattern_offset;
-		sys line_width                = sys psd-> line_width;
-		sys line_end                  = sys psd-> line_end;
-		sys line_join                 = sys psd-> line_join;
-		sys line_pattern              = sys psd-> line_pattern;
-		sys line_pattern_len          = sys psd-> line_pattern_len;
-		sys rop                       = sys psd-> rop;
-		sys rop2                      = sys psd-> rop2;
-		sys transform                 = sys psd-> transform;
-		apt_assign( aptTextOpaque,      sys psd-> text_opaque);
-		apt_assign( aptTextOutBaseline, sys psd-> text_out_baseline);
-		apt_assign( aptGDIPlus,         sys psd-> antialias);
-		free( sys psd);
-		sys psd = NULL;
-	}
 	sys bpp = 0;
+
+	save_ps = sys ps;
+	sys ps = 0;
+	apc_gp_pop(self, NULL);
+	sys ps = save_ps;
 }
 
 Bool
