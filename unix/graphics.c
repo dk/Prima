@@ -235,6 +235,7 @@ Unbuffered:
 	apc_gp_set_antialias( self, XX-> flags.antialias);
 	apc_gp_set_color( self, XX-> saved_fore);
 	apc_gp_set_back_color( self, XX-> saved_back);
+
 	if ( PDrawable(self)-> fillPatternImage ) {
 		apc_gp_set_fill_image( self, PDrawable(self)-> fillPatternImage);
 	} else {
@@ -311,7 +312,7 @@ static void
 cleanup_stipples( Handle self )
 {
 	DEFXX;
-	Bool kill = true;
+	Bool kill = false;
 
 	if ( XX-> gc_stack ) {
 		int i;
@@ -320,8 +321,10 @@ cleanup_stipples( Handle self )
 			if ( !state->paint.tile || !state->paint.stipple)
 				continue;
 
-			if ( state-> paint.tile       ) state-> paint.kill_tile       = true;
-			if ( state-> paint.stipple    ) state-> paint.kill_stipple    = true;
+			if ( state-> paint.tile    && state->paint.tile == XX-> fp_tile   )
+				state-> paint.kill_tile    = true;
+			if ( state-> paint.stipple && state->paint.tile == XX-> fp_stipple)
+				state-> paint.kill_stipple = true;
 			kill = false;
 			break;
 		}
@@ -432,7 +435,6 @@ make_tiled_brush( Handle self, int colorIndex)
 	}
 	return true;
 }
-
 
 static Bool
 make_mono_brush( Handle self, int colorIndex)
