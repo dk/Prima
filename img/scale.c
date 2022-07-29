@@ -360,9 +360,6 @@ static stretch_t stretch_procs[] = {
 #undef SDECL
 };
 
-typedef void BitBltProc( Byte * src, Byte * dst, int count);
-typedef BitBltProc *PBitBltProc;
-
 static void
 bitblt_or( Byte * src, Byte * dst, int count)
 {
