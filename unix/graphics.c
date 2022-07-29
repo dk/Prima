@@ -311,7 +311,7 @@ static void
 cleanup_stipples( Handle self )
 {
 	DEFXX;
-	Bool kill = false;
+	Bool kill = true;
 
 	if ( XX-> gc_stack ) {
 		int i;
