@@ -138,6 +138,10 @@ sub menuadd
 					['~Increase' => '+' => '+' => sub{$_[0]-> IV-> zoom( $_[0]-> IV-> zoom * 1.1)}],
 					['~Decrease' => '-' => '-' => sub{$_[0]-> IV-> zoom( $_[0]-> IV-> zoom / 1.1)}],
 				]],
+				['~Scaling' => [
+					map {my $k = $_; [ $k, $k, sub { $_[0]->IV->scaling( $ist::{$k}() )} ]}
+					qw(Box AND OR Triangle Quadratic Sinc Hermite Cubic Gaussian)
+				]],
 				['~Info' => 'Alt+F1' => '@F1' => \&iinfo],
 			]],
 			],

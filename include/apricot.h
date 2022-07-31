@@ -3211,8 +3211,9 @@ IST(Hermite)
 IST(Cubic)
 #define    istGaussian           11
 IST(Gaussian)
-END_TABLE(ist,UV)
 #define istMax istGaussian
+IST(Max)
+END_TABLE(ist,UV)
 #undef IST
 
 /* Icon auto masking types */
