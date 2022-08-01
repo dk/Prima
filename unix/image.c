@@ -1278,7 +1278,6 @@ create_image_cache( PImage img, int type, int alpha)
 	}
 
 	/* treat ARGB separately, and leave */
-	cache->alpha = alpha;
 	if ( type == CACHE_LAYERED || type == CACHE_LAYERED_ALPHA ) {
 		Bool ok;
 		PIcon i = (PIcon) pass;
@@ -1309,8 +1308,6 @@ create_image_cache( PImage img, int type, int alpha)
 			img_premultiply_alpha_constant( dup, alpha);
 			if ( XT_IS_ICON(IMG)) {
 				Image dummy;
-				if ( PIcon(dup)->maskType != imbpp8 )
-					CIcon(dup)->set_maskType(dup, imbpp8);
 				img_fill_dummy( &dummy, img->w, img->h, imByte, PIcon(dup)->mask, std256gray_palette);
 				img_premultiply_alpha_constant( (Handle) &dummy, alpha);
 			}
@@ -1323,9 +1320,11 @@ create_image_cache( PImage img, int type, int alpha)
 		if ( !ok ) return NULL;
 
 		cache-> type = type;
+		cache->alpha = alpha;
 		return cache;
 	}
 
+	cache->alpha = alpha;
 	if ( type == CACHE_A8 ) {
 		Bool ok;
 		PImage i = (PImage) pass;
