@@ -1226,7 +1226,7 @@ extern Bool
 prima_create_icon_pixmaps( Handle bw_icon, Pixmap *xor, Pixmap *and);
 
 extern ImageCache*
-prima_image_cache( PImage img, int type);
+prima_image_cache( PImage img, int type, int alpha);
 
 extern Bool
 prima_put_ximage( XDrawable win, GC gc, PrimaXImage *i,

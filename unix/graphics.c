@@ -1888,6 +1888,8 @@ apc_gp_set_alpha( Handle self, int alpha)
 			return true;
 		XX-> alpha = alpha;
 		guts.xrender_pen_dirty = true;
+		if ( PDrawable(self)-> fillPatternImage )
+			apc_gp_set_fill_image( self, PDrawable(self)-> fillPatternImage);
 	} else {
 		XX-> alpha = alpha;
 	}
@@ -1946,12 +1948,12 @@ create_tile( Handle self, Handle image, Bool mono )
 	GC gc;
 	XGCValues gcv;
 
-	if ( mono || XT_IS_BITMAP(XX)) {
-		depth = 1;
-		flag = CACHE_BITMAP;
-	} else if ( XF_LAYERED(XX) ) {
+	if ( !mono && ( XF_LAYERED(XX) || XX->alpha < 255 || XX->flags.antialias )) {
 		depth = guts.argb_depth;
 		flag = X(image)->type.icon ? CACHE_LAYERED_ALPHA : CACHE_LAYERED;
+	} else if ( mono || XT_IS_BITMAP(XX)) {
+		depth = 1;
+		flag = CACHE_BITMAP;
 	} else {
 		depth = guts.depth;
 		flag = CACHE_PIXMAP;
@@ -1961,7 +1963,7 @@ create_tile( Handle self, Handle image, Bool mono )
 	XCHECKPOINT;
 	if ( !px ) return 0;
 
-	if (!(cache = prima_image_cache((PImage) image, flag))) {
+	if (!(cache = prima_image_cache((PImage) image, flag, XX->alpha))) {
 		XFreePixmap(DISP, px);
 		return 0;
 	}
