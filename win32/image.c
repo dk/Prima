@@ -445,16 +445,16 @@ image_create_gp_pattern( Handle self, Handle image, unsigned int alpha )
 
 	if (( i->type & imBPP ) != 24 ) {
 		XColorPalette palette = { 0, i-> palSize };
+		uint32_t a = (alpha & 0xff) << 24;
 		if ( i->type == imBW && !dsys(i)options.aptIcon) {
 			palette.entries[0] = remap_color(sys bg, false);
 			if ( sys rop2 == ropCopyPut )
-				palette.entries[0] |= 0xff000000;
-			palette.entries[1] = 0xff000000 | remap_color(sys fg, false);
+				palette.entries[0] |= a;
+			palette.entries[1] = a | remap_color(sys fg, false);
 		} else {
 			int j;
 			for ( j = 0; j < i->palSize; j++) {
-				palette.entries[j] =
-					0xff000000            |
+				palette.entries[j] = a        |
 					i->palette[j].r << 16 |
 					i->palette[j].g << 8  |
 					i->palette[j].b
