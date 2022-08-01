@@ -1948,12 +1948,12 @@ create_tile( Handle self, Handle image, Bool mono )
 	GC gc;
 	XGCValues gcv;
 
-	if ( !mono && ( XF_LAYERED(XX) || XX->alpha < 255 || XX->flags.antialias )) {
-		depth = guts.argb_depth;
-		flag = X(image)->type.icon ? CACHE_LAYERED_ALPHA : CACHE_LAYERED;
-	} else if ( mono || XT_IS_BITMAP(XX)) {
+	if ( mono || XT_IS_BITMAP(XX)) {
 		depth = 1;
 		flag = CACHE_BITMAP;
+	} else if ( XF_LAYERED(XX) || XX->alpha < 255 || XX->flags.antialias ) {
+		depth = guts.argb_depth;
+		flag = X(image)->type.icon ? CACHE_LAYERED_ALPHA : CACHE_LAYERED;
 	} else {
 		depth = guts.depth;
 		flag = CACHE_PIXMAP;
@@ -1963,7 +1963,7 @@ create_tile( Handle self, Handle image, Bool mono )
 	XCHECKPOINT;
 	if ( !px ) return 0;
 
-	if (!(cache = prima_image_cache((PImage) image, flag, XX->alpha))) {
+	if (!(cache = prima_image_cache((PImage) image, flag, mono ? 255 : XX->alpha))) {
 		XFreePixmap(DISP, px);
 		return 0;
 	}
