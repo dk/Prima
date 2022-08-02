@@ -145,25 +145,34 @@ PAINT:
 		);
 		if ( $iS > $iI ) {
 			# scaling kernel may need pixels beyond the cliprect
-			if ( $xDest >= $iI) {
-				$xDest -= $iI;
-				$imXz  += $iS;
-				$imX   += $iI;
-				$xFrom += $iS;
+			my $ks = {
+				ist::Triangle,  1,
+				ist::Quadratic, 2,
+				ist::Sinc,      4,
+				ist::Hermite,   1,
+				ist::Cubic,     2,
+				ist::Gaussian,  2,
+			}->{$self->{scaling}};
+
+			if ( $xDest >= $iI * $ks) {
+				$xDest -= $iI * $ks;
+				$imXz  += $iS * $ks;
+				$imX   += $iI * $ks;
+				$xFrom += $iS * $ks;
 			}
-			if ( $xDest + $imX <= $self->{imageX} - $iI ) {
-				$imX   += $iI;
-				$imXz  += $iS;
+			if ( $xDest + $imX <= $self->{imageX} - $iI * $ks ) {
+				$imX   += $iI * $ks;
+				$imXz  += $iS * $ks;
 			}
-			if ( $yDest >= $iI ) {
-				$yDest -= $iI;
-				$imYz  += $iS;
-				$imY   += $iI;
-				$yFrom += $iS;
+			if ( $yDest >= $iI * $ks ) {
+				$yDest -= $iI * $ks;
+				$imYz  += $iS * $ks;
+				$imY   += $iI * $ks;
+				$yFrom += $iS * $ks;
 			}
-			if ( $yDest + $imY <= $self->{imageY} - $iI ) {
-				$imY   += $iI;
-				$imYz  += $iS;
+			if ( $yDest + $imY <= $self->{imageY} - $iI * $ks ) {
+				$imY   += $iI * $ks;
+				$imYz  += $iS * $ks;
 			}
 		}
 		my $i = $self->{image}->extract( $xDest, $yDest, $imX, $imY );
