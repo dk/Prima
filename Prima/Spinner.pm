@@ -136,7 +136,7 @@ sub on_paint
 		my $fill_spline = sub {
 			my ( $n, $p ) = @_;
 			$canvas->color( $colors[( $self->{start_angle} + $n) % 8] );
-			$canvas->fill_spline(_scale($p, $scale_factor, $scale_factor));
+			$canvas->fill_spline(_scale($p, $scale_factor, $scale_factor), integer => $self->antialias);
 		};
 
 		$fill_spline->(7, \@petal2);
