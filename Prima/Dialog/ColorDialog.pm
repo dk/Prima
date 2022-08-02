@@ -112,16 +112,16 @@ sub create_wheel
 {
 	my ($id, $pix, $color)   = @_;
 	my $imul = 256 * $pix / $id;
-	my $i = Prima::DeviceBitmap-> create(
-		width  => 256 * $pix,
-		height => 256 * $pix,
-		name => '',
-	);
 
 	my ( $y1, $x1) = ($id,$id);
 	my  $d0 = $id / 2;
 
-	$i-> begin_paint;
+	my $i = Prima::Image->create(
+		width  => $id,
+		height => $id,
+		type   => im::RGB,
+	);
+
 	$i-> color( cl::Black);
 	$i-> bar( 0, 0, $i-> width, $i-> height);
 
@@ -129,44 +129,39 @@ sub create_wheel
 
 	for ( $y = 0; $y < $y1; $y++) {
 		for ( $x = 0; $x < $x1; $x++) {
-			my ( $h, $s, $ok) = xy2hs( $x, $y, $d0);
-			next if $ok;
+			my ( $h, $s) = xy2hs( $x, $y, $d0);
 			my ( $r, $g, $b) = hsv2rgb( $h, $s, 1);
-			$i-> color( $b | ($g << 8) | ($r << 16));
-			$i-> bar(
-				$x * $imul, $y * $imul,
-				( $x + 1) * $imul - 1, ( $y + 1) * $imul - 1
-			);
+			$i-> pixel( $x, $y, $b | ($g << 8) | ($r << 16));
 		}
 	}
-	$i-> end_paint;
+	$i-> scaling( ist::Gaussian ) if $::application->get_bpp > 8;
+	$i-> size( 256 * $pix, 256 * $pix);
 
-
-	my $a = Prima::DeviceBitmap-> create(
+	my $xa = Prima::DeviceBitmap-> create(
 		width  => 256 * $pix,
 		height => 256 * $pix,
 		name   => 'ColorWheel',
 	);
 
-	$a-> begin_paint;
-	$a-> color( $color);
-	$a-> bar( 0, 0, $a-> size);
-	$a-> rop( rop::XorPut);
-	$a-> put_image( 0, 0, $i);
-	$a-> rop( rop::CopyPut);
-	$a-> color( cl::Black);
-	$a-> fill_ellipse(
+	$xa-> begin_paint;
+	$xa-> color( $color);
+	$xa-> bar( 0, 0, $xa-> size);
+	$xa-> rop( rop::XorPut);
+	$xa-> put_image( 0, 0, $i);
+	$xa-> rop( rop::CopyPut);
+	$xa-> color( cl::Black);
+	$xa-> fill_ellipse(
 		128 * $pix, 128 * $pix,
 		(256 * $pix) - $imul * 2 - 1,
 		(256 * $pix) - $imul * 2 - 1
 	);
-	$a-> rop( rop::XorPut);
-	$a-> put_image( 0, 0, $i);
-	$a-> end_paint;
+	$xa-> rop( rop::XorPut);
+	$xa-> put_image( 0, 0, $i);
+	$xa-> end_paint;
 
 	$i-> destroy;
 
-	return $a;
+	return $xa;
 }
 
 sub create_wheel_shape
@@ -510,16 +505,23 @@ sub Roller_Paint
 	$canvas-> clear;
 	my $i;
 	my $step = 8 * $owner->{scaling};
-	my ( $h, $s, $v, $d) = ( $owner-> {H}-> value, $owner-> {S}-> value,
-		$owner-> {V}-> value, ($size[1] - $step * 2) / 32);
+	my ( $h, $s, $v, $d, $dd) = ( $owner-> {H}-> value, $owner-> {S}-> value,
+		$owner-> {V}-> value, ($size[1] - $step * 2) / 32, ($size[1] - $step * 2) / 256 );
 	$s /= 255;
 	$v /= 255;
 	my ( $r, $g, $b);
 
-	for $i (0..31) {
-		( $r, $g, $b) = hsv2rgb( $h, $s, $i / 31);
+	my $rlim;
+	if ( $::application->get_bpp > 8 ) {
+		$rlim = 256;
+	} else {
+		$rlim = 32;
+		$dd = $d;
+	}
+	for $i (0..$rlim-1) {
+		( $r, $g, $b) = hsv2rgb( $h, $s, $i / $rlim);
 		$canvas-> color( cl::from_rgb( $r, $g, $b));
-		$canvas-> bar( $step, $step + $i * $d, $size[0] - $step, $step + ($i + 1) * $d);
+		$canvas-> bar( $step, $step + $i * $dd, $size[0] - $step, $step + ($i + 1) * $dd);
 	}
 
 	$canvas-> color( cl::Black);
