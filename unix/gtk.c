@@ -5,6 +5,8 @@
 /*********************************/
 
 #include <sys/param.h>
+#include <sys/socket.h>
+#include <sys/signal.h>
 #include "unix/guts.h"
 #include "img.h"
 
@@ -29,24 +31,27 @@
 static int           gtk_initialized        = 0;
 static GApplication* gtk_app                = NULL;
 static GtkWidget*    gtk_dialog             = NULL;
-static char	     gtk_dialog_title[256];
-static char*	     gtk_dialog_title_ptr   = NULL;
-static Bool	     gtk_select_multiple    = FALSE;
-static Bool	     gtk_overwrite_prompt   = FALSE;
-static Bool	     gtk_show_hidden_files  = FALSE;
-static char	     gtk_current_folder[MAXPATHLEN+1];
-static char*	     gtk_current_folder_ptr = NULL;
-static List*	     gtk_filters            = NULL;
-static int	     gtk_filter_index       = 0;
+static char          gtk_dialog_title[256];
+static char*         gtk_dialog_title_ptr   = NULL;
+static Bool          gtk_select_multiple    = FALSE;
+static Bool          gtk_overwrite_prompt   = FALSE;
+static Bool          gtk_show_hidden_files  = FALSE;
+static char          gtk_current_folder[MAXPATHLEN+1];
+static char*         gtk_current_folder_ptr = NULL;
+static List*         gtk_filters            = NULL;
+static int           gtk_filter_index       = 0;
+static pid_t         gtk_screenshot_pid     = 0;
+static pid_t         gtk_screenshot_ppid    = 0;
+static int           gtk_screenshot_sockets[2];
 
 static GdkDisplay * display = NULL;
 
+#if GTK_MAJOR_VERSION == 2
 static Color
 gdk_color(GdkColor * c)
 {
-		return ((c->red >> 8) << 16) | ((c->green >> 8) << 8) | (c->blue >> 8);
+	return ((c->red >> 8) << 16) | ((c->green >> 8) << 8) | (c->blue >> 8);
 }
-
 
 typedef struct {
 		GType (*func)(void);
@@ -83,6 +88,8 @@ static GTFStruct widget_types[] = {
 };
 #undef GT
 
+#endif
+
 #if GTK_MAJOR_VERSION == 3
 GdkDisplay *
 my_gdk_display_open_default (void)
@@ -99,19 +106,130 @@ my_gdk_display_open_default (void)
 }
 #endif
 
-#ifdef SAFE_DBUS
+#if defined(SAFE_DBUS) && (GLIB_MAJOR_VERSION > 2 || (GLIB_MAJOR_VERSION == 2 && GLIB_MINOR_VERSION >= 34))
+#define DBUS_SCREENSHOT
+
 /* GIO wants that callback, even empty */
 static void gtk_application_activate (GApplication *app) {}
+
+static int
+make_screenshot(int x, int y, int w, int h)
+{
+	GApplication    *app;
+	GDBusConnection *conn;
+	GVariant        *params, *results;
+	GError          *error = NULL;
+	char             filename[256];
+
+	app = g_application_new("org.gnome.Screenshot", G_APPLICATION_FLAGS_NONE);
+	if ( !g_application_register (app, NULL, NULL)) {
+		g_object_unref(app);
+		Mdebug("cannot register another gtk application\n");
+		return false;
+	}
+
+	if (!( conn = g_application_get_dbus_connection (app))) {
+		g_object_unref(app);
+		Mdebug("cannot get dbus connection\n");
+		return false;
+	}
+
+	snprintf(filename, 256, "/tmp/%d-sc.png", gtk_screenshot_ppid);
+	params = g_variant_new("(iiiibs)",
+		x, y, w, h,
+		0, filename);
+
+	results = g_dbus_connection_call_sync (conn,
+		"org.gnome.Shell.Screenshot",
+		"/org/gnome/Shell/Screenshot",
+		"org.gnome.Shell.Screenshot",
+		"ScreenshotArea",
+		params,
+		NULL,
+		G_DBUS_CALL_FLAGS_NONE,
+		-1,
+		NULL,
+		&error
+	);
+
+	if ( results )
+		g_variant_unref( results );
+	if (error != NULL) {
+		Mdebug("cannot get gnome shell screenshot:%s\n", error->message);
+      		g_error_free (error);
+		g_object_unref(app);
+		return false;
+	}
+
+	g_object_unref(app);
+	return true;
+}
+
+static void
+terminate_screenshot_app(void)
+{
+	int status;
+
+	if ( !gtk_screenshot_pid ) return;
+
+	close( gtk_screenshot_sockets[0]);
+	kill( gtk_screenshot_pid, SIGINT);
+	waitpid( gtk_screenshot_pid, &status, 0);
+	gtk_screenshot_pid = 0;
+}
+
+static void
+run_screenshot_app(void)
+{
+	int s = gtk_screenshot_sockets[1];
+	int buf[20];
+	while (1) {
+		int n = read( s, buf, sizeof(int) * 4 );
+		if ( n < sizeof(int) * 4 ) {
+			Mdebug("bad screenshot request");
+			break;
+		}
+		buf[0] = make_screenshot(buf[0], buf[1], buf[2], buf[3]);
+		n = write( s, buf, sizeof(int) );
+		if ( n < sizeof(int) ) {
+			Mdebug("screenshot: cannot respond");
+			break;
+		}
+	}
+}
+
+static Bool
+request_screenshot(int x, int y, int w, int h)
+{
+	int s = gtk_screenshot_sockets[0];
+	int n, buf[4] = { x, y, w, h };
+	n = write( s, buf, sizeof(int) * 4 );
+	if ( n < sizeof(int) * 4 ) {
+		Mdebug("bad write to screenshot app");
+		terminate_screenshot_app();
+		return false;
+	}
+	n = read( s, buf, sizeof(int));
+	if ( n < sizeof(int) ) {
+		Mdebug("bad read from screenshot app");
+		terminate_screenshot_app();
+		return false;
+	}
+	return n;
+}
 #endif
 
 Display*
 prima_gtk_init(void)
 {
-	int i, argc = 0;
+	int  argc = 0;
 	Display *ret;
+#if GTK_MAJOR_VERSION == 2
 	GtkSettings * settings;
 	Color ** stdcolors;
+	int i;
 	PangoWeight weight;
+#endif
 
 	switch ( gtk_initialized) {
 	case -1:
@@ -125,6 +243,23 @@ prima_gtk_init(void)
 		return gdk_x11_display_get_xdisplay(display);
 #endif
 	}
+
+#ifdef DBUS_SCREENSHOT
+	gtk_screenshot_ppid = getpid();
+	if ( socketpair(AF_UNIX, SOCK_STREAM, PF_UNSPEC, gtk_screenshot_sockets) == 0) {
+		gtk_screenshot_pid  = fork();
+		if ( gtk_screenshot_pid == 0 ) {
+			close(gtk_screenshot_sockets[0]);
+			run_screenshot_app();
+			exit(0);
+		} else {
+			close(gtk_screenshot_sockets[1]);
+		}
+	} else {
+		gtk_screenshot_pid = 0;
+		Mdebug("socketpair() error");
+	}
+#endif
 
 #ifdef WITH_GTK_NONX11
 	{
@@ -165,8 +300,9 @@ prima_gtk_init(void)
 	sync_locale();
 #endif
 
-#if defined(SAFE_DBUS) && (GLIB_MAJOR_VERSION > 2 || (GLIB_MAJOR_VERSION == 2 && GLIB_MINOR_VERSION >= 34))
+#ifdef DBUS_SCREENSHOT
 	gtk_app = g_application_new ("org.prima", G_APPLICATION_NON_UNIQUE);
+
 	g_signal_connect (gtk_app, "activate", G_CALLBACK (gtk_application_activate), NULL);
 	if ( !g_application_register (gtk_app, NULL, NULL)) {
   		g_object_unref (gtk_app);
@@ -174,9 +310,9 @@ prima_gtk_init(void)
 	}
 #endif
 
+#if GTK_MAJOR_VERSION == 2
 	settings  = gtk_settings_get_default();
 	stdcolors = prima_standard_colors();
-#if GTK_MAJOR_VERSION == 2
 	for ( i = 0; i < sizeof(widget_types)/sizeof(GTFStruct); i++) {
 		GTFStruct * s = widget_types + i;
 		Color     * c = stdcolors[ s-> prima_class >> 16 ];
@@ -251,6 +387,7 @@ prima_gtk_init(void)
 Bool
 prima_gtk_done(void)
 {
+	terminate_screenshot_app();
 	if ( gtk_filters) {
 		int i;
 		for ( i = 0; i < gtk_filters-> count; i++)
@@ -422,7 +559,7 @@ gtk_openfile( Bool open)
 				}
 				*(ptr - 1) = 0;
 			} else {
-					warn("gtk_openfile: cannot allocate %d bytes of memory", size);
+				warn("gtk_openfile: cannot allocate %d bytes of memory", size);
 			}
 
 			/* free */
@@ -586,14 +723,14 @@ prima_gtk_openfile( char * params)
 Bool
 prima_gtk_application_get_bitmap( Handle self, Handle image, int x, int y, int xLen, int yLen)
 {
-#if defined(SAFE_DBUS) && (GLIB_MAJOR_VERSION > 2 || (GLIB_MAJOR_VERSION == 2 && GLIB_MINOR_VERSION >= 34))
+#ifdef DBUS_SCREENSHOT
 	DEFXX;
 	int              i, found_png;
 	PList            codecs;
-	GVariant        *params, *results;
-	GError   *       error = NULL;
-	GDBusConnection *conn;
 	char             filename[256];
+
+	if ( !gtk_screenshot_pid)
+		return false;
 
 	/* do we have png? it seems gnome only saves scheenshots as pngs */
 	codecs = plist_create( 16, 16);
@@ -613,37 +750,11 @@ prima_gtk_application_get_bitmap( Handle self, Handle image, int x, int y, int x
 	}
 
 	/* execute gnome shell screenshot */
-	snprintf(filename, 256, "/tmp/%d-sc.png", (int) getpid());
-	params = g_variant_new("(iiiibs)",
-		x, XX->size.y - y - yLen, xLen, yLen, 
-		0, filename);
-
-	if (!( conn = g_application_get_dbus_connection (g_application_get_default ()))) {
-		Mdebug("cannot get dbus connection\n");
+	if ( !request_screenshot( x, XX->size.y - y - yLen, xLen, yLen))
 		return false;
-	}
-
-	results = g_dbus_connection_call_sync (conn,
-		"org.gnome.Shell.Screenshot",
-		"/org/gnome/Shell/Screenshot",
-		"org.gnome.Shell.Screenshot",
-		"ScreenshotArea",
-		params,
-		NULL,
-		G_DBUS_CALL_FLAGS_NONE,
-		-1,
-		NULL,
-		&error
-	);
-	if ( results )
-		g_variant_unref( results );
-	if (error != NULL) {
-		Mdebug("cannot get gnome shell screenshot\n");
-      		g_error_free (error);
-		return false;
-	}
 
 	/* load */
+	snprintf(filename, 256, "/tmp/%d-sc.png", gtk_screenshot_ppid);
 	codecs = apc_img_load( image, filename, false, NULL, NULL, NULL);
 	unlink( filename );
 	if ( !codecs ) {
