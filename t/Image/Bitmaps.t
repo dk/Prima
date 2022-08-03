@@ -360,18 +360,23 @@ $dst->end_paint;
 
 sub ready_to_paint
 {
+	diag(__LINE__);
 	return 0 if get_flag;
 	my $self = shift;
 	my $ok;
 	my @sz = $self-> size;
 	return 0 unless $sz[0] == 4 && $sz[1] == 2;
 	for ( 0..4 ) {
+	diag(__LINE__);
 		$self->color(cl::Black);
 		$self->bar(0,0,$self->size);
 		goto AGAIN unless $self->pixel(0,0) == 0;
+	diag( $self->pixel(1,0) );
 		$self->color(cl::White);
 		$self->bar(0,0,$self->size);
 		goto AGAIN unless $self->pixel(3,1) != 0;
+	diag( $self->pixel(0,1) );
+	diag(__LINE__);
 		$ok = 1;
 		last;
 	AGAIN:
@@ -379,6 +384,7 @@ sub ready_to_paint
 	}
 	return 0 unless $ok;
 	set_flag;
+	diag(__LINE__);
 	return 1;
 }
 
