@@ -131,8 +131,8 @@ options:
     WITH_FRIBIDI      - compile with/without fribidi (default 1)
     WITH_HARFBUZZ     - compile with/without harfbuzz (default 1), X only
     WITH_ICONV        - compile with/without iconv (default 1), X only
-    WITH_GTK2         - compile with/without GTK2 (default 1), X only
-    WITH_GTK3         - compile with/without GTK3 (default 0), X only
+    WITH_GTK3         - compile with/without GTK3 (default 1), X only
+    WITH_GTK2         - compile with/without GTK2 (default 0), X only
     WITH_OPENMP       - compile with/without openmp (default 1)
     WITH_COCOA        - compile with/without Cocoa (default 1), MacOSX only
     WITH_LIBTHAI      - compile with/without libthai (default 1)
@@ -189,8 +189,8 @@ sub setup_argv
 		WITH_HARFBUZZ => 1,
 		WITH_FRIBIDI   => 1,
 		WITH_ICONV    => 1,
-		WITH_GTK2     => 1,
-		WITH_GTK3     => 0,
+		WITH_GTK2     => 0,
+		WITH_GTK3     => 1,
 		WITH_OPENMP   => 1,
 		WITH_COCOA    => ($^O eq 'darwin'),
 		WITH_LIBTHAI  => 1,

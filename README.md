@@ -27,13 +27,13 @@ Prerequisites
 Debian/Ubuntu
 -------------
 
-  apt-get install libgtk2.0-dev libgif-dev libjpeg-dev libtiff-dev libxpm-dev
+  apt-get install libgtk3.0-dev libgif-dev libjpeg-dev libtiff-dev libxpm-dev
       libwebp-dev libfribidi-dev libharfbuzz-dev libthai-dev
 
 OpenSUSE
 --------
 
-  zypper install gtk2-devel giflib-devel libjpeg-devel libtiff-devel
+  zypper install gtk3-devel giflib-devel libjpeg-devel libtiff-devel
       libXpm-devel libXrandr-devel libXcomposite-devel libXcursor-devel
       libfribidi-devel libwebp-devel libharfbuzz-devel libthai-devel
 
@@ -53,7 +53,7 @@ Cygwin
 
 - install prerequisites:
 
-   apt-cyg install libgtk2.0-devel libfribidi-devel libgif-devel libjpeg-devel libtiff-devel libXpm-devel
+   apt-cyg install libgtk3.0-devel libfribidi-devel libgif-devel libjpeg-devel libtiff-devel libXpm-devel
         libwebp-devel libharfbuzz-devel libthai-devel
 
 Graphic libraries
@@ -229,7 +229,7 @@ Copyright
 
 (c) 1997-2003 The Protein Laboratory, University of Copenhagen
 
-(c) 1997-2021 Dmitry Karasik
+(c) 1997-2022 Dmitry Karasik
 
 Author
 ======
