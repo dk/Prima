@@ -495,6 +495,7 @@ prima_cursor_tick( void)
 		int x, y, w, h;
 
 		if ( guts. cursor_shown) {
+			if ( guts.invisible_timeout == 0 ) return;
 			guts. cursor_shown = false;
 			apc_timer_set_timeout( CURSOR_TIMER, guts. invisible_timeout);
 			pixmap = guts. cursor_save;
@@ -1035,12 +1036,12 @@ apc_sys_get_value( int v)  /* XXX one big XXX */
 		apc_menu_default_font( &f);
 		return f. height + MENU_ITEM_GAP * 2;
 	}
-	case svYTitleBar: /* XXX */ return 20;
-	case svMousePresent:		return guts. mouse_buttons > 0;
-	case svMouseButtons:		return guts. mouse_buttons;
-	case svSubmenuDelay:  /* XXX ? */ return guts. menu_timeout;
-	case svFullDrag: /* XXX ? */ return false;
-	case svWheelPresent:		return guts.mouse_wheel_up || guts.mouse_wheel_down;
+	case svYTitleBar:    /* XXX */ return 20;
+	case svMousePresent:  return guts. mouse_buttons > 0;
+	case svMouseButtons:  return guts. mouse_buttons;
+	case svSubmenuDelay: /* XXX ? */ return guts. menu_timeout;
+	case svFullDrag:     /* XXX ? */ return false;
+	case svWheelPresent: return guts.mouse_wheel_up || guts.mouse_wheel_down;
 	case svXIcon:
 	case svYIcon:
 	case svXSmallIcon:
@@ -1061,24 +1062,24 @@ apc_sys_get_value( int v)  /* XXX one big XXX */
 			return ret[v - svXIcon];
 		}
 		break;
-	case svXPointer:		return guts. cursor_width;
-	case svYPointer:		return guts. cursor_height;
-	case svXScrollbar:		return 19;
-	case svYScrollbar:		return 19;
-	case svXCursor:		return 1;
-	case svAutoScrollFirst:	return guts. scroll_first;
-	case svAutoScrollNext:	return guts. scroll_next;
-	case svXbsNone:		return 0;
-	case svYbsNone:		return 0;
-	case svXbsSizeable:		return 3; /* XXX */
-	case svYbsSizeable:		return 3; /* XXX */
-	case svXbsSingle:		return 1; /* XXX */
-	case svYbsSingle:		return 1; /* XXX */
-	case svXbsDialog:		return 2; /* XXX */
-	case svYbsDialog:		return 2; /* XXX */
+	case svXPointer:        return guts. cursor_width;
+	case svYPointer:        return guts. cursor_height;
+	case svXScrollbar:      return 19;
+	case svYScrollbar:      return 19;
+	case svXCursor:         return 1;
+	case svAutoScrollFirst: return guts. scroll_first;
+	case svAutoScrollNext:  return guts. scroll_next;
+	case svXbsNone:	        return 0;
+	case svYbsNone:	        return 0;
+	case svXbsSizeable:     return 3; /* XXX */
+	case svYbsSizeable:     return 3; /* XXX */
+	case svXbsSingle:       return 1; /* XXX */
+	case svYbsSingle:       return 1; /* XXX */
+	case svXbsDialog:       return 2; /* XXX */
+	case svYbsDialog:       return 2; /* XXX */
 	case svShapeExtension:	return guts. shape_extension;
-	case svDblClickDelay:        return guts. double_click_time_frame;
-	case svColorPointer:         return 
+	case svDblClickDelay:   return guts. double_click_time_frame;
+	case svColorPointer:    return 
 #ifdef HAVE_X11_XCURSOR_XCURSOR_H
 		1
 #else

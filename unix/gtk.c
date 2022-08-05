@@ -91,18 +91,46 @@ static GTFStruct widget_types[] = {
 #endif
 
 #if GTK_MAJOR_VERSION == 3
+
+static Color
+gdk_color(GdkRGBA * c)
+{
+	int r = c->red   * 255 + .5;
+	int g = c->green * 255 + .5;
+	int b = c->blue  * 255 + .5;
+	if ( r < 0 ) r = 0;
+	if ( g < 0 ) g = 0;
+	if ( b < 0 ) b = 0;
+	if ( r > 255 ) r = 255;
+	if ( g > 255 ) g = 255;
+	if ( b > 255 ) b = 255;
+	return (r << 16) | (g << 8) | b;
+}
+
+static const char * gt_color_properties[] = {
+	"theme_text_color",
+	"theme_bg_color",
+	"theme_selected_fg_color",
+	"theme_selected_bg_color",
+	"insensitive_fg_color",
+	"insensitive_bg_color",
+	"theme_fg_color",
+	"theme_unfocused_bg_color"
+};
+#define GTK_COLORLIST_SIZE (sizeof(gt_color_properties)/sizeof(char*))
+
 GdkDisplay *
 my_gdk_display_open_default (void)
 {
-  GdkDisplay *display;
+	GdkDisplay *display;
 
-  display = gdk_display_get_default ();
-  if (display)
-    return display;
+	display = gdk_display_get_default ();
+	if (display)
+		return display;
 
-  display = gdk_display_open (gdk_get_display_arg_name ());
+	display = gdk_display_open (gdk_get_display_arg_name ());
 
-  return display;
+	return display;
 }
 #endif
 
@@ -217,19 +245,26 @@ request_screenshot(int x, int y, int w, int h)
 	}
 	return n;
 }
+
 #endif
+
+static int
+get_int( GtkSettings * settings, const char * prop_name)
+{
+	gint v;
+	g_object_get(G_OBJECT(settings), prop_name, &v, NULL);
+	return v;
+}
 
 Display*
 prima_gtk_init(void)
 {
 	int  argc = 0;
 	Display *ret;
-#if GTK_MAJOR_VERSION == 2
 	GtkSettings * settings;
 	Color ** stdcolors;
 	int i;
 	PangoWeight weight;
-#endif
 
 	switch ( gtk_initialized) {
 	case -1:
@@ -310,9 +345,10 @@ prima_gtk_init(void)
 	}
 #endif
 
-#if GTK_MAJOR_VERSION == 2
 	settings  = gtk_settings_get_default();
-	stdcolors = prima_standard_colors();
+
+#if GTK_MAJOR_VERSION == 2
+	stdcolors = prima_standard_colors(NULL);
 	for ( i = 0; i < sizeof(widget_types)/sizeof(GTFStruct); i++) {
 		GTFStruct * s = widget_types + i;
 		Color     * c = stdcolors[ s-> prima_class >> 16 ];
@@ -379,8 +415,105 @@ prima_gtk_init(void)
 		apc_font_pick( prima_guts.application, f, f);
 #define DEBUG_FONT(font) f->height,f->width,f->size,f->name,f->encoding
 		Fdebug("gtk-font (%s): %d.[w=%d,s=%d].%s.%s\n", s->name, DEBUG_FONT(f));
+#undef DEBUG_FONT
 	}
 #endif
+
+#if GTK_MAJOR_VERSION == 3
+	{
+		/* font */
+		GValue value = {0};
+		Font font;
+		PangoFontDescription *pfd;
+
+		g_value_init(&value, G_TYPE_STRING);
+		g_object_get_property(G_OBJECT(settings), "gtk-font-name", &value);
+
+		bzero(&font, sizeof(Font));
+
+		pfd = pango_font_description_from_string((char*) g_value_peek_pointer(&value));
+
+		strlcpy( font.name, pango_font_description_get_family(pfd), 255);
+		font.size = pango_font_description_get_size(pfd) / 1000.0 + .5;
+		weight    = pango_font_description_get_weight(pfd);
+		if ( weight <= PANGO_WEIGHT_LIGHT ) font.style |= fsThin;
+		if ( weight >= PANGO_WEIGHT_BOLD  ) font.style |= fsBold;
+		if ( pango_font_description_get_style(pfd) == PANGO_STYLE_ITALIC)
+			font.style |= fsItalic;
+		strcpy( font.encoding, "Default" );
+		font.undef.width = font.undef.height = font.undef.pitch = font.undef.vector = 1;
+		apc_font_pick( prima_guts.application, &font, &font);
+#define DEBUG_FONT font.height,font.width,font.size,font.name,font.encoding
+		Fdebug("gtk-font (%s): %d.[w=%d,s=%d].%s.%s\n", g_value_peek_pointer(&value), DEBUG_FONT);
+#undef DEBUG_FONT
+		guts.default_msg_font     =
+		guts.default_menu_font    =
+		guts.default_widget_font  =
+		guts.default_caption_font =
+		guts.default_font         = font;
+
+		pango_font_description_free(pfd);
+
+	}
+
+	{
+		/* colors */
+		GtkStyleContext *ctx;
+		GdkRGBA color;
+		int n_classes;
+		Color colors[GTK_COLORLIST_SIZE], template1[ciMaxId+1], template2[ciMaxId+1];
+
+		stdcolors = prima_standard_colors(&n_classes);
+		ctx = gtk_style_context_new();
+
+		for ( i = 0; i < GTK_COLORLIST_SIZE; i++)
+			colors[i] = clInvalid;
+		memcpy( template1, stdcolors[wcApplication >> 16], sizeof(template1));
+		memcpy( template2, stdcolors[wcButton      >> 16], sizeof(template2));
+
+		for ( i = 0; i < sizeof(gt_color_properties)/sizeof(char*); i++) {
+			if (!gtk_style_context_lookup_color( ctx, gt_color_properties[i], &color))
+				continue;
+			Mdebug("gtk-color: %s %g %g %g\n", gt_color_properties[i], color.red, color.green, color.blue);
+			colors[i] = gdk_color(&color);
+		}
+
+		if ( colors[0] != clInvalid) template1[ciFore]         = colors[0];
+		if ( colors[1] != clInvalid) template1[ciBack]         = colors[1];
+		if ( colors[2] != clInvalid) template1[ciHiliteText]   = colors[2];
+		if ( colors[3] != clInvalid) template1[ciHilite]       = colors[3];
+		if ( colors[4] != clInvalid) template1[ciDisabledText] = colors[4];
+		if ( colors[5] != clInvalid) template1[ciDisabled]     = colors[5];
+
+		if ( colors[0] != clInvalid) template2[ciFore]         = colors[0];
+		if ( colors[1] != clInvalid) template2[ciBack]         = colors[1];
+		if ( colors[6] != clInvalid) template2[ciHiliteText]   = colors[6];
+		if ( colors[7] != clInvalid) template2[ciHilite]       = colors[7];
+		if ( colors[4] != clInvalid) template2[ciDisabledText] = colors[4];
+		if ( colors[5] != clInvalid) template2[ciDisabled]     = colors[5];
+
+		for ( i = 1; i < n_classes; i++) {
+			Color *template;
+			template = (
+				((i << 16) == wcButton) ||
+				((i << 16) == wcRadio) ||
+				((i << 16) == wcCheckBox)
+			) ? template2 : template1;
+			memcpy( stdcolors[i], template, sizeof(template1));
+		}
+
+		g_object_unref(ctx);
+	}
+#endif
+
+	/* misc settings */
+	guts.double_click_time_frame = (Time) get_int( settings, "gtk-double-click-time");
+	i = get_int( settings, "gtk-cursor-blink-time");
+	guts.visible_timeout   = i * 2 / 3; /* from gtkentry.c */
+	guts.invisible_timeout = i * 1 / 3;
+        i = get_int( settings, "gtk-cursor-blink");
+	if ( !i ) guts.invisible_timeout = 0;
+
 	return ret;
 }
 

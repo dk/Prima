@@ -1423,7 +1423,7 @@ extern XCharStruct *
 prima_char_struct( XFontStruct * xs, void * c, Bool wide);
 
 extern Color**
-prima_standard_colors(void);
+prima_standard_colors(int * n_classes);
 
 struct MsgDlg {
 	struct MsgDlg * next;

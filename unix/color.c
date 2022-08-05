@@ -41,12 +41,9 @@
 
 #define COLORSET_3D                COLOR_LIGHT3D, COLOR_DARK3D
 
-#define COLORSET_GRAY              COLORSET_GRAY_NORMAL, COLORSET_GRAY_HILITE, \
-											COLORSET_GRAY_DISABLED, COLORSET_3D
-#define COLORSET_ALT_GRAY          COLORSET_GRAY_NORMAL, COLORSET_GRAY_ALT_HILITE, \
-											COLORSET_GRAY_DISABLED, COLORSET_3D
-#define COLORSET_PANEL             COLORSET_PANEL_NORMAL, COLORSET_PANEL_HILITE, \
-											COLORSET_PANEL_DISABLED, COLORSET_3D
+#define COLORSET_GRAY              COLORSET_GRAY_NORMAL,  COLORSET_GRAY_HILITE,     COLORSET_GRAY_DISABLED,  COLORSET_3D
+#define COLORSET_ALT_GRAY          COLORSET_GRAY_NORMAL,  COLORSET_GRAY_ALT_HILITE, COLORSET_GRAY_DISABLED,  COLORSET_3D
+#define COLORSET_PANEL             COLORSET_PANEL_NORMAL, COLORSET_PANEL_HILITE,    COLORSET_PANEL_DISABLED, COLORSET_3D
 
 static Color standard_button_colors[]      = { COLORSET_GRAY     };
 static Color standard_checkbox_colors[]    = { COLORSET_GRAY     };
@@ -85,11 +82,12 @@ static Color* standard_colors[] = {
 	standard_application_colors,
 };
 
-static const int MAX_COLOR_CLASS = sizeof( standard_colors) / sizeof( standard_colors[ 0]) - 1;
+static const int MAX_COLOR_CLASS = sizeof(standard_colors) / sizeof( standard_colors[ 0]) - 1;
 
 Color **
-prima_standard_colors(void)
+prima_standard_colors(int * n_classes)
 {
+	if ( n_classes ) *n_classes = MAX_COLOR_CLASS + 1;
 	return standard_colors;
 }
 
