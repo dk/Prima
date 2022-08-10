@@ -818,6 +818,11 @@ See L<Prima::image-load> for details.
 
 NB! When loading from streams on win32, mind C<binmode>.
 
+=item load_stream BASE64_STRING, %OPTIONS
+
+Decodes BASE64_STRING and tries to load an image from it.
+Returns image reference(s) on success, or C<undef> on failure; also C<$@> is set in this case.
+
 =item map COLOR
 
 Performs iterative mapping of bitmap pixels, setting every pixel
@@ -889,6 +894,13 @@ Note that when saving to a stream, C<codecID> must be explicitly given in C<%PAR
 See L<Prima::image-load> for details.
 
 NB! When saving to streams on win32, mind C<binmode>.
+
+=item save_stream BASE64_STRING, %OPTIONS
+
+Saves image into a datastream and return it encoded in base64.
+Unless C<$OPTIONS{codecID}> or C<$image->{extras}->{codecID}> is set, tries to find the best codec for the job.
+
+Returns encoded content on success, or C<undef> on failure; C<$@> is set in the latter case.
 
 =item scanline Y
 

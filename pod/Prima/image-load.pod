@@ -267,6 +267,20 @@ is off by default. If indeed the codec detected that the file was incomplete,
 it sets C<truncated> error string in the C<extras> profile, if C<loadExtras>
 was requested.
 
+=head2 Inline files
+
+Using C<Prima::Image::base64> it is possible to convert images into an base64
+format, and embed the result directly into the source. Assuming an appropriate codec
+was compiled, the following would work:
+
+	my $icon = Prima::Icon->load_stream(<<~'ICON');
+		R0lGODdhIAAgAIAAAAAAAP///ywAAAAAIAAgAIAAAAD///8CT4SPqcvtD6OctNqLcwogcK91nEhq
+		3gim2Umm4+W2IBzX0fvl8jTr9SeZiU5E4a1XLHZ4yaal6XwFoSwMVUVzhoZSaQW6ZXjD5LL5jE6r
+		DQUAOw==
+		ICON
+
+	print $icon->save_stream;
+
 =head1 Saving
 
 =head2 Simple saving

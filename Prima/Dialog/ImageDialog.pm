@@ -265,6 +265,7 @@ sub profile_default  {
 		filter   => [ Prima::Dialog::ImageDialog::filtered_codecs($codecs) ],
 		image    => undef,
 		filterDialog => 1,
+		useBase64 => 0,
 		noTestFileCreate => 1,
 	}
 }
@@ -274,7 +275,7 @@ sub init
 	my $self = shift;
 	my %profile = $self-> SUPER::init(@_);
 	$self-> {ConvertTo} = $self-> insert( ComboBox =>
-		origin => [ 524, 80],
+		origin => [ 524, 120],
 		items  => [],
 		enabled => 0,
 		name => 'ConvertTo',
@@ -283,7 +284,7 @@ sub init
 		growMode   => gm::GrowLoX,
 	);
 	$self-> insert( Label =>
-		origin => [ 524, 110],
+		origin => [ 524, 150],
 		text   => '~Convert to:',
 		size  => [ 96, 20],
 		name => 'ConvertToLabel',
@@ -298,6 +299,14 @@ sub init
 		delegations => [qw(Click)],
 		growMode   => gm::GrowLoX,
 	);
+	$self-> {UseBase64} = $self-> insert( CheckBox =>
+		origin => [ 524, 60],
+		text   => 'As ~base64',
+		size   => [ 96, 36],
+		name   => 'UseBase64',
+		delegations => [qw(Click)],
+		growMode   => gm::GrowLoX,
+	);
 
 	$self-> {codecFilters} = [];
 	$self-> {allCodecs} = Prima::Image-> codecs;
@@ -309,6 +318,7 @@ sub init
 
 	$self-> image( $profile{image});
 	$self-> filterDialog( $profile{filterDialog});
+	$self-> useBase64( $profile{useBase64});
 	$self-> ExtensionsLabel-> text("Sav~e as type ($codec->{fileShortType})");
 
 	return %profile;
@@ -379,6 +389,12 @@ sub filterDialog
 {
 	return $_[0]-> {UseFilter}-> checked unless $#_;
 	$_[0]-> {UseFilter}-> checked( $_[1]);
+}
+
+sub useBase64
+{
+	return $_[0]-> {UseBase64}-> checked unless $#_;
+	$_[0]-> {UseBase64}-> checked( $_[1]);
 }
 
 sub image
@@ -474,10 +490,25 @@ sub save
 		$j++;
 	}
 
-	if ( $dup-> save( $self-> fileName, %profile)) {
-		$ret = 1;
+	if ( $self->useBase64) {
+		my ($ok, $error) = $dup-> save_stream;
+		if ( $ok ) {
+			my $f;
+			my $r_ok = open $f, ">", $self->fileName;
+			$error = "$!", goto FAIL unless $r_ok;
+			$error = "$!", goto FAIL unless print $f $ok;
+			$error = "$!", goto FAIL unless close $f;
+			$ret = 1;
+		} else {
+		FAIL:
+			Prima::MsgBox::message("Error saving " . $self-> fileName . ":$error");
+		}
 	} else {
-		Prima::MsgBox::message("Error saving " . $self-> fileName . ":$@");
+		if ( $dup-> save( $self-> fileName, %profile)) {
+			$ret = 1;
+		} else {
+			Prima::MsgBox::message("Error saving " . $self-> fileName . ":$@");
+		}
 	}
 
 EXIT:

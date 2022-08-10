@@ -756,6 +756,23 @@ sub to_icon
 	return Prima::Icon->create_combined( $self, $and, %set );
 }
 
+sub load_stream
+{
+	shift;
+	require Prima::Image::base64;
+	my ($ok, $error) = Prima::Image::base64::load_icon(@_);
+	$@ = $error unless $ok;
+	return $ok;
+}
+
+sub save_stream
+{
+	require Prima::Image::base64;
+	my ( $ok, $error ) = Prima::Image::base64::save(@_);
+	$@ = $error unless $ok;
+	return $ok;
+}
+
 package Prima::Icon;
 use vars qw( @ISA);
 @ISA = qw(Prima::Image);
@@ -841,6 +858,15 @@ sub image
 	$image->clear;
 	$image->put_image(0,0,$self,rop::CopyPut);
 	return $image;
+}
+
+sub load_stream
+{
+	shift;
+	require Prima::Image::base64;
+	my ($ok, $error) = Prima::Image::base64::load_icon(@_);
+	$@ = $error unless $ok;
+	return $ok;
 }
 
 package Prima::DeviceBitmap;

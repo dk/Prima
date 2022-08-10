@@ -289,6 +289,7 @@ Prima/Header.pm
 Prima/HelpViewer.fm
 Prima/HelpViewer.pm
 Prima/Image/Animate.pm
+Prima/Image/base64.pm
 Prima/Image/gif.pm
 Prima/Image/heif.fm
 Prima/Image/heif.pm

@@ -1351,10 +1351,9 @@ sub Open_Click
 				return;
 			}
 			return if !$self-> {openMode} && $self-> {overwritePrompt} && (
-					Prima::MsgBox::message_box( $self-> text,
-					"File $_ already exists. Overwrite?",
-					mb::OKCancel|mb::Warning) != mb::OK);
-
+				Prima::MsgBox::message_box( $self-> text,
+				"File $_ already exists. Overwrite?",
+				mb::OKCancel|mb::Warning) != mb::OK);
 		} else {
 			my ( $dirTo, $fileTo) = ( m{^(.*[:/\\])([^:\\/]*)$});
 			$dirTo = '.', $fileTo = $_ unless defined $dirTo;
@@ -1364,7 +1363,7 @@ sub Open_Click
 					mb::OKCancel|mb::Information
 				) != mb::OK);
 				my $file;
-				if ( open $file, ">$_") {
+				if ( open $file, ">", $_) {
 					close $file;
 				} else {
 					Prima::MsgBox::message_box( $self-> text,
