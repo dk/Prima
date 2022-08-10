@@ -1147,7 +1147,7 @@ apc_window_set_icon( Handle self, Handle icon)
 		GC gc;
 		XGCValues gcv;
 
-		and = XCreatePixmap( DISP, guts. root, i-> w, i-> h, 1);
+		and = XCreatePixmap( DISP, guts. root, i-> w, i-> h, guts.depth);
 		if ( !and) {
 			XFreePixmap( DISP, xor);
 			goto FAIL;
