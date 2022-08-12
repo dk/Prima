@@ -382,7 +382,7 @@ sub ready_to_paint
 	return 1;
 }
 
-$dst = Prima::Widget->create( width => 4, height => 2, buffered => 1, onPaint => sub {
+$dst = Prima::Widget->create( width => 4, height => 2, buffered => 1, centered => 1, onPaint => sub {
 	return unless ready_to_paint(@_);
 	test_dst("widget");
 });
@@ -394,7 +394,7 @@ SKIP: {
 SKIP: {
     skip "no argb capability", 226 unless $can_argb;
     reset_flag;
-    $dst = Prima::Widget->create( width => 4, height => 2, buffered => 1, layered => 1, onPaint => sub {
+    $dst = Prima::Widget->create( width => 4, height => 2, buffered => 1, layered => 1, centered => 1, onPaint => sub {
 	return unless ready_to_paint(@_);
 	test_dst("argb widget");
     });
