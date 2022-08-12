@@ -175,7 +175,7 @@ memmem(const void *l, size_t l_len, const void *s, size_t s_len)
 
 #endif
 
-#ifndef STRLCPY
+#ifndef HAVE_STRLCPY
 size_t
 strlcpy(char * dst, const char * src, size_t dstsize)
 {

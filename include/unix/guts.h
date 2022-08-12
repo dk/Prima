@@ -786,7 +786,7 @@ extern UnixGuts  guts;
 extern UnixGuts* pguts;
 
 #define XCHECKPOINT						\
-	STMT_START {							\
+	{							\
 		pguts-> ri[ pguts-> ri_head]. line = __LINE__;			\
 		pguts-> ri[ pguts-> ri_head]. file = __FILE__;			\
 		pguts-> ri[ pguts-> ri_head]. request = NextRequest(DISP);	\
@@ -796,9 +796,9 @@ extern UnixGuts* pguts;
 		if ( pguts-> ri_tail == pguts-> ri_head) {			\
 			pguts-> ri_tail++;					\
 			if ( pguts-> ri_tail >= REQUEST_RING_SIZE)		\
-				pguts-> ri_tail = 0;					\
+				pguts-> ri_tail = 0;				\
 		}								\
-	} STMT_END
+	}
 
 #define APC_BAD_SIZE INT_MAX
 #define APC_BAD_ORIGIN INT_MAX
