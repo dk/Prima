@@ -45,6 +45,13 @@ f.ex. 1024x746 size to Prima.  If Prima is compiled with Cocoa library,
 C<get_fullscreen_image> method circumvents these limitations and returns shot
 of the whole screen.
 
+Note that the screen grabbing has to be allowed. To do that, Choose Apple menu,
+System Preferences, click Security & Privacy, then click Privacy.  Click on an
+icon on the left lower corner to allow changes.  Then, in the screen recording
+tab, add XQuartz to the list of allowed applications. Note that it might not
+work if you run your application from a (remote) ssh session - I couldn't find
+how to a how to enable screen grabbing for sshd.
+
 =head1 AUTHOR
 
 Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.

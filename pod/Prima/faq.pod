@@ -205,6 +205,16 @@ the same set of documentation but composed as a single book. Its sources are
 in utils/makedoc directory, somewhat rudimentary and require an installation
 of latex and dvips to produce one of tex, dvi, ps, or pdf targets.
 
+=head2 Screen grabbing doesn't work on MacOSX.
+
+It does if you 1) compile Prima with cocoa 2) allow the application (XQuartz
+and probably terminal) to access the screen. To do the latter, Choose Apple
+menu, System Preferences, click Security & Privacy, then click Privacy.  Click
+on an icon on the left lower corner to allow changes.  Then, in the screen
+recording tab, add XQuartz to the list of allowed applications. Note that it
+might not work if you run your application from a (remote) ssh session - I
+couldn't find how to a how to enable screen grabbing for sshd.
+
 =head2 I've found a bug!
 
 L<https://github.com/dk/Prima/issues> is the place.
