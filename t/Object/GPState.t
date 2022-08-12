@@ -5,8 +5,11 @@ use Test::More;
 use Prima::sys::Test;
 my $unix = Prima::Application-> get_system_info-> {apc} == apc::Unix;
 
-my $d = Prima::Drawable-> create( width => 1, height => 1, type => im::RGB);
+my $d = Prima::Drawable-> create( width => 1, height => 1, type => im::RGB, antialias => 1);
 my (@z, $i, @fpo, $fillPatternCount);
+
+my $can_antialias = $d->antialias;
+$d->antialias(0);
 
 sub test
 {
@@ -18,8 +21,8 @@ sub test
 	is( $d->$method(), $value1, 'out.' . $method);
 }
 
-test( antialias => 0, 1 );
-test( alpha => 255, 10 );
+test( antialias => 0, 1 ) if $can_antialias;
+test( alpha => 255, 10 ) if $can_antialias;
 test( color => 0x123456, 0x654321 );
 test( backColor => 0x654321, 0x123456 );
 
@@ -129,12 +132,13 @@ sub check
 	isnt($bits1,$bits2,"gc.bits.$method$xaa");
 }
 
-check( antialias => 0,   1,  act => sub { $d->polyline([2,2,6,2,6,6]); });
-check( alpha     => 200, 50, act => sub { $d->bar(2,2,6,6); });
+check( antialias => 0,   1,  act => sub { $d->polyline([2,2,6,2,6,6]); }) if $can_antialias;
+check( alpha     => 200, 50, act => sub { $d->bar(2,2,6,6); }) if $can_antialias;
 $d->alpha(255);
 $d->antialias(0);
 
 for my $aa ( 0, 1) {
+	next if $aa && !$can_antialias;
 	$d->antialias($aa);
 	$d->clipRect(0,0,8,8);
 	my $xaa = $aa ? '.aa' : '';
