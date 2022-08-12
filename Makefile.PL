@@ -564,6 +564,7 @@ sub cc_command_line
 	$cc .= ' ' . join(' ', map { "$CLIBPATHFLAG$_"} @LIBPATH) unless $compile_only || ( $compiler_type eq 'cl');
 	$cc .= " $srcf";
 	return $cc if $compile_only;
+
 	$cc .= " $passthru_options{LDDLFLAGS}" if gcc;
 	$cc .= " $CLINKPREFIX";
 	$cc .= " $LDFLAGS";
@@ -571,6 +572,8 @@ sub cc_command_line
 	$cc .= ' ' . join(' ', map { "$LDLIBFLAG$_$LD_LIB_EXT"} @LIBS);
 	$cc .= " $passthru_options{LIBS}" if length $passthru_options{LIBS};
 	$cc .= " $cmd_options{EXTRA_LDFLAGS}" if length $cmd_options{EXTRA_LDFLAGS};
+	$cc =~ s/\-bundle// if $^O eq 'darwin';
+
 	return $cc;
 }
 
