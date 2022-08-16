@@ -139,6 +139,14 @@ sub undoLimit
 
 Prima::Widget::UndoActions - undo and redo the content of editable widgets
 
+=head1 DESCRIPTION
+
+Generic helpers that implement stored actions for undo/redo.
+
+=head1 SYNOPSIS
+
+
+
 =head1 Properties
 
 =over
@@ -159,9 +167,33 @@ undo is disabled.
 Opens bracket for group of actions, undone as single operation.
 The bracket is closed by calling C<end_undo_group>.
 
+=item can_undo, can_redo
+
+Return boolean flags whether undo or redo could be done.
+Useful for graying a menu f ex.
+
 =item end_undo_group
 
 Closes bracket for group of actions, opened by C<begin_undo_group>.
+
+=item init_undo
+
+Should be called once, inside init()
+
+=item has_undo_action ACTION
+
+Checks whether there is any ACTION in the undo list.
+
+=item push_grouped_undo_action ACTION, @PARAMS
+
+Stores a single undo action where ACTION is a method to be called inside
+undo/redo, if any.  Each action is added to the last undo group, and will be
+removed/replayed together with the other actions in the group.
+
+=item push_undo_action ACTION, @PARAMS
+
+Stores a single undo action where ACTION is a method to be called inside
+undo/redo, if any.  Each action is a single undo/redo operation.
 
 =item redo
 

@@ -432,25 +432,25 @@ L<Prima::PS::Printer> - PostScript and PDF interfaces to C<Prima::Printer>
 
 =item Widget helpers
 
-C<Prima::Widget::BidiInput> - heuristics for i18n input
+L<Prima::Widget::BidiInput> - heuristics for i18n input
 
-C<Prima::Widget::GroupScroller> - optional automatic scroll bars
+L<Prima::Widget::GroupScroller> - optional automatic scroll bars
 
-C<Prima::Widget::IntIndents> - indenting support
+L<Prima::Widget::IntIndents> - indenting support
 
-C<Prima::Widget::ListBoxUtils> - common paint routine for listboxes
+L<Prima::Widget::ListBoxUtils> - common paint routine for listboxes
 
-C<Prima::Widget::MouseScroller> - auto repeating mouse events
+L<Prima::Widget::MouseScroller> - auto repeating mouse events
 
 L<Prima::Widget::Panel> - simple panel widget
 
-C<Prima::Widget::RubberBand> - draw rubberbands
+L<Prima::Widget::RubberBand> - draw rubberbands
 
 L<Prima::Widget::ScrollWidget> - scrollable generic document widget
 
 L<Prima::Widget::StartupWindow> - a simplistic startup banner window
 
-C<Prima::Widget::UndoActions> - undo and redo the content of editable widgets
+L<Prima::Widget::UndoActions> - undo and redo the content of editable widgets
 
 =item C interface to the toolkit
 
