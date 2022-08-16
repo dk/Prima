@@ -1,12 +1,8 @@
-# contains:
-#   Panel
-package Prima::Widgets;
+package Prima::Widgets::Panel;
 
 use strict;
 use warnings;
 use Prima;
-
-package Prima::Panel;
 use vars qw(@ISA);
 @ISA = qw(Prima::Widget);
 
@@ -157,21 +153,13 @@ sub raise        {($#_)?$_[0]-> set_raise($_[1]):return $_[0]-> {raise}}
 
 =head1 NAME
 
-Prima::Widgets - miscellaneous widget classes
-
-=head1 DESCRIPTION
-
-The module was designed to serve as a collection of small widget
-classes that do not group well with the other, more purposeful classes.
-The current implementation contains the only class, C<Prima::Panel>.
-
-=head1 Prima::Panel
+Prima::Widgets::Panel - simple panel widget
 
 Provides a simple panel widget, capable of displaying a single line
 of centered text on a custom background. Probably this functionality
 is better to be merged into C<Prima::Label>'s.
 
-=head2 Properties
+=head1 Properties
 
 =over
 

@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Prima qw(Application Themes ScrollBar Buttons InputLine ExtLists Notebooks ScrollWidget);
+use Prima qw(Application Themes ScrollBar Buttons InputLine ExtLists Notebooks Widget::ScrollWidget);
 
 =pod
 

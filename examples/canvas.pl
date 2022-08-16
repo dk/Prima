@@ -1,14 +1,14 @@
 use strict;
 use warnings;
 
-use Prima qw(ScrollWidget);
+use Prima qw(Widget::ScrollWidget);
 # A widget with two scrollbars. Contains set of objects, that know
 # how to draw themselves. The graphic objects hierarchy starts
 # from Prima::CanvasObject:: class
 
 package Prima::Canvas;
 use vars qw(@ISA);
-@ISA = qw(Prima::ScrollWidget);
+@ISA = qw(Prima::Widget::ScrollWidget);
 
 sub profile_default
 {

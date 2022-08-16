@@ -60,11 +60,11 @@ sub classes
 		RTModule => 'Prima::InputLine',
 		module   => 'Prima::VB::CoreClasses',
 	},
-	'Prima::ScrollWidget' => {
+	'Prima::Widget::ScrollWidget' => {
 		icon     => 'VB::classes.gif:21',
 		page     => 'Abstract',
 		class    => 'Prima::VB::ScrollWidget',
-		RTModule => 'Prima::ScrollWidget',
+		RTModule => 'Prima::Widget::ScrollWidget',
 		module   => 'Prima::VB::CoreClasses',
 	},
 	'Prima::Widget' => {

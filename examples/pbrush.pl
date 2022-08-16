@@ -10,7 +10,7 @@ Outlines features required for a graphic editor window -
 color selection, and, mainly, non-standart L<Prima::ImageViewer>
 usage.
 
-Using L<Prima::Classes>, L<Prima::ScrollWidget>, L<Prima::Application>,
+Using L<Prima::Classes>, L<Prima::Widget::ScrollWidget>, L<Prima::Application>,
 L<Prima::Dialog::ColorDialog>, L<Prima::ImageViewer>.
 
 =cut
@@ -20,7 +20,7 @@ use warnings;
 
 use Prima;
 use Prima::Classes;
-use Prima::ScrollWidget;
+use Prima::Widget::ScrollWidget;
 use Prima::Application;
 use Prima::Dialog::ColorDialog;
 use Prima::ImageViewer;

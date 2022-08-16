@@ -82,7 +82,7 @@ package Prima::FrameSet::Slider;
 use strict;
 use warnings;
 use vars qw(@ISA);
-use Prima::RubberBand;
+use Prima::Widget::RubberBand;
 
 @ISA = qw(Prima::Widget);
 

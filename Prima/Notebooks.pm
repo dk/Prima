@@ -2,7 +2,7 @@ package Prima::Notebooks;
 
 use strict;
 use warnings;
-use Prima qw(ScrollWidget);
+use Prima qw(Widget::ScrollWidget);
 
 package Prima::TabSet;
 use base qw(Prima::Widget Prima::Widget::MouseScroller);

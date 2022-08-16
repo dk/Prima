@@ -368,15 +368,11 @@ L<Prima::PodView> - POD browser widget
 
 L<Prima::ScrollBar> - scroll bars
 
-L<Prima::ScrollWidget> - scrollable generic document widget
-
 L<Prima::Sliders> - sliding bars, spin buttons and input lines, dial widget etc.
 
 L<Prima::Spinner> - spinner animation
 
 L<Prima::TextView> - rich text browser widget
-
-L<Prima::Widgets> - miscellaneous widget classes
 
 =item Standard dialogs
 
@@ -446,6 +442,14 @@ C<Prima::Widget::ListBoxUtils> - common paint routine for listboxes
 
 C<Prima::Widget::MouseScroller> - auto repeating mouse events
 
+L<Prima::Widget::Panel> - simple panel widget
+
+C<Prima::Widget::RubberBand> - draw rubberbands
+
+L<Prima::Widget::ScrollWidget> - scrollable generic document widget
+
+L<Prima::Widget::StartupWindow> - a simplistic startup banner window
+
 C<Prima::Widget::UndoActions> - undo and redo the content of editable widgets
 
 =item C interface to the toolkit
@@ -467,8 +471,6 @@ L<Prima::EventHook> - event filtering
 L<Prima::Image::Animate> - animate gif and webp files
 
 L<Prima::IniFile> - support of Windows-like initialization files
-
-L<Prima::StartupWindow> - a simplistic startup banner window
 
 L<Prima::StdBitmap> - shared access to the standard toolkit bitmaps
 

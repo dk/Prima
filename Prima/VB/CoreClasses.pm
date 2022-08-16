@@ -102,8 +102,8 @@ sub classes
 			page   => 'General',
 			icon   => 'VB::classes.gif:14',
 		},
-		'Prima::ScrollWidget' => {
-			RTModule => 'Prima::ScrollWidget',
+		'Prima::Widget::ScrollWidget' => {
+			RTModule => 'Prima::Widget::ScrollWidget',
 			class  => 'Prima::VB::ScrollWidget',
 			page   => 'Abstract',
 			icon   => 'VB::classes.gif:21',

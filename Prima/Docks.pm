@@ -12,7 +12,7 @@
 package Prima::Docks;
 
 use Prima;
-use Prima::RubberBand;
+use Prima::Widget::RubberBand;
 use strict;
 use warnings;
 use Tie::RefHash;

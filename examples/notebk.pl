@@ -13,7 +13,7 @@ L<Prima::TabbedNotebook> standard class.
 
 use strict;
 use warnings;
-use Prima qw(Buttons Notebooks ScrollWidget Application MsgBox);
+use Prima qw(Buttons Notebooks Widget::ScrollWidget Application MsgBox);
 
 package Bla;
 use vars qw(@ISA);

@@ -3,11 +3,11 @@
 #     Dmitry Karasik <dk@plab.ku.dk>
 use strict;
 use warnings;
-use Prima::ScrollWidget;
+use Prima::Widget::ScrollWidget;
 
 package Prima::ImageViewer;
 use vars qw(@ISA);
-@ISA = qw( Prima::ScrollWidget);
+@ISA = qw( Prima::Widget::ScrollWidget);
 
 sub profile_default
 {
@@ -604,9 +604,9 @@ Prima::ImageViewer - standard image, icon, and bitmap viewer class.
 The module contains C<Prima::ImageViewer> class, which provides
 image displaying functionality, including different zoom levels.
 
-C<Prima::ImageViewer> is a descendant of C<Prima::ScrollWidget>
+C<Prima::ImageViewer> is a descendant of C<Prima::Widget::ScrollWidget>
 and inherits its document scrolling behavior and programming interface.
-See L<Prima::ScrollWidget> for details.
+See L<Prima::Widget::ScrollWidget> for details.
 
 =head1 API
 
@@ -812,6 +812,6 @@ Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
 
 =head1 SEE ALSO
 
-L<Prima>, L<Prima::Image>, L<Prima::ScrollWidget>, L<Prima::Dialog::ImageDialog>, F<examples/iv.pl>.
+L<Prima>, L<Prima::Image>, L<Prima::Widget::ScrollWidget>, L<Prima::Dialog::ImageDialog>, F<examples/iv.pl>.
 
 =cut

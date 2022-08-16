@@ -396,7 +396,7 @@ sub xorrect
 
 	my $o = $self->owner;
 	$self->{rubberbands} //= [ map {
-		Prima::RubberBand->new(
+		Prima::Widget::RubberBand->new(
 			breadth  => $self-> {sizeable} ? 5 : 1,
 			clipRect => [$o->client_to_screen( 0, 0, $o->size )],
 		)

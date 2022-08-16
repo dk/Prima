@@ -1,9 +1,8 @@
+package Prima::Widget::ScrollWidget;
 use strict;
 use warnings;
 use Prima;
-
-package Prima::ScrollWidget;
-use base qw(Prima::Widget Prima::GroupScroller);
+use base qw(Prima::Widget Prima::Widget::GroupScroller);
 
 {
 my %RNT = (

@@ -12,7 +12,7 @@ Panel with widgets that is too big for the screen
 
 use strict;
 use warnings;
-use Prima qw(ScrollWidget InputLine Application);
+use Prima qw(Widget::ScrollWidget InputLine Application);
 
 my $w = Prima::MainWindow->new( packPropagate => 0);
 

@@ -1,4 +1,4 @@
-package Prima::RubberBand;
+package Prima::Widget::RubberBand;
 
 use strict;
 use warnings;
@@ -279,7 +279,7 @@ sub rubberband
 			$self-> {__rubberband}-> set(%profile);
 		} else {
 			$profile{canvas} //= $self;
-			$self-> {__rubberband} = Prima::RubberBand-> new(%profile);
+			$self-> {__rubberband} = Prima::Widget::RubberBand-> new(%profile);
 		}
 	}
 
@@ -292,7 +292,7 @@ sub rubberband
 
 =head1 NAME
 
-Prima::RubberBand - draw rubberbands
+Prima::Widget::RubberBand - draw rubberbands
 
 =head1 DESCRIPTION
 
@@ -312,7 +312,7 @@ rubberband is erased too.
 =head1 SYNOPSIS
 
 	use strict;
-	use Prima qw(Application RubberBand);
+	use Prima qw(Application Widget::RubberBand);
 
 	sub xordraw
 	{
@@ -421,7 +421,7 @@ Returns the existing C<Prima::RubberBand> object
 
 =item rubberband(destroy => 1)
 
-Destroys the existing C<Prima::RubberBand> object
+Destroys the existing C<Prima::Widget::RubberBand> object
 
 =back
 

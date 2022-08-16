@@ -326,12 +326,9 @@ Prima/PS/Setup.pm
 Prima/PS/TempFile.pm
 Prima/PS/Type1.pm
 Prima/PS/Unicode.pm
-Prima/RubberBand.pm
 Prima/ScrollBar.pm
-Prima/ScrollWidget.pm
 Prima/Sliders.pm
 Prima/Spinner.pm
-Prima/StartupWindow.pm
 Prima/StdBitmap.pm
 Prima/Stress.pm
 Prima/sys/FS.pm
@@ -355,6 +352,10 @@ Prima/Widget/GroupScroller.pm
 Prima/Widget/IntIndents.pm
 Prima/Widget/ListBoxUtils.pm
 Prima/Widget/MouseScroller.pm
+Prima/Widget/Panel.pm
+Prima/Widget/RubberBand.pm
+Prima/Widget/ScrollWidget.pm
+Prima/Widget/StartupWindow.pm
 Prima/Widget/UndoActions.pm
 Prima/VB/prima-cfgmaint.pl
 Prima/VB/CfgMaint.pm
@@ -368,7 +369,6 @@ Prima/VB/VB.gif
 Prima/VB/VB.pl
 Prima/VB/VBControls.pm
 Prima/VB/VBLoader.pm
-Prima/Widgets.pm
 t/Image/Bar.t
 t/Image/Basic.t
 t/Image/Bitmaps.t

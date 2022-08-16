@@ -1,4 +1,4 @@
-package Prima::StartupWindow;
+package Prima::Widget::StartupWindow;
 use strict;
 use warnings;
 use Prima;
@@ -51,14 +51,14 @@ sub unimport {
 
 =head1 NAME
 
-Prima::StartupWindow - a simplistic startup banner window
+Prima::Widget::StartupWindow - a simplistic startup banner window
 
 =head1 DESCRIPTION
 
 The module, when imported by C<use> call, creates a temporary window
 which appears with 'loading...' text while the modules required by
 a program are loading. The window parameters can be modified by
-passing custom parameters after C<use Prima::StartupWindow> statement,
+passing custom parameters after C<use Prima::Widget::StartupWindow> statement,
 which are passed to C<Prima::Window> class as creation parameters.
 The window is discarded by explicit unimporting of the module
 ( see L<"SYNOPSIS">  ).
@@ -67,12 +67,12 @@ The window is discarded by explicit unimporting of the module
 
 	use Prima;
 	use Prima::Application;
-	use Prima::StartupWindow; # the window is created here
+	use Prima::Widget::StartupWindow; # the window is created here
 
 	use Prima::Buttons;
 	.... # lots of 'use' of other modules
 
-	no Prima::StartupWindow; # the window is discarded here
+	no Prima::Widget::StartupWindow; # the window is discarded here
 
 =head1 AUTHORS
 

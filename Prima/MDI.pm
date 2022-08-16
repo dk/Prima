@@ -8,7 +8,7 @@ package Prima::MDI;
 use strict;
 use warnings;
 use Prima::Classes;
-use Prima::RubberBand;
+use Prima::Widget::RubberBand;
 
 package Prima::MDIMethods;
 
