@@ -10,11 +10,10 @@ package Prima::Sliders;
 
 use strict;
 use warnings;
-use Prima qw(IntUtils);
+use Prima;
 
 package Prima::AbstractSpinButton;
-use vars qw(@ISA);
-@ISA = qw(Prima::Widget Prima::MouseScroller);
+use base qw(Prima::Widget Prima::Widget::MouseScroller);
 
 {
 my %RNT = (

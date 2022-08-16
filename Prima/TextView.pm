@@ -10,11 +10,9 @@ sub on_mouseup   {}
 package Prima::TextView;
 
 use Prima;
-use Prima::IntUtils;
 use Prima::ScrollBar;
 use Prima::Drawable::TextBlock;
-use vars qw(@ISA);
-@ISA = qw(Prima::Widget Prima::MouseScroller Prima::GroupScroller);
+use base qw(Prima::Widget Prima::Widget::MouseScroller Prima::Widget::GroupScroller);
 
 use constant YMAX => 1000;
 

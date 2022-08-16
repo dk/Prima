@@ -1,10 +1,9 @@
 use strict;
 use warnings;
-use Prima qw(IntUtils);
+use Prima;
 
 package Prima::ScrollWidget;
-use vars qw(@ISA);
-@ISA = qw( Prima::Widget Prima::GroupScroller);
+use base qw(Prima::Widget Prima::GroupScroller);
 
 {
 my %RNT = (
@@ -497,7 +496,7 @@ Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
 
 =head1 SEE ALSO
 
-L<Prima>, L<Prima::ImageViewer>, L<Prima::IntUtils>, L<Prima::ScrollBar>, F<examples/e.pl>.
+L<Prima>, L<Prima::ImageViewer>, L<Prima::ScrollBar>, F<examples/e.pl>.
 
 
 =cut

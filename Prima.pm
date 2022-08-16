@@ -434,6 +434,20 @@ L<Prima::PS::PDF> - PDF interface to C<Prima::Drawable>
 
 L<Prima::PS::Printer> - PostScript and PDF interfaces to C<Prima::Printer>
 
+=item Widget helpers
+
+C<Prima::Widget::BidiInput> - heuristics for i18n input
+
+C<Prima::Widget::GroupScroller> - optional automatic scroll bars
+
+C<Prima::Widget::IntIndents> - indenting support
+
+C<Prima::Widget::ListBoxUtils> - common paint routine for listboxes
+
+C<Prima::Widget::MouseScroller> - auto repeating mouse events
+
+C<Prima::Widget::UndoActions> - undo and redo the content of editable widgets
+
 =item C interface to the toolkit
 
 L<Prima::internals> - Internal architecture
@@ -453,8 +467,6 @@ L<Prima::EventHook> - event filtering
 L<Prima::Image::Animate> - animate gif and webp files
 
 L<Prima::IniFile> - support of Windows-like initialization files
-
-L<Prima::IntUtils> - internal functions
 
 L<Prima::StartupWindow> - a simplistic startup banner window
 

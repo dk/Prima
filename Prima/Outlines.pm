@@ -8,11 +8,11 @@ package Prima::Outlines;
 use strict;
 use warnings;
 use Cwd;
-use Prima qw(IntUtils StdBitmap);
+use Prima qw(StdBitmap);
 
 package Prima::OutlineViewer;
-use vars qw(@ISA @images @imageSize);
-@ISA = qw(Prima::Widget Prima::MouseScroller Prima::GroupScroller Prima::ListBoxUtils);
+use vars qw(@images @imageSize);
+use base qw(Prima::Widget Prima::Widget::MouseScroller Prima::Widget::GroupScroller Prima::Widget::ListBoxUtils);
 
 use constant DATA     => 0;
 use constant DOWN     => 1;
@@ -2155,8 +2155,8 @@ node structure is used as a reference. It is important to use a valid reference 
 since the class does not always perform the check if the node belongs to internal node list due to
 the speed reasons.
 
-C<Prima::OutlineViewer> is a descendant of C<Prima::GroupScroller> and C<Prima::MouseScroller>,
-so some properties and methods are not described here. See L<Prima::IntUtils> for these.
+C<Prima::OutlineViewer> is a descendant of C<Prima::Widget::GroupScroller> and C<Prima::Widget::MouseScroller>,
+so some properties and methods are not described here. 
 
 The class is not usable directly.
 
@@ -2637,6 +2637,6 @@ Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
 
 =head1 SEE ALSO
 
-L<Prima>, L<Prima::Widget>, L<Prima::IntUtils>, <examples/outline.pl>.
+L<Prima>, L<Prima::Widget>, <examples/outline.pl>.
 
 =cut

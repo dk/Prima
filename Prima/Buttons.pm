@@ -14,11 +14,10 @@ package Prima::Buttons;
 use strict;
 use warnings;
 use Carp;
-use Prima qw(IntUtils StdBitmap);
+use Prima qw(StdBitmap);
 
 package Prima::AbstractButton;
-use vars qw(@ISA);
-@ISA = qw(Prima::Widget Prima::MouseScroller);
+use base qw(Prima::Widget Prima::Widget::MouseScroller);
 
 {
 my %RNT = (
@@ -1734,7 +1733,7 @@ Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
 
 =head1 SEE ALSO
 
-L<Prima>, L<Prima::Widget>, L<Prima::Window>, L<Prima::IntUtils>,
+L<Prima>, L<Prima::Widget>, L<Prima::Window>, 
 L<Prima::Drawable::Metafile>,
 L<Prima::StdBitmap>, F<examples/buttons.pl>, F<examples/buttons2.pl>.
 

@@ -8,14 +8,13 @@
 #
 package Prima::ScrollBar;
 use vars qw(@ISA @stdMetrics);
-@ISA = qw(Prima::Widget Prima::MouseScroller);
+use strict;
+use warnings;
+use Prima;
+use base qw(Prima::Widget Prima::Widget::MouseScroller);
 
 @stdMetrics = Prima::Application-> get_default_scrollbar_metrics;
 my $win32 = (Prima::Application-> get_system_info-> {apc} == apc::Win32);
-
-use strict;
-use warnings;
-use Prima qw(IntUtils);
 
 sub profile_default
 {
@@ -969,7 +968,7 @@ mouse instead of C<Change>.
 
 =head1 SEE ALSO
 
-L<Prima>, L<Prima::Widget>, L<Prima::IntUtils>, F<examples/rtc.pl>, F<examples/scrolbar.pl>
+L<Prima>, L<Prima::Widget>, F<examples/rtc.pl>, F<examples/scrolbar.pl>
 
 =head1 AUTHORS
 

@@ -12,13 +12,11 @@ use constant Vertical     =>  1;
 use constant Horizontal   =>  2;
 
 package Prima::Edit;
-use vars qw(@ISA);
-@ISA = qw(
-	Prima::Widget Prima::MouseScroller Prima::GroupScroller
-	Prima::UndoActions Prima::BidiInput
+use Prima qw(ScrollBar Drawable::Glyphs);
+use base qw(
+	Prima::Widget Prima::Widget::MouseScroller Prima::Widget::GroupScroller
+	Prima::Widget::UndoActions Prima::Widget::BidiInput
 );
-
-use Prima qw(ScrollBar IntUtils Drawable::Glyphs);
 
 {
 my %RNT = (
@@ -3724,6 +3722,6 @@ Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
 
 =head1 SEE ALSO
 
-L<Prima>, L<Prima::Widget>, L<Prima::Dialog::FindDialog>, L<Prima::IntUtils>, F<examples/editor.pl>
+L<Prima>, L<Prima::Widget>, L<Prima::Dialog::FindDialog>, F<examples/editor.pl>
 
 =cut

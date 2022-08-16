@@ -1,15 +1,12 @@
 #  Created by Dmitry Karasik <dk@plab.ku.dk>
 #  Modifications by Anton Berezin <tobez@tobez.org>
 package Prima::InputLine;
-use vars qw(@ISA);
-@ISA = qw(Prima::Widget Prima::MouseScroller Prima::UndoActions Prima::BidiInput);
-
 use strict;
 use warnings;
-
-use Prima::Classes;
-use Prima::IntUtils;
+use Prima;
 use Prima::Drawable::Glyphs;
+use base qw(Prima::Widget Prima::Widget::MouseScroller Prima::Widget::UndoActions Prima::Widget::BidiInput);
+
 
 sub profile_default
 {

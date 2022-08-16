@@ -12,7 +12,7 @@ package Prima::Lists;
 
 use strict;
 use warnings;
-use Prima qw(ScrollBar StdBitmap IntUtils Utils);
+use Prima qw(ScrollBar StdBitmap Utils);
 
 package
     ci;
@@ -22,10 +22,7 @@ eval 'use constant Grid => 1 + MaxId;' unless exists $ci::{Grid};
 }
 
 package Prima::AbstractListViewer;
-use vars qw(@ISA);
-@ISA = qw(Prima::Widget Prima::MouseScroller Prima::GroupScroller Prima::ListBoxUtils);
-
-use Prima::Classes;
+use base qw(Prima::Widget Prima::Widget::MouseScroller Prima::Widget::GroupScroller Prima::Widget::ListBoxUtils);
 
 {
 my %RNT = (
@@ -2003,8 +2000,8 @@ C<get_item_width>, and C<draw_items>.
 
 =head1 Prima::AbstractListViewer
 
-C<Prima::AbstractListViewer> is a descendant of C<Prima::GroupScroller>,
-and some properties are not described here. See L<Prima::IntUtils/"Prima::GroupScroller">.
+C<Prima::AbstractListViewer> is a descendant of C<Prima::Widget::GroupScroller>,
+and some properties are not described here.
 
 The class provides interface to generic list browsing functionality,
 plus functionality for text-oriented lists. The class is not usable directly.

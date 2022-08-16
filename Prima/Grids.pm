@@ -3,7 +3,6 @@ package Prima::Grids;
 use strict;
 use warnings;
 use Prima;
-use Prima::IntUtils;
 
 package
     ci;
@@ -32,8 +31,7 @@ use constant TOP       => 10;
 use constant RECT      => 7,8,9,10;
 
 package Prima::AbstractGridViewer;
-use vars qw(@ISA);
-@ISA = qw(Prima::Widget Prima::MouseScroller Prima::GroupScroller Prima::ListBoxUtils);
+use base qw(Prima::Widget Prima::Widget::MouseScroller Prima::Widget::GroupScroller Prima::Widget::ListBoxUtils);
 
 {
 my %RNT = (
@@ -2418,8 +2416,8 @@ C<Prima::AbstractGridViewer>, the base for all grid widgets in the module,
 provides interface to generic grid browsing functionality,
 plus functionality for text-oriented grids. The class is not usable directly.
 
-C<Prima::AbstractGridViewer> is a descendant of C<Prima::GroupScroller>,
-and some properties are not described here. See L<Prima::IntUtils/"Prima::GroupScroller">.
+C<Prima::AbstractGridViewer> is a descendant of C<Prima::Widget::GroupScroller>,
+and some properties are not described here. 
 
 =head2 Properties
 
@@ -2629,7 +2627,7 @@ Nullifies the selection, if C<multiSelect> is 1.
 A bulk draw routine, called from C<onPaint> to draw cells.
 AREA is an array of four integers with inclusive-inclusive
 coordinates of the widget inferior without borders and scrollbars
-( result of C<get_active_area(2)> call; see L<Prima::IntUtils/get_active_area> ).
+( result of C<get_active_area(2)> call; see L<Prima::Widget::IntIndents/get_active_area> ).
 
 COLUMNS and ROWS are structures that reflect the columns and rows of the cells
 to be drawn. Each item in these corresponds to a column or row, and is an

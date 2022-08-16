@@ -4,7 +4,6 @@ use strict;
 use warnings;
 use Prima;
 use Prima::Const;
-use Prima::IntUtils;
 
 package
     fra; # Frame arragement constants.
@@ -21,9 +20,7 @@ use constant Proportional => 1; # XXX Yet to be implemented.
 package Prima::FrameSet::Frame;
 use strict;
 use warnings;
-use vars qw(@ISA);
-
-@ISA = qw(Prima::Widget Prima::MouseScroller);
+use base qw(Prima::Widget Prima::Widget::MouseScroller);
 
 # Initialization
 sub profile_default

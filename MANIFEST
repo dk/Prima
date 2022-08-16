@@ -350,6 +350,12 @@ Prima/themes/tabset.pm
 Prima/Themes.pm
 Prima/Tie.pm
 Prima/Utils.pm
+Prima/Widget/BidiInput.pm
+Prima/Widget/GroupScroller.pm
+Prima/Widget/IntIndents.pm
+Prima/Widget/ListBoxUtils.pm
+Prima/Widget/MouseScroller.pm
+Prima/Widget/UndoActions.pm
 Prima/VB/prima-cfgmaint.pl
 Prima/VB/CfgMaint.pm
 Prima/VB/classes.gif

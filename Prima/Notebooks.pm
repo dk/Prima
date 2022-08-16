@@ -2,11 +2,10 @@ package Prima::Notebooks;
 
 use strict;
 use warnings;
-use Prima qw(IntUtils ScrollWidget);
+use Prima qw(ScrollWidget);
 
 package Prima::TabSet;
-use vars qw(@ISA);
-@ISA = qw(Prima::Widget Prima::MouseScroller);
+use base qw(Prima::Widget Prima::Widget::MouseScroller);
 
 
 {
