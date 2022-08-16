@@ -388,6 +388,76 @@ produces a less readable code, but is more explicit and powerful:
 
 This concludes the short tutorial on menus. To read more, see L<Prima::Menu> .
 
+=head1 Adding help to your program
+
+The toolking comes with a POD viewer program C<podview> that can be
+incorporated into an application. This is rather straighforward as you can write
+the application manual in POD format.
+
+=over
+
+=item *
+
+First, add some pod content to your main script, such as f ex:
+
+   #!/usr/bin/env perl
+   ...
+   =pod
+   
+   =head1 NAME
+   
+   My program
+   
+   =cut
+
+exactly as if you wanted C<perldoc> to display it.
+
+=item *
+
+Second, add an invocation code, possibly inside a menu:
+
+	['~Help' => 'F1' => 'F1' => sub {
+		$::application-> open_help($0);
+	}],
+
+C<open_help> can also take a standard C<< L<link> >> syntax so for example
+
+   open_help("My::Module/help")
+
+is also okay.
+
+=item *
+
+Finally, consider if text-only POD is okay for you or you need images embedded
+in the pod.  This is somewhat tricky because the perl maintainers actively
+reject the idea of having images in pod, however metacpan.org can display
+images in the perl documentation alright, and so does Prima, however both using
+different syntax.
+
+Here is an example of a mixed content that will show graphic when the graphic display is available, and
+just plain text otherwise:
+
+   =for podview <img src="illustration.gif" cut=1 title="Horizontal font measurements">
+   
+   =for html <p><img src="https://raw.githubusercontent.com/me/myproject/master/illustration.gif"><!--
+   
+      .. plain text illustration ..
+   
+   =for html -->
+   
+   =for podview </cut>
+
+GIF is chosen because Prima keeps all of its internal images into this format,
+so it is a most safe fallback.  However any other format is okay too.
+
+If you don't need a text fallback, just just this:
+
+  =for podview <img src="illustration.gif">
+  
+  =for html <p><img src="https://raw.githubusercontent.com/me/myproject/master/illustration.gif">
+
+=back
+
 =head1 AUTHOR
 
 Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.

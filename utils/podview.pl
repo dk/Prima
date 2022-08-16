@@ -106,6 +106,8 @@ L<Prima> - perl graphic toolkit the viewer is based on
 
 L<Prima::HelpViewer> - menu commands explained
 
+L<Prima::tutorial/Adding help to your program> - how to add help content
+
 =head1 AUTHORS
 
 Dmitry Karasik E<lt>dmitry@karasik.eu.orgE<gt>
