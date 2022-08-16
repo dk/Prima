@@ -202,9 +202,9 @@ sub deltaY        {($#_)?$_[0]->set_deltas($_[0]->{'deltaX'},$_[1]):return $_[0]
 sub deltas        {($#_)?$_[0]->set_deltas         ($_[1], $_[2]):return ($_[0]->{'deltaX'},$_[0]->{'deltaY'}); }
 
 
-package Prima::ScrollGroup;
+package Prima::Widget::ScrollGroup;
 use vars qw(@ISA);
-@ISA = qw(Prima::ScrollWidget);
+@ISA = qw(Prima::Widget::ScrollWidget);
 
 sub profile_default
 {
@@ -215,7 +215,7 @@ sub profile_default
 		slaveClass		=> 'Prima::Widget',
 		slaveProfile		=> {},
 		slaveDelegations	=> [],
-		clientClass		=> 'Prima::ScrollGroup::Client',
+		clientClass		=> 'Prima::Widget::ScrollGroup::Client',
 		clientProfile		=> {},
 		clientDelegations	=> [],
 	);
@@ -403,7 +403,7 @@ sub use_current_size
 	$_[0]-> {client}-> sizeMin( $_[0]-> children_extensions);
 }
 
-package Prima::ScrollGroup::Client;
+package Prima::Widget::ScrollGroup::Client;
 use vars qw(@ISA);
 @ISA = qw(Prima::Widget);
 
@@ -433,20 +433,23 @@ sub geomSize
 
 =head1 NAME
 
-Prima::ScrollWidget - scrollable generic document widget.
+Prima::Widget::ScrollWidget - scrollable generic document widget.
 
 =head1 DESCRIPTION
 
-C<Prima::ScrollWidget> is a simple class that declares two pairs of properties,
+C<Prima::Widget::ScrollWidget> is a simple class that declares two pairs of properties,
 I<delta> and I<limit> for vertical and horizontal axes, which define a
 a virtual document. I<limit> is the document dimension, and I<delta> is
 the current offset.
 
-C<Prima::ScrollWidget> is a descendant of C<Prima::GroupScroller>, and, as well as its
+C<Prima::Widget::ScrollWidget> is a descendant of C<Prima::Widget::GroupScroller>, and, as well as its
 ascendant, provides same user navigation by two scrollbars. The scrollbars' C<partial>
 and C<whole> properties are maintained if the document or widget extensions change.
 
-=head1 API
+C<Prima::Widget::ScrollGroup> in addition provides capability to host other widgets inside, and
+scroll them. Useful for widget group panels that cannot. fit in window
+
+=head1 Prima::Widget::ScrollWidget
 
 =head2 Properties
 
@@ -486,6 +489,34 @@ Selects vertical document extension.
 
 Called whenever the client area is to be scrolled. The default
 action calls C<Widget::scroll> .
+
+=back
+
+=head1 Prima::Widget::ScrollGroup
+
+=head2 Properties
+
+=over
+
+=item client
+
+Return a parent widget to insert other widgets to. The client size is fixed,
+and is panned through the slave widget when scrolling. The client is unaffected by
+eventual automated pack/place/growMode size alteration the parent or slave might have.
+
+=item clientClass
+
+C<clientClass> widget is inserted in the C<slave> widget.
+
+=item slave
+
+Returns the slave widget. The slave widget designated the area desired to be
+scrollable, and is just a normal widget that is allowed to be resized, moved,
+etc.
+
+=item slaveClass
+
+C<slaveClass> widget is inserted directly in the scroll group widget.
 
 =back
 

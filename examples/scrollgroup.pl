@@ -16,7 +16,7 @@ use Prima qw(Widget::ScrollWidget InputLine Application);
 
 my $w = Prima::MainWindow->new( packPropagate => 0);
 
-my $sc = $w->insert( ScrollGroup =>
+my $sc = $w->insert( 'Widget::ScrollGroup' =>
 	pack => { expand => 1, fill => 'both' },
 );
 $sc->insert( InputLine => pack => { side => 'bottom' }) for 1..20;

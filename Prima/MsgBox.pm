@@ -7,7 +7,7 @@ use vars qw(@ISA @EXPORT @EXPORT_OK);
 @ISA = qw(Exporter);
 @EXPORT = qw(message_box message input_box);
 @EXPORT_OK = qw(message_box message input_box);
-use Prima qw(Buttons InputLine Label ScrollWidget StdBitmap Utils);
+use Prima qw(Buttons InputLine Label Widget::ScrollWidget StdBitmap Utils);
 
 sub insert_buttons
 {
@@ -168,7 +168,7 @@ sub message_box
 			valignment    => ta::Middle,
 		);
 	} else {
-		$scroller = $dlg-> insert( ScrollGroup => %geom);
+		$scroller = $dlg-> insert( 'Widget::ScrollGroup' => %geom);
 		$label->set(
 			owner         => $scroller->client,
 			growMode      => gm::Center,
