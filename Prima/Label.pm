@@ -1,10 +1,8 @@
 package Prima::Label;
-use vars qw(@ISA);
-@ISA = qw(Prima::Widget);
 use strict;
 use warnings;
-use Carp;
 use Prima;
+use base qw(Prima::Widget Prima::Widget::SubEvents);
 
 sub profile_default
 {
@@ -233,6 +231,7 @@ sub on_keydown
 sub on_mousedown
 {
 	my $self = $_[0];
+	return if $self->SUPER::on_mousedown(@_);
 	$self-> notify( 'Click');
 	$self-> clear_event;
 }
