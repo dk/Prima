@@ -56,8 +56,7 @@ static ImgCodecInfo codec_info = {
 	features,    /* features  */
 	"Prima::Image::heif",     /* module */
 	"Prima::Image::heif",     /* package */
-	IMG_LOAD_FROM_FILE | IMG_LOAD_FROM_STREAM | IMG_LOAD_MULTIFRAME |
-	IMG_SAVE_TO_FILE | IMG_SAVE_TO_STREAM | IMG_SAVE_MULTIFRAME,
+	IMG_LOAD_FROM_FILE | IMG_LOAD_FROM_STREAM | IMG_LOAD_MULTIFRAME,
 	bpp, /* save types */
 	loadOutput,
 	mime
@@ -139,6 +138,8 @@ init( PImgCodecInfo * info, void * param)
 		if ( got_hevc ) default_compression = heif_compression_HEVC;
 		heif_context_free(ctx);
 	}
+	if ( heif_have_encoder_for_format(default_compression))
+		codec_info.IOFlags |= IMG_SAVE_TO_FILE | IMG_SAVE_TO_STREAM | IMG_SAVE_MULTIFRAME;
 	return (void*)1;
 }
 
@@ -939,7 +940,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 		else
 			SET_ERROR("bad encoder, must be one of: HEVC, AVC, AV1");
 	}
-	if ( !heif_have_decoder_for_format(compression))
+	if ( !heif_have_encoder_for_format(compression))
 		SET_ERROR("encoder is not available");
 	CALL heif_context_get_encoder_for_format(l->ctx, compression, &encoder);
 	CHECK_HEIF_ERROR;
