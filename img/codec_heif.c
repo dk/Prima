@@ -11,11 +11,6 @@
 extern "C" {
 #endif
 
-#if !LIBHEIF_HAVE_VERSION(1,12,0)
-#define heif_encoder_descriptor_supports_lossy_compression    heif_encoder_descriptor_supportes_lossy_compression
-#define heif_encoder_descriptor_supports_lossless_compression heif_encoder_descriptor_supportes_lossless_compression
-#endif
-
 static char * ext[] = {
 	"heic",
 	"heif",
@@ -32,9 +27,7 @@ static char * loadOutput[] = {
 	"ispe_height",
 	"ispe_width",
 	"luma_bits_per_pixel",
-#if LIBHEIF_HAVE_VERSION(1,12,0)
 	"premultiplied_alpha",
-#endif
 	"thumbnails",
 	"aux",
 	"metadata",
@@ -77,9 +70,7 @@ load_defaults( PImgCodec c)
 {
 	HV * profile = newHV();
 	pset_i( ignore_transformations, 0);
-#if LIBHEIF_HAVE_VERSION(1,12,0)
 	pset_i( convert_hdr_to_8bit, 0);
-#endif
 	return profile;
 }
 
@@ -91,11 +82,12 @@ init( PImgCodecInfo * info, void * param)
 		struct heif_context*ctx = heif_context_alloc();
 		struct heif_encoder_descriptor *enc[1024];
 		int i, n, feat, got_hevc = 0;
+
 		n = heif_context_get_encoder_descriptors(ctx, heif_compression_undefined, NULL,
 			(const struct heif_encoder_descriptor**) enc, 1024);
 		for ( i = feat = 0; i < n; i++) {
-			char buf[2048];
-			const char *name, *shrt, *compstr;
+			char buf[2048], *compstr;
+			const char *name, *shrt;
 			enum heif_compression_format comp;
 			int lossy, lossless;
 
@@ -114,12 +106,10 @@ init( PImgCodecInfo * info, void * param)
 				compstr = "AVC";
 				ext[2] = "avif";
 				break;
-#if LIBHEIF_HAVE_VERSION(1,12,0)
 			case heif_compression_AV1:
 				compstr = "AV1";
 				ext[2] = "avif";
 				break;
-#endif
 			default:
 				continue;
 			}
@@ -512,10 +502,8 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 	height = heif_image_handle_get_height(h);
 	if ( fi-> loadExtras) {
 		int n;
-#if LIBHEIF_HAVE_VERSION(1,12,0)
 		if ( heif_image_handle_is_premultiplied_alpha(h))
 			pset_i( premultiplied_alpha, 1);
-#endif
 		pset_i( chroma_bits_per_pixel,  heif_image_handle_get_chroma_bits_per_pixel(h));
 		pset_i( luma_bits_per_pixel,    bit_depth);
 		pset_i( ispe_width,             heif_image_handle_get_ispe_width(h));
@@ -527,13 +515,11 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 			if (n) pset_i( depth_images, n);
 			n = heif_image_handle_get_number_of_thumbnails(h);
 			if (n) pset_i( thumbnails, n);
-#if LIBHEIF_HAVE_VERSION(1,12,0)
 			n = heif_image_handle_get_number_of_auxiliary_images(h,
 				LIBHEIF_AUX_IMAGE_FILTER_OMIT_ALPHA|
 				LIBHEIF_AUX_IMAGE_FILTER_OMIT_DEPTH
 			);
 			if (n) pset_i( aux, n);
-#endif
 			if ( l->primary_index == l->toplevel->curr)
 				pset_i(is_primary, 1);
 		} else {
@@ -553,10 +539,8 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 		HV * profile = fi->profile;
 		if ( pexist(ignore_transformations))
 			hdo->ignore_transformations = pget_i(ignore_transformations);
-#if LIBHEIF_HAVE_VERSION(1,12,0)
 		if ( pexist(convert_hdr_to_8bit))
 			hdo->convert_hdr_to_8bit = pget_i(convert_hdr_to_8bit);
-#endif
 	}
 	if ( fi-> loadExtras)
 		read_metadata(h, profile);
@@ -635,17 +619,13 @@ save_defaults( PImgCodec c)
 	switch (default_compression) {
 	case heif_compression_HEVC: pset_c(encoder, "HEVC"); break;
 	case heif_compression_AVC:  pset_c(encoder, "AVC"); break;
-#if LIBHEIF_HAVE_VERSION(1,12,0)
 	case heif_compression_AV1:  pset_c(encoder, "AV1"); break;
-#endif
 	default: break;
 	}
 
 	pset_i(is_primary, 0);
 	pset_c(quality, "50"); /* x265.quality and aom.quality defauilt values are 50 */
-#if LIBHEIF_HAVE_VERSION(1,12,0)
 	pset_i(premultiplied_alpha, 0);
-#endif
 	pset_i(thumbnail_of,    -1);
 	pset_sv(metadata,  newRV_noinc((SV*) newHV()));
 
@@ -668,13 +648,10 @@ save_defaults( PImgCodec c)
 					case heif_encoder_parameter_type_integer: {
 						HV *profile = hv;
 						int v, have_min = 0, min = 0, max = 0;
-#if LIBHEIF_HAVE_VERSION(1,12,0)
 						int have_max = 0, n = 0, *ints = NULL;
-#endif
 						svtype = "int";
 						if ( heif_encoder_get_parameter_integer(encoder, name, &v).code == heif_error_Ok)
 							pset_i(default, v);
-#if LIBHEIF_HAVE_VERSION(1,12,0)
 						if ( heif_encoder_parameter_get_valid_integer_values(*list,
 							&have_min, &have_max, &min, &max, &n, (const int**) &ints
 							).code == heif_error_Ok) {
@@ -687,16 +664,6 @@ save_defaults( PImgCodec c)
 								pset_sv(values, newRV_noinc((SV*)av));
 							}
 						}
-#else
-						if ( heif_encoder_parameter_get_valid_integer_range(*list,
-							&have_min, &min, &max
-							).code == heif_error_Ok) {
-							if ( have_min ) {
-								pset_i(min, min);
-								pset_i(max, max);
-							}
-						}
-#endif
 						break;
 					}
 					case heif_encoder_parameter_type_boolean: {
@@ -967,10 +934,8 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 			compression = heif_compression_HEVC;
 		else if ( strcmp(c, "AVC") == 0)
 			compression = heif_compression_AVC;
-#if LIBHEIF_HAVE_VERSION(1,12,0)
 		else if ( strcmp(c, "AV1") == 0)
 			compression = heif_compression_AV1;
-#endif
 		else
 			SET_ERROR("bad encoder, must be one of: HEVC, AVC, AV1");
 	}
@@ -1033,10 +998,8 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 		dst = (Byte*) heif_image_get_plane(himg, heif_channel_interleaved, &dst_stride);
 	}
 
-#if LIBHEIF_HAVE_VERSION(1,12,0)
 	if ( pexist(premultiplied_alpha) && pget_i(premultiplied_alpha))
 		heif_image_set_premultiplied_alpha(himg, 1);
-#endif
 
 	if ( icon ) {
 		alpha        = mask8 ? mask8 : i-> mask;
