@@ -65,7 +65,7 @@ SKIP : {
             my $name = "./test.test." . $ci-> {fileExtensions}->[0];
 
             my $xi = $i-> dup;
-            fail($names[ $cid ]), unlink( $name), next unless $xi-> save( $name);
+            fail($names[ $cid ]), unlink( $name), diag($@), next unless $xi-> save( $name);
             my $xl = Prima::Image-> load( $name, loadExtras => 1);
             unlink $name;
             pass( $names[ $cid] ), next unless $xl;
