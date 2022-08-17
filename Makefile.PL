@@ -1980,8 +1980,8 @@ VER
 		}
 	}
 	if ( defined $heif_version ) {
-		if ( $heif_version < 112 ) {
-			printlog "** Warning: libheif version is too low, at least 1.12.0 is needed, skipping\n";
+		if ( $heif_version < 106 ) {
+			printlog "** Warning: libheif version is too low, at least 1.6.0 is needed, skipping\n";
 			@ACTIVE_CODECS = grep { !/heif/ } @ACTIVE_CODECS;
 			$PASSIVE_CODECS{'img/codec_heif.c'} = 1;
 		}
