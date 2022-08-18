@@ -164,7 +164,7 @@ prima_clipboard_kill_item( PClipboardDataItem item, Handle id)
 	item += id;
 	clipboard_free_data( item-> data, item-> size, id);
 	if ( item-> image ) {
-		if ( PObject(item->image)-> mate )
+		if ( PObject(item->image)-> mate && PObject(item->image)-> mate != NULL_SV)
 			SvREFCNT_dec( SvRV( PObject(item-> image)->mate ));
 		unprotect_object( item-> image );
 	}
