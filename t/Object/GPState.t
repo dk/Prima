@@ -46,8 +46,9 @@ $d->graphic_context( fillPatternOffset =>[5,4], sub {
 is( $fpo[0], 1, 'out.fillPatternOffset.x' );
 is( $fpo[1], 2, 'out.fillPatternOffset.y' );
 
-my $fpx1 = Prima::Image->new( size => [1,1], type => im::RGB, data => "\x11\x11\x11" );
-my $fpx2 = Prima::Image->new( size => [1,1], type => im::RGB, data => "\x22\x22\x22" );
+my $fpx1 = Prima::Image->new( size => [1,1], type => im::RGB, data => "\xff\x00\xff" ); # for non-24 bit displays
+my $fpx2 = Prima::Image->new( size => [1,1], type => im::RGB, data => "\x00\xff\x00" );
+
 test( fillPattern => $fpx1, $fpx2);
 $d->fillPattern(fp::Solid);
 
