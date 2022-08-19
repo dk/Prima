@@ -1104,7 +1104,7 @@ Widget_hintVisible( Handle self, Bool set, int hintVisible)
 	wantVisible = ( hintVisible != 0);
 	if ( wantVisible == P_APPLICATION-> hintVisible) return false;
 	if ( wantVisible) {
-		if ( SvCUR( var-> hint) == 0) return false;
+		if ( SvTYPE(var->hint) == SVt_NULL || (SvCUR( var-> hint) == 0)) return false;
 		if ( hintVisible > 0) P_APPLICATION-> hintActive = -1; /* immediate */
 	}
 	C_APPLICATION-> set_hint_action( prima_guts.application, self, wantVisible, false);
@@ -1673,7 +1673,7 @@ Widget_set_hint( Handle self, SV *hint)
 		P_APPLICATION-> hintUnder == self)
 	{
 		Handle hintWidget = P_APPLICATION-> hintWidget;
-		if ( SvLEN( var-> hint) == 0)
+		if ( SvTYPE(var->hint) == SVt_NULL || (SvLEN( var-> hint) == 0))
 			my-> set_hintVisible( self, 0);
 		if ( hintWidget)
 			CWidget(hintWidget)-> set_text( hintWidget, my-> get_hint( self));

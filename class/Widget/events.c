@@ -533,7 +533,14 @@ void Widget_handle_event( Handle self, PEvent event)
 		case cmMouseEnter:
 			my-> notify( self, "<siP", "MouseEnter", event-> pos. mod, event -> pos. where);
 			objCheck;
-			if ( prima_guts.application && is_opt( optShowHint) && (P_APPLICATION-> options. optShowHint) && var-> hint && SvCUR(var-> hint))
+			if (
+				prima_guts.application &&
+				is_opt( optShowHint) &&
+				(P_APPLICATION-> options. optShowHint) &&
+				var-> hint &&
+				SvTYPE(var->hint) != SVt_NULL &&
+				SvCUR(var-> hint)
+			)
 				C_APPLICATION-> set_hint_action( prima_guts.application, self, true, true);
 			break;
 		case cmMouseLeave:
