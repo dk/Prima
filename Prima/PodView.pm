@@ -37,11 +37,13 @@ sub on_mousemove
 		$owner-> {lastLinkPointer} = $r;
 		if ( $was_hand ) {
 			$or = $rr->[$or];
-			$owner-> invalidate_rect($or->[0] + $dx, $dy - $or->[1], $or->[2] + $dx, $dy - $or->[3]);
+			$owner-> invalidate_rect($or->[0] + $dx, $dy - $or->[1], $or->[2] + $dx, $dy - $or->[3])
+				if $or;
 		}
 		if ( $is_hand ) {
 			$or = $rr->[$r];
-			$owner-> invalidate_rect($or->[0] + $dx, $dy - $or->[1], $or->[2] + $dx, $dy - $or->[3]);
+			$owner-> invalidate_rect($or->[0] + $dx, $dy - $or->[1], $or->[2] + $dx, $dy - $or->[3])
+				if $or;
 		}
 	}
 }
@@ -51,6 +53,7 @@ sub on_paint
 	my ( $self, $owner, $canvas, $ci ) = @_;
 	my ($dx, $dy) = $owner->point2screen(0,0);
 	my $r  = $self->rectangles->[ $owner->{lastLinkPointer} ];
+	return unless defined($r) && defined ($r->[0]);
 	my $c  = $canvas-> color;
 	$canvas-> color( $owner-> {colorMap}->[ $ci ]);
 	$canvas-> translate(0,0);
@@ -112,7 +115,7 @@ use constant T_ITEM_DEPTH  => 4; # depth of =item recursion
 use constant T_LINK_OFFSET => 5; #
 
 # formatting constants
-use constant FORMAT_LINES    => 100;
+use constant FORMAT_LINES    => 300;
 use constant FORMAT_TIMEOUT  => 300;
 
 $OP_LINK = tb::opcode(1, 'link');
@@ -230,14 +233,14 @@ sub on_size
 {
 	my ( $self, $oldx, $oldy, $x, $y) = @_;
 	$self-> SUPER::on_size( $oldx, $oldy, $x, $y);
-	$self-> format(1) if $oldx != $x;
+	$self-> format(keep_offset => 1) if $oldx != $x;
 }
 
 sub on_fontchanged
 {
 	my $self = $_[0];
 	$self-> SUPER::on_fontchanged;
-	$self-> format(1);
+	$self-> format(keep_offset => 1);
 }
 
 # sub on_link {
@@ -310,7 +313,6 @@ sub load_bookmark
 	my ( $page, $topic, $ofs) = split( '\|', $mark, 3);
 	return 0 unless $ofs =~ /^\d+$/ && $topic =~ /^\d+$/;
 
-
 	if ( $page ne $self-> {pageName}) {
 		my $ret = $self-> load_file( $page);
 		return 2 if $ret != 1;
@@ -330,7 +332,7 @@ sub load_bookmark
 
 sub load_link
 {
-	my ( $self, $s) = @_;
+	my ( $self, $s, %opt) = @_;
 
 	my $mark = $self-> make_bookmark;
 	my $t;
@@ -383,7 +385,7 @@ sub load_link
 			}
 		}
 		if ( length $page and $page ne $self-> {pageName}) { # new page?
-			if ( $self-> load_file( $page) != 1) {
+			if ( $self-> load_file( $page, %opt) != 1) {
 				$self-> notify(q(Bookmark), $mark) if $mark;
 				return 0;
 			}
@@ -488,7 +490,7 @@ sub justify
 	$justify = ( $justify ? 1 : 0);
 	return if $self-> {justify} == $justify;
 	$self-> {justify} = $justify;
-	$self-> format(1);
+	$self-> format(keep_offset => 1);
 }
 
 sub pageName
@@ -571,42 +573,62 @@ sub message
 	$self-> {manpath} = '';
 }
 
-sub load_file
+sub podpath2file
 {
-	my ( $self, $manpage) = @_;
-	my $pageName = $manpage;
-	my $path = '';
+	my ($self, $manpage) = @_;
 
-	unless ( -f $manpage) {
-		my ( $fn, $mpath);
-		my @ext =  ( '.pod', '.pm', '.pl' );
-		push @ext, ( '.bat' ) if $^O =~ /win32/i;
-		push @ext, ( '.com' ) if $^O =~ /VMS/;
-		for ( map { $_, "$_/pod", "$_/pods" }
-				grep { defined && length && -d }
-					@INC,
-					split( $Config::Config{path_sep}, $ENV{PATH})) {
-			if ( -f "$_/$manpage") {
-				$manpage = "$_/$manpage";
-				$path = $_;
-				last;
-			}
-			$fn = "$_/$manpage";
-			$fn =~ s/::/\//g;
-			$mpath = $fn;
-			$mpath =~ s/\/[^\/]*$//;
-			for ( @ext ) {
-				if ( -f "$fn$_") {
-					$manpage = "$fn$_";
-					$path = $mpath;
-					goto FOUND;
-				}
+	my $path = '';
+	my ( $fn, $mpath);
+	my @ext =  ( '.pod', '.pm', '.pl' );
+	push @ext, ( '.bat' ) if $^O =~ /win32/i;
+	push @ext, ( '.com' ) if $^O =~ /VMS/;
+	for (
+		map  { $_, "$_/pod", "$_/pods" }
+		grep { defined && length && -d }
+			@INC,
+			split( $Config::Config{path_sep}, $ENV{PATH})
+	) {
+		if ( -f "$_/$manpage") {
+			$manpage = "$_/$manpage";
+			$path = $_;
+			goto FOUND;
+		}
+		$fn = "$_/$manpage";
+		$fn =~ s/::/\//g;
+		$mpath = $fn;
+		$mpath =~ s/\/[^\/]*$//;
+		for ( @ext ) {
+			if ( -f "$fn$_") {
+				$manpage = "$fn$_";
+				$path = $mpath;
+				goto FOUND;
 			}
 		}
 	}
-FOUND:
+	return undef;
 
-	unless ( open F, "< $manpage") {
+FOUND:
+	return $manpage, $path;
+}
+
+sub load_file
+{
+	my ( $self, $manpage, %opt) = @_;
+	my $pageName = $manpage;
+	my $path = '';
+	my $ok = 1;
+
+	unless (-f $manpage) {
+		my ($new_manpage, $new_path) = $self-> podpath2file($manpage);
+		if ( defined $new_manpage ) {
+			($manpage, $path) = ($new_manpage, $new_path);
+		} else {
+			$ok = 0;
+		}
+	}
+
+	my $f;
+	unless ( $ok && open $f, "<", $manpage) {
 		my $m = <<ERROR;
 \=head1 Error
 
@@ -622,9 +644,9 @@ ERROR
 	$self-> pointer( cr::Wait);
 	$self-> {manpath} = $path;
 	$self-> {source_file} = $manpage;
-	$self-> open_read;
-	$self-> read($_) while <F>;
-	close F;
+	$self-> open_read(%opt);
+	$self-> read($_) while <$f>;
+	close $f;
 
 	$self-> pageName( $pageName);
 	my $ret = $self-> close_read( $self-> {topicView});
@@ -655,7 +677,6 @@ sub load_content
 	$self-> read($content);
 	return $self-> close_read( $self-> {topicView});
 }
-
 
 sub open_read
 {
@@ -712,9 +733,6 @@ sub add_image
 
 	my $w = $opt{width} // $src-> width;
 	my $h = $opt{height} // $src-> height;
-	my @resolution = $self-> resolution;
-	$w *= 72 / $resolution[0];
-	$h *= 72 / $resolution[1];
 	$src-> {stretch} = [$w, $h];
 	my $r = $self-> {readState};
 	$r-> {pod_cutting} = $opt{cut} ? 0 : 1
@@ -805,9 +823,6 @@ sub _imgpaint
 {
 	my ( $self, $canvas, $block, $state, $x, $y, $img) = @_;
 	my ( $dx, $dy) = @{$img->{stretch}};
-	my @res = $self-> resolution;
-	$dx *= $res[0] / 72;
-	$dy *= $res[1] / 72;
 	$canvas-> stretch_image( $x, $y, $dx, $dy, $img);
 	$canvas-> graphic_context(
 		color             => $canvas->backColor,
@@ -1092,7 +1107,7 @@ NO_INDEX:
 	$self-> {lastLinkPointer} = -1;
 
 	my $topic;
-	$topic = $self-> {topics}-> [$msecid] if $topicView;
+	$topic = $self-> {topics}-> [$msecid] if $topicView and defined $msecid;
 	$self-> select_topic( $topic);
 
 	$self-> notify(q(NewPage));
@@ -1425,11 +1440,11 @@ sub stop_format
 
 sub format
 {
-	my ( $self, $keepOffset) = @_;
+	my ( $self, %opt) = @_;
 	my ( $pw, $ph) = $self-> get_active_area(2);
 
 	my $autoOffset;
-	if ( $keepOffset) {
+	if ( $opt{keep_offset}) {
 		if ( $self-> {formatData} && $self-> {formatData}-> {position}) {
 			$autoOffset = $self-> {formatData}-> {position};
 		} else {
@@ -1487,16 +1502,19 @@ sub format
 		positionSet   => 0,
 		verbatim      => undef,
 		last_ymap     => 0,
+		exportable    => $opt{exportable},
 	};
 
-	$self-> {formatTimer} = $self-> insert( Timer =>
-		name        => 'FormatTimer',
-		delegations => [ 'Tick' ],
-		timeout     => FORMAT_TIMEOUT,
-	) unless $self-> {formatTimer};
+	if ( !$opt{sync} ) {
+		$self-> {formatTimer} = $self-> insert( Timer =>
+			name        => 'FormatTimer',
+			delegations => [ 'Tick' ],
+			timeout     => FORMAT_TIMEOUT,
+		) unless $self-> {formatTimer};
+		$self-> {formatTimer}-> start;
+	}
 
 	$self-> paneSize(0,0);
-	$self-> {formatTimer}-> start;
 	$self-> select_text_offset( $autoOffset) if $autoOffset;
 
 	while ( 1) {
@@ -1506,6 +1524,8 @@ sub format
 			$self-> {blocks}-> [-1] &&
 			$self-> {blocks}-> [-1]-> [tb::BLK_Y] < $ph;
 	}
+
+	do {} while $opt{sync} && $self-> format_chunks;
 }
 
 sub FormatTimer_Tick
@@ -1517,13 +1537,12 @@ sub paint_code_div
 {
 	my ( $self, $canvas, $block, $state, $x, $y, $coord) = @_;
 	my $f  = $canvas->font;
-	my ($style, $w, $h) = @$coord;
+	my ($style, $w, $h, $corner) = @$coord;
 	my %save = map { $_ => $canvas-> $_() } qw(color);
-
 	my $path = $canvas->new_path->round_rect(
 		$x, $y,
 		$x + $w, $y + $h,
-		$self->{defaultFontSize} * 2 * $self->{resolution}->[0] / 96.0
+		$corner
 	);
 	if ( $style == TDIVSTYLE_SOLID ) {
 		$save{backColor} = $canvas->backColor;
@@ -1555,8 +1574,9 @@ sub add_code_div
 	$$b[tb::BLK_WIDTH]  = $w;
 	$$b[tb::BLK_HEIGHT] = $h;
 	$$b[tb::BLK_TEXT_OFFSET] = -1;
+	$style = TDIVSTYLE_OUTLINE if $self->{formatData}->{exportable};
 	push @$b,
-		tb::code( \&paint_code_div, [$style, $w, $h]),
+		tb::code( \&paint_code_div, [$style, $w, $h, $self->{defaultFontSize} * 2 * $self->{resolution}->[0] / 96.0]),
 		tb::extend($w, $h);
 	return $b;
 }
@@ -1565,7 +1585,7 @@ sub format_chunks
 {
 	my $self = $_[0];
 
-	my $f = $self-> {formatData};
+	my $f = $self-> {formatData} or return 0;
 
 	my $time = time;
 	$self-> begin_paint_info;
@@ -1707,8 +1727,11 @@ sub format_chunks
 		$self-> offset( $settopline[0]);
 	}
 
-	$self-> stop_format if $mid >= $f-> {max};
 	$f-> {step} *= 2 unless time - $time;
+
+	my $ret = 1;
+	$self-> stop_format, $ret = 0 if $mid >= $f-> {max};
+	return $ret;
 }
 
 sub print
@@ -1915,6 +1938,22 @@ sub text_range
 		$self-> {model}-> [ $self-> {modelRange}-> [1] + 1]-> [M_TEXT_OFFSET];
 	$range[1]-- if $range[1] > $range[0];
 	return @range;
+}
+
+sub export_blocks
+{
+	my $self = shift;
+	$self->format(sync => 1, exportable => 1);
+	my %save;
+	$save{$_} = $self->{$_} for qw(blocks contents);
+	my $ret = Prima::Drawable::PolyTextBlock->new(
+		blocks   => $self->{blocks},
+		fontmap  => $self->{fontPalette},
+		colormap => $self->{colorMap},
+		textRef  => $self->textRef,
+	);
+	$self->{$_} = $save{$_} for qw(blocks contents);
+	return $ret;
 }
 
 %HTML_Escapes = (

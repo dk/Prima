@@ -2031,10 +2031,15 @@ sub on_change
 		my $x = $self-> get_text_width( $_);
 		$maxLn = $x if $maxLn < $x;
 	}
-	$self-> size(
+	my @sz = (
 		$maxLn + 6,
 		( $self-> font-> height * scalar @ln) + 2
 	);
+	my @as = map { $_ / 4 } $::application->size;
+	for (0,1) {
+		$sz[$_] = $as[$_] if $sz[$_] > $as[0];
+	}
+	$self-> size(@sz);
 }
 
 sub on_paint
