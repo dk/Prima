@@ -139,8 +139,13 @@ sub opcode
 	my $len = $_[0] || 0;
 	my $name = $_[1];
 	$len = 0 if $len < 0;
-	my $op = ++$lastop;
-	$opnames{$name} = $op if defined $name;
+	my $op;
+	if ( defined $name && exists $opnames{$name}) {
+		$op = $opnames{$name};
+	} else {
+		$op = ++$lastop;
+		$opnames{$name} = $op if defined $name;
+	}
 	return $op | (( $len + 1 ) << 16);
 }
 

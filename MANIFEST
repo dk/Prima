@@ -350,6 +350,7 @@ Prima/Utils.pm
 Prima/Widget/BidiInput.pm
 Prima/Widget/GroupScroller.pm
 Prima/Widget/IntIndents.pm
+Prima/Widget/Link.pm
 Prima/Widget/ListBoxUtils.pm
 Prima/Widget/MouseScroller.pm
 Prima/Widget/Panel.pm
