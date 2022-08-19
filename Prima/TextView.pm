@@ -382,12 +382,11 @@ sub recalc_ymap
 
 sub block_walk_abort { shift->{blockWalk} = 1 }
 
-sub block_walk
+sub block_walk_defaults
 {
 	my ( $self, $block, %commands ) = @_;
-	local $self-> {blockWalk} = 0;
 	my $canvas = $commands{canvas} // $self;
-	return tb::walk( $block,
+	return (
 		textPtr      => $self->{text},
 		canvas       => $canvas,
 		realize      => sub { $self-> realize_state($canvas, @_) },
@@ -395,6 +394,16 @@ sub block_walk
 		semaphore    => \ $self-> {blockWalk},
 		resolution   => $self->{resolution},
 		%commands
+	);
+}
+
+sub block_walk
+{
+	my ( $self, $block, %commands ) = @_;
+	local $self-> {blockWalk} = 0;
+	return tb::walk( $block,
+		semaphore  => \ $self-> {blockWalk},
+		$self->block_walk_defaults(%commands),
 	);
 }
 

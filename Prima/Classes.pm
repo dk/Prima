@@ -1081,17 +1081,6 @@ sub notification_types { return \%RNT; }
 	y_centered        => 0,
 );
 
-my $_markup_loaded;
-sub _markup($)
-{
-	unless ( $_markup_loaded ) {
-		eval "use Prima::Drawable::Markup;";
-		die $@ if $@;
-		$_markup_loaded++;
-	}
-	return Prima::Drawable::Markup::M( ${ $_[0] } );
-}
-
 sub profile_default
 {
 	my $def = $_[ 0]-> SUPER::profile_default;
@@ -1125,7 +1114,7 @@ sub profile_check_in
 	delete $p-> { font} unless defined $orgFont;
 
 	for my $tx ( qw(text hint)) {
-		$p->{$tx} = _markup $p->{$tx} if defined $p->{$tx} && (ref($p->{$tx}) // '') eq 'SCALAR';
+		$p->{$tx} = $self->parse_markup($tx, $p->{$tx}) if defined $p->{$tx} && (ref($p->{$tx}) // '') eq 'SCALAR';
 	}
 
 	my $name = defined $p-> {name} ? $p-> {name} : $default-> {name};
@@ -1335,13 +1324,13 @@ sub y_centered       {($#_)?$_[0]-> set_centered(0,1)      :$_[0]-> raise_wo("y_
 sub hint
 {
 	return $_[0]->get_hint unless $#_;
-	$_[0]->set_hint( (( ref($_[1]) // '') eq 'SCALAR') ? _markup $_[1] : $_[1] );
+	$_[0]->set_hint( (( ref($_[1]) // '') eq 'SCALAR') ? $_[0]->parse_markup(hint => $_[1]) : $_[1] );
 }
 
 sub text
 {
 	return $_[0]->get_text unless $#_;
-	$_[0]->set_text( (( ref($_[1]) // '') eq 'SCALAR') ? _markup $_[1] : $_[1] );
+	$_[0]->set_text( (( ref($_[1]) // '') eq 'SCALAR') ? $_[0]->parse_markup(text => $_[1]) : $_[1] );
 }
 
 sub insert
@@ -1438,6 +1427,20 @@ sub select      { $_[0]-> selected(1); }
 sub deselect    { $_[0]-> selected(0); }
 sub focus       { $_[0]-> focused(1); }
 sub defocus     { $_[0]-> focused(0); }
+
+my $_markup_loaded;
+sub _parse_markup
+{
+	my ( $self, $prop, $markup ) = @_;
+	unless ( $_markup_loaded ) {
+		eval "use Prima::Drawable::Markup;";
+		die $@ if $@;
+		$_markup_loaded++;
+	}
+	return $self->parse_markup( $prop, $$markup );
+}
+
+sub parse_markup { Prima::Drawable::Markup::M( $_[0] ) }
 
 # Tk namespace and syntax compatibility
 

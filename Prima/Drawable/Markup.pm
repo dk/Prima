@@ -37,14 +37,14 @@ C<U> (underlined text), C<F> (change font), C<S> (change font size), C<C>
 (change foreground color), C<G> (change background color), C<M> (move pointer),
 C<W> (disable wrapping), and C<P> (picture).
 
-The C<F> sequence is used as follows: C<FE<lt>n|textE<gt>>, where C<n> is a
+The C<F> sequence is used as follows: C<< F<n|text> >>, where C<n> is a
 0-based index into the C<fontPalette>.
 
-The C<S> sequence is used as follows: C<SE<lt>n|textE<gt>>, where C<n> is the
+The C<S> sequence is used as follows: C<< S<n|text> >>, where C<n> is the
 number of points relative to the current font size. The font size may
 optionally be preceded by C<+> or C<->.
 
-The C<C> and C<G> sequences are used as follows: C<CE<lt>c|textE<gt>>, where
+The C<C> and C<G> sequences are used as follows: C<< C<c|text> >>, where
 C<c> is either: a color in any form accepted by Prima, including the C<cl>
 constants (C<Black> C<Blue> C<Green> C<Cyan> C<Red> C<Magenta> C<Brown>
 C<LightGray> C<DarkGray> C<LightBlue> C<LightGreen> C<LightCyan> C<LightRed>
@@ -84,11 +84,16 @@ C<@COLORS, @FONTS, @IMAGES> correspondingly.
 our (@FONTS, @COLORS, @IMAGES);
 sub M($) {
 	return Prima::Drawable::Markup->new(
-		markup         => $_[0],
-		fontPalette    => \@FONTS,
-		picturePalette => \@IMAGES,
-		colorPalette   => \@COLORS,
-	) 
+		markup  => $_[0],
+		defaults(),
+	)
+}
+
+sub defaults
+{
+	fontPalette    => \@FONTS,
+	picturePalette => \@IMAGES,
+	colorPalette   => \@COLORS,
 }
 
 sub new
@@ -100,6 +105,7 @@ sub new
 	);
 	my $self = $class->SUPER::new(%opt);
 	$self-> $_( $opt{$_} || [] ) for qw(fontPalette colorPalette picturePalette);
+	$self-> local_syntax(%{$opt{local_syntax}}) if defined $opt{local_syntax};
 	$self-> markup( $opt{markup} || '');
 	return $self;
 }
@@ -286,7 +292,21 @@ sub commands
 		W => [ 0, 1, \&parse_wrap ],
 		P => [ 1, 0, \&parse_picture ],
 		Q => [ 0, 1, \&parse_quote ],
+		%{ $_[0]->{local_syntax} // {} },
 	);
+}
+
+sub local_syntax
+{
+	return $_[0]->{local_syntax} unless $#_;
+	my $self = shift;
+	$self->{local_syntax} = { @_ };
+}
+
+sub local_property
+{
+	return $_[0]->{local_property}->{$_[1]} if @_ == 2;
+	$_[0]->{local_property}->{$_[1]} = $_[2];
 }
 
 sub init_state
@@ -412,6 +432,9 @@ sub markup
 	$self-> text( $text );
 	$self-> {block} = $block;
 }
+
+sub reparse    { $_[0]->markup( $_[0]-> markup ) }
+sub text_block { $_[0]->{block} }
 
 sub acquire
 {
