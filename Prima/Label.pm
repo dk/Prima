@@ -172,6 +172,17 @@ sub set_text
 	my $self = $_[0];
 	$self-> SUPER::set_text( $_[1]);
 	$self-> check_auto_size;
+	undef $self->{link_handler};
+
+	if ( ref($text) ) {
+		$text = $self->SUPER::text;
+		$self->{link_handler} = Prima::Widget::Link->new(
+			markup => $text,
+			color  => $self->linkColor,
+		) if UNIVERSAL::isa($text, 'Prima::Drawable::Markup');
+	}
+
+	$self->reset_lines;
 	$self-> repaint;
 }
 
@@ -313,6 +324,7 @@ sub reset_lines
 
 	if ($self->{link_handler}) {
 		my $ta = $self->{alignment};
+		my (@sx, @sy);
 		for ( my $i = 0; $i < @ws; $i++) {
 			my $x = 0;
 			if ( $ta == ta::Center) {
@@ -322,12 +334,18 @@ sub reset_lines
 			}
 
 			my $b = $ws[$i]->block;
+			push @sx, $$b[tb::BLK_X];
+			push @sy, $$b[tb::BLK_Y];
 			$$b[tb::BLK_X] = $x;
 			$$b[tb::BLK_Y] = $starty;
-
 			$starty -= $fh;
 		}
 		$self->{link_handler}->reset_positions_markup(\@ws);
+		for ( my $i = 0; $i < @ws; $i++) {
+			my $b = $ws[$i]->block;
+			$$b[tb::BLK_X] = $sx[$i];
+			$$b[tb::BLK_Y] = $sy[$i];
+		}
 	}
 
 	$self-> end_paint_info;
@@ -426,25 +444,6 @@ sub linkColor     {
 	$self->{linkColor} = $lc;
 	$self->{link_handler}->color($lc) if $self->{link_handler};
 	$self->repaint;
-}
-
-sub text
-{
-	return $_[0]->SUPER::text unless $#_;
-	my ( $self, $text ) = @_;
-	$self->SUPER::text($text);
-
-	undef $self->{link_handler};
-
-	if ( ref($text) ) {
-		$text = $self->SUPER::text;
-		$self->{link_handler} = Prima::Widget::Link->new(
-			markup => $text,
-			color  => $self->linkColor,
-		) if UNIVERSAL::isa($text, 'Prima::Drawable::Markup');
-	}
-
-	$self->reset_lines;
 }
 
 sub textDirection

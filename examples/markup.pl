@@ -30,7 +30,7 @@ my $tn = $Main->insert('TabbedNotebook',
 );
 
 $tn->insert_to_page(0,'Label',
-	text   => \ "\x{5e9} Some F<1|U<m>onospace text> in a label",
+	text   => \ "\x{5e9} Some F<1|U<m>onospace text> in a L<http://google.com/?q=label|label>",
 	autoHeight => 1,
 	hotKey => 'm',
 	backColor => cl::Yellow,
