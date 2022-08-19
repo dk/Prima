@@ -781,8 +781,9 @@ Application_HintTimer_handle_event( Handle timer, PEvent event)
 			ev. gen. H = var->  hintUnder;
 			var->  hintVisible = 1;
 			if (( PWidget( var->  hintUnder)-> stage == csNormal) &&
-				( CWidget( var->  hintUnder)-> message( var->  hintUnder, &ev)))
+				( CWidget( var->  hintUnder)-> message( var->  hintUnder, &ev))) {
 				hshow( self);
+			}
 		} else if ( var->  hintActive == -1)
 			var->  hintActive = 0;
 	}

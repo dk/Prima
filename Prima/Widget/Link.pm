@@ -182,6 +182,7 @@ sub on_mousemove
 		$self-> on_linkpreview( $owner, \$hint);
 		$owner->hint( $hint );
 		$owner->showHint(1);
+		$::application->set_hint_action($owner, 1, 1);
 	} else {
 		$owner->hint('');
 		$owner->showHint(0);
