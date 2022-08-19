@@ -188,6 +188,7 @@ sub on_translateaccel
 }
 
 sub on_link {}
+sub on_linkpreview {}
 
 sub on_click
 {

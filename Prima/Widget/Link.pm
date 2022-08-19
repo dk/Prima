@@ -124,6 +124,24 @@ sub on_link
 	}
 }
 
+sub on_linkpreview
+{
+	my ( $self, $owner, $url ) = @_;
+
+	if ( $$url =~ m[^pod://(.*)] ) {
+		my $tx = $1;
+		if ( $tx =~ m/^([^\/]+)\/(.+)$/) {
+			$$url = \ "B<< $1 >> manpage, section B<< $2 >>";
+		} else {
+			$$url = "$tx manpage";
+		}
+	} elsif ( $url =~ m[^(ftp|https?)://]) {
+		# same
+	} else {
+		$owner->notify(q(LinkPreview), $url);
+	}
+}
+
 sub on_mousedown
 {
 	my ( $self, $owner, $dx, $dy, $btn, $mod, $x, $y) = @_;
@@ -141,22 +159,32 @@ sub on_mousemove
 	my $r = $self-> contains( $x, $y);
 	$self->{owner_pointer} //= $owner->pointer;
 	$r = $self->rectangles->[$r]->[4] if $r >= 0;
-	if ( $r != $self-> {last_link_pointer}) {
-		my $was_hand = ($self->{last_link_pointer} >= 0) ? 1 : 0;
-		my $is_hand  = ($r >= 0) ? 1 : 0;
-		if ( $is_hand != $was_hand) {
-			$owner-> pointer( $is_hand ? cr::Hand : $self->{owner_pointer} );
-			delete $self->{owner_pointer} unless $is_hand;
-		}
-		my $rr = $self->rectangles;
-		my $or = $self->{last_link_pointer};
-		$self-> {last_link_pointer} = $r;
-		if ( $was_hand != $is_hand ) {
-			my $rx = $was_hand ? $or : $r;
-			for my $rc ( $self->filter_rectangles_by_link_id( $rx )) {
-				$owner-> invalidate_rect($rc->[0] + $dx, $rc->[1] + $dy, $rc->[2] + $dx, $rc->[3] + $dy);
-			}
-		}
+	return if $r == $self-> {last_link_pointer};
+
+	my $was_hand = ($self->{last_link_pointer} >= 0) ? 1 : 0;
+	my $is_hand  = ($r >= 0) ? 1 : 0;
+	if ( $is_hand != $was_hand) {
+		$owner-> pointer( $is_hand ? cr::Hand : $self->{owner_pointer} );
+		delete $self->{owner_pointer} unless $is_hand;
+	}
+
+	my $rr = $self->rectangles;
+	my $or = $self->{last_link_pointer};
+	$self-> {last_link_pointer} = $r;
+	return if $was_hand == $is_hand;
+
+	my $rx = $was_hand ? $or : $r;
+	for my $rc ( $self->filter_rectangles_by_link_id( $rx )) {
+		$owner-> invalidate_rect($rc->[0] + $dx, $rc->[1] + $dy, $rc->[2] + $dx, $rc->[3] + $dy);
+	}
+	if ( $is_hand ) {
+		my $hint =$self-> {references}-> [$r];
+		$self-> on_linkpreview( $owner, \$hint);
+		$owner->hint( $hint );
+		$owner->showHint(1);
+	} else {
+		$owner->hint('');
+		$owner->showHint(0);
 	}
 }
 
