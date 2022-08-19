@@ -1114,7 +1114,7 @@ sub profile_check_in
 	delete $p-> { font} unless defined $orgFont;
 
 	for my $tx ( qw(text hint)) {
-		$p->{$tx} = $self->parse_markup($tx, $p->{$tx}) if defined $p->{$tx} && (ref($p->{$tx}) // '') eq 'SCALAR';
+		$p->{$tx} = $self->_parse_markup($tx, $p->{$tx}) if defined $p->{$tx} && (ref($p->{$tx}) // '') eq 'SCALAR';
 	}
 
 	my $name = defined $p-> {name} ? $p-> {name} : $default-> {name};
@@ -1324,13 +1324,13 @@ sub y_centered       {($#_)?$_[0]-> set_centered(0,1)      :$_[0]-> raise_wo("y_
 sub hint
 {
 	return $_[0]->get_hint unless $#_;
-	$_[0]->set_hint( (( ref($_[1]) // '') eq 'SCALAR') ? $_[0]->parse_markup(hint => $_[1]) : $_[1] );
+	$_[0]->set_hint( (( ref($_[1]) // '') eq 'SCALAR') ? $_[0]->_parse_markup(hint => $_[1]) : $_[1] );
 }
 
 sub text
 {
 	return $_[0]->get_text unless $#_;
-	$_[0]->set_text( (( ref($_[1]) // '') eq 'SCALAR') ? $_[0]->parse_markup(text => $_[1]) : $_[1] );
+	$_[0]->set_text( (( ref($_[1]) // '') eq 'SCALAR') ? $_[0]->_parse_markup(text => $_[1]) : $_[1] );
 }
 
 sub insert
@@ -1440,7 +1440,7 @@ sub _parse_markup
 	return $self->parse_markup( $prop, $$markup );
 }
 
-sub parse_markup { Prima::Drawable::Markup::M( $_[0] ) }
+sub parse_markup { Prima::Drawable::Markup::M( $_[2] ) }
 
 # Tk namespace and syntax compatibility
 
