@@ -4,7 +4,10 @@ use warnings;
 use Prima::Drawable::TextBlock;
 use Prima::Drawable::Markup;
 
-sub notification_types {{ Link => nt::Default }}
+sub notification_types {{
+	Link        => nt::Default,
+	LinkPreview => nt::Action,
+}}
 sub profile_default    {{ color => cl::Green  }}
 
 sub new
@@ -79,14 +82,56 @@ sub bind_markup
 	}
 }
 
+sub open_podview
+{
+	my ( $self, $url, $btn, $mod ) = @_;
+	return if $btn != mb::Left;
+
+	$::application->open_help($url);
+}
+
+sub open_browser
+{
+	my ( $self, $url, $btn, $mod ) = @_;
+	return 0 if $btn != mb::Left;
+
+	if ( Prima::Application-> get_system_info-> {apc} == apc::Win32) {
+		open UNIQUE_FILE_HANDLE_NEVER_TO_BE_CLOSED, "|start $url";
+		close UNIQUE_FILE_HANDLE_NEVER_TO_BE_CLOSED if 0;
+	} else {
+		my $pg;
+		CMD: for my $cmd ( qw(xdg-open x-www-browser www-browser firefox mozilla sensible-browser netscape)) {
+			for ( split /:/, $ENV{PATH} ) {
+				$pg = "$_/$cmd", last CMD if -x "$_/$cmd";
+			}
+		}
+		return -1 unless defined $pg && ! system( "$pg $url &");
+	}
+
+	return 1;
+}
+
+sub on_link
+{
+	my ( $self, $owner, $url, $btn, $mod ) = @_;
+
+	if ( $url =~ m[^pod://(.*)] ) {
+		$self->open_podview($1, $btn, $mod);
+	} elsif ( $url =~ m[^(ftp|https?)://]) {
+		$self->open_browser($url, $btn, $mod);
+	} else {
+		$owner->notify(q(Link), $url, $btn, $mod);
+	}
+}
+
 sub on_mousedown
 {
-	my ( $self, $owner, $btn, $mod, $x, $y) = @_;
+	my ( $self, $owner, $dx, $dy, $btn, $mod, $x, $y) = @_;
 	my $r = $self-> contains( $x, $y);
 	return 1 if $r < 0;
 	$r = $self-> {rectangles}-> [$r];
 	$r = $self-> {references}-> [$$r[4]];
-	$owner->notify(qw(Link), $self, $r, $btn, $mod, $x, $y);
+	$self->on_link( $owner, $r, $btn, $mod);
 	return 0;
 }
 
