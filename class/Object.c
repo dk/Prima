@@ -105,7 +105,7 @@ Object_destroy( Handle self)
 		mate = var-> mate;
 		var-> stage = csDead;
 		var-> mate = NULL_SV;
-		if ( mate && object) sv_free( mate);
+		if ( mate && mate != NULL_SV && object) sv_free( mate);
 		return;
 	}
 
@@ -175,7 +175,7 @@ Object_destroy( Handle self)
 	}
 	var-> stage = csDead;
 	var-> mate = NULL_SV;
-	if ( mate && object) sv_free( mate);
+	if ( mate && mate != NULL_SV && object) sv_free( mate);
 
 	while (( prima_guts.recursive_call == 0) && ( prima_guts.post_destroys. count > 0)) {
 		Handle last = prima_guts.post_destroys. items[ 0];
