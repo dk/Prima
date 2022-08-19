@@ -4,31 +4,6 @@ use warnings;
 use Prima::Drawable::TextBlock;
 use Prima::Drawable::Markup;
 
-our $OP_LINK = tb::opcode(1, 'link');
-sub op_link_enter { $OP_LINK, 1 }
-sub op_link_leave { $OP_LINK, 0 }
-
-sub markup_parse_link_syntax
-{
-	my ( $self, $mode, $command, $stacks, $state, $block, $url ) = @_;
-
-	if ( $mode ) {
-		push @{$stacks->{color}}, $state->{color};
-
-		$state->{color} = $self->local_property('link')->color;
-		push @$block,
-			tb::color($state->{color}),
-			op_link_enter,
-			;
-		push @{ $self->{references} }, $url;
-	} else {
-		push @$block,
-			op_link_leave,
-			tb::color($state->{color}),
-			;
-	}
-}
-
 sub notification_types {{ Link => nt::Default }}
 sub profile_default    {{ color => cl::Green  }}
 
@@ -43,24 +18,9 @@ sub new
 	$self-> {$_} = $profile{$_} ? $profile{$_} : []
 		for qw( rectangles references);
 	$self->{color} = $profile{color} // profile_default->{color};
+	$self->bind_markup($profile{markup}) if defined $profile{markup};
 	return $self;
 }
-
-sub parse_markup
-{
-	my ( $class, $text ) = @_;
-
-	my $self   = $class->new;
-	my $markup = Prima::Drawable::Markup->new(
-		Prima::Drawable::Markup->defaults,
-		local_syntax   => { L => [1, 1, \&markup_parse_link_syntax ] },
-	);
-	$markup-> local_property( link => $self );
-	$markup-> markup($text);
-	return $markup;
-}
-
-sub markup_has_links { scalar @{ $_[0]->{references} } }
 
 sub contains
 {
@@ -72,6 +32,12 @@ sub contains
 		$rec++;
 	}
 	return -1;
+}
+
+sub filter_rectangles_by_link_id
+{
+	my ( $self, $link_id ) = @_;
+	return grep { $_->[4] == $link_id } @{ $self->{rectangles} };
 }
 
 sub rectangles
@@ -89,7 +55,28 @@ sub references
 sub color
 {
 	return $_[0]-> {color} unless $#_;
-	$_[0]-> {color} = $_[1];
+	my ( $self, $color ) = @_;
+	$self->{color} = $color;
+	$self->{colormap}->[ $self->{link_color_index} ] = $color if $self->{colormap};
+}
+
+sub bind_markup
+{
+	my ( $self, $m ) = @_;
+	if ( $m ) {
+		my $cm = $m->colormap;
+		my $ix = @$cm;
+		push @$cm, $self->color;
+		$m->linkColor( $ix | tb::COLOR_INDEX );
+		$m->reparse;
+		$self->{link_color_index} = $ix;
+		$self->{colormap}         = $cm;
+		$self->{references}       = $m->link_urls;
+	} else {
+		$self->{references}       = [];
+		$self->{link_color_index} = undef;
+		$self->{colormap}         = undef;
+	}
 }
 
 sub on_mousedown
@@ -99,7 +86,7 @@ sub on_mousedown
 	return 1 if $r < 0;
 	$r = $self-> {rectangles}-> [$r];
 	$r = $self-> {references}-> [$$r[4]];
-	$owner->notify(qw(Link), $r, $btn, $mod, $x, $y);
+	$owner->notify(qw(Link), $self, $r, $btn, $mod, $x, $y);
 	return 0;
 }
 
@@ -108,22 +95,22 @@ sub on_mousemove
 	my ( $self, $owner, $dx, $dy, $mod, $x, $y) = @_;
 	my $r = $self-> contains( $x, $y);
 	$self->{owner_pointer} //= $owner->pointer;
+	$r = $self->rectangles->[$r]->[4] if $r >= 0;
 	if ( $r != $self-> {last_link_pointer}) {
 		my $was_hand = ($self->{last_link_pointer} >= 0) ? 1 : 0;
 		my $is_hand  = ($r >= 0) ? 1 : 0;
 		if ( $is_hand != $was_hand) {
 			$owner-> pointer( $is_hand ? cr::Hand : $self->{owner_pointer} );
+			delete $self->{owner_pointer} unless $is_hand;
 		}
 		my $rr = $self->rectangles;
 		my $or = $self->{last_link_pointer};
-		$owner-> {last_link_pointer} = $r;
-		if ( $was_hand ) {
-			$or = $rr->[$or];
-			$owner-> invalidate_rect($or->[0] + $dx, $dy - $or->[1], $or->[2] + $dx, $dy - $or->[3]);
-		}
-		if ( $is_hand ) {
-			$or = $rr->[$r];
-			$owner-> invalidate_rect($or->[0] + $dx, $dy - $or->[1], $or->[2] + $dx, $dy - $or->[3]);
+		$self-> {last_link_pointer} = $r;
+		if ( $was_hand != $is_hand ) {
+			my $rx = $was_hand ? $or : $r;
+			for my $rc ( $self->filter_rectangles_by_link_id( $rx )) {
+				$owner-> invalidate_rect($rc->[0] + $dx, $rc->[1] + $dy, $rc->[2] + $dx, $rc->[3] + $dy);
+			}
 		}
 	}
 }
@@ -135,11 +122,12 @@ sub on_paint
 	my ( $self, $owner, $dx, $dy, $canvas ) = @_;
 	return if $self->{last_link_pointer} < 0;
 
-	my $r  = $self->rectangles->[ $self->{last_link_pointer} ];
 	$canvas->graphic_context( sub {
 		$canvas-> color( $self->color );
 		$canvas-> translate(0,0);
-		$canvas-> line( $r->[0] + $dx, $dy - $r->[3], $r->[2] + $dx, $dy - $r->[3]);
+		for my $rc ( $self->filter_rectangles_by_link_id( $self->{last_link_pointer} )) {
+			$canvas-> line( $rc->[0] + $dx, $rc->[1] + $dy, $rc->[2] + $dx, $rc->[1] + $dy);
+		}
 	});
 }
 

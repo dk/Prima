@@ -107,47 +107,38 @@ sub on_paint
 	my $fh = $canvas-> font-> height;
 	my $ta = $self-> {alignment};
 	my $ws = $self-> {words};
-	my ($starty,$ycommon) = (0, scalar @{$ws} * $fh);
 
-	if ( $self-> {valignment} == ta::Top)  {
-		$starty = $size[1] - $fh;
-	} elsif ( $self-> {valignment} == ta::Bottom) {
-		$starty = $ycommon - $fh;
-	} else {
-		$starty = ( $size[1] + $ycommon)/2 - $fh;
-	}
-
-	my $y   = $starty;
+	my $y   = $self->{start_y};
 	my $tl  = $self-> {tildeLine};
 	my $i;
 	my $paintLine = !$self-> {showAccelChar} && defined($tl) && $tl < scalar @{$ws};
 
 	my @wss = $self->shape_and_justify_text($canvas);
-	my @wx  = map { $canvas->get_text_width($_) } @wss;
+	my $wx  = $self->{start_x};
 
 	unless ( $self-> enabled) {
 		$canvas-> color( $self-> light3DColor);
 		for ( $i = 0; $i < @wss; $i++) {
 			my $x = 0;
 			if ( $ta == ta::Center) {
-				$x = ( $size[0] - $wx[$i]) / 2;
+				$x = ( $size[0] - $$wx[$i]) / 2;
 			} elsif ( $ta == ta::Right) {
-				$x = $size[0] - $wx[$i];
+				$x = $size[0] - $$wx[$i];
 			}
 			$canvas-> text_out( $wss[$i], $x + 1, $y - 1);
 			$y -= $fh;
 		}
-		$y   = $starty;
+		$y   = $self->{start_y};
 		if ( $paintLine) {
 			my $x = 0;
 			if ( $ta == ta::Center) {
-				$x = ( $size[0] - $wx[$tl]) / 2;
+				$x = ( $size[0] - $$wx[$tl]) / 2;
 			} elsif ( $ta == ta::Right) {
-				$x = $size[0] - $wx[$tl];
+				$x = $size[0] - $$wx[$tl];
 			}
 			$canvas-> line(
-				$x + $self-> {tildeStart} + 1, $starty - $fh * $tl - 1,
-				$x + $self-> {tildeEnd} + 1,   $starty - $fh * $tl - 1
+				$x + $self-> {tildeStart} + 1, $self->{start_y} - $fh * $tl - 1,
+				$x + $self-> {tildeEnd} + 1,   $self->{start_y} - $fh * $tl - 1
 			);
 		}
 	}
@@ -156,20 +147,20 @@ sub on_paint
 	for ( $i = 0; $i < @wss; $i++) {
 		my $x = 0;
 		if ( $ta == ta::Center) {
-			$x = ( $size[0] - $wx[$i]) / 2;
+			$x = ( $size[0] - $$wx[$i]) / 2;
 		} elsif ( $ta == ta::Right) {
-			$x = $size[0] - $wx[$i];
+			$x = $size[0] - $$wx[$i];
 		}
 		$canvas-> text_out( $wss[$i], $x, $y);
 		$y -= $fh;
 	}
 	if ( $paintLine) {
 		my $x = 0;
-		if ( $ta == ta::Center) { $x = ( $size[0] - $wx[$tl]) / 2; }
-		elsif ( $ta == ta::Right) { $x = $size[0] - $wx[$tl]; }
+		if ( $ta == ta::Center) { $x = ( $size[0] - $$wx[$tl]) / 2; }
+		elsif ( $ta == ta::Right) { $x = $size[0] - $$wx[$tl]; }
 		$canvas-> line(
-			$x + $self-> {tildeStart}, $starty - $fh * $tl,
-			$x + $self-> {tildeEnd},   $starty - $fh * $tl
+			$x + $self-> {tildeStart}, $self->{start_y} - $fh * $tl,
+			$x + $self-> {tildeEnd},   $self->{start_y} - $fh * $tl
 		);
 	}
 	$self->{link_handler}->on_paint( $self, 0, 0, $canvas )
@@ -296,7 +287,6 @@ sub reset_lines
 		rtl     => $self->textDirection,
 	);
 	my $lastRef = pop @{$lines};
-
 	$self-> {textLines} = scalar @$lines;
 	for( qw( tildeStart tildeEnd tildeLine)) {$self-> {$_} = $lastRef-> {$_}}
 
@@ -304,8 +294,39 @@ sub reset_lines
 	splice( @{$lines}, $maxLines) if scalar @{$lines} > $maxLines && !$nomaxlines;
 	$self-> {words} = $lines;
 
+	my $fh = $self->font->height;
+	my ($starty,$ycommon) = (0, scalar @{$lines} * $fh);
+	my @size = $self->size;
+
+	if ( $self-> {valignment} == ta::Top)  {
+		$starty = $size[1] - $fh;
+	} elsif ( $self-> {valignment} == ta::Bottom) {
+		$starty = $ycommon - $fh;
+	} else {
+		$starty = ( $size[1] + $ycommon)/2 - $fh;
+	}
+	$self->{start_y} = $starty;
+
+	my @ws = $self->shape_and_justify_text($self);
+	my @wx = map { $self->get_text_width($_) } @ws;
+	$self->{start_x} = \@wx;
+
 	if ($self->{link_handler}) {
-		my @ws = $self->shape_and_justify_text($self);
+		my $ta = $self->{alignment};
+		for ( my $i = 0; $i < @ws; $i++) {
+			my $x = 0;
+			if ( $ta == ta::Center) {
+				$x = ( $size[0] - $wx[$i]) / 2;
+			} elsif ( $ta == ta::Right) {
+				$x = $size[0] - $wx[$i];
+			}
+
+			my $b = $ws[$i]->block;
+			$$b[tb::BLK_X] = $x;
+			$$b[tb::BLK_Y] = $starty;
+
+			$starty -= $fh;
+		}
 		$self->{link_handler}->reset_positions_markup(\@ws);
 	}
 
@@ -403,10 +424,7 @@ sub linkColor     {
 	return $_[0]->{linkColor} unless $#_;
 	my ( $self, $lc ) = @_;
 	$self->{linkColor} = $lc;
-	if ($self->{link_handler} && $self->{link_handler}->color != $lc) {
-		$self->{link_handler}->color($lc);
-		$self->SUPER::text->reparse;
-	}
+	$self->{link_handler}->color($lc) if $self->{link_handler};
 	$self->repaint;
 }
 
@@ -420,8 +438,10 @@ sub text
 
 	if ( ref($text) ) {
 		$text = $self->SUPER::text;
-		$self->{link_handler} = $text->local_property('link')
-			if UNIVERSAL::isa($text, 'Prima::Drawable::Markup');
+		$self->{link_handler} = Prima::Widget::Link->new(
+			markup => $text,
+			color  => $self->linkColor,
+		) if UNIVERSAL::isa($text, 'Prima::Drawable::Markup');
 	}
 
 	$self->reset_lines;
@@ -479,13 +499,6 @@ sub shape_and_justify_text
 	}
 
 	return @wss;
-}
-
-sub parse_markup
-{
-	my ( $self, $prop, $text) = @_;
-	return $self->SUPER::parse_markup($prop, $text) if $prop ne 'text';
-	return Prima::Widget::Link->parse_markup($$text);
 }
 
 1;

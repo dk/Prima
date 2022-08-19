@@ -222,6 +222,7 @@ sub _debug_block
 		$color = sprintf("%06x", $color);
 	}
 	print STDERR "$color\n";
+	my %opval = reverse %opnames;
 
 	my ($i, $lim) = (BLK_START, scalar @$b);
 	for ( ; $i < $lim; $i += $$b[$i] >> 16) {
@@ -294,6 +295,8 @@ sub _debug_block
 			print STDERR ": OP_MARK $id $x $y\n";
 		} else {
 			my $oplen = $cmd >> 16;
+			$cmd &= 0xffff;
+			$cmd = $opval{$cmd} if defined $opval{$cmd};
 			my @o = ($oplen > 1) ? @$b[ $i + 1 .. $i + $oplen - 1] : ();
 			print STDERR ": OP($cmd) @o\n";
 			last unless $$b[$i] >> 16;

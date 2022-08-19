@@ -82,6 +82,12 @@ C<@COLORS, @FONTS, @IMAGES> correspondingly.
 =cut
 
 our (@FONTS, @COLORS, @IMAGES);
+our $LINK_COLOR = cl::Green;
+
+our $OP_LINK = tb::opcode(1, 'link');
+sub op_link_enter { $OP_LINK, 1 }
+sub op_link_leave { $OP_LINK, 0 }
+
 sub M($) {
 	return Prima::Drawable::Markup->new(
 		markup  => $_[0],
@@ -94,6 +100,7 @@ sub defaults
 	fontPalette    => \@FONTS,
 	picturePalette => \@IMAGES,
 	colorPalette   => \@COLORS,
+	linkColor      => $LINK_COLOR,
 }
 
 sub new
@@ -104,8 +111,7 @@ sub new
 		colormap      => [0,0],
 	);
 	my $self = $class->SUPER::new(%opt);
-	$self-> $_( $opt{$_} || [] ) for qw(fontPalette colorPalette picturePalette);
-	$self-> local_syntax(%{$opt{local_syntax}}) if defined $opt{local_syntax};
+	$self-> $_( $opt{$_} || [] ) for qw(fontPalette colorPalette picturePalette linkColor);
 	$self-> markup( $opt{markup} || '');
 	return $self;
 }
@@ -277,6 +283,29 @@ sub parse_quote
 	return 1;
 }
 
+sub parse_link_syntax
+{
+	my ( $self, $mode, $command, $stacks, $state, $block, $url ) = @_;
+
+	if ( $mode ) {
+		push @{$stacks->{color}}, $state->{color};
+
+		$state->{color} = $self->linkColor;
+		push @$block,
+			tb::color($state->{color}),
+			op_link_enter,
+			;
+		push @{ $self->{link_urls} }, $url;
+	} else {
+		$state->{color} = pop @{$stacks->{color}};
+
+		push @$block,
+			op_link_leave,
+			tb::color($state->{color}),
+			;
+	}
+}
+
 sub commands
 {
 	return (
@@ -292,21 +321,8 @@ sub commands
 		W => [ 0, 1, \&parse_wrap ],
 		P => [ 1, 0, \&parse_picture ],
 		Q => [ 0, 1, \&parse_quote ],
-		%{ $_[0]->{local_syntax} // {} },
+		L => [ 1, 1, \&parse_link_syntax ],
 	);
-}
-
-sub local_syntax
-{
-	return $_[0]->{local_syntax} unless $#_;
-	my $self = shift;
-	$self->{local_syntax} = { @_ };
-}
-
-sub local_property
-{
-	return $_[0]->{local_property}->{$_[1]} if @_ == 2;
-	$_[0]->{local_property}->{$_[1]} = $_[2];
 }
 
 sub init_state
@@ -327,13 +343,21 @@ sub parse
 	my ( $self, $text ) = @_;
 	my (%stacks, @cmd_stack, @delim_stack );
 
+	@{$self->{link_urls}} = ();
+
 	my %commands = $self->commands;
 
 	my @tokens = split /([A-Z]<(?:<+\s+)?|\n\r*)/, $text;
 	my $block  = tb::block_create();
+
 	my $plaintext = '';
 
 	my $state = $self->init_state;
+	$$block[ tb::BLK_COLOR      ] = $state->{color};
+	$$block[ tb::BLK_BACKCOLOR  ] = $state->{backColor};
+	$$block[ tb::BLK_FONT_ID    ] = $state->{fontId};
+	$$block[ tb::BLK_FONT_SIZE  ] = $state->{fontSize};
+	$$block[ tb::BLK_FONT_STYLE ] = $state->{fontStyle};
 
 	while ( @tokens ) {
 		my $token = shift @tokens;
@@ -435,6 +459,8 @@ sub markup
 
 sub reparse    { $_[0]->markup( $_[0]-> markup ) }
 sub text_block { $_[0]->{block} }
+sub link_urls  { $_[0]->{link_urls} }
+sub has_links  { scalar( @{ $_[0]->{link_urls} } ) > 0 }
 
 sub acquire
 {
@@ -488,6 +514,12 @@ sub picturePalette
 	$self->{picturePalette} = $pp;
 }
 
+sub linkColor
+{
+	return $_[0]->{linkColor} unless $#_;
+	$_[0]->{linkColor} = $_[1];
+}
+
 sub text_wrap
 {
 	my ( $self, $canvas, $width, $opt, $indent) = @_;
@@ -512,7 +544,7 @@ sub text_wrap
 		my $b = $block->{block};
 		splice( @$b, tb::BLK_START, 0,
 			tb::color( $$b[tb::BLK_COLOR]),
-			tb::color( $$b[tb::BLK_BACKCOLOR]),
+			tb::backColor( $$b[tb::BLK_BACKCOLOR]),
 			tb::fontId( $$b[tb::BLK_FONT_ID]),
 			tb::fontSize( $$b[tb::BLK_FONT_SIZE] - $self->{baseFontSize}),
 			tb::fontStyle( $$b[tb::BLK_FONT_STYLE])
