@@ -384,7 +384,7 @@ sub block_walk_abort { shift->{blockWalk} = 1 }
 
 sub block_walk_defaults
 {
-	my ( $self, $block, %commands ) = @_;
+	my ( $self, %commands ) = @_;
 	my $canvas = $commands{canvas} // $self;
 	return (
 		textPtr      => $self->{text},
