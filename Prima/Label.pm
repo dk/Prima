@@ -104,60 +104,38 @@ sub on_paint
 		$canvas-> bar(0,0,@size);
 	}
 
-	my $fh = $canvas-> font-> height;
-	my $ta = $self-> {alignment};
-	my $ws = $self-> {words};
-
+	my $fh  = $canvas-> font-> height;
+	my $ws  = $self->{words};
+	my $wx  = $self->{start_x};
 	my $y   = $self->{start_y};
 	my $tl  = $self-> {tildeLine};
 	my $i;
 	my $paintLine = !$self-> {showAccelChar} && defined($tl) && $tl < scalar @{$ws};
 
-	my @wss = $self->shape_and_justify_text($canvas);
-	my $wx  = $self->{start_x};
-
 	unless ( $self-> enabled) {
 		$canvas-> color( $self-> light3DColor);
-		for ( $i = 0; $i < @wss; $i++) {
-			my $x = 0;
-			if ( $ta == ta::Center) {
-				$x = ( $size[0] - $$wx[$i]) / 2;
-			} elsif ( $ta == ta::Right) {
-				$x = $size[0] - $$wx[$i];
-			}
-			$canvas-> text_out( $wss[$i], $x + 1, $y - 1);
+		for ( $i = 0; $i < @$ws; $i++) {
+			$canvas-> text_out( $$ws[$i], $$wx[$i] + 1, $y - 1);
 			$y -= $fh;
 		}
-		$y   = $self->{start_y};
+		$y = $self->{start_y};
+
 		if ( $paintLine) {
-			my $x = 0;
-			if ( $ta == ta::Center) {
-				$x = ( $size[0] - $$wx[$tl]) / 2;
-			} elsif ( $ta == ta::Right) {
-				$x = $size[0] - $$wx[$tl];
-			}
+			my $x = $$wx[$i] + 1;
 			$canvas-> line(
-				$x + $self-> {tildeStart} + 1, $self->{start_y} - $fh * $tl - 1,
-				$x + $self-> {tildeEnd} + 1,   $self->{start_y} - $fh * $tl - 1
+				$x + $self-> {tildeStart}, $self->{start_y} - $fh * $tl - 1,
+				$x + $self-> {tildeEnd},   $self->{start_y} - $fh * $tl - 1
 			);
 		}
 	}
 
 	$canvas-> color( $clr[0]);
-	for ( $i = 0; $i < @wss; $i++) {
-		my $x = 0;
-		if ( $ta == ta::Center) {
-			$x = ( $size[0] - $$wx[$i]) / 2;
-		} elsif ( $ta == ta::Right) {
-			$x = $size[0] - $$wx[$i];
-		}
-		$canvas-> text_out( $wss[$i], $x, $y);
+	for ( $i = 0; $i < @$ws; $i++) {
+		$canvas-> text_out( $$ws[$i], $$wx[$i], $y);
 		$y -= $fh;
 	}
 	if ( $paintLine) {
-		my $x = 0;
-		if ( $ta == ta::Center) { $x = ( $size[0] - $$wx[$tl]) / 2; }
-		elsif ( $ta == ta::Right) { $x = $size[0] - $$wx[$tl]; }
+		my $x = $$wx[$i];
 		$canvas-> line(
 			$x + $self-> {tildeStart}, $self->{start_y} - $fh * $tl,
 			$x + $self-> {tildeEnd},   $self->{start_y} - $fh * $tl
@@ -174,15 +152,15 @@ sub set_text
 	$self-> check_auto_size;
 	undef $self->{link_handler};
 
-	if ( ref($text) ) {
-		$text = $self->SUPER::text;
+	if ( ref($_[1]) ) {
+		my $text = $self->SUPER::text;
 		$self->{link_handler} = Prima::Widget::Link->new(
 			markup => $text,
 			color  => $self->linkColor,
 		) if UNIVERSAL::isa($text, 'Prima::Drawable::Markup');
 	}
 
-	$self->reset_lines;
+	$self-> reset_lines;
 	$self-> repaint;
 }
 
@@ -256,7 +234,11 @@ sub on_size
 	my $self = shift;
 	return $self-> reset_lines unless $self->{autoHeight};
 
-	return if $self->{auto_height_adjustment};
+	if ($self->{auto_height_adjustment}) {
+		$self->reposition_lines;
+		return;
+	}
+
 	local $self->{auto_height_adjustment} = 1;
 	$self-> check_auto_size;
 }
@@ -303,10 +285,23 @@ sub reset_lines
 
 	$self-> {accel} = defined($self-> {tildeStart}) ? lc( $lastRef-> {tildeChar}) : undef;
 	splice( @{$lines}, $maxLines) if scalar @{$lines} > $maxLines && !$nomaxlines;
-	$self-> {words} = $lines;
 
+	$self->{words} = [$self->shape_and_justify_text($self, $lines)];
+	$self-> reposition_lines;
+
+	$self-> end_paint_info;
+}
+
+sub reposition_lines
+{
+	my $self = shift;
+
+	my $ps = $self->get_paint_state;
+	$self-> begin_paint_info if $ps == ps::Disabled;
+
+	my $ws = $self->{words};
 	my $fh = $self->font->height;
-	my ($starty,$ycommon) = (0, scalar @{$lines} * $fh);
+	my ($starty,$ycommon) = (0, scalar @$ws * $fh);
 	my @size = $self->size;
 
 	if ( $self-> {valignment} == ta::Top)  {
@@ -318,37 +313,44 @@ sub reset_lines
 	}
 	$self->{start_y} = $starty;
 
-	my @ws = $self->shape_and_justify_text($self);
-	my @wx = map { $self->get_text_width($_) } @ws;
+	my @wx;
+	if ( $self->{alignment} == ta::Left ) {
+		@wx = map { 0 } @$ws;
+	} else {
+		my $ta = $self->{alignment};
+		my @ww = map { $self->get_text_width($_) } @$ws;
+		for ( my $i = 0; $i < @$ws; $i++) {
+			my $x = 0;
+			if ( $ta == ta::Center) {
+				$x = ( $size[0] - $ww[$i]) / 2;
+			} elsif ( $ta == ta::Right) {
+				$x = $size[0] - $ww[$i];
+			}
+			push @wx, $x;
+		}
+	}
 	$self->{start_x} = \@wx;
 
 	if ($self->{link_handler}) {
 		my $ta = $self->{alignment};
 		my (@sx, @sy);
-		for ( my $i = 0; $i < @ws; $i++) {
-			my $x = 0;
-			if ( $ta == ta::Center) {
-				$x = ( $size[0] - $wx[$i]) / 2;
-			} elsif ( $ta == ta::Right) {
-				$x = $size[0] - $wx[$i];
-			}
-
-			my $b = $ws[$i]->block;
+		for ( my $i = 0; $i < @$ws; $i++) {
+			my $b = $$ws[$i]->block;
 			push @sx, $$b[tb::BLK_X];
 			push @sy, $$b[tb::BLK_Y];
-			$$b[tb::BLK_X] = $x;
+			$$b[tb::BLK_X] = $wx[$i];
 			$$b[tb::BLK_Y] = $starty;
 			$starty -= $fh;
 		}
-		$self->{link_handler}->reset_positions_markup(\@ws);
-		for ( my $i = 0; $i < @ws; $i++) {
-			my $b = $ws[$i]->block;
+		$self->{link_handler}->reset_positions_markup($ws);
+		for ( my $i = 0; $i < @$ws; $i++) {
+			my $b = $$ws[$i]->block;
 			$$b[tb::BLK_X] = $sx[$i];
 			$$b[tb::BLK_Y] = $sy[$i];
 		}
 	}
 
-	$self-> end_paint_info;
+	$self-> end_paint_info if $ps == ps::Disabled;
 }
 
 sub check_auto_size
@@ -476,11 +478,10 @@ sub textJustify
 
 sub shape_and_justify_text
 {
-	my ($self, $canvas) = @_;
+	my ($self, $canvas, $ws) = @_;
 
 	my @size = $canvas-> size;
 	my %justify = ( %{$self->textJustify}, rtl => $self->textDirection);
-	my $ws = $self->{words};
 	my @wss;
 
 	for ( my $i = 0; $i < @$ws; $i++) {
