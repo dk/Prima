@@ -129,12 +129,17 @@ sub on_linkpreview
 	my ( $self, $owner, $url ) = @_;
 
 	if ( $$url =~ m[^pod://(.*)] ) {
-		my $tx = $1;
-		if ( $tx =~ m/^([^\/]+)\/(.+)$/) {
-			$$url = \ "B<< $1 >> manpage, section B<< $2 >>";
-		} else {
-			$$url = "$tx manpage";
+		require Prima::PodView;
+		my $link = $1;
+		my $pod = Prima::PodView->new(
+			visible   => 0,
+			size      => [ map { $_ / 4 } $::application->size ],
+			topicView => $link =~ m[/],
+		);
+		if ( $pod->load_link($link, createIndex => 0) ) {
+			$$url = $pod->export_blocks;
 		}
+		$pod->destroy;
 	} elsif ( $url =~ m[^(ftp|https?)://]) {
 		# same
 	} else {

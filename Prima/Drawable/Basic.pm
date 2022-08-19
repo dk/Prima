@@ -395,6 +395,7 @@ sub text_shape_out
 sub get_text_shape_width
 {
 	my ( $self, $text, $flags) = @_;
+	Carp::confess unless defined $text;
 	my %flags = (skip_if_simple => 1);
 	$flags{rtl} = $flags & to::RTL if defined $flags;
 	if ( my $glyphs = $self->text_shape($text, %flags)) {

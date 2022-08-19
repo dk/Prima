@@ -892,7 +892,7 @@ sub new
 		direction     => 0,
 		fontmap       => [],
 		colormap      => [],
-		text          => '',
+		textRef       => \'',
 		textDirection => 0,
 		block         => undef,
 		resolution    => [72,72],
@@ -903,9 +903,15 @@ sub new
 }
 
 eval "sub $_ { \$#_ ? \$_[0]->{$_} = \$_[1] : \$_[0]->{$_}}" for qw(
-	fontmap colormap block text resolution direction
+	fontmap colormap block textRef resolution direction
 	baseFontSize baseFontStyle restoreCanvas textDirection
 );
+
+sub text
+{
+	return ${ $_[0]->{textRef} } unless $#_;
+	$_[0]->{textRef} = \ $_[1];
+}
 
 sub acquire {}
 
@@ -957,7 +963,7 @@ sub walk_options
 {
 	my $self = shift;
 	return
-		textPtr => \ $self->{text},
+		textPtr => $self->{textRef},
 		( map { ($_ , $self->{$_}) } qw(fontmap colormap resolution baseFontSize baseFontSize) ),
 		;
 }
@@ -1080,7 +1086,7 @@ sub text_wrap
 	# Ignored options: ExpandTabs, CalcTabs .
 
 	# first, we don't return chunks, period. That's too messy.
-	return $canvas-> text_wrap( $self-> {text}, $width, $opt, $indent)
+	return $canvas-> text_wrap( ${$self-> {textRef}}, $width, $opt, $indent)
 		if $opt & tw::ReturnChunks;
 
 	$self->acquire($canvas, font => 1);
@@ -1144,6 +1150,73 @@ sub height
 	my ( $self, $canvas ) = @_;
 	$self-> acquire( $canvas, dimensions => 1 );
 	return $self->{block}->[tb::BLK_HEIGHT];
+}
+
+package Prima::Drawable::PolyTextBlock;
+use base qw(Prima::Drawable::TextBlock);
+
+
+sub new
+{
+	my ($class, %opt) = @_;
+	my $self = $class->SUPER::new(%opt);
+	$self->{blocks} //= [];
+	return $self;
+}
+
+sub blocks { $_[0]->{blocks} }
+
+sub for_blocks
+{
+	my ( $self, $cb ) = @_;
+	for my $b ( @{ $self->{blocks} }) {
+		$self->{block} = $b;
+		$cb->(@_);
+	}
+}
+
+sub calculate_dimensions
+{
+	my ( $self, $canvas ) = @_;
+	$self-> for_blocks( sub {
+		$self-> SUPER::calculate_dimensions( $canvas );
+	} );
+}
+
+sub text_out
+{
+	my ($self, $canvas, $x, $y) = @_;
+	$self-> for_blocks( sub {
+		$self-> SUPER::text_out( $canvas, $x, $y );
+	});
+}
+
+sub get_text_width
+{
+	my ( $self, $canvas, $add_overhangs) = @_;
+
+	my $max = 0;
+	$self-> for_blocks( sub {
+		my $x = $self-> SUPER::get_text_width( $canvas, $add_overhangs );
+		$max = $x if $max < $x;
+	} );
+	return $max;
+}
+
+sub get_text_box
+{
+	# unimplemented
+}
+
+sub text_wrap
+{
+	my ( $self, $canvas, $width, $opt, $indent) = @_;
+	my @ret;
+	$self-> for_blocks( sub {
+		my $x = $self-> SUPER::text_wrap( $canvas, $width, $opt, $indent);
+		push @ret, @$x;
+	} );
+	return \@ret;
 }
 
 1;
