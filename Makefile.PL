@@ -2367,7 +2367,7 @@ sub command_bindist
 		my $f = "$File::Find::dir/$_";
 		return if $f =~ /include.generic|\.git|\.swp|\.log|blib|dll.base|dll.exp|Prima.bs|Prima.def/;
 		return if $f =~ /\.(c|cls|h)$/i;
-		return if $f =~ /$CWD.(img|include|win32|unix|Makefile.old)/i;
+		return if $f =~ /$CWD.(img|include|win32|unix|api|class|Makefile.old)/i;
 		if ( -d $f) {
 			$f =~ s/^$CWD/$DISTNAME/;
 			push @dirs, $f;
