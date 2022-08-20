@@ -417,7 +417,7 @@ sub load_link
 	if ( defined $t) {
 		if ( $t = $self-> {topics}-> [$t]) {
 			if ( $self-> {topicView}) {
-				$self-> select_topic($t);
+				$self-> select_topic($t, %opt);
 			} else {
 				$self-> select_text_offset(
 					$self-> {model}-> [ $$t[ T_MODEL_START]]-> [ M_TEXT_OFFSET]
@@ -447,19 +447,21 @@ sub link_click
 # so must be called with care
 sub select_topic
 {
-	my ( $self, $t) = @_;
+	my ( $self, $t, %opt) = @_;
 	my @mr1 = @{$self-> {modelRange}};
 	if ( defined $t) {
 		$self-> {modelRange} = [
 			$$t[ T_MODEL_START],
 			$$t[ T_MODEL_END],
 			$$t[ T_LINK_OFFSET]
-		]
+		];
 	} else {
 		$self-> {modelRange} = [ 0, scalar @{$self-> {model}} - 1, 0 ]
 	}
-	my @mr2 = @{$self-> {modelRange}};
 
+	return unless $opt{format} // 1;
+
+	my @mr2 = @{$self-> {modelRange}};
 	if ( grep { $mr1[$_] != $mr2[$_] } 0 .. 2) {
 		$self-> lock;
 		$self-> topLine(0);
@@ -697,8 +699,8 @@ sub open_read
 		wrapindent    => 0,
 
 		topicStack    => [[-1]],
-		ignoreFormat  => 0,
 
+		format        => 1,
 		createIndex   => 1,
 		encoding      => undef,
 		bom           => undef,
@@ -989,7 +991,10 @@ sub close_read
 	$self-> add_verbatim_mark(0);
 	$self-> {contents}-> [0]-> references( $self-> {links});
 
-	goto NO_INDEX unless $self-> {readState}-> {createIndex};
+	unless ($self-> {readState}-> {createIndex}) {
+		$self-> _close_topic( STYLE_HEAD_1);
+		goto NO_INDEX;
+	}
 
 	my $secid = 0;
 	my $msecid = scalar(@{$self-> {topics}});
@@ -1000,6 +1005,7 @@ sub close_read
 			0, scalar @{$self-> {model}} - 1,
 			"Document", STYLE_HEAD_1, 0, 0
 		] if scalar @{$self-> {model}} > 2; # no =head's, but some info
+		$self-> _close_topic( STYLE_HEAD_1);
 		goto NO_INDEX;
 	}
 
@@ -1108,7 +1114,7 @@ NO_INDEX:
 
 	my $topic;
 	$topic = $self-> {topics}-> [$msecid] if $topicView and defined $msecid;
-	$self-> select_topic( $topic);
+	$self-> select_topic( $topic, format => $r->{format} );
 
 	$self-> notify(q(NewPage));
 
@@ -1575,6 +1581,7 @@ sub add_code_div
 	$$b[tb::BLK_HEIGHT] = $h;
 	$$b[tb::BLK_TEXT_OFFSET] = -1;
 	$style = TDIVSTYLE_OUTLINE if $self->{formatData}->{exportable};
+
 	push @$b,
 		tb::code( \&paint_code_div, [$style, $w, $h, $self->{defaultFontSize} * 2 * $self->{resolution}->[0] / 96.0]),
 		tb::extend($w, $h);
@@ -1605,6 +1612,8 @@ sub format_chunks
 		my $m = $self-> {model}-> [$mid];
 
 		if (( $m->[M_TYPE] & T_TYPE_MASK) == T_DIV ) {
+			next if $self->{formatData}->{exportable};
+
 			if ( $m->[MDIV_TAG] == TDIVTAG_OPEN) {
 				$f->{verbatim} = scalar @{ $self->{blocks} };
 			} else {
@@ -1940,20 +1949,50 @@ sub text_range
 	return @range;
 }
 
+sub _is_block_prunable
+{
+	my ( $self, $b ) = @_;
+
+	my $semaphore;
+	tb::walk( $b,
+		trace     => tb::TRACE_TEXT,
+		textPtr   => $self->textRef,
+		semaphore => \ $semaphore,
+		code      => sub { $semaphore++ },
+		text      => sub { $semaphore++ if pop =~ /\S/ },
+	);
+	return !$semaphore;
+}
+
 sub export_blocks
 {
-	my $self = shift;
-	$self->format(sync => 1, exportable => 1);
+	my ($self, %opt) = @_;
 	my %save;
-	$save{$_} = $self->{$_} for qw(blocks contents);
-	my $ret = Prima::Drawable::PolyTextBlock->new(
-		blocks   => $self->{blocks},
+	$save{$_} = $self->{$_} for qw(blocks contents modelRange);
+
+	if ( $opt{trim_header}) {
+		# remove section header, display pure content
+		$self->{modelRange} = [ @{ $self->{modelRange} } ];
+		$self->{modelRange}->[T_MODEL_START] += 2;
+	}
+
+	$self->format(sync => 1, exportable => 1);
+	my @b = @{ $self->{blocks} };
+	$self->{$_} = $save{$_} for qw(blocks contents modelRange);
+	return unless @b;
+
+	if ( $opt{trim_footer}) {
+		# prune empty tails
+		pop @b while @b && $self->_is_block_prunable($b[-1]);
+		return unless @b;
+	}
+
+	return Prima::Drawable::PolyTextBlock->new(
+		blocks   => \@b,
 		fontmap  => $self->{fontPalette},
 		colormap => $self->{colorMap},
 		textRef  => $self->textRef,
 	);
-	$self->{$_} = $save{$_} for qw(blocks contents);
-	return $ret;
 }
 
 %HTML_Escapes = (
