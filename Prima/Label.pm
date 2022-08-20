@@ -135,7 +135,7 @@ sub on_paint
 		$y -= $fh;
 	}
 	if ( $paintLine) {
-		my $x = $$wx[$i];
+		my $x = $$wx[$tl];
 		$canvas-> line(
 			$x + $self-> {tildeStart}, $self->{start_y} - $fh * $tl,
 			$x + $self-> {tildeEnd},   $self->{start_y} - $fh * $tl
