@@ -210,7 +210,7 @@ sub _debug_block
 	} elsif ( $color & COLOR_INDEX) {
 		$color = "index(" . ( $color & ~COLOR_INDEX) . ")";
 	} else {
-		$color = sprintf("%06x", $color);
+		$color = sprintf("%06x", $color & 0xffffff);
 	}
 	print STDERR "COLORS     : $color ";
 	$color = $$b[BLK_BACKCOLOR];
@@ -219,7 +219,7 @@ sub _debug_block
 	} elsif ( $color & COLOR_INDEX) {
 		$color = "index(" . ( $color & ~COLOR_INDEX) . ")";
 	} else {
-		$color = sprintf("%06x", $color);
+		$color = sprintf("%06x%s", $color & 0xffffff, ($color & BACKCOLOR_OFF) ? ',transparent' : '');
 	}
 	print STDERR "$color\n";
 	my %opval = reverse %opnames;
@@ -267,6 +267,10 @@ sub _debug_block
 			if ( $color & BACKCOLOR_FLAG ) {
 				$bk = 'backcolor,';
 				$color &= ~BACKCOLOR_FLAG;
+			}
+			if ( $color & BACKCOLOR_OFF ) {
+				$bk = 'transparent,';
+				$color &= ~BACKCOLOR_OFF;
 			}
 			if ( $color & COLOR_INDEX) {
 				$color = "index(" . ( $color & ~COLOR_INDEX) . ")";
@@ -1168,17 +1172,23 @@ sub blocks { $_[0]->{blocks} }
 
 sub for_blocks
 {
-	my ( $self, $cb ) = @_;
+	my ( $self, $canvas, $cb ) = @_;
+
+	my $ps = $canvas ? $canvas->get_paint_state : ps::Enabled;
+	$canvas->begin_paint_info if $ps == ps::Disabled;
+
 	for my $b ( @{ $self->{blocks} }) {
 		$self->{block} = $b;
 		$cb->(@_);
 	}
+
+	$canvas->end_paint_info if $ps == ps::Disabled;
 }
 
 sub calculate_dimensions
 {
 	my ( $self, $canvas ) = @_;
-	$self-> for_blocks( sub {
+	$self-> for_blocks( $canvas, sub {
 		$self-> SUPER::calculate_dimensions( $canvas );
 	} );
 }
@@ -1186,8 +1196,10 @@ sub calculate_dimensions
 sub text_out
 {
 	my ($self, $canvas, $x, $y) = @_;
-	$self-> for_blocks( sub {
-		$self-> SUPER::text_out( $canvas, $x, $y );
+	$self-> for_blocks( $canvas, sub {
+		my $b = $self->{block};
+		$self-> SUPER::text_out( $canvas, $x, $y);
+		$y -= $$b[tb::BLK_HEIGHT];
 	});
 }
 
@@ -1196,7 +1208,7 @@ sub get_text_width
 	my ( $self, $canvas, $add_overhangs) = @_;
 
 	my $max = 0;
-	$self-> for_blocks( sub {
+	$self-> for_blocks( $canvas, sub {
 		my $x = $self-> SUPER::get_text_width( $canvas, $add_overhangs );
 		$max = $x if $max < $x;
 	} );
@@ -1205,14 +1217,14 @@ sub get_text_width
 
 sub get_text_box
 {
-	# unimplemented
+	# XXX unimplemented - todo
 }
 
 sub text_wrap
 {
 	my ( $self, $canvas, $width, $opt, $indent) = @_;
 	my @ret;
-	$self-> for_blocks( sub {
+	$self-> for_blocks( $canvas, sub {
 		my $x = $self-> SUPER::text_wrap( $canvas, $width, $opt, $indent);
 		push @ret, @$x;
 	} );

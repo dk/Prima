@@ -129,15 +129,20 @@ sub on_linkpreview
 	my ( $self, $owner, $url ) = @_;
 
 	if ( $$url =~ m[^pod://(.*)] ) {
+		$$url = undef;
+
 		require Prima::PodView;
 		my $link = $1;
+		my $topicView = ($link =~ m[/]) ? 1 : 0;
 		my $pod = Prima::PodView->new(
 			visible   => 0,
-			size      => [ map { $_ / 4 } $::application->size ],
-			topicView => $link =~ m[/],
+			size      => [ Prima::HintWidget-> max_extents ],
+			topicView => $topicView,
 		);
-		if ( $pod->load_link($link, createIndex => 0) ) {
-			$$url = $pod->export_blocks;
+		if ( $pod->load_link($link, createIndex => 0, format => 0) ) {
+			if ( my $polyblock = $pod->export_blocks( trim_footer => 1, trim_header => $topicView ) ) {
+				$$url = $polyblock;
+			}
 		}
 		$pod->destroy;
 	} elsif ( $url =~ m[^(ftp|https?)://]) {
@@ -185,10 +190,12 @@ sub on_mousemove
 	if ( $is_hand ) {
 		my $hint =$self-> {references}-> [$r];
 		$self-> on_linkpreview( $owner, \$hint);
+		goto NO_HINT unless length($hint // '');
 		$owner->hint( $hint );
 		$owner->showHint(1);
 		$::application->set_hint_action($owner, 1, 1);
 	} else {
+	NO_HINT:
 		$owner->hint('');
 		$owner->showHint(0);
 	}

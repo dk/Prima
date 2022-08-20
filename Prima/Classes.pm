@@ -2022,6 +2022,8 @@ sub profile_default
 	return $def;
 }
 
+sub max_extents { map { $_ / 2 } $::application->size }
+
 sub on_change
 {
 	my $self = $_[0];
@@ -2031,11 +2033,13 @@ sub on_change
 		my $x = $self-> get_text_width( $_);
 		$maxLn = $x if $maxLn < $x;
 	}
-	my @sz = (
-		$maxLn + 6,
-		( $self-> font-> height * scalar @ln) + 2
-	);
-	my @as = map { $_ / 4 } $::application->size;
+	my @sz = ( $maxLn + 6, 2);
+	if ( ref($ln[0])) {
+		$sz[1] += $_ for map { $_->height } @ln;
+	} else {
+		$sz[1] += $self-> font-> height * @ln;
+	}
+	my @as = $self->max_extents;
 	for (0,1) {
 		$sz[$_] = $as[$_] if $sz[$_] > $as[0];
 	}
@@ -2048,12 +2052,12 @@ sub on_paint
 	my @size = $canvas-> size;
 	$canvas-> clear( 1, 1, $size[0]-2, $size[1]-2);
 	$canvas-> rectangle( 0, 0, $size[0]-1, $size[1]-1);
-	my $fh = $canvas-> font-> height;
-	my ( $x, $y) = ( 3, $size[1] - 1 - $fh);
-	my @ln = $canvas->text_split_lines($self->text);
-	for ( @ln) {
+
+	my @ln = $canvas->text_split_lines($self->text) or return;
+	my ($x, $y, $fh) = ( 3, $size[1] - 1, $self->font->height);
+	for (@ln) {
+		$y -= ref ? $_->height : $fh;
 		$canvas-> text_shape_out( $_, $x, $y);
-		$y -= $fh;
 	}
 }
 

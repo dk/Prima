@@ -225,6 +225,13 @@ sub on_mousemove
 		if $self->{link_handler};
 }
 
+sub on_mouseleave
+{
+	my ( $self) = @_;
+	$self->{link_handler}->on_mousemove($self, 0, 0, 0, -1, -1)
+		if $self->{link_handler};
+}
+
 sub on_fontchanged
 {
 	$_[0]-> check_auto_size;
