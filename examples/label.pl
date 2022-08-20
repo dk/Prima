@@ -6,32 +6,57 @@ examples/label.pl - Prima label widget
 
 =head1 FEATURES
 
-Demonstrates the basic usage of a Prima toolkit
-and L<Prima::Label> class capabilites, in particular
-text wrapping.
+Demonstrates the basic usage of a Prima toolkit and L<Prima::Label> class
+capabilites, in particular text wrapping and links.
+
+=head1 Misc
+
+=over
+
+=item tooltip
+
+=over
+
+=item *
+
+This is tooltip text. It is shown as a preview
+
+=item *
+
+The tooltip mechanics respect native B<pod> I<formatting> .
+
+=back
+
+=back
 
 =cut
 
 use strict;
 use warnings;
-use Prima;
-use Prima::Const;
-use Prima::Buttons;
-use Prima::Label;
-use Prima::Application;
+use Prima qw(InputLine Label MsgBox Application);
 
 my $w = Prima::MainWindow-> create(
-	size => [ 430, 200],
+	size => [ 600, 200],
 	text => "Static texts",
 	designScale => [7, 16],
 );
 
-my $b1 = $w->insert( Button => left => 20 => bottom => 0);
+my $b1 = $w->insert( InputLine =>
+	left => 20,
+	bottom => 10,
+	width => 80,
+	text => 'Press Alt-L to have me focused',
+);
+$w->insert( InputLine =>
+	left => 120,
+	bottom => 10,
+	width => 80,
+	text => '',
+);
 
 $w->insert( Label =>
-# font => { height => 24},
-	origin => [ 20, 50],
-	text => "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et ".
+	origin => [ 20, 60],
+	text => "~Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et ".
 "dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo ".
 "consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. ".
 "Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
@@ -44,22 +69,40 @@ $w->insert( Label =>
 	textJustify => 1,
 );
 
-my $b2 = $w->insert( Button =>
-	left => 320,
-	bottom => 0,
-	growMode => gm::GrowLoX,
+$w->insert(
+	Label      => origin   => [ 260, 140],
+	size       => [300, 36],
+	wordWrap   => 1,
+	text       => \ "Label with a L<tip://$0/tooltip|tooltip> - click does not function",
+	growMode   => gm::GrowLoX,
 );
 
 $w->insert(
-	Label      => origin   => [ 320, 50],
-	text       => 'Disab~led',
-	focusLink  => $b2,
+	Label      => origin   => [ 260, 100],
+	size       => [300, 36],
+	wordWrap   => 1,
+	text       => \ "Label with a L<pod://$0/FEATURES|pod> - both click and preview work and a L<http://prima.eu.org/|http link>",
+	growMode   => gm::GrowLoX,
+);
+
+$w->insert(
+	Label      => origin   => [ 260, 60],
+	size       => [300, 36],
+	wordWrap   => 1,
+	text       => \ "Label with L<custom link|custom stuff> - both click and preview are overloadable",
+	growMode   => gm::GrowLoX,
+	onLink     => sub { message($_[1]) },
+	onLinkPreview => sub { ${$_[1]} = localtime },
+);
+
+$w->insert(
+	Label      => origin   => [ 260, 20],
+	text       => 'Disab~led label',
 	autoHeight => 1,
 	enabled    => 0,
 	growMode   => gm::GrowLoX,
 	textJustify => 1,
 );
-
 
 run Prima;
 

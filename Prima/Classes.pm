@@ -2035,7 +2035,7 @@ sub on_change
 	}
 	my @sz = ( $maxLn + 6, 2);
 	if ( ref($ln[0])) {
-		$sz[1] += $_ for map { $_->height } @ln;
+		$sz[1] += $_ for map { $_->height($self) } @ln;
 	} else {
 		$sz[1] += $self-> font-> height * @ln;
 	}
@@ -2056,7 +2056,7 @@ sub on_paint
 	my @ln = $canvas->text_split_lines($self->text) or return;
 	my ($x, $y, $fh) = ( 3, $size[1] - 1, $self->font->height);
 	for (@ln) {
-		$y -= ref ? $_->height : $fh;
+		$y -= ref ? $_->height($canvas) : $fh;
 		$canvas-> text_shape_out( $_, $x, $y);
 	}
 }

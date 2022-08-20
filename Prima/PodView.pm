@@ -1972,19 +1972,23 @@ sub export_blocks
 	if ( $opt{trim_header}) {
 		# remove section header, display pure content
 		$self->{modelRange} = [ @{ $self->{modelRange} } ];
-		$self->{modelRange}->[T_MODEL_START] += 2;
+		$self->{modelRange}->[T_MODEL_START]++;
 	}
 
 	$self->format(sync => 1, exportable => 1);
 	my @b = @{ $self->{blocks} };
 	$self->{$_} = $save{$_} for qw(blocks contents modelRange);
-	return unless @b;
 
+	if ( $opt{trim_header}) {
+		# prune empty geads
+		shift @b while @b && $self->_is_block_prunable($b[0]);
+		return unless @b;
+	}
 	if ( $opt{trim_footer}) {
 		# prune empty tails
 		pop @b while @b && $self->_is_block_prunable($b[-1]);
-		return unless @b;
 	}
+	return unless @b;
 
 	return Prima::Drawable::PolyTextBlock->new(
 		blocks   => \@b,
