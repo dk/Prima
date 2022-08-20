@@ -347,9 +347,8 @@ sub load_link
 	unless ( defined $t) { # page / section / item
 		my ( $page, $section, $item, $lead_slash) = ( '', '', 1, '');
 		my $default_topic = 0;
-
-		if ( $s =~ /^file:\/\/(.*)$/) {
-			$page = $1;
+		if ( $s =~ /^file:\/\/(.*?)(?:\|([^\/]*))?$/) {
+			($page, $section) = ($1, $2 // '');
 		} elsif ( $s =~ m{^([:\w]+)/?$} ) {
 			$page = $1;
 		} elsif ( $s =~ /^([^\/]*)(\/)(.*)$/) {

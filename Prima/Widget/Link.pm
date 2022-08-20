@@ -15,7 +15,7 @@ sub new
 	my $class = shift;
 	my %profile = @_;
 	my $self = {
-		last_link_pointer => -1,
+		last_link_pointer => [-1, cr::Default],
 	};
 	bless( $self, $class);
 	$self-> {$_} = $profile{$_} ? $profile{$_} : []
@@ -116,9 +116,16 @@ sub on_link
 	my ( $self, $owner, $url, $btn, $mod ) = @_;
 
 	if ( $url =~ m[^pod://(.*)] ) {
-		$self->open_podview($1, $btn, $mod);
+		my $link = $1;
+		# if it is a path or module? 
+		if ( $link !~ /::/ && $link =~ m/^(.*?)\/([^\/]*)$/) {
+			$link = "file://$1|$2";
+		}
+		$self->open_podview($link, $btn, $mod);
 	} elsif ( $url =~ m[^(ftp|https?)://]) {
 		$self->open_browser($url, $btn, $mod);
+	} elsif ( $url =~ m[^tip://]) {
+		# nothing
 	} else {
 		$owner->notify(q(Link), $url, $btn, $mod);
 	}
@@ -128,19 +135,25 @@ sub on_linkpreview
 {
 	my ( $self, $owner, $url ) = @_;
 
-	if ( $$url =~ m[^pod://(.*)] ) {
+	if ( $$url =~ m[^(pod|tip)://(.*)] ) {
 		$$url = undef;
 
 		require Prima::PodView;
-		my $link = $1;
+		my ($tip, $link) = ($1 eq 'tip', $2);
 		my $topicView = ($link =~ m[/]) ? 1 : 0;
+
+		# if it is a path or module? 
+		if ( $link !~ /::/ && $link =~ m/^(.*?)\/([^\/]*)$/) {
+			$link = "file://$1|$2";
+		}
+
 		my $pod = Prima::PodView->new(
 			visible   => 0,
 			size      => [ Prima::HintWidget-> max_extents ],
 			topicView => $topicView,
 		);
 		if ( $pod->load_link($link, createIndex => 0, format => 0) ) {
-			if ( my $polyblock = $pod->export_blocks( trim_footer => 1, trim_header => $topicView ) ) {
+			if ( my $polyblock = $pod->export_blocks( trim_footer => 1, trim_header => $topicView || $tip) ) {
 				$$url = $polyblock;
 			}
 		}
@@ -169,26 +182,29 @@ sub on_mousemove
 	my $r = $self-> contains( $x, $y);
 	$self->{owner_pointer} //= $owner->pointer;
 	$r = $self->rectangles->[$r]->[4] if $r >= 0;
-	return if $r == $self-> {last_link_pointer};
+	return if $r == $self-> {last_link_pointer}->[0];
 
-	my $was_hand = ($self->{last_link_pointer} >= 0) ? 1 : 0;
-	my $is_hand  = ($r >= 0) ? 1 : 0;
-	if ( $is_hand != $was_hand) {
-		$owner-> pointer( $is_hand ? cr::Hand : $self->{owner_pointer} );
-		delete $self->{owner_pointer} unless $is_hand;
+	my $url     = ($r >= 0) ? $self->references->[$r] : '';
+	my $new_ptr = ($r >= 0) ? (($url =~ /^tip:/ ? cr::QuestionArrow : cr::Hand)) : cr::Default;
+	my $old_ptr = $self->{last_link_pointer}->[1];
+	if ( $new_ptr != $old_ptr ) {
+		$owner-> pointer(( $new_ptr == cr::Default) ? $self->{owner_pointer} : $new_ptr);
+		delete $self->{owner_pointer} if $new_ptr == cr::Default;
 	}
 
 	my $rr = $self->rectangles;
-	my $or = $self->{last_link_pointer};
-	$self-> {last_link_pointer} = $r;
-	return if $was_hand == $is_hand;
+	my $or = $self->{last_link_pointer}->[0];
+	$self-> {last_link_pointer} = [$r, $new_ptr];
 
-	my $rx = $was_hand ? $or : $r;
-	for my $rc ( $self->filter_rectangles_by_link_id( $rx )) {
+	for my $rc (
+		($or < 0) ? () : $self->filter_rectangles_by_link_id( $or ),
+		($r  < 0) ? () : $self->filter_rectangles_by_link_id( $r  ),
+	) {
 		$owner-> invalidate_rect($rc->[0] + $dx, $rc->[1] + $dy, $rc->[2] + $dx, $rc->[3] + $dy);
 	}
-	if ( $is_hand ) {
-		my $hint =$self-> {references}-> [$r];
+
+	if ( $r >= 0 ) {
+		my $hint = $self-> {references}-> [$r];
 		$self-> on_linkpreview( $owner, \$hint);
 		goto NO_HINT unless length($hint // '');
 		$owner->hint( $hint );
@@ -211,9 +227,14 @@ sub on_paint
 	$canvas->graphic_context( sub {
 		$canvas-> color( $self->color );
 		$canvas-> translate(0,0);
-		for my $rc ( $self->filter_rectangles_by_link_id( $self->{last_link_pointer} )) {
+
+		my $tip = ($self->references->[$self->{last_link_pointer}->[0]] // '') =~ /^tip:/;
+		$canvas-> linePattern($tip ? lp::ShortDash : lp::Solid);
+
+		for my $rc ( $self->filter_rectangles_by_link_id( $self->{last_link_pointer}->[0] )) {
 			$canvas-> line( $rc->[0] + $dx, $rc->[1] + $dy, $rc->[2] + $dx, $rc->[1] + $dy);
 		}
+
 	});
 }
 
