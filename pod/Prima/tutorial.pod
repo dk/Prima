@@ -420,7 +420,7 @@ Second, add an invocation code, possibly inside a menu:
 		$::application-> open_help("file://$0|DESCRIPTION");
 	}],
 
-C<open_help> can also take a standard C<< L<link> >> syntax so for example
+C<open_help> can also take a standard C<< LE<lt>linkE<gt> >> syntax so for example
 
    open_help("My::Module/help")
 

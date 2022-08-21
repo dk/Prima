@@ -338,8 +338,8 @@ and displays it as a hint.
 The idea behind this feature is to collect all tootip cards in a pod section, and referencing them
 in a text like in the example code in L<SYNOPSIS> above.
 
-Syntax: C<< L<tip://FILEPATH_OR_MODULE/SECTION> >> or
-C<< L<tip://FILEPATH_OR_MODULE> >> where C<FILEPATH_OR_MODULE> can refer either to
+Syntax: C<< LE<lt>tip://FILEPATH_OR_MODULE/SECTIONE<gt> >> or
+C<< LE<lt>tip://FILEPATH_OR_MODULEE<gt> >> where C<FILEPATH_OR_MODULE> can refer either to
 a file (path with slashes/backslashes) or a perl module (with C<::>s ).
 
 Tooltip text, when selected, is underscored by a dashed line, vs all other link types that
@@ -350,8 +350,8 @@ draw solid line.
 These links both diplay a pod section preview, like the toolkip, but also open a pod viewer
 with the referred section when clicked on. 
 
-Syntax: C<< L<pod://FILEPATH_OR_MODULE/SECTION >> or
-C<< L<tip://FILEPATH_OR_MODULE> >> where C<FILEPATH_OR_MODULE> can refer either to
+Syntax: C<< LE<lt>tip://FILEPATH_OR_MODULE/SECTIONE<gt> >> or
+C<< LE<lt>tip://FILEPATH_OR_MODULEE<gt> >> where C<FILEPATH_OR_MODULE> can refer either to
 a file (path with slashes/backslashes) or a perl module (with C<::>s ).
 
 =head2 Hyperlinks
@@ -376,9 +376,9 @@ The owner might also want to overload link events, see below.
 
 =head1 Markup
 
-L<Prima::Drawable::Markup> understands the C<< L<..|..> >> command, which is, unlike perlpod, is formatted
-with its arguments reversed, to stay consistent with the other markup commands (i e it is C<< L<http://google.com|search> >>,
-not C<< L<search|http://google.com> >> .
+L<Prima::Drawable::Markup> understands the C<< LE<lt>..|..E<gt> >> command, which is, unlike perlpod, is formatted
+with its arguments reversed, to stay consistent with the other markup commands (i e it is C<< LE<lt>http://google.com|searchE<gt> >>,
+not C<< LE<lt>search|http://google.comE<gt> >> .
 
 The simple way to incorporate rich text in both widget and link handler is to
 use C<Prima::Drawable::Markup> to handle the markup parsing, and use the
