@@ -401,7 +401,7 @@ typedef struct {
 typedef struct {
 	int            type;
 	LOGBRUSH       logbrush;
-	COLORREF       back_color;
+	COLORREF       color, back_color;
 	FillPattern    fill_pattern;
 } RQBrush, *PRQBrush;
 

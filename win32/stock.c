@@ -282,7 +282,7 @@ select_brush( Handle self)
 	Bool mono_workaround = false;
 
 	/* image brush is not cacheable */
-	fg = sys rq_pen.logpen.lopnColor;
+	fg = sys rq_brush.color;
 	if ( var fillPatternImage ) {
 		b.lbHatch = (LONG_PTR) 0;
 
@@ -331,8 +331,9 @@ select_brush( Handle self)
 	key.type = DCO_BRUSH;
 	if (( ret = stylus_fetch( &key )) == NULL)
 		return false;
-	if ( ret-> handle )
+	if ( ret-> handle ) {
 		goto SUCCESS;
+	}
 
 	/* create new one */
 	b = key.logbrush;
@@ -448,7 +449,7 @@ select_gp_brush(Handle self)
 
 	memset(&key, 0, sizeof(key));
 	key.type = DCO_GP_BRUSH;
-	fg = sys rq_pen.logpen.lopnColor;
+	fg = sys rq_brush.color;
 	bg = sys rq_brush.back_color;
 	b = (fg >> 16) & 0xff;
 	g = (fg & 0xff00) >> 8;

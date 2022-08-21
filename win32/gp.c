@@ -1287,6 +1287,7 @@ apc_gp_set_color( Handle self, Color color)
 		if ( pal_ok) clr = palette_match( self, clr);
 		sys rq_pen.logpen.lopnColor   = ( COLORREF) clr;
 		sys rq_brush.logbrush.lbColor = ( COLORREF) (( sys rq_brush.logbrush.lbStyle == BS_DIBPATTERNPT) ? 0 : clr);
+		sys rq_brush.color            = ( COLORREF) clr;
 		STYLUS_FREE_PEN;
 		STYLUS_FREE_GP_PEN;
 		STYLUS_FREE_TEXT;
