@@ -141,7 +141,7 @@ sub on_paint
 			$x + $self-> {tildeEnd},   $self->{start_y} - $fh * $tl
 		);
 	}
-	$self->{link_handler}->on_paint( $self, 0, 0, $canvas )
+	$self->{link_handler}->on_paint( $self, $canvas )
 		if $self->{link_handler};
 }
 
@@ -187,9 +187,6 @@ sub on_translateaccel
 	}
 }
 
-sub on_link {}
-sub on_linkpreview {}
-
 sub on_click
 {
 	my ( $self, $f) = ( $_[0], $_[0]-> {focusLink});
@@ -214,21 +211,21 @@ sub on_mousedown
 {
 	my ( $self, $btn, $mod, $x, $y) = @_;
 	$self-> clear_event;
-	return if $self->{link_handler} && $self->{link_handler}->on_mousedown($self, 0, 0, $btn, $mod, $x, $y);
+	return if $self->{link_handler} && $self->{link_handler}->on_mousedown($self, $btn, $mod, $x, $y);
 	$self-> notify( 'Click');
 }
 
 sub on_mousemove
 {
 	my ( $self, $mod, $x, $y) = @_;
-	$self->{link_handler}->on_mousemove($self, 0, 0, $mod, $x, $y)
+	$self->{link_handler}->on_mousemove($self, $mod, $x, $y)
 		if $self->{link_handler};
 }
 
 sub on_mouseleave
 {
 	my ( $self) = @_;
-	$self->{link_handler}->on_mousemove($self, 0, 0, 0, -1, -1)
+	$self->{link_handler}->on_mousemove($self, 0, -1, -1)
 		if $self->{link_handler};
 }
 

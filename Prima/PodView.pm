@@ -1,69 +1,12 @@
-use strict;
-use warnings;
-use Prima;
-use Config;
-use Prima::Utils;
-use Prima::TextView;
-use Encode;
-
-package Prima::PodView::Link;
-use vars qw(@ISA);
-@ISA = qw( Prima::TextView::EventRectangles Prima::TextView::EventContent );
-
-sub on_mousedown
-{
-	my ( $self, $owner, $btn, $mod, $x, $y) = @_;
-	my $r = $self-> contains( $x, $y);
-	return 1 if $r < 0;
-	$r = $self-> {rectangles}-> [$r];
-	$r = $self-> {references}-> [$$r[4]];
-	$owner-> link_click( $r, $btn, $mod, $x, $y);
-	return 0;
-}
-
-sub on_mousemove
-{
-	my ( $self, $owner, $mod, $x, $y) = @_;
-	my $r = $self-> contains( $x, $y);
-	if ( $r != $owner-> {lastLinkPointer}) {
-		my $was_hand = ($owner->{lastLinkPointer} >= 0) ? 1 : 0;
-		my $is_hand  = ($r >= 0) ? 1 : 0;
-		if ( $is_hand != $was_hand) {
-			$owner-> pointer( $is_hand ? cr::Hand : cr::Text );
-		}
-		my $rr = $self->rectangles;
-		my ($dx, $dy) = $owner->point2screen(0,0);
-		my $or = $owner->{lastLinkPointer};
-		$owner-> {lastLinkPointer} = $r;
-		if ( $was_hand ) {
-			$or = $rr->[$or];
-			$owner-> invalidate_rect($or->[0] + $dx, $dy - $or->[1], $or->[2] + $dx, $dy - $or->[3])
-				if $or;
-		}
-		if ( $is_hand ) {
-			$or = $rr->[$r];
-			$owner-> invalidate_rect($or->[0] + $dx, $dy - $or->[1], $or->[2] + $dx, $dy - $or->[3])
-				if $or;
-		}
-	}
-}
-
-sub on_paint
-{
-	my ( $self, $owner, $canvas, $ci ) = @_;
-	my ($dx, $dy) = $owner->point2screen(0,0);
-	my $r  = $self->rectangles->[ $owner->{lastLinkPointer} ];
-	return unless defined($r) && defined ($r->[0]);
-	my $c  = $canvas-> color;
-	$canvas-> color( $owner-> {colorMap}->[ $ci ]);
-	$canvas-> translate(0,0);
-	$canvas-> line( $r->[0] + $dx, $dy - $r->[3], $r->[2] + $dx, $dy - $r->[3]);
-	$canvas-> color( $c);
-}
-
 package Prima::PodView;
 
-use vars qw(@ISA %HTML_Escapes $OP_LINK);
+use strict;
+use warnings;
+use Config;
+use Encode;
+use Prima qw(Utils TextView Widget::Link);
+
+use vars qw(@ISA %HTML_Escapes);
 @ISA = qw(Prima::TextView);
 
 use constant DEF_INDENT       => 4;
@@ -118,8 +61,6 @@ use constant T_LINK_OFFSET => 5; #
 use constant FORMAT_LINES    => 300;
 use constant FORMAT_TIMEOUT  => 300;
 
-$OP_LINK = tb::opcode(1, 'link');
-
 sub model_create
 {
 	my %opt = @_;
@@ -145,7 +86,7 @@ sub div_create
 {
 my %RNT = (
 	%{Prima::TextView-> notification_types()},
-	Link     => nt::Default,
+	%{Prima::Widget::Link-> notification_types()},
 	Bookmark => nt::Default,
 	NewPage  => nt::Default,
 );
@@ -206,10 +147,9 @@ sub init
 	$self-> {hasIndex}   = 0;
 	$self-> {topicView}  = 0;
 	$self-> {justify}  = 0;
-	$self-> {lastLinkPointer} = -1;
+	$self-> {link_handler} = Prima::Widget::Link-> new;
+	$self-> {contents} = [ $self->{link_handler} ];
 	my %profile = $self-> SUPER::init(@_);
-
-	$self-> {contents} = [ Prima::PodView::Link-> new ];
 
 	my %font = %{$self-> fontPalette-> [0]};
 	$font{pitch} = fp::Fixed;
@@ -221,12 +161,19 @@ sub init
 	return %profile;
 }
 
+sub colorMap
+{
+	return @{$_[0]->SUPER::colorMap} unless $#_;
+	my ( $self, $cm) = @_;
+	$self-> {link_handler}->color( $$cm[ COLOR_LINK_FOREGROUND & ~tb::COLOR_INDEX ] );
+	$self-> SUPER::colorMap($cm);
+}
+
 sub on_paint
 {
 	my ( $self, $canvas ) = @_;
 	$self-> SUPER::on_paint($canvas);
-	$self-> {contents}-> [0]-> on_paint( $self, $canvas, COLOR_LINK_FOREGROUND & ~tb::COLOR_INDEX )
-		if $self->{lastLinkPointer} >= 0
+	$self-> {link_handler}-> on_paint( $self, $canvas);
 }
 
 sub on_size
@@ -243,9 +190,30 @@ sub on_fontchanged
 	$self-> format(keep_offset => 1);
 }
 
-# sub on_link {
-# 	my ( $self, $linkPointer, $mouseButtonOrKeyEventIfZero, $mod, $x, $y) = @_;
-# }
+sub on_link
+{
+	my ( $self, $link_handler, $url, $btn, $mod) = @_;
+	return if $btn != mb::Left;
+	$self-> load_link( $url );
+}
+
+sub on_linkpreview
+{
+	my ( $self, $link_handler, $url) = @_;
+	$$url = '';
+	$self->clear_event;
+}
+
+sub on_linkadjustrect
+{
+	my ( $self, $link_handler, $rc) = @_;
+	my ($dx, $dy) = $self->point2screen(0,0);
+	$$rc[$_] = $dx + $$rc[$_] for 0,2;
+	$$rc[$_] = $dy - $$rc[$_] for 1,3;
+	$self->clear_event;
+}
+
+sub link_handler { shift->{link_handler} }
 
 # returns a storable string, that identifies position.
 # can report current positions and links to the upper topic
@@ -431,15 +399,6 @@ sub load_link
 	}
 
 	return 0;
-}
-
-sub link_click
-{
-	my ( $self, $s, $btn, $mod, $x, $y) = @_;
-
-	return unless $self-> notify(q(Link), \$s, $btn, $mod, $x, $y);
-	return if $btn != mb::Left;
-	$self-> load_link( $s);
 }
 
 # selects a sub-page; does not check if topicView,
@@ -1109,7 +1068,6 @@ sub close_read
 NO_INDEX:
 	# finalize
 	undef $self-> {readState};
-	$self-> {lastLinkPointer} = -1;
 
 	my $topic;
 	$topic = $self-> {topics}-> [$msecid] if $topicView and defined $msecid;
@@ -1333,7 +1291,8 @@ sub add
 						push @$g, $tb::{$_}-> ( $val{$_} = $z-> {$_});
 					}
 					unless ($link) {
-						push @$g, $OP_LINK, $link = 1;
+						push @$g, $self->link_handler->op_link_enter;
+						$link = 1;
 						$linkHREF = '';
 					}
 				} elsif ( $$_[1] eq 'S') {
@@ -1360,7 +1319,8 @@ sub add
 						push @$g, $tb::{$_}-> ( $val{$_} = pop @{$stack{$_}});
 					}
 					if ( $link) {
-						push @$g, $OP_LINK, $link = 0;
+						push @$g, $self->link_handler->op_link_leave;
+						$link = 0;
 						push @{$self-> {links}}, $linkHREF;
 						$self-> {postBlocks}-> { $itemid} = 1;
 					}
@@ -1370,7 +1330,8 @@ sub add
 			}
 		}
 		if ( $link) {
-			push @$g, $OP_LINK, $link = 0;
+			push @$g, $self->link_handler->op_link_leave;
+			$link = 0;
 			push @{$self-> {links}}, $linkHREF;
 			$self-> {postBlocks}-> { $itemid} = 1;
 		}
@@ -1468,13 +1429,13 @@ sub format
 	my ( $min, $max, $linkIdStart) = @{$self-> {modelRange}};
 	if ( $min >= $max) {
 		$self-> {blocks} = [];
-		$self-> {contents}-> [0]-> rectangles([]);
+		$self-> link_handler->clear_positions;
 		$self-> paneSize(0,0);
 		return;
 	}
 
 	$self-> {blocks} = [];
-	$self-> {contents}-> [0]-> rectangles( []);
+	$self-> link_handler->clear_positions;
 
 	$self-> begin_paint_info;
 
@@ -1501,7 +1462,6 @@ sub format
 		current       => $min,
 		paneWidth     => $paneWidth,
 		formatWidth   => $paneWidth,
-		linkRects     => $self-> {contents}-> [0]-> rectangles,
 		step          => FORMAT_LINES,
 		position      => undef,
 		positionSet   => 0,
@@ -1602,7 +1562,6 @@ sub format_chunks
 	$max = $f-> {max} if $max > $f-> {max};
 	my $indents   = $f-> {indents};
 	my $state     = $f-> {state};
-	my $linkRects = $f-> {linkRects};
 	my $formatWidth = $f-> {formatWidth};
 	my $fw = $self->font->width;
 
@@ -1648,38 +1607,7 @@ sub format_chunks
 
 		# check links
 		if ( $postBlocks-> {$mid}) {
-			my $linkState = 0;
-			my $linkStart = 0;
-			my @rect;
-			for my $b ( @blocks) {
-				my @pos = ( $$b[tb::BLK_X], 0 );
-
-				if ( $linkState) {
-					$rect[0] = $$b[ tb::BLK_X];
-					$rect[1] = $$b[ tb::BLK_Y];
-				}
-
-				$self-> block_walk( $b,
-					position => \@pos,
-					trace => tb::TRACE_POSITION,
-					link  => sub {
-						if ( $linkState = shift ) {
-							$rect[0] = $pos[0];
-							$rect[1] = $$b[ tb::BLK_Y];
-						} else {
-							$rect[2] = $pos[0] + $fw;
-							$rect[3] = $$b[ tb::BLK_Y] + $$b[ tb::BLK_HEIGHT];
-							push @$linkRects, [ @rect, $f-> {linkId} ++ ];
-						}
-					},
-				);
-
-				if ( $linkState) {
-					$rect[2] = $pos[0];
-					$rect[3] = $$b[ tb::BLK_Y] + $$b[ tb::BLK_HEIGHT];
-					push @$linkRects, [ @rect, $f-> {linkId}];
-				}
-			}
+			$f->{linkId} = $self-> link_handler-> add_positions_from_blocks($f->{linkId}, \@blocks);
 		}
 
 		# push back
@@ -2276,6 +2204,7 @@ The default colors in the styles are mapped into these entries.
 
 =head2 Link and navigation methods
 
+XXX -rewrite 
 Prima::PodView provides a hand-icon mouse pointer highlight for the link
 entries and as an interactive part, the link documents or topics are loaded
 when the user presses the mouse button on the link. The mechanics below that
