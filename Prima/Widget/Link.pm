@@ -1,14 +1,19 @@
 package Prima::Widget::Link;
 use strict;
 use warnings;
+use base qw(Prima::Widget::EventRectangles);
 use Prima::Drawable::TextBlock;
 use Prima::Drawable::Markup;
 
 sub notification_types {{
-	Link        => nt::Default,
-	LinkPreview => nt::Action,
+	Link           => nt::Action,
+	LinkPreview    => nt::Action,
+	LinkAdjustRect => nt::Action,
 }}
 sub profile_default    {{ color => cl::Green  }}
+
+*op_link_enter = \&Prima::Drawable::Markup::op_link_enter;
+*op_link_leave = \&Prima::Drawable::Markup::op_link_leave;
 
 sub new
 {
@@ -37,7 +42,7 @@ sub contains
 	return -1;
 }
 
-sub filter_rectangles_by_link_id
+sub id2rectangles
 {
 	my ( $self, $link_id ) = @_;
 	return grep { $_->[4] == $link_id } @{ $self->{rectangles} };
@@ -85,15 +90,12 @@ sub bind_markup
 sub open_podview
 {
 	my ( $self, $url, $btn, $mod ) = @_;
-	return if $btn != mb::Left;
-
 	$::application->open_help($url);
 }
 
 sub open_browser
 {
 	my ( $self, $url, $btn, $mod ) = @_;
-	return 0 if $btn != mb::Left;
 
 	if ( Prima::Application-> get_system_info-> {apc} == apc::Win32) {
 		open UNIQUE_FILE_HANDLE_NEVER_TO_BE_CLOSED, "|start $url";
@@ -105,7 +107,7 @@ sub open_browser
 				$pg = "$_/$cmd", last CMD if -x "$_/$cmd";
 			}
 		}
-		return -1 unless defined $pg && ! system( "$pg $url &");
+		return 0 unless defined $pg && ! system( "$pg $url &");
 	}
 
 	return 1;
@@ -114,6 +116,9 @@ sub open_browser
 sub on_link
 {
 	my ( $self, $owner, $url, $btn, $mod ) = @_;
+
+	return unless $owner->notify(q(Link), $self, $url, $btn, $mod);
+	return 0 if $btn != mb::Left;
 
 	if ( $url =~ m[^pod://(.*)] ) {
 		my $link = $1;
@@ -126,14 +131,14 @@ sub on_link
 		$self->open_browser($url, $btn, $mod);
 	} elsif ( $url =~ m[^tip://]) {
 		# nothing
-	} else {
-		$owner->notify(q(Link), $url, $btn, $mod);
 	}
 }
 
 sub on_linkpreview
 {
 	my ( $self, $owner, $url ) = @_;
+
+	return unless $owner->notify(q(LinkPreview), $self, $url);
 
 	if ( $$url =~ m[^(pod|tip)://(.*)] ) {
 		$$url = undef;
@@ -160,14 +165,12 @@ sub on_linkpreview
 		$pod->destroy;
 	} elsif ( $url =~ m[^(ftp|https?)://]) {
 		# same
-	} else {
-		$owner->notify(q(LinkPreview), $url);
 	}
 }
 
 sub on_mousedown
 {
-	my ( $self, $owner, $dx, $dy, $btn, $mod, $x, $y) = @_;
+	my ( $self, $owner, $btn, $mod, $x, $y) = @_;
 	my $r = $self-> contains( $x, $y);
 	return 1 if $r < 0;
 	$r = $self-> {rectangles}-> [$r];
@@ -178,7 +181,7 @@ sub on_mousedown
 
 sub on_mousemove
 {
-	my ( $self, $owner, $dx, $dy, $mod, $x, $y) = @_;
+	my ( $self, $owner, $mod, $x, $y) = @_;
 	my $r = $self-> contains( $x, $y);
 	$self->{owner_pointer} //= $owner->pointer;
 	$r = $self->rectangles->[$r]->[4] if $r >= 0;
@@ -197,10 +200,12 @@ sub on_mousemove
 	$self-> {last_link_pointer} = [$r, $new_ptr];
 
 	for my $rc (
-		($or < 0) ? () : $self->filter_rectangles_by_link_id( $or ),
-		($r  < 0) ? () : $self->filter_rectangles_by_link_id( $r  ),
+		($or < 0) ? () : $self->id2rectangles( $or ),
+		($r  < 0) ? () : $self->id2rectangles( $r  ),
 	) {
-		$owner-> invalidate_rect($rc->[0] + $dx, $rc->[1] + $dy, $rc->[2] + $dx, $rc->[3] + $dy);
+		my @rc = @$rc;
+		$owner-> notify(qw(LinkAdjustRect), $self, \@rc);
+		$owner-> invalidate_rect(@rc[0..3]);
 	}
 
 	if ( $r >= 0 ) {
@@ -217,11 +222,9 @@ sub on_mousemove
 	}
 }
 
-sub on_mouseup   {}
-
 sub on_paint
 {
-	my ( $self, $owner, $dx, $dy, $canvas ) = @_;
+	my ( $self, $owner, $canvas ) = @_;
 	return if $self->{last_link_pointer} < 0;
 
 	$canvas->graphic_context( sub {
@@ -231,22 +234,25 @@ sub on_paint
 		my $tip = ($self->references->[$self->{last_link_pointer}->[0]] // '') =~ /^tip:/;
 		$canvas-> linePattern($tip ? lp::ShortDash : lp::Solid);
 
-		for my $rc ( $self->filter_rectangles_by_link_id( $self->{last_link_pointer}->[0] )) {
-			$canvas-> line( $rc->[0] + $dx, $rc->[1] + $dy, $rc->[2] + $dx, $rc->[1] + $dy);
+		for my $rc ( $self->id2rectangles( $self->{last_link_pointer}->[0] )) {
+			my @rc = @$rc;
+			$owner-> notify(qw(LinkAdjustRect), $self, \@rc);
+			$canvas-> line( @rc[0,3,2,3]);
 		}
 
 	});
 }
 
-sub reset_positions_blocks
+sub clear_positions { shift->{rectangles} = [] }
+
+sub add_positions_from_blocks
 {
-	my ( $self, $blocks, %defaults ) = @_;
+	my ( $self, $linkId, $blocks, %defaults ) = @_;
 	my $linkState = 0;
 	my $linkStart = 0;
-	my $linkId    = 0;
 	my @rect;
 	my $rects = $self->{rectangles};
-	@$rects = ();
+	$linkId //= 0;
 
 	for my $b ( @$blocks ) {
 		my @pos = ( $$b[tb::BLK_X], 0 );
@@ -277,12 +283,15 @@ sub reset_positions_blocks
 			push @$rects, [@rect, $linkId];
 		}
 	}
+
+	return $linkId;
 }
 
 sub reset_positions_markup
 {
 	my ($self, $blocks, %defaults) = @_;
-	$self->reset_positions_blocks([map { $_->text_block } @$blocks ], %defaults);
+	$self->clear_positions;
+	$self->add_positions_from_blocks(undef, [map { $_->text_block } @$blocks ], %defaults);
 }
 
 1;

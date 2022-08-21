@@ -91,8 +91,16 @@ $w->insert(
 	wordWrap   => 1,
 	text       => \ "Label with L<custom link|custom stuff> - both click and preview are overloadable",
 	growMode   => gm::GrowLoX,
-	onLink     => sub { message($_[1]) },
-	onLinkPreview => sub { ${$_[1]} = localtime },
+	onLink     => sub {
+		my ( $self, $link_handler, $url) = @_;
+		message($url);
+		$self->clear_event;
+	},
+	onLinkPreview => sub {
+		my ( $self, $link_handler, $url, $btn, $mod) = @_;
+		$self->clear_event;
+		$$url  = localtime;
+	},
 );
 
 $w->insert(

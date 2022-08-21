@@ -91,19 +91,8 @@ sub load_link
 
 	if ( $link =~ /^(https?|ftp):\//) {
 		$self-> owner-> status("Starting browser for $link...");
-		if ( Prima::Application-> get_system_info-> {apc} == apc::Win32) {
-			open UNIQUE_FILE_HANDLE_NEVER_TO_BE_CLOSED, "|start $link";
-			close UNIQUE_FILE_HANDLE_NEVER_TO_BE_CLOSED if 0;
-		} else {
-			my $pg;
-			CMD: for my $cmd ( qw(xdg-open x-www-browser www-browser firefox mozilla sensible-browser netscape)) {
-				for ( split /:/, $ENV{PATH} ) {
-					$pg = "$_/$cmd", last CMD if -x "$_/$cmd";
-				}
-			}
-			$self-> owner-> status("Cannot start browser"), return
-				unless defined $pg && ! system( "$pg $link &");
-		}
+		$self-> owner-> status("Cannot start browser") unless
+			$self->link_handler->open_browser($link);
 		return;
 	}
 
@@ -979,8 +968,10 @@ sub setup_dialog
 
 	return if $setupdlg-> execute != mb::OK;
 
-	$t-> {colorMap}-> [ Prima::PodView::COLOR_LINK_FOREGROUND & ~tb::COLOR_INDEX ] = $setupdlg-> LinkColor-> value;
-	$t-> {colorMap}-> [ Prima::PodView::COLOR_CODE_FOREGROUND & ~tb::COLOR_INDEX ] = $setupdlg-> CodeColor-> value;
+	my $cm = $t->colorMap;
+	$$cm[ Prima::PodView::COLOR_LINK_FOREGROUND & ~tb::COLOR_INDEX ] = $setupdlg-> LinkColor-> value;
+	$$cm[ Prima::PodView::COLOR_CODE_FOREGROUND & ~tb::COLOR_INDEX ] = $setupdlg-> CodeColor-> value;
+	$t-> colorMap($cm);
 
 	my $f1 = $setupdlg-> VarFont-> text;
 	my $f2 = $setupdlg-> FixFont-> text;

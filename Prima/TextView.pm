@@ -1,13 +1,7 @@
+package Prima::TextView;
+
 use strict;
 use warnings;
-
-package Prima::TextView::EventContent;
-
-sub on_mousedown {}
-sub on_mousemove {}
-sub on_mouseup   {}
-
-package Prima::TextView;
 
 use Prima;
 use Prima::ScrollBar;
@@ -972,7 +966,8 @@ sub on_mouseup
 	my ( $self, $btn, $mod, $x, $y) = @_;
 
 	unless ( $self-> {mouseTransaction}) {
-		( $x, $y) = $self-> screen2point( $x, $y);
+		my @size = $self->size;
+		( $x, $y) = $self-> screen2point( $x, $y, @size);
 		for my $obj ( @{$self-> {contents}}) {
 			unless ( $obj-> on_mouseup( $self, $btn, $mod, $x, $y)) {
 				$self-> clear_event;
@@ -998,7 +993,8 @@ sub on_mousemove
 	my ( $self, $mod, $x, $y) = @_;
 
 	unless ( $self-> {mouseTransaction}) {
-		( $x, $y) = $self-> screen2point( $x, $y);
+		my @size = $self->size;
+		( $x, $y) = $self-> screen2point( $x, $y, @size);
 		for my $obj ( @{$self-> {contents}}) {
 			unless ( $obj-> on_mousemove( $self, $mod, $x, $y)) {
 				$self-> clear_event;
@@ -1302,43 +1298,6 @@ sub clear_all
 	$self-> {blocks} = [];
 	$self-> paneSize( 0, 0);
 	$self-> text('');
-}
-
-
-package Prima::TextView::EventRectangles;
-
-sub new
-{
-	my $class = shift;
-	my %profile = @_;
-	my $self = {};
-	bless( $self, $class);
-	$self-> {$_} = $profile{$_} ? $profile{$_} : []
-		for qw( rectangles references);
-	return $self;
-}
-
-sub contains
-{
-	my ( $self, $x, $y) = @_;
-	my $rec = 0;
-	for ( @{$self-> {rectangles}}) {
-		return $rec if $x >= $$_[0] && $y >= $$_[1] && $x < $$_[2] && $y < $$_[3];
-		$rec++;
-	}
-	return -1;
-}
-
-sub rectangles
-{
-	return $_[0]-> {rectangles} unless $#_;
-	$_[0]-> {rectangles} = $_[1];
-}
-
-sub references
-{
-	return $_[0]-> {references} unless $#_;
-	$_[0]-> {references} = $_[1];
 }
 
 1;

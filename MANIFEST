@@ -348,6 +348,7 @@ Prima/Themes.pm
 Prima/Tie.pm
 Prima/Utils.pm
 Prima/Widget/BidiInput.pm
+Prima/Widget/EventRectangles.pm
 Prima/Widget/GroupScroller.pm
 Prima/Widget/IntIndents.pm
 Prima/Widget/Link.pm
