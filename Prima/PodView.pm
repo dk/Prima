@@ -2204,15 +2204,13 @@ The default colors in the styles are mapped into these entries.
 
 =head2 Link and navigation methods
 
-XXX -rewrite 
 Prima::PodView provides a hand-icon mouse pointer highlight for the link
 entries and as an interactive part, the link documents or topics are loaded
-when the user presses the mouse button on the link. The mechanics below that
-is as follows. C<{contents}> of event rectangles, ( see L<Prima::TextView> )
-is responsible for distinguishing whether a mouse is inside a link or not.
-When the link is activated, C<link_click> is called, which, in turn, calls
-C<load_link> method. If the page is loaded successfully, depending on C<::topicView>
-property value, either C<select_topic> or C<select_text_offset> method is called.
+when the user presses the mouse button on the link. L<Prima::Widget::Link> is
+used for the link mechanics implementation.
+
+If the page is loaded successfully, depending on C<::topicView> property value,
+either C<select_topic> or C<select_text_offset> method is called.
 
 The family of file and link access functions consists of the following methods:
 

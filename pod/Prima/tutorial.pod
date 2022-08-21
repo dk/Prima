@@ -417,7 +417,7 @@ exactly as if you wanted C<perldoc> to display it.
 Second, add an invocation code, possibly inside a menu:
 
 	['~Help' => 'F1' => 'F1' => sub {
-		$::application-> open_help($0);
+		$::application-> open_help("file://$0|DESCRIPTION");
 	}],
 
 C<open_help> can also take a standard C<< L<link> >> syntax so for example

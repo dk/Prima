@@ -738,6 +738,10 @@ link POD format ( see L<perlpod> ) - the string is treated
 as "manpage/section", where 'manpage' is the file with POD
 content and 'section' is the topic inside the manpage.
 
+Alternatively can handle the syntax in form of C< file://path|section >
+where C<path> is the file with the pod content and C<section> is an optional pod
+section within the file.
+
 =item stop
 
 Breaks the event loop. The loop can be started again by C<go> thereafter.
