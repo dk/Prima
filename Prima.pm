@@ -438,6 +438,8 @@ L<Prima::Widget::GroupScroller> - optional automatic scroll bars
 
 L<Prima::Widget::IntIndents> - indenting support
 
+L<Prima::Widget::Link> - links embedded in widgets
+
 L<Prima::Widget::ListBoxUtils> - common paint routine for listboxes
 
 L<Prima::Widget::MouseScroller> - auto repeating mouse events
