@@ -421,14 +421,6 @@ link rectanges. Return new LINK_ID.
 
 Clears the content of C<rectangles>
 
-=item reset_positions_markup BLOCKS, %DEFAULTS
-
-To be used when the link object is bound to a markup object and link rectangle recalculation
-is needed due to formatting change, f ex widget size, font size etc. C<%DEFAULTS> is sent
-internally to C<tb::block_walk> that might need eventual default parameters.
-
-=back
-
 =item id2rectangles ID
 
 Returns rectangles mapped to a link id. There can be more than 1 rectangle bound
@@ -441,6 +433,12 @@ Opens a pod viewer with the URL
 =item open_browser URL
 
 Opens a web browser with the URL
+
+=item reset_positions_markup BLOCKS, %DEFAULTS
+
+To be used when the link object is bound to a markup object and link rectangle recalculation
+is needed due to formatting change, f ex widget size, font size etc. C<%DEFAULTS> is sent
+internally to C<tb::block_walk> that might need eventual default parameters.
 
 =back
 
