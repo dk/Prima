@@ -693,6 +693,9 @@ sub add_image
 
 	my $w = $opt{width} // $src-> width;
 	my $h = $opt{height} // $src-> height;
+	my @resolution = $self-> resolution;
+	my $W = $w * 72 / $resolution[0];
+	my $H = $h * 72 / $resolution[1];
 	$src-> {stretch} = [$w, $h];
 	my $r = $self-> {readState};
 	$r-> {pod_cutting} = $opt{cut} ? 0 : 1
@@ -701,9 +704,9 @@ sub add_image
 	my @imgop = (
 		tb::moveto( 2, 0, tb::X_DIMENSION_FONT_HEIGHT),
 		tb::wrap(tb::WRAP_MODE_OFF),
-		tb::extend( $w, $h, tb::X_DIMENSION_POINT),
+		tb::extend( $W, $H, tb::X_DIMENSION_POINT),
 		tb::code( \&_imgpaint, $src),
-		tb::moveto( $w, 0, tb::X_DIMENSION_POINT),
+		tb::moveto( $W, 0, tb::X_DIMENSION_POINT),
 		tb::wrap(tb::WRAP_MODE_ON)
 	);
 
@@ -783,6 +786,7 @@ sub _imgpaint
 {
 	my ( $self, $canvas, $block, $state, $x, $y, $img) = @_;
 	my ( $dx, $dy) = @{$img->{stretch}};
+
 	$canvas-> stretch_image( $x, $y, $dx, $dy, $img);
 	$canvas-> graphic_context(
 		color             => $canvas->backColor,
