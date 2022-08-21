@@ -69,6 +69,11 @@ The text inside C<Q> sequence will not be treated as markup.
 The C<P> sequence is used as follows:C<< PE<lt>nE<gt> >>, where C<n> is a
 0-based index into the C<picturePalette>.
 
+The L<URL|text> sequence parsing is resulted into making 1) C<text> of color C<linkColor>,
+and 2) wrapping the text with C<OP_LINK> commands in the block, that do nothing by default
+but could be used by whoever uses the block. See L<Prima::Widget::Link> for more and L<Prima::Label>
+as an example.
+
 The methods C<text_out> and C<get_text_width> are affected by C<Prima::Drawable::Markup>.
 C<text_out> will write formatted text to the canvas, and C<get_text_width> will
 return the width of the formatted text.  B<NOTE>: These methods do not save state

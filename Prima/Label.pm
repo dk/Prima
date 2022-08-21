@@ -516,12 +516,15 @@ Prima::Label - static text widget
 
 =head1 DESCRIPTION
 
-The class is designed for display of text, and assumes no
-user interaction. The text output capabilities include wrapping,
-horizontal and vertical alignment, and automatic widget resizing to
-match text extension. If text contains a tilde-escaped ( hot ) character, the label can
-explicitly focus the specified widget upon press of the character key, what feature
-is useful for dialog design.
+The class is designed for display of text, and assumes no user interaction. The
+text output capabilities include wrapping, horizontal and vertical alignment,
+and automatic widget resizing to match text extension. If text contains a
+tilde-escaped ( hot ) character, the label can explicitly focus the specified
+widget upon press of the character key, what feature is useful for dialog
+design.
+
+Labels can display rich text with links. See L<Prima::Drawable::Markup> for
+more.
 
 =head1 SYNOPSIS
 
@@ -667,6 +670,6 @@ Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
 
 =head1 SEE ALSO
 
-L<Prima>, L<Prima::Widget>, F<examples/label.pl>
+L<Prima>, L<Prima::Widget>, L<Prima::Drawable::Markup>, L<Prima::Widget::Links>, F<examples/label.pl>
 
 =cut
