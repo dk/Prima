@@ -1,6 +1,6 @@
 Revision history for Perl module Prima
 
-1.66 20XX-XX-XX
+1.66 2022-08-20
  - Add HEIF image support
  - rop2(rop::NoOper) on fillPattern is now fully supported, but breaks the old code.
    Prepend rop2(rop::CopyPut) to fix.
@@ -12,6 +12,7 @@ Revision history for Perl module Prima
  - Support base64-encoded image files
  - Implement push/pop operations on the graphic context
  - ColorDialog looks better
+ - Prima::IntUtils is deprecated
 
 1.65 2022-04-21
  - Fix broken 1.64 distro
