@@ -272,11 +272,15 @@ sub metafile
 	$p = $m1->render_polyline($p, matrix => [$t, 0, 0, $t, -$d, -$d], integer => 1);
 	push @$p, @$p[0,1];
 	$m1->begin_paint;
+	$m1->antialias(1);
+	$m1->lineWidth(1.3);
 	$m1->color(cl::Black);
 	$m1->polyline($p) ;
 	$m1->end_paint;
 	my $m2 = Prima::Drawable::Metafile->new( size => [$t, $t] );
 	$m2->begin_paint;
+	$m2->antialias(1);
+	$m2->lineWidth(1.3);
 	$m2->color(wc::Menu|cl::Hilite);
 	$m2->fillWinding(fm::Winding|fm::Overlay);
 	$m2->fillpoly($p);
@@ -285,6 +289,8 @@ sub metafile
 	$m2->end_paint;
 	my $m3 = Prima::Drawable::Metafile->new( size => [$t, $t], type => dbt::Bitmap);
 	$m3->begin_paint;
+	$m3->antialias(1);
+	$m3->lineWidth(1.3);
 	$m3->color(cl::White);
 	$m3->translate(1,-1);
 	$m3->polyline($p);
