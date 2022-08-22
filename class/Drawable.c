@@ -118,6 +118,8 @@ Drawable_end_paint( Handle self)
 {
 	clear_font_abc_caches( self);
 	opt_clear( optInDraw);
+	var->alpha     = apc_gp_get_alpha(self);
+	var->antialias = apc_gp_get_antialias( self );
 }
 
 Bool
@@ -135,6 +137,8 @@ Drawable_end_paint_info( Handle self)
 {
 	clear_font_abc_caches( self);
 	opt_clear( optInDrawInfo);
+	var->alpha     = apc_gp_get_alpha(self);
+	var->antialias = apc_gp_get_antialias( self );
 }
 
 void
@@ -208,6 +212,8 @@ Drawable_graphic_context_pop(Handle self)
 		unprotect_object(var-> fillPatternImage);
 		var-> fillPatternImage = NULL_HANDLE;
 	}
+	var->alpha     = apc_gp_get_alpha(self);
+	var->antialias = apc_gp_get_antialias( self );
 	return ok;
 }
 

@@ -924,7 +924,7 @@ Image_update_change( Handle self)
 typedef struct _PaintState
 {
 	Bool antialias;
-	int rop;
+	int alpha, rop;
 	PRegionRec region;
 } PaintState, *PPaintState;
 
@@ -942,9 +942,10 @@ Image_graphic_context_push(Handle self)
 
 	if (opt_InPaint) return inherited graphic_context_push(self);
 
-	state.antialias = var->antialias;
+	state.alpha     = var-> alpha;
+	state.antialias = var-> antialias;
 	state.rop       = var-> extraROP;
-	state.region    = var->regionData ? Region_clone_data(NULL_HANDLE, var->regionData) : NULL;
+	state.region    = var-> regionData ? Region_clone_data(NULL_HANDLE, var->regionData) : NULL;
 
 	return apc_gp_push(self, gc_destroy, &state, sizeof(state));
 }
@@ -952,18 +953,18 @@ Image_graphic_context_push(Handle self)
 Bool
 Image_graphic_context_pop(Handle self)
 {
-	Bool ok;
 	PaintState state;
 	if (opt_InPaint) return inherited graphic_context_pop(self);
 
-	ok = apc_gp_pop( self, &state);
-	if ( ok) {
-		var-> antialias = state.antialias;
-		var-> extraROP  = state.rop;
-		if ( var-> regionData ) free( var-> regionData );
-		var-> regionData = state.region;
-	}
-	return ok;
+	if (!apc_gp_pop( self, &state)) return false;
+
+	var-> alpha     = state.alpha;
+	var-> antialias = state.antialias;
+	var-> extraROP  = state.rop;
+	if ( var-> regionData ) free( var-> regionData );
+	var-> regionData = state.region;
+
+	return true;
 }
 
 double
