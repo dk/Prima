@@ -520,7 +520,7 @@ prima_gtk_init(void)
 Bool
 prima_gtk_done(void)
 {
-#define DBUS_SCREENSHOT
+#ifdef DBUS_SCREENSHOT
 	terminate_screenshot_app();
 #endif
 	if ( gtk_filters) {
