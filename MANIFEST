@@ -303,7 +303,6 @@ Prima/Image/webp.pm
 Prima/ImageViewer.pm
 Prima/IniFile.pm
 Prima/InputLine.pm
-Prima/IntUtils.pm
 Prima/KeySelector.pm
 Prima/Label.pm
 Prima/Lists.pm
