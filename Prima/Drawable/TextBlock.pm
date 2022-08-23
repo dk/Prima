@@ -539,7 +539,7 @@ sub block_wrap
 			$lastTextOffset = $ofs + $tlen unless $can_wrap;
 
 		REWRAP:
-			my $tw  = $canvas-> get_text_shape_width(substr( $$t, $o + $ofs, $tlen), 1, $flags);
+			my $tw  = $canvas-> get_text_shape_width(substr( $$t, $o + $ofs, $tlen), to::AddOverhangs, $flags);
 			my $apx = $state_hash{$state_key}-> {width};
 			if ( $x + $tw + $apx <= $width) {
 				push @$z, OP_TEXT, $ofs, $tlen, $tw;
@@ -566,14 +566,14 @@ sub block_wrap
 						push @$z, OP_TEXT,
 							$ofs, $l + length $leadingSpaces,
 							$tw = $canvas-> get_text_shape_width(
-								$leadingSpaces . substr( $str, 0, $l), 1,
+								$leadingSpaces . substr( $str, 0, $l), to::AddOverhangs,
 								$flags
 							);
 					} else {
 						push @$z, OP_TEXT,
 							$ofs + length $leadingSpaces, $l,
 							$tw = $canvas-> get_text_shape_width(
-								substr( $str, 0, $l), 1,
+								substr( $str, 0, $l), to::AddOverhangs,
 								$flags
 							);
 						$has_text = 1;
@@ -586,7 +586,7 @@ sub block_wrap
 					if ( $str =~ /^(\s+)/) {
 						$ofs  += length $1;
 						$tlen -= length $1;
-						$x    += $canvas-> get_text_shape_width( $1, 1, $flags);
+						$x    += $canvas-> get_text_shape_width( $1, to::AddOverhangs, $flags);
 						$str =~ s/^\s+//;
 					}
 					goto REWRAP if length $str;
@@ -600,7 +600,7 @@ sub block_wrap
 					# but may be some words can be stripped?
 						goto REWRAP if $ox > 0;
 						if ( $word_break && ($str =~ m/^(\S+)(\s*)/)) {
-							$tw = $canvas-> get_text_shape_width( $1, 1, $flags);
+							$tw = $canvas-> get_text_shape_width( $1, to::AddOverhangs, $flags);
 							push @$z, OP_TEXT, $ofs, length $1, $tw;
 							$has_text = 1;
 							$x += $tw;
@@ -609,8 +609,9 @@ sub block_wrap
 							goto REWRAP;
 						}
 					}
+					my $rr = $x;
 					push @$z, OP_TEXT, $ofs, length($str),
-						$x += $canvas-> get_text_shape_width( $str, 1, $flags);
+						$x += $canvas-> get_text_shape_width( $str, to::AddOverhangs, $flags);
 					$has_text = 1;
 				}
 			} elsif ( $haswrapinfo) { # unwrappable, and cannot be fit - retrace
@@ -938,7 +939,7 @@ sub calculate_dimensions
 			my ( undef, undef, undef, $text ) = @_;
 			$b-> [ $ptr + tb::T_WID ] = $canvas->get_text_shape_width(
 				$text,
-				$self->{textDirection} ? to::RTL : 0
+				($self->{textDirection} ? to::RTL : 0) | to::AddOverhangs,
 			);
 
 			my $f = $canvas->get_font;
