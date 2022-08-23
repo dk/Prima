@@ -409,7 +409,17 @@ sub text_wrap_shape
 	my ( $self, $text, $width, %opt) = @_;
 
 	my $opt    = delete($opt{options}) // tw::Default;
-	my $shaped = $self-> text_shape( $text, %opt );
+
+	my $shaped;
+	if ( $opt & ( tw::NewLineBreak | tw::ExpandTabs | tw::SpaceBreak )) {
+		# looking up a newline glyph can be expensive, and unnecessary here
+		my $t = $text;
+		$t =~ s/[\n\r]/ /gs if $opt & tw::NewLineBreak;
+		$t =~ s/\t/ /s if $opt & ( tw::ExpandTabs | tw::SpaceBreak );
+		$shaped = $self-> text_shape( $t, %opt );
+	} else {
+		$shaped = $self-> text_shape( $text, %opt );
+	}
 	return $self->text_wrap( $text, $width // -1, $opt, delete($opt{tabs}) // 8) unless $shaped;
 	my $ret    = $self-> text_wrap( $text, $width // -1, $opt, delete($opt{tabs}) // 8, 0, -1, $shaped);
 
