@@ -33,10 +33,12 @@ sub profile_default
 	my $def = $_[ 0]-> SUPER::profile_default;
 	my $font = $_[ 0]-> get_default_font;
 	my %prf = (
+		antialias        => 1,
 		colored          => 1,
 		firstTab         => 0,
 		focusedTab       => 0,
 		height           => $font-> { height} > 14 ? $font-> { height} * 2 : 28,
+		lineWidth        => 1,
 		ownerBackColor   => 1,
 		selectable       => 1,
 		selectingButtons => 0,
