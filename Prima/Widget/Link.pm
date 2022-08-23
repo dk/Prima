@@ -228,7 +228,10 @@ sub on_paint
 	return if $self->{last_link_pointer} < 0;
 
 	$canvas->graphic_context( sub {
+		$canvas-> rop2(rop::NoOper);
 		$canvas-> color( $self->color );
+		$canvas-> antialias(0);
+		$canvas-> lineWidth(1);
 		$canvas-> translate(0,0);
 
 		my $tip = ($self->references->[$self->{last_link_pointer}->[0]] // '') =~ /^tip:/;
@@ -237,9 +240,9 @@ sub on_paint
 		for my $rc ( $self->id2rectangles( $self->{last_link_pointer}->[0] )) {
 			my @rc = @$rc;
 			$owner-> notify(qw(LinkAdjustRect), $self, \@rc);
-			$canvas-> line( @rc[0,3,2,3]);
+			$rc[4] = $rc[1] < $rc[3] ? $rc[1] : $rc[3];
+			$canvas-> line( @rc[0,4,2,4]);
 		}
-
 	});
 }
 
