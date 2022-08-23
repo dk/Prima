@@ -303,7 +303,7 @@ sub on_begindragfont
 {
 	my ( $self) = @_;
 	$self-> {old_text} = $self-> text;
-	$self-> Sample-> Example-> pointer( cr::Invalid);
+	$self-> Sample-> Example-> pointer( cr::DragMove);
 	$self-> text( "Apply font...");
 }
 
