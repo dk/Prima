@@ -576,9 +576,11 @@ sub _arc
 	}
 }
 
-sub stroke {
+sub stroke
+{
 	return 0 unless $_[0]->{canvas};
 	for ( map { @$_ } @{ $_[0]->points }) {
+		next if 4 > @$_;
 		if ( $_[0]->{antialias} && !$_[0]->{canvas}->antialias) {
 			return 0 unless $_[0]->{canvas}->new_aa_surface->polyline($_);
 		} else {
@@ -588,7 +590,8 @@ sub stroke {
 	return 1;
 }
 
-sub fill {
+sub fill
+{
 	my ( $self, $fillMode ) = @_;
 	return 0 unless my $c = $self->{canvas};
 	my @p = $self->points(fill => 1);
@@ -599,6 +602,7 @@ sub fill {
 		$c->fillMode($fillMode);
 	}
 	for ( @p ) {
+		next if 4 > @$_;
 		if ( $self->{antialias} && !$_[0]->{canvas}->antialias) {
 			last unless $ok &= $c->new_aa_surface->fillpoly($_);
 		} else {
