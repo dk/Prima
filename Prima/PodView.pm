@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use Config;
 use Encode;
-use Prima qw(Utils TextView Widget::Link);
+use Prima qw(Utils TextView Widget::Link Image::base64);
 
 use vars qw(@ISA %HTML_Escapes);
 @ISA = qw(Prima::TextView);
@@ -671,7 +671,10 @@ sub open_read
 
 sub load_image
 {
-	my ( $self, $src, $frame ) = @_;
+	my ( $self, $src, $frame, $rest ) = @_;
+	return Prima::Image::base64->load_icon($rest)#, index => $frame, iconUnmask => 1)
+		if $src eq 'data:base64';
+
 	return Prima::Icon-> load( $src, index => $frame, iconUnmask => 1)
 		if -f $src;
 
@@ -757,8 +760,9 @@ sub add_formatted
 		$self-> add($text,STYLE_CODE,0);
 		$self-> add_new_line;
 	} elsif ( $format eq 'podview') {
-		while ( $text =~ m/<\s*([^<>]*)\s*>/gcs) {
+		while ( $text =~ m/<\s*([^<>]*)\s*>(.*)/gcs) {
 			my $cmd = $1;
+			my $rest = $2;
 			if ( lc($cmd) eq 'cut') {
 				$self-> {readState}-> {pod_cutting} = 0;
 			} elsif ( lc($cmd) eq '/cut') {
@@ -772,7 +776,7 @@ sub add_formatted
 					elsif ( $option =~ /^(src|cut|title)$/) { $opt{$option} = $value }
 				}
 				if ( defined $opt{src}) {
-					my $img = $self->load_image($opt{src}, $opt{frame} // 0);
+					my $img = $self->load_image($opt{src}, $opt{frame} // 0, $rest);
 					$self->add_image($img, %opt) if $img;
 				} elsif ( defined $opt{frame} && defined $self->{images}->[$opt{frame}]) {
 					$self->add_image($self->{images}->[$opt{frame}], %opt);
@@ -2127,6 +2131,13 @@ In the example above 'graphic.gif' will be shown if it can be found and loaded,
 otherwise the poor-man-drawings would be selected.
 
 If "src" is omitted, image is retrieved from C<images> array, from the index C<frame>.
+
+It is also possible to embed images in the pod, by using special C<src> tag and base64-encoded
+images. The format should preferrably be GIF, as this is Prima default format, or BMP for
+very small images, as it is supported without third party libraries:
+
+	=for podview <img src="data:base64">
+	R0lGODdhAQABAIAAAAAAAAAAACwAAAAAAQABAIAAAAAAAAACAkQBADs=
 
 =back
 

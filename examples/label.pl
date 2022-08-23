@@ -23,7 +23,14 @@ This is tooltip text. It is shown as a preview
 
 =item *
 
-The tooltip mechanics respect native B<pod> I<formatting> .
+The tooltip mechanics respect native B<pod> I<formatting>
+
+=for podview <img src=data:base64 title="and images">
+R0lGODdhMAAwAJEAAAAAAGhoaL+/v////ywAAAAAMAAwAIEAAABoaGi/v7////8CwZyPqcvtD6Oc
+tIGLs968ezB84kiW5tlV6rKt7tG+biyrdE3duKRHl9xzBH2aScpWJP5Cy8pQgUFEnUnI1HA1Vh/X
+rDYjCRyhIMaTvJV6YemHeI1tM8G7eO9MvQjmZTYd/QWwZ9fH16QGhyaY8HeHlzHIOKUD9qcYqWhY
+2AgHyeXhV8gnqacUYxkaivnZgooI4pnzwRqbh0e4uDJmVTpzy1jzWxd6OExbbGwhl6yIzNws+gyN
+Ql1tXa15jS3N3e3tUAAAOw==
 
 =back
 
