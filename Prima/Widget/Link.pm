@@ -324,9 +324,8 @@ browser or pod viewer. The programmer can also customize these actions.
 
   this is a tooltip
 
-=for podview <img src="link.gif">
-
-=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/Widget/link.gif">
+  =for podview <img src="data:base64">
+  R0lGODdhAQABAIAAAAAAAAAAACwAAAAAAQABAIAAAAAAAAACAkQBADs=
 
 =head1 Link types
 
