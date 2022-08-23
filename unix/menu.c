@@ -2427,7 +2427,6 @@ apc_menu_item_begin_paint( Handle self, PEvent event)
 
 	YY-> type.drawable = 1;
 	YY-> type.widget   = 1;
-	YY-> flags.paint   = 1;
 	YY-> flags.layered = pe->layered;
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
 	YY-> argb_picture  = M(pe->self)->w->argb_picture;
@@ -2437,6 +2436,7 @@ apc_menu_item_begin_paint( Handle self, PEvent event)
 	YY-> visual        = pe->layered ? &guts. argb_visual : &guts. visual;
 	YY-> colormap      = pe->layered ? guts. argbColormap : guts. defaultColormap;
 	prima_prepare_drawable_for_painting(event-> gen.H, false );
+	YY-> flags.paint   = 1;
 	XCHECKPOINT;
 
 	return true;
