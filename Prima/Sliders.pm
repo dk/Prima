@@ -1781,7 +1781,7 @@ sub borderWidth
 
 package Prima::CircularSlider;
 use vars qw(@ISA);
-@ISA = qw(Prima::AbstractSlider Prima::MouseScroller);
+@ISA = qw(Prima::AbstractSlider Prima::Widget::MouseScroller);
 
 {
 my %RNT = (
