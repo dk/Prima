@@ -862,19 +862,19 @@ sub text_offset2block
 	my ( $l, $r) = ( 0, scalar @$bx);
 	while ( 1) {
 		my $i = int(( $l + $r) / 2);
+		my $j = $i + 1;
 		last if $i == $ret;
 		$ret = $i;
-		my ( $b1, $b2) = ( $$bx[$i], $$bx[$i+1]);
+		$i-- while $i > 0     && $$bx[$i]->[tb::BLK_TEXT_OFFSET] < 0;
+		$j++ while $j < $#$bx && $$bx[$j]->[tb::BLK_TEXT_OFFSET] < 0;
+
+		my ($b1, $b2) = ( $$bx[$i], $$bx[$j]);
 
 		last if $ofs == $$b1[ tb::BLK_TEXT_OFFSET];
 
 		if ( $ofs > $$b1[ tb::BLK_TEXT_OFFSET]) {
-			if ( $b2) {
-				last if $ofs < $$b2[ tb::BLK_TEXT_OFFSET];
-				$l = $i;
-			} else {
-				last;
-			}
+			last if $ofs < $$b2[ tb::BLK_TEXT_OFFSET];
+			$l = $j;
 		} else {
 			$r = $i;
 		}
