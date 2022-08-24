@@ -691,7 +691,6 @@ sub find_text
 	my ( $self, $line, $offset, $options) = @_;
 	$self = $self-> {text};
 	return unless scalar @{$self-> {blocks}};
-	$line = '('.quotemeta( $line).')' unless $options & fdo::RegularExpression;
 
 	my @range = $self-> text_range;
 	return if $range[0] >= $range[1];
@@ -699,38 +698,31 @@ sub find_text
 	$offset = $range[1] if $offset > $range[1];
 	return if $offset < $range[0];
 
-	my ( $re, $re2, $esub);
-	$re  = '/';
-	$re .= '\\b' if $options & fdo::WordsOnly;
-	$re .= "$line";
-	$re .= '\\b' if $options & fdo::WordsOnly;
-	$re .= '/';
-	$re2 = '';
-	$re2.= 'i' unless $options & fdo::MatchCase;
+	local $SIG{__WARN__} = sub {};
+	eval {
+		$line = quotemeta($line) unless $options & fdo::RegularExpression;
+		$line = qr/$line/i       unless $options & fdo::MatchCase;
+		$line = qr/\b$line\b/    if $options & fdo::WordsOnly;
+	};
+	Prima::MsgBox::message_box("Text Search", "Error: $@") if $@;
 
 	my $dir = ( $options & fdo::BackwardSearch) ? 0 : 1;
-	my @opt = $dir ? ( $offset, $range[1] - $offset + 1) :
-					( $range[0], $offset - $range[0]);
+	my @opt = $dir ? 
+		( $offset, $range[1] - $offset + 1) :
+		( $range[0], $offset - $range[0]);
 	my @text = split('(\n)', substr( ${$self-> {text}}, $opt[0], $opt[1]));
 	@text = reverse @text unless $dir;
-
-
-	local $SIG{__WARN__}=sub{};
-	$esub = eval(<<FINDER);
-sub {
-	for ( \@text) {
-		\$offset -= length unless $dir;
-		if ( $re$re2) {
-			\$offset += length(\$`);
-			return \$offset, \$offset + length(\$&);
+ 
+	for my $t ( @text) {
+		$offset -= length $t unless $dir;
+		if ( $t =~ /($line)(.*)/) {
+			$offset += length($t) - length($1) - length($2);
+			return $offset, $offset + length($1);
 		}
-		\$offset += length if $dir;
+		$offset += length $t if $dir;
 	}
+
 	return;
-}
-FINDER
-	return unless $esub;
-	return $esub-> ();
 }
 
 sub do_find
@@ -742,7 +734,7 @@ sub do_find
 
 	my ( $offset, $offset2);
 	if ( defined $self-> {find_offset}) {
-	$offset = $self-> {find_offset};
+		$offset = $self-> {find_offset};
 	} else {
 		if ( $$p{scope} != fds::Cursor) {
 			my @scope = ($$p{scope} == fds::Top) ? (0,0) : (-1,-1);

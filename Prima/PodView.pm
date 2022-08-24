@@ -386,6 +386,7 @@ sub load_link
 			if ( $self-> {topicView}) {
 				$self-> select_topic($t, %opt);
 			} else {
+					my $m = $self-> {model}-> [ $$t[ T_MODEL_START]];
 				$self-> select_text_offset(
 					$self-> {model}-> [ $$t[ T_MODEL_START]]-> [ M_TEXT_OFFSET]
 				);
