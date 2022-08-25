@@ -893,18 +893,26 @@ Prima::FrameSet - standard frameset widget
 
 =head1 SYNOPSIS
 
-	use Prima::FrameSet;
+	use Prima qw(Application Buttons FrameSet);
 
-	my $frame = Prima::FrameSet->create(
-		frameSizes => [qw(211 20% 123 10% * 45% *)],
-		opaqueResize => 0,
-		frameProfiles => [ 0,0, { minFrameWidth => 123, maxFrameWidth => 123 }],
+	my $w = Prima::MainWindow->create( size => [300, 150] );
+
+	my $frame = $w-> insert( 'FrameSet' =>
+		pack          => { fill => 'both', expand => 1 },
+	        frameSizes    => [qw(60% *)],
+	        frameProfiles => [ 0,0, { minFrameWidth => 123 }],
 	);
-	$frame->insert_to_frame(
-		0,
-		Button =>
-		text => '~Ok',
+
+	$frame->insert_to_frame( 0, Button =>
+		bottom        => 50,
+	        text          => '~Ok',
 	);
+
+	run Prima;
+
+=for podview <img src="frameset.gif">
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/frameset.gif">
 
 =head1 DESCRIPTION
 
