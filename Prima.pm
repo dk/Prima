@@ -101,6 +101,11 @@ Prima - a perl graphic toolkit
 
 =head1 SYNOPSIS
 
+=for podview <img src="Prima/hello-world.gif">
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/hello-world.gif">
+
+
 	use Prima qw(Application Buttons);
 
 	Prima::MainWindow->new(
