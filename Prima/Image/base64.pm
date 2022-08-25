@@ -17,7 +17,7 @@ sub check_mime
 sub load_class
 {
 	my $class = shift;
-	shift if $_[0] // '' eq __PACKAGE__;
+	shift if ($_[0] // '') eq __PACKAGE__;
 
 	check_mime();
 	return (undef, $has_mime) unless 1 eq $has_mime;
