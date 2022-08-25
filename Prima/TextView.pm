@@ -564,7 +564,7 @@ sub on_paint
 			} elsif ( $j == $sy1 ) {
 				# upper selected part
 				$self->paint_selection( $canvas, $b, $j, $x, $y, $sx1, -1);
-			} elsif ( $j == $sy2 ) {
+			} elsif ( $j == $sy2 && $sx2 > 0 ) {
 				# lower selected part
 				$self->paint_selection( $canvas, $b, $j, $x, $y, 0, $sx2 - 1);
 			} elsif ( $j > $sy1 && $j < $sy2) { # simple selection case
