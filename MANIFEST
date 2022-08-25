@@ -289,7 +289,6 @@ Prima/EventHook.pm
 Prima/ExtLists.pm
 Prima/FrameSet.pm
 Prima/Grids.pm
-Prima/Header.pm
 Prima/HelpViewer.fm
 Prima/HelpViewer.pm
 Prima/Image/Animate.pm
@@ -353,6 +352,7 @@ Prima/Utils.pm
 Prima/Widget/BidiInput.pm
 Prima/Widget/EventRectangles.pm
 Prima/Widget/GroupScroller.pm
+Prima/Widget/Header.pm
 Prima/Widget/IntIndents.pm
 Prima/Widget/Link.pm
 Prima/Widget/ListBoxUtils.pm

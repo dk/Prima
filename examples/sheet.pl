@@ -14,20 +14,13 @@ rearrangement ( horizontal, with drag ).
 
 use strict;
 use warnings;
-use Prima;
-use Prima::DetailedList;
+use Prima qw(DetailedList Application);
 
 package Sheet;
-
-
-use Prima;
-use Prima::Header;
-use Prima::Application;
 
 my $w = Prima::MainWindow-> create( packPropagate => 0);
 
 my @items;
-
 my $fname;
 
 my $os = Prima::Application-> get_system_info;

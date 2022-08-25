@@ -215,7 +215,7 @@ L<Prima::FrameSet> - frameset widget class
 
 L<Prima::Grids> - grid widgets
 
-L<Prima::Header> - a multi-tabbed header widget
+L<Prima::Widget::Header> - multi-column header widget
 
 L<Prima::ImageViewer> - bitmap viewer
 

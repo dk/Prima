@@ -33,12 +33,12 @@ GENPROC
 
 sub profile_default {
 	return {
- 		%{Prima::Header->profile_default},
+ 		%{Prima::Widget::Header->profile_default},
 		%{$_[ 0]-> SUPER::profile_default},
 		autoRecalc        => 1,
 		autoHScroll       => 1,
 		hScroll           => 0,
-		headerClass       => 'Prima::Header',
+		headerClass       => 'Prima::Widget::Header',
 		headerProfile     => {},
 		headerDelegations => [qw(MoveItem SizeItem SizeItems Click)],
 		multiColumn       => 0,

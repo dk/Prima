@@ -6,7 +6,7 @@ use strict;
 use warnings;
 use Prima::Classes;
 use Prima::Lists;
-use Prima::Header;
+use Prima::Widget::Header;
 
 use vars qw(@ISA);
 @ISA = qw(Prima::ListViewer);
@@ -36,9 +36,9 @@ GENPROC
 sub profile_default
 {
 	return {
-		%{Prima::Header-> profile_default},
+		%{Prima::Widget::Header-> profile_default},
 		%{$_[ 0]-> SUPER::profile_default},
-		headerClass       => 'Prima::Header',
+		headerClass       => 'Prima::Widget::Header',
 		headerProfile     => {},
 		headerDelegations => [qw(MoveItem SizeItem SizeItems Click)],
 		multiColumn       => 0,
@@ -493,7 +493,7 @@ use Prima::DetailedList;
 
 Prima::DetailedList is a descendant of Prima::ListViewer, and as such provides
 a certain level of abstraction. It overloads format of L<items> in order to
-support multi-column ( 2D ) cell span. It also inserts L<Prima::Header> widget
+support multi-column ( 2D ) cell span. It also inserts L<Prima::Widget::Header> widget
 on top of the list, so the user can interactively move, resize and sort the content
 of the list. The sorting mechanism is realized inside the package; it is
 activated by the mouse click on a header tab.
@@ -546,7 +546,7 @@ Assigns a header class.
 
 Create-only property.
 
-Default value: C<Prima::Header>
+Default value: C<Prima::Widget::Header>
 
 =item headerProfile HASH
 
@@ -604,6 +604,6 @@ Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
 
 =head1 SEE ALSO
 
-L<Prima>, L<Prima::Lists>, L<Prima::Header>, F<examples/sheet.pl>
+L<Prima>, L<Prima::Lists>, L<Prima::Widget::Header>, F<examples/sheet.pl>
 
 =cut

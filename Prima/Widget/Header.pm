@@ -1,6 +1,6 @@
 #  Created by Dmitry Karasik <dk@plab.ku.dk>
 #  Modifications by Anton Berezin <tobez@tobez.org>
-package Prima::Header;
+package Prima::Widget::Header;
 
 use strict;
 use warnings;
@@ -388,7 +388,7 @@ sub on_click
 
 sub protect
 {
-	die "Prima::Header: Cannot change parameters during transaction\n" if $_[0]-> {transaction};
+	die "Prima::Widget::Header: Cannot change parameters during transaction\n" if $_[0]-> {transaction};
 }
 
 sub autowidths
@@ -549,7 +549,7 @@ sub pressed
 
 =head1 NAME
 
-Prima::Header - a multi-tabbed header widget.
+Prima::Widget::Header - multi-column header widget
 
 =head1 DESCRIPTION
 

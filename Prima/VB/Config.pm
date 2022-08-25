@@ -179,11 +179,11 @@ sub classes
 		RTModule => 'Prima::Sliders',
 		module   => 'Prima::VB::CoreClasses',
 	},
-	'Prima::Header' => {
+	'Prima::Widget::Header' => {
 		icon     => 'VB::classes.gif:30',
 		page     => 'Sliders',
 		class    => 'Prima::VB::Header',
-		RTModule => 'Prima::Header',
+		RTModule => 'Prima::Widget::Header',
 		module   => 'Prima::VB::CoreClasses',
 	},
 	'Prima::DirectoryOutline' => {

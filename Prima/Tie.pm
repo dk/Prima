@@ -310,7 +310,7 @@ if available.
 =head2 Prima::Tie::items
 
 The class is applicable to C<Prima::ListViewer>, C<Prima::ListBox>,
-C<Prima::Header>, and their descendants, and in limited fashion to
+C<Prima::Widget::Header>, and their descendants, and in limited fashion to
 C<Prima::OutlineViewer> and its descendants C<Prima::StringOutline> and
 C<Prima::Outline>.
 

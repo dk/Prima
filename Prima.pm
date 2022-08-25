@@ -347,8 +347,6 @@ L<Prima::FrameSet> - frameset widget class
 
 L<Prima::Grids> - grid widgets
 
-L<Prima::Header> - a multi-tabbed header widget
-
 L<Prima::HelpViewer> - the built-in POD file browser
 
 L<Prima::ImageViewer> - bitmap viewer
@@ -440,6 +438,8 @@ L<Prima::PS::Printer> - PostScript and PDF interfaces to C<Prima::Printer>
 L<Prima::Widget::BidiInput> - heuristics for i18n input
 
 L<Prima::Widget::GroupScroller> - optional automatic scroll bars
+
+L<Prima::Widget::Header> - multi-column header widget
 
 L<Prima::Widget::IntIndents> - indenting support
 

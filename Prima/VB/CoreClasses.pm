@@ -186,9 +186,9 @@ sub classes
 			page   => 'Additional',
 			icon   => 'VB::classes.gif:28',
 		},
-		'Prima::Header' => {
+		'Prima::Widget::Header' => {
 			icon     => 'VB::classes.gif:30',
-			RTModule => 'Prima::Header',
+			RTModule => 'Prima::Widget::Header',
 			page     => 'Sliders',
 			module   => 'Prima::VB::CoreClasses',
 			class    => 'Prima::VB::Header',
@@ -2155,7 +2155,7 @@ use strict;
 use vars qw(@ISA);
 @ISA = qw( Prima::VB::CommonControl);
 
-# use Prima::Header;
+# use Prima::Widget::Header;
 
 sub prf_types
 {
