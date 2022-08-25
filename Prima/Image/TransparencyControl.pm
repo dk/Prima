@@ -305,6 +305,10 @@ color index when saving an image to a file. C<Prima::Image::TransparencyControl>
 is a widget class that displays the image palette and allow color rather than
 index selection.
 
+=for podview <img src="transparency.gif">
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/Image/transparency.gif">
+
 =head1 Prima::Image::TransparencyControl
 
 =head2 Properties
