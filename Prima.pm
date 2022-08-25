@@ -469,13 +469,15 @@ L<prima-gencls>     - C<prima-gencls>, a class compiler tool.
 
 =item Miscellaneous
 
-L<Prima::faq> - frequently asked questions 
+L<Prima::faq> - frequently asked questions
 
-L<Prima::Const> - predefined toolkit constants 
+L<Prima::Const> - predefined toolkit constants
 
 L<Prima::EventHook> - event filtering
 
 L<Prima::Image::Animate> - animate gif and webp files
+
+L<Prima::Image::base64> - hard-coded image files
 
 L<Prima::IniFile> - support of Windows-like initialization files
 

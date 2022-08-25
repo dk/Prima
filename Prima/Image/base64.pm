@@ -86,7 +86,7 @@ sub save
 
 =head1 NAME
 
-Prima::Image::base64
+Prima::Image::base64 - hard-coded image files
 
 =head1 DESCRIPTION
 
