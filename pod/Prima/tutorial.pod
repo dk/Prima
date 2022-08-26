@@ -431,20 +431,20 @@ is also okay.
 Finally, consider if text-only POD is okay for you or you need images embedded
 in the pod.  This is somewhat tricky because the perl maintainers actively
 reject the idea of having images in pod, however metacpan.org can display
-images in the perl documentation alright, and so does Prima, however both using
+images in the perl documentation alright, and so does Prima, however both use
 different syntax.
 
 Here is an example of a mixed content that will show graphic when the graphic display is available, and
 just plain text otherwise:
 
    =for podview <img src="illustration.gif" cut=1 title="Horizontal font measurements">
-   
+
    =for html <p><img src="https://raw.githubusercontent.com/me/myproject/master/illustration.gif"><!--
-   
+
       .. plain text illustration ..
-   
+
    =for html -->
-   
+
    =for podview </cut>
 
 GIF is chosen because Prima keeps all of its internal images into this format,
@@ -453,7 +453,7 @@ so it is a most safe fallback.  However any other format is okay too.
 If you don't need a text fallback, just just this:
 
   =for podview <img src="illustration.gif">
-  
+
   =for html <p><img src="https://raw.githubusercontent.com/me/myproject/master/illustration.gif">
 
 =back
