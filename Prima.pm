@@ -235,9 +235,18 @@ namespace.
 
 =over
 
-=item message TEXT 
+=item message TEXT
 
 Displays a system message box with TEXT.
+
+=item open_file, save_file
+
+When the C<Prima::Dialog::FileDialog> module is loaded, these shortcut methods
+are registered in the C<Prima::> namespace as an alternative to the same
+methods in the module's own namespace. The methods execute standard file open
+and save dialogs, correspondingly.
+
+See L<Prima::Dialog::FileDialog> for more.
 
 =item run
 
