@@ -313,10 +313,15 @@ browser or pod viewer. The programmer can also customize these actions.
 
 =head1 SYNOPSIS
 
+  use Prima qw(Label Application);
+
+  my $main_window = Prima::MainWindow->new( size => [400, 100] );
   $main_window->insert( Label =>
+    centered => 1,
     text   => \ "L<tip://$0/ttt|tip>, L<pod://Prima/|podviewer>, L<http://google.com/|browser>, L<id|custom>",
     onLink => sub { print "$_[2]\n" },
   );
+  run Prima;
 
   =pod
 
@@ -325,7 +330,12 @@ browser or pod viewer. The programmer can also customize these actions.
   this is a tooltip
 
   =for podview <img src="data:base64">
-  R0lGODdhAQABAIAAAAAAAAAAACwAAAAAAQABAIAAAAAAAAACAkQBADs=
+  R0lGODdhFgAVAIAAAAAAAP///ywAAAAAFgAVAIAAAAD///8CLIyPqcutsKALQKI6qT11R69lWDJm
+  5omm6jqBjucycEx+bVOSNNf1+/NjCREFADs=
+
+=for podview <img src="link.gif">
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/Widget/link.gif">
 
 =head1 Link types
 

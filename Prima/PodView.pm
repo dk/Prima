@@ -673,7 +673,7 @@ sub open_read
 sub load_image
 {
 	my ( $self, $src, $frame, $rest ) = @_;
-	return Prima::Image::base64->load_icon($rest)#, index => $frame, iconUnmask => 1)
+	return Prima::Image::base64->load_icon($rest, index => $frame, iconUnmask => 1)
 		if $src eq 'data:base64';
 
 	return Prima::Icon-> load( $src, index => $frame, iconUnmask => 1)
