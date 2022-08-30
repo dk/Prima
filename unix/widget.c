@@ -380,10 +380,10 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
 		XX-> ackOrigin = pos;
 		XX-> ackSize   = XX-> size;
 		XX-> flags. mapped = XX-> flags. want_visible;
-		XDestroyWindow( DISP, old);
 		prima_set_view_ex( self, &vprf);
 		for ( i = 0; i < count; i++) ((( PComponent) list[ i])-> self)-> recreate( list[ i]);
 		prima_notify_sys_handle( self );
+		XDestroyWindow( DISP, old);
 		return true;
 	}
 
