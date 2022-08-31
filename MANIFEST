@@ -277,6 +277,7 @@ Prima/Drawable/Metafile.pm
 Prima/Drawable/Markup.pm
 Prima/Drawable/Path.pm
 Prima/Drawable/Subcanvas.pm
+Prima/Drawable/SVG.pm
 Prima/Drawable/TextBlock.pm
 Prima/Dialog/ColorDialog.pm
 Prima/Dialog/FileDialog.pm
@@ -333,6 +334,7 @@ Prima/Sliders.pm
 Prima/Spinner.pm
 Prima/StdBitmap.pm
 Prima/Stress.pm
+Prima/sys/HTMLEscapes.pm
 Prima/sys/FS.pm
 Prima/sys/Gencls.pm
 Prima/sys/gtk/FileDialog.pm
