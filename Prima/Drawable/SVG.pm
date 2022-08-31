@@ -312,10 +312,12 @@ sub apply_transform
 			}
 		}
 		my @o = @r;
-		for ( my $j = 0; $j < 2; $j++) {
-			$r[$j] = $$m[ $j ] * $o[0] + $$m[$j + 2] * $o[1];
-			$r[$j] += $$m[ $j + 4 ] if $pos;
+		if ( $pos ) {
+			for ( my $j = 0; $j < 2; $j++) {
+				$r[$j] = $$m[ $j ] * $o[0] + $$m[$j + 2] * $o[1] + $$m[ $j + 4 ];
+			}
 		}
+		#print "@_[$i,$i+1] $pos:@o / @$m => @r\n";
 		push @ret, @r;
 	}
 
@@ -332,7 +334,7 @@ sub draw_svg
 	my ( $w, $h ) = $self->apply_size($tag, qw(width height));
 
 	my @cr = $canvas->clipRect;
-	my @nr = ($x, $y, $x + $w, $y + $h);
+	my @nr = ($x, $y, $x + $w, $y - $h);
 	$nr[0] = $cr[0] if $nr[0] < $cr[0];
 	$nr[1] = $cr[1] if $nr[1] < $cr[1];
 	$nr[2] = $cr[2] if $nr[2] > $cr[2];
@@ -341,8 +343,8 @@ sub draw_svg
 	my ($m, $v) = ($self->{matrix}, $self->{view});
 	local $self->{matrix} = [
 		@$m[0..3],
-		$$m[4] + $x,
-		$$m[5] - $y
+		$x,
+		$y
 	];
 	local $self->{view} = [
 		$x, $y, $w, $h
@@ -356,7 +358,7 @@ sub draw_ellipse
 	my ( $self, $canvas, $tag ) = @_;
 	my ( $cx, $cy ) = $self-> apply_position( $tag, qw(cx cy));
 	my ( $rx, $ry ) = $self-> apply_size( $tag, qw(rx ry));
-	$canvas->new_path->ellipse($cx, $cy, $rx, $ry);
+	$canvas->new_path->ellipse($cx, $cy, $rx, $ry)->stroke;
 }
 
 sub draw_tag
@@ -371,11 +373,15 @@ sub draw_tag
 
 sub draw
 {
-	my ( $self, $canvas ) = @_;
+	my ( $self, $canvas, $x, $y ) = @_;
 
 	return unless $self->{tree};
+
+	$x //= 0;
+	$y //= 0;
+
 	local $self->{view}   = [0,0,$canvas->size];
-	local $self->{matrix} = [1,0,0,-1,0,$self->{tree}->{attr}->{height}];
+	local $self->{matrix} = [1,0,0,-1,$x,$canvas->height - $y - 1];
 	$self->draw_tag( $canvas, $self->{tree});
 }
 
