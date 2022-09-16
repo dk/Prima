@@ -80,10 +80,15 @@ sub import
 		my $module = shift @module;
 		next if $module eq 'Prima' || $module eq '';
 		$module = "Prima::$module" unless $module =~ /^Prima::/;
+		next unless $module;
 		local $__import = caller;
-		if ( $module) {
-			eval "use $module;";
-			die $@ if $@;
+		eval "use $module;";
+		die $@ if $@;
+		if ( $module->isa('Exporter') && $module->can('export')) {
+			no strict 'refs';
+			if ( exists ${$module.'::'}{'EXPORT_OK'} && (my $ok = \@{"${module}::EXPORT_OK"})) {
+				$module->export( $__import, @$ok) if @$ok;
+			}
 		}
 		$__import = 0;
 	}
