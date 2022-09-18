@@ -151,8 +151,8 @@ sub parse
 }
 
 my %types = (
-	gt0   => sub { (${$_[0]} > 0) ? undef : "must be positive numeric" },
-	len   => 'int&gt0',
+	ge0   => sub { (${$_[0]} >= 0) ? undef : "must be positive numeric" },
+	len   => 'int&ge0',
 	int   => qr/^\d+$/,
 	pct   => qr/^\d+(\.\d+)?%$/,
 	lp    => 'len|pct',
@@ -317,7 +317,7 @@ sub apply_transform
 				$r[$j] = $$m[ $j ] * $o[0] + $$m[$j + 2] * $o[1] + $$m[ $j + 4 ];
 			}
 		}
-		#print "@_[$i,$i+1] $pos:@o / @$m => @r\n";
+		print "@_[$i,$i+1] $pos:@o / @$m => @r\n";
 		push @ret, @r;
 	}
 
@@ -359,6 +359,15 @@ sub draw_ellipse
 	my ( $cx, $cy ) = $self-> apply_position( $tag, qw(cx cy));
 	my ( $rx, $ry ) = $self-> apply_size( $tag, qw(rx ry));
 	$canvas->new_path->ellipse($cx, $cy, $rx, $ry)->stroke;
+}
+
+sub draw_rect
+{
+	my ( $self, $canvas, $tag ) = @_;
+	my ( $x, $y ) = $self-> apply_position( $tag, qw(x y));
+	my ( $w, $h ) = $self-> apply_size( $tag, qw(width height));
+	print "$x $y $w $h\n";
+	$canvas->bar($x, $y, $x + $w, $y - $h);
 }
 
 sub draw_tag

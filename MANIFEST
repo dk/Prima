@@ -334,6 +334,7 @@ Prima/Sliders.pm
 Prima/Spinner.pm
 Prima/StdBitmap.pm
 Prima/Stress.pm
+Prima/sys/CSS.pm
 Prima/sys/HTMLEscapes.pm
 Prima/sys/FS.pm
 Prima/sys/Gencls.pm
@@ -419,6 +420,7 @@ t/Widget/Size.t
 t/Widget/SizeLimits.t
 t/Widget/Window.t
 t/Widget/ZOrder.t
+t/misc/css.t
 t/misc/fs.t
 t/misc/pod.t
 t/misc/syntax.t

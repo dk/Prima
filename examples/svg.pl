@@ -4,18 +4,22 @@ use lib '.';
 use Prima::Drawable::SVG;
 use Prima qw(Application);
 
+my $selector = '.a .b';
+$selector =~ m/^((?:\.\w+(?:\s+|$))+)$/;
+die "'$1'";
 
 my $p = Prima::Drawable::SVG::Parser->new;
 my $r = $p->parse(<<SVG);
-<svg x=20 y="20%">
-<ellipse cx="10%" rx="20" ry="50" />
+<svg x=10 y="10%">
+<ellipse cx="50%" cy="50%" rx="20" ry="50" />
 </svg>
 SVG
-use Data::Dumper; print STDERR Dumper(	$r);
+#<rect x="0" y="0" width="90%" height="80%" />
+#use Data::Dumper; print STDERR Dumper(	$r);
 
 my $w = Prima::MainWindow->new(onPaint => sub {
 	$_[1]->clear;
-	$r->draw($_[1], 100, 100);
+	$r->draw($_[1]);
 });
 
 run Prima;
