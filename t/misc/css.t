@@ -23,6 +23,27 @@ p ~ ul			{ 12:1; }
 a[href^="https"]	{ 17:1; }
 a[href$=".pdf"]		{ 18:1; }
 a[href*="w3schools"]	{ 19:1; }
+a:active		{ 20:1; }
+z::after		{ 21:1; }
+p:empty			{ 22:1; }
+p:first-child		{ 23:1; }
+p:first-of-type		{ 24:1; }
+z:lang(it)		{ 25:1; }
+p:last-child		{ 26:1; }
+p:last-of-type		{ 27:1; }
+:not(argh)		{ 28:1; }
+z:nth-child(2)		{ 29:1; }
+z:nth-last-child(2)	{ 30:1; }
+z:nth-last-of-type(2)	{ 31:1; }
+z:nth-of-type(2)	{ 32:1; }
+p:only-of-type		{ 33:1; }
+p:only-child		{ 34:1; }
+input:optional		{ 35:1; }
+input::placeholder	{ 36:1; }
+input:read-only		{ 37:1; }
+input:read-write	{ 38:1; }
+input:required		{ 39:1; }
+:root			{ 40:1; }
 CSS
 
 ok( ref($css), "css parsed" );
@@ -41,7 +62,7 @@ sub match
 	my %attr = $css->match($item);
 	my @attr = sort keys %attr;
 	my $id = _id($item);
-	@wanted = sort 5, @wanted;
+	@wanted = sort 5, 28, 40, @wanted;
 	is("@attr", "@wanted", $id);
 }
 
@@ -53,7 +74,7 @@ sub cmatch
 	my %attr = $css->match($item);
 	my @attr = sort keys %attr;
 	my $id = _id($item);
-	@wanted = sort 5, @wanted;
+	@wanted = sort 5, 28, @wanted;
 	is("@attr", "@wanted", $id);
 }
 
@@ -75,12 +96,12 @@ match ({ class => 'name1 name2 name3 intro'}, 1,2);
 cmatch({ class => 'name1', children => [{ class => 'name2'}]}, [0], 3);
 match ({ id => 'firstname'}, 4);
 match ({ id => 'xarr'});
-match ({ name => 'p'}, 6, 8);
-match ({ name => 'p', class => 'intro'}, 1, 6, 7, 8);
+match ({ name => 'p'}, 6, 8, 23, 24, 22, 26, 27, 33, 34);
+match ({ name => 'p', class => 'intro'}, 1, 6, 7, 8, 22, 23, 24, 26, 27, 33, 34);
 match ({ name => 'div'}, 8);
-cmatch({ name => 'div', children => [{ name => 'p'}]}, [0], 6, 8, 9, 10);
-cmatch({ name => 'div', children => [{ children => [{ name => 'p'}]}]}, [0,0], 6, 8, 9);
-cmatch({ children => [{name => 'div'}, {name => 'p'}]}, [1], 6, 8, 11);
+cmatch({ name => 'div', children => [{ name => 'p'}]}, [0], 6, 8, 9, 10, 22, 23, 24, 26, 27, 33, 34);
+cmatch({ name => 'div', children => [{ children => [{ name => 'p'}]}]}, [0,0], 6, 8, 9, 22, 23, 24, 26, 27, 33, 34);
+cmatch({ children => [{name => 'div'}, {name => 'p'}]}, [1], 6, 8, 11, 22, 24, 26, 27, 33);
 cmatch({ children => [{name => 'p'}, {name => 'foo'}, {name => 'ul'}]}, [2], 12);
 match ({ target => 'foo' }, 13);
 match ({ target => '_blank' }, 13, 14);
@@ -94,6 +115,13 @@ umatch({ name => 'a', href => 'xhttps://' }, 17);
 match ({ name => 'a', href => '/a.pdf' }, 18);
 umatch({ name => 'a', href => '/a.pdf#a' }, 18);
 match ({ name => 'a', href => '_w3schools_' }, 19);
-
+match ({ name => 'a', active => 1 }, 20);
+match ({ name => 'z', after  => 1 }, 21);
+match ({ name => 'z', lang => 'it'}, 25);
+cmatch ({children => [{name=>'x'},{name=>'z'},{name=>'y'}]}, [1], 29,30);
+cmatch ({children => [{name=>'x'},{name=>'z'},{name=>'z'},{name=>'z'},{name=>'y'}]}, [2], 31,32);
+match ({ name => 'input', required => 1}, 38, 39);
+match ({ name => 'input', readonly => 1}, 35, 37);
+match ({ name => 'input', placeholder => 1}, 35, 36, 38);
 
 done_testing;

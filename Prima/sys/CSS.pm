@@ -203,29 +203,323 @@ sub parse_attr_selector
 	return $self->error("bad attribute selector declaration");
 }
 
-sub get_selector_operand
+# :empty	p:empty	Selects every <p> element that has no children (including text nodes)
+sub _predicate_empty
 {
-	my $self    = shift;
+	my ( $provider, $item ) = @_;
+	return 0 == @{ $provider->get_children($item) };
+}
+
+# :first-child	p:first-child	Selects every <p> element that is the first child of its parent
+sub _predicate_first_child
+{
+	my ( $provider, $item ) = @_;
+	return ( $provider->get_siblings($item)->[0] // 0 ) == $item;
+}
+
+# :first-of-type	p:first-of-type	Selects every <p> element that is the first <p> element of its parent
+sub _predicate_first_of_type
+{
+	my ( $provider, $item ) = @_;
+	my $name = $provider->get_name($item);
+	return 0 unless defined $name;
+	my @r = grep {
+		my $iname = $provider->get_name($_);
+		defined($iname) ? ($iname eq $name) : 0;
+	} @{ $provider->get_siblings($item) };
+	return ( $r[0] // 0 ) == $item;
+}
+
+# :last-child	p:last-child	Selects every <p> element that is the last child of its parent
+sub _predicate_last_child
+{
+	my ( $provider, $item ) = @_;
+	return ( $provider->get_siblings($item)->[-1] // 0 ) == $item;
+}
+
+# :last-of-type	p:last-of-type	Selects every <p> element that is the last <p> element of its parent
+sub _predicate_last_of_type
+{
+	my ( $provider, $item ) = @_;
+	my $name = $provider->get_name($item);
+	return 0 unless defined $name;
+	my @r = grep {
+		my $iname = $provider->get_name($_);
+		defined($iname) ? ($iname eq $name) : 0;
+	} @{ $provider->get_siblings($item) };
+	return ( $r[-1] // 0 ) == $item;
+}
+
+# :only-of-type	p:only-of-type	Selects every <p> element that is the only <p> element of its parent
+sub _predicate_only_of_type
+{
+	my ( $provider, $item ) = @_;
+	my $name = $provider->get_name($item);
+	return 0 unless defined $name;
+	my @r = grep {
+		my $iname = $provider->get_name($_);
+		defined($iname) ? ($iname eq $name) : 0;
+	} @{ $provider->get_siblings($item) };
+	return 1 == @r && ( $r[0] // 0 ) == $item;
+}
+
+# :only-child	p:only-child	Selects every <p> element that is the only child of its parent
+sub _predicate_only_child
+{
+	my ( $provider, $item ) = @_;
+	my $p = $provider->get_siblings($item);
+	return 1 == @$p && ( $p->[0] // 0 ) == $item;
+}
+
+# :optional	input:optional	Selects input elements with no "required" attribute
+sub _predicate_optional
+{
+	my ( $provider, $item ) = @_;
+	return !defined $provider->get_attribute($item, 'required');
+}
+
+# ::placeholder	input::placeholder	Selects input elements with the "placeholder" attribute specified
+sub _predicate_placeholder
+{
+	my ( $provider, $item ) = @_;
+	return defined $provider->get_attribute($item, 'placeholder');
+}
+
+# :read-only	input:read-only	Selects input elements with the "readonly" attribute specified
+sub _predicate_read_only
+{
+	my ( $provider, $item ) = @_;
+	return defined $provider->get_attribute($item, 'readonly');
+}
+
+# :read-write	input:read-write	Selects input elements with the "readonly" attribute NOT specified
+sub _predicate_read_write
+{
+	my ( $provider, $item ) = @_;
+	return !defined $provider->get_attribute($item, 'readonly');
+}
+
+# :required	input:required	Selects input elements with the "required" attribute specified
+sub _predicate_required
+{
+	my ( $provider, $item ) = @_;
+	return defined $provider->get_attribute($item, 'required');
+}
+
+# :root	:root	Selects the document's root element
+sub _predicate_root
+{
+	my ( $provider, $item ) = @_;
+	return $provider->get_root($item) == $item;
+}
+
+my %predicates = (
+	empty           => [ 1, \&_predicate_empty ],
+	'first-child'   => [ 1, \&_predicate_first_child ],
+	'first-of-type' => [ 1, \&_predicate_first_of_type ],
+	'last-child'    => [ 1, \&_predicate_last_child ],
+	'last-of-type'  => [ 1, \&_predicate_last_of_type ],
+	'only-of-type'  => [ 1, \&_predicate_only_of_type ],
+	'only-child'    => [ 1, \&_predicate_only_child ],
+	'optional'      => [ 1, \&_predicate_optional ],
+	'placeholder'   => [ 2, \&_predicate_placeholder ],
+	'read-only'     => [ 1, \&_predicate_read_only ],
+	'read-write'    => [ 1, \&_predicate_read_write ],
+	'required'      => [ 1, \&_predicate_required ],
+	'root'          => [ 1, \&_predicate_root ],
+);
+
+# :lang(language)	p:lang(it)	Selects every <p> element with a lang attribute equal to "it" (Italian)
+sub _predicate_lang
+{
+	my ( $lang ) = @_;
+	return sub {
+		my ( $provider, $item ) = @_;
+		return $lang eq ($provider->get_attribute($item, 'lang') // '');
+	}
+}
+
+# :nth-child(n)	p:nth-child(2)	Selects every <p> element that is the second child of its parent
+sub _predicate_nth_child
+{
+	my ( $n ) = @_;
+	$n--;
+	return sub {
+		my ( $provider, $item ) = @_;
+		return ( $provider->get_siblings($item)->[$n] // 0 ) == $item;
+	}
+}
+
+# :nth-last-child(n)	p:nth-last-child(2)	Selects every <p> element that is the second child of its parent, counting from the last child
+sub _predicate_nth_last_child
+{
+	my ( $n ) = @_;
+	return sub {
+		my ( $provider, $item ) = @_;
+		return ( $provider->get_siblings($item)->[-$n] // 0 ) == $item;
+	}
+}
+
+# :nth-last-of-type(n)	p:nth-last-of-type(2)	Selects every <p> element that is the second <p> element of its parent, counting from the last child
+sub _predicate_nth_last_of_type
+{
+	my ( $n ) = @_;
+	return sub {
+		my ( $provider, $item ) = @_;
+		my $name = $provider->get_name($item);
+		return 0 unless defined $name;
+		my @r = grep {
+			my $iname = $provider->get_name($_);
+			defined($iname) ? ($iname eq $name) : 0;
+		} @{ $provider->get_siblings($item) };
+		return ( $r[-$n] // 0 ) == $item;
+	}
+}
+
+# :nth-of-type(n)	p:nth-of-type(2)	Selects every <p> element that is the second <p> element of its parent
+sub _predicate_nth_of_type
+{
+	my ( $n ) = @_;
+	$n--;
+	return sub {
+		my ( $provider, $item ) = @_;
+		my $name = $provider->get_name($item);
+		return 0 unless defined $name;
+		my @r = grep {
+			my $iname = $provider->get_name($_);
+			defined($iname) ? ($iname eq $name) : 0;
+		} @{ $provider->get_siblings($item) };
+		return ( $r[$n] // 0 ) == $item;
+	}
+}
+
+my %predicates2 = (
+	lang               => \&_predicate_lang,
+	'nth-child'        => \&_predicate_nth_child,
+	'nth-last-child'   => \&_predicate_nth_last_child,
+	'nth-of-type'      => \&_predicate_nth_of_type,
+	'nth-last-of-type' => \&_predicate_nth_last_of_type,
+);
+
+sub parse_predicate
+{
+	my ($self, $colons) = @_;
+
 	my $content = $self->{parser}->{content};
 
-	if ( $$content =~ m/\G([\*\-\#\.\w]+)/gcs ) {
-		my $s_id     = $self->parse_xid_selector($1);
-		my $selector = $s_id;
-		if ( $$content =~ m/\G\[/gcs ) {
-			my $s_attr = $self->parse_attr_selector;
-			return $self->error unless ref $s_attr;
-			$$content =~ m/\G\s*\]/gcs or return $self->error("] is expected");
-			$selector = sub { $s_id->(@_) && $s_attr->(@_) };
+	while ( 1 ) {
+		if ( $$content =~ m/\G([-\w]+)\(/gcs ) {
+			my $function = $1;
+			my $ret;
+
+			if ( $function eq 'not') {
+				# :not(selector)	:not(p)	Selects every element that is not a <p> element
+				my $selector = $self->get_selector_operand(')');
+				return $self->error unless ref $selector;
+				$ret = sub { !$selector->(@_) }
+			} elsif ( my $cb = $predicates2{ $function } ) {
+				return $self->error('too many colons') if 1 != $colons;
+				my $param;
+				if ( $function eq 'lang') {
+					$$content =~ m/\G(\w+)/gcs or return $self->error('string expected');
+					$param = $1;
+				} else {
+					$$content =~ m/\G([1-9]\d*)/gcs or return $self->error('positive integer expected');
+					$param = $1;
+				}
+				$ret = $cb->($param);
+			} else {
+				return $self->error("unknown predicate function '$function'");
+			}
+
+			$$content =~ m/\G\)/gcs or return $self->error(') expected');
+			return $ret;
+		} elsif ( $$content =~ m/\G([-\w]+)/gcs ) {
+			my $function = $1;
+			if ( my $rec = $predicates{ $function } ) {
+				return $self->error("should be preceded by $rec->[0] colon(s)") if $rec->[0] != $colons;
+				return $rec->[1];
+			} elsif ( $function =~ m/^(
+				active|checked|default|disabled|enabled|focus|fullscreen|
+				hover|in\-range|indeterminate|invalid|link|out\-of\-range|
+				target|valid|visited
+			)/x) {
+# :active	a:active	Selects the active link
+# :checked	input:checked	Selects every checked <input> element
+# :default	input:default	Selects the default <input> element
+# :disabled	input:disabled	Selects every disabled <input> element
+# :enabled	input:enabled	Selects every enabled <input> element
+# :focus	input:focus	Selects the input element which has focus
+# :fullscreen	:fullscreen	Selects the element that is in full-screen mode
+# :hover	a:hover	Selects links on mouse over
+# :in-range	input:in-range	Selects input elements with a value within a specified range
+# :indeterminate	input:indeterminate	Selects input elements that are in an indeterminate state
+# :invalid	input:invalid	Selects all input elements with an invalid value
+# :link	a:link	Selects all unvisited links
+# :out-of-range	input:out-of-range	Selects input elements with a value outside a specified range
+# :target	#news:target	Selects the current active #news element (clicked on a URL containing that anchor name)
+# :valid	input:valid	Selects all input elements with a valid value
+# :visited	a:visited	Selects all visited links
+				return $self->error('too many colons') if 1 != $colons;
+				return sub { $_[0]-> has_predicate($_[1], $function) };
+			} elsif ( $function =~ m/^(after|before|marker|selection)$/) {
+# ::after	p::after	Insert something after the content of each <p> element
+# ::before	p::before	Insert something before the content of each <p> element
+# ::marker	::marker	Selects the markers of list items
+# ::selection	::selection	Selects the portion of an element that is selected by a user
+				return $self->error('two colons expected') if 2 != $colons;
+				return sub { $_[0]-> has_predicate($_[1], $function) };
+			} else {
+				return $self->error("unknown predicate function '$function'");
+			}
+		} elsif ( $$content =~ m/\G$/gcs ) {
+			return $self->error("unexpected end of content");
+		} else {
+			return $self->error("bad predicate");
 		}
-		return $selector;
-	} elsif ( $$content =~ m/\G\[/gcs ) {
-		my $s_attr = $self->parse_attr_selector;
-		return $self->error unless ref $s_attr;
-		$$content =~ m/\G\s*\]/gcs or return $self->error("] is expected");
-		return $s_attr;
-	} else {
-		return $self->error('bad selector');
 	}
+}
+
+sub get_selector_operand
+{
+	my ($self, $terminator) = @_;
+	$terminator //= '{,';
+	my $content = $self->{parser}->{content};
+
+	my %got;
+	while ( 1 ) {
+		if ( $$content =~ m/\G([\*\-\#\.\w]+)/gcs ) {
+			return $self->error('xid is already declared') if defined $got{xid};
+			$got{xid} = $self->parse_xid_selector($1);
+		} elsif ( $$content =~ m/\G\[/gcs) {
+			return $self->error('attribute selector is already declared') if defined $got{attr};
+			$got{attr} = $self->parse_attr_selector;
+			return $self->error unless ref $got{attr};
+			$$content =~ m/\G\]/gcs or return $self->error('] expected');
+		} elsif ( $$content =~ m/\G(\:+)/gcs) {
+			my $p = $self->parse_predicate(length $1);
+			return $self->error unless ref $p;
+			push @{$got{p}}, $p;
+		} elsif ( $$content =~ m/\G(?=[\s$terminator])/gcs ) {
+			last;
+		} elsif ( $$content =~ m/\G$/gcs ) {
+			return $self->error("unexpected end of content");
+		} else {
+			return $self->error("bad selector");
+		}
+	}
+
+	my @selectors = grep { defined } $got{xid}, $got{attr}, @{ $got{p} // [] };
+	return $self->error('empty selector') unless @selectors;
+
+	return $selectors[0] if 1 == @selectors;
+
+	return sub {
+		for my $s ( @selectors ) {
+			return 0 unless $s->(@_);
+		}
+		return 1;
+	};
 }
 
 sub _match_parent
@@ -252,9 +546,7 @@ sub _match_right_before
 	# element+element	div + p			Selects the first <p> element that is placed immediately after <div> elements
 	my ( $cb, $provider, $item ) = @_;
 
-	return 0 unless my $p = $provider->get_parent($item);
-	$p = $provider->get_children($p);
-
+	my $p = $provider->get_siblings($item);
 	for ( my $i = 0; $i < @$p; $i++) {
 		next if $p->[$i] != $item;
 		return 0 if $i == 0;
@@ -269,9 +561,7 @@ sub _match_before
 	# element1~element2	p ~ ul			Selects every <ul> element that is preceded by a <p> element
 	my ( $cb, $provider, $item ) = @_;
 
-	return 0 unless my $p = $provider->get_parent($item);
-	$p = $provider->get_children($p);
-
+	my $p = $provider->get_siblings($item);
 	for ( my $i = 0; $i < @$p; $i++) {
 		next if $p->[$i] != $item;
 		return if $i == 0;
@@ -485,8 +775,26 @@ sub get_attribute { $_[1]->{$_[2]} }
 sub get_name      { $_[1]->{name} // '' }
 sub get_parent    { $_[0]->{cache}->{"$_[1]"} }
 sub get_children  { $_[1]->{children} // [] }
+sub has_predicate { defined $_[1]->{$_[2]} }
 
 sub set_attribute { $_[1]->{$_[2]} = $_[3] }
+
+sub get_root
+{
+	my ( $self, $item ) = @_;
+	while (1) {
+		my $p = $self->get_parent($item);
+		return $item unless $p;
+		$item = $p;
+	}
+}
+
+sub get_siblings
+{
+	my ( $self, $item ) = @_;
+	my $p = $self->get_parent($item) or return [$item];
+	return $self->get_children($p);
+}
 
 sub cache
 {
