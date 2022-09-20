@@ -47,7 +47,7 @@ input:required		{ 39:1; }
 CSS
 
 ok( ref($css), "css parsed" );
-diag($css) unless ref($css);
+diag($css), exit unless ref($css);
 
 sub _id
 {
