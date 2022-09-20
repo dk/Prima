@@ -28,9 +28,12 @@ sub error
 	return $self->{parser}->{error};
 }
 
-sub _class($) { $_[0]->{class} // '' }
-sub _id($)    { $_[0]->{id} // '' }
-sub _name($)  { $_[0]->{name} // '' }
+sub _class($)    { $_[0]->{class} // '' }
+sub _id($)       { $_[0]->{id} // '' }
+sub _name($)     { $_[0]->{name} // '' }
+sub _parent($)   { $_[0]->{parent} }
+sub _children($) { $_[0]->{children} // [] }
+sub _attr($$)    { $_[0]->{$_[1]} }
 
 # https://www.w3schools.com/cssref/css_selectors.asp
 sub _match_xid
@@ -120,42 +123,42 @@ sub parse_xid_selector
 sub _attr_eq
 {
 	my ($attr, $val) = @_;
-	return sub { $val eq ($_[0]->{$attr} // '') };
+	return sub { $val eq ((_attr($_[0], $attr) // '')) };
 }
 
 # [attribute~=value]	[title~=flower]		Selects all elements with a title attribute containing the word "flower"
 sub _attr_word
 {
 	my ($attr, $val) = @_;
-	return sub { ($_[0]->{$attr} // '') =~ /(^|\s)\Q$val\E(\s|$)/ };
+	return sub { (_attr($_[0], $attr) // '') =~ /(^|\s)\Q$val\E(\s|$)/ };
 }
 
 # [attribute|=value]	[lang|=en]		Selects all elements with a lang attribute value equal to "en" or starting with "en-"
 sub _attr_starts_with_word
 {
 	my ($attr, $val) = @_;
-	return sub { ($_[0]->{$attr} // '') =~ /^\Q$val\E(-|$)/ };
+	return sub { (_attr($_[0], $attr) // '') =~ /^\Q$val\E(-|$)/ };
 }
 
 # [attribute^=value]	a[href^="https"]	Selects every <a> element whose href attribute value begins with "https"
 sub _attr_starts_with
 {
 	my ($attr, $val) = @_;
-	return sub { ($_[0]->{$attr} // '') =~ /^\Q$val\E/ };
+	return sub { (_attr($_[0], $attr) // '') =~ /^\Q$val\E/ };
 }
 
 # [attribute$=value]	a[href$=".pdf"]		Selects every <a> element whose href attribute value ends with ".pdf"
 sub _attr_ends_width
 {
 	my ($attr, $val) = @_;
-	return sub { ($_[0]->{$attr} // '') =~ /\Q$val\E$/ };
+	return sub { (_attr($_[0], $attr) // '') =~ /\Q$val\E$/ };
 }
 
 # [attribute*=value]	a[href*="w3schools"]	Selects every <a> element whose href attribute value contains the substring "w3schools"
 sub _attr_substr
 {
 	my ($attr, $val) = @_;
-	return sub { index($_[0]->{$attr} // '', $val) >= 0 };
+	return sub { index((_attr($_[0], $attr) // ''), $val) >= 0 };
 }
 
 my %attr_ops = (
@@ -199,7 +202,7 @@ sub parse_attr_selector
 	# [attribute]		[target]		Selects all elements with a target attribute
 	elsif ( $$content =~ m/\G([-\w]+)/gcs) {
 		my $attr = $1;
-		return sub { exists $_[0]->{$attr} };
+		return sub { defined _attr $_[0], $attr };
 	}
 
 	return $self->error("bad attribute selector declaration");
@@ -235,8 +238,8 @@ sub _match_parent
 	# .class1 .class2	.name1 .name2		Selects all elements with name2 that is a descendant of an element with name1
 	# element element	div p			Selects all <p> elements inside <div> elements
 	my ( $cb, $item ) = @_;
-	while ( $item->{parent}) {
-		$item = $item->{parent};
+	while ( _parent $item) {
+		$item = _parent $item;
 		return 1 if $cb->($item);
 	}
 	return 0;
@@ -246,7 +249,8 @@ sub _match_direct_parent
 {
 	# element>element	div > p			Selects all <p> elements where the parent is a <div> element
 	my ( $cb, $item ) = @_;
-	return $item->{parent} ? $cb->($item->{parent}) : 0;
+	my $p = _parent $item or return 0;
+	return $cb->($p);
 }
 
 sub _match_right_before
@@ -254,8 +258,8 @@ sub _match_right_before
 	# element+element	div + p			Selects the first <p> element that is placed immediately after <div> elements
 	my ( $cb, $item ) = @_;
 
-	return 0 unless my $p = $item->{parent};
-	$p = $p->{children} // [];
+	return 0 unless my $p = _parent $item;
+	$p = _children $p;
 
 	for ( my $i = 0; $i < @$p; $i++) {
 		next if $p->[$i] != $item;
@@ -271,8 +275,8 @@ sub _match_before
 	# element1~element2	p ~ ul			Selects every <ul> element that is preceded by a <p> element
 	my ( $cb, $item ) = @_;
 
-	return 0 unless my $p = $item->{parent};
-	$p = $p->{children} // [];
+	return 0 unless my $p = _parent $item;
+	$p = _children $p;
 
 	for ( my $i = 0; $i < @$p; $i++) {
 		next if $p->[$i] != $item;
