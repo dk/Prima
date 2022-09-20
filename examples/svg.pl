@@ -4,10 +4,6 @@ use lib '.';
 use Prima::Drawable::SVG;
 use Prima qw(Application);
 
-my $selector = '.a .b';
-$selector =~ m/^((?:\.\w+(?:\s+|$))+)$/;
-die "'$1'";
-
 my $p = Prima::Drawable::SVG::Parser->new;
 my $r = $p->parse(<<SVG);
 <svg x=10 y="10%">

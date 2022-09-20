@@ -38,14 +38,14 @@ sub parse_tag
 {
 	my ($self, $open, $tag) = @_;
 	my %ret = (
-		name     => '',
+		type     => '',
 		attr     => {},
 		children => [],
 		content  => '',
 	);
 
 	return $self->error("no tag in $tag") unless $tag =~ m/\G(\w+)\s*/gcs;
-	$ret{name} = $1;
+	$ret{type} = $1;
 
 	while ( 1 ) {
 		$tag =~ m/\G\s+/gcs and redo;
@@ -62,7 +62,7 @@ sub parse_tag
 				return $self->error("syntax error in $tag");
 			}
 
-			$self->parse_attr($ret{name}, $attr, $ct, $ret{attr}) or return $self->error;
+			$self->parse_attr($ret{type}, $attr, $ct, $ret{attr}) or return $self->error;
 			redo;
 		};
 		$tag =~ m/\G(\S+)/gcs and return $self->error("syntax error in $1");
@@ -94,7 +94,7 @@ sub parse
 
 	reset($content);
 
-	my $root  = { name => 'root', attr => {}, children => [], content => '' };
+	my $root  = { type => 'root', attr => {}, children => [], content => '' };
 	my @stack = ($root);
 
 	local $self->{parser} = {
@@ -112,8 +112,8 @@ sub parse
 				return $self->error("stack underflow") if 1 == @stack;
 				my $tag = $self->parse_tag(0, $1);
 				return $self->error unless ref $tag;
-				return $self->error("tag mismatch: got $tag->{name}, $stack[-1]->{name} expected") if 
-					$tag->{name} ne $stack[-1]->{name};
+				return $self->error("tag mismatch: got $tag->{type}, $stack[-1]->{type} expected") if 
+					$tag->{type} ne $stack[-1]->{type};
 				pop @stack;
 			} else {
 				my $tail;
@@ -125,7 +125,7 @@ sub parse
 				return $self->error unless ref $tag;
 
 				if ( 1 == @stack ) {
-					return $self->error('first tag is not svg') unless $tag->{name} eq 'svg';
+					return $self->error('first tag is not svg') unless $tag->{type} eq 'svg';
 					return $self->error('svg tag is already defined svg') if @{$root->{children}} == 1;
 				}
 
@@ -144,7 +144,7 @@ sub parse
 		$content =~ m/\G(.+)/gcs and return $self->error("unexpected command: $1");
 		$content =~ m/\G$/gcs and last;
 	}
-	return $self->error("tag <$stack[-1]->{name}> not closed") if 1 < @stack;
+	return $self->error("tag <$stack[-1]->{type}> not closed") if 1 < @stack;
 	return $self->error("no svg tag") unless $root->{children}->[0];
 
 	return Prima::Drawable::SVG::Tree->new( tree => $root->{children}->[0] );
@@ -248,7 +248,7 @@ sub validate_tag
 
 	my $attr = $hash->{attr};
 
-	if ( my $types = $tags{$hash->{name}}) {
+	if ( my $types = $tags{$hash->{type}}) {
 		for my $type ( @$types ) {
 			if ($type =~ m/^(\w+):(\w+)$/) {
 				my ( $subtag, $subtype ) = ($1,$2);
@@ -258,14 +258,14 @@ sub validate_tag
 					my $err = type_check($subtype, \$attr->{$subtag});
 					next unless defined $err;
 
-					$self->error("'$subtag' value '$attr->{$subtag}' is invalid in <$hash->{name}> ($err) ");
+					$self->error("'$subtag' value '$attr->{$subtag}' is invalid in <$hash->{type}> ($err) ");
 					return 0;
 				} else {
 					my $new_value = undef;
 					# print "? $subtag=undef :: $subtype\n";
 					my $err = type_check($subtype, \$new_value);
 					if ( defined $err ) {
-						$self->error("'$subtag' expected in $hash->{name}");
+						$self->error("'$subtag' expected in $hash->{type}");
 						return 0;
 					}
 					$attr->{$subtag} = $new_value;
@@ -317,7 +317,7 @@ sub apply_transform
 				$r[$j] = $$m[ $j ] * $o[0] + $$m[$j + 2] * $o[1] + $$m[ $j + 4 ];
 			}
 		}
-		print "@_[$i,$i+1] $pos:@o / @$m => @r\n";
+		# print "@_[$i,$i+1] $pos:@o / @$m => @r\n";
 		push @ret, @r;
 	}
 
@@ -366,7 +366,6 @@ sub draw_rect
 	my ( $self, $canvas, $tag ) = @_;
 	my ( $x, $y ) = $self-> apply_position( $tag, qw(x y));
 	my ( $w, $h ) = $self-> apply_size( $tag, qw(width height));
-	print "$x $y $w $h\n";
 	$canvas->bar($x, $y, $x + $w, $y - $h);
 }
 
@@ -374,7 +373,7 @@ sub draw_tag
 {
 	my ( $self, $canvas, $tag ) = @_;
 	my %state;
-	my $meth = $self->can("draw_" . $tag->{name});
+	my $meth = $self->can("draw_" . $tag->{type});
 	return unless $meth;
 	$meth->($self, $canvas, $tag);
 }

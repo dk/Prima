@@ -57,8 +57,8 @@ sub _match_xid
 	}
 
 	if ( exists $match->{element}) {
-		my $name = $provider->get_name($item);
-		return 0 unless defined($name) && $match->{element} eq $name;
+		my $type = $provider->get_type($item);
+		return 0 unless defined($type) && $match->{element} eq $type;
 		$ok = 1;
 	}
 
@@ -221,11 +221,11 @@ sub _predicate_first_child
 sub _predicate_first_of_type
 {
 	my ( $provider, $item ) = @_;
-	my $name = $provider->get_name($item);
-	return 0 unless defined $name;
+	my $type = $provider->get_type($item);
+	return 0 unless defined $type;
 	my @r = grep {
-		my $iname = $provider->get_name($_);
-		defined($iname) ? ($iname eq $name) : 0;
+		my $itype = $provider->get_type($_);
+		defined($itype) ? ($itype eq $type) : 0;
 	} @{ $provider->get_siblings($item) };
 	return ( $r[0] // 0 ) == $item;
 }
@@ -241,11 +241,11 @@ sub _predicate_last_child
 sub _predicate_last_of_type
 {
 	my ( $provider, $item ) = @_;
-	my $name = $provider->get_name($item);
-	return 0 unless defined $name;
+	my $type = $provider->get_type($item);
+	return 0 unless defined $type;
 	my @r = grep {
-		my $iname = $provider->get_name($_);
-		defined($iname) ? ($iname eq $name) : 0;
+		my $itype = $provider->get_type($_);
+		defined($itype) ? ($itype eq $type) : 0;
 	} @{ $provider->get_siblings($item) };
 	return ( $r[-1] // 0 ) == $item;
 }
@@ -254,11 +254,11 @@ sub _predicate_last_of_type
 sub _predicate_only_of_type
 {
 	my ( $provider, $item ) = @_;
-	my $name = $provider->get_name($item);
-	return 0 unless defined $name;
+	my $type = $provider->get_type($item);
+	return 0 unless defined $type;
 	my @r = grep {
-		my $iname = $provider->get_name($_);
-		defined($iname) ? ($iname eq $name) : 0;
+		my $itype = $provider->get_type($_);
+		defined($itype) ? ($itype eq $type) : 0;
 	} @{ $provider->get_siblings($item) };
 	return 1 == @r && ( $r[0] // 0 ) == $item;
 }
@@ -366,11 +366,11 @@ sub _predicate_nth_last_of_type
 	my ( $n ) = @_;
 	return sub {
 		my ( $provider, $item ) = @_;
-		my $name = $provider->get_name($item);
-		return 0 unless defined $name;
+		my $type = $provider->get_type($item);
+		return 0 unless defined $type;
 		my @r = grep {
-			my $iname = $provider->get_name($_);
-			defined($iname) ? ($iname eq $name) : 0;
+			my $itype = $provider->get_type($_);
+			defined($itype) ? ($itype eq $type) : 0;
 		} @{ $provider->get_siblings($item) };
 		return ( $r[-$n] // 0 ) == $item;
 	}
@@ -383,11 +383,11 @@ sub _predicate_nth_of_type
 	$n--;
 	return sub {
 		my ( $provider, $item ) = @_;
-		my $name = $provider->get_name($item);
-		return 0 unless defined $name;
+		my $type = $provider->get_type($item);
+		return 0 unless defined $type;
 		my @r = grep {
-			my $iname = $provider->get_name($_);
-			defined($iname) ? ($iname eq $name) : 0;
+			my $itype = $provider->get_type($_);
+			defined($itype) ? ($itype eq $type) : 0;
 		} @{ $provider->get_siblings($item) };
 		return ( $r[$n] // 0 ) == $item;
 	}
@@ -772,7 +772,7 @@ sub new
 }
 
 sub get_attribute { $_[1]->{$_[2]} }
-sub get_name      { $_[1]->{name} // '' }
+sub get_type      { $_[1]->{type} // '' }
 sub get_parent    { $_[0]->{cache}->{"$_[1]"} }
 sub get_children  { $_[1]->{children} // [] }
 sub has_predicate { defined $_[1]->{$_[2]} }
