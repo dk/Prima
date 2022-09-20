@@ -3,6 +3,15 @@ package Prima::Drawable::SVG;
 use strict;
 use warnings;
 
+package Prima::Drawable::SVG::CSSProvider;
+use Prima::sys::CSS;
+use base qw(Prima::sys::CSS::Provider);
+
+sub has_predicate { 0 }
+sub get_children  { $_[1]->{children} // [] }
+sub get_attribute { $_[1]->{attr}->{$_[2]} }
+sub set_attribute { $_[1]->{attr}->{$_[2]} = $_[3] }
+
 package Prima::Drawable::SVG::Parser;
 use Prima::sys::HTMLEscapes;
 
@@ -40,7 +49,6 @@ sub parse_tag
 	my %ret = (
 		type     => '',
 		attr     => {},
-		children => [],
 		content  => '',
 	);
 
@@ -92,15 +100,14 @@ sub parse
 {
 	my ( $self, $content ) = @_;
 
-	reset($content);
-
 	my $root  = { type => 'root', attr => {}, children => [], content => '' };
 	my @stack = ($root);
 
 	local $self->{parser} = {
-		root => $root,
-		ids  => {},
+		root    => $root,
+		ids     => {},
 		content => \ $content,
+		css     => Prima::sys::CSS::Ruleset->new( provider => Prima::Drawable::SVG::CSSProvider->new ),
 	};
 
 	while ( 1 ) {
@@ -130,7 +137,7 @@ sub parse
 				}
 
 				$self->{parse}->{ids}->{$tag->{attr}->{id}} = $tag
-					if exists $tag->{attrs}->{id};
+					if exists $tag->{attr}->{id};
 				push @{$stack[-1]->{children}}, $tag;
 				push @stack, $tag unless $tail;
 			}
@@ -138,7 +145,15 @@ sub parse
 		};
 		$content =~ m/\G([^<]+)/gcs and do {
 			return $self->error("unexpected content") if 1 == @stack;
-			$stack[-1]->{content} = $self->parse_text($1);
+			my $c = $self->parse_text($1);
+			if ( $stack[-1]->{type} eq 'style') {
+				my $css = Prima::sys::CSS::Parser->new->parse($c);
+				return $self->error( $css ) unless ref $css;
+				return $self->error unless $self->validate_css($css);
+				$self->{parser}->{css}->append( $css );
+			} else {
+				$stack[-1]->{content} = $c;
+			}
 			redo;
 		};
 		$content =~ m/\G(.+)/gcs and return $self->error("unexpected command: $1");
@@ -147,7 +162,10 @@ sub parse
 	return $self->error("tag <$stack[-1]->{type}> not closed") if 1 < @stack;
 	return $self->error("no svg tag") unless $root->{children}->[0];
 
-	return Prima::Drawable::SVG::Tree->new( tree => $root->{children}->[0] );
+	$root = $root->{children}->[0];
+	$self->{parser}->{css}->apply_all( $root );
+
+	return Prima::Drawable::SVG::Tree->new( tree => $root );
 }
 
 my %types = (
@@ -240,6 +258,7 @@ sub type_compile
 my %tags = (
 	svg     => [qw(height:W width:W x:X y:X)],
 	ellipse => [qw(cx:X cy:X rx:coord ry:coord) ],
+	text    => [qw(x:X y:X dx:X dy:X)]
 );
 
 sub validate_tag
@@ -275,6 +294,23 @@ sub validate_tag
 			}
 		}
 	}
+
+	return 1;
+}
+
+sub validate_css
+{
+	my ( $self, $css ) = @_;
+
+#	my @rs = $css->ruleset;
+#	for ( my $i = 1; $i < @rs; $i += 2 ) {
+#		my $attr = $rs[$i];
+#		while ( my ( $k, $v ) = each %$attr ) {
+#			my $err = type_check($subtype, \$attr->{$subtag});
+#			next unless defined $err;
+#			$self->error("'$subtag' value '$attr->{$subtag}' is invalid in <$hash->{type}> ($err) ");
+#		}
+#	}
 
 	return 1;
 }
@@ -349,7 +385,7 @@ sub draw_svg
 	local $self->{view} = [
 		$x, $y, $w, $h
 	];
-	$self->draw_tag( $canvas, $_ ) for @{$tag->{children}};
+	$self->draw_tag( $canvas, $_ ) for @{$tag->{children} // []};
 	$canvas->clipRect(@cr);
 }
 

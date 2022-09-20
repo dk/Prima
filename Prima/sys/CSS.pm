@@ -694,7 +694,7 @@ sub parse_attribute
 			next;
 		};
 		$$content =~ m/\G([-\w]+)/gcs and do {
-			$val = $1;
+			$val .= $1;
 			next;
 		};
 		return $self->error("bad attribute decalaration");
@@ -731,16 +731,30 @@ sub parse
 {
 	my ( $self, $content ) = @_;
 
-	reset($content);
-
 	local $self->{parser} = {
 		content => \ $content,
 	};
 	my @rules;
 
 	my $selector;
+	my $comment;
 	while ( 1 ) {
 		$content =~ m/\G\s+/gcs and redo;
+
+		if ( $comment ) {
+			$content =~ m/\G$/gcs and last;
+			$content =~ m/\G\*\//gcs and do {
+				$comment = 0;
+				next;
+			};
+			$content =~ m/\G.*?(?!\*\/)/gcs and next;
+		} else {
+			$content =~ m/\G\/\*/gcs and do {
+				$comment = 1;
+				next;
+			};
+		}
+
 
 		if ( !defined $selector) {
 			$content =~ m/\G$/gcs and last;
@@ -757,7 +771,7 @@ sub parse
 
 	}
 
-	return Prima::sys::CSS::Ruleset->new( set => \@rules);
+	return Prima::sys::CSS::Ruleset->new( ruleset => \@rules);
 }
 
 package Prima::sys::CSS::Provider;
@@ -771,13 +785,15 @@ sub new
 	return $self;
 }
 
+# override these
 sub get_attribute { $_[1]->{$_[2]} }
 sub get_type      { $_[1]->{type} // '' }
-sub get_parent    { $_[0]->{cache}->{"$_[1]"} }
 sub get_children  { $_[1]->{children} // [] }
 sub has_predicate { defined $_[1]->{$_[2]} }
-
 sub set_attribute { $_[1]->{$_[2]} = $_[3] }
+#
+
+sub get_parent    { $_[0]->{cache}->{"$_[1]"} }
 
 sub get_root
 {
@@ -808,10 +824,19 @@ sub new
 {
 	my ( $class, %opt ) = @_;
 	my $self = bless {
+		ruleset => [],
 		%opt
 	}, $class;
 	$self->provider( Prima::sys::CSS::Provider->new ) unless $self->provider;
 	return $self;
+}
+
+sub ruleset { @{ $_[0]->{ruleset} } }
+
+sub append
+{
+	my ( $self, $ruleset ) = @_;
+	push @{ $self->{ruleset} }, $ruleset->ruleset;
 }
 
 sub provider
@@ -843,9 +868,8 @@ sub match
 	my ( $self, $item ) = @_;
 
 	my $provider = $self->{provider};
-	my $set = $self->{set} // [];
+	my $set = $self->{ruleset};
 	my %attr;
-
 	for ( my $i = 0; $i < @$set; $i += 2 ) {
 		my ( $selector, $attributes ) = @{$set}[$i,$i+1];
 		next unless $selector->($provider, $item);
