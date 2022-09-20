@@ -28,17 +28,10 @@ sub error
 	return $self->{parser}->{error};
 }
 
-sub _class($)    { $_[0]->{class} // '' }
-sub _id($)       { $_[0]->{id} // '' }
-sub _name($)     { $_[0]->{name} // '' }
-sub _parent($)   { $_[0]->{parent} }
-sub _children($) { $_[0]->{children} // [] }
-sub _attr($$)    { $_[0]->{$_[1]} }
-
 # https://www.w3schools.com/cssref/css_selectors.asp
 sub _match_xid
 {
-	my ($match, $item) = @_;
+	my ($match, $provider, $item) = @_;
 
 	# *			*			Selects all elements
 	# .class		.intro			Selects all elements with class="intro"
@@ -50,7 +43,7 @@ sub _match_xid
 	my $ok = $match->{wildcard} ? 1 : 0;
 
 	if ( exists $match->{class}) {
-		my %classes = map { $_ => 1 } split /\s+/, _class $item;
+		my %classes = map { $_ => 1 } split /\s+/, ( $provider->get_attribute( $item, 'class' ) // '' );
 		for my $c ( @{ $match->{class} } ) {
 			return 0 unless $classes{$c};
 		}
@@ -58,12 +51,14 @@ sub _match_xid
 	}
 
 	if ( exists $match->{id}) {
-		return 0 unless $match->{id} eq _id $item;
+		my $id = $provider->get_attribute($item, 'id');
+		return 0 unless defined($id) && $match->{id} eq $id;
 		$ok = 1;
 	}
 
 	if ( exists $match->{element}) {
-		return 0 unless $match->{element} eq _name $item;
+		my $name = $provider->get_name($item);
+		return 0 unless defined($name) && $match->{element} eq $name;
 		$ok = 1;
 	}
 
@@ -116,49 +111,49 @@ sub parse_xid_selector
 
 	return $self->error("no selectors declared") unless keys %match;
 
-	return sub { _match_xid(\%match, $_[0]) }
+	return sub { _match_xid(\%match, @_) }
 }
 
 # [attribute=value]	[target=_blank]		Selects all elements with target="_blank"
 sub _attr_eq
 {
 	my ($attr, $val) = @_;
-	return sub { $val eq ((_attr($_[0], $attr) // '')) };
+	return sub { $val eq ($_[0]->get_attribute($_[1], $attr) // '') };
 }
 
 # [attribute~=value]	[title~=flower]		Selects all elements with a title attribute containing the word "flower"
 sub _attr_word
 {
 	my ($attr, $val) = @_;
-	return sub { (_attr($_[0], $attr) // '') =~ /(^|\s)\Q$val\E(\s|$)/ };
+	return sub { ($_[0]->get_attribute($_[1], $attr) // '') =~ /(^|\s)\Q$val\E(\s|$)/ };
 }
 
 # [attribute|=value]	[lang|=en]		Selects all elements with a lang attribute value equal to "en" or starting with "en-"
 sub _attr_starts_with_word
 {
 	my ($attr, $val) = @_;
-	return sub { (_attr($_[0], $attr) // '') =~ /^\Q$val\E(-|$)/ };
+	return sub { ($_[0]->get_attribute($_[1], $attr) // '') =~ /^\Q$val\E(-|$)/ };
 }
 
 # [attribute^=value]	a[href^="https"]	Selects every <a> element whose href attribute value begins with "https"
 sub _attr_starts_with
 {
 	my ($attr, $val) = @_;
-	return sub { (_attr($_[0], $attr) // '') =~ /^\Q$val\E/ };
+	return sub { ($_[0]->get_attribute($_[1], $attr) // '') =~ /^\Q$val\E/ };
 }
 
 # [attribute$=value]	a[href$=".pdf"]		Selects every <a> element whose href attribute value ends with ".pdf"
 sub _attr_ends_width
 {
 	my ($attr, $val) = @_;
-	return sub { (_attr($_[0], $attr) // '') =~ /\Q$val\E$/ };
+	return sub { ($_[0]->get_attribute($_[1], $attr) // '') =~ /\Q$val\E$/ };
 }
 
 # [attribute*=value]	a[href*="w3schools"]	Selects every <a> element whose href attribute value contains the substring "w3schools"
 sub _attr_substr
 {
 	my ($attr, $val) = @_;
-	return sub { index((_attr($_[0], $attr) // ''), $val) >= 0 };
+	return sub { index(($_[0]->get_attribute($_[1], $attr) // ''), $val) >= 0 };
 }
 
 my %attr_ops = (
@@ -202,7 +197,7 @@ sub parse_attr_selector
 	# [attribute]		[target]		Selects all elements with a target attribute
 	elsif ( $$content =~ m/\G([-\w]+)/gcs) {
 		my $attr = $1;
-		return sub { defined _attr $_[0], $attr };
+		return sub { defined $_[0]->get_attribute($_[1], $attr) };
 	}
 
 	return $self->error("bad attribute selector declaration");
@@ -237,10 +232,9 @@ sub _match_parent
 {
 	# .class1 .class2	.name1 .name2		Selects all elements with name2 that is a descendant of an element with name1
 	# element element	div p			Selects all <p> elements inside <div> elements
-	my ( $cb, $item ) = @_;
-	while ( _parent $item) {
-		$item = _parent $item;
-		return 1 if $cb->($item);
+	my ( $cb, $provider, $item ) = @_;
+	while ($item = $provider->get_parent($item)) {
+		return 1 if $cb->($provider, $item);
 	}
 	return 0;
 }
@@ -248,23 +242,23 @@ sub _match_parent
 sub _match_direct_parent
 {
 	# element>element	div > p			Selects all <p> elements where the parent is a <div> element
-	my ( $cb, $item ) = @_;
-	my $p = _parent $item or return 0;
-	return $cb->($p);
+	my ( $cb, $provider, $item ) = @_;
+	my $p = $provider->get_parent($item) or return 0;
+	return $cb->($provider, $p);
 }
 
 sub _match_right_before
 {
 	# element+element	div + p			Selects the first <p> element that is placed immediately after <div> elements
-	my ( $cb, $item ) = @_;
+	my ( $cb, $provider, $item ) = @_;
 
-	return 0 unless my $p = _parent $item;
-	$p = _children $p;
+	return 0 unless my $p = $provider->get_parent($item);
+	$p = $provider->get_children($p);
 
 	for ( my $i = 0; $i < @$p; $i++) {
 		next if $p->[$i] != $item;
 		return 0 if $i == 0;
-		return $cb->($p->[$i-1]);
+		return $cb->($provider, $p->[$i-1]);
 	}
 
 	return 0;
@@ -273,17 +267,17 @@ sub _match_right_before
 sub _match_before
 {
 	# element1~element2	p ~ ul			Selects every <ul> element that is preceded by a <p> element
-	my ( $cb, $item ) = @_;
+	my ( $cb, $provider, $item ) = @_;
 
-	return 0 unless my $p = _parent $item;
-	$p = _children $p;
+	return 0 unless my $p = $provider->get_parent($item);
+	$p = $provider->get_children($p);
 
 	for ( my $i = 0; $i < @$p; $i++) {
 		next if $p->[$i] != $item;
 		return if $i == 0;
 
 		for ( $i = $i - 1; $i >= 0; $i--) {
-			return 1 if $cb->($p->[$i]);
+			return 1 if $cb->($provider, $p->[$i]);
 		}
 		last;
 	}
@@ -476,7 +470,7 @@ sub parse
 	return Prima::sys::CSS::Ruleset->new( set => \@rules);
 }
 
-package Prima::sys::CSS::Ruleset;
+package Prima::sys::CSS::Provider;
 
 sub new
 {
@@ -487,20 +481,97 @@ sub new
 	return $self;
 }
 
+sub get_attribute { $_[1]->{$_[2]} }
+sub get_name      { $_[1]->{name} // '' }
+sub get_parent    { $_[0]->{cache}->{"$_[1]"} }
+sub get_children  { $_[1]->{children} // [] }
+
+sub set_attribute { $_[1]->{$_[2]} = $_[3] }
+
+sub cache
+{
+	return $_[0]->{cache} unless $#_;
+	$_[0]->{cache} = $_[1];
+}
+
+package Prima::sys::CSS::Ruleset;
+
+sub new
+{
+	my ( $class, %opt ) = @_;
+	my $self = bless {
+		%opt
+	}, $class;
+	$self->provider( Prima::sys::CSS::Provider->new ) unless $self->provider;
+	return $self;
+}
+
+sub provider
+{
+	return $_[0]->{provider} unless $#_;
+	$_[0]->{provider} = $_[1];
+}
+
+sub _study
+{
+	my ( $provider, $cache, $item ) = @_;
+	for my $i ( @{ $provider->get_children($item) } ) {
+		$cache->{"$i"} = $item;
+		_study( $provider, $cache, $i );
+	}
+}
+
+sub study
+{
+	my ( $self, $root ) = @_;
+	my $provider = $self->{provider};
+	my $cache = {};
+	$provider->cache($cache);
+	_study($provider, $cache, $root) if $root;
+}
+
 sub match
 {
 	my ( $self, $item ) = @_;
 
+	my $provider = $self->{provider};
 	my $set = $self->{set} // [];
 	my %attr;
 
 	for ( my $i = 0; $i < @$set; $i += 2 ) {
 		my ( $selector, $attributes ) = @{$set}[$i,$i+1];
-		next unless $selector->($item);
+		next unless $selector->($provider, $item);
 		%attr = (%attr, %$attributes);
 	}
 
 	return %attr;
+}
+
+sub match_and_apply
+{
+	my ( $self, $item ) = @_;
+	my $provider = $self->{provider};
+	my %attr     = $self->match($item);
+	while ( my ( $k, $v ) = each %attr ) {
+		$provider->set_attribute( $item, $k, $v );
+	}
+}
+
+sub _apply_all
+{
+	my ( $self, $root ) = @_;
+	$self->match_and_apply($root);
+	for my $c ( @{ $self->{provider}->get_children($root) } ) {
+		$self->_apply_all( $c );
+	}
+}
+
+sub apply_all
+{
+	my ( $self, $root ) = @_;
+	$self->study($root);
+	$self->_apply_all($root, $self->{provider});
+	$self->study(undef);
 }
 
 1;

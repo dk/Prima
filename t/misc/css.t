@@ -2,7 +2,6 @@ use strict;
 use warnings;
 use Test::More;
 use Prima::sys::CSS;
-use Scalar::Util qw(weaken);
 
 my $css = Prima::sys::CSS::Parser->new->parse(<<'CSS');
 .intro			{ 1:1; }
@@ -29,25 +28,16 @@ CSS
 ok( ref($css), "css parsed" );
 diag($css) unless ref($css);
 
-sub fix
-{
-	my $item = shift;
-	for my $c ( @{ $item->{children} // [] } ) {
-		$c->{parent} = $item;
-		weaken $c->{parent};
-		fix($c);
-	}
-}
-
 sub _id
 {
 	my $i = shift;
-	return join(' ', map { "$_=$i->{$_}" } grep { !/^(children|parent)$/ } sort keys %$i);
+	return join(' ', map { "$_=$i->{$_}" } grep { !/^(children)$/ } sort keys %$i);
 }
 
 sub match
 {
 	my ( $item, @wanted ) = @_;
+	$css->study($item);
 	my %attr = $css->match($item);
 	my @attr = sort keys %attr;
 	my $id = _id($item);
@@ -58,14 +48,19 @@ sub match
 sub cmatch
 {
 	my ( $item, $path, @wanted ) = @_;
-	fix($item);
+	$css->study($item);
 	$item = $item->{children}->[$_] for @$path;
-	match( $item, @wanted );
+	my %attr = $css->match($item);
+	my @attr = sort keys %attr;
+	my $id = _id($item);
+	@wanted = sort 5, @wanted;
+	is("@attr", "@wanted", $id);
 }
 
 sub umatch
 {
 	my ( $item, @wanted ) = @_;
+	$css->study($item);
 	my %attr = $css->match($item);
 	my @attr = sort keys %attr;
 	my $id = _id($item);
