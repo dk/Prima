@@ -362,8 +362,8 @@ draw solid line.
 These links both diplay a pod section preview, like the toolkip, but also open a pod viewer
 with the referred section when clicked on. 
 
-Syntax: C<< LE<lt>tip://FILEPATH_OR_MODULE/SECTIONE<gt> >> or
-C<< LE<lt>tip://FILEPATH_OR_MODULEE<gt> >> where C<FILEPATH_OR_MODULE> can refer either to
+Syntax: C<< LE<lt>pod://FILEPATH_OR_MODULE/SECTIONE<gt> >> or
+C<< LE<lt>pod://FILEPATH_OR_MODULEE<gt> >> where C<FILEPATH_OR_MODULE> can refer either to
 a file (path with slashes/backslashes) or a perl module (with C<::>s ).
 
 =head2 Hyperlinks
