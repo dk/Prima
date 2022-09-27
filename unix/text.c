@@ -254,13 +254,17 @@ gp_text_out_rotated(
 	XX-> flags. brush_back = 1;
 
 	if ( PDrawable( self)-> font. style & (fsUnderlined|fsStruckOut)) {
-		int lw = apc_gp_get_line_width( self);
+		int lw = 1;
 		int tw = gp_get_text_width( self, text, len, flags | toAddOverhangs) - 1;
 		int d  = XX-> font-> underlinePos;
 		Point ovx = gp_get_text_overhangs( self, text, len, flags);
 		int x1, y1, x2, y2;
-		if ( lw != XX-> font-> underlineThickness)
-			apc_gp_set_line_width( self, XX-> font-> underlineThickness);
+
+		if ( lw != XX-> font-> underlineThickness) {
+			XGCValues gcv;
+			lw = gcv.line_width = XX-> font-> underlineThickness;
+			XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);
+		}
 
 		if ( PDrawable( self)-> font. style & fsUnderlined) {
 			ay = d + ( XX-> flags. base_line ? 0 : XX-> font-> font. descent);
@@ -291,8 +295,11 @@ gp_text_out_rotated(
 			XDrawLine( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y1), x2, REVERT( y2));
 		}
 
-		if ( lw != XX-> font-> underlineThickness)
-			apc_gp_set_line_width( self, lw);
+		if ( lw != 1 ) {
+			XGCValues gcv;
+			gcv.line_width = 1;
+			XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);
+		}
 	}
 	XFLUSH;
 	return true;
@@ -332,12 +339,15 @@ static void
 draw_text_underline(Handle self, const char * text, int x, int y, int len, int flags)
 {
 	DEFXX;
-	int lw = apc_gp_get_line_width( self) + .5;
+	int lw = 1;
 	int tw = gp_get_text_width( self, text, len, flags | toAddOverhangs);
 	int d  = XX-> font-> underlinePos;
 	Point ovx = gp_get_text_overhangs( self, text, len, flags);
-	if ( lw != XX-> font-> underlineThickness)
-		apc_gp_set_line_width( self, XX-> font-> underlineThickness);
+	if ( lw != XX-> font-> underlineThickness) {
+		XGCValues gcv;
+		lw = gcv.line_width = XX-> font-> underlineThickness;
+		XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);
+	}
 	if ( PDrawable( self)-> font. style & fsUnderlined)
 		XDrawLine( DISP, XX-> gdrawable, XX-> gc,
 			x - ovx.x, REVERT( y + d), x + tw - 1 + ovx.y, REVERT( y + d));
@@ -346,8 +356,11 @@ draw_text_underline(Handle self, const char * text, int x, int y, int len, int f
 		XDrawLine( DISP, XX-> gdrawable, XX-> gc,
 			x - ovx.x, scy, x + tw - 1 + ovx.y, scy);
 	}
-	if ( lw != XX-> font-> underlineThickness)
-		apc_gp_set_line_width( self, lw);
+	if ( lw != 1 ) {
+		XGCValues gcv;
+		gcv.line_width = 1;
+		XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);
+	}
 }
 
 static Bool
