@@ -1751,7 +1751,7 @@ menuItems => [
 		['backColor' => '~Background color' => \&set_color],
 		['alpha' => '~Alpha' => [ map { [ $_, $_, \&set_alpha ] } 0, 32, 64, 96, 128, 164, 192, 224, 255]],
 		[],
-		['~Line width' => [ map { [ "lw$_", $_, \&set_line_width ] } 0..7, 10, 15 ]],
+		['~Line width' => [ map { [ "lw$_", $_, \&set_line_width ] } 0, 0.25, 0.5, 0.75, 1..7, 10, 15, 20 ]],
 		['Line ~pattern' => [ map { [ "lp:linePattern=$_", $_, \&set_constant ] }
 				sort grep { !m/AUTOLOAD|constant|BEGIN|END/ } keys %lp:: ]],
 		['Line ~end' => [ map { [ "le:lineEnd=$_", $_, \&set_constant ] }

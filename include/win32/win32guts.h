@@ -82,10 +82,6 @@ typedef HANDLE SOCKETHANDLE;
 #define WC_MENU         4
 #define WC_POPUP        5
 
-#define exsLinePattern  1
-#define exsLineEnd      2
-#define exsLineJoin     4
-
 #define stbPen          0x01
 #define stbBrush        0x02
 #define stbText         0x04
@@ -338,11 +334,8 @@ typedef struct _PaintSaveData
 	Bool           antialias, fill_mode;
 	int            alpha;
 	Color          fg, bg;
-	float          line_width;
-	int            line_end, line_join;
 	unsigned char *line_pattern;
 	int            line_pattern_len;
-	float          miter_limit;
 	FillPattern    fill_pattern;
 	Point          fill_pattern_offset;
 	int            rop, rop2;
@@ -393,8 +386,6 @@ typedef struct {
 	LOGPEN         logpen;
 	Bool           geometric;
 	DWORD          style;
-	DWORD          line_end;
-	DWORD          line_join;
 	LinePattern   *line_pattern;
 } RQPen, *PRQPen;
 
@@ -427,7 +418,7 @@ typedef struct _PaintState
 		RQPen      rq_pen;
 		RQBrush    rq_brush;
 		PDCFont    dc_font;
-		float      font_sin, font_cos, line_width;
+		float      font_sin, font_cos;
 	} paint;
 	struct {
 		HPALETTE   palette;
@@ -482,16 +473,12 @@ typedef struct _DrawableData
 	/* HDC attributes storage outside paint mode */
 	Color          fg, bg;
 	int            fill_mode;
-	float          line_width;
-	int            line_end;
-	int            line_join;
 	unsigned char *line_pattern;
 	int            line_pattern_len;
 	FillPattern    fill_pattern;
 	Point          fill_pattern_offset;
 	int            rop;
 	int            rop2;
-	float          miter_limit;
 	Point          transform;
 	Point          gp_transform;
 
@@ -767,7 +754,6 @@ extern PDCObject    stylus_fetch( void * key );
 extern Bool         stylus_is_complex(Handle self);
 extern Bool         stylus_is_geometric( Handle self);
 extern void         stylus_release( Handle self );
-extern DWORD        stylus_get_extpen_style( Handle self );
 extern GpPen*       stylus_gp_get_pen(int line_width, uint32_t color);
 extern HPEN         stylus_get_pen( DWORD style, DWORD line_width, COLORREF color );
 extern HBRUSH       stylus_get_solid_brush( COLORREF color );

@@ -39,8 +39,9 @@ cmp_ok( $bl, '<', 6, "linePattern");
 $x-> color( cl::White);
 $x-> bar( 0, 0, 7, 7);
 $x-> color( cl::Black);
-$x-> lineWidth( 3);
+$x-> lineWidth( 4);
 $x-> line( 3, 4, 5, 4);
+$x-> image->save('1.bmp');
 $x-> lineWidth( 1);
 is( $x-> pixel( 2, 4), 0, "lineWidth");
 is( $x-> pixel( 5, 3), 0, "lineWidth");
@@ -110,6 +111,7 @@ sub check
 	$xsum = int($xsum * 10 + .5) / 10;
 	is( $xsum, $sum, "$test on $subtest");
 }
+
 
 my $can_argb = $::application->get_system_value(sv::LayeredWidgets);
 for my $aa ( 0, 1 ) {

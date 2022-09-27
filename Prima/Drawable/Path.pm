@@ -576,12 +576,20 @@ sub _arc
 	}
 }
 
+sub acquire
+{
+	my $c = $_[0]->{canvas};
+	$_[0]->{subpixel} = $c->antialias || $c->alpha < 255;
+}
+
 sub stroke
 {
 	return 0 unless $_[0]->{canvas};
+	$_[0]->acquire;
+	my $emulated_aa = $_[0]->{antialias} && !$_[0]->{canvas}->antialias;
 	for ( map { @$_ } @{ $_[0]->points }) {
 		next if 4 > @$_;
-		if ( $_[0]->{antialias} && !$_[0]->{canvas}->antialias) {
+		if ( $emulated_aa ) {
 			return 0 unless $_[0]->{canvas}->new_aa_surface->polyline($_);
 		} else {
 			return 0 unless $_[0]->{canvas}->polyline($_);
@@ -594,6 +602,7 @@ sub fill
 {
 	my ( $self, $fillMode ) = @_;
 	return 0 unless my $c = $self->{canvas};
+	$self->acquire;
 	my @p = $self->points(fill => 1);
 	my $ok = 1;
 	my $save;
@@ -857,6 +866,7 @@ sub poly2patterns
 sub widen
 {
 	my ( $self, %opt ) = @_;
+	$self->acquire;
 
 	my $dst = ref($self)->new( undef,
 		%$self,
@@ -876,7 +886,9 @@ sub widen
 	return $dst if $lp eq lp::Null;
 	$pp = poly2patterns($pp, $lp, $lw, !$self->{subpixel}) if $lp ne lp::Solid;
 
-	if ( $lw < 1 && !$self->{subpixel} ) {
+	my $no_line_ends = ($lw < 2.5) && !$self->{subpixel};
+
+	if ( $no_line_ends && $lw < 1.5 ) {
 		for my $p ( @$pp ) {
 			$dst->line($p);
 			$dst->line([map { @{$p}[-2*$_,-2*$_+1] } 1..@$p/2 ])
@@ -885,6 +897,7 @@ sub widen
 		}
 		return $dst;
 	}
+
 	my $ml = exists($opt{miterLimit}) ? $opt{miterLimit} : ($self->{canvas} ? $self->{canvas}->miterLimit : 10);
 	$ml = 20        if $ml > 20;
 	$lw = 16834     if $lw > 16834;
@@ -902,7 +915,9 @@ sub widen
 
 		if ( $last == 0 ) {
 			my ($x,$y) = @$p;
-			if ( $le == le::Square ) {
+			if ( $no_line_ends ) {
+				# nothing
+			} elsif ( $le == le::Square ) {
 				$dst->line( 
 					$x - $lw2, $y - $lw2,
 					$x - $lw2, $y + $lw2,
@@ -928,7 +943,7 @@ sub widen
 			if ( !$closed && ($i == 0 || $i == $last )) {
 				my ( $xo, $yo, $xa, $ya) = @$p[ $i ? (map { $i + $_ } 0,1,-2,-1) : (0..3)];
         	        	my $theta = atan2( $ya - $yo, $xa - $xo );
-				if ( $le == le::Flat) {
+				if ( $le == le::Flat || $no_line_ends) {
 					my ($sin, $cos) = (sin($theta + $PI_2), cos($theta + $PI_2));
 					push @u, [ line => [
 						$xo + $lw2 * $cos,
@@ -999,7 +1014,7 @@ sub widen
 					]];
 					@$firstout = @{ $out->[-1][1] }
 						if $i == 0;
-				} elsif ( $_lj == lj::Bevel) {
+				} elsif ( $_lj == lj::Bevel || $no_line_ends ) {
 					@$firstout = ( $xo - $dx1, $yo - $dy1 )
 						if $i == 0;
 					push @$out, [ line => [ $xo - $dx1, $yo - $dy1 ]];
@@ -1336,11 +1351,11 @@ pixels, to be suitable for direct send to the polyline() API call. If PRESCALE
 factor is set, it is used instead to premultiply coordinates of arc anchor
 points used to render the lines.
 
-=item points FOR_FILL_POLY=0
+=item points %opt
 
 Runs all accumulated commands, and returns rendered set of points, suitable
 for further calls to either C<Prima::Drawable::polyline> or C<Prima::Drawable::fillpoly>
-depending on the C<FOR_FILL_POLY> flag.
+depending on the C<$opt{fill}> flag.
 
 =item region MODE=fm::Winding|fm::Overlay, RGNOP=rgnop::Union
 

@@ -349,7 +349,7 @@ sub fill_imgaa_primitive
 	return 1;
 }
 
-sub stroke_aa_primitive
+sub stroke_primitive
 {
 	my ( $self, $request ) = (shift, shift);
 	return 1 if $self->rop == rop::NoOper;
@@ -358,8 +358,17 @@ sub stroke_aa_primitive
 
 	my $path = $self->new_path;
 	$path->$request(@_);
+
+	if (!$self->antialias && $self->alpha == 255 && $self->lineWidth < 1.5) {
+		return unless $self->graphic_context_push;
+		$self-> lineWidth(0);
+		my $ok = $path->stroke;
+		$self->graphic_context_pop;
+		return $ok;
+	}
+
 	$path = $path->widen(
-		linePattern => ( $lp eq lp::Null) ? lp::Solid : $lp
+		linePattern => ( $lp eq lp::Null) ? lp::Solid : $lp,
 	);
 	return unless $self->graphic_context_push;
 	$self->fillPattern(fp::Solid);
@@ -370,7 +379,7 @@ sub stroke_aa_primitive
 	return $ok;
 }
 
-sub fill_aa_primitive
+sub fill_primitive
 {
 	my ( $self, $request ) = (shift, shift);
 	my $path = $self->new_path;
