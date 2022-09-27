@@ -22,7 +22,6 @@ Bool
 apc_gp_init( Handle self)
 {
 	objCheck false;
-	sys line_width = 1.0;
 	return true;
 }
 
@@ -93,101 +92,9 @@ adjust_line_end_##typ                                              \
 ADJUST_LINE_END_DEF(int);
 ADJUST_LINE_END_DEF(LONG);
 
-static Bool
-gp_Arc(
-	Handle self,
-	int nLeftRect, int nTopRect, int nRightRect, int nBottomRect,
-	int nXRadial1, int nYRadial1, int nXRadial2, int nYRadial2,
-	double angleStart, double angleEnd
-) {
-	if ( nXRadial1 == nXRadial2 && nYRadial1 == nYRadial2 && fabs(angleStart - angleEnd) < 360 ) {
-		SelectObject( sys ps, stylus_get_pen( PS_SOLID, 1, sys rq_brush.back_color));
-		STYLUS_FREE_PEN;
-		adjust_line_end_int( nXRadial1, nYRadial1, &nXRadial2, &nYRadial2);
-		MoveToEx( sys ps, nXRadial1, nYRadial1, NULL);
-		return LineTo( sys ps, nXRadial2, nYRadial2);
-	} else {
-		return Arc(
-			sys ps,
-			nLeftRect,  nTopRect,  nRightRect,  nBottomRect,
-			nXRadial1,  nYRadial1,  nXRadial2,  nYRadial2
-		);
-	}
-}
-
-static Bool
-gp_Chord(
-  Handle self,
-  int nLeftRect, int nTopRect, int nRightRect, int nBottomRect,
-  int nXRadial1, int nYRadial1, int nXRadial2, int nYRadial2,
-  double angleStart, double angleEnd, Bool filled
-) {
-	if (
-		(abs(nXRadial1 - nXRadial2) < 2) &&
-		(abs(nYRadial1 == nYRadial2) < 2) &&
-		(fabs(angleStart - angleEnd) < 360 )
-	) {
-		if ( filled ) {
-			nXRadial2--;
-			nYRadial2--;
-		}
-
-		SelectObject( sys ps, stylus_get_pen( PS_SOLID, 1, sys rq_brush.back_color));
-		STYLUS_FREE_PEN;
-		adjust_line_end_int( nXRadial1, nYRadial1, &nXRadial2, &nYRadial2);
-		MoveToEx( sys ps, nXRadial1, nYRadial1, NULL);
-		return LineTo( sys ps, nXRadial2, nYRadial2);
-	} else {
-		return Chord(
-			sys ps,
-			nLeftRect,  nTopRect,  nRightRect,  nBottomRect,
-			nXRadial1,  nYRadial1,  nXRadial2,  nYRadial2
-		);
-	}
-}
-
-static Bool
-gp_Pie(
-	Handle self,
-	int nLeftRect, int nTopRect, int nRightRect, int nBottomRect,
-	int nXRadial1, int nYRadial1, int nXRadial2, int nYRadial2,
-	double angleStart, double angleEnd, Bool filled
-) {
-	if ( nXRadial1 == nXRadial2 && nYRadial1 == nYRadial2 && fabs(angleStart - angleEnd) < 360 ) {
-		int cx, cy;
-
-		SelectObject( sys ps, stylus_get_pen( PS_SOLID, 1, sys rq_brush.back_color));
-		STYLUS_FREE_PEN;
-		cx  = ( nLeftRect + nRightRect ) / 2;
-		cy  = ( nTopRect  + nBottomRect ) / 2;
-		adjust_line_end_int( cx, cy, &nXRadial1, &nYRadial1);
-		if ( filled ) {
-			if ( nXRadial2 > cx ) nXRadial1 = nXRadial2;
-			if ( nYRadial2 > cy ) nYRadial1 = nYRadial2;
-		}
-		MoveToEx( sys ps, cx, cy, NULL);
-		return LineTo( sys ps, nXRadial1, nYRadial1);
-	} else {
-		return Pie(
-			sys ps,
-			nLeftRect,  nTopRect,  nRightRect,  nBottomRect,
-			nXRadial1,  nYRadial1,  nXRadial2,  nYRadial2
-		);
-	}
-}
-
-
 #define GRAD 57.29577951
 
 #define check_swap( parm1, parm2) if ( parm1 > parm2) { int parm3 = parm1; parm1 = parm2; parm2 = parm3;}
-
-#define ELLIPSE_RECT (int)(x - ( dX - 1) / 2), (int)(y - dY / 2), (int)(x + dX / 2), (int)(y + (dY - 1) / 2)
-#define ELLIPSE_RECT_SUPERINCLUSIVE (int)(x - ( dX - 1) / 2), (int)(y - dY / 2), (int)(x + dX / 2 + 1), (int)(y + (dY - 1) / 2 + 1)
-#define ARC_COMPLETE (int)(x + dX / 2 + 1), y, (int)(x + dX / 2 + 1), y
-#define ARC_ANGLED   (int)(x + cos( angleStart / GRAD) * dX / 2 + 0.5), (int)(y - sin( angleStart / GRAD) * dY / 2 + 0.5), \
-							(int)(x + cos( angleEnd / GRAD) * dX / 2 + 0.5),   (int)(y - sin( angleEnd / GRAD) * dY / 2 + 0.5)
-#define ARC_ANGLED_SUPERINCLUSIVE   (int)(x + cos( angleStart / GRAD) * dX / 2 + 0.5), (int)(y - sin( angleStart / GRAD) * dY / 2 + 0.5), \
-							(int)(x + cos( angleEnd / GRAD) * dX / 2 + 1.5),   (int)(y - sin( angleEnd / GRAD) * dY / 2 + 1.5)
 
 #define EMULATE_OPAQUE_LINE \
 (sys rq_pen.logpen.lopnStyle == PS_USERSTYLE && sys rop2 == ropCopyPut)
@@ -196,41 +103,6 @@ gp_Pie(
 	STYLUS_FREE_PEN;\
 	if (sys rop != R2_COPYPEN) SetROP2( sys ps, R2_COPYPEN)
 #define STYLUS_RESTORE_OPAQUE_LINE if (sys rop != R2_COPYPEN) SetROP2( sys ps, sys rop)
-
-static Rect
-fill_ellipse_rect(int x1, int x2, int x3, int x4)
-{
-	Rect r = { x1, x2, x3, x4 };
-	return r;
-}
-
-#define EXPAND_ELLIPSE_RECT(r) r.left,r.bottom,r.right,r.top
-
-Bool
-apc_gp_arc( Handle self, int x, int y, int dX, int dY, double angleStart, double angleEnd)
-{ objCheck false; {
-	int compl, needf;
-	HDC ps = sys ps;
-
-	SHIFT_XY(x,y);
-	compl = arc_completion( &angleStart, &angleEnd, &needf);
-
-	if (EMULATE_OPAQUE_LINE) {
-		STYLUS_USE_OPAQUE_LINE;
-		if ( compl )
-			Arc( ps, ELLIPSE_RECT, ARC_COMPLETE);
-		else
-			gp_Arc( self, ELLIPSE_RECT, ARC_ANGLED, angleStart, angleEnd);
-		STYLUS_RESTORE_OPAQUE_LINE;
-	}
-
-	STYLUS_USE_PEN;
-	while( compl--)
-		Arc( ps, ELLIPSE_RECT, ARC_COMPLETE);
-	if ( !needf) return true;
-	if ( !gp_Arc( self, ELLIPSE_RECT, ARC_ANGLED, angleStart, angleEnd)) apiErrRet;
-	return true;
-}}
 
 /* emulate transparent mono patterns with xor/and stippling */
 static Bool
@@ -279,7 +151,6 @@ make_brush(Handle self, int* mix)
 		return false;
 	}
 }
-
 
 Bool
 apc_gp_bar( Handle self, int x1, int y1, int x2, int y2)
@@ -439,37 +310,6 @@ apc_gp_clear( Handle self, int x1, int y1, int x2, int y2)
 }}
 
 Bool
-apc_gp_chord( Handle self, int x, int y, int dX, int dY, double angleStart, double angleEnd)
-{objCheck false;{
-	Bool ok = true;
-	HDC     ps = sys ps;
-	int compl, needf;
-	HGDIOBJ old;
-	compl = arc_completion( &angleStart, &angleEnd, &needf);
-
-	SHIFT_XY(x,y);
-	old = SelectObject( ps, std_hollow_brush);
-
-	if (EMULATE_OPAQUE_LINE) {
-		STYLUS_USE_OPAQUE_LINE;
-		if ( compl ) Arc( ps, ELLIPSE_RECT, ARC_COMPLETE);
-		gp_Chord( self, ELLIPSE_RECT, ARC_ANGLED, angleStart, angleEnd, false);
-		STYLUS_RESTORE_OPAQUE_LINE;
-	}
-
-	STYLUS_USE_PEN;
-	while( compl--)
-		Arc( ps, ELLIPSE_RECT, ARC_COMPLETE);
-	if ( needf) {
-		if ( !( ok = gp_Chord( self, ELLIPSE_RECT, ARC_ANGLED, angleStart, angleEnd, false))) apiErr;
-	}
-
-	SelectObject( ps, old );
-
-	return ok;
-}}
-
-Bool
 apc_gp_draw_poly( Handle self, int numPts, Point * points)
 {objCheck false;{
 	int i;
@@ -534,92 +374,6 @@ apc_gp_draw_poly2( Handle self, int numPts, Point * points)
 	if ( !( ok = PolyPolyline( sys ps, p, pts, numPts/2))) apiErr;
 	free( pts);
 	free( p);
-	return ok;
-}}
-
-Bool
-apc_gp_ellipse( Handle self, int x, int y, int dX, int dY)
-{objCheck false;{
-	Bool    ok = true;
-	HDC     ps = sys ps;
-	HGDIOBJ old;
-
-	old = SelectObject( ps, std_hollow_brush);
-	SHIFT_XY(x,y);
-
-	if (EMULATE_OPAQUE_LINE) {
-		STYLUS_USE_OPAQUE_LINE;
-		Ellipse( ps, ELLIPSE_RECT);
-		STYLUS_RESTORE_OPAQUE_LINE;
-	}
-
-	STYLUS_USE_PEN;
-	if ( !( ok = Ellipse( ps, ELLIPSE_RECT))) apiErr;
-	SelectObject( ps, old );
-
-	return ok;
-}}
-
-Bool
-apc_gp_fill_chord( Handle self, int x, int y, int dX, int dY, double angleStart, double angleEnd)
-{objCheck false;{
-	Bool ok = true;
-	HDC     ps = sys ps;
-	Bool   comp;
-	int compl0, needf;
-	int mix = 0;
-	Rect r;
-
-	compl0 = arc_completion( &angleStart, &angleEnd, &needf);
-	comp = ((sys fill_mode & fmOverlay) == 0) || stylus_is_complex( self);
-	SHIFT_XY(x,y);
-
-	if ( comp) {
-		SelectObject( ps, std_hollow_pen);
-		r = fill_ellipse_rect( ELLIPSE_RECT_SUPERINCLUSIVE );
-	} else {
-		SelectObject( ps, stylus_get_pen( PS_SOLID, 1, sys rq_brush.logbrush.lbColor));
-		r = fill_ellipse_rect( ELLIPSE_RECT );
-	}
-
-	while ( make_brush(self, &mix)) {
-		int compl = compl0;
-		while ( compl--)
-			if ( !( ok = Ellipse( ps, EXPAND_ELLIPSE_RECT(r)))) apiErr;
-		if ( !( ok = !needf || gp_Chord(
-			self, EXPAND_ELLIPSE_RECT(r), ARC_ANGLED_SUPERINCLUSIVE, angleStart, angleEnd, true
-		))) apiErr;
-	}
-
-	STYLUS_FREE_PEN;
-
-	return ok;
-}}
-
-Bool
-apc_gp_fill_ellipse( Handle self, int x, int y, int dX, int dY)
-{objCheck false;{
-	Bool ok = true;
-	HDC     ps  = sys ps;
-	Bool    comp = ((sys fill_mode & fmOverlay) == 0) || stylus_is_complex(self);
-	Rect r;
-	int mix = 0;
-	SHIFT_XY(x,y);
-
-	if ( comp) {
-		SelectObject( ps, std_hollow_pen);
-		r = fill_ellipse_rect( ELLIPSE_RECT_SUPERINCLUSIVE );
-		if ( !( ok = Ellipse( ps, ELLIPSE_RECT_SUPERINCLUSIVE))) apiErr;
-	} else {
-		SelectObject( ps, stylus_get_pen( PS_SOLID, 1, sys rq_brush.logbrush.lbColor));
-		r = fill_ellipse_rect( ELLIPSE_RECT );
-	}
-
-	while ( make_brush( self, &mix )) {
-		if ( !( ok = Ellipse( ps, EXPAND_ELLIPSE_RECT(r)))) apiErr;
-	}
-
-	STYLUS_FREE_PEN;
 	return ok;
 }}
 
@@ -777,51 +531,6 @@ apc_gp_fill_poly( Handle self, int numPts, Point * points)
 }return ok;}
 
 Bool
-apc_gp_fill_sector( Handle self, int x, int y, int dX, int dY, double angleStart, double angleEnd)
-{objCheck false;{
-	Bool ok = true;
-	HDC     ps = sys ps;
-	POINT   pts[ 3];
-	Bool comp;
-	int compl0, needf;
-	Rect r;
-	int mix = 0;
-
-	compl0 = arc_completion( &angleStart, &angleEnd, &needf);
-	comp = ((sys fill_mode & fmOverlay) == 0) || stylus_is_complex(self);
-
-	SHIFT_XY(x,y);
-	pts[0].x = x + cos( angleEnd   / GRAD) * dX / 2 + 0.5;
-	pts[0].y = y - sin( angleEnd   / GRAD) * dY / 2 + 0.5;
-	pts[1].x = x + cos( angleStart / GRAD) * dX / 2 + 0.5;
-	pts[1].y = y - sin( angleStart / GRAD) * dY / 2 + 0.5;
-
-	if ( comp) {
-		SelectObject( ps, std_hollow_pen);
-		r = fill_ellipse_rect( ELLIPSE_RECT_SUPERINCLUSIVE );
-	} else {
-		SelectObject( ps, stylus_get_pen( PS_SOLID, 1, sys rq_brush.logbrush.lbColor));
-		r = fill_ellipse_rect( ELLIPSE_RECT );
-	}
-
-	while ( make_brush( self, &mix )) {
-		int compl = compl0;
-		while ( compl--)
-			if ( !( ok = Ellipse( ps, EXPAND_ELLIPSE_RECT(r)))) apiErr;
-		if ( !( ok = !needf || gp_Pie(
-			self, EXPAND_ELLIPSE_RECT(r),
-			pts[1].x, pts[1].y,
-			pts[0].x, pts[0].y,
-			angleStart, angleEnd, true
-		))) apiErr;
-	}
-
-	STYLUS_FREE_PEN;
-
-	return ok;
-}}
-
-Bool
 apc_gp_flood_fill( Handle self, int x, int y, Color borderColor, Bool singleBorder)
 {objCheck false;{
 	HDC ps = sys ps;
@@ -848,7 +557,6 @@ apc_gp_get_handle( Handle self)
 	objCheck 0;
 	return ( ApiHandle) sys ps;
 }
-
 
 Bool
 apc_gp_line( Handle self, int x1, int y1, int x2, int y2)
@@ -915,55 +623,6 @@ apc_gp_rectangle( Handle self, int x1, int y1, int x2, int y2)
 }}
 
 Bool
-apc_gp_sector( Handle self, int x, int y, int dX, int dY, double angleStart, double angleEnd)
-{objCheck false;{
-	Bool ok = true;
-	HDC     ps = sys ps;
-	int compl, needf;
-	POINT   pts[ 2];
-	HGDIOBJ old;
-
-	compl = arc_completion( &angleStart, &angleEnd, &needf);
-	old = SelectObject( ps, std_hollow_brush);
-
-	pts[0].x = x + cos(angleEnd   / GRAD) * dX / 2 + 0.5;
-	pts[0].y = y - sin(angleEnd   / GRAD) * dY / 2 + 0.5;
-	pts[1].x = x + cos(angleStart / GRAD) * dX / 2 + 0.5;
-	pts[1].y = y - sin(angleStart / GRAD) * dY / 2 + 0.5;
-
-	SHIFT_XY(x,y);
-
-	if (EMULATE_OPAQUE_LINE) {
-		STYLUS_USE_OPAQUE_LINE;
-		if ( compl ) Arc( ps, ELLIPSE_RECT, ARC_COMPLETE);
-		gp_Pie(
-			self, ELLIPSE_RECT,
-			pts[1].x, pts[1].y,
-			pts[0].x, pts[0].y,
-			angleStart, angleEnd, false
-		);
-		STYLUS_RESTORE_OPAQUE_LINE;
-	}
-
-	STYLUS_USE_PEN;
-
-	while( compl--)
-		Arc( ps, ELLIPSE_RECT, ARC_COMPLETE);
-	if ( needf) {
-		if ( !( ok = gp_Pie(
-			self, ELLIPSE_RECT,
-			pts[1].x, pts[1].y,
-			pts[0].x, pts[0].y,
-			angleStart, angleEnd, false
-		))) apiErr;
-	}
-
-	SelectObject(ps, old);
-
-	return ok;
-}}
-
-Bool
 apc_gp_set_pixel( Handle self, int x, int y, Color color)
 {
 	objCheck false;
@@ -1001,43 +660,6 @@ apc_gp_get_fill_mode( Handle self)
 	return sys fill_mode;
 }
 
-static Handle ctx_le2PS_ENDCAP[] = {
-	leRound,          PS_ENDCAP_ROUND             ,
-	leSquare,         PS_ENDCAP_SQUARE            ,
-	leFlat,           PS_ENDCAP_FLAT              ,
-	endCtx
-};
-
-int
-apc_gp_get_line_end( Handle self)
-{
-	objCheck 0;
-	if ( !sys ps) return sys line_end;
-	return ctx_remap_def( sys rq_pen.line_end, ctx_le2PS_ENDCAP, false, leRound);
-}
-
-static Handle ctx_lj2PS_JOIN[] = {
-	ljRound,          PS_JOIN_ROUND             ,
-	ljBevel,          PS_JOIN_BEVEL             ,
-	ljMiter,          PS_JOIN_MITER             ,
-	endCtx
-};
-
-int
-apc_gp_get_line_join( Handle self)
-{
-	objCheck 0;
-	if ( !sys ps) return sys line_join;
-	return ctx_remap_def( sys rq_pen.line_join, ctx_lj2PS_JOIN, false, ljRound);
-}
-
-float
-apc_gp_get_line_width( Handle self)
-{
-	objCheck 0;
-	return sys ps ? sys rq_pen.logpen.lopnWidth.x : sys line_width;
-}
-
 int
 apc_gp_get_line_pattern( Handle self, unsigned char * buffer)
 {
@@ -1072,16 +694,6 @@ apc_gp_get_line_pattern( Handle self, unsigned char * buffer)
 		strcpy(( char *) buffer, "\1");
 		return 1;
 	}
-}
-
-float
-apc_gp_get_miter_limit( Handle self)
-{
-	FLOAT ml;
-	objCheck 0;
-	if ( !sys ps) return sys miter_limit;
-	if (! GetMiterLimit( sys ps, &ml)) return 0;
-	return (float)ml;
 }
 
 Color
@@ -1223,7 +835,6 @@ static Handle ctx_rop2R2[] = {
 	ropInvert        , R2_NOT          ,
 	endCtx
 };
-
 
 int
 apc_gp_get_rop( Handle self)
@@ -1457,54 +1068,6 @@ apc_gp_get_fill_pattern_offset( Handle self)
 }
 
 Bool
-apc_gp_set_line_end( Handle self, int line_end)
-{
-	objCheck false;
-	if ( !sys ps) {
-		sys line_end = line_end;
-	} else {
-		sys rq_pen.line_end = ctx_remap_def( line_end, ctx_le2PS_ENDCAP, true, PS_ENDCAP_ROUND);
-		if (( sys rq_pen.geometric = stylus_is_geometric(self)))
-			sys rq_pen.style = stylus_get_extpen_style(self);
-		STYLUS_FREE_PEN;
-		STYLUS_FREE_GP_PEN;
-	}
-	return true;
-}
-
-Bool
-apc_gp_set_line_join( Handle self, int line_join)
-{
-	objCheck false;
-	if ( !sys ps) {
-		sys line_join = line_join;
-	} else {
-		sys rq_pen.line_join = ctx_remap_def( line_join, ctx_lj2PS_JOIN, true, PS_JOIN_ROUND);
-		if (( sys rq_pen.geometric = stylus_is_geometric(self)))
-			sys rq_pen.style = stylus_get_extpen_style(self);
-		STYLUS_FREE_PEN;
-		STYLUS_FREE_GP_PEN;
-	}
-	return true;
-}
-
-Bool
-apc_gp_set_line_width( Handle self, float line_width)
-{
-	objCheck false;
-	if ( sys ps) {
-		if ( line_width < 0.0 || line_width > 8192.0) line_width = 0.0;
-		sys rq_pen.logpen.lopnWidth.x = line_width + .5;
-		if (( sys rq_pen.geometric = stylus_is_geometric(self)))
-			sys rq_pen.style = stylus_get_extpen_style(self);
-		STYLUS_FREE_PEN;
-		STYLUS_FREE_GP_PEN;
-	}
-	sys line_width = line_width;
-	return true;
-}
-
-Bool
 apc_gp_set_line_pattern( Handle self, unsigned char * pattern, int len)
 {
 	objCheck false;
@@ -1525,27 +1088,14 @@ apc_gp_set_line_pattern( Handle self, unsigned char * pattern, int len)
 		sys rq_pen.logpen.lopnStyle  = patres_user( pattern, len);
 		sys rq_pen.line_pattern = &std_hollow_line_pattern;
 		if (( sys rq_pen.geometric = stylus_is_geometric(self))) {
-			sys rq_pen.style = stylus_get_extpen_style(self);
-			if ( sys rq_pen.logpen.lopnStyle == PS_USERSTYLE)
-				sys rq_pen.line_pattern = patres_fetch( pattern, len);
+			sys rq_pen.style        = sys rq_pen.logpen.lopnStyle | PS_GEOMETRIC;
+			sys rq_pen.line_pattern = patres_fetch( pattern, len);
 		}
 		STYLUS_FREE_PEN;
 		STYLUS_FREE_GP_PEN;
 	}
 	return true;
 }
-
-Bool
-apc_gp_set_miter_limit( Handle self, float miter_limit)
-{
-	objCheck false;
-	if ( !sys ps) {
-		sys miter_limit = miter_limit;
-		return true;
-	} else 
-		return SetMiterLimit( sys ps, (FLOAT) miter_limit, NULL);
-}
-
 
 Bool
 apc_gp_set_palette( Handle self)
@@ -1648,9 +1198,6 @@ apc_gp_push(Handle self, GCStorageFunction * destructor, void * user_data, unsig
 		state->paint.rq_brush    = sys rq_brush;
 		state->common.transform  = sys gp_transform;
 	} else {
-		state->common.line_end    = sys line_end;
-		state->common.line_join   = sys line_join;
-		state->common.miter_limit = sys miter_limit;
 		state->common.line_pattern_len = sys line_pattern_len;
 		if ( state->common.line_pattern_len > sizeof(sys line_pattern)) {
 			if (( state->common.line_pattern = malloc(state->common.line_pattern_len)) != NULL)
@@ -1673,7 +1220,6 @@ apc_gp_push(Handle self, GCStorageFunction * destructor, void * user_data, unsig
 	state->common.fg            = sys fg;
 	state->common.bg            = sys bg;
 	state->common.font          = var font;
-	state->common.line_width    = sys line_width;
 	state->common.text_out_baseline = is_apt( aptTextOutBaseline);
 	state->common.text_opaque   = is_apt( aptTextOpaque);
 	if ( var fillPatternImage )
@@ -1729,10 +1275,6 @@ apc_gp_pop( Handle self, void * user_data)
 			GdipTranslateTextureTransform(CURRENT_GP_BRUSH,offset.x,offset.y,MatrixOrderPrepend);
 		}
 	} else {
-		sys line_end        = state->common.line_end;
-		sys line_join       = state->common.line_join;
-		sys line_width      = state->common.line_width;
-		sys miter_limit     = state->common.miter_limit;
 		if ( sys line_pattern_len > sizeof(sys line_pattern)) 
 			free(sys line_pattern);
 		sys line_pattern_len = state->common.line_pattern_len;

@@ -1,5 +1,12 @@
 use Types;
 
+global %DrawablePaintState {
+	int line_end;
+	int line_join;
+	double line_width;
+	double miter_limit;
+}
+
 object Prima::Drawable ( Prima::Component)
 {
 	Font         font;
@@ -10,6 +17,9 @@ object Prima::Drawable ( Prima::Component)
 	Bool         antialias;
 	int          alpha;
 	Handle       fillPatternImage;
+
+	DrawablePaintState current_state;
+	DrawablePaintState saved_state;
 
 	property     int           alpha;
 	property     Bool          antialias;

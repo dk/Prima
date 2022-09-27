@@ -2860,6 +2860,7 @@ LE(Flat)
 LE(Square)
 #define    leRound          2
 LE(Round)
+#define    leMax            2
 END_TABLE(le,UV)
 #undef LE
 
@@ -2872,6 +2873,7 @@ LJ(Round)
 LJ(Bevel)
 #define    ljMiter          2
 LJ(Miter)
+#define    ljMax            2
 END_TABLE(lj,UV)
 #undef LJ
 
@@ -3570,9 +3572,6 @@ extern Bool
 apc_gp_alpha( Handle self, int alpha, int x1, int y1, int x2, int y2);
 
 extern Bool
-apc_gp_arc( Handle self, int x, int y, int dX, int dY, double angleStart, double angleEnd);
-
-extern Bool
 apc_gp_bar( Handle self, int x1, int y1, int x2, int y2);
 
 extern Bool
@@ -3585,28 +3584,13 @@ extern Bool
 apc_gp_clear( Handle self, int x1, int y1, int x2, int y2);
 
 extern Bool
-apc_gp_chord( Handle self, int x, int y, int dX, int dY, double angleStart, double angleEnd);
-
-extern Bool
 apc_gp_draw_poly( Handle self, int numPts, Point * points);
 
 extern Bool
 apc_gp_draw_poly2( Handle self, int numPts, Point * points);
 
 extern Bool
-apc_gp_ellipse( Handle self, int x, int y, int dX, int dY);
-
-extern Bool
-apc_gp_fill_chord( Handle self, int x, int y, int dX, int dY, double angleStart, double angleEnd);
-
-extern Bool
-apc_gp_fill_ellipse( Handle self, int x, int y, int dX, int dY);
-
-extern Bool
 apc_gp_fill_poly( Handle self, int numPts, Point * points);
-
-extern Bool
-apc_gp_fill_sector( Handle self, int x, int y, int dX, int dY, double angleStart, double angleEnd);
 
 extern Bool
 apc_gp_flood_fill( Handle self, int x, int y, Color borderColor, Bool singleBorder);
@@ -3642,10 +3626,6 @@ apc_gp_put_image( Handle self, Handle image, int x, int y,
 						int xFrom, int yFrom, int xLen, int yLen, int rop);
 extern Bool
 apc_gp_rectangle( Handle self, int x1, int y1, int x2, int y2);
-
-extern Bool
-apc_gp_sector( Handle self, int x, int y, int dX, int dY,
-					double angleStart, double angleEnd);
 
 extern Bool
 apc_gp_set_pixel( Handle self, int x, int y, Color color);
@@ -3758,19 +3738,7 @@ extern ApiHandle
 apc_gp_get_handle( Handle self);
 
 extern int
-apc_gp_get_line_end( Handle self);
-
-extern int
-apc_gp_get_line_join( Handle self);
-
-extern float
-apc_gp_get_line_width( Handle self);
-
-extern int
 apc_gp_get_line_pattern( Handle self, unsigned char * buffer);
-
-extern float
-apc_gp_get_miter_limit( Handle self);
 
 extern Color
 apc_gp_get_nearest_color( Handle self, Color color);
@@ -3862,19 +3830,7 @@ extern Bool
 apc_gp_set_font( Handle self, PFont font);
 
 extern Bool
-apc_gp_set_line_end( Handle self, int lineEnd);
-
-extern Bool
-apc_gp_set_line_join( Handle self, int lineJoin);
-
-extern Bool
-apc_gp_set_line_width( Handle self, float lineWidth);
-
-extern Bool
 apc_gp_set_line_pattern( Handle self, unsigned char * pattern, int len);
-
-extern Bool
-apc_gp_set_miter_limit( Handle self, float limit);
 
 extern Bool
 apc_gp_set_palette( Handle self);

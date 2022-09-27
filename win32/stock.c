@@ -231,7 +231,7 @@ select_pen( Handle self )
 
 	key.type = DCO_PEN;
 	if ( !key.geometric ) {
-		key.style = key.line_end = key.line_join = 0;
+		key.style = 0;
 		key.line_pattern = NULL;
 	}
 	if (( ret = stylus_fetch(&key)) == NULL )
@@ -368,13 +368,7 @@ Bool
 stylus_is_geometric( Handle self )
 {
 	LOGPEN *s = & sys rq_pen.logpen;
-	if ( s-> lopnWidth.x > 1) {
-		if ( s-> lopnStyle == PS_NULL)
-			return false;
-		return true;
-	} else if ( s-> lopnStyle == PS_USERSTYLE)
-		return true;
-	return false;
+	return s-> lopnStyle == PS_USERSTYLE;
 }
 
 Bool
@@ -401,13 +395,6 @@ stylus_is_complex( Handle self )
 		return true;
 
 	return false;
-}
-
-DWORD
-stylus_get_extpen_style( Handle self )
-{
-	RQPen *s = & sys rq_pen;
-	return s-> logpen.lopnStyle | s-> line_end | s-> line_join | PS_GEOMETRIC;
 }
 
 static PDCObject
@@ -1977,13 +1964,9 @@ hwnd_enter_paint( Handle self)
 	apc_gp_set_text_out_baseline( self, is_apt( aptTextOutBaseline));
 	apc_gp_set_fill_mode( self, sys fill_mode);
 	apc_gp_set_fill_pattern_offset( self, sys fill_pattern_offset);
-	apc_gp_set_line_width( self, sys line_width);
-	apc_gp_set_line_end( self, sys line_end);
-	apc_gp_set_line_join( self, sys line_join);
 	apc_gp_set_line_pattern( self,
 		( Byte*)(( sys line_pattern_len > sizeof(sys line_pattern)) ? sys line_pattern : ( Byte*)&sys line_pattern),
 		sys line_pattern_len);
-	apc_gp_set_miter_limit( self, sys miter_limit);
 	apc_gp_set_rop( self, sys rop);
 	apc_gp_set_rop2( self, sys rop2);
 	apc_gp_set_transform( self, sys transform. x, sys transform. y);

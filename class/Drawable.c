@@ -110,6 +110,7 @@ Drawable_begin_paint( Handle self)
 	if ( var-> stage > csFrozen) return false;
 	if ( is_opt( optInDrawInfo)) my-> end_paint_info( self);
 	opt_set( optInDraw);
+	var->saved_state = var->current_state;
 	return true;
 }
 
@@ -118,6 +119,7 @@ Drawable_end_paint( Handle self)
 {
 	clear_font_abc_caches( self);
 	opt_clear( optInDraw);
+	var->current_state = var->saved_state;
 	var->alpha     = apc_gp_get_alpha(self);
 	var->antialias = apc_gp_get_antialias( self );
 }
@@ -129,6 +131,7 @@ Drawable_begin_paint_info( Handle self)
 	if ( is_opt( optInDraw))     return true;
 	if ( is_opt( optInDrawInfo)) return false;
 	opt_set( optInDrawInfo);
+	var->saved_state = var->current_state;
 	return true;
 }
 
@@ -139,6 +142,7 @@ Drawable_end_paint_info( Handle self)
 	opt_clear( optInDrawInfo);
 	var->alpha     = apc_gp_get_alpha(self);
 	var->antialias = apc_gp_get_antialias( self );
+	var->current_state = var->saved_state;
 }
 
 void
@@ -201,13 +205,13 @@ Drawable_set( Handle self, HV * profile)
 Bool
 Drawable_graphic_context_push(Handle self)
 {
-	return apc_gp_push(self, NULL, NULL, 0);
+	return apc_gp_push(self, NULL, &var->current_state, sizeof(var->current_state));
 }
 
 Bool
 Drawable_graphic_context_pop(Handle self)
 {
-	Bool ok = apc_gp_pop(self, NULL);
+	Bool ok = apc_gp_pop(self, &var->current_state);
 	if ( var-> fillPatternImage && PObject(var-> fillPatternImage)->stage != csNormal) {
 		unprotect_object(var-> fillPatternImage);
 		var-> fillPatternImage = NULL_HANDLE;
@@ -492,17 +496,17 @@ Drawable_fillPatternOffset( Handle self, Bool set, Point fpo)
 int
 Drawable_lineEnd( Handle self, Bool set, int lineEnd)
 {
-	if (!set) return apc_gp_get_line_end( self);
-	apc_gp_set_line_end( self, lineEnd);
-	return lineEnd;
+	if (!set) return var->current_state.line_end;
+	if ( lineEnd < 0 || lineEnd > leMax ) lineEnd = 0;
+	return var->current_state.line_end = lineEnd;
 }
 
 int
 Drawable_lineJoin( Handle self, Bool set, int lineJoin)
 {
-	if (!set) return apc_gp_get_line_join( self);
-	apc_gp_set_line_join( self, lineJoin);
-	return lineJoin;
+	if (!set) return var->current_state.line_join;
+	if ( lineJoin < 0 || lineJoin > leMax ) lineJoin = 0;
+	return var->current_state.line_join = lineJoin;
 }
 
 SV *
@@ -525,18 +529,17 @@ Drawable_linePattern( Handle self, Bool set, SV * pattern)
 double
 Drawable_lineWidth( Handle self, Bool set, double lineWidth)
 {
-	if (!set) return apc_gp_get_line_width( self);
+	if (!set) return var->current_state.line_width;
 	if ( lineWidth < 0.0 ) lineWidth = 0.0;
-	apc_gp_set_line_width( self, lineWidth);
-	return lineWidth;
+	return var->current_state.line_width = lineWidth;
 }
 
 double
 Drawable_miterLimit( Handle self, Bool set, double miterLimit)
 {
-	if (!set) return apc_gp_get_miter_limit( self);
-	apc_gp_set_miter_limit( self, miterLimit);
-	return miterLimit;
+	if (!set) return var->current_state.miter_limit;
+	if ( miterLimit < 0.0 )  miterLimit = 0.0;
+	return var->current_state.miter_limit = miterLimit;
 }
 
 SV *

@@ -82,7 +82,7 @@ $mw = Prima::MainWindow->new(
 			Dot DotDot DashDot DashDotDot
 		) ]],
 		[ '~Width' => [
-			(map { my $k = $_; [ $k , sub { lw($k) } ] } (0,1,2,3,5,10,20,30)),
+			(map { my $k = $_; [ $k , sub { lw($k) } ] } (0,0.5,1,2,3,5,10,20,30)),
 		]],
 	],
 	buffered => 1,
@@ -135,7 +135,7 @@ $mw = Prima::MainWindow->new(
 
 		if ( $cmp = $self-> menu->checked('hairline')) {
 			$canvas->color(cl::White);
-			$canvas->lineWidth(1);
+			$canvas->lineWidth(0);
 			$canvas->linePattern(lp::Solid);
 			$canvas-> polyline( \@xpoints);
 		}
