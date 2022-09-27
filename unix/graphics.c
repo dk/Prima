@@ -128,32 +128,6 @@ prima_release_gc( PDrawableSysData selfxx)
 	}
 }
 
-/*
-	macros to multiply line pattern entries to line width in
-	a more-less aestethic fashion :-)
-*/
-#define MAX_DASH_LEN 2048
-#define dDASH_FIX(line_width,source,length) \
-	int df_i, df_lw = line_width + .5, df_len = length; \
-	char df_list[MAX_DASH_LEN], *df_src = (char*)source, *df_dst = df_list
-#define DASH_FIX \
-	if ( df_lw > 1) {\
-		int on = 0;\
-		if ( df_len > MAX_DASH_LEN) df_len = MAX_DASH_LEN;\
-		for ( df_i = 0; df_i < df_len; df_i++) {\
-			unsigned int w = *((unsigned char*)df_src++);\
-			if (( on = !on)) {\
-				if ( w > 1) w *= df_lw;\
-			} else {\
-				w = w * df_lw + 1;\
-			}\
-			if ( w > 255) w = 255;\
-			*((unsigned char*)df_dst++) = w;\
-		}\
-		df_src = df_list;\
-	}
-#define DASHES df_src, df_len
-
 void
 prima_prepare_drawable_for_painting( Handle self, Bool inside_on_paint)
 {
@@ -197,9 +171,7 @@ Unbuffered:
 
 
 	if ( XX-> dashes) {
-		dDASH_FIX( XX-> line_width, XX-> dashes, XX-> ndashes);
-		DASH_FIX;
-		XSetDashes( DISP, XX-> gc, 0, DASHES);
+		XSetDashes( DISP, XX-> gc, 0, (char*)XX-> dashes, XX-> ndashes);
 	} else {
 		XX-> line_style = LineSolid;
 	}
@@ -665,117 +637,18 @@ apc_gp_done( Handle self)
 	return true;
 }
 
-static int
-arc_completion( double * angleStart, double * angleEnd, int * needFigure)
-{
-	int max;
-	long diff = (long)( fabs( *angleEnd - *angleStart) * 64 + 0.5);
-
-	if ( diff == 0) {
-		*needFigure = false;
-		return 0;
-	}
-	diff /= 64;
-
-	while ( *angleStart > *angleEnd)
-		*angleEnd += 360;
-
-	while ( *angleStart < 0) {
-		*angleStart += 360;
-		*angleEnd   += 360;
-	}
-
-	while ( *angleStart >= 360) {
-		*angleStart -= 360;
-		*angleEnd   -= 360;
-	}
-
-	while ( *angleEnd >= *angleStart + 360)
-		*angleEnd -= 360;
-
-	if ( diff < 360) {
-		*needFigure = true;
-		return 0;
-	}
-
-	max = (int)(diff / 360);
-	*needFigure = ( max * 360) != diff;
-	return ( max % 2) ? 1 : 2;
-}
-
-static void
-calculate_ellipse_divergence(void)
-{
-	static Bool init = false;
-	if ( !init) {
-		XGCValues gcv;
-		Pixmap px = XCreatePixmap( DISP, guts.root, 4, 4, 1);
-		GC gc = XCreateGC( DISP, px, 0, &gcv);
-		XImage *xi;
-		XSetForeground( DISP, gc, 0);
-		XFillRectangle( DISP, px, gc, 0, 0, 5, 5);
-		XSetForeground( DISP, gc, 1);
-		XDrawArc( DISP, px, gc, 0, 0, 4, 4, 0, 360 * 64);
-		if (( xi = XGetImage( DISP, px, 0, 0, 4, 4, 1, XYPixmap))) {
-			int i;
-			Byte *data[4];
-			if ( xi-> bitmap_bit_order == LSBFirst)
-				prima_mirror_bytes(( Byte*) xi-> data, xi-> bytes_per_line * 4);
-			for ( i = 0; i < 4; i++) data[i] = (Byte*)xi-> data + i * xi-> bytes_per_line;
-#define PIX(x,y) ((data[y][0] & (0x80>>(x)))!=0)
-			if (  PIX(2,1) && !PIX(3,1)) guts. ellipseDivergence.x = -1; else
-			if ( !PIX(2,1) && !PIX(3,1)) guts. ellipseDivergence.x = 1;
-			if (  PIX(1,2) && !PIX(1,3)) guts. ellipseDivergence.y = -1; else
-			if ( !PIX(1,2) && !PIX(1,3)) guts. ellipseDivergence.y = 1;
-#undef PIX
-			XDestroyImage( xi);
-		}
-		XFreeGC( DISP, gc);
-		XFreePixmap( DISP, px);
-		init = true;
-	}
-}
-
-#define ELLIPSE_RECT x - ( dX + 1) / 2 + 1, y - dY / 2, dX-guts.ellipseDivergence.x, dY-guts.ellipseDivergence.y
 #define FILL_ANTIDEFECT_REPAIRABLE (((XX->fill_mode & fmOverlay) != 0) && \
 		( rop_map[XX-> rop] == GXcopy ||\
 		rop_map[XX-> rop] == GXset  ||\
 		rop_map[XX-> rop] == GXclear))
 #define FILL_ANTIDEFECT_OPEN {\
 XGCValues gcv;\
-gcv. line_width = 1;\
 gcv. line_style = LineSolid;\
-XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);\
+XChangeGC( DISP, XX-> gc, GCLineStyle, &gcv);\
 }
 #define FILL_ANTIDEFECT_CLOSE {\
 XGCValues gcv;\
-gcv. line_width = XX-> line_width + .5;\
-XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);\
-}
-
-Bool
-apc_gp_arc( Handle self, int x, int y, int dX, int dY, double angleStart, double angleEnd)
-{
-	DEFXX;
-	int compl, needf;
-
-	if ( PObject( self)-> options. optInDrawInfo) return false;
-	if ( !XF_IN_PAINT(XX)) return false;
-	if ( dX <= 0 || dY <= 0) return false;
-	RANGE4(x, y, dX, dY);
-
-	SHIFT( x, y);
-	y = REVERT( y);
-	PURE_FOREGROUND;
-	calculate_ellipse_divergence();
-	compl = arc_completion( &angleStart, &angleEnd, &needf);
-	while ( compl--)
-		XDrawArc( DISP, XX-> gdrawable, XX-> gc, ELLIPSE_RECT, 0, 360 * 64);
-	if ( needf)
-		XDrawArc( DISP, XX-> gdrawable, XX-> gc, ELLIPSE_RECT,
-			angleStart * 64, ( angleEnd - angleStart) * 64);
-	XFLUSH;
-	return true;
+XChangeGC( DISP, XX-> gc, GCLineStyle, &gcv);\
 }
 
 Bool
@@ -918,34 +791,6 @@ apc_gp_clear( Handle self, int x1, int y1, int x2, int y2)
 #define GRAD 57.29577951
 
 Bool
-apc_gp_chord( Handle self, int x, int y, int dX, int dY, double angleStart, double angleEnd)
-{
-	int compl, needf;
-	DEFXX;
-
-	if ( PObject( self)-> options. optInDrawInfo) return false;
-	if ( !XF_IN_PAINT(XX)) return false;
-	if ( dX <= 0 || dY <= 0) return false;
-	RANGE4(x, y, dX, dY);
-
-	SHIFT( x, y);
-	y = REVERT( y);
-	PURE_FOREGROUND;
-	compl = arc_completion( &angleStart, &angleEnd, &needf);
-	calculate_ellipse_divergence();
-	while ( compl--)
-		XDrawArc( DISP, XX-> gdrawable, XX-> gc, ELLIPSE_RECT, 0, 360 * 64);
-	if ( !needf) return true;
-	XDrawArc( DISP, XX-> gdrawable, XX-> gc, ELLIPSE_RECT,
-		angleStart * 64, ( angleEnd - angleStart) * 64);
-	XDrawLine( DISP, XX-> gdrawable, XX-> gc,
-		x + cos( angleStart / GRAD) * dX / 2, y - sin( angleStart / GRAD) * dY / 2,
-		x + cos( angleEnd / GRAD) * dX / 2,   y - sin( angleEnd / GRAD) * dY / 2);
-	XFLUSH;
-	return true;
-}
-
-Bool
 apc_gp_draw_poly( Handle self, int n, Point *pp)
 {
 	DEFXX;
@@ -1006,93 +851,6 @@ apc_gp_draw_poly2( Handle self, int np, Point *pp)
 }
 
 Bool
-apc_gp_ellipse( Handle self, int x, int y, int dX, int dY)
-{
-	DEFXX;
-
-	if ( dX == 1 || dY == 1 ) /* Xorg bug */
-		return apc_gp_rectangle( self, x - dX / 2, y - dY / 2, x + dX / 2, y + dY / 2);
-
-	if ( PObject( self)-> options. optInDrawInfo) return false;
-	if ( !XF_IN_PAINT(XX)) return false;
-	if ( dX <= 0 || dY <= 0) return false;
-	RANGE4(x, y, dX, dY);
-
-	SHIFT( x, y);
-	y = REVERT( y);
-	PURE_FOREGROUND;
-	calculate_ellipse_divergence();
-	XDrawArc( DISP, XX-> gdrawable, XX-> gc, ELLIPSE_RECT, 0, 64*360);
-	XFLUSH;
-	return true;
-}
-
-Bool
-apc_gp_fill_chord( Handle self, int x, int y, int dX, int dY, double angleStart, double angleEnd)
-{
-	DEFXX;
-	int compl, needf, mix = 0;
-
-	if ( PObject( self)-> options. optInDrawInfo) return false;
-	if ( !XF_IN_PAINT(XX)) return false;
-	if ( dX <= 0 || dY <= 0) return false;
-	RANGE4(x, y, dX, dY);
-
-	SHIFT( x, y);
-	y = REVERT( y);
-
-	XSetArcMode( DISP, XX-> gc, ArcChord);
-	FILL_ANTIDEFECT_OPEN;
-
-	while ( prima_make_brush( self, mix++)) {
-		compl = arc_completion( &angleStart, &angleEnd, &needf);
-		while ( compl--) {
-			XFillArc( DISP, XX-> gdrawable, XX-> gc, x - ( dX + 1) / 2 + 1, y - dY / 2, dX, dY, 0, 64*360);
-			if ( FILL_ANTIDEFECT_REPAIRABLE)
-				XDrawArc( DISP, XX-> gdrawable, XX-> gc, x - ( dX + 1) / 2 + 1, y - dY / 2, dX-1, dY-1, 0, 64*360);
-		}
-
-		if ( needf) {
-			XFillArc( DISP, XX-> gdrawable, XX-> gc, x - ( dX + 1) / 2 + 1, y - dY / 2, dX, dY,
-				angleStart * 64, ( angleEnd - angleStart) * 64);
-			if ( FILL_ANTIDEFECT_REPAIRABLE)
-				XDrawArc( DISP, XX-> gdrawable, XX-> gc, x - ( dX + 1) / 2 + 1, y - dY / 2, dX-1, dY-1,
-					angleStart * 64, ( angleEnd - angleStart) * 64);
-		}
-	}
-	FILL_ANTIDEFECT_CLOSE;
-	XFLUSH;
-	return true;
-}
-
-Bool
-apc_gp_fill_ellipse( Handle self, int x, int y,  int dX, int dY)
-{
-	DEFXX;
-	int mix = 0;
-
-	if ( dX == 1 || dY == 1 ) /* Xorg bug */
-		return apc_gp_bar( self, x - dX / 2, y - dY / 2, x + dX / 2, y + dY / 2);
-
-	if ( PObject( self)-> options. optInDrawInfo) return false;
-	if ( !XF_IN_PAINT(XX)) return false;
-	if ( dX <= 0 || dY <= 0) return false;
-	RANGE4(x, y, dX, dY);
-	SHIFT( x, y);
-	y = REVERT( y);
-
-	FILL_ANTIDEFECT_OPEN;
-	while ( prima_make_brush( self, mix++)) {
-		XFillArc( DISP, XX-> gdrawable, XX-> gc, x - ( dX + 1) / 2 + 1, y - dY / 2, dX, dY, 0, 64*360);
-		if ( FILL_ANTIDEFECT_REPAIRABLE)
-			XDrawArc( DISP, XX-> gdrawable, XX-> gc, x - ( dX + 1) / 2 + 1, y - dY / 2, dX-1, dY-1, 0, 64*360);
-	}
-	FILL_ANTIDEFECT_CLOSE;
-	XFLUSH;
-	return true;
-}
-
-Bool
 apc_gp_fill_poly( Handle self, int numPts, Point *points)
 {
 	/* XXX - beware, current implementation will not deal correctly with different rops and tiles */
@@ -1127,43 +885,6 @@ apc_gp_fill_poly( Handle self, int numPts, Point *points)
 		warn( "Prima::Drawable::fill_poly: too many points");
 	FILL_ANTIDEFECT_CLOSE;
 	free( p);
-	XFLUSH;
-	return true;
-}
-
-Bool
-apc_gp_fill_sector( Handle self, int x, int y, int dX, int dY, double angleStart, double angleEnd)
-{
-	DEFXX;
-	int compl, needf, mix = 0;
-
-	if ( PObject( self)-> options. optInDrawInfo) return false;
-	if ( !XF_IN_PAINT(XX)) return false;
-	if ( dX <= 0 || dY <= 0) return false;
-	RANGE4(x, y, dX, dY);
-
-	SHIFT( x, y);
-	y = REVERT( y);
-	XSetArcMode( DISP, XX-> gc, ArcPieSlice);
-
-	FILL_ANTIDEFECT_OPEN;
-	while ( prima_make_brush( self, mix++)) {
-		compl = arc_completion( &angleStart, &angleEnd, &needf);
-		while ( compl--) {
-			XFillArc( DISP, XX-> gdrawable, XX-> gc, x - ( dX + 1) / 2 + 1, y - dY / 2, dX, dY, 0, 64*360);
-			if ( FILL_ANTIDEFECT_REPAIRABLE)
-				XDrawArc( DISP, XX-> gdrawable, XX-> gc, x - ( dX + 1) / 2 + 1, y - dY / 2, dX-1, dY-1, 0, 64*360);
-		}
-
-		if ( needf) {
-			XFillArc( DISP, XX-> gdrawable, XX-> gc, x - ( dX + 1) / 2 + 1, y - dY / 2, dX, dY,
-				angleStart * 64, ( angleEnd - angleStart) * 64);
-			if ( FILL_ANTIDEFECT_REPAIRABLE)
-				XDrawArc( DISP, XX-> gdrawable, XX-> gc, x - ( dX + 1) / 2 + 1, y - dY / 2, dX-1, dY-1,
-					angleStart * 64, ( angleEnd - angleStart) * 64);
-		}
-	}
-	FILL_ANTIDEFECT_CLOSE;
 	XFLUSH;
 	return true;
 }
@@ -1568,17 +1289,7 @@ apc_gp_line( Handle self, int x1, int y1, int x2, int y2)
 	SHIFT( x1, y1); SHIFT( x2, y2);
 	RANGE4(x1, y1, x2, y2); /* not really correct */
 	PURE_FOREGROUND;
-	if (((int)(XX-> line_width + .5) == 0) && (x1 == x2 || y1 == y2)) {
-		XGCValues gcv;
-		gcv. line_width = 1;
-		XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);
-	}
 	XDrawLine( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y1), x2, REVERT( y2));
-	if (((int)(XX-> line_width + .5) == 0) && (x1 == x2 || y1 == y2)) {
-		XGCValues gcv;
-		gcv. line_width = 0;
-		XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);
-	}
 	XFLUSH;
 	return true;
 }
@@ -1587,7 +1298,6 @@ Bool
 apc_gp_rectangle( Handle self, int x1, int y1, int x2, int y2)
 {
 	DEFXX;
-	int lw = XX-> line_width + .5;
 
 	if ( PObject( self)-> options. optInDrawInfo) return false;
 	if ( !XF_IN_PAINT(XX)) return false;
@@ -1596,47 +1306,8 @@ apc_gp_rectangle( Handle self, int x1, int y1, int x2, int y2)
 	SORT( x1, x2); SORT( y1, y2);
 	RANGE4(x1, y1, x2, y2);
 	PURE_FOREGROUND;
-	if ( lw > 0 && (lw % 2) == 0) {
-		y2--;
-		y1--;
-	}
 	XDrawRectangle( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y2), x2 - x1, y2 - y1);
 	XCHECKPOINT;
-	XFLUSH;
-	return true;
-}
-
-Bool
-apc_gp_sector( Handle self, int x, int y,  int dX, int dY, double angleStart, double angleEnd)
-{
-	int compl, needf;
-	DEFXX;
-
-	if ( PObject( self)-> options. optInDrawInfo) return false;
-	if ( !XF_IN_PAINT(XX)) return false;
-	if ( dX <= 0 || dY <= 0) return false;
-	RANGE4(x, y, dX, dY);
-
-	SHIFT( x, y);
-	y = REVERT( y);
-
-	compl = arc_completion( &angleStart, &angleEnd, &needf);
-	PURE_FOREGROUND;
-	calculate_ellipse_divergence();
-	while ( compl--)
-		XDrawArc( DISP, XX-> gdrawable, XX-> gc, ELLIPSE_RECT,
-			0, 360 * 64);
-	if ( !needf) return true;
-	XDrawArc( DISP, XX-> gdrawable, XX-> gc, ELLIPSE_RECT,
-		angleStart * 64, ( angleEnd - angleStart) * 64);
-	XDrawLine( DISP, XX-> gdrawable, XX-> gc,
-		x + cos( angleStart / GRAD) * dX / 2, y - sin( angleStart / GRAD) * dY / 2,
-		x, y
-	);
-	XDrawLine( DISP, XX-> gdrawable, XX-> gc,
-		x, y,
-		x + cos( angleEnd / GRAD) * dX / 2, y - sin( angleEnd / GRAD) * dY / 2
-	);
 	XFLUSH;
 	return true;
 }
@@ -1758,60 +1429,6 @@ apc_gp_get_fill_pattern_offset( Handle self)
 }
 
 int
-apc_gp_get_line_end( Handle self)
-{
-	DEFXX;
-	int cap;
-	XGCValues gcv;
-
-	if ( XF_IN_PAINT(XX)) {
-		if ( XGetGCValues( DISP, XX-> gc, GCCapStyle, &gcv) == 0) {
-			warn( "UAG_006: error querying GC values");
-			cap = CapButt;
-		} else {
-			cap = gcv. cap_style;
-		}
-	} else {
-		cap = XX-> gcv. cap_style;
-	}
-	if ( cap == CapRound)
-		return leRound;
-	else if ( cap == CapProjecting)
-		return leSquare;
-	return leFlat;
-}
-
-int
-apc_gp_get_line_join( Handle self)
-{
-	DEFXX;
-	int join;
-	XGCValues gcv;
-
-	if ( XF_IN_PAINT(XX)) {
-		if ( XGetGCValues( DISP, XX-> gc, GCJoinStyle, &gcv) == 0) {
-			warn( "UAG_006: error querying GC values");
-			join = JoinRound;
-		} else {
-			join = gcv. join_style;
-		}
-	} else {
-		join = XX-> gcv. join_style;
-	}
-	if ( join == JoinMiter)
-		return ljMiter;
-	else if ( join == JoinBevel)
-		return ljBevel;
-	return ljRound;
-}
-
-float
-apc_gp_get_line_width( Handle self)
-{
-	return X(self)-> line_width;
-}
-
-int
 apc_gp_get_line_pattern( Handle self, unsigned char *dashes)
 {
 	DEFXX;
@@ -1826,15 +1443,6 @@ apc_gp_get_line_pattern( Handle self, unsigned char *dashes)
 		memcpy( dashes, XX-> dashes, n);
 	}
 	return n;
-}
-
-float
-apc_gp_get_miter_limit( Handle self)
-{
-	DEFXX;
-	/* xorg.miArcJoin: don't miter arcs with less than 11 degrees between them */
-	if ( XF_IN_PAINT(XX) ) return 1.0 / sin((11.0 * 3.14159265358 / 180) / 2);
-	return XX->miter_limit;
 }
 
 Point
@@ -2072,76 +1680,6 @@ apc_gp_set_font( Handle self, PFont font)
 */
 
 Bool
-apc_gp_set_line_end( Handle self, int lineEnd)
-{
-	DEFXX;
-	int cap = CapButt;
-	XGCValues gcv;
-
-	if ( lineEnd == leFlat)
-		cap = CapButt;
-	else if ( lineEnd == leSquare)
-		cap = CapProjecting;
-	else if ( lineEnd == leRound)
-		cap = CapRound;
-
-	if ( XF_IN_PAINT(XX)) {
-		gcv. cap_style = cap;
-		XChangeGC( DISP, XX-> gc, GCCapStyle, &gcv);
-		XCHECKPOINT;
-	} else {
-		XX-> gcv. cap_style = cap;
-	}
-	return true;
-}
-
-Bool
-apc_gp_set_line_join( Handle self, int lineJoin)
-{
-	DEFXX;
-	int join = JoinRound;
-	XGCValues gcv;
-
-	if ( lineJoin == ljRound)
-		join = JoinRound;
-	else if ( lineJoin == ljBevel)
-		join = JoinBevel;
-	else if ( lineJoin == ljMiter)
-		join = JoinMiter;
-
-	if ( XF_IN_PAINT(XX)) {
-		gcv. join_style = join;
-		XChangeGC( DISP, XX-> gc, GCJoinStyle, &gcv);
-		XCHECKPOINT;
-	} else {
-		XX-> gcv. join_style = join;
-	}
-	return true;
-}
-
-Bool
-apc_gp_set_line_width( Handle self, float line_width)
-{
-	DEFXX;
-	XGCValues gcv;
-
-	XX-> line_width = line_width;
-	if ( XF_IN_PAINT(XX)) {
-		gcv. line_width = line_width +.5;
-		if ( !( XX-> ndashes == 0 || (XX-> ndashes == 1 && XX-> dashes[0] == 1))) {
-			dDASH_FIX( line_width, XX->dashes, XX->ndashes);
-			DASH_FIX;
-			XSetDashes( DISP, XX-> gc, 0, DASHES);
-		}
-		XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);
-		XCHECKPOINT;
-	} else {
-		XX-> gcv. line_width = line_width + .5;
-	}
-	return true;
-}
-
-Bool
 apc_gp_set_line_pattern( Handle self, unsigned char *pattern, int len)
 {
 	DEFXX;
@@ -2152,10 +1690,8 @@ apc_gp_set_line_pattern( Handle self, unsigned char *pattern, int len)
 			gcv. line_style = LineSolid;
 			XChangeGC( DISP, XX-> gc, GCLineStyle, &gcv);
 		} else {
-			dDASH_FIX(XX-> line_width, pattern, len);
-			DASH_FIX;
 			gcv. line_style = ( XX-> rop2 == ropNoOper) ? LineOnOffDash : LineDoubleDash;
-			XSetDashes( DISP, XX-> gc, 0, DASHES);
+			XSetDashes( DISP, XX-> gc, 0, (char*) pattern, len);
 			XChangeGC( DISP, XX-> gc, GCLineStyle, &gcv);
 		}
 		XX-> line_style = gcv. line_style;
@@ -2177,15 +1713,6 @@ apc_gp_set_line_pattern( Handle self, unsigned char *pattern, int len)
 		XX-> gcv. line_style = ( XX-> rop2 == ropNoOper) ? LineOnOffDash : LineDoubleDash;
 	}
 
-	return true;
-}
-
-Bool
-apc_gp_set_miter_limit( Handle self, float miter_limit)
-{
-	DEFXX;
-	if ( XF_IN_PAINT(XX)) return false;
-	XX-> miter_limit = miter_limit;
 	return true;
 }
 
@@ -2289,7 +1816,6 @@ apc_gp_push(Handle self, GCStorageFunction * destructor, void * user_data, unsig
 	state->antialias     = XX-> flags.antialias;
 	state->fill_mode     = XX-> fill_mode;
 	state->alpha         = XX-> alpha;
-	state->line_width    = XX-> line_width;
 	state->n_dashes      = XX-> ndashes;
 	if ( XX-> dashes && (( state->dashes = malloc( XX-> ndashes)) != NULL))
 		memcpy( state->dashes, XX-> dashes, XX->ndashes);
@@ -2323,7 +1849,6 @@ apc_gp_push(Handle self, GCStorageFunction * destructor, void * user_data, unsig
 		state->nonpaint.fore = XX->saved_fore;
 		state->nonpaint.back = XX->saved_back;
 	}
-	state->miter_limit = XX->miter_limit;
 	memcpy( state->fill_pattern, XX->fill_pattern, sizeof(FillPattern));
 	state->fill_pattern_offset = XX->fill_pattern_offset;
 	state->null_hatch = XX->flags.brush_null_hatch;
@@ -2351,7 +1876,6 @@ apc_gp_pop( Handle self, void * user_data)
 	XX-> flags.antialias  = state->antialias;
 	XX-> fill_mode        = state->fill_mode;
 	XX-> alpha            = state-> alpha;
-	XX-> line_width       = state-> line_width;
 	if ( XX->dashes ) free( XX-> dashes);
 	XX->dashes            = state->dashes;
 	XX->ndashes           = state->n_dashes;
@@ -2406,7 +1930,6 @@ apc_gp_pop( Handle self, void * user_data)
 	memcpy( XX->fill_pattern, state->fill_pattern, sizeof(FillPattern));
 	XX-> fill_pattern_offset = state->fill_pattern_offset;
 	XX-> flags.brush_null_hatch = state->null_hatch;
-	XX->miter_limit = state->miter_limit;
 
 	if (PDrawable(self)->fillPatternImage)
 		unprotect_object(PDrawable(self)->fillPatternImage);

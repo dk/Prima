@@ -1718,7 +1718,6 @@ static void
 overstrike( Handle self, int x, int y, Point *ovx, int advance)
 {
 	DEFXX;
-	float lw = apc_gp_get_line_width( self);
 	int d  = - PDrawable(self)-> font. descent;
 	int ay, x1, y1, x2, y2;
 	double c = XX-> xft_font_cos, s = XX-> xft_font_sin;
@@ -1728,9 +1727,6 @@ overstrike( Handle self, int x, int y, Point *ovx, int advance)
 		XSetForeground( DISP, XX-> gc, XX-> fore. primary);
 		XX-> flags. brush_fore = 1;
 	}
-
-	if ( lw != 1.0)
-		apc_gp_set_line_width( self, 1.0);
 
 	if ( ovx->x < 0 ) ovx->x = 0;
 	if ( ovx->y < 0 ) ovx->y = 0;
@@ -1753,9 +1749,6 @@ overstrike( Handle self, int x, int y, Point *ovx, int advance)
 		y2 = y + advance * s + ay * c + 0.5;
 		XDrawLine( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y1), x2, REVERT( y2));
 	}
-
-	if ( lw != 1.0)
-		apc_gp_set_line_width( self, lw);
 }
 
 static void

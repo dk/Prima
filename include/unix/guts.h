@@ -855,7 +855,6 @@ typedef struct _drawable_sys_data
 	int rop2;
 	int alpha;
 	int line_style;
-	float line_width, miter_limit;
 	unsigned char *dashes;
 	int ndashes;
 	Point clip_mask_extent, shape_extent, shape_offset;
@@ -961,7 +960,6 @@ typedef struct _PaintState
 	Handle fill_image;
 	FillPattern fill_pattern;
 	Font font;
-	float line_width, miter_limit;
 	unsigned char *dashes;
 
 	unsigned int user_data_size;
