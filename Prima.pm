@@ -86,7 +86,7 @@ sub import
 		die $@ if $@;
 		if ( $module->isa('Exporter') && $module->can('export')) {
 			no strict 'refs';
-			if ( exists ${$module.'::'}{'EXPORT_OK'} && (my $ok = \@{"${module}::EXPORT_OK"})) {
+			if ( exists ${$module.'::'}{'EXPORT'} && (my $ok = \@{"${module}::EXPORT"})) {
 				$module->export( $__import, @$ok) if @$ok;
 			}
 		}
