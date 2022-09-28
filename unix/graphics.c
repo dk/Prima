@@ -72,7 +72,11 @@ prima_get_gc( PDrawableSysData selfxx)
 		TAILQ_REMOVE(gc_pool, XX->gcl, gc_link);
 	if (!XX->gcl) {
 		gcv. graphics_exposures = false;
-		XX-> gc = XCreateGC( DISP, (bitmap || layered) ? XX-> gdrawable : guts. root, GCGraphicsExposures, &gcv);
+		gcv. cap_style = CapProjecting;
+		XX-> gc = XCreateGC( DISP,
+			(bitmap || layered) ? XX-> gdrawable : guts. root,
+			GCGraphicsExposures | GCCapStyle,
+			&gcv);
 		XCHECKPOINT;
 		if (( XX->gcl = alloc1z( GCList)))
 			XX->gcl->gc = XX-> gc;

@@ -327,17 +327,14 @@ typedef struct
 struct  _drawable_sys_data;
 
 #define VIRGIN_GC_MASK  (       GCBackground    \
-			|       GCCapStyle      \
 			|       GCClipMask      \
 			|       GCForeground    \
 			|       GCFunction      \
-			|       GCJoinStyle     \
 			|       GCFillRule      \
 			|       GCFillStyle      \
 			|       GCTileStipXOrigin \
 			|       GCTileStipYOrigin \
 			|       GCLineStyle     \
-			|       GCLineWidth     \
 			|       GCSubwindowMode )
 
 typedef struct gc_list

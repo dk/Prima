@@ -943,7 +943,8 @@ apc_show_message( const char * message, Bool utf8)
 #define CLR(x) prima_allocate_color( NULL_HANDLE,prima_map_color(x,NULL),NULL)
 		XGCValues gcv;
 		gcv. font = md. fontId;
-		md. gc = XCreateGC( DISP, md. w, GCFont, &gcv);
+		gcv. cap_style = CapProjecting;
+		md. gc = XCreateGC( DISP, md. w, GCFont | GCCapStyle, &gcv);
 		md. fg  = CLR(clFore | wcDialog);
 		prima_allocate_color( NULL_HANDLE, prima_map_color(clBack | wcDialog,NULL), &md. bg);
 		md. l3d = CLR(clLight3DColor | wcDialog);
