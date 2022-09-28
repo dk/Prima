@@ -406,6 +406,18 @@ sub matrix_apply
 	return $ref ? $ret : @$ret;
 }
 
+sub get_approximate_matrix_scaling
+{
+	my $m = shift->{curr}->{matrix};
+	my $r = $m->[A];
+	$r = $m->[B] if $r < $m->[B];
+	$r = $m->[C] if $r < $m->[C];
+	$r = $m->[D] if $r < $m->[D];
+	return $r;
+}
+
+sub __map_round { map { int($_ + (($_ < 0) ? -.5 : .5)) } @_ }
+
 sub _save
 {
 	my $self = shift;
@@ -452,7 +464,7 @@ sub  _moveto
 	($mx, $my) = $self->matrix_apply($mx, $my);
 	my ($lx, $ly) = $rel ? $self->last_point : (0,0);
 	my $arr = $self->new_array;
-	push @$arr, $self->{subpixel} ? ($lx + $mx, $ly + $my) : (int($lx + $mx + .5), int($ly + $my + .5));
+	push @$arr, $self->{subpixel} ? ($lx + $mx, $ly + $my) : __map_round($lx + $mx, $ly + $my);
 	push @{$self->{points}->[-1]}, $arr;
 }
 
@@ -474,7 +486,7 @@ sub _line
 	if ( $self->{subpixel} ) {
 		push @{ $self->{points}->[-1]->[-1] }, @{ $self-> matrix_apply( $line ) };
 	} else {
-		push @{ $self->{points}->[-1]->[-1] }, map { int($_ + .5) } @{ $self-> matrix_apply( $line ) };
+		push @{ $self->{points}->[-1]->[-1] }, __map_round(@{ $self-> matrix_apply( $line ) });
 	}
 }
 
@@ -550,6 +562,7 @@ sub _arc
 {
 	my ( $self, $from, $to, $rel ) = @_;
 
+	my $scaling = $self->get_approximate_matrix_scaling;
 	my $nurbset = $self->arc2nurbs( $from, $to);
 	if ( $rel ) {
 		my ($lx,$ly) = $self->last_point;
@@ -562,17 +575,20 @@ sub _arc
 
 	my %xopt;
 	$xopt{precision} = $self->{curr}->{precision} if defined $self->{curr}->{precision};
+	$xopt{precision} = $scaling if ($xopt{precision} // 24) > $scaling;
 	$xopt{integer}   = !$self->{subpixel};
 
 	for my $set ( @$nurbset ) {
 		my ( $points, @options ) = @$set;
-		Prima::array::append( $self->{points}->[-1]->[-1],
-			Prima::Drawable->render_spline(
-				$self-> matrix_apply( $points ),
-				@options,
-				%xopt
-			)
-		);
+		my $poly = $self-> matrix_apply( $points );
+		if ($xopt{precision} >= 2) {
+			$poly = Prima::Drawable->render_spline( $poly, @options, %xopt);
+		} elsif ( $xopt{integer}) {
+			my $n = $self->new_array;
+			push @$n, __map_round(@$poly[0,1,-2,-1]);
+			$poly = $n;
+		}
+		Prima::array::append( $self->{points}->[-1]->[-1], $poly);
 	}
 }
 
@@ -915,9 +931,7 @@ sub widen
 
 		if ( $last == 0 ) {
 			my ($x,$y) = @$p;
-			if ( $no_line_ends ) {
-				# nothing
-			} elsif ( $le == le::Square ) {
+			if ( $le == le::Square || $no_line_ends ) {
 				$dst->line( 
 					$x - $lw2, $y - $lw2,
 					$x - $lw2, $y + $lw2,
