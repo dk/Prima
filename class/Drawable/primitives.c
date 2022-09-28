@@ -120,21 +120,21 @@ Bool
 Drawable_fill_chord( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
 {
 	CHECK_GP(false);
-	return primitive( self, 1, "snnnnnn", "chord", x, y, dX, dY, startAngle, endAngle);
+	return primitive( self, 1, "snnnnnn", "chord", x, y, dX-1, dY-1, startAngle, endAngle);
 }
 
 Bool
 Drawable_fill_ellipse( Handle self, double x, double y,  double dX, double dY)
 {
 	CHECK_GP(false);
-	return primitive( self, 1, "snnnn", "ellipse", x, y, dX, dY);
+	return primitive( self, 1, "snnnn", "ellipse", x, y, dX-1, dY-1);
 }
 
 Bool
 Drawable_fill_sector( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
 {
 	CHECK_GP(false);
-	return primitive( self, 1, "snnnnnn", "sector", x, y, dX, dY, startAngle, endAngle);
+	return primitive( self, 1, "snnnnnn", "sector", x, y, dX-1, dY-1, startAngle, endAngle);
 }
 
 Bool
@@ -210,7 +210,6 @@ Bool
 Drawable_polyline(Handle self, SV * lines)
 {
 	CHECK_GP(false);
-
 	if (EMULATED_LINE)
 		return primitive( self, 0, "sS", "line", lines);
 	else
