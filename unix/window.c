@@ -758,9 +758,9 @@ apc_window_set_caption( Handle self, const char *caption, Bool utf8)
 			XFree( p. value);
 		}
 		XChangeProperty( DISP, X_WINDOW, NET_WM_NAME, UTF8_STRING, 8,
-			PropModeReplace, ( unsigned char*) caption, strlen( caption) + 1);
-		XChangeProperty( DISP, X_WINDOW, NET_WM_ICON_NAME, UTF8_STRING, 8,
-			PropModeReplace, ( unsigned char*) caption, strlen( caption) + 1);
+			PropModeReplace, ( unsigned char*) caption, strlen( caption));
+		XChangeProperty( DISP, X_WINDOW, NET_WM_ICON_NAME, UTF8_STRING, 8
+			PropModeReplace, ( unsigned char*) caption, strlen( caption));
 		X(self)->flags. title_utf8 = 1;
 	} else {
 		XDeleteProperty( DISP, X_WINDOW, NET_WM_NAME);
