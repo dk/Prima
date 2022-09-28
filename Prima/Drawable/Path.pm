@@ -581,12 +581,12 @@ sub _arc
 	for my $set ( @$nurbset ) {
 		my ( $points, @options ) = @$set;
 		my $poly = $self-> matrix_apply( $points );
-		if ($xopt{precision} >= 2) {
-			$poly = Prima::Drawable->render_spline( $poly, @options, %xopt);
-		} elsif ( $xopt{integer}) {
+		if ( $xopt{integer} && $xopt{precision} < 3) {
 			my $n = $self->new_array;
 			push @$n, __map_round(@$poly[0,1,-2,-1]);
 			$poly = $n;
+		} elsif ($xopt{precision} >= 2) {
+			$poly = Prima::Drawable->render_spline( $poly, @options, %xopt);
 		}
 		Prima::array::append( $self->{points}->[-1]->[-1], $poly);
 	}
