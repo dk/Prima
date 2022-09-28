@@ -456,11 +456,13 @@ apc_gp_aa_fill_poly( Handle self, int numPts, NPoint * points)
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+//#define EDGE_DEBUG 1
+
 typedef struct _Edge Edge;
 
 struct _Edge {
     XLineFixed	edge;
-    XFixed	current_x;
+    double	current_x;
     Bool	clockWise;
     Edge	*next, *prev;
 };
@@ -473,14 +475,23 @@ CompareEdge (const void *o1, const void *o2)
     return e1->edge.p1.y - e2->edge.p1.y;
 }
 
-static XFixed
+static double
 XRenderComputeX (XLineFixed *line, XFixed y)
 {
-    XFixed  dx = line->p2.x - line->p1.x;
-    double  ex = (double) (y - line->p1.y) * (double) dx;
-    XFixed  dy = line->p2.y - line->p1.y;
-
-    return (XFixed) line->p1.x + (XFixed) (ex / dy);
+    double  dx = XFixedToDouble(line->p2.x - line->p1.x);
+    double  ex = XFixedToDouble(y - line->p1.y) * (double) dx;
+    double  dy = XFixedToDouble(line->p2.y - line->p1.y);
+#if EDGE_DEBUG
+    printf("f(%g:%g - %g:%g, %g) = %g\n",
+    	line->p1.x/65536.0,
+    	line->p1.y/65536.0,
+    	line->p2.x/65536.0,
+    	line->p2.y/65536.0,
+	y/65536.0,
+	XFixedToDouble(line->p1.x) + ex / dy
+    );
+#endif
+    return XFixedToDouble(line->p1.x) + ex / dy;
 }
 
 static double
@@ -531,6 +542,20 @@ XRenderComputeTrapezoids (Edge		*edges,
 
     *ntraps = 0;
     qsort (edges, nedges, sizeof (Edge), CompareEdge);
+#if EDGE_DEBUG
+    {
+    	int i;
+	for ( i = 0; i < nedges; i++) {
+	Edge *e = edges + i;
+		printf("edge %d:%d %-6.2g:%-6.2g - %-6.2g:%-6.2g\n", i, e->clockWise,
+		e->edge.p1.x / 65536.0,
+		e->edge.p1.y / 65536.0,
+		e->edge.p2.x / 65536.0,
+		e->edge.p2.y / 65536.0
+		);
+	}
+    }
+#endif
 
     y = edges[0].edge.p1.y;
     active = NULL;
@@ -560,12 +585,21 @@ XRenderComputeTrapezoids (Edge		*edges,
 	for (e = active; e; e = next)
 	{
 	    next = e->next;
+#if EDGE_DEBUG
+	    if ( !next ) continue;
+	    printf("cmp %d vs %d", e - edges+1, e->next - edges+1);
+#endif
 	    /*
 	     * Find one later in the list that belongs before the
 	     * current one
 	     */
 	    for (en = next; en; en = en->next)
 	    {
+#if EDGE_DEBUG
+	        printf(" (vs %d r%f %f)", en-edges+1,
+			en->current_x, e->current_x
+		);
+#endif
 		if (en->current_x < e->current_x ||
 		    (en->current_x == e->current_x &&
 		     en->edge.p2.x < e->edge.p2.x))
@@ -592,15 +626,21 @@ XRenderComputeTrapezoids (Edge		*edges,
 		     * start over at en
 		     */
 		    next = en;
+#if EDGE_DEBUG
+		    printf("- %d is before %d ", 1+en-edges, 1+e-edges);
+#endif
 		    break;
 		}
 	    }
+#if EDGE_DEBUG
+	    printf("\n");
+#endif
 	}
-#if 0
-	printf ("y: %6.3g:", y / 65536.0);
+#if EDGE_DEBUG
+	printf ("y: %6.3g => ",  y / 65536.0);
 	for (e = active; e; e = e->next)
 	{
-	    printf (" %6.3g", e->current_x / 65536.0);
+	    printf (" %d:%6.3g/%6.3g", 1+e-edges, e->current_x, e-> edge.p2.x / 65536.0);
 	}
 	printf ("\n");
 #endif
@@ -639,8 +679,14 @@ XRenderComputeTrapezoids (Edge		*edges,
 	    traps->left = e->edge;
 	    if ( winding == WindingRule ) {
 	       int cw = (e->clockWise ? 1 : -1) + (en->clockWise ? 1 : -1);
+#if EDGE_DEBUG
+	       printf("* %d:%d %d:%d\n", e->clockWise, 1+e-edges, en->clockWise, 1+en-edges);
+#endif
 	       while (en && cw != 0) {
                    en = en->next;
+#if EDGE_DEBUG
+	           printf("+ %d:%d\n", e, en->clockWise, 1+en-edges);
+#endif
 	           cw += en->clockWise ? 1 : -1;
 	       }
 	       traps->right = en->edge;
@@ -650,6 +696,9 @@ XRenderComputeTrapezoids (Edge		*edges,
 	       }
 	    }
 	    traps->right = en->edge;
+#if EDGE_DEBUG
+	    printf("%strap %g:%d - %g:%d\n", (winding == WindingRule) ? "*" : "", y/65536.0, 1+e-edges, next_y/65536.0, 1+en-edges);
+#endif
 	    traps++;
 	    (*ntraps)++;
 	    if ( --maxtraps <= 0 ) {
