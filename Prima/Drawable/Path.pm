@@ -574,8 +574,8 @@ sub _arc
 	}
 
 	my %xopt;
-	$xopt{precision} = $self->{curr}->{precision} if defined $self->{curr}->{precision};
-	$xopt{precision} = $scaling if ($xopt{precision} // 24) > $scaling;
+	$xopt{precision} = $self->{curr}->{precision} // 24;
+	$xopt{precision} = $scaling if $xopt{precision} // 24 > $scaling;
 	$xopt{integer}   = !$self->{subpixel};
 
 	for my $set ( @$nurbset ) {

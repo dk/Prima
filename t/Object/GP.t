@@ -4,8 +4,6 @@ use warnings;
 use Test::More;
 use Prima::sys::Test;
 
-plan tests => 119;
-
 my $x = Prima::DeviceBitmap-> create( type => dbt::Bitmap, width => 8, height => 8);
 # 1
 ok( $x && $x-> get_paint_state, "create");
@@ -200,7 +198,6 @@ $x-> fill_chord( 4, 4, 7, 7, 30, 210);
 $coordinates = [
     [ 1, 4, 0 ],
     [ 4, 7, 0 ],
-    [ 4, 4, 0 ],
     [ 7, 4, 0xFFFFFF ],
     [ 4, 1, 0xFFFFFF ]
 ];
@@ -348,3 +345,5 @@ sub run_tests {
         is( $x->pixel( $xco, $yco ), $expected, "$name ($xco, $yco)" );
     }
 }
+
+done_testing;
