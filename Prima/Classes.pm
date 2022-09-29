@@ -170,6 +170,58 @@ sub enlarge
 
 sub shrink { $_[0]->enlarge( -$_[1] ) }
 
+package Prima::matrix;
+
+sub new
+{
+	my $self  = bless [ 1, 0, 0, 1, 0, 0 ], shift;
+	$self->set(@_);
+	return $self;
+}
+
+sub set
+{
+	my $self = shift;
+	@$self[0..$#_] = @_ if @_;
+}
+
+sub identity  { @{$_[0]} = ( 1, 0, 0, 1, 0, 0 )       }
+sub A         { $#_ ? $_[0]->[0] = $_[1] : $_[0]->[0] }
+sub B         { $#_ ? $_[0]->[1] = $_[1] : $_[0]->[1] }
+sub C         { $#_ ? $_[0]->[2] = $_[1] : $_[0]->[2] }
+sub D         { $#_ ? $_[0]->[3] = $_[1] : $_[0]->[3] }
+sub X         { $#_ ? $_[0]->[4] = $_[1] : $_[0]->[4] }
+sub Y         { $#_ ? $_[0]->[5] = $_[1] : $_[0]->[5] }
+
+sub translate { $_[0]->[4]+=$_[1]; $_[0]->[4]+=$_[2]; }
+sub scale     { $_[0]->multiply([$_[1],0,0,$_[2] // $_[1],0,0]) }
+sub shear     { $_[0]->multiply([1,$_[2] // $_[1],$_[1],1,0,0]) }
+
+our $PI  = 3.14159265358979323846264338327950288419716939937510;
+our $RAD = 180.0 / $PI;
+sub rotate
+{
+	my ( $self, $angle ) = @_;
+	return if $angle == 0.0;
+	$angle /= $RAD;
+	my $cos = cos($angle);
+	my $sin = sin($angle);
+	$self->multiply([$cos, $sin, -$sin, $cos, 0, 0]);
+}
+
+sub multiply
+{
+	my ( $m1, $m2 ) = @_;
+	$m1->set(
+		$m1->[0] * $m2->[0] + $m1->[1] * $m2->[2],
+		$m1->[0] * $m2->[1] + $m1->[1] * $m2->[3],
+		$m1->[2] * $m2->[0] + $m1->[3] * $m2->[2],
+		$m1->[2] * $m2->[1] + $m1->[3] * $m2->[3],
+		$m1->[4] * $m2->[0] + $m1->[5] * $m2->[2] + $m2->[4],
+		$m1->[4] * $m2->[1] + $m1->[5] * $m2->[3] + $m2->[5]
+	);
+}
+
 # class Object; base class of all Prima classes
 package Prima::Object;
 use vars qw(@hooks);
@@ -741,19 +793,34 @@ sub scanline  { substr( $_[0]->data, $_[0]->lineSize * $_[1], $_[0]-> lineSize )
 sub shear     { $_[0]->transform(1,@_[2,1],1) }
 sub to_region { Prima::Region->new( image => shift ) }
 
+sub to_rgba
+{
+	my $i = shift->to_icon( maskType => 8, fill => "\x{255}" );
+	$i->type(im::RGB);
+	return $i;
+}
+
 sub to_icon
 {
 	my ( $self, %set ) = @_;
 	my $fill = delete $set{fill};
 	my $type = delete $set{maskType} // 1;
-	my $and = Prima::Icon->new(
-		size => [ $self-> size ],
-		type => $type,
+	my @size = $self->size;
+
+	return Prima::Icon->new(
+		%set,
+		size     => \@size,
+		maskType => $type,
+		( map { $_ => $self->$_() } qw(
+			data type palette scaling conversion preserveType
+		)),
+		(( defined $fill && length $fill ) ? (
+			autoMasking => am::None,
+			mask        => ( $fill x ((
+				($size[0] * $type + 31 ) / 32 * 4 * $size[1]
+			) / length $fill ))
+		) : ())
 	);
-	if ( defined $fill && length $fill ) {
-		$and->data( $fill  x ( $and->dataSize / (length $fill)));
-	}
-	return Prima::Icon->create_combined( $self, $and, %set );
 }
 
 sub load_stream
