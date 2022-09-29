@@ -795,14 +795,22 @@ sub to_region { Prima::Region->new( image => shift ) }
 
 sub to_rgba
 {
-	my $i = shift->to_icon( maskType => 8, fill => "\x{255}" );
-	$i->type(im::RGB);
-	return $i;
+	my $self = shift;
+
+	if ( $self->isa('Prima::Icon')) {
+		return $self->clone( type => im::RGB, maskType => im::bpp8 );
+	} else {
+		my $i = $self->to_icon( maskType => 8, fill => "\xff" );
+		$i->type(im::RGB);
+		return $i;
+	}
 }
 
 sub to_icon
 {
 	my ( $self, %set ) = @_;
+	return if $self->isa('Prima::Icon');
+
 	my $fill = delete $set{fill};
 	my $type = delete $set{maskType} // 1;
 	my @size = $self->size;

@@ -911,6 +911,15 @@ Returns a scaline from Y in the same raw format as C<data>
 Applies shearing to the image. If the shearing is needed only for one axis, set
 shear factor for the other one to zero.
 
+=item to_icon fill => $MASK_TEMPLATE, %options
+
+Creates an icon from image, with optional C<fill> scalar used for newly populate mask.
+Applies C<%options> to a new object, if any
+
+=item to_rgba
+
+Creates a new icon with type set to 24 bits and mask type to 8 bit
+
 =item to_region
 
 Creates a new L<Prima::Region> object with the image as the data source.
