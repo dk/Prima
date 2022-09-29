@@ -333,6 +333,7 @@ typedef struct {
 static BOOL
 _enum_monitors( HMONITOR monitor, HDC dc, LPRECT rect, LPARAM data)
 {
+	MONITORINFO mi;
 	EnumMonitorData * d;
 	Box * current;
 
@@ -346,6 +347,18 @@ _enum_monitors( HMONITOR monitor, HDC dc, LPRECT rect, LPARAM data)
 	current-> height = rect-> bottom - rect-> top;
 	if ( d-> max_height < rect-> bottom ) d-> max_height = rect-> bottom;
 	d->nrects++;
+
+	mi.cbSize = sizeof(mi);
+	if (
+		GetMonitorInfo( monitor, &mi) &&
+		( mi.dwFlags & MONITORINFOF_PRIMARY ) &&
+		(d->nrects > 1)
+	) {
+		/* primary comes first, if any */
+		Box first = *(d->rects);
+		*(d->rects) = *current;
+		*current = first;
+	}
 
 	return true;
 }
