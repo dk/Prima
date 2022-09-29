@@ -164,8 +164,9 @@ img_put(
 		ok = img_put(dest, (Handle)&dummy, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, rop, region, NULL);
 		free(bits);
 		return ok;
-	} else if ( rop & ropConstantAlpha )
+	} else if ( rop & ropConstantAlpha ) {
 		return img_put_alpha( dest, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, rop, region);
+	}
 
 	srcSz. x = PImage(src)-> w;
 	srcSz. y = PImage(src)-> h;
@@ -472,7 +473,7 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
 {
 	int bpp, bytes, mls, als, xrop;
 	unsigned int src_alpha = 0, dst_alpha = 0;
-	Bool use_src_alpha = false, use_dst_alpha = false;
+	Bool use_src_alpha = false, use_dst_alpha = false, no_scale;
 	Byte *asbuf, *adbuf, src_alpha_mul = 255, dst_alpha_mul = 255;
 
 	xrop = rop;
@@ -489,42 +490,30 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
 	rop &= ropPorterDuffMask;
 	if ( rop > ropMaxPDFunc || rop < 0 ) return false;
 
+
 	/* align types and geometry - can only operate over imByte and imRGB */
+	if (
+		srcX >= PImage(src)->w  || srcX + srcW <= 0 ||
+		srcY >= PImage(src)->h  || srcY + srcH <= 0 ||
+		dstX >= PImage(dest)->w || dstX + dstW <= 0 ||
+		dstY >= PImage(dest)->h || dstY + dstH <= 0
+	)
+		return true;
+	no_scale =
+		( srcW == dstW) && ( srcH == dstH) &&
+		( srcX >= 0) && ( srcY >= 0) && ( srcX + srcW <= PImage(src)-> w) && ( srcY + srcH <= PImage(src)-> h)
+		;
+
 	bpp = (( PImage(src)->type & imGrayScale) && ( PImage(dest)->type & imGrayScale)) ? imByte : imRGB;
 
-	/* adjust rectangles */
-	if ( dstX < 0 || dstY < 0 || dstX + dstW >= PImage(dest)-> w || dstY + dstH >= PImage(dest)-> h) {
-		if ( dstX < 0) {
-			dstW += dstX;
-			srcX -= dstX;
-			dstX = 0;
-		}
-		if ( dstY < 0) {
-			dstH += dstY;
-			srcY -= dstY;
-			dstY = 0;
-		}
-		if ( dstX + dstW > PImage(dest)-> w)
-			dstW = PImage(dest)-> w - dstX;
-		if ( dstY + dstH > PImage(dest)-> h)
-			dstH = PImage(dest)-> h - dstY;
-	}
-	if ( srcX + srcW > PImage(src)-> w)
-		srcW = PImage(src)-> w - srcX;
-	if ( srcY + srcH > PImage(src)-> h)
-		srcH = PImage(src)-> h - srcY;
-	if ( srcH <= 0 || srcW <= 0 )
-		return false;
-
 	/* adjust source type */
-	if (PImage(src)-> type != bpp || srcW != dstW || srcH != dstH ) {
+	if (PImage(src)-> type != bpp || !no_scale ) {
 		Bool ok;
 		Handle dup;
 
-		if ( srcW != PImage(src)-> w || srcH != PImage(src)-> h)
-			dup = CImage(src)-> extract( src, srcX, srcY, srcW, srcH );
-		else
-			dup = CImage(src)-> dup(src);
+		dup = ( srcW != PImage(src)-> w || srcH != PImage(src)-> h) ?
+			CImage(src)-> extract( src, srcX, srcY, srcW, srcH ) :
+			CImage(src)-> dup(src);
 
 		if ( srcW != dstW || srcH != dstH )
 			CImage(dup)->stretch( dup, dstW, dstH );
@@ -559,15 +548,14 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
 	}
 
 	/* assign pointers */
-	if ( srcW != dstW || srcH != dstH ||
-		PImage(src)->type != PImage(dest)->type || PImage(src)-> type != bpp)
-		croak("panic: assert failed for img_put_alpha: %s", "types and geometry");
+	if ( PImage(src)->type != PImage(dest)->type || PImage(src)-> type != bpp)
+		croak("panic: assert failed for img_put_alpha: %s", "types");
 
 	bpp = ( bpp == imByte ) ? 1 : 3;
 	if ( kind_of(src, CIcon)) {
 		mls = PIcon(src)-> maskLine;
 		if ( PIcon(src)-> maskType != imbpp8)
-			croak("panic: assert failed for img_put_alpha: %s", "src mask type");
+			croak("panic: assert failed for img_put_alpha: %s=%d", "src mask type", PIcon(src)->maskType);
 		if ( use_src_alpha )
 			src_alpha_mul = src_alpha;
 		use_src_alpha = false;
@@ -578,7 +566,7 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
 	if ( kind_of(dest, CIcon)) {
 		als = PIcon(dest)-> maskLine;
 		if ( PIcon(dest)-> maskType != imbpp8)
-			croak("panic: assert failed for img_put_alpha: %s", "dst mask type");
+			croak("panic: assert failed for img_put_alpha: %s=%d", "dst mask type", PIcon(dest)->maskType);
 		if ( use_dst_alpha )
 			dst_alpha_mul = dst_alpha;
 		use_dst_alpha = false;
@@ -609,6 +597,24 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
 
 	if ( use_src_alpha ) asbuf[0] = src_alpha;
 	if ( use_dst_alpha ) adbuf[0] = dst_alpha;
+
+	/* adjust final rectangles */
+	if ( dstX < 0 || dstY < 0 || dstX + dstW >= PImage(dest)-> w || dstY + dstH >= PImage(dest)-> h) {
+		if ( dstX < 0) {
+			dstW += dstX;
+			srcX -= dstX;
+			dstX = 0;
+		}
+		if ( dstY < 0) {
+			dstH += dstY;
+			srcY -= dstY;
+			dstY = 0;
+		}
+		if ( dstX + dstW > PImage(dest)-> w)
+			dstW = PImage(dest)-> w - dstX;
+		if ( dstY + dstH > PImage(dest)-> h)
+			dstH = PImage(dest)-> h - dstY;
+	}
 
 	/* select function */
 	{
