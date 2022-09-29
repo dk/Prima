@@ -1008,8 +1008,9 @@ Box *
 apc_application_get_monitor_rects( Handle self, int * nrects)
 {
 #if defined(HAVE_X11_EXTENSIONS_XRANDR_H) && (RANDR_MAJOR > 1 || (RANDR_MAJOR == 1 && RANDR_MINOR > 3))
-	XRRScreenResources * sr;
+	XRRMonitorInfo *m;
 	Box * ret = NULL;
+	int n;
 
 	if ( !guts. randr_extension) {
 		*nrects = 0;
@@ -1017,20 +1018,25 @@ apc_application_get_monitor_rects( Handle self, int * nrects)
 	}
 
 	XCHECKPOINT;
-	sr = XRRGetScreenResourcesCurrent(DISP,guts.root);
-	if ( sr ) {
+	m = XRRGetMonitors(DISP,guts.root,false,&n);
+	if ( m ) {
 		int i;
-		ret = malloc(sizeof(Box) * sr->ncrtc);
-		*nrects = sr->ncrtc;
-		for ( i = 0; i < sr->ncrtc; i++) {
-			XRRCrtcInfo * ci = XRRGetCrtcInfo (DISP, sr, sr->crtcs[i]);
-			ret[i].x      = ci->x;
-			ret[i].y      = guts.displaySize.y - ci->height - ci->y;
-			ret[i].width  = ci->width;
-			ret[i].height = ci->height;
-			XRRFreeCrtcInfo(ci);
+		XRRMonitorInfo * mi = m;
+		ret = malloc(sizeof(Box) * n);
+		*nrects = n;
+		for ( i = 0; i < n; i++, mi++) {
+			ret[i].x      = mi->x;
+			ret[i].y      = guts.displaySize.y - mi->height - mi->y;
+			ret[i].width  = mi->width;
+			ret[i].height = mi->height;
+			if ( i > 0 && mi->primary ) {
+				/* primary comes first, if any */
+				Box first = *ret;
+				*ret = *(ret + i);
+				*(ret + i) = first;
+			}
 		}
-		XRRFreeScreenResources(sr);
+		XRRFreeMonitors(m);
 		XCHECKPOINT;
 	} else {
 		*nrects = 0;
