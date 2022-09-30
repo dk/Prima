@@ -1027,10 +1027,7 @@ sub grayscale
 	return $_[0]->{grayscale} unless $#_;
 	my ( $self, $gs ) = @_;
 	$self->{grayscale} = $gs;
-	if ( $gs ) {
-		my ($r,$g,$b) = cl::to_rgb($self->value);
-		$self->value(($r + $g + $b) / 3);
-	}
+	$self->value(cl::to_gray_rgb($self->value)) if $gs;
 }
 
 1;

@@ -31,6 +31,9 @@ sub from_rgb { ($_[2] & 0xff) | (($_[1] & 0xff) << 8) | (($_[0] & 0xff) << 16) }
 sub to_rgb   { (( $_[0]>>16) & 0xFF, ($_[0]>>8) & 0xFF, $_[0] & 0xFF) }
 sub from_bgr { ($_[0] & 0xff) | (($_[1] & 0xff) << 8) | (($_[2] & 0xff) << 16) }
 sub to_bgr   { ($_[0] & 0xFF, ($_[0]>>8) & 0xFF, ( $_[0]>>16) & 0xFF) }
+sub to_gray_byte   { my ( $r, $g, $b ) = to_rgb($_[0]); return int(( $r + $g + $b ) / 3 + .5) }
+sub to_gray_rgb    { return from_rgb( (to_gray_byte($_[0])) x 3 ) }
+sub from_gray_byte { return 0x10101 * ($_[0] & 0xff) }
 sub premultiply { from_rgb( map { int($_ * $_[1] / 255) } to_rgb($_[0]) ) }
 
 package
