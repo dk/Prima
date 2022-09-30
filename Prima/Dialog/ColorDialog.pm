@@ -198,6 +198,7 @@ sub profile_default
 		text          => 'Select color',
 
 		quality       => 0,
+		grayscale     => 0,
 		value         => cl::White,
 	}
 }
@@ -354,6 +355,7 @@ sub init
 	$self-> quality( $profile{quality});
 
 	$self-> Roller_Repaint if $self-> {quality};
+	$self-> grayscale($profile{grayscale});
 	return %profile;
 }
 
@@ -635,6 +637,16 @@ sub set_value
 sub value        {($#_)?$_[0]-> set_value        ($_[1]):return $_[0]-> {value};}
 sub quality      {($#_)?$_[0]-> set_quality      ($_[1]):return $_[0]-> {quality};}
 
+sub grayscale
+{
+	return $_[0]->{grayscale} unless $#_;
+	my ( $self, $gs ) = @_;
+	$self-> {$_}-> enabled(!$gs) for qw(H S R G B wheel);
+	if ( $gs ) {
+		$self-> {$_}-> value(0) for qw(H S);
+	}
+}
+
 package Prima::ColorComboBox;
 use vars qw(@ISA);
 @ISA = qw(Prima::ComboBox);
@@ -662,6 +674,7 @@ sub profile_default
 		width            => 56 * $scaling,
 		literal          => 0,
 		colors           => 20 + 128,
+		grayscale        => 0,
 		editClass        => 'Prima::Widget',
 		listClass        => 'Prima::Widget',
 		editProfile      => {
@@ -694,6 +707,7 @@ sub init
 	%profile = $self-> SUPER::init(%profile);
 	$self-> colors( $profile{colors});
 	$self-> value( $profile{value});
+	$self-> grayscale( $profile{grayscale});
 	return %profile;
 }
 
@@ -917,8 +931,9 @@ sub MoreBtn_Click
 	my $d;
 	$combo-> listVisible(0);
 	$d = Prima::Dialog::ColorDialog-> create(
-		text  => 'Mixed color palette',
-		value => $combo-> value,
+		text      => 'Mixed color palette',
+		value     => $combo-> value,
+		grayscale => $combo->grayscale,
 	);
 	$combo-> value( $d-> value) if $d-> execute != mb::Cancel;
 	$d-> destroy;
@@ -976,7 +991,15 @@ my @palColors = (
 sub on_colorify
 {
 	my ( $self, $index, $sref) = @_;
-	if ( $index < 20) {
+	if ( $self->{grayscale}) {
+		my $g;
+		if ( $index < 20 ) {
+			$g = $index * 255 / 20;
+		} else {
+			$g = ($index - 20) * 255 / 128;
+		}
+		$$sref = cl::from_rgb($g,$g,$g);
+	} elsif ( $index < 20) {
 		$$sref = $palColors[ $index];
 	} else {
 		my $i = $index - 20;
@@ -999,6 +1022,16 @@ sub on_colorify
 sub value        {($#_)?$_[0]-> set_value       ($_[1]):return $_[0]-> {value};  }
 sub colors       {($#_)?$_[0]-> set_colors      ($_[1]):return $_[0]-> {colors};  }
 
+sub grayscale
+{
+	return $_[0]->{grayscale} unless $#_;
+	my ( $self, $gs ) = @_;
+	$self->{grayscale} = $gs;
+	if ( $gs ) {
+		my ($r,$g,$b) = cl::to_rgb($self->value);
+		$self->value(($r + $g + $b) / 3);
+	}
+}
 
 1;
 
@@ -1033,6 +1066,10 @@ invoke C<Prima::Dialog::ColorDialog> window.
 =head2 Properties
 
 =over
+
+=item grayscale BOOLEAN
+
+If set, allows only gray colors for selection
 
 =item quality BOOLEAN
 
@@ -1153,6 +1190,10 @@ result scalar, where the notification is expected to write the resulting color.
 =item colors INTEGER
 
 Defines amount of colors in the fixed palette of the combo box.
+
+=item grayscale BOOLEAN
+
+If set, allows only gray colors for selection
 
 =item value COLOR
 

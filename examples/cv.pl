@@ -20,6 +20,7 @@ my $p = Prima::Dialog::ColorDialog-> create(
 	value => 0x3030F0,
 	visible => 1,
 	quality => 1,
+	grayscale => 1,
 );
 
 my $banner = $p-> {wheel}-> insert( Label =>
