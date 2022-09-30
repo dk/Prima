@@ -843,11 +843,13 @@ Icon_rotate( Handle self, double degrees)
 }
 
 Bool
-Icon_transform( Handle self, double a, double b, double c, double d, double x, double y)
+Icon_transform( Handle self, HV * profile )
 {
+	dPROFILE;
 	Bool ok;
 	Image dummy;
 	int autoMasking = var->autoMasking, maskType = var->maskType;
+	SV * matrix = NULL;
 	var->autoMasking = amNone;
 
 	var->updateLock++;
@@ -858,9 +860,18 @@ Icon_transform( Handle self, double a, double b, double c, double d, double x, d
 	dummy.scaling = var->scaling;
 	dummy.mate    = var->mate;
 
-	ok = inherited transform(self, a, b, c, d, x, y);
+	pdelete( fill );
+
+	if ( pexist(matrix)) {
+		matrix = pget_sv(matrix);
+		++SvREFCNT(matrix);
+	}
+
+	ok = inherited transform(self, profile);
 	if ( ok ) {
-		ok = Image_transform((Handle) &dummy, a, b, c, d, x, y);
+		pset_sv( matrix, matrix );
+		ok = Image_transform((Handle) &dummy, profile );
+		hv_clear(profile);
 		if ( ok ) {
 			var-> mask     = dummy.data;
 			var-> maskLine = dummy. lineSize;
@@ -869,6 +880,8 @@ Icon_transform( Handle self, double a, double b, double c, double d, double x, d
 				croak("panic: icon object inconsistent after 2d transform");
 		}
 	}
+	if ( matrix )
+		--SvREFCNT(matrix);
 
 	if (maskType != imbpp8 && is_opt( optPreserveType))
 		my-> set_maskType( self, maskType);

@@ -1127,6 +1127,108 @@ Image_preserveType( Handle self, Bool set, Bool preserveType)
 	return false;
 }
 
+static Bool
+read_pixel( Handle self, SV * pixel, ColorPixel *output )
+{
+	Color color;
+	RGBColor rgb;
+
+	if ( var-> type & (imComplexNumber|imTrigComplexNumber)) {
+		if ( !SvROK( pixel) || ( SvTYPE( SvRV( pixel)) != SVt_PVAV)) {
+			switch ( var-> type) {
+			case imComplex:
+			case imTrigComplex:
+				*((float*)(output)) = SvNV(pixel);
+				return true;
+			case imDComplex:
+			case imTrigDComplex:
+				*((double*)(output)) = SvNV(pixel);
+				return true;
+			default:
+				return false;
+			}
+		} else {
+			AV * av = (AV *) SvRV( pixel);
+			SV **sv[2];
+			sv[0] = av_fetch( av, 0, 0);
+			sv[1] = av_fetch( av, 1, 0);
+
+			switch ( var-> type) {
+			case imComplex:
+			case imTrigComplex:
+				((float*)(output))[0] = sv[0] ? SvNV(*(sv[0])) : 0.0;
+				((float*)(output))[1] = sv[1] ? SvNV(*(sv[1])) : 0.0;
+				return true;
+			case imDComplex:
+			case imTrigDComplex:
+				((double*)(output))[0] = sv[0] ? SvNV(*(sv[0])) : 0.0;
+				((double*)(output))[1] = sv[1] ? SvNV(*(sv[1])) : 0.0;
+				return true;
+			default:
+				return false;
+			}
+		}
+	} else if ( var-> type & imRealNumber) {
+		switch ( var-> type) {
+		case imFloat:
+			*((float*)(output)) = SvNV(pixel);
+			return true;
+		case imDouble:
+			*((double*)(output)) = SvNV(pixel);
+			return true;
+		default:
+			return false;
+		}
+	}
+
+#define LONGtoBGR(lv,clr)   (\
+	(clr).b =  ( lv )         & 0xff, \
+	(clr).g = (( lv ) >>  8 ) & 0xff, \
+	(clr).r = (( lv ) >> 16 ) & 0xff, \
+	(clr)) \
+
+	color = SvIV( pixel);
+	switch (var->type & imBPP) {
+	case imbpp1 :
+		*((Byte*)(output)) = ((var->type & imGrayScale) ?
+			color / 255 :
+			cm_nearest_color( LONGtoBGR(color,rgb), var->palSize, var->palette))
+		& 1;
+		return true;
+	case imbpp4  :
+		*((Byte*)(output)) = (var->type & imGrayScale) ?
+			( color * 15 ) / 255 :
+			cm_nearest_color( LONGtoBGR(color,rgb), var->palSize, var->palette) ;
+		return true;
+	case imbpp8:
+		*((Byte*)(output)) = (var->type & imGrayScale) ?
+			color :
+			cm_nearest_color( LONGtoBGR(color,rgb), var->palSize, var->palette);
+		return true;
+	case imbpp16 : {
+		int32_t color = SvIV( pixel);
+		if ( color > INT16_MAX ) color = INT16_MAX;
+		if ( color < INT16_MIN ) color = INT16_MIN;
+		*((Short*)(output)) = color;
+		return true;
+	}
+	case imbpp24 :
+		(void) LONGtoBGR(color,rgb);
+		memcpy(output, &rgb, sizeof(RGBColor));
+		return true;
+	case imbpp32 : {
+		IV color = SvIV(pixel);
+		if ( color > INT32_MAX ) color = INT32_MAX;
+		if ( color < INT32_MIN ) color = INT32_MIN;
+		*((Long*)(output)) = color;
+		return true;
+	}
+	default:
+		return false;
+	}
+#undef LONGtoBGR
+}
+
 SV *
 Image_pixel( Handle self, Bool set, int x, int y, SV * pixel)
 {
@@ -1195,125 +1297,54 @@ Image_pixel( Handle self, Bool set, int x, int y, SV * pixel)
 		}
 #undef BGRto32
 	} else {
-		Color color;
-		RGBColor rgb;
-#define LONGtoBGR(lv,clr)   ((clr).b=(lv)&0xff,(clr).g=((lv)>>8)&0xff,(clr).r=((lv)>>16)&0xff,(clr))
+		ColorPixel color;
+		int bpp = var->type & imBPP;
 		if ( is_opt( optInDraw))
 			return inherited pixel(self,true,x,y,pixel);
 
 		if ((x>=var->w) || (x<0) || (y>=var->h) || (y<0))
 			return NULL_SV;
 
-		if ( var-> type & (imComplexNumber|imTrigComplexNumber)) {
-			if ( !SvROK( pixel) || ( SvTYPE( SvRV( pixel)) != SVt_PVAV)) {
-				switch ( var-> type) {
-				case imComplex:
-				case imTrigComplex:
-					*(float*)(var->data+(var->lineSize*y+x*2*sizeof(float)))=SvNV(pixel);
-					break;
-				case imDComplex:
-				case imTrigDComplex:
-					*(double*)(var->data+(var->lineSize*y+x*2*sizeof(double)))=SvNV(pixel);
-					break;
-				default:
-					return NULL_SV;
-				}
-			} else {
-				AV * av = (AV *) SvRV( pixel);
-				SV **sv[2];
-				sv[0] = av_fetch( av, 0, 0);
-				sv[1] = av_fetch( av, 1, 0);
+		if ( !read_pixel(self, pixel, &color))
+			return NULL_SV;
 
-				switch ( var-> type) {
-				case imComplex:
-				case imTrigComplex:
-					if ( sv[0]) *(float*)(var->data+(var->lineSize*y+x*2*sizeof(float)))=SvNV(*(sv[0]));
-					if ( sv[1]) *(float*)(var->data+(var->lineSize*y+(x*2+1)*sizeof(float)))=SvNV(*(sv[1]));
-					break;
-				case imDComplex:
-				case imTrigDComplex:
-					if ( sv[0]) *(double*)(var->data+(var->lineSize*y+x*2*sizeof(double)))=SvNV(*(sv[0]));
-					if ( sv[1]) *(double*)(var->data+(var->lineSize*y+(x*2+1)*sizeof(double)))=SvNV(*(sv[1]));
-					break;
-				default:
-					return NULL_SV;
-				}
-			}
+		if ( var-> type & (imComplexNumber|imTrigComplexNumber)) {
+			memcpy( var->data + ( var->lineSize * y + x * bpp ), color, bpp);
+			return NULL_SV;
 		} else if ( var-> type & imRealNumber) {
-			switch ( var-> type) {
-			case imFloat:
-				*(float*)(var->data+(var->lineSize*y+x*sizeof(float)))=SvNV(pixel);
-				break;
-			case imDouble:
-				*(double*)(var->data+(var->lineSize*y+x*sizeof(double)))=SvNV(pixel);
-				break;
-			default:
-				return NULL_SV;
-			}
+			memcpy( var->data + ( var->lineSize * y + x * bpp ), color, bpp);
 			my->update_change( self);
 			return NULL_SV;
 		}
 
-		color = SvIV( pixel);
 		switch (var->type & imBPP) {
-		case imbpp1  :
-			{
-				int x1=7-(x&7);
-				Byte p=(((var->type & imGrayScale) ? color/255 : cm_nearest_color(LONGtoBGR(color,rgb),var->palSize,var->palette)) & 1);
-				Byte *pd=var->data+(var->lineSize*y+(x>>3));
-				*pd&=~(1 << x1);
-				*pd|=(p << x1);
-			}
+		case imbpp1  : {
+			int x1   = 7 - ( x & 7 );
+			Byte p   = *((Byte*)&color);
+			Byte *pd = var->data + (var->lineSize * y + ( x >> 3 ));
+			*pd &= ~(1 << x1);
+			*pd |= (p << x1);
 			break;
-		case imbpp4  :
-			{
-				Byte p=((var->type & imGrayScale) ? (color*15)/255 : cm_nearest_color(LONGtoBGR(color,rgb),var->palSize,var->palette));
-				Byte *pd=var->data+(var->lineSize*y+(x>>1));
-				if (x&1) {
-					*pd&=0xf0;
-				}
-				else {
-					p<<=4;
-					*pd&=0x0f;
-				}
-				*pd|=p;
+		}
+		case imbpp4  : {
+			Byte p   = *((Byte*)&color);
+			Byte *pd = var->data + ( var->lineSize * y + ( x >> 1 ));
+			if ( x&1 ) {
+				*pd &= 0xf0;
+			} else {
+				p <<= 4;
+				*pd &= 0x0f;
 			}
+			*pd |= p;
 			break;
+		}
 		case imbpp8:
-			{
-				if (var->type & imGrayScale) {
-					var->data[(var->lineSize)*y+x]=color;
-				}
-				else {
-					var->data[(var->lineSize)*y+x]=cm_nearest_color(LONGtoBGR(color,rgb),(var->palSize),(var->palette));
-				}
-			}
-			break;
-		case imbpp16 :
-			{
-				int32_t color = SvIV( pixel);
-				if ( color > INT16_MAX ) color = INT16_MAX;
-				if ( color < INT16_MIN ) color = INT16_MIN;
-				*(Short*)(var->data+(var->lineSize*y+(x<<1)))=color;
-			}
-			break;
-		case imbpp24 :
-			(void) LONGtoBGR(color,rgb);
-			memcpy((var->data + (var->lineSize*y+x*3)),&rgb,sizeof(RGBColor));
-			break;
-		case imbpp32 :
-			{
-				IV color = SvIV(pixel);
-				if ( color > INT32_MAX ) color = INT32_MAX;
-				if ( color < INT32_MIN ) color = INT32_MIN;
-				*(Long*)(var->data+(var->lineSize*y+(x<<2)))=color;
-			}
+			var->data[ var->lineSize * y + x ] = *((Byte*)&color);
 			break;
 		default:
-			return NULL_SV;
+			memcpy(var->data + (var->lineSize * y + x * bpp), &color, bpp);
 		}
 		my->update_change( self);
-#undef LONGtoBGR
 		return NULL_SV;
 	}
 }
@@ -1944,20 +1975,27 @@ Image_rotate( Handle self, double degrees)
 }
 
 Bool
-Image_transform( Handle self, double a, double b, double c, double d, double x, double y)
+Image_transform( Handle self, HV * profile )
 {
+	dPROFILE;
 	Image i;
 	int desired_type = var->type;
-	float matrix[6] = { a, b, c, d, x, y };
+	float matrix[6];
+	ColorPixel fill;
 
-	if (( desired_type & imBPP) <= 8) 
+	if (( desired_type & imBPP) <= 8)
 		desired_type = (desired_type & imGrayScale) ? imByte : imRGB;
+
+	if ( !pexist(matrix)) {
+		warn("'matrix' is required");
+		goto FAIL;
+	}
 
 	if (var->type != desired_type) {
 		Bool ok;
 		int type = var->type;
 		my->set_type( self, desired_type );
-		ok = my->transform( self, a, b, c, d, x, y);
+		ok = my->transform( self, profile );
 		if ( is_opt( optPreserveType)) {
 			int conv = var-> conversion;
 			my-> set_conversion( self, ictNone);
@@ -1967,7 +2005,25 @@ Image_transform( Handle self, double a, double b, double c, double d, double x, 
 		return ok;
 	}
 
-	if (!img_2d_transform( self, matrix, &i ))
+	{
+		int i;
+		double *cmatrix;
+		if (( cmatrix = (double*) prima_read_array(
+			pget_sv(matrix),
+			"transform.matrix", 'd', 1, 6, 6, NULL, NULL)
+		) == NULL)
+			goto FAIL;
+		for ( i = 0; i < 6; i++)
+			matrix[i] = cmatrix[i];
+		free(cmatrix);
+	}
+
+	bzero(fill, sizeof(fill));
+	if ( pexist(fill))
+		read_pixel( self, pget_sv(fill), &fill );
+
+	hv_clear(profile);
+	if (!img_2d_transform( self, matrix, fill, &i ))
 		return false;
 
 	if ( i.data != NULL ) {
@@ -1983,6 +2039,10 @@ Image_transform( Handle self, double a, double b, double c, double d, double x, 
 	}
 
 	return true;
+
+FAIL:
+	hv_clear(profile);
+	return false;
 }
 
 void

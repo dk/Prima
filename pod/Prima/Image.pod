@@ -924,15 +924,20 @@ Creates a new icon with type set to 24 bits and mask type to 8 bit
 
 Creates a new L<Prima::Region> object with the image as the data source.
 
-=item transform @MATRIX
+=item transform matrix => [a,b,c,d,x,y], [ fill => color ]
 
-Applies generic 2D transform matrix to the image, where matrix is 6 numbers.
+Applies generic 2D transform matrix to the image, fills empty pixels with
+optional fill colors.
+
+Required option C<matrix> should point to an array of 6 float numbers,
+where these represent a standard 3x2 matrix for 2D transformation, f ex a
+C<Prima::matrix> object.
 
 Tries first to split matrix into series of shear and scale transforms using LDU
-decomposition; if an interim image needs to be too large, fails and returns
-C<false>.
+decomposition; if an interim image is calculated to be too large, fails and
+returns C<false>.
 
-The last two members (DX and DY translation) only use mantisse and ignore the
+The last two members (X and Y translation) only use mantisse and ignore the
 rest, so setting them f ex to 10.5 will not produce an image 11 pixels larger,
 but only 1.  The translation is thus effectively sub-pixel.
 
@@ -1021,6 +1026,12 @@ Only applicable when C<maskType> is <im::bpp8>.
 Returns two new I<Prima::Image> objects of same dimension.
 Pixels in the first is are duplicated from C<::data> storage,
 in the second - from C<::mask> storage.
+
+=item translate matrix => [a,b,c,d,x,y]
+
+Same as the C<translate> method from C<Prima::Image> except that it also
+rotates the mask, and ignores C<fill> option - all new pixels are filled with
+zeros.
 
 =item ui_scale %OPTIONS
 
