@@ -37,7 +37,6 @@ my $c1 = $panel-> insert( ColorComboBox =>
 	name   => 'C1',
 	pack   => { side => 'right',  },
 	value  => cl::White,
-	grayscale => 1,
 	onChange => \&repaint,
 );
 
