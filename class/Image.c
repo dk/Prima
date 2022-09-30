@@ -1944,11 +1944,11 @@ Image_rotate( Handle self, double degrees)
 }
 
 Bool
-Image_transform( Handle self, double a, double b, double c, double d)
+Image_transform( Handle self, double a, double b, double c, double d, double x, double y)
 {
 	Image i;
 	int desired_type = var->type;
-	float matrix[4] = { a, b, c, d };
+	float matrix[6] = { a, b, c, d, x, y };
 
 	if (( desired_type & imBPP) <= 8) 
 		desired_type = (desired_type & imGrayScale) ? imByte : imRGB;
@@ -1957,7 +1957,7 @@ Image_transform( Handle self, double a, double b, double c, double d)
 		Bool ok;
 		int type = var->type;
 		my->set_type( self, desired_type );
-		ok = my->transform( self, a, b, c, d);
+		ok = my->transform( self, a, b, c, d, x, y);
 		if ( is_opt( optPreserveType)) {
 			int conv = var-> conversion;
 			my-> set_conversion( self, ictNone);

@@ -149,4 +149,15 @@ $p = $p->data;
 $p = substr($p,0,2) . substr($p,4,2) . substr($p,8,2);
 is_bytes( $p, join('', map { chr } (1, (0+4)/2), 3, (4+6)/2, 0, (6+0)/2), "yshear subpixel");
 
+$p = Prima::Image->create(
+	width    => 2,
+	height   => 2,
+	type     => im::Byte,
+	data     => "\4\4..\4\4");
+$p->transform(1,0,0,1,0.5,0.5);
+$p = $p->data;
+$p = substr($p,0,3) . substr($p,4,3) . substr($p,8,3);
+is_bytes( $p, join('', map { chr } (1,2,1, 2,4,2, 1,2,1)), "pure subpixel");
+
+
 done_testing;

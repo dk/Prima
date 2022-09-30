@@ -843,7 +843,7 @@ Icon_rotate( Handle self, double degrees)
 }
 
 Bool
-Icon_transform( Handle self, double a, double b, double c, double d)
+Icon_transform( Handle self, double a, double b, double c, double d, double x, double y)
 {
 	Bool ok;
 	Image dummy;
@@ -858,9 +858,9 @@ Icon_transform( Handle self, double a, double b, double c, double d)
 	dummy.scaling = var->scaling;
 	dummy.mate    = var->mate;
 
-	ok = inherited transform(self, a, b, c, d);
+	ok = inherited transform(self, a, b, c, d, x, y);
 	if ( ok ) {
-		ok = Image_transform((Handle) &dummy, a, b, c, d);
+		ok = Image_transform((Handle) &dummy, a, b, c, d, x, y);
 		if ( ok ) {
 			var-> mask     = dummy.data;
 			var-> maskLine = dummy. lineSize;

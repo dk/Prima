@@ -926,11 +926,15 @@ Creates a new L<Prima::Region> object with the image as the data source.
 
 =item transform @MATRIX
 
-Applies generic 2D transform matrix to the image, where matrix is 4 numbers.
+Applies generic 2D transform matrix to the image, where matrix is 6 numbers.
 
 Tries first to split matrix into series of shear and scale transforms using LDU
 decomposition; if an interim image needs to be too large, fails and returns
 C<false>.
+
+The last two members (DX and DY translation) only use mantisse and ignore the
+rest, so setting them f ex to 10.5 will not produce an image 11 pixels larger,
+but only 1.  The translation is thus effectively sub-pixel.
 
 Rotation matrices can be applied too, however, when angles are close to 90 and
 270, either interim images become too big, or defects introduced by shearing
