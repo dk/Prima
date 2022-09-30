@@ -799,7 +799,7 @@ sub ui_scale
 
 sub dataSize  { $_[0]->lineSize * $_[0]->height }
 sub scanline  { substr( $_[0]->data, $_[0]->lineSize * $_[1], $_[0]-> lineSize ) }
-sub shear     { $_[0]->transform(1,@_[2,1],1) }
+sub shear     { $_[0]->transform(matrix => [1,@_[2,1],1,0,0]) }
 sub to_region { Prima::Region->new( image => shift ) }
 
 sub to_rgba

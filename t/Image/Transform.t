@@ -115,7 +115,7 @@ for (my $i = 0; $i < 360; $i++) {
 	my $d = $k->dup;
 	my $cos = cos($i / 3.14159 * 180.0);
 	my $sin = sin($i / 3.14159 * 180.0);
-	$d->transform($cos, $sin, -$sin, $cos + 0.001); # to make sure it's 2D transform, not a rotation
+	$d->transform(matrix => [$cos, $sin, -$sin, $cos + 0.001, 0, 0]); # to make sure it's 2D transform, not a rotation
 	my $dx = ($p-> width  - $d->width) / 2; 
 	my $dy = ($p-> height - $d->height) / 2; 
 	$p->put_image($dx,$dy,$d,rop::OrPut);
@@ -154,7 +154,7 @@ $p = Prima::Image->create(
 	height   => 2,
 	type     => im::Byte,
 	data     => "\4\4..\4\4");
-$p->transform(1,0,0,1,0.5,0.5);
+$p->transform(matrix => [1,0,0,1,0.5,0.5]);
 $p = $p->data;
 $p = substr($p,0,3) . substr($p,4,3) . substr($p,8,3);
 is_bytes( $p, join('', map { chr } (1,2,1, 2,4,2, 1,2,1)), "pure subpixel");

@@ -1298,7 +1298,7 @@ Image_pixel( Handle self, Bool set, int x, int y, SV * pixel)
 #undef BGRto32
 	} else {
 		ColorPixel color;
-		int bpp = var->type & imBPP;
+		int bpp = (var->type & imBPP) / 8;
 		if ( is_opt( optInDraw))
 			return inherited pixel(self,true,x,y,pixel);
 
