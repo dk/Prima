@@ -1677,6 +1677,7 @@ Image_put_image_indirect( Handle self, Handle image, int x, int y, int xFrom, in
 {
 	Bool ret;
 	Byte * color = NULL, colorbuf[ MAX_SIZEOF_PIXEL ];
+	Point t;
 
 	if ( is_opt( optInDrawInfo)) return false;
 	if ( image == NULL_HANDLE) return false;
@@ -1690,7 +1691,8 @@ Image_put_image_indirect( Handle self, Handle image, int x, int y, int xFrom, in
 		color = colorbuf;
 	}
 
-	ret = img_put( self, image, x, y, xFrom, yFrom, xDestLen, yDestLen, xLen, yLen, rop,
+	t = my->get_translate(self);
+	ret = img_put( self, image, x + t.x, y + t.y, xFrom, yFrom, xDestLen, yDestLen, xLen, yLen, rop,
 		var->regionData ? &var->regionData-> data. box : NULL, color);
 	my-> update_change( self);
 	return ret;
