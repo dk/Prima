@@ -940,9 +940,9 @@ ldu( float *matrix, ImgOpPipeline *iop)
 			add_op( iop, STEP_ROTATE_90, 0.0,                                           0.0);
 		}
 	} else {
-		add_op( iop, STEP_SHEAR_X,   matrix[2] / matrix[3], 0.0);
-		add_op( iop, STEP_SCALE,     matrix[0],             matrix[0] - matrix[1] * matrix[2] / matrix[3]);
-		add_op( iop, STEP_SHEAR_Y,   matrix[1] / matrix[3], 0.0);
+		add_op( iop, STEP_SHEAR_X,   matrix[2] / matrix[0], 0.0);
+		add_op( iop, STEP_SCALE,     matrix[0],             matrix[3] - matrix[1] * matrix[2] / matrix[0]);
+		add_op( iop, STEP_SHEAR_Y,   matrix[1] / matrix[0], 0.0);
 	}
 }
 
