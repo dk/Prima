@@ -231,6 +231,17 @@ sub transform
 	return $ref ? $ret : @$ret;
 }
 
+sub inverse_transform
+{
+	my $self   = shift;
+	my ($ref, $points) = $#_ ? (0, [@_]) : (1, $_[0]);
+	$points = Prima::Drawable->render_polyline( $points, matrix => [1,0,0,1,-$self->[4],-$self->[5]])
+		if $self->[4] != 0.0 || $self->[5] != 0.0;
+	my @inverse_matrix = ( $self->[3], -$self->[1], -$self->[2], $self->[0], 0, 0 );
+	my $ret = Prima::Drawable->render_polyline( $points, matrix => \@inverse_matrix);
+	return $ref ? $ret : @$ret;
+}
+
 # class Object; base class of all Prima classes
 package Prima::Object;
 use vars qw(@hooks);
