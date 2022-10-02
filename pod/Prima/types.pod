@@ -56,8 +56,6 @@ An array of 6 doubles with some helper methods attached.
 Named accessor properties for the 6 members.
 The members can just as well be accessed directly with array syntax.
 
-=item
-
 =item clone
 
 Clones the matrix object
