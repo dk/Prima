@@ -1,0 +1,176 @@
+=head1 NAME
+
+Prima::types - builtin types
+
+=head1 DESCRIPTION
+
+Auxillary second-citizen classes that are not usually created manually but used
+as results of Prima methods and accepted as inputs. These classes names can be
+distinguished that their name is started by a lower-case letter.
+
+=head1 Prima::array
+
+Overloaded C array that can be used transparently as a normal perl array of
+numbers.  The reason C<Prima::array> exists is that Prima methods don't need to
+do expensive conversions between a perl array of scalars to C array of integers
+or floats.
+
+=over
+
+=item new LETTER = [idsS], BUF = undef
+
+Creates a new C array with type either int, double, short, and unsigned short.
+There are also methods C<new_int>, C<new_double>, C<new_short>, and C<new_ushort>
+that to the same.
+
+BUF, a normal perl string, can be used to initialize the array, if any (and can
+be pre-populated with pack()). Otherwise an array is created as empty.
+
+=item is_array SCALAR
+
+Checks whether SCALAR is a C<Prima::array> object.
+
+=item substr OFFSET, LENGTH, REPLACEMENT
+
+Emulates perl's C<substr> except operates not on character but C type level.
+Returns a new C<Prima::array> object.
+
+=item append ARRAY
+
+Assuming two arrays have same type, appends the ARRAY's contents to own content.
+
+=item clone 
+
+Clones the array.
+
+=back
+
+=head1 Prima::matrix
+
+An array of 6 doubles with some helper methods attached.
+
+=over
+
+=item A,B,C,D,X,Y
+
+Named accessor properties for the 6 members.
+The members can just as well be accessed directly with array syntax.
+
+=item
+
+=item clone
+
+Clones the matrix object
+
+=item identity
+
+Resets the matrix to identity
+
+=item inverse_transform @POINTS | $POINTS_ARRAY
+
+Applies inverse matrix tranformation to an array or arrayref of points,
+and returns in the same format (i e array for array, ref for ref).
+
+=item new [ @ARRAY ]
+
+Creates a new object and optionally initializes it with @ARRAY
+
+=item multiply MATRIX
+
+Multiplies the matrices and stores the result
+
+=item rotate ANGLE
+
+Rotates the matrix
+
+=item scale MX,MY
+
+Scales the matrix
+
+=item shear DX,DY
+
+Shears the matrix
+
+=item set @ARRAY
+
+Assigns all 6 members at once
+
+=item translate DX,DY
+
+Translates the matrix
+
+=item transform @POINTS | $POINTS_ARRAY
+
+Applies matrix tranformation to an array or arrayref of points,
+and returns in the same format (i e array for array, ref for ref).
+
+=back
+
+=head1 Prima::rect
+
+Represents rectangular object either as I<rectangle> ( X1,Y1,X2,Y2 ) or I<box> ( X,Y,WIDTH,HEIGHT ).
+
+=over
+
+=item box
+
+Returns X, Y, WIDTH, HEIGHT
+
+=item clone
+
+Clones the object
+
+=item enlarge N
+
+Enlarges the rectangle by N
+
+=item inclusive
+
+Rectangle itself is agnostic of its 2D presentation, but assuming the coordinates
+are inclusive-exclusive, C<inclusive> returns X1,Y1,X2,Y2 as inclusive-inclusive rectangle.
+
+=item intersect RECT
+
+Intersects with RECT and stores the result
+
+=item is_empty
+
+Returns true if rectangle's width and height are zero
+
+=item is_equal RECT
+
+Returns true if both rectangles are equal
+
+=item new () | (WIDTH,HEIGHT) | (X1,Y1,X2,Y2)
+
+Creates new object with rectangle syntax
+
+=item new_box X,Y,WIDTH,HEIGHT
+
+Creates new object with box syntax
+
+=item origin
+
+Returns X,Y
+
+=item shrink N
+
+Shrinks the rectangle by N
+
+=item size
+
+Return WIDTH and HEIGHT
+
+=item union RECT
+
+Joins with RECT and stores the result
+
+=back
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<Prima>
