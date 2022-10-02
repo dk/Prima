@@ -461,7 +461,7 @@ sub increase_font_size
 	$fs = 100 if $fs > 100;
 	return if $fs == $t->{defaultFontSize};
 	$t->{defaultFontSize} = $fs;
-	$t-> format(1);
+	$t-> format(keep_offset => 1);
 	$inifile-> section('View')-> {FontSize} = $fs;
 }
 
@@ -985,7 +985,7 @@ sub setup_dialog
 	if ( $f1 ne $of1 || $f2 ne $of2) {
 		$t-> {fontPalette}-> [0]-> {name} = $f1;
 		$t-> {fontPalette}-> [1]-> {name} = $f2;
-		$t-> format(1);
+		$t-> format(keep_offset => 1);
 	} else {
 		$t-> repaint;
 	}
