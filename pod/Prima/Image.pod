@@ -916,9 +916,10 @@ shear factor for the other one to zero.
 Creates an icon from image, with optional C<fill> scalar used for newly populate mask.
 Applies C<%options> to a new object, if any
 
-=item to_rgba
+=item to_rgba TYPE=undef
 
-Creates a new icon with type set to 24 bits and mask type to 8 bit
+Creates a new icon with type set to 24 or 8 gray bits and mask type to 8 bit.
+If TYPE is set, uses this type instead.
 
 =item to_region
 

@@ -469,6 +469,89 @@ sub text_wrap_shape
 	return $ret;
 }
 
+sub render_pattern
+{
+	my ( $package, $handle, %opt ) = @_;
+
+	my $matrix = $opt{matrix};
+
+	return unless $matrix;
+
+	my $source = $handle->to_rgba;
+	$source->transform( matrix => $matrix );
+
+	my $target = ref($handle)->new(
+		size        => [ $source-> size ],
+		type        => (( $handle->type & im::GrayScale ) ? im::Byte : im::RGB),
+		maskType    => 8,
+		autoMasking => am::None,
+	);
+	$target->clear;
+
+	my @s = $handle->size;
+	my @r = $matrix->transform(
+		0,         0,
+		$s[0] - 1, 0,
+		$s[0] - 1, $s[1] - 1,
+		0,         $s[1] - 1
+	);
+	my @d = $source->size;
+	my @D = $matrix->inverse_transform(
+		0,         0,
+		$d[0] - 1, 0,
+		$d[0] - 1, $d[1] - 1,
+		0        , $d[1] - 1
+	);
+
+	my $enclosure = sub {
+		my @D = @_;
+		my ( $dx1, $dy1, $dx2, $dy2 ) = @D[0,1,0,1];
+		for ( my $i = 0; $i < @D; $i += 2 ) {
+			my ( $x, $y ) = @D[$i,$i+1];
+			$dx1 = $x if $dx1 > $x;
+			$dy1 = $y if $dy1 > $y;
+			$dx2 = $x if $dx2 < $x;
+			$dy2 = $y if $dy2 < $y;
+		}
+		return ( $dx1, $dy1, $dx2, $dy2 );
+	};
+
+	my ( $dx1, $dy1, $dx2, $dy2 ) = $enclosure->(@D);
+	my @aperture = $enclosure->(@r);
+
+	$dx1 /= $s[0];
+	$dx2 /= $s[0];
+	$dy1 /= $s[1];
+	$dy2 /= $s[1];
+	$dx1 = int($dx1) - 1;
+	$dy1 = int($dy1) - 1;
+	$dx2 = int($dx2) + 1;
+	$dy2 = int($dy2) + 1;
+
+	my $plotter = Prima::matrix->new( map { int }
+		$r[2] - $r[0],
+		$r[3] - $r[1],
+		$r[0] - $r[6],
+		$r[1] - $r[7],
+		$aperture[0],
+		$aperture[1],
+	);
+
+	($dy2, $dy1) = (-$dy1, -$dy2);
+	for ( my $y = $dy1; $y <= $dy2; $y++) {
+		for ( my $x = $dx1; $x <= $dx2; $x++) {
+			$target->put_image($plotter->transform($x,$y), $source);
+		}
+	}
+
+	if ( $handle-> preserveType ) {
+		$target->type( $handle->type);
+		$target->maskType( $handle->maskType ) if $handle->isa('Prima::Icon');
+	}
+
+	return $target;
+}
+
 1;
 
 =head1 NAME

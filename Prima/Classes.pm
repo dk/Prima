@@ -815,13 +815,17 @@ sub to_region { Prima::Region->new( image => shift ) }
 
 sub to_rgba
 {
-	my $self = shift;
+	my ($self, $type) = @_;
+
+	unless ( defined $type ) {
+		$type = ( $self->type & im::GrayScale ) ? im::Byte : im::RGB;
+	}
 
 	if ( $self->isa('Prima::Icon')) {
-		return $self->clone( type => im::RGB, maskType => im::bpp8 );
+		return $self->clone( type => $type, maskType => im::bpp8 );
 	} else {
 		my $i = $self->to_icon( maskType => 8, fill => "\xff" );
-		$i->type(im::RGB);
+		$i->type($type);
 		return $i;
 	}
 }

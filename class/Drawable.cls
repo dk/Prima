@@ -77,6 +77,7 @@ object Prima::Drawable ( Prima::Component)
 	method SV *  get_text_box( SV * text, int from = 0, int len = -1);
 	method SV *  render_glyph( int index, HV * profile);
 	static SV *  render_polyline( SV * obj, SV * points, HV * profile);
+	import Handle render_pattern( SV * obj, Handle pattern, HV * profile);
 	static SV *  render_spline( SV * obj, SV * points, HV * profile);
 	method Bool  graphic_context_push();
 	method Bool  graphic_context_pop();

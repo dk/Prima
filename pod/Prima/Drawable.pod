@@ -2036,6 +2036,21 @@ The C<ggo::> commands are:
 	ggo::Conic - plot 2-degree spline
 	ggo::Cubic - plot 3-degree spline
 
+=item render_pattern IMAGE, %OPTIONS
+
+Takes an IMAGE (or icon) and %OPTIONS and generates a new rectangular pattern that can be used
+in C<fillPattern> property.
+
+Options:
+
+=over
+
+=item matrix MATRIX
+
+2D matrix to transform IMAGE
+
+=back
+
 =item render_polyline \@POLYLINE, %OPTIONS
 
 Performs calculations on POLYLINE, defined by OPTIONS. The following options are recognized:
