@@ -2038,14 +2038,18 @@ The C<ggo::> commands are:
 
 =item render_pattern IMAGE|ICON|ARRAY|INDEX, %OPTIONS
 
-Takes a fill pattern represented by one of C<fp::XXX> constant, an array of 8 bytes, or an image (or icon);
-same syntax as in C<fillPattern>.
+Takes a fill pattern represented by one of C<fp::XXX> constant, an array of 8
+bytes, or an image (or icon); same syntax as in C<fillPattern>.
 
-Uses %OPTIONS to generate a new rectangular pattern that can be used in C<fillPattern> property.
+Uses %OPTIONS to generate a new rectangular pattern that can be used in
+C<fillPattern> property.  Since Prima does not provide an individual property
+that would govern specifically the matrix of a fill pattern, this method can be
+used to implement this functionality.
 
-Specifically respects C<preserveType> property and if sets, changed the resulting pattern type back
-to the original type. In case or ARRAY or INDEX fillPattern, always generates a C<im::BW> image, so
-it can be used both in C<rop2> transparent and opaque modes, line the original pattern.
+Specifically respects C<preserveType> property and if sets, changed the
+resulting pattern type back to the original type. In case or ARRAY or INDEX
+fillPattern, always generates a C<im::BW> image, so it can be used both in
+C<rop2> transparent and opaque modes, line the original pattern.
 
 Options:
 
