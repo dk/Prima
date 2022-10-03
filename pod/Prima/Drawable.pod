@@ -2036,14 +2036,29 @@ The C<ggo::> commands are:
 	ggo::Conic - plot 2-degree spline
 	ggo::Cubic - plot 3-degree spline
 
-=item render_pattern IMAGE, %OPTIONS
+=item render_pattern IMAGE|ICON|ARRAY|INDEX, %OPTIONS
 
-Takes an IMAGE (or icon) and %OPTIONS and generates a new rectangular pattern that can be used
-in C<fillPattern> property.
+Takes a fill pattern represented by one of C<fp::XXX> constant, an array of 8 bytes, or an image (or icon);
+same syntax as in C<fillPattern>.
+
+Uses %OPTIONS to generate a new rectangular pattern that can be used in C<fillPattern> property.
+
+Specifically respects C<preserveType> property and if sets, changed the resulting pattern type back
+to the original type. In case or ARRAY or INDEX fillPattern, always generates a C<im::BW> image, so
+it can be used both in C<rop2> transparent and opaque modes, line the original pattern.
 
 Options:
 
 =over
+
+=item fill COLOR, mask COLOR
+
+If C<margin> is used, fills pixels with this color.
+C<mask> is used to fill mask pixels, if the image is an icon.
+
+=item margin XY | [ X, Y ]
+
+Set margins in X and Y pixels before applying the transformatiom
 
 =item matrix MATRIX
 

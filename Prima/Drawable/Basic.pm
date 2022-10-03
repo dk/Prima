@@ -473,13 +473,65 @@ sub render_pattern
 {
 	my ( $package, $handle, %opt ) = @_;
 
+	# parse arguments
 	my $matrix = $opt{matrix};
+	my @margin = defined($opt{margin}) ?
+		( ref($opt{margin}) ? @{$opt{margin}} : (($opt{margin}) x 2)) :
+		( 0,0 );
 
-	return unless $matrix;
+	return unless $matrix || $margin[0] != 0 || $margin[1] != 0;
+	if ( $margin[0] < 0 || $margin[1] < 0 ) {
+		warn "render_patern: bad margin";
+		return;
+	}
 
+	# non-image
+	if ( !ref($handle) || ref($handle) eq 'ARRAY') {
+		my $p = Prima::Image->new(
+			type         => im::BW,
+			size         => [8,8],
+			rop2         => rop::CopyPut,
+			fillPattern  => $handle,
+			preserveType => 1,
+		);
+		$p->bar(0,0,$p->size);
+		$handle = $p;
+	}
+
+	# apply margins
+	if ( $margin[0] != 0 || $margin[0] != 0 ) {
+		my @ns = ( $handle-> width + $margin[0] * 2, $handle->height + $margin[1] * 2);
+		my $orig = $handle;
+		if ( $handle->isa('Prima::Icon')) {
+			my ($nx, $na) = $handle->split;
+			my $n1 = $nx->clone( size => \@ns );
+			$n1->backColor( $opt{fill} ) if defined $opt{fill};
+			$n1->clear;
+			$n1->put_image( @margin, $nx );
+			my $n2 = $na->clone( size => \@ns );
+			$n2->backColor( $opt{mask} ) if defined $opt{mask};
+			$n2->clear;
+			$n2->put_image( @margin, $nx );
+			$handle = Prima::Icon->create_combined($n1, $n2);
+		} else {
+			my $n1 = $handle->clone( size => \@ns );
+			$n1->backColor( $opt{fill} ) if defined $opt{fill};
+			$n1->color( cl::White);
+			$n1->clear;
+			$n1->put_image( @margin, $handle );
+			$handle = $n1;
+		}
+		$handle-> set( map { $_ => $orig->$_() } qw(preserveType scaling conversion));
+	}
+
+	# all calculations are in 32-bit RGBA or 8-bit GA
 	my $source = $handle->to_rgba;
-	$source->transform( matrix => $matrix );
+	$source->transform( matrix => $matrix )
+		if $matrix;
 
+	$matrix //= Prima::matrix->new;
+
+	# target's size is the same as transformed's image enclosure
 	my $target = ref($handle)->new(
 		size        => [ $source-> size ],
 		type        => (( $handle->type & im::GrayScale ) ? im::Byte : im::RGB),
@@ -488,6 +540,24 @@ sub render_pattern
 	);
 	$target->clear;
 
+	#
+	# instead of calculating plotting positions directly, calculate them as if
+	# we're plotting rectangular source ( before the transformation ) on a target
+	# that is inversely transformed. I.e not this:
+	#
+	#  .......
+        #  .     .
+	#  . __  .
+	#  ./_/...
+	#
+	# but this:
+	#   .
+	#  .  .
+	# .  _ .
+	#  .|_| .
+	#   .  .
+	#     .
+	#
 	my @s = $handle->size;
 	my @r = $matrix->transform(
 		0,         0,
@@ -537,6 +607,7 @@ sub render_pattern
 		$aperture[1],
 	);
 
+	# execute
 	($dy2, $dy1) = (-$dy1, -$dy2);
 	for ( my $y = $dy1; $y <= $dy2; $y++) {
 		for ( my $x = $dx1; $x <= $dx2; $x++) {
@@ -544,6 +615,7 @@ sub render_pattern
 		}
 	}
 
+	# finalize
 	if ( $handle-> preserveType ) {
 		$target->type( $handle->type);
 		$target->maskType( $handle->maskType ) if $handle->isa('Prima::Icon');
