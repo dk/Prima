@@ -618,6 +618,7 @@ sub profile_default
 		lineJoin        => lj::Round,
 		linePattern     => lp::Solid,
 		lineWidth       => 0,
+		matrix          => [1,0,0,1,0,0],
 		miterLimit      => 10.0,
 		owner           => undef,
 		palette         => [],

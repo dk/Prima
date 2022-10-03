@@ -221,6 +221,7 @@ Unbuffered:
 		apc_gp_set_fill_pattern( self, fp);
 	}
 	apc_gp_set_fill_pattern_offset( self, XX-> fill_pattern_offset);
+	apc_gp_set_matrix( self, XX-> matrix);
 
 	if ( !XX-> flags. reload_font && XX-> font && XX-> font-> id) {
 		XSetFont( DISP, XX-> gc, XX-> font-> id);
@@ -1449,6 +1450,13 @@ apc_gp_get_line_pattern( Handle self, unsigned char *dashes)
 	return n;
 }
 
+Matrix *
+apc_gp_get_matrix( Handle self)
+{
+	return &(X(self)-> matrix);
+}
+
+
 Point
 apc_gp_get_resolution( Handle self)
 {
@@ -1721,6 +1729,14 @@ apc_gp_set_line_pattern( Handle self, unsigned char *pattern, int len)
 }
 
 Bool
+apc_gp_set_matrix( Handle self, Matrix matrix)
+{
+	DEFXX;
+	memcpy(XX-> matrix, matrix, sizeof(Matrix));
+	return true;
+}
+
+Bool
 apc_gp_set_rop( Handle self, int rop)
 {
 	DEFXX;
@@ -1857,6 +1873,7 @@ apc_gp_push(Handle self, GCStorageFunction * destructor, void * user_data, unsig
 	state->fill_pattern_offset = XX->fill_pattern_offset;
 	state->null_hatch = XX->flags.brush_null_hatch;
 	state->font = PDrawable(self)->font;
+	memcpy( state->matrix, XX->matrix, sizeof(Matrix));
 
 	if ( PDrawable(self)->fillPatternImage )
 		protect_object( state->fill_image = PDrawable(self)->fillPatternImage );
@@ -1938,6 +1955,8 @@ apc_gp_pop( Handle self, void * user_data)
 	if (PDrawable(self)->fillPatternImage)
 		unprotect_object(PDrawable(self)->fillPatternImage);
 	PDrawable(self)->fillPatternImage = state-> fill_image;
+
+	memcpy( XX->matrix, state->matrix, sizeof(Matrix));
 
 	free(state);
 	return true;

@@ -844,10 +844,7 @@ typedef struct _drawable_sys_data
 	int fill_mode;
 	Pixmap fp_tile, fp_stipple, fp_render_pen;
 	XID fp_render_picture;
-#if defined(sgi) && !defined(__GNUC__)
-/* multiple compilation and runtime errors otherwise. must be some alignment tricks */
-	char dummy_b_1[2];
-#endif
+	Matrix matrix;
 	int rop;
 	int rop2;
 	int alpha;
@@ -958,6 +955,7 @@ typedef struct _PaintState
 	FillPattern fill_pattern;
 	Font font;
 	unsigned char *dashes;
+	Matrix matrix;
 
 	unsigned int user_data_size;
 	GCStorageFunction * user_destructor;

@@ -338,6 +338,7 @@ typedef struct _PaintSaveData
 	int            line_pattern_len;
 	FillPattern    fill_pattern;
 	Point          fill_pattern_offset;
+	Matrix         matrix;
 	int            rop, rop2;
 	Point          transform;
 	Font           font;
@@ -477,6 +478,7 @@ typedef struct _DrawableData
 	int            line_pattern_len;
 	FillPattern    fill_pattern;
 	Point          fill_pattern_offset;
+	Matrix         matrix;
 	int            rop;
 	int            rop2;
 	Point          transform;

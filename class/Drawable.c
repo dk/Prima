@@ -42,6 +42,7 @@ Drawable_init( Handle self, HV * profile)
 	my-> set_lineJoin     ( self, pget_i ( lineJoin));
 	my-> set_linePattern  ( self, pget_sv( linePattern));
 	my-> set_lineWidth    ( self, pget_f ( lineWidth));
+	my-> set_matrix       ( self, pget_sv( matrix));
 	my-> set_miterLimit   ( self, pget_i ( miterLimit));
 	my-> set_region       ( self, pget_H ( region));
 	my-> set_rop          ( self, pget_i ( rop));
@@ -532,6 +533,38 @@ Drawable_lineWidth( Handle self, Bool set, double lineWidth)
 	if (!set) return var->current_state.line_width;
 	if ( lineWidth < 0.0 ) lineWidth = 0.0;
 	return var->current_state.line_width = lineWidth;
+}
+
+SV *
+Drawable_matrix( Handle self, Bool set, SV * svmatrix)
+{
+	int i;
+	if ( !set) {
+		AV * av;
+		Matrix* matrix;
+		if ( !( matrix = apc_gp_get_matrix( self))) return NULL_SV;
+
+		av = newAV();
+		for ( i = 0; i < 6; i++) av_push( av, newSVnv((*matrix)[i]));
+		return newRV_noinc(( SV *) av);
+	} else {
+		if ( SvROK(svmatrix) && ( SvTYPE( SvRV(svmatrix)) == SVt_PVAV)) {
+			Matrix matrix;
+			AV * av = ( AV *) SvRV(svmatrix);
+			if ( av_len( av) != 5) goto FAIL;
+			for ( i = 0; i < 6; i++) {
+				SV ** holder = av_fetch( av, i, 0);
+				if ( !holder) goto FAIL;
+				matrix[i] = SvNV( *holder);
+			}
+			apc_gp_set_matrix(self, matrix);
+		} else {
+		FAIL:
+			warn("Drawable::matrix: must be array of 6 numerics");
+			return NULL_SV;
+		}
+	}
+	return NULL_SV;
 }
 
 double

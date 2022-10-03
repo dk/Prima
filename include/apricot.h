@@ -3740,6 +3740,9 @@ apc_gp_get_handle( Handle self);
 extern int
 apc_gp_get_line_pattern( Handle self, unsigned char * buffer);
 
+extern Matrix *
+apc_gp_get_matrix( Handle self);
+
 extern Color
 apc_gp_get_nearest_color( Handle self, Color color);
 
@@ -3831,6 +3834,9 @@ apc_gp_set_font( Handle self, PFont font);
 
 extern Bool
 apc_gp_set_line_pattern( Handle self, unsigned char * pattern, int len);
+
+extern Bool
+apc_gp_set_matrix( Handle self, Matrix matrix );
 
 extern Bool
 apc_gp_set_palette( Handle self);

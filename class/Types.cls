@@ -63,3 +63,5 @@ global %PrinterInfo {
 	string device;
 	Bool   defaultPrinter;
 }
+
+global @Matrix double[6];

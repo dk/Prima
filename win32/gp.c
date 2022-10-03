@@ -660,6 +660,21 @@ apc_gp_get_fill_mode( Handle self)
 	return sys fill_mode;
 }
 
+FillPattern *
+apc_gp_get_fill_pattern( Handle self)
+{
+	objCheck NULL;
+	return &sys fill_pattern;
+}
+
+Point
+apc_gp_get_fill_pattern_offset( Handle self)
+{
+	Point p = {0,0};
+	objCheck p;
+	return sys fill_pattern_offset;
+}
+
 int
 apc_gp_get_line_pattern( Handle self, unsigned char * buffer)
 {
@@ -694,6 +709,13 @@ apc_gp_get_line_pattern( Handle self, unsigned char * buffer)
 		strcpy(( char *) buffer, "\1");
 		return 1;
 	}
+}
+
+Matrix *
+apc_gp_get_matrix( Handle self)
+{
+	objCheck NULL;
+	return &sys matrix;
 }
 
 Color
@@ -1052,21 +1074,6 @@ apc_gp_set_font( Handle self, PFont font)
 	return true;
 }
 
-FillPattern *
-apc_gp_get_fill_pattern( Handle self)
-{
-	objCheck NULL;
-	return &sys fill_pattern;
-}
-
-Point
-apc_gp_get_fill_pattern_offset( Handle self)
-{
-	Point p = {0,0};
-	objCheck p;
-	return sys fill_pattern_offset;
-}
-
 Bool
 apc_gp_set_line_pattern( Handle self, unsigned char * pattern, int len)
 {
@@ -1096,6 +1103,15 @@ apc_gp_set_line_pattern( Handle self, unsigned char * pattern, int len)
 	}
 	return true;
 }
+
+Bool
+apc_gp_set_matrix( Handle self, Matrix pattern)
+{
+	objCheck false;
+{
+	memcpy( &sys matrix, matrix, sizeof(Matrix));
+	return true;
+}}
 
 Bool
 apc_gp_set_palette( Handle self)

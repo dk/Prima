@@ -1967,6 +1967,7 @@ hwnd_enter_paint( Handle self)
 	apc_gp_set_line_pattern( self,
 		( Byte*)(( sys line_pattern_len > sizeof(sys line_pattern)) ? sys line_pattern : ( Byte*)&sys line_pattern),
 		sys line_pattern_len);
+	apc_gp_set_matrix( self, sys matrix);
 	apc_gp_set_rop( self, sys rop);
 	apc_gp_set_rop2( self, sys rop2);
 	apc_gp_set_transform( self, sys transform. x, sys transform. y);

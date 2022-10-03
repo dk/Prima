@@ -1793,6 +1793,59 @@ color2pixel( Handle self, Color color, Byte * pixel)
 }
 
 static void
+prepare_matrix( Handle self, Matrix ctx)
+{
+	if ( my-> matrix == Drawable_matrix) {
+		Matrix *matrix = apc_gp_get_matrix(self);
+		if ( matrix )
+			memcpy( ctx, matrix, sizeof(Matrix));
+		else {
+			bzero(ctx, sizeof(Matrix));
+			ctx[0] = ctx[3] = 1.0;
+		}
+	} else {
+		AV * av;
+		SV * m;
+		m = my->get_matrix( self);
+		if ( m && SvOK(m) && SvROK(m) && SvTYPE(av = (AV*)SvRV(m)) == SVt_PVAV && av_len(av) == 5) {
+			int i;
+			for ( i = 0; i < 6; i++) {
+				SV ** sv = av_fetch( av, i, 0);
+				ctx[i] = (sv && *sv && SvOK(*sv)) ? SvIV(*sv) : 0;
+			}
+		} else {
+			warn("Bad array returned by .matrix");
+			bzero(ctx, sizeof(Matrix));
+			ctx[0] = ctx[3] = 1.0;
+		}
+	}
+}
+
+/*
+static void
+apply_matrix( Matrix matrix, double *x, double *y)
+{
+	double xx = matrix[0] * (*x) + matrix[2] * (*y) + matrix[4];
+	double yy = matrix[1] * (*x) + matrix[3] * (*y) + matrix[5];
+	*x = xx;
+	*y = yy;
+}
+*/
+
+static void
+apply_matrix2( Matrix matrix, double *src, double *dst, int n)
+{
+	int i;
+	for ( i = 0; i < n; i++) {
+		double xx = matrix[0] * src[0] + matrix[2] * src[1] + matrix[4];
+		double yy = matrix[1] * src[0] + matrix[3] * src[1] + matrix[5];
+		src += 2;
+		*(dst++) = xx;
+		*(dst++) = yy;
+	}
+}
+
+static void
 prepare_fill_context(Handle self, Point translate, PImgPaintContext ctx)
 {
 	FillPattern * p = &ctx->pattern;
@@ -2243,10 +2296,44 @@ Image_bar( Handle self, double x1, double y1, double x2, double y2)
 	Bool ok;
 	int _x1, _y1, _x2, _y2;
 	ImgPaintContext ctx;
+	Matrix matrix;
+	double nbar[8];
+
 	if (opt_InPaint)
 		return inherited bar( self, x1, y1, x2, y2);
 	else if ( var-> antialias ) {
 		ok = primitive( self, 1, "snnnn", "rectangle", x1, y1, x2, y2);
+		my-> update_change(self);
+		return ok;
+	}
+
+	prepare_matrix(self, matrix);
+	nbar[0] = nbar[6] = x1;
+	nbar[1] = nbar[3] = y1;
+	nbar[2] = nbar[4] = x2;
+	nbar[5] = nbar[7] = y2;
+	apply_matrix2( matrix, nbar, nbar, 8);
+	if (nbar[0] == nbar[6] && nbar[1] == nbar[3] && nbar[2] == nbar[4] && nbar[5] == nbar[7]) {
+		x1 = nbar[0];
+		y1 = nbar[1];
+		x2 = nbar[2];
+		y2 = nbar[5];
+	} else if (nbar[0] == nbar[2] && nbar[1] == nbar[7] && nbar[6] == nbar[4] && nbar[3] == nbar[7]) {
+		x1 = nbar[0];
+		y1 = nbar[1];
+		x2 = nbar[4];
+		y2 = nbar[3];
+	} else {
+		SV *sv, *points;
+		Matrix identity = {1.0,0.0,0.0,1.0,0.0,0.0};
+
+		sv = prima_array_new(sizeof(nbar));
+		memcpy( prima_array_get_storage(sv), nbar, sizeof(nbar));
+		points = prima_array_tie( sv, sizeof(double), "d");
+		apc_gp_set_matrix(self, identity);
+		ok = primitive( self, 1, "sS", "line", points );
+		apc_gp_set_matrix(self, matrix);
+		sv_free(points);
 		my-> update_change(self);
 		return ok;
 	}
@@ -2291,12 +2378,48 @@ Image_bars( Handle self, SV * rects)
 		}
 		if ( do_free ) free( p);
 	} else {
+		Matrix matrix;
+		SV *sv, *points = NULL;
+		void *storage;
+		Matrix identity = {1.0,0.0,0.0,1.0,0.0,0.0};
+
 		if (( p = prima_read_array( rects, "Image::bars", 'i', 4, 0, -1, &count, &do_free)) == NULL)
 			return false;
 		t = my->get_translate(self);
 		prepare_fill_context(self, t, &ctx);
+		prepare_matrix(self, matrix);
+
 		for ( i = 0, r = p; i < count; i++, r++) {
+			double nbar[8];
 			ImgPaintContext ctx2 = ctx;
+
+			nbar[0] = nbar[6] = r->left;
+			nbar[1] = nbar[3] = r->bottom;
+			nbar[2] = nbar[4] = r->right;
+			nbar[5] = nbar[7] = r->top;
+			apply_matrix2( matrix, nbar, nbar, 8);
+			if (nbar[0] == nbar[6] && nbar[1] == nbar[3] && nbar[2] == nbar[4] && nbar[5] == nbar[7]) {
+				r->left   = nbar[0];
+				r->bottom = nbar[1];
+				r->right  = nbar[2];
+				r->top    = nbar[5];
+			} else if (nbar[0] == nbar[2] && nbar[1] == nbar[7] && nbar[6] == nbar[4] && nbar[3] == nbar[7]) {
+				r->left   = nbar[0];
+				r->bottom = nbar[1];
+				r->right  = nbar[4];
+				r->top    = nbar[3];
+			} else {
+				if ( points == NULL ) {
+					sv = prima_array_new(sizeof(nbar));
+					storage = prima_array_get_storage(sv);
+					points = prima_array_tie( sv, sizeof(double), "d");
+					apc_gp_set_matrix(self, identity);
+				}
+				memcpy( storage, nbar, sizeof(nbar));
+				ok &= primitive( self, 1, "sS", "line", points );
+				continue;
+			}
+
 			if ( !( ok &= img_bar( self,
 				r->left,
 				r->bottom,
@@ -2305,6 +2428,11 @@ Image_bars( Handle self, SV * rects)
 				&ctx2))) break;
 		}
 		if ( do_free ) free( p);
+
+		if ( points != NULL ) {
+			apc_gp_set_matrix(self, matrix);
+			sv_free(points);
+		}
 	}
 	my-> update_change(self);
 	return ok;
