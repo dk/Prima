@@ -1752,7 +1752,7 @@ color2pixel( Handle self, Color color, Byte * pixel)
 		pixel[0] = (int)( (rgb.r + rgb.g + rgb.b) / 48.0);
 		break;
 	case imbpp4  :
-		pixel[0] = cm_nearest_color(rgb,var->palSize,var->palette) & 7;
+		pixel[0] = cm_nearest_color(rgb,var->palSize,var->palette) & 15;
 		break;
 	case imByte:
 		pixel[0] = (int)( (rgb.r + rgb.g + rgb.b) / 3.0);
