@@ -2051,10 +2051,10 @@ Options:
 
 =over
 
-=item fill COLOR, mask COLOR
+=item color COLOR, alpha 0-255
 
-If C<margin> is used, fills pixels with this color.
-C<mask> is used to fill mask pixels, if the image is an icon.
+If C<margin> is used, pre-fills target image with this color.
+C<alpha> is used to pre-fill the target image's mask with this value, if the image is an icon.
 
 =item margin XY | [ X, Y ]
 

@@ -498,32 +498,6 @@ sub render_pattern
 		$handle = $p;
 	}
 
-	# apply margins
-	if ( $margin[0] != 0 || $margin[0] != 0 ) {
-		my @ns = ( $handle-> width + $margin[0] * 2, $handle->height + $margin[1] * 2);
-		my $orig = $handle;
-		if ( $handle->isa('Prima::Icon')) {
-			my ($nx, $na) = $handle->split;
-			my $n1 = $nx->clone( size => \@ns );
-			$n1->backColor( $opt{fill} ) if defined $opt{fill};
-			$n1->clear;
-			$n1->put_image( @margin, $nx );
-			my $n2 = $na->clone( size => \@ns );
-			$n2->backColor( $opt{mask} ) if defined $opt{mask};
-			$n2->clear;
-			$n2->put_image( @margin, $nx );
-			$handle = Prima::Icon->create_combined($n1, $n2);
-		} else {
-			my $n1 = $handle->clone( size => \@ns );
-			$n1->backColor( $opt{fill} ) if defined $opt{fill};
-			$n1->color( cl::White);
-			$n1->clear;
-			$n1->put_image( @margin, $handle );
-			$handle = $n1;
-		}
-		$handle-> set( map { $_ => $orig->$_() } qw(preserveType scaling conversion));
-	}
-
 	# all calculations are in 32-bit RGBA or 8-bit GA
 	my $source = $handle->to_rgba;
 	$source->transform( matrix => $matrix )
@@ -538,7 +512,15 @@ sub render_pattern
 		maskType    => 8,
 		autoMasking => am::None,
 	);
-	$target->clear;
+
+	if ( $opt{color}) {
+		$target->backColor($opt{color}) if $opt{color};
+		$target->clear;
+	}
+	if ( exists $opt{alpha} && $handle->isa('Prima::Icon')) {
+		my $fill = chr($opt{alpha} & 0xff);
+		$target->mask( $fill x $target->maskSize );
+	}
 
 	#
 	# instead of calculating plotting positions directly, calculate them as if
@@ -558,20 +540,6 @@ sub render_pattern
 	#   .  .
 	#     .
 	#
-	my @s = $handle->size;
-	my @r = $matrix->transform(
-		0,         0,
-		$s[0] - 1, 0,
-		$s[0] - 1, $s[1] - 1,
-		0,         $s[1] - 1
-	);
-	my @d = $source->size;
-	my @D = $matrix->inverse_transform(
-		0,         0,
-		$d[0] - 1, 0,
-		$d[0] - 1, $d[1] - 1,
-		0        , $d[1] - 1
-	);
 
 	my $enclosure = sub {
 		my @D = @_;
@@ -586,8 +554,25 @@ sub render_pattern
 		return ( $dx1, $dy1, $dx2, $dy2 );
 	};
 
-	my ( $dx1, $dy1, $dx2, $dy2 ) = $enclosure->(@D);
+	my @s = $handle->size;
+	$s[$_] += $margin[$_] * 2 for 0,1;
+	my @r = $matrix->transform(
+		0,         0,
+		$s[0] - 1, 0,
+		$s[0] - 1, $s[1] - 1,
+		0,         $s[1] - 1
+	);
+
 	my @aperture = $enclosure->(@r);
+	my @d = ($aperture[2] - $aperture[0], $aperture[3] - $aperture[1]);
+	my @D = $matrix->inverse_transform(
+		0,         0,
+		$d[0] - 1, 0,
+		$d[0] - 1, $d[1] - 1,
+		0        , $d[1] - 1
+	);
+
+	my ( $dx1, $dy1, $dx2, $dy2 ) = $enclosure->(@D);
 
 	$dx1 /= $s[0];
 	$dx2 /= $s[0];
@@ -603,8 +588,8 @@ sub render_pattern
 		$r[3] - $r[1],
 		$r[0] - $r[6],
 		$r[1] - $r[7],
-		$aperture[0],
-		$aperture[1],
+		$aperture[0] + $margin[0],
+		$aperture[1] + $margin[1],
 	);
 
 	# execute
