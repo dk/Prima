@@ -1105,7 +1105,7 @@ apc_gp_set_line_pattern( Handle self, unsigned char * pattern, int len)
 }
 
 Bool
-apc_gp_set_matrix( Handle self, Matrix pattern)
+apc_gp_set_matrix( Handle self, Matrix matrix)
 {
 	objCheck false;
 {
@@ -1229,6 +1229,7 @@ apc_gp_push(Handle self, GCStorageFunction * destructor, void * user_data, unsig
 	memcpy( state->common.fill_pattern, sys fill_pattern, sizeof(FillPattern));
 	state->common.fill_pattern_offset = sys fill_pattern_offset;
 	state->common.fill_mode     = sys fill_mode;
+	memcpy( state->common.matrix, sys matrix, sizeof(Matrix));
 	state->common.rop           = sys rop;
 	state->common.rop2          = sys rop2;
 	state->common.antialias     = is_apt(aptGDIPlus);
@@ -1303,6 +1304,7 @@ apc_gp_pop( Handle self, void * user_data)
 	memcpy( sys fill_pattern, state->common.fill_pattern, sizeof(FillPattern));
 	sys fill_pattern_offset = state->common.fill_pattern_offset;
 	sys fill_mode           = state->common.fill_mode;
+	memcpy( sys matrix, state->common.matrix, sizeof(Matrix));
 	sys rop                 = state->common.rop;
 	sys rop2                = state->common.rop2;
 
