@@ -808,14 +808,15 @@ prima_get_frame_info( Handle self, PRect r)
 		r-> left = XX-> decorationSize. x;
 		r-> top  = XX-> decorationSize. y;
 	} else if ( p != X_WINDOW)
-		if ( !XTranslateCoordinates( DISP, X_WINDOW, p, 0, 0, &r-> left, &r-> bottom, &dummy))
+		if ( !XTranslateCoordinates( DISP, X_WINDOW, p, 0, 0, &r-> left, &r-> top, &dummy))
 			warn( "error in XTranslateCoordinates()");
 	if ( !XGetGeometry( DISP, p, &dummy, &px, &py, &pw, &ph, &pb, &pd)) {
 		warn( "error in XGetGeometry()");
-		r-> right = pw - r-> left  - XX-> size. x;
-		r-> top   = ph - r-> right - XX-> size. y;
+	} else {
+		r-> top   += XX-> menuHeight;
+		r-> right  = pw - r-> left - XX-> size. x;
+		r-> bottom = ph - r-> top  - XX-> size. y;
 	}
-	r-> top += XX-> menuHeight;
 	return true;
 }
 
