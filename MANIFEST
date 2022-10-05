@@ -15,6 +15,7 @@ api/exception.c
 api/file.c
 api/hash.c
 api/list.c
+api/matrix.c
 api/omp.c
 api/options.c
 api/perl.c

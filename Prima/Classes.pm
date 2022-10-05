@@ -183,10 +183,11 @@ sub set
 {
 	my $self = shift;
 	@$self[0..$#_] = @_ if @_;
+	return $self;
 }
 
 sub clone     { ref($_[0])->new(@{$_[0]})             }
-sub identity  { @{$_[0]} = ( 1, 0, 0, 1, 0, 0 )       }
+sub identity  { @{$_[0]} = ( 1, 0, 0, 1, 0, 0 );$_[0] }
 sub A         { $#_ ? $_[0]->[0] = $_[1] : $_[0]->[0] }
 sub B         { $#_ ? $_[0]->[1] = $_[1] : $_[0]->[1] }
 sub C         { $#_ ? $_[0]->[2] = $_[1] : $_[0]->[2] }
@@ -194,7 +195,7 @@ sub D         { $#_ ? $_[0]->[3] = $_[1] : $_[0]->[3] }
 sub X         { $#_ ? $_[0]->[4] = $_[1] : $_[0]->[4] }
 sub Y         { $#_ ? $_[0]->[5] = $_[1] : $_[0]->[5] }
 
-sub translate { $_[0]->[4]+=$_[1]; $_[0]->[5]+=$_[2];           }
+sub translate { $_[0]->[4]+=$_[1]; $_[0]->[5]+=$_[2];     $_[0] }
 sub scale     { $_[0]->multiply([$_[1],0,0,$_[2] // $_[1],0,0]) }
 sub shear     { $_[0]->multiply([1,$_[2] // $_[1],$_[1],1,0,0]) }
 
@@ -207,7 +208,7 @@ sub rotate
 	$angle /= $RAD;
 	my $cos = cos($angle);
 	my $sin = sin($angle);
-	$self->multiply([$cos, $sin, -$sin, $cos, 0, 0]);
+	return $self->multiply([$cos, $sin, -$sin, $cos, 0, 0]);
 }
 
 sub multiply
@@ -221,6 +222,7 @@ sub multiply
 		$m1->[4] * $m2->[0] + $m1->[5] * $m2->[2] + $m2->[4],
 		$m1->[4] * $m2->[1] + $m1->[5] * $m2->[3] + $m2->[5]
 	);
+	return $m1;
 }
 
 sub transform

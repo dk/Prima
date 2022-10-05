@@ -1557,6 +1557,34 @@ prima_read_point( SV *rv_av, int * pt, int number, char * error);
 extern void *
 prima_read_array( SV * points, char * procName, char type, int div, int min, int max, int * n_points, Bool * do_free);
 
+/* Matrix */
+void
+prima_matrix_apply( Matrix matrix, double *x, double *y);
+
+Point
+prima_matrix_apply_to_int( Matrix matrix, double x, double y);
+
+void
+prima_matrix_apply2( Matrix matrix, NPoint *src, NPoint *dst, int n_points);
+
+void
+prima_matrix_apply2_to_int( Matrix matrix, NPoint *src, Point *dst, int n_points);
+
+Point*
+prima_matrix_transform_to_int( Matrix martix, NPoint *src, Bool src_is_modifiable, int n_points);
+
+Bool
+prima_matrix_read_sv( SV * matrix, Matrix ctx);
+
+Bool
+prima_matrix_is_identity( Matrix matrix);
+
+void
+prima_matrix_set_identity( Matrix matrix);
+
+Bool
+prima_matrix_is_square_rectangular( Matrix matrix, NRect *src_dest_rect, NPoint *dest_polygon);
+
 /* OS types */
 #define APC(const_name) CONSTANT(apc,const_name)
 START_TABLE(apc,UV)
