@@ -293,4 +293,48 @@ is_pict($i, "fill_chord",
 	"     "
 );
 
+# now with matrix
+$i->matrix([-1,0,0,1,5,0]);
+
+$i->clear;
+$i->fill_chord(2,2,5,5,0,90);
+is_pict($i, "fill_chord with matrix",
+	"   * ".
+	"  *  ".
+	" *   ".
+	"     ".
+	"     "
+);
+
+$i->clear;
+$i->polyline([1,1,4,1,1,4,4,4]);
+is_pict($i, "polyline with matrix",
+	" ****".
+	"   * ".
+	"  *  ".
+	" ****".
+	"     "
+);
+
+$i->clear;
+$i->rectangle(1,1,4,4);
+is_pict($i, "rectangle with matrix",
+	" ****".
+	" *  *".
+	" *  *".
+	" ****".
+	"     "
+);
+
+$i->clear;
+$i->bar(1,1,4,4);
+is_pict($i, "bar with matrix",
+	" ****".
+	" ****".
+	" ****".
+	" ****".
+	"     "
+);
+
+
 done_testing;

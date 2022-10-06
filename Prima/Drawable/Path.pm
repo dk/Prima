@@ -94,8 +94,13 @@ sub matrix_multiply
 sub matrix
 {
 	my ( $self, @m ) = @_;
-	@_ == 7 or Carp::croak('bad parameters to matrix');
-	$self->cmd( matrix => @m );
+	if ( (1 == @m) && ref($m[0]) ) {
+		$self->cmd( matrix => @{$m[0]} );
+	} elsif ( @m == 6 ) {
+		$self->cmd( matrix => @m );
+	} else {
+		Carp::croak('bad parameters to matrix');
+	}
 }
 
 sub identity  { 1, 0, 0, 1, 0, 0 }
@@ -1118,6 +1123,19 @@ sub region
 	$reg ? $reg->combine($_, $rgnop) : ($reg = $_)
 		for map { Prima::Region->new( polygon => $_, fillMode => $mode) } $self->points(fill => 1);
 	return $reg;
+}
+
+sub _debug_commands
+{
+	my $self = shift;
+	my $c = $self->{commands};
+	for ( my $i = 0; $i < @$c; ) {
+		my ($cmd,$len) = @$c[$i,$i+1];
+		my @p = @$c[$i+2..$i+$len+1];
+		@p = map { 'ARRAY' eq ref ? "[@$_]" : $_ } @p;
+		print STDERR ".$cmd(@p)\n";
+		$i += $len + 2;
+	}
 }
 
 1;

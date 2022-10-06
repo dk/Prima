@@ -139,16 +139,28 @@ prima_matrix_is_square_rectangular( Matrix matrix, NRect *src_dest_rect, NPoint 
 		src_dest_rect->bottom = p[0].y;
 		src_dest_rect->right  = p[1].x;
 		src_dest_rect->top    = p[2].y;
-		return true;
 	} else if (p[0].x == p[1].x && p[0].y == p[3].y && p[3].x == p[2].x && p[1].y == p[2].y) {
 		src_dest_rect->left   = p[0].x;
 		src_dest_rect->bottom = p[0].y;
 		src_dest_rect->right  = p[2].x;
 		src_dest_rect->top    = p[1].y;
-		return true;
 	} else {
 		return false;
 	}
+
+	if ( src_dest_rect->left > src_dest_rect->right ) {
+		double x = src_dest_rect->left;
+		src_dest_rect->left = src_dest_rect->right;
+		src_dest_rect->right = x;
+	}
+
+	if ( src_dest_rect->bottom > src_dest_rect->top ) {
+		double y = src_dest_rect->bottom;
+		src_dest_rect->bottom = src_dest_rect->top;
+		src_dest_rect->top = y;
+	}
+
+	return true;
 }
 
 #ifdef __cplusplus

@@ -546,7 +546,8 @@ Drawable_matrix( Handle self, Bool set, SV * svmatrix)
 
 		av = newAV();
 		for ( i = 0; i < 6; i++) av_push( av, newSVnv((*matrix)[i]));
-		return newRV_noinc(( SV *) av);
+		svmatrix = newRV_noinc(( SV *) av);
+		return sv_bless(svmatrix, gv_stashpv("Prima::matrix", GV_ADD));
 	} else {
 		if ( SvROK(svmatrix) && ( SvTYPE( SvRV(svmatrix)) == SVt_PVAV)) {
 			Matrix matrix;

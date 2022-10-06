@@ -242,14 +242,19 @@ sub stroke_img_primitive
 	my $path = $self->new_path;
 	my @offset  = $self->translate;
 	$path->translate(@offset);
+	my $matrix = $self-> matrix;
+	$path->matrix( $matrix );
 	$path->$request(@_);
 	my $ok = 1;
+
 	if ( int($self->lineWidth + .5) == 0 ) {
 		# paths produce floating point coordinates and line end arcs,
 		# here we need internal pixel-wise plotting
+		$self-> matrix( $Prima::matrix::identity );
 		for my $pp ( map { @$_ } @{ $path->points } ) {
 			last unless $ok &= $self->polyline($pp);
 		}
+		$self-> matrix( $matrix );
 		return $ok;
 	}
 
@@ -271,6 +276,7 @@ sub stroke_img_primitive
 	return unless $self->graphic_context_push;
 	$self->fillPattern(fp::Solid);
 	$self->translate(0,0);
+	$self->matrix( $Prima::matrix::identity );
 	if ( $self-> rop2 == rop::CopyPut && $self->linePattern ne lp::Solid && $self->linePattern ne lp::Null ) {
 		$self->color($self->backColor);
 		my $path3 = $path->widen( linePattern => lp::Solid );
@@ -290,9 +296,13 @@ sub stroke_img_primitive
 
 sub fill_img_primitive
 {
-	my ( $self, $request ) = (shift, shift);
+	my ( $self, $request, @p ) = @_;
+
+	return unless $self->graphic_context_push;
 	my $path = $self->new_path;
-	$path->$request(@_);
+	$path->matrix( $self->matrix);
+	$path->$request(@p);
+
 	my @offset  = $self->translate;
 	my $region1 = $path->region( $self-> fillMode);
 	$region1->offset(@offset);
@@ -301,10 +311,13 @@ sub fill_img_primitive
 	my @box = $region1->box;
 	$box[$_+2] += $box[$_] for 0,1;
 	$self->region($region1);
+
 	$self->translate(0,0);
+	$self->matrix($Prima::matrix::identity);
 	my $ok = $self->bar(@box);
-	$self->translate(@offset);
-	$self->region($region2);
+
+	$self->graphic_context_pop;
+
 	return $ok;
 }
 
@@ -319,13 +332,16 @@ sub stroke_imgaa_primitive
 	return 0 unless $aa->can_aa;
 
 	my $path = $self->new_path;
+	$path->matrix( $self-> matrix );
 	$path->$request(@_);
 	$path = $path->widen(
 		linePattern => ( $lp eq lp::Null) ? lp::Solid : $lp
 	);
+
 	return unless $self->graphic_context_push;
 	$self->fillPattern(fp::Solid);
 	$self->fillMode(fm::Winding);
+	$self->matrix($Prima::matrix::identity);
 	$self->color($self->backColor) if $lp eq lp::Null;
 	my $ok = 1;
 	for ($path->points(fill => 1)) {
@@ -339,14 +355,23 @@ sub stroke_imgaa_primitive
 sub fill_imgaa_primitive
 {
 	my ( $self, $request ) = (shift, shift);
-	my $path = $self->new_path;
-	$path->$request(@_);
+
 	my $aa = $self->new_aa_surface;
 	return 0 unless $aa->can_aa;
+
+	my $ok = 1;
+	my $path = $self->new_path;
+	my $m = $self->matrix;
+	$path->matrix($m);
+	$path->$request(@_);
+	$self->matrix($Prima::matrix::identity);
 	for ($path->points(fill => 1)) {
-		return 0 unless $aa->fillpoly($_);
+		next if $aa->fillpoly($_);
+		$ok = 0;
+		last;
 	}
-	return 1;
+	$self->matrix($Prima::matrix::identity);
+	return $ok;
 }
 
 sub stroke_primitive
