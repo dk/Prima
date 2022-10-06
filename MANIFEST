@@ -47,6 +47,9 @@ class/File.cls
 class/Icon.c
 class/Icon.cls
 class/Image.c
+class/Image/conv.c
+class/Image/io.c
+class/Image/primitive.c
 class/Image.cls
 class/Menu.c
 class/Menu.cls
@@ -168,6 +171,7 @@ include/guts.h
 include/img.h
 include/img_conv.h
 include/Drawable_private.h
+include/Image_private.h
 include/unix/guts.h
 include/unix/queue.h
 include/win32/win32guts.h
