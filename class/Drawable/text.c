@@ -45,7 +45,7 @@ read_subarray( AV * av, int index,
 }
 
 Bool
-read_glyphs( PGlyphsOutRec t, SV * text, Bool indexes_required, const char * caller)
+Drawable_read_glyphs( PGlyphsOutRec t, SV * text, Bool indexes_required, const char * caller)
 {
 	int len;
 	AV* av;
@@ -114,7 +114,7 @@ NO_ADVANCES:
 }
 
 int
-check_length( int from, int len, int real_len )
+Drawable_check_length( int from, int len, int real_len )
 {
 	if ( len < 0 ) len = real_len;
 	if ( from < 0 ) return 0;
@@ -124,7 +124,7 @@ check_length( int from, int len, int real_len )
 }
 
 char * 
-hop_text(char * start, Bool utf8, int from)
+Drawable_hop_text(char * start, Bool utf8, int from)
 {
 	if ( !utf8 ) return start + from;
 	while ( from-- ) start = (char*)utf8_hop((U8*)start, 1);
@@ -132,7 +132,7 @@ hop_text(char * start, Bool utf8, int from)
 }
 
 void 
-hop_glyphs(GlyphsOutRec * t, int from, int len)
+Drawable_hop_glyphs(GlyphsOutRec * t, int from, int len)
 {
 	if ( from == 0 && len == t->len ) return;
 
@@ -174,21 +174,21 @@ Drawable_text_out( Handle self, SV * text, int x, int y, int from, int len)
 		Bool   utf8 = prima_is_utf8_sv( text);
 		CHECK_GP(false);
 		if ( utf8) dlen = prima_utf8_length(c_text, dlen);
-		if ((len = check_length(from,len,dlen)) == 0)
+		if ((len = Drawable_check_length(from,len,dlen)) == 0)
 			return true;
-		c_text = hop_text(c_text, utf8, from);
+		c_text = Drawable_hop_text(c_text, utf8, from);
 		ok = apc_gp_text_out( self, c_text, x, y, len, utf8 ? toUTF8 : 0);
 		if ( !ok) perl_error();
 	} else if ( SvTYPE( SvRV( text)) == SVt_PVAV) {
 		GlyphsOutRec t;
 		CHECK_GP(false);
-		if (!read_glyphs(&t, text, 0, "Drawable::text_out"))
+		if (!Drawable_read_glyphs(&t, text, 0, "Drawable::text_out"))
 			return false;
 		if (t.len == 0)
 			return true;
-		if (( len = check_length(from,len,t.len)) == 0)
+		if (( len = Drawable_check_length(from,len,t.len)) == 0)
 			return true;
-		hop_glyphs(&t, from, len);
+		Drawable_hop_glyphs(&t, from, len);
 		ok = apc_gp_glyphs_out( self, &t, x, y);
 		if ( !ok) perl_error();
 	} else {
@@ -199,7 +199,7 @@ Drawable_text_out( Handle self, SV * text, int x, int y, int from, int len)
 }
 
 int
-get_glyphs_width( Handle self, PGlyphsOutRec t, Bool add_overhangs)
+Drawable_get_glyphs_width( Handle self, PGlyphsOutRec t, Bool add_overhangs)
 {
 	int i, ret;
 	uint16_t * advances = t->advances;
@@ -211,13 +211,13 @@ get_glyphs_width( Handle self, PGlyphsOutRec t, Bool add_overhangs)
 		PFontABC abc;
 		uint16_t glyph1 = t->glyphs[0], glyph2 = t->glyphs[t->len - 1];
 
-		abc = call_get_font_abc( self, glyph1, glyph1, toGlyphs);
+		abc = Drawable_call_get_font_abc( self, glyph1, glyph1, toGlyphs);
 		if ( !abc ) return ret;
 		ret += ( abc->a < 0 ) ? (-abc->a + .5) : 0;
 
 		if ( glyph1 != glyph2 ) {
 			free(abc);
-			abc = call_get_font_abc( self, glyph2, glyph2, toGlyphs);
+			abc = Drawable_call_get_font_abc( self, glyph2, glyph2, toGlyphs);
 			if ( !abc ) return ret;
 		}
 		ret += ( abc->c < 0 ) ? (-abc->c + .5) : 0;
@@ -243,24 +243,24 @@ Drawable_get_text_width( Handle self, SV * text, int flags, int from, int len)
 			flags |= toUTF8;
 		} else
 			flags &= ~toUTF8;
-		if (( len = check_length(from,len,dlen)) == 0)
+		if (( len = Drawable_check_length(from,len,dlen)) == 0)
 			return 0;
-		c_text = hop_text(c_text, flags & toUTF8, from);
+		c_text = Drawable_hop_text(c_text, flags & toUTF8, from);
 		gpENTER(0);
 		res = apc_gp_get_text_width( self, c_text, len, flags);
 		gpLEAVE;
 	} else if ( SvTYPE( SvRV( text)) == SVt_PVAV) {
 		GlyphsOutRec t;
 		CHECK_GP(0);
-		if (!read_glyphs(&t, text, 0, "Drawable::get_text_width"))
+		if (!Drawable_read_glyphs(&t, text, 0, "Drawable::get_text_width"))
 			return false;
 		if (t.len == 0)
 			return true;
-		if (( len = check_length(from,len,t.len)) == 0)
+		if (( len = Drawable_check_length(from,len,t.len)) == 0)
 			return 0;
-		hop_glyphs(&t, from, len);
+		Drawable_hop_glyphs(&t, from, len);
 		if (t.advances)
-			return get_glyphs_width(self, &t, flags & toAddOverhangs);
+			return Drawable_get_glyphs_width(self, &t, flags & toAddOverhangs);
 		gpENTER(0);
 		res = apc_gp_get_glyphs_width( self, &t);
 		gpLEAVE;
@@ -285,7 +285,7 @@ get_glyphs_box( Handle self, PGlyphsOutRec t, Point * pt)
 	pt[0].y = pt[2]. y = var-> font. ascent - 1;
 	pt[1].y = pt[3]. y = - var-> font. descent;
 	pt[4].y = pt[0]. x = pt[1].x = 0;
-	pt[3].x = pt[2]. x = pt[4].x = get_glyphs_width(self, t, false);
+	pt[3].x = pt[2]. x = pt[4].x = Drawable_get_glyphs_width(self, t, false);
 
 	text_out_baseline = ( my-> textOutBaseline == Drawable_textOutBaseline) ?
 		apc_gp_get_text_out_baseline(self) :
@@ -326,20 +326,20 @@ Drawable_get_text_box( Handle self, SV * text, int from, int len )
 			dlen = utf8_length(( U8*) c_text, ( U8*) c_text + dlen);
 			flags |= toUTF8;
 		}
-		if ((len = check_length(from,len,dlen)) == 0)
+		if ((len = Drawable_check_length(from,len,dlen)) == 0)
 			return newRV_noinc(( SV *) newAV());
-		c_text = hop_text(c_text, flags & toUTF8, from);
+		c_text = Drawable_hop_text(c_text, flags & toUTF8, from);
 		gpENTER( newRV_noinc(( SV *) newAV()));
 		p = apc_gp_get_text_box( self, c_text, len, flags);
 		gpLEAVE;
 	} else if ( SvTYPE( SvRV( text)) == SVt_PVAV) {
 		GlyphsOutRec t;
 		CHECK_GP(NULL_SV);
-		if (!read_glyphs(&t, text, 0, "Drawable::get_text_box"))
+		if (!Drawable_read_glyphs(&t, text, 0, "Drawable::get_text_box"))
 			return false;
-		if (( len = check_length(from,len,t.len)) == 0)
+		if (( len = Drawable_check_length(from,len,t.len)) == 0)
 			return newRV_noinc(( SV *) newAV());
-		hop_glyphs(&t, from, len);
+		Drawable_hop_glyphs(&t, from, len);
 		if (t.advances) {
 			if (!( p = malloc( sizeof(Point) * 5 )))
 				return newRV_noinc(( SV *) newAV());

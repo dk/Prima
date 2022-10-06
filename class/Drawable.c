@@ -90,7 +90,7 @@ Drawable_done( Handle self)
 		unprotect_object(var-> fillPatternImage);
 		var-> fillPatternImage = NULL_HANDLE;
 	}
-	clear_font_abc_caches( self);
+	Drawable_clear_font_abc_caches( self);
 	apc_gp_done( self);
 	inherited done( self);
 }
@@ -118,7 +118,7 @@ Drawable_begin_paint( Handle self)
 void
 Drawable_end_paint( Handle self)
 {
-	clear_font_abc_caches( self);
+	Drawable_clear_font_abc_caches( self);
 	opt_clear( optInDraw);
 	var->current_state = var->saved_state;
 	var->alpha     = apc_gp_get_alpha(self);
@@ -139,7 +139,7 @@ Drawable_begin_paint_info( Handle self)
 void
 Drawable_end_paint_info( Handle self)
 {
-	clear_font_abc_caches( self);
+	Drawable_clear_font_abc_caches( self);
 	opt_clear( optInDrawInfo);
 	var->alpha     = apc_gp_get_alpha(self);
 	var->antialias = apc_gp_get_antialias( self );

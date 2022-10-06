@@ -299,13 +299,13 @@ analyze_fonts( Handle self, PTextShapeRec t, uint16_t * fonts)
 	int i;
 	uint32_t *text = t-> text;
 	int pitch      = (t->flags >> toPitch) & fpMask;
-	char * key     = font_key(var->font.name, var->font.style);
+	char * key     = Drawable_font_key(var->font.name, var->font.style);
 	uint16_t fid   = PTR2IV(hash_fetch(font_substitutions, key, strlen(key)));
 
 	bzero(fonts, t->len * sizeof(uint16_t));
 
 	for ( i = 0; i < t->len; i++) {
-		unsigned int nfid = find_font(*(text++), pitch, var->font.style, fid);
+		unsigned int nfid = Drawable_find_font(*(text++), pitch, var->font.style, fid);
 		if ( nfid != fid ) fonts[i] = nfid;
 	}
 
@@ -429,7 +429,7 @@ shape_unicode(Handle self, PTextShapeRec t, PTextShapeFunc shaper,
 			if ( run.fonts[0] == 0 ) {
 				apc_gp_set_font( self, &var->font);
 			} else {
-				if ( switch_font(self, run.fonts[0])) {
+				if ( Drawable_switch_font(self, run.fonts[0])) {
 #ifdef _DEBUG
 					printf("%d: set font #%d\n", run_offs, run.fonts[0]);
 #endif
@@ -492,7 +492,7 @@ bidi_only_shaper( Handle self, PTextShapeRec r)
 	return true;
 }
 
-Bool
+static Bool
 lang_is_rtl(void)
 {
 	static int cached = -1;

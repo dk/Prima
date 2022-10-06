@@ -81,7 +81,7 @@ prima_cleanup_font_mapper(void)
 }
 
 char *
-font_key( const char * name, unsigned int style)
+Drawable_font_key( const char * name, unsigned int style)
 {
 	static char buf[2048];
 	if ( !name ) return NULL;
@@ -97,7 +97,7 @@ prima_font_mapper_save_font(const char * name, unsigned int style)
 	PFont f;
 	char * key;
 
-	key = font_key(name, style);
+	key = Drawable_font_key(name, style);
 	if ( name && PTR2IV(hash_fetch(font_substitutions, key, strlen(key))) != 0)
 		return NULL;
 
@@ -129,7 +129,7 @@ prima_font_mapper_save_font(const char * name, unsigned int style)
 }
 
 void
-query_ranges(PPassiveFontEntry pfe)
+Drawable_query_ranges(PPassiveFontEntry pfe)
 {
 	Font f;
 	unsigned long * ranges;
@@ -225,7 +225,7 @@ can_substitute(uint32_t c, int pitch, int fid)
 		return false;
 
 	if ( !pfe-> ranges_queried )
-		query_ranges(pfe);
+		Drawable_query_ranges(pfe);
 
 	if ( 
 		pitch != fpDefault && 
@@ -254,7 +254,7 @@ can_substitute(uint32_t c, int pitch, int fid)
 }
 
 unsigned int
-find_font(uint32_t c, int pitch, int style, uint16_t preferred_font)
+Drawable_find_font(uint32_t c, int pitch, int style, uint16_t preferred_font)
 {
 	unsigned int i, def_style;
 	unsigned int page = c >> FONTMAPPER_VECTOR_BASE;
@@ -282,7 +282,7 @@ find_font(uint32_t c, int pitch, int style, uint16_t preferred_font)
 		uint16_t fid;
 		apc_font_default( &font);
 		font_mapper_default_id[def_style] = -2;
-		key = font_key(font.name, def_style);
+		key = Drawable_font_key(font.name, def_style);
 		fid = PTR2IV(hash_fetch(font_substitutions, key, strlen(key)));
 		if ( fid > 0 ) 
 			font_mapper_default_id[def_style] = fid;
@@ -317,12 +317,12 @@ find_font(uint32_t c, int pitch, int style, uint16_t preferred_font)
 
 	if ( style >= 0 ) {
 		if ( style & fsThin )
-			return find_font(c, pitch, style & ~fsThin, preferred_font);
+			return Drawable_find_font(c, pitch, style & ~fsThin, preferred_font);
 		if ( style & fsBold )
-			return find_font(c, pitch, style & ~fsBold, preferred_font);
+			return Drawable_find_font(c, pitch, style & ~fsBold, preferred_font);
 		if ( style & fsItalic )
-			return find_font(c, pitch, style & ~fsItalic, preferred_font);
-		return find_font(c, pitch, -1, preferred_font);
+			return Drawable_find_font(c, pitch, style & ~fsItalic, preferred_font);
+		return Drawable_find_font(c, pitch, -1, preferred_font);
 	}
 
 #ifdef _DEBUG
@@ -346,7 +346,7 @@ prima_font_mapper_action(int action, PFont font)
 	case pfmaEnable:
 	case pfmaDisable:
 	case pfmaGetIndex:
-		key = font_key(font->name, font->style);
+		key = Drawable_font_key(font->name, font->style);
 		fid = PTR2IV(hash_fetch(font_substitutions, key, strlen(key)));
 		if ( fid == 0 ) return -1;
 		pfe = PASSIVE_FONT(fid);
@@ -391,7 +391,7 @@ prima_font_mapper_action(int action, PFont font)
 }
 
 Bool
-switch_font( Handle self, uint16_t fid)
+Drawable_switch_font( Handle self, uint16_t fid)
 {
 	Font src, dst;
 	src = PASSIVE_FONT(fid)->font;

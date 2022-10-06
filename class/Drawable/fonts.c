@@ -7,7 +7,7 @@ extern "C" {
 #endif
 
 void
-clear_font_abc_caches( Handle self)
+Drawable_clear_font_abc_caches( Handle self)
 {
 	PList u;
 	if (( u = var-> font_abc_glyphs)) {
@@ -221,7 +221,7 @@ Drawable_get_font( Handle self)
 void
 Drawable_set_font( Handle self, Font font)
 {
-	clear_font_abc_caches( self);
+	Drawable_clear_font_abc_caches( self);
 	apc_font_pick( self, &font, &var-> font);
 	apc_gp_set_font( self, &var-> font);
 }

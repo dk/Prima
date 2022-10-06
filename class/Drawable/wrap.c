@@ -40,7 +40,7 @@ fill_abc_list_cache( PList * cache, int base, PFontABC abc)
 }
 
 PFontABC
-call_get_font_abc( Handle self, unsigned int from, unsigned int to, int flags)
+Drawable_call_get_font_abc( Handle self, unsigned int from, unsigned int to, int flags)
 {
 	PFontABC abc;
 
@@ -86,7 +86,7 @@ call_get_font_abc( Handle self, unsigned int from, unsigned int to, int flags)
 static PFontABC
 call_get_font_abc_base( Handle self, unsigned int base, int flags)
 {
-	return call_get_font_abc( self, base * 256, base * 256 + 255, flags);
+	return Drawable_call_get_font_abc( self, base * 256, base * 256 + 255, flags);
 }
 
 static PFontABC
@@ -208,13 +208,13 @@ query_abc_range_glyphs( Handle self, GlyphWrapRec * t, unsigned int base)
 		bzero(used_fonts, sizeof(used_fonts));
 		bzero(filled_entries, sizeof(filled_entries));
 		used_fonts[0] = 0x01; /* fid = 0 */
-		key = font_key(var->font.name, var->font.style);
+		key = Drawable_font_key(var->font.name, var->font.style);
 		i = PTR2IV(hash_fetch(font_substitutions, key, strlen(key)));
 		if ( i > 0 ) {
 			/* copy ranges from subst table */
 			pfe = PASSIVE_FONT(i);
 			if ( !pfe-> ranges_queried )
-				query_ranges(pfe);
+				Drawable_query_ranges(pfe);
 			if ( pfe-> vectors.count <= page ) goto NO_FONT_ABC; /* should be there, or some error */
 			/* page covers the 256 range in whole */
 			fa = (Byte *) pfe-> vectors.items[ page ];
@@ -248,16 +248,16 @@ query_abc_range_glyphs( Handle self, GlyphWrapRec * t, unsigned int base)
 			used_fonts[fid >> 3] |= 1 << (fid & 7);
 
 			pfe = PASSIVE_FONT(fid);
-			if ( !switch_font(self, fid))
+			if ( !Drawable_switch_font(self, fid))
 				continue;
 			font_changed = 1;
 
 			if ( !pfe-> ranges_queried )
-				query_ranges(pfe);
+				Drawable_query_ranges(pfe);
 			if ( pfe-> vectors.count <= page )
 				continue;
 
-			if ( !( abc2 = call_get_font_abc( self, from, to, toGlyphs)))
+			if ( !( abc2 = Drawable_call_get_font_abc( self, from, to, toGlyphs)))
 				continue;
 
 			fa = (Byte *) pfe-> vectors.items[ page ];
@@ -403,14 +403,14 @@ text_init_wrap_rec( Handle self, SV * text, int width, int options, int tabInden
 	t-> utf8_text = prima_is_utf8_sv( text);
 	if ( t-> utf8_text) {
 		t-> utf8_textLen = prima_utf8_length( t-> text, tlen);
-		if (( t-> utf8_textLen = check_length(from, len, t-> utf8_textLen)) == 0)
+		if (( t-> utf8_textLen = Drawable_check_length(from, len, t-> utf8_textLen)) == 0)
 			from = 0;
-		t-> text = hop_text(t->text, true, from);
+		t-> text = Drawable_hop_text(t->text, true, from);
 		t-> textLen = utf8_hop(( U8*) t-> text, t-> utf8_textLen) - (U8*) t-> text;
 	} else {
-		if ((tlen = check_length(from, len, tlen)) == 0)
+		if ((tlen = Drawable_check_length(from, len, tlen)) == 0)
 			from = 0;
-		t-> text = hop_text(t->text, false, from);
+		t-> text = Drawable_hop_text(t->text, false, from);
 		t-> utf8_textLen = t-> textLen = tlen;
 	}
 
@@ -662,7 +662,7 @@ glyphs_fit_quickcheck(Handle self, SV * glyphs, int width, int options, TextWrap
 	AV * av;
 	if (!(
 		(g->len == 0) ||
-		(g->advances && ( width >= get_glyphs_width(self, g, true)))
+		(g->advances && ( width >= Drawable_get_glyphs_width(self, g, true)))
 	))
 		return NULL;
 
@@ -1166,11 +1166,11 @@ glyphs_wrap( Handle self, SV * text, int width, int options, int from, int len)
 	GlyphsOutRec g;
 	SV *qt, *ret;
 
-	if (!read_glyphs(&g, text, 1, "Drawable::text_wrap"))
+	if (!Drawable_read_glyphs(&g, text, 1, "Drawable::text_wrap"))
 		return NULL_SV;
-	if ((len = check_length(from, len, g.len)) == 0)
+	if ((len = Drawable_check_length(from, len, g.len)) == 0)
 		from = 0;
-	hop_glyphs(&g, from, len);
+	Drawable_hop_glyphs(&g, from, len);
 	if (( qt = glyphs_fit_quickcheck(self, text, width, options, NULL, &g)) != NULL)
 		return qt;
 	glyph_init_wrap_rec( self, width, options, 0, &g, &t);
@@ -1213,7 +1213,7 @@ string_glyphs_wrap( Handle self, SV * text, int width, int options, int tabInden
 		warn("Drawable::text_wrap: not a glyph array passed");
 		return NULL_SV;
 	}
-	if (!read_glyphs(&g, glyphs, 1, "Drawable::text_wrap"))
+	if (!Drawable_read_glyphs(&g, glyphs, 1, "Drawable::text_wrap"))
 		return NULL_SV;
 	text_init_wrap_rec( self, text, width, options, tabIndent, 0, -1, &tw);
 	if ( g.text_len != tw.utf8_textLen) {
