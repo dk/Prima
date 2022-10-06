@@ -425,6 +425,15 @@ Image_bar( Handle self, double x1, double y1, double x2, double y2)
 }
 
 Bool
+Image_bar_alpha(Handle self, int alpha, int x1, int y1, int x2, int y2)
+{
+	if (opt_InPaint)
+		return inherited bar_alpha( self, alpha, x1, y1, x2, y2);
+	else
+		return false;
+}
+
+Bool
 Image_bars( Handle self, SV * rects)
 {
 	Point t;

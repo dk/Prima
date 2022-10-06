@@ -38,6 +38,7 @@ object Prima::Image( Prima::Drawable)
 	method UV     add_notification( char * name, SV * subroutine, Handle referer = NULL_HANDLE, int index = -1);
 	method Bool   arc( double x, double y, double dX, double dY, double startAngle, double endAngle);
 	method Bool   bar(double x1, double y1, double x2, double y2);
+	method Bool   bar_alpha(int alpha, int x1=-1, int y1=-1, int x2=-1, int y2=-1);
 	method Bool   bars(SV * rects);
 	method Handle bitmap();
 	method Bool   begin_paint();
