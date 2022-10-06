@@ -1,5 +1,6 @@
 #include "apricot.h"
 #include "Icon.h"
+#include "Image_private.h"
 #include "img_conv.h"
 #include <Icon.inc>
 
@@ -395,9 +396,18 @@ Icon_maskIndex( Handle self, Bool set, int index)
 SV *
 Icon_maskPixel( Handle self, Bool set, int x, int y, SV * pixel)
 {
+	Point pt;
+	Matrix matrix;
+
 	if (!set) {
 		if ( opt_InPaint)
 			return inherited pixel(self,false,x,y,pixel);
+
+		Image_prepare_matrix(self, matrix);
+		pt = prima_matrix_apply_to_int( matrix, x, y );
+		x = pt.x;
+		y = pt.y;
+
 		if (x >= var->w || x < 0 || y >= var->h || y < 0)
 			return newSViv(clInvalid);
 
@@ -418,6 +428,12 @@ Icon_maskPixel( Handle self, Bool set, int x, int y, SV * pixel)
 		IV color;
 		if ( is_opt( optInDraw))
 			return inherited pixel(self,true,x,y,pixel);
+
+		Image_prepare_matrix(self, matrix);
+		pt = prima_matrix_apply_to_int( matrix, x, y );
+		x = pt.x;
+		y = pt.y;
+
 
 		if ( x >= var->w || x < 0 || y >= var->h || y < 0)
 			return NULL_SV;
