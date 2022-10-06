@@ -12,8 +12,8 @@
 extern "C" {
 #endif
 
-static void
-prepare_matrix( Handle self, Matrix ctx)
+void
+Image_prepare_matrix( Handle self, Matrix ctx)
 {
 	if ( my-> matrix == Drawable_matrix) {
 		Matrix *matrix = apc_gp_get_matrix(self);
@@ -38,7 +38,7 @@ Image_pixel( Handle self, Bool set, int x, int y, SV * pixel)
 		if ( opt_InPaint)
 			return inherited pixel(self,false,x,y,pixel);
 
-		prepare_matrix(self, matrix);
+		Image_prepare_matrix(self, matrix);
 		pt = prima_matrix_apply_to_int( matrix, x, y );
 		x = pt.x;
 		y = pt.y;
@@ -108,7 +108,7 @@ Image_pixel( Handle self, Bool set, int x, int y, SV * pixel)
 		if ( is_opt( optInDraw))
 			return inherited pixel(self,true,x,y,pixel);
 
-		prepare_matrix(self, matrix);
+		Image_prepare_matrix(self, matrix);
 		pt = prima_matrix_apply_to_int( matrix, x, y );
 		x = pt.x;
 		y = pt.y;
@@ -393,7 +393,7 @@ Image_bar( Handle self, double x1, double y1, double x2, double y2)
 		return ok;
 	}
 
-	prepare_matrix(self, matrix);
+	Image_prepare_matrix(self, matrix);
 	if ( prima_matrix_is_square_rectangular( matrix, &nrect, npoly)) {
 		_x1 = floor(nrect.left   + .5);
 		_y1 = floor(nrect.bottom + .5);
@@ -467,7 +467,7 @@ Image_bars( Handle self, SV * rects)
 			return false;
 		t = my->get_translate(self);
 		prepare_fill_context(self, t, &ctx);
-		prepare_matrix(self, matrix);
+		Image_prepare_matrix(self, matrix);
 
 		for ( i = 0, r = p; i < count; i++, r++) {
 			ImgPaintContext ctx2 = ctx;
@@ -548,7 +548,7 @@ Image_clear(Handle self, double x1, double y1, double x2, double y2)
 		} else {
 			Matrix matrix;
 			NRect nrect = {x1,y1,x2,y2};
-			prepare_matrix(self, matrix);
+			Image_prepare_matrix(self, matrix);
 			if ( prima_matrix_is_square_rectangular( matrix, &nrect, npoly)) {
 				_x1 = floor(nrect.left   + .5);
 				_y1 = floor(nrect.bottom + .5);
@@ -648,7 +648,7 @@ Image_flood_fill( Handle self, int x, int y, Color color, Bool singleBorder)
 	x += t.x;
 	y += t.y;
 
-	prepare_matrix(self, matrix);
+	Image_prepare_matrix(self, matrix);
 	pp = prima_matrix_apply_to_int( matrix, x, y );
 	prepare_fill_context(self, t, &ctx);
 	Image_color2pixel( self, color, (Byte*)&px);
@@ -668,7 +668,7 @@ Image_line(Handle self, double x1, double y1, double x2, double y2)
 		unsigned char lp[256];
 		Point poly[2];
 
-		prepare_matrix(self, matrix);
+		Image_prepare_matrix(self, matrix);
 		poly[0] = prima_matrix_apply_to_int( matrix, x1, y1);
 		poly[1] = prima_matrix_apply_to_int( matrix, x2, y2);
 
@@ -695,7 +695,7 @@ Image_lines( Handle self, SV * points)
 		if (( lines = prima_read_array( points, "Image::lines", 'd', 4, 0, -1, &count, &do_free)) == NULL)
 			return false;
 		prepare_line_context( self, lp, &ctx);
-		prepare_matrix(self, matrix);
+		Image_prepare_matrix(self, matrix);
 		for (i = 0, p = lines; i < count; i++, p += 2) {
 			Point segment[2];
 			ctx2 = ctx;
@@ -725,7 +725,7 @@ Image_polyline( Handle self, SV * points)
 
 		if (( raw_points = prima_read_array( points, "Image::polyline", 'd', 2, 2, -1, &count, &free_raw_points)) == NULL)
 			return false;
-		prepare_matrix(self, matrix);
+		Image_prepare_matrix(self, matrix);
 		if (( lines = prima_matrix_transform_to_int( matrix, raw_points, free_raw_points, count)) == NULL )
 			goto FAIL;
 		prepare_line_context( self, lp, &ctx);
@@ -753,7 +753,7 @@ Image_rectangle(Handle self, double x1, double y1, double x2, double y2)
 		NPoint src[5] = { {x1,y1}, {x2,y1}, {x2,y2}, {x1,y2}, {x1,y1} };
 		Point dst[5];
 
-		prepare_matrix(self, matrix);
+		Image_prepare_matrix(self, matrix);
 		prima_matrix_apply2_to_int(matrix, src, dst, 5);
 		prepare_line_context( self, lp, &ctx);
 		return img_polyline(self, 5, dst, &ctx);
