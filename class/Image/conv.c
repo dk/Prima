@@ -422,7 +422,7 @@ integral_rotate( Handle self, int degrees)
 }
 
 static Bool
-generic_rotate( Handle self, float degrees)
+generic_rotate( Handle self, float degrees, ColorPixel fill)
 {
 	Image i;
 	int desired_type = var->type;
@@ -434,7 +434,7 @@ generic_rotate( Handle self, float degrees)
 		Bool ok;
 		int type = var->type;
 		my->set_type( self, desired_type );
-		ok = generic_rotate( self, degrees );
+		ok = generic_rotate( self, degrees, fill );
 		if ( is_opt( optPreserveType)) {
 			int conv = var-> conversion;
 			my-> set_conversion( self, ictNone);
@@ -444,7 +444,7 @@ generic_rotate( Handle self, float degrees)
 		return ok;
 	}
 
-	if (!img_generic_rotate( self, degrees, &i ))
+	if (!img_generic_rotate( self, degrees, &i, fill))
 		return false;
 
 	free( var->data);
@@ -589,7 +589,7 @@ Image_reset( Handle self, int new_type, RGBColor * palette, int palSize)
 }
 
 Bool
-Image_rotate( Handle self, double degrees)
+Image_rotate( Handle self, double degrees, SV * svfill)
 {
 	degrees = fmod(degrees, 360.0);
 	if ( degrees < 0 ) degrees += 360.0;
@@ -599,8 +599,13 @@ Image_rotate( Handle self, double degrees)
 
 	if ( degrees == 90.0 || degrees == 180.0 || degrees == 270.0 )
 		return integral_rotate(self, (int)degrees);
-	else
-		return generic_rotate(self, degrees);
+	else {
+		ColorPixel px;
+		bzero(&px, sizeof(px));
+		if (svfill != NULL_SV)
+			Image_read_pixel(self, svfill, &px);
+		return generic_rotate(self, degrees, px);
+	}
 }
 
 void

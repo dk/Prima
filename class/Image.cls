@@ -78,7 +78,7 @@ object Prima::Image( Prima::Drawable)
 	method void   premultiply_alpha(SV * alpha);
 	method Bool   put_image_indirect( Handle image, int x, int y, int xFrom, int yFrom, int xDestLen, int yDestLen, int xLen, int yLen, int rop);
 	method void   remove_notification( UV id);
-	method Bool   rotate( double degrees );
+	method Bool   rotate( double degrees, SV * fill = NULL_SV );
 	method Bool   rectangle(double x1, double y1, double x2, double y2);
 	method void   resample( double srcLo, double srcHi, double dstLo, double dstHi);
 	weird  int    save( SV *className, SV *filename, HV * profile);

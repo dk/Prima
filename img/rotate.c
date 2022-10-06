@@ -705,21 +705,63 @@ find_filter( int scaling )
 	return filter;
 }
 
+/* convert pixels of all types to floats, as resampling is in the float space */
+static void
+fix_ffills( int type, int channels, ColorPixel fill, float * ffill )
+{
+	Byte n, *src = fill, bpp = ( type & imBPP ) / 8;
+	for ( n = 0; n < channels; n++) {
+		if ( channels == 2 ) {
+			switch ( type & imBPP ) {
+			case sizeof(float)  * 8:
+				ffill[n] = *((float*)(src));
+				break;
+			case sizeof(double) * 8:
+				ffill[n] = *((double*)(src));
+				break;
+			default:
+				croak("panic: cannot convert pixel type %x to float", type);
+			}
+		} else {
+			switch ( type ) {
+			case imByte:
+				ffill[n] = *((Byte*)(src));
+				break;
+			case imShort:
+				ffill[n] = *((Short*)(src));
+				break;
+			case imLong:
+				ffill[n] = *((Long*)(src));
+				break;
+			case imFloat:
+				ffill[n] = *((float*)(src));
+				break;
+			case imDouble:
+				ffill[n] = *((double*)(src));
+				break;
+			default:
+				croak("panic: cannot convert pixel type %x to float", type);
+			}
+		}
+		src += bpp;
+	}
+}
+
 
 /* Fast rotation by Paeth algortihm. Accepts grayscale images with bpp >= 8, and 24 bpp RGBs */
 Bool
-img_generic_rotate( Handle self, float degrees, PImage output)
+img_generic_rotate( Handle self, float degrees, PImage output, ColorPixel fill)
 {
 	Bool apply_180 = false;
 	Image *i = (PImage)self, s0, s1, s2;
 	float sin1, tan2;
 	Point p[4], s1dim, s2dim, s3dim, s1min, s2min, s3min;
-	int channels;
+	int type, channels;
 	FilterFunc *filter = find_filter(i->scaling);
-	ColorPixel fill;
 	float ffill[3] = {0,0,0};
 
-	reduce_image_to_channels( i->type, NULL, &channels);
+	reduce_image_to_channels( i->type, &type, &channels);
+	fix_ffills( type, channels, fill, ffill );
 
 	if ( degrees < 270 && degrees > 90 ) {
 		degrees -= 180;
@@ -741,7 +783,6 @@ img_generic_rotate( Handle self, float degrees, PImage output)
 	))
 		return false;
 
-	bzero(fill, sizeof(fill));
 	if ( !create_tmp_image(i, channels, &s1, s1dim, fill))
 		return false;
 	img_fill_dummy( &s0, i->w * channels, i->h, s1.type, i->data, i->palette);
@@ -801,7 +842,7 @@ roundoff(float * matrix, int count)
 
 /* very special case for rotation */
 static int
-check_rotated_case( Handle self, float *matrix, PImage output)
+check_rotated_case( Handle self, float *matrix, PImage output, ColorPixel fill)
 {
 	if ( matrix[4] != 0.0 || matrix[5] != 0.0 ) return -1;
 
@@ -822,7 +863,7 @@ check_rotated_case( Handle self, float *matrix, PImage output)
 			} else if ( cos1 == -1.0 && sin1 == 0.0 ) 
 				return integral_rotate(self, 180, output);
 
-			return img_generic_rotate( self, angle * RAD, output);
+			return img_generic_rotate( self, angle * RAD, output, fill);
 		}
 	}
 	return -1;
@@ -1043,48 +1084,6 @@ add_offsetting( float mx, float my, ImgOpPipeline *iop)
 		add_op( iop, STEP_SHEAR_Y, 0.0, my);
 }
 
-/* convert pixels of all types to floats, as resampling is in the float space */
-static void
-fix_ffills( int type, int channels, ColorPixel fill, float * ffill )
-{
-	Byte n, *src = fill, bpp = ( type & imBPP ) / 8;
-	for ( n = 0; n < channels; n++) {
-		if ( channels == 2 ) {
-			switch ( type & imBPP ) {
-			case sizeof(float)  * 8:
-				ffill[n] = *((float*)(src));
-				break;
-			case sizeof(double) * 8:
-				ffill[n] = *((double*)(src));
-				break;
-			default:
-				croak("panic: cannot convert pixel type %x to float", type);
-			}
-		} else {
-			switch ( type ) {
-			case imByte:
-				ffill[n] = *((Byte*)(src));
-				break;
-			case imShort:
-				ffill[n] = *((Short*)(src));
-				break;
-			case imLong:
-				ffill[n] = *((Long*)(src));
-				break;
-			case imFloat:
-				ffill[n] = *((float*)(src));
-				break;
-			case imDouble:
-				ffill[n] = *((double*)(src));
-				break;
-			default:
-				croak("panic: cannot convert pixel type %x to float", type);
-			}
-		}
-		src += bpp;
-	}
-}
-
 /* Generic 2D transform applied through LDU decomposition as series of shears and/or scaling.
    Does not fare well with inputs that create interim images that are too large, f.ex.
    rotation to angles near 90,270. So it detects rotations to cover for at least these cases,
@@ -1105,7 +1104,7 @@ img_2d_transform( Handle self, float *matrix, ColorPixel fill, PImage output)
 	matrix[5] = matrix[5] - floorf(matrix[5]);
 	roundoff(matrix, 6);
 
-	if ((n = check_rotated_case(self, matrix, output)) >= 0)
+	if ((n = check_rotated_case(self, matrix, output, fill)) >= 0)
 		return n;
 
 	memset( &iop, 0, sizeof(iop));

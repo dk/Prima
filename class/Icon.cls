@@ -23,7 +23,7 @@ object Prima::Icon( Prima::Image)
 	method void       init( HV * profile);
 	method Handle     extract( int x, int y, int width, int height);
 	method Handle     dup();
-	method Bool       rotate( double degrees );
+	method Bool       rotate( double degrees, SV * fill = NULL_SV );
 	method void       set( HV * profile);
 	method IconHandle split();
 	method void       combine( Handle xorMask, Handle andMask);

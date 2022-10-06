@@ -825,7 +825,7 @@ Icon_bar_alpha( Handle self, int alpha, int x1, int y1, int x2, int y2)
 }
 
 Bool
-Icon_rotate( Handle self, double degrees)
+Icon_rotate( Handle self, double degrees, SV * svfill)
 {
 	Bool ok;
 	Image dummy;
@@ -840,9 +840,9 @@ Icon_rotate( Handle self, double degrees)
 	dummy.scaling = var->scaling;
 	dummy.mate    = var->mate;
 
-	ok = inherited rotate(self, degrees);
+	ok = inherited rotate(self, degrees, NULL_SV);
 	if ( ok ) {
-		ok = Image_rotate((Handle) &dummy, degrees);
+		ok = Image_rotate((Handle) &dummy, degrees, NULL_SV);
 		if ( ok ) {
 			var-> mask     = dummy.data;
 			var-> maskLine = dummy. lineSize;

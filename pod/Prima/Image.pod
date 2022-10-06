@@ -871,12 +871,14 @@ gray non-8 bit pixel values, by the code:
 
    $image-> resample( $image-> rangeLo, $image-> rangeHi, 0, 255);
 
-=item rotate DEGREES
+=item rotate DEGREES [,FILL_COLOR]
 
 Rotates the image. Where the angle is 90, 180, or 270 degrees, fast pixel
 flipping is used, otherwise fast Paeth rotation is used.  Eventual resampling
 can be controlled by C<scaling> property ( probably not worth it for functions
 with support of more than 1 pixel).
+
+Fills empty pixels with optional fill color.
 
 Resulting images can be 1 pixel too wide due to horizontal shearing applied
 twice, where in worst cases 1 pixel from the original image can take 3
@@ -928,7 +930,7 @@ Creates a new L<Prima::Region> object with the image as the data source.
 =item transform matrix => [a,b,c,d,x,y], [ fill => color ]
 
 Applies generic 2D transform matrix to the image, fills empty pixels with
-optional fill colors.
+optional fill color.
 
 Required option C<matrix> should point to an array of 6 float numbers,
 where these represent a standard 3x2 matrix for 2D transformation, f ex a
@@ -1021,6 +1023,11 @@ Applies premultiplication formula to each pixel
 
 where alpha is the corresponding alpha value for each coordinate.
 Only applicable when C<maskType> is <im::bpp8>.
+
+=item rotate, transform
+
+Applies same transformation as in C<Prima::Image> to both color and mask pixels.
+Ignores fill color, fills with zeros both planes.
 
 =item split
 
