@@ -1,6 +1,5 @@
 #include "apricot.h"
 #include "Icon.h"
-#include "Image_private.h"
 #include "img_conv.h"
 #include <Icon.inc>
 
@@ -13,6 +12,9 @@ extern "C" {
 #define inherited CImage->
 #define my  ((( PIcon) self)-> self)
 #define var (( PIcon) self)
+
+extern void
+Image_prepare_matrix( Handle self, Matrix ctx);
 
 static void
 produce_mask( Handle self)

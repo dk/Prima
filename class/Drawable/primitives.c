@@ -161,7 +161,7 @@ Drawable_fillpoly(Handle self, SV * points)
 		if ( !do_free ) {
 			void *newp;
 			int sz = count * 2 * sizeof(double);
-			if ( ( pp = malloc(sz)) == NULL ) {
+			if ( ( newp = malloc(sz)) == NULL ) {
 				warn("Not enough memory");
 				return false;
 			}
