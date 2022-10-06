@@ -1570,6 +1570,9 @@ prima_matrix_apply2( Matrix matrix, NPoint *src, NPoint *dst, int n_points);
 void
 prima_matrix_apply2_to_int( Matrix matrix, NPoint *src, Point *dst, int n_points);
 
+void
+prima_matrix_apply2_int_to_int( Matrix matrix, Point *src, Point *dst, int n_points);
+
 Point*
 prima_matrix_transform_to_int( Matrix martix, NPoint *src, Bool src_is_modifiable, int n_points);
 

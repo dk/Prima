@@ -51,6 +51,20 @@ prima_matrix_apply2_to_int( Matrix matrix, NPoint *src, Point *dst, int n)
 	}
 }
 
+void
+prima_matrix_apply2_int_to_int( Matrix matrix, Point *src, Point *dst, int n)
+{
+	int i;
+	for ( i = 0; i < n; i++) {
+		register double xx = matrix[0] * (*src).x + matrix[2] * (*src).y + matrix[4];
+		register double yy = matrix[1] * (*src).x + matrix[3] * (*src).y + matrix[5];
+		(*dst).x = floor( xx + .5 );
+		(*dst).y = floor( yy + .5 );
+		src++;
+		dst++;
+	}
+}
+
 Bool
 prima_matrix_read_sv( SV * m, Matrix ctx)
 {
