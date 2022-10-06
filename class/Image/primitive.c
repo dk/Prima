@@ -563,6 +563,7 @@ Image_clear(Handle self, double x1, double y1, double x2, double y2)
 			ctx.patternOffset.x -= t.x;
 			ctx.patternOffset.y -= t.y;
 			ctx.transparent = false;
+
 			ok = img_bar( self, _x1, _y1, _x2 - _x1 + 1, _y2 - _y1 + 1, &ctx);
 		} else {
 			SV *sv, *points;
