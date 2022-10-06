@@ -143,7 +143,7 @@ Drawable_fillpoly(Handle self, SV * points)
 	int count;
 	void *p;
 	Bool ret = false;
-	Bool do_free = true;
+	Bool do_free;
 	CHECK_GP(false);
 
 	if (( p = prima_read_array(
@@ -154,10 +154,24 @@ Drawable_fillpoly(Handle self, SV * points)
 	)) == NULL)
 		return false;
 
-	if ( var->alpha < 255 && !var->antialias ) {
+	if ( var->alpha < 255 && !var->antialias && IS_AA ) {
 		int i;
-		NPoint *pp = (NPoint*)p;
-		for ( i = 0; i < count; i++, pp++) TRUNC2(pp->x,pp->y);
+		NPoint *pp;
+
+		if ( !do_free ) {
+			void *newp;
+			int sz = count * 2 * sizeof(double);
+			if ( ( pp = malloc(sz)) == NULL ) {
+				warn("Not enough memory");
+				return false;
+			}
+			memcpy( newp, p, sz );
+			p = newp;
+			do_free = true;
+		}
+
+		for ( i = 0, pp = (NPoint*)p; i < count; i++, pp++)
+			TRUNC2(pp->x,pp->y);
 	}
 
 	ret = IS_AA ?
