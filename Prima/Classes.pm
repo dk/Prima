@@ -553,6 +553,16 @@ package Prima::Region;
 use vars qw(@ISA);
 @ISA = qw(Prima::Component);
 
+sub profile_default
+{
+	my $def = $_[ 0]-> SUPER::profile_default;
+	my %prf = (
+		owner           => undef,
+	);
+	@$def{keys %prf} = values %prf;
+	return $def;
+}
+
 sub origin { (shift->box)[0,1] }
 sub size   { (shift->box)[2,3] }
 sub rect
