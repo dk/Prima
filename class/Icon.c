@@ -1,5 +1,6 @@
 #include "apricot.h"
 #include "Icon.h"
+#include "Region.h"
 #include "img_conv.h"
 #include <Icon.inc>
 
@@ -804,22 +805,76 @@ Icon_bar_alpha( Handle self, int alpha, int x1, int y1, int x2, int y2)
 	Point t;
 	Image dummy;
 	ImgPaintContext ctx;
+	Matrix matrix;
+	NRect nrect = {x1,y1,x2,y2};
+	NPoint npoly[4];
+	Bool free_rgn = false;
+	PRegionRec rgn = var->regionData;
+	Bool full;
+
 	if (opt_InPaint)
 		return apc_gp_alpha( self, alpha, x1, y1, x2, y2);
 
+	if ( x1 < 0 && y1 < 0 && x2 < 0 && y2 < 0 ) {
+		x1 = 0;
+		y1 = 0;
+		x2 = var-> w - 1;
+		y2 = var-> h - 1;
+	} else {
+		Image_prepare_matrix( self, matrix);
+		if ( prima_matrix_is_square_rectangular( matrix, &nrect, npoly)) {
+			x1 = floor(nrect.left   + .5);
+			y1 = floor(nrect.bottom + .5);
+			x2 = floor(nrect.right  + .5);
+			y2 = floor(nrect.top    + .5);
+		} else {
+			Handle rgn1;
+			RegionRec rgndata;
+			int i;
+			Point poly[4];
+
+			rgndata.type                  = rgnPolygon;
+			rgndata.data.polygon.n_points = 4;
+			rgndata.data.polygon.points   = poly;
+			prima_matrix_apply2_to_int( matrix, npoly, poly, 4 );
+			x1 = x2 = poly[0].x;
+			y1 = y2 = poly[0].y;
+			for ( i = 1; i < 4; i++) {
+				if ( x1 > poly[i].x ) x1 = poly[i].x;
+				if ( y1 > poly[i].y ) y1 = poly[i].y;
+				if ( x2 < poly[i].x ) x2 = poly[i].x;
+				if ( y2 < poly[i].y ) y2 = poly[i].y;
+			}
+
+			rgn1 = Region_create_from_data( NULL_HANDLE, &rgndata );
+			if ( var-> regionData ) {
+				Handle rgn2 = Region_create_from_data( NULL_HANDLE, var->regionData );
+				Region_combine(rgn1, rgn2, rgnopUnion);
+				Object_destroy(rgn2);
+			}
+			rgn = Region_update_change(rgn1, true);
+			free_rgn = true;
+			Object_destroy(rgn1);
+
+		}
+
+		t = my->get_translate(self);
+		x1 += t.x;
+		y1 += t.y;
+	}
+
 	img_fill_dummy( &dummy, var-> w, var-> h, var-> maskType | imGrayScale, var-> mask, std256gray_palette);
 
-	t = my->get_translate(self);
-	x1 += t.x;
-	y1 += t.y;
 	bzero(&ctx, sizeof(ctx));
-	ctx. color[0] = alpha & 0xff;
-	ctx. rop = ropCopyPut;
-	ctx. region = var->regionData ? &var->regionData-> data. box : NULL;
 	memset( ctx.pattern, 0xff, sizeof(ctx.pattern));
 	ctx.patternOffset.x = ctx.patternOffset.y = 0;
-	ctx.transparent = false;
+	ctx.transparent     = false;
+	ctx. color[0]       = alpha & 0xff;
+	ctx. rop            = ropCopyPut;
+	ctx. region         = rgn ? &rgn-> data.box : NULL;
 	img_bar((Handle) &dummy, x1, y1, x2 - x1 + 1, y2 - y1 + 1, &ctx);
+
+	if ( free_rgn ) free(rgn);
 
 	return true;
 }

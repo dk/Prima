@@ -518,7 +518,6 @@ Image_chord( Handle self, double x, double y, double dX, double dY, double start
 Bool
 Image_clear(Handle self, double x1, double y1, double x2, double y2)
 {
-	Point t;
 	Bool ok;
 	ImgPaintContext ctx;
 	int _x1, _y1, _x2, _y2;
@@ -560,17 +559,19 @@ Image_clear(Handle self, double x1, double y1, double x2, double y2)
 
 		if ( is_pure_rect ) {
 			bzero(&ctx, sizeof(ctx));
-			t = my->get_translate(self);
-			_x1 += t.x;
-			_y1 += t.y;
 			Image_color2pixel( self, my->get_backColor(self), ctx.color);
 			*ctx.backColor = *ctx.color;
 			ctx.rop = my->get_rop(self);
 			ctx.region = var->regionData ? &var->regionData-> data. box : NULL;
 			memset( ctx.pattern, 0xff, sizeof(ctx.pattern));
 			ctx.patternOffset.x = ctx.patternOffset.y = 0;
-			ctx.patternOffset.x -= t.x;
-			ctx.patternOffset.y -= t.y;
+			if ( !full ) {
+				Point t = my->get_translate(self);
+				_x1 += t.x;
+				_y1 += t.y;
+				ctx.patternOffset.x -= t.x;
+				ctx.patternOffset.y -= t.y;
+			}
 			ctx.transparent = false;
 
 			ok = img_bar( self, _x1, _y1, _x2 - _x1 + 1, _y2 - _y1 + 1, &ctx);
