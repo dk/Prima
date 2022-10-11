@@ -805,12 +805,8 @@ Icon_bar_alpha( Handle self, int alpha, int x1, int y1, int x2, int y2)
 	Point t;
 	Image dummy;
 	ImgPaintContext ctx;
-	Matrix matrix;
-	NRect nrect = {x1,y1,x2,y2};
-	NPoint npoly[4];
 	Bool free_rgn = false;
 	PRegionRec rgn = var->regionData;
-	Bool full;
 
 	if (opt_InPaint)
 		return apc_gp_alpha( self, alpha, x1, y1, x2, y2);
@@ -821,6 +817,10 @@ Icon_bar_alpha( Handle self, int alpha, int x1, int y1, int x2, int y2)
 		x2 = var-> w - 1;
 		y2 = var-> h - 1;
 	} else {
+		Matrix matrix;
+		NRect nrect = {x1,y1,x2,y2};
+		NPoint npoly[4];
+
 		Image_prepare_matrix( self, matrix);
 		if ( prima_matrix_is_square_rectangular( matrix, &nrect, npoly)) {
 			x1 = floor(nrect.left   + .5);
