@@ -9,8 +9,7 @@
 
 #define SORT(a,b)	{ int swp; if ((a) > (b)) { swp=(a); (a)=(b); (b)=swp; }}
 #define REVERT(a)	(XX-> size. y - (a) - 1)
-#define SHIFT(a,b)	{ (a) += XX-> transform. x + XX-> btransform. x; \
-			(b) += XX-> transform. y + XX-> btransform. y; }
+#define SHIFT(a,b)	{ (a) += XX-> btransform. x; (b) += XX-> btransform. y; }
 #define RANGE(a)        { if ((a) < -16383) (a) = -16383; else if ((a) > 16383) a = 16383; }
 #define RANGE2(a,b)     RANGE(a) RANGE(b)
 

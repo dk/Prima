@@ -24,6 +24,16 @@ prima_matrix_apply_to_int( Matrix matrix, double x, double y)
 }
 
 void
+prima_matrix_apply_int_to_int( Matrix matrix, int *x, int *y)
+{
+	Point p;
+	p.x = floor( matrix[0] * *x + matrix[2] * *y + matrix[4] + .5 );
+	p.y = floor( matrix[1] * *x + matrix[3] * *y + matrix[5] + .5 );
+	*x = p.x;
+	*y = p.y;
+}
+
+void
 prima_matrix_apply2( Matrix matrix, NPoint *src, NPoint *dst, int n)
 {
 	int i;
@@ -96,6 +106,14 @@ prima_matrix_is_identity( Matrix m)
 	Matrix identity = {1.0,0.0,0.0,1.0,0.0,0.0};
 	return memcmp(m, identity, sizeof(Matrix)) == 0;
 }
+
+Bool
+prima_matrix_is_translated_only( Matrix m)
+{
+	double translate_only[4] = {1.0,0.0,0.0,1.0};
+	return memcmp(m, translate_only, sizeof(translate_only)) == 0;
+}
+
 
 Point*
 prima_matrix_transform_to_int( Matrix matrix, NPoint *src, Bool src_is_modifiable, int n_points)

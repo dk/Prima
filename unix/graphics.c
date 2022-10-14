@@ -9,8 +9,7 @@
 
 #define SORT(a,b)	{ int swp; if ((a) > (b)) { swp=(a); (a)=(b); (b)=swp; }}
 #define REVERT(a)	(XX-> size. y - (a) - 1)
-#define SHIFT(a,b)	{ (a) += XX-> transform. x + XX-> btransform. x; \
-									(b) += XX-> transform. y + XX-> btransform. y; }
+#define SHIFT(a,b)	{ (a) += XX-> btransform. x; (b) += XX-> btransform. y; }
 #define RANGE(a)        { if ((a) < -16383) (a) = -16383; else if ((a) > 16383) a = 16383; }
 #define RANGE2(a,b)     RANGE(a) RANGE(b)
 #define RANGE4(a,b,c,d) RANGE(a) RANGE(b) RANGE(c) RANGE(d)
@@ -221,7 +220,6 @@ Unbuffered:
 		apc_gp_set_fill_pattern( self, fp);
 	}
 	apc_gp_set_fill_pattern_offset( self, XX-> fill_pattern_offset);
-	apc_gp_set_matrix( self, XX-> matrix);
 
 	if ( !XX-> flags. reload_font && XX-> font && XX-> font-> id) {
 		XSetFont( DISP, XX-> gc, XX-> font-> id);
@@ -657,43 +655,28 @@ XChangeGC( DISP, XX-> gc, GCLineStyle, &gcv);\
 }
 
 Bool
-apc_gp_bar( Handle self, int x1, int y1, int x2, int y2)
-{
-	DEFXX;
-	int mix = 0;
-
-	if ( PObject( self)-> options. optInDrawInfo) return false;
-	if ( !XF_IN_PAINT(XX)) return false;
-
-	SHIFT( x1, y1); SHIFT( x2, y2);
-	SORT( x1, x2); SORT( y1, y2);
-	RANGE4( x1, y1, x2, y2);
-	while ( prima_make_brush( self, mix++))
-		XFillRectangle( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y2), x2 - x1 + 1, y2 - y1 + 1);
-	XCHECKPOINT;
-	XFLUSH;
-	return true;
-}
-
-Bool
 apc_gp_bars( Handle self, int nr, Rect *rr)
 {
 	DEFXX;
-	XRectangle *r, *rp;
 	int i, mix = 0;
+	XRectangle *r, *rp, sr;
 
 	if ( PObject( self)-> options. optInDrawInfo) return false;
 	if ( !XF_IN_PAINT(XX)) return false;
-	if ((r = malloc( sizeof( XRectangle)*nr)) == NULL) return false;
+
+	if ( nr > 1 ) {
+		if ((r = malloc( sizeof( XRectangle)*nr)) == NULL) return false;
+	} else
+		r = &sr;
 
 	for ( i = 0, rp = r; i < nr; i++, rr++, rp++) {
-		SHIFT( rr->left,rr-> bottom); SHIFT( rr->right, rr->top);
-		SORT( rr->left, rr->right); SORT( rr->bottom, rr->top);
+		SHIFT ( rr->left, rr-> bottom); SHIFT( rr->right, rr->top);
+		SORT  ( rr->left, rr->right);  SORT( rr->bottom, rr->top);
 		RANGE4( rr->left, rr->bottom, rr->right, rr->top);
-		rp->x = rr->left;
-		rp->y = REVERT(rr->top);
-		rp->width = rr->right - rr->left + 1;
-		rp->height = rr->top - rr->bottom + 1;
+		rp->x      = rr->left;
+		rp->y      = REVERT(rr->top);
+		rp->width  = rr->right - rr->left + 1;
+		rp->height = rr->top   - rr->bottom + 1;
 	}
 
 	while ( prima_make_brush( self, mix++))
@@ -701,7 +684,8 @@ apc_gp_bars( Handle self, int nr, Rect *rr)
 
 	XCHECKPOINT;
 	XFLUSH;
-	free( r);
+	if ( nr > 1 ) free( r);
+
 	return true;
 }
 
@@ -800,8 +784,8 @@ apc_gp_draw_poly( Handle self, int n, Point *pp)
 {
 	DEFXX;
 	int i;
-	int x = XX-> transform. x + XX-> btransform. x;
-	int y = XX-> size. y - 1 - XX-> transform. y - XX-> btransform. y;
+	int x = XX-> btransform. x;
+	int y = XX-> size. y - 1 - XX-> btransform. y;
 	XPoint *p;
 
 	if ( PObject( self)-> options. optInDrawInfo) return false;
@@ -829,8 +813,8 @@ apc_gp_draw_poly2( Handle self, int np, Point *pp)
 {
 	DEFXX;
 	int i;
-	int x = XX-> transform. x + XX-> btransform. x;
-	int y = XX-> size. y - 1 - XX-> transform. y - XX-> btransform. y;
+	int x = XX-> btransform. x;
+	int y = XX-> size. y - 1 - XX-> btransform. y;
 	XSegment *s;
 	int n = np / 2;
 
@@ -869,12 +853,12 @@ apc_gp_fill_poly( Handle self, int numPts, Point *points)
 	if ( !( p = malloc(( numPts + 1) * sizeof( XPoint)))) return false;
 
 	for ( i = 0; i < numPts; i++) {
-		p[i]. x = (short)points[i]. x + XX-> transform. x + XX-> btransform. x;
-		p[i]. y = (short)REVERT(points[i]. y + XX-> transform. y + XX-> btransform. y);
+		p[i]. x = (short)points[i]. x + XX-> btransform. x;
+		p[i]. y = (short)REVERT(points[i]. y + XX-> btransform. y);
 		RANGE2(p[i].x, p[i].y);
 	}
-	p[numPts]. x = (short)points[0]. x + XX-> transform. x + XX-> btransform. x;
-	p[numPts]. y = (short)REVERT(points[0]. y + XX-> transform. y + XX-> btransform. y);
+	p[numPts]. x = (short)points[0]. x + XX-> btransform. x;
+	p[numPts]. y = (short)REVERT(points[0]. y + XX-> btransform. y);
 	RANGE2(p[numPts].x, p[numPts].y);
 
 	FILL_ANTIDEFECT_OPEN;
@@ -1332,7 +1316,7 @@ apc_gp_set_pixel( Handle self, int x, int y, Color color)
 	if ( PObject( self)-> options. optInDrawInfo) return false;
 	if ( !XF_IN_PAINT(XX)) return false;
 
-	SHIFT( x, y);
+	SHIFT(x, y);
 	XSetForeground( DISP, XX-> gc, prima_allocate_color( self, color, NULL));
 	XDrawPoint( DISP, XX-> gdrawable, XX-> gc, x, REVERT( y));
 	XX-> flags. brush_fore = 0;
@@ -1450,13 +1434,6 @@ apc_gp_get_line_pattern( Handle self, unsigned char *dashes)
 	return n;
 }
 
-Matrix *
-apc_gp_get_matrix( Handle self)
-{
-	return &(X(self)-> matrix);
-}
-
-
 Point
 apc_gp_get_resolution( Handle self)
 {
@@ -1473,12 +1450,6 @@ int
 apc_gp_get_rop2( Handle self)
 {
 	return X(self)-> rop2;
-}
-
-Point
-apc_gp_get_transform( Handle self)
-{
-	return X(self)-> transform;
 }
 
 Bool
@@ -1729,14 +1700,6 @@ apc_gp_set_line_pattern( Handle self, unsigned char *pattern, int len)
 }
 
 Bool
-apc_gp_set_matrix( Handle self, Matrix matrix)
-{
-	DEFXX;
-	memcpy(XX-> matrix, matrix, sizeof(Matrix));
-	return true;
-}
-
-Bool
 apc_gp_set_rop( Handle self, int rop)
 {
 	DEFXX;
@@ -1779,15 +1742,6 @@ apc_gp_set_rop2( Handle self, int rop)
 			XX-> gcv. line_style = ( rop == ropCopyPut) ? LineDoubleDash : LineOnOffDash;
 		XX-> rop2 = rop;
 	}
-	return true;
-}
-
-Bool
-apc_gp_set_transform( Handle self, int x, int y)
-{
-	DEFXX;
-	XX-> transform. x = x;
-	XX-> transform. y = y;
 	return true;
 }
 
@@ -1841,7 +1795,6 @@ apc_gp_push(Handle self, GCStorageFunction * destructor, void * user_data, unsig
 		memcpy( state->dashes, XX-> dashes, XX->ndashes);
 	state->rop           = XX->rop;
 	state->rop2          = XX->rop2;
-	state->transform     = XX->transform;
 	state->text_baseline = XX->flags.base_line;
 	state->text_opaque   = XX->flags.opaque;
 	if ( state-> in_paint ) {
@@ -1873,7 +1826,6 @@ apc_gp_push(Handle self, GCStorageFunction * destructor, void * user_data, unsig
 	state->fill_pattern_offset = XX->fill_pattern_offset;
 	state->null_hatch = XX->flags.brush_null_hatch;
 	state->font = PDrawable(self)->font;
-	memcpy( state->matrix, XX->matrix, sizeof(Matrix));
 
 	if ( PDrawable(self)->fillPatternImage )
 		protect_object( state->fill_image = PDrawable(self)->fillPatternImage );
@@ -1902,7 +1854,6 @@ apc_gp_pop( Handle self, void * user_data)
 	XX->ndashes           = state->n_dashes;
 	XX->rop               = state->rop;
 	XX->rop2              = state->rop2;
-	XX->transform         = state->transform;
 	XX->flags. base_line  = state->text_baseline;
 	XX->flags. opaque     = state->text_opaque;
 	if ( state-> in_paint ) {
@@ -1955,8 +1906,6 @@ apc_gp_pop( Handle self, void * user_data)
 	if (PDrawable(self)->fillPatternImage)
 		unprotect_object(PDrawable(self)->fillPatternImage);
 	PDrawable(self)->fillPatternImage = state-> fill_image;
-
-	memcpy( XX->matrix, state->matrix, sizeof(Matrix));
 
 	free(state);
 	return true;

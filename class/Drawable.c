@@ -49,22 +49,11 @@ Drawable_init( Handle self, HV * profile)
 	my-> set_rop2         ( self, pget_i ( rop2));
 	my-> set_textOpaque   ( self, pget_B ( textOpaque));
 	my-> set_textOutBaseline( self, pget_B ( textOutBaseline));
-	if ( pexist( translate))
+	if ( pexist( fillPatternOffset))
 	{
 		AV * av;
 		Point tr;
 		SV ** holder, *sv;
-
-		sv = pget_sv( translate);
-		if ( sv && SvOK(sv) && SvROK(sv) && SvTYPE(av = (AV*)SvRV(sv)) == SVt_PVAV && av_len(av) == 1) {
-			tr.x = tr.y = 0;
-			holder = av_fetch( av, 0, 0);
-			if ( holder) tr.x = SvIV( *holder); else warn("Array panic on 'translate'");
-			holder = av_fetch( av, 1, 0);
-			if ( holder) tr.y = SvIV( *holder); else warn("Array panic on 'translate'");
-			my-> set_translate( self, tr);
-		} else
-			warn("Array panic on 'translate'");
 
 		sv = pget_sv( fillPatternOffset);
 		if ( sv && SvOK(sv) && SvROK(sv) && SvTYPE(av = (AV*)SvRV(sv)) == SVt_PVAV && av_len(av) == 1) {
@@ -155,17 +144,6 @@ Drawable_set( Handle self, HV * profile)
 		SvHV_Font( pget_sv( font), &Font_buffer, "Drawable::set");
 		my-> set_font( self, Font_buffer);
 		pdelete( font);
-	}
-
-	if ( pexist( translate)) {
-		AV * av = ( AV *) SvRV( pget_sv( translate));
-		Point tr = {0,0};
-		SV ** holder = av_fetch( av, 0, 0);
-		if ( holder) tr.x = SvIV( *holder); else warn("Array panic on 'translate'");
-		holder = av_fetch( av, 1, 0);
-		if ( holder) tr.y = SvIV( *holder); else warn("Array panic on 'translate'");
-		my-> set_translate( self, tr);
-		pdelete( translate);
 	}
 
 	if ( pexist( width) && pexist( height)) {
@@ -541,8 +519,7 @@ Drawable_matrix( Handle self, Bool set, SV * svmatrix)
 	int i;
 	if ( !set) {
 		AV * av;
-		Matrix* matrix;
-		if ( !( matrix = apc_gp_get_matrix( self))) return NULL_SV;
+		Matrix *matrix = & var-> current_state.matrix;
 
 		av = newAV();
 		for ( i = 0; i < 6; i++) av_push( av, newSVnv((*matrix)[i]));
@@ -550,15 +527,14 @@ Drawable_matrix( Handle self, Bool set, SV * svmatrix)
 		return sv_bless(svmatrix, gv_stashpv("Prima::matrix", GV_ADD));
 	} else {
 		if ( SvROK(svmatrix) && ( SvTYPE( SvRV(svmatrix)) == SVt_PVAV)) {
-			Matrix matrix;
+			Matrix *matrix = & var-> current_state.matrix;
 			AV * av = ( AV *) SvRV(svmatrix);
 			if ( av_len( av) != 5) goto FAIL;
 			for ( i = 0; i < 6; i++) {
 				SV ** holder = av_fetch( av, i, 0);
 				if ( !holder) goto FAIL;
-				matrix[i] = SvNV( *holder);
+				(*matrix)[i] = SvNV( *holder);
 			}
-			apc_gp_set_matrix(self, matrix);
 		} else {
 		FAIL:
 			warn("Drawable::matrix: must be array of 6 numerics");
@@ -681,14 +657,6 @@ Drawable_textOutBaseline( Handle self, Bool set, Bool textOutBaseline)
 	if (!set) return apc_gp_get_text_out_baseline( self);
 	apc_gp_set_text_out_baseline( self, textOutBaseline);
 	return textOutBaseline;
-}
-
-Point
-Drawable_translate( Handle self, Bool set, Point translate)
-{
-	if (!set) return apc_gp_get_transform( self);
-	apc_gp_set_transform( self, translate. x, translate. y);
-	return translate;
 }
 
 #ifdef __cplusplus

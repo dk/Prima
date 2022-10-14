@@ -641,7 +641,6 @@ sub profile_default
 		rop2            => rop::NoOper,
 		textOutBaseline => 0,
 		textOpaque      => 0,
-		translate       => [ 0, 0],
 	);
 	@$def{keys %prf} = values %prf;
 	return $def;
@@ -655,6 +654,8 @@ sub profile_check_in
 	$p-> { font} = Prima::Drawable-> font_match( $p-> { font}, $default-> { font});
 	$p->{fillMode} = ( delete($p->{fillWinding}) ? fm::Winding : fm::Alternate) | fm::Overlay
 		if exists $p->{fillWinding} && ! exists $p->{fillMode}; # compatibility
+	$p->{matrix} = [1,0,0,1,@{$p->{translate}}]
+		if exists $p->{translate} && ! exists $p->{matrix}; # compatibility
 }
 
 sub font
@@ -716,6 +717,14 @@ sub graphic_context
 	$self->set(@_);
 	$cb->();
 	return $self->graphic_context_pop;
+}
+
+sub translate
+{
+	return @{$_[0]->matrix}[4,5] unless $#_;
+	my $m = $_[0]->matrix;
+	@{$m}[4,5] = ref($_[1]) ? @{$_[1]} : @_[1,2];
+	$_[0]->matrix($m);
 }
 
 package Prima::Image;

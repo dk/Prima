@@ -14,9 +14,6 @@ extern "C" {
 #define my  ((( PIcon) self)-> self)
 #define var (( PIcon) self)
 
-extern void
-Image_prepare_matrix( Handle self, Matrix ctx);
-
 static void
 produce_mask( Handle self)
 {
@@ -400,14 +397,12 @@ SV *
 Icon_maskPixel( Handle self, Bool set, int x, int y, SV * pixel)
 {
 	Point pt;
-	Matrix matrix;
 
 	if (!set) {
 		if ( opt_InPaint)
 			return inherited pixel(self,false,x,y,pixel);
 
-		Image_prepare_matrix(self, matrix);
-		pt = prima_matrix_apply_to_int( matrix, x, y );
+		pt = prima_matrix_apply_to_int( var->current_state.matrix, x, y );
 		x = pt.x;
 		y = pt.y;
 
@@ -432,8 +427,7 @@ Icon_maskPixel( Handle self, Bool set, int x, int y, SV * pixel)
 		if ( is_opt( optInDraw))
 			return inherited pixel(self,true,x,y,pixel);
 
-		Image_prepare_matrix(self, matrix);
-		pt = prima_matrix_apply_to_int( matrix, x, y );
+		pt = prima_matrix_apply_to_int( var->current_state.matrix, x, y );
 		x = pt.x;
 		y = pt.y;
 
@@ -802,7 +796,6 @@ Icon_premultiply_alpha( Handle self, SV * alpha)
 Bool
 Icon_bar_alpha( Handle self, int alpha, int x1, int y1, int x2, int y2)
 {
-	Point t;
 	Image dummy;
 	ImgPaintContext ctx;
 	Bool free_rgn = false;
@@ -817,12 +810,10 @@ Icon_bar_alpha( Handle self, int alpha, int x1, int y1, int x2, int y2)
 		x2 = var-> w - 1;
 		y2 = var-> h - 1;
 	} else {
-		Matrix matrix;
 		NRect nrect = {x1,y1,x2,y2};
 		NPoint npoly[4];
 
-		Image_prepare_matrix( self, matrix);
-		if ( prima_matrix_is_square_rectangular( matrix, &nrect, npoly)) {
+		if ( prima_matrix_is_square_rectangular( var->current_state.matrix, &nrect, npoly)) {
 			x1 = floor(nrect.left   + .5);
 			y1 = floor(nrect.bottom + .5);
 			x2 = floor(nrect.right  + .5);
@@ -836,7 +827,7 @@ Icon_bar_alpha( Handle self, int alpha, int x1, int y1, int x2, int y2)
 			rgndata.type                  = rgnPolygon;
 			rgndata.data.polygon.n_points = 4;
 			rgndata.data.polygon.points   = poly;
-			prima_matrix_apply2_to_int( matrix, npoly, poly, 4 );
+			prima_matrix_apply2_to_int( var->current_state.matrix, npoly, poly, 4 );
 			x1 = x2 = poly[0].x;
 			y1 = y2 = poly[0].y;
 			for ( i = 1; i < 4; i++) {
@@ -857,10 +848,6 @@ Icon_bar_alpha( Handle self, int alpha, int x1, int y1, int x2, int y2)
 			Object_destroy(rgn1);
 
 		}
-
-		t = my->get_translate(self);
-		x1 += t.x;
-		y1 += t.y;
 	}
 
 	img_fill_dummy( &dummy, var-> w, var-> h, var-> maskType | imGrayScale, var-> mask, std256gray_palette);

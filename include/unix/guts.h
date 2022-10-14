@@ -821,7 +821,7 @@ typedef struct _drawable_sys_data
 	XDrawable gdrawable;
 	XWindow parent;
 	Point origin, size, bsize;
-	Point transform, btransform;
+	Point btransform;
 	Point ackOrigin, ackSize, ackFrameSize;
 	int menuHeight;
 	int menuColorImmunity;
@@ -950,7 +950,7 @@ typedef struct _PaintState
 	} nonpaint;
 	int alpha, fill_mode, n_dashes, rop, rop2;
 	Bool antialias, text_opaque, text_baseline, null_hatch;
-	Point fill_pattern_offset, transform;
+	Point fill_pattern_offset;
 	Handle fill_image;
 	FillPattern fill_pattern;
 	Font font;

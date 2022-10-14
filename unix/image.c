@@ -8,8 +8,7 @@
 #include "DeviceBitmap.h"
 
 #define REVERT(a)	( XX-> size. y - (a) - 1 )
-#define SHIFT(a,b)	{ (a) += XX-> transform. x + XX-> btransform. x; \
-			(b) += XX-> transform. y + XX-> btransform. y; }
+#define SHIFT(a,b)	{ (a) += XX-> btransform. x; (b) += XX-> btransform. y; }
 /* Multiple evaluation macro! */
 #define REVERSE_BYTES_32(x) ((((x)&0xff)<<24) | (((x)&0xff00)<<8) | (((x)&0xff0000)>>8) | (((x)&0xff000000)>>24))
 #define REVERSE_BYTES_16(x) ((((x)&0xff)<<8 ) | (((x)&0xff00)>>8))

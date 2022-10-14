@@ -240,8 +240,6 @@ sub stroke_img_primitive
 	return 1 if $self->linePattern eq lp::Null && $self->rop2 == rop::NoOper;
 
 	my $path = $self->new_path;
-	my @offset  = $self->translate;
-	$path->translate(@offset);
 	my $matrix = $self-> matrix;
 	$path->matrix( $matrix );
 	$path->$request(@_);
@@ -275,7 +273,6 @@ sub stroke_img_primitive
 
 	return unless $self->graphic_context_push;
 	$self->fillPattern(fp::Solid);
-	$self->translate(0,0);
 	$self->matrix( $Prima::matrix::identity );
 	if ( $self-> rop2 == rop::CopyPut && $self->linePattern ne lp::Solid && $self->linePattern ne lp::Null ) {
 		$self->color($self->backColor);
@@ -303,16 +300,13 @@ sub fill_img_primitive
 	$path->matrix( $self->matrix);
 	$path->$request(@p);
 
-	my @offset  = $self->translate;
 	my $region1 = $path->region( $self-> fillMode);
-	$region1->offset(@offset);
 	my $region2 = $self->region;
 	$region1->combine($region2, rgnop::Intersect) if $region2;
 	my @box = $region1->box;
 	$box[$_+2] += $box[$_] for 0,1;
 	$self->region($region1);
 
-	$self->translate(0,0);
 	$self->matrix($Prima::matrix::identity);
 	my $ok = $self->bar(@box);
 

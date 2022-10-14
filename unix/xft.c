@@ -1436,8 +1436,7 @@ create_no_aa_font( XftFont * font)
 
 #define SORT(a,b)       { int swp; if ((a) > (b)) { swp=(a); (a)=(b); (b)=swp; }}
 #define REVERT(a)       (XX-> size. y - (a) - 1)
-#define SHIFT(a,b)      { (a) += XX-> transform. x + XX-> btransform. x; \
-			(b) += XX-> transform. y + XX-> btransform. y; }
+#define SHIFT(a,b)      { (a) += XX-> btransform. x; (b) += XX-> btransform. y; }
 #define RANGE(a)        { if ((a) < -16383) (a) = -16383; else if ((a) > 16383) a = 16383; }
 #define RANGE2(a,b)     RANGE(a) RANGE(b)
 #define RANGE4(a,b,c,d) RANGE(a) RANGE(b) RANGE(c) RANGE(d)
@@ -1945,7 +1944,7 @@ prima_xft_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 	XftFont *font = XX-> font-> xft;
 	int rop = XX-> rop;
 	Point baseline;
-		
+
 	t-> flags |= toAddOverhangs; /* for overstriking etc */
 
 	if ( t->len == 0) return true;
@@ -1989,7 +1988,7 @@ prima_xft_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 	COPY_PUT:
 		xft_draw_glyphs(XX, &xftcolor, x, REVERT(y) + 1, NULL, 0, t);
 	}
-	XCHECKPOINT; 
+	XCHECKPOINT;
 
 	if ( PDrawable( self)-> font. style & (fsUnderlined|fsStruckOut)) {
 		Point ovx;

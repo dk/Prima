@@ -126,6 +126,45 @@ semistatic_done( semistatic_t * s);
 	((( s.count >= s.size ) ? semistatic_expand(&s,-1) : 1) && \
 		(((((type*)s.heap)[s.count++])=v) || 1))
 
+/* Matrix */
+#define COPY_MATRIX(src,dst) memcpy(dst,src,sizeof(Matrix))
+
+void
+prima_matrix_apply( Matrix matrix, double *x, double *y);
+
+Point
+prima_matrix_apply_to_int( Matrix matrix, double x, double y);
+
+void
+prima_matrix_apply_int_to_int( Matrix matrix, int *x, int *y);
+
+void
+prima_matrix_apply2( Matrix matrix, NPoint *src, NPoint *dst, int n_points);
+
+void
+prima_matrix_apply2_to_int( Matrix matrix, NPoint *src, Point *dst, int n_points);
+
+void
+prima_matrix_apply2_int_to_int( Matrix matrix, Point *src, Point *dst, int n_points);
+
+Point*
+prima_matrix_transform_to_int( Matrix martix, NPoint *src, Bool src_is_modifiable, int n_points);
+
+Bool
+prima_matrix_read_sv( SV * matrix, Matrix ctx);
+
+Bool
+prima_matrix_is_identity( Matrix matrix);
+
+Bool
+prima_matrix_is_translated_only( Matrix matrix);
+
+void
+prima_matrix_set_identity( Matrix matrix);
+
+Bool
+prima_matrix_is_square_rectangular( Matrix matrix, NRect *src_dest_rect, NPoint *dest_polygon);
+
 
 #ifdef __cplusplus
 }

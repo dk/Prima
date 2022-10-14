@@ -12,34 +12,17 @@
 extern "C" {
 #endif
 
-void
-Image_prepare_matrix( Handle self, Matrix ctx)
-{
-	if ( my-> matrix == Drawable_matrix) {
-		Matrix *matrix = apc_gp_get_matrix(self);
-		if ( matrix )
-			memcpy( ctx, matrix, sizeof(Matrix));
-		else {
-			bzero(ctx, sizeof(Matrix));
-			ctx[0] = ctx[3] = 1.0;
-		}
-	} else
-		prima_matrix_read_sv( my->get_matrix( self), ctx );
-}
-
 SV *
 Image_pixel( Handle self, Bool set, int x, int y, SV * pixel)
 {
 	Point pt;
-	Matrix matrix;
 
 #define BGRto32(pal) ((var->palette[pal].r<<16) | (var->palette[pal].g<<8) | (var->palette[pal].b))
 	if (!set) {
 		if ( opt_InPaint)
 			return inherited pixel(self,false,x,y,pixel);
 
-		Image_prepare_matrix(self, matrix);
-		pt = prima_matrix_apply_to_int( matrix, x, y );
+		pt = prima_matrix_apply_to_int( var->current_state.matrix, x, y );
 		x = pt.x;
 		y = pt.y;
 
@@ -108,8 +91,7 @@ Image_pixel( Handle self, Bool set, int x, int y, SV * pixel)
 		if ( is_opt( optInDraw))
 			return inherited pixel(self,true,x,y,pixel);
 
-		Image_prepare_matrix(self, matrix);
-		pt = prima_matrix_apply_to_int( matrix, x, y );
+		pt = prima_matrix_apply_to_int( var->current_state.matrix, x, y );
 		x = pt.x;
 		y = pt.y;
 
@@ -265,7 +247,7 @@ Image_read_pixel( Handle self, SV * pixel, ColorPixel *output )
 
 
 static void
-prepare_fill_context(Handle self, Point translate, PImgPaintContext ctx)
+prepare_fill_context(Handle self, PImgPaintContext ctx)
 {
 	FillPattern * p = &ctx->pattern;
 
@@ -322,7 +304,6 @@ prepare_line_context( Handle self, unsigned char * lp, ImgPaintContext * ctx)
 	}
 	ctx->region = var->regionData ? &var->regionData-> data. box : NULL;
 	ctx->transparent = my->get_rop2(self) == ropNoOper;
-	ctx->translate = my->get_translate(self);
 	if ( my-> linePattern == Drawable_linePattern) {
 		int lplen;
 		lplen = apc_gp_get_line_pattern( self, lp);
@@ -377,11 +358,9 @@ Image_arc( Handle self, double x, double y, double dX, double dY, double startAn
 Bool
 Image_bar( Handle self, double x1, double y1, double x2, double y2)
 {
-	Point t;
 	Bool ok;
 	int _x1, _y1, _x2, _y2;
 	ImgPaintContext ctx;
-	Matrix matrix;
 	NRect nrect = {x1,y1,x2,y2};
 	NPoint npoly[4];
 
@@ -393,32 +372,28 @@ Image_bar( Handle self, double x1, double y1, double x2, double y2)
 		return ok;
 	}
 
-	Image_prepare_matrix(self, matrix);
-	if ( prima_matrix_is_square_rectangular( matrix, &nrect, npoly)) {
+	if ( prima_matrix_is_square_rectangular( var->current_state.matrix, &nrect, npoly)) {
 		_x1 = floor(nrect.left   + .5);
 		_y1 = floor(nrect.bottom + .5);
 		_x2 = floor(nrect.right  + .5);
 		_y2 = floor(nrect.top    + .5);
 	} else {
 		SV *sv, *points;
-		Matrix identity = {1.0,0.0,0.0,1.0,0.0,0.0};
+		Matrix identity = {1.0,0.0,0.0,1.0,0.0,0.0}, save;
 
 		sv = prima_array_new(sizeof(npoly));
 		memcpy( prima_array_get_storage(sv), npoly, sizeof(npoly));
 		points = prima_array_tie( sv, sizeof(double), "d");
-		apc_gp_set_matrix(self, identity);
+		COPY_MATRIX(var->current_state.matrix, save);
+		COPY_MATRIX(identity, var->current_state.matrix);
 		ok = primitive( self, 1, "sS", "line", points );
-		apc_gp_set_matrix(self, matrix);
+		COPY_MATRIX(save, var->current_state.matrix);
 		sv_free(points);
 		my-> update_change(self);
 		return ok;
 	}
 
-	t = my->get_translate(self);
-	_x1 += t.x;
-	_y1 += t.y;
-
-	prepare_fill_context(self, t, &ctx);
+	prepare_fill_context(self, &ctx);
 	ok = img_bar( self, _x1, _y1, _x2 - _x1 + 1, _y2 - _y1 + 1, &ctx);
 	my-> update_change(self);
 	return ok;
@@ -436,7 +411,6 @@ Image_bar_alpha(Handle self, int alpha, int x1, int y1, int x2, int y2)
 Bool
 Image_bars( Handle self, SV * rects)
 {
-	Point t;
 	ImgPaintContext ctx;
 	int i, count;
 	Bool ok = true, do_free;
@@ -457,23 +431,22 @@ Image_bars( Handle self, SV * rects)
 		}
 		if ( do_free ) free( p);
 	} else {
-		Matrix matrix;
 		SV *sv, *points = NULL;
 		void *storage = NULL;
-		Matrix identity = {1.0,0.0,0.0,1.0,0.0,0.0};
+		Matrix identity = {1.0,0.0,0.0,1.0,0.0,0.0}, save;
 		Rect irect;
 
 		if (( p = prima_read_array( rects, "Image::bars", 'd', 4, 0, -1, &count, &do_free)) == NULL)
 			return false;
-		t = my->get_translate(self);
-		prepare_fill_context(self, t, &ctx);
-		Image_prepare_matrix(self, matrix);
+		prepare_fill_context(self, &ctx);
 
+		COPY_MATRIX(var->current_state.matrix, save);
+		COPY_MATRIX(identity, var->current_state.matrix);
 		for ( i = 0, r = p; i < count; i++, r++) {
 			ImgPaintContext ctx2 = ctx;
 			NRect nrect = *r;
 			NPoint npoly[4];
-			if ( prima_matrix_is_square_rectangular( matrix, &nrect, npoly)) {
+			if ( prima_matrix_is_square_rectangular( var->current_state.matrix, &nrect, npoly)) {
 				irect.left  	 = floor(nrect.left   + .5);
 				irect.bottom	 = floor(nrect.bottom + .5);
 				irect.right 	 = floor(nrect.right  + .5);
@@ -483,7 +456,6 @@ Image_bars( Handle self, SV * rects)
 					sv = prima_array_new(sizeof(npoly));
 					storage = prima_array_get_storage(sv);
 					points = prima_array_tie( sv, sizeof(double), "d");
-					apc_gp_set_matrix(self, identity);
 				}
 				memcpy( storage, npoly, sizeof(npoly));
 				ok &= primitive( self, 1, "sS", "line", points );
@@ -497,12 +469,12 @@ Image_bars( Handle self, SV * rects)
 				irect.top   - irect.bottom + 1,
 				&ctx2))) break;
 		}
+		COPY_MATRIX(save, var->current_state.matrix);
+
 		if ( do_free ) free( p);
 
-		if ( points != NULL ) {
-			apc_gp_set_matrix(self, matrix);
+		if ( points != NULL )
 			sv_free(points);
-		}
 	}
 	my-> update_change(self);
 	return ok;
@@ -545,10 +517,8 @@ Image_clear(Handle self, double x1, double y1, double x2, double y2)
 			_y2 = var-> h - 1;
 			is_pure_rect = true;
 		} else {
-			Matrix matrix;
 			NRect nrect = {x1,y1,x2,y2};
-			Image_prepare_matrix(self, matrix);
-			if ( prima_matrix_is_square_rectangular( matrix, &nrect, npoly)) {
+			if ( prima_matrix_is_square_rectangular( var->current_state.matrix, &nrect, npoly)) {
 				_x1 = floor(nrect.left   + .5);
 				_y1 = floor(nrect.bottom + .5);
 				_x2 = floor(nrect.right  + .5);
@@ -560,34 +530,28 @@ Image_clear(Handle self, double x1, double y1, double x2, double y2)
 		if ( is_pure_rect ) {
 			bzero(&ctx, sizeof(ctx));
 			Image_color2pixel( self, my->get_backColor(self), ctx.color);
-			*ctx.backColor = *ctx.color;
-			ctx.rop = my->get_rop(self);
-			ctx.region = var->regionData ? &var->regionData-> data. box : NULL;
-			memset( ctx.pattern, 0xff, sizeof(ctx.pattern));
+			*ctx.backColor      = *ctx.color;
+			ctx.rop             = my->get_rop(self);
+			ctx.region          = var->regionData ? &var->regionData-> data. box : NULL;
 			ctx.patternOffset.x = ctx.patternOffset.y = 0;
-			if ( !full ) {
-				Point t = my->get_translate(self);
-				_x1 += t.x;
-				_y1 += t.y;
-				ctx.patternOffset.x -= t.x;
-				ctx.patternOffset.y -= t.y;
-			}
-			ctx.transparent = false;
-
+			ctx.transparent     = false;
+			memset( ctx.pattern, 0xff, sizeof(ctx.pattern));
 			ok = img_bar( self, _x1, _y1, _x2 - _x1 + 1, _y2 - _y1 + 1, &ctx);
 		} else {
 			SV *sv, *points;
-			Matrix identity = {1.0,0.0,0.0,1.0,0.0,0.0};
+			Matrix identity = {1.0,0.0,0.0,1.0,0.0,0.0}, save;
 
 			if ( !my->graphic_context_push(self)) return false;
 
 			sv = prima_array_new(sizeof(npoly));
 			memcpy( prima_array_get_storage(sv), npoly, sizeof(npoly));
 			points = prima_array_tie( sv, sizeof(double), "d");
-			apc_gp_set_matrix(self, identity);
+			COPY_MATRIX(var->current_state.matrix, save);
+			COPY_MATRIX(identity, var->current_state.matrix);
 			apc_gp_set_color(self, apc_gp_get_back_color(self));
 			apc_gp_set_fill_pattern(self, fillPatterns[fpSolid]);
 			ok = primitive( self, 1, "sS", "line", points );
+			COPY_MATRIX(save, var->current_state.matrix);
 			sv_free(points);
 			my-> graphic_context_pop(self);
 			my-> update_change(self);
@@ -637,23 +601,17 @@ Image_fill_sector( Handle self, double x, double y, double dX, double dY, double
 Bool
 Image_flood_fill( Handle self, int x, int y, Color color, Bool singleBorder)
 {
-	Point t, pp;
+	Point pp;
 	Bool ok;
 	ImgPaintContext ctx;
 	ColorPixel px;
-	Matrix matrix;
 	if (opt_InPaint)
 		return inherited flood_fill(self, x, y, color, singleBorder);
 
-	t = my->get_translate(self);
-	x += t.x;
-	y += t.y;
-
-	Image_prepare_matrix(self, matrix);
-	pp = prima_matrix_apply_to_int( matrix, x, y );
-	prepare_fill_context(self, t, &ctx);
+	pp = prima_matrix_apply_to_int( var->current_state.matrix, x, y );
+	prepare_fill_context(self, &ctx);
 	Image_color2pixel( self, color, (Byte*)&px);
-	ok = img_flood_fill( self, pp.x, pp.y, px, singleBorder, &ctx); 
+	ok = img_flood_fill( self, pp.x, pp.y, px, singleBorder, &ctx);
 	my-> update_change(self);
 	return ok;
 }
@@ -665,13 +623,11 @@ Image_line(Handle self, double x1, double y1, double x2, double y2)
 		return inherited line(self, x1, y1, x2, y2);
 	} else if ( !var->antialias && (int)(my->get_lineWidth(self) + .5) == 0) {
 		ImgPaintContext ctx;
-		Matrix matrix;
 		unsigned char lp[256];
 		Point poly[2];
 
-		Image_prepare_matrix(self, matrix);
-		poly[0] = prima_matrix_apply_to_int( matrix, x1, y1);
-		poly[1] = prima_matrix_apply_to_int( matrix, x2, y2);
+		poly[0] = prima_matrix_apply_to_int( var->current_state.matrix, x1, y1);
+		poly[1] = prima_matrix_apply_to_int( var->current_state.matrix, x2, y2);
 
 		prepare_line_context( self, lp, &ctx);
 		return img_polyline(self, 2, poly, &ctx);
@@ -691,16 +647,14 @@ Image_lines( Handle self, SV * points)
 		Bool ok = true, do_free;
 		ImgPaintContext ctx, ctx2;
 		unsigned char lp[256];
-		Matrix matrix;
 
 		if (( lines = prima_read_array( points, "Image::lines", 'd', 4, 0, -1, &count, &do_free)) == NULL)
 			return false;
 		prepare_line_context( self, lp, &ctx);
-		Image_prepare_matrix(self, matrix);
 		for (i = 0, p = lines; i < count; i++, p += 2) {
 			Point segment[2];
 			ctx2 = ctx;
-			prima_matrix_apply2_to_int( matrix, p, segment, 2 );
+			prima_matrix_apply2_to_int( var->current_state.matrix, p, segment, 2 );
 			if ( !( ok &= img_polyline(self, 2, segment, &ctx2))) break;
 		}
 		if (do_free) free(lines);
@@ -721,13 +675,11 @@ Image_polyline( Handle self, SV * points)
 		int count;
 		Bool ok = false, free_raw_points;
 		ImgPaintContext ctx;
-		Matrix matrix;
 		unsigned char lp[256];
 
 		if (( raw_points = prima_read_array( points, "Image::polyline", 'd', 2, 2, -1, &count, &free_raw_points)) == NULL)
 			return false;
-		Image_prepare_matrix(self, matrix);
-		if (( lines = prima_matrix_transform_to_int( matrix, raw_points, free_raw_points, count)) == NULL )
+		if (( lines = prima_matrix_transform_to_int( var->current_state.matrix, raw_points, free_raw_points, count)) == NULL )
 			goto FAIL;
 		prepare_line_context( self, lp, &ctx);
 		ok = img_polyline(self, count, lines, &ctx);
@@ -750,12 +702,10 @@ Image_rectangle(Handle self, double x1, double y1, double x2, double y2)
 	} else if ( !var->antialias && (int)(my->get_lineWidth(self) + .5) == 0) {
 		ImgPaintContext ctx;
 		unsigned char lp[256];
-		Matrix matrix;
 		NPoint src[5] = { {x1,y1}, {x2,y1}, {x2,y2}, {x1,y2}, {x1,y1} };
 		Point dst[5];
 
-		Image_prepare_matrix(self, matrix);
-		prima_matrix_apply2_to_int(matrix, src, dst, 5);
+		prima_matrix_apply2_to_int(var->current_state.matrix, src, dst, 5);
 		prepare_line_context( self, lp, &ctx);
 		return img_polyline(self, 5, dst, &ctx);
 	} else {

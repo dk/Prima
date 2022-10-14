@@ -1,12 +1,5 @@
 use Types;
 
-global %DrawablePaintState {
-	int line_end;
-	int line_join;
-	double line_width;
-	double miter_limit;
-}
-
 object Prima::Drawable ( Prima::Component)
 {
 	Font         font;
@@ -45,7 +38,6 @@ object Prima::Drawable ( Prima::Component)
 	property     Point         size;
 	property     Bool          textOpaque;
 	property     Bool          textOutBaseline;
-	property     Point         translate;
 	property     int           width;
 
 	# globals

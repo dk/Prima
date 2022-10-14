@@ -110,23 +110,87 @@ prima_read_point( SV *rv_av, int * pt, int number, char * error)
 }
 
 #define xmovi(src_t,dst_t) {                          \
-	int i;                                        \
-	src_t* src = (src_t*)ref;                     \
-	dst_t* dst = (dst_t*)p;                       \
-	for ( i = 0; i < count; i++)                  \
-		*(dst++) = *(src++);                  \
+	register int i;                               \
+	register src_t* s = (src_t*)src;              \
+	register dst_t* d = (dst_t*)dst;              \
+	for ( i = 0; i < n_points; i++)               \
+		*(d++) = *(s++);                      \
 	}                                             \
 	break                                         \
 
 #define xmovd(src_t,dst_t) {                          \
-	int i;                                        \
-	src_t* src = (src_t*)ref;                     \
-	dst_t* dst = (dst_t*)p;                       \
-	for ( i = 0; i < count; i++) {                \
-		register src_t x = *(src++);          \
-		*(dst++) = x + ((x < 0) ? -.5 : +.5); \
+	register int i;                               \
+	register src_t* s = (src_t*)src;              \
+	register dst_t* d = (dst_t*)dst;              \
+	for ( i = 0; i < n_points; i++) {             \
+		register src_t x = *(s++);            \
+		*(d++) = x + ((x < 0) ? -.5 : +.5);   \
 	}}                                            \
 	break                                         \
+
+static int
+typesize(char type)
+{
+	switch(type) {
+	case 'S': return sizeof(uint16_t);
+	case 's': return sizeof(int16_t);
+	case 'i': return sizeof(int);
+	case 'd': return sizeof(double);
+	default: croak("Bad type %c", type);
+	}
+}
+
+void *
+prima_array_convert( int n_points, void * src, char src_type, void * _dst, char dst_type )
+{
+	int sz, * dst;
+
+	(void) typesize(src_type); /* assert */
+	sz = typesize(dst_type);
+
+	if ( _dst != NULL )
+		dst = _dst;
+	else if ( !( dst = malloc( n_points * sz))) {
+		warn("Not enought memory");
+		return NULL;
+	}
+
+	if ( src_type == dst_type ) {
+		memcpy( dst, src, sz * n_points);
+	}
+	else switch ( src_type ) {
+	case 'i':
+		switch (dst_type) {
+		case 'd': xmovi(int,double);
+		case 's': xmovi(int,int16_t);
+		case 'S': xmovi(int,uint16_t);
+		}
+		break;
+	case 'S':
+		switch (dst_type) {
+		case 'd': xmovi(uint16_t,double);
+		case 'i': xmovi(uint16_t,int);
+		case 's': xmovi(uint16_t,int16_t);
+		}
+		break;
+	case 's':
+		switch (dst_type) {
+		case 'd': xmovi(int16_t,double);
+		case 'i': xmovi(int16_t,int);
+		case 'S': xmovi(int16_t,uint16_t);
+		}
+		break;
+	case 'd':
+		switch (dst_type) {
+		case 'i': xmovd(double,int);
+		case 's': xmovd(double,int16_t);
+		case 'S': xmovd(double,uint16_t);
+		}
+		break;
+	}
+
+	return dst;
+}
 
 
 void *
@@ -136,13 +200,10 @@ prima_read_array( SV * points, char * procName, char type, int div, int min, int
 	int i, count, psize;
 	void * p;
 
-	switch(type) {
-	case 'S': psize = sizeof(uint16_t); break;
-	case 's': psize = sizeof(int16_t);  break;
-	case 'i': psize = sizeof(int);      break;
-	case 'd': psize = sizeof(double);   break;
-	default: croak("Bad type %c", type);
-	}
+	if ( do_free )
+		*do_free = false;
+
+	psize = typesize(type);
 	if ( !SvROK( points) || ( SvTYPE( SvRV( points)) != SVt_PVAV)) {
 		warn("Invalid array reference passed to %s", procName);
 		return NULL;
@@ -178,46 +239,8 @@ prima_read_array( SV * points, char * procName, char type, int div, int min, int
 				*do_free = false;
 				return ref;
 			}
-
-			if (!( p = malloc( psize * count))) {
-				warn("not enough memory");
-				return false;
-			}
 			if (do_free) *do_free = true;
-
-			if ( *pack == type )
-				memcpy( p, ref, psize * count);
-			else switch ( *pack ) {
-			case 'i':
-				switch (type) {
-				case 'd': xmovi(int,double);
-				case 's': xmovi(int,int16_t);
-				case 'S': xmovi(int,uint16_t);
-				}
-				break;
-			case 'S':
-				switch (type) {
-				case 'd': xmovi(uint16_t,double);
-				case 'i': xmovi(uint16_t,int);
-				case 's': xmovi(uint16_t,int16_t);
-				}
-				break;
-			case 's':
-				switch (type) {
-				case 'd': xmovi(int16_t,double);
-				case 'i': xmovi(int16_t,int);
-				case 'S': xmovi(int16_t,uint16_t);
-				}
-				break;
-			case 'd':
-				switch (type) {
-				case 'i': xmovd(double,int);
-				case 's': xmovd(double,int16_t);
-				case 'S': xmovd(double,uint16_t);
-				}
-				break;
-			}
-			return p;
+			return prima_array_convert( count, ref, *pack, NULL, type);
 		}
 	}
 

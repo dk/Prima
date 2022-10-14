@@ -1557,36 +1557,8 @@ prima_read_point( SV *rv_av, int * pt, int number, char * error);
 extern void *
 prima_read_array( SV * points, char * procName, char type, int div, int min, int max, int * n_points, Bool * do_free);
 
-/* Matrix */
-void
-prima_matrix_apply( Matrix matrix, double *x, double *y);
-
-Point
-prima_matrix_apply_to_int( Matrix matrix, double x, double y);
-
-void
-prima_matrix_apply2( Matrix matrix, NPoint *src, NPoint *dst, int n_points);
-
-void
-prima_matrix_apply2_to_int( Matrix matrix, NPoint *src, Point *dst, int n_points);
-
-void
-prima_matrix_apply2_int_to_int( Matrix matrix, Point *src, Point *dst, int n_points);
-
-Point*
-prima_matrix_transform_to_int( Matrix martix, NPoint *src, Bool src_is_modifiable, int n_points);
-
-Bool
-prima_matrix_read_sv( SV * matrix, Matrix ctx);
-
-Bool
-prima_matrix_is_identity( Matrix matrix);
-
-void
-prima_matrix_set_identity( Matrix matrix);
-
-Bool
-prima_matrix_is_square_rectangular( Matrix matrix, NRect *src_dest_rect, NPoint *dest_polygon);
+extern void*
+prima_array_convert(int n_points, void * src, char src_type, void * dst, char dst_type);
 
 /* OS types */
 #define APC(const_name) CONSTANT(apc,const_name)
@@ -3587,6 +3559,14 @@ extern PRegionRec
 apc_region_copy_rects( Handle self);
 
 /* gp functions */
+typedef struct {
+	int line_end;
+	int line_join;
+	double line_width;
+	double miter_limit;
+	Matrix matrix;
+} DrawablePaintState;
+
 extern Bool
 apc_gp_init( Handle self);
 
@@ -3594,16 +3574,13 @@ extern Bool
 apc_gp_done( Handle self);
 
 extern Bool
-apc_gp_aa_bar( Handle self, double x1, double y1, double x2, double y2);
+apc_gp_aa_bars( Handle self, int nr, NRect *rr);
 
 extern Bool
 apc_gp_aa_fill_poly( Handle self, int numPts, NPoint * points);
 
 extern Bool
 apc_gp_alpha( Handle self, int alpha, int x1, int y1, int x2, int y2);
-
-extern Bool
-apc_gp_bar( Handle self, int x1, int y1, int x2, int y2);
 
 extern Bool
 apc_gp_bars( Handle self, int nr, Rect *rr);
@@ -3771,9 +3748,6 @@ apc_gp_get_handle( Handle self);
 extern int
 apc_gp_get_line_pattern( Handle self, unsigned char * buffer);
 
-extern Matrix *
-apc_gp_get_matrix( Handle self);
-
 extern Color
 apc_gp_get_nearest_color( Handle self, Color color);
 
@@ -3822,9 +3796,6 @@ apc_gp_get_text_width( Handle self, const char * text, int len, int flags);
 extern Bool
 apc_gp_get_text_out_baseline( Handle self);
 
-extern Point
-apc_gp_get_transform( Handle self);
-
 typedef void GCStorageFunction( Handle self, void * user_data, unsigned int user_data_size, Bool in_paint);
 
 extern Bool
@@ -3867,9 +3838,6 @@ extern Bool
 apc_gp_set_line_pattern( Handle self, unsigned char * pattern, int len);
 
 extern Bool
-apc_gp_set_matrix( Handle self, Matrix matrix );
-
-extern Bool
 apc_gp_set_palette( Handle self);
 
 extern Bool
@@ -3880,9 +3848,6 @@ apc_gp_set_rop( Handle self, int rop);
 
 extern Bool
 apc_gp_set_rop2( Handle self, int rop);
-
-extern Bool
-apc_gp_set_transform( Handle self, int x, int y);
 
 extern Bool
 apc_gp_set_text_opaque( Handle self, Bool opaque);

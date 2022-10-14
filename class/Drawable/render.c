@@ -1,4 +1,5 @@
 #include "apricot.h"
+#include "guts.h"
 #include "Drawable.h"
 #include "Drawable_private.h"
 
@@ -378,8 +379,7 @@ Drawable_render_polyline( SV * obj, SV * points, HV * profile)
 	if ( pexist(integer)) as_integer = pget_B(integer);
 
 	if ( pexist(matrix) ) {
-		int i;
-		double *src, *dst, *cmatrix;
+		double *cmatrix;
 		if (( cmatrix = (double*) prima_read_array(
 			pget_sv(matrix),
 			"render_polyline.matrix", 'd', 1, 6, 6, NULL, NULL)
@@ -391,14 +391,7 @@ Drawable_render_polyline( SV * obj, SV * points, HV * profile)
 			goto FAIL;
 		}
 		free_buffer = true;
-
-		for ( i = 0, src = input, dst = buffer; i < count; i++) {
-			double x,y;
-			x = *(src++);
-			y = *(src++);
-			*(dst++) = cmatrix[0] * x + cmatrix[2] * y + cmatrix[4];
-			*(dst++) = cmatrix[1] * x + cmatrix[3] * y + cmatrix[5];
-		}
+		prima_matrix_apply2( cmatrix, (NPoint*)input, (NPoint*)buffer, count);
 		free(cmatrix);
 	} else {
 		buffer = input;
@@ -433,18 +426,7 @@ Drawable_render_polyline( SV * obj, SV * points, HV * profile)
 
 	ret = prima_array_new(count * 2 * (as_integer ? sizeof(int) : sizeof(double)));
 	storage = prima_array_get_storage(ret);
-	if ( as_integer ) {
-		int i, *dst;
-		double *src;
-		for ( i = 0, src = buffer, dst = (int*)storage; i < count; i++) {
-			register double x;
-			x = *(src++);
-			*(dst++) = x + ((x < 0) ? -.5 : +.5);
-			x = *(src++);
-			*(dst++) = x + ((x < 0) ? -.5 : +.5);
-		}
-	} else
-		memcpy(storage, buffer, count * 2 * sizeof(double));
+	prima_array_convert(count * 2, buffer, 'd', storage, as_integer ? 'i' : 'd');
 
 	if ( free_buffer ) free( buffer );
 	if ( free_input ) free(input);
