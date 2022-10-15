@@ -1099,7 +1099,6 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
 			sys ps  = dc;
 			sys stock_bitmap = SelectObject( dc, bm);
 			sys bm = bm;
-			apc_gp_set_transform( self, -r. left, -r. top);
 			sys transform2. x = r. left;
 			sys transform2. y = r. top;
 			apt_set( aptBitmap);
@@ -1129,7 +1128,6 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
 		dsys( owner) ps = sys ps;
 		dsys(owner) transform2. x += ed. x;
 		dsys(owner) transform2. y += so. y - sz. y - ed. y;
-		apc_gp_set_transform( owner, 0, 0);
 		apc_gp_set_text_out_baseline( owner, dsys(owner) options. aptTextOutBaseline);
 
 		saved_dc_state = SaveDC( sys ps );
@@ -1154,16 +1152,11 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
 		RestoreDC( sys ps, saved_dc_state);
 
 		dsys(owner)transform2 = tr;
-		apc_gp_set_transform( owner, 0, 0);
-		dsys( owner) ps = dc;
+		dsys(owner)ps = dc;
 		CWidget( owner)-> end_paint( owner);
 	}
 
 	hwnd_enter_paint( self);
-
-	if ( useRPDraw) {
-		apc_gp_set_transform( self, sys transform. x, sys transform. y);
-	}
 
 	if ( is_apt(aptLayeredPaint)) {
 		Rect r;

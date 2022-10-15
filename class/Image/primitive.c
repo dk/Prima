@@ -267,7 +267,8 @@ prepare_fill_context(Handle self, PImgPaintContext ctx)
 	ctx-> tile = NULL_HANDLE;
 	if ( var-> fillPatternImage ) {
 		memset( p, 0xff, sizeof(FillPattern));
-		ctx-> tile = var-> fillPatternImage;
+		if ( PObject(var->fillPatternImage)->stage == csNormal)
+			ctx-> tile = var-> fillPatternImage;
 	} else if ( my-> fillPattern == Drawable_fillPattern) {
 		FillPattern * fp = apc_gp_get_fill_pattern( self);
 		if ( fp )

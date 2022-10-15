@@ -139,9 +139,7 @@ typedef HANDLE SOCKETHANDLE;
 #define objCheck          if ( var stage == csDead) return
 #define dobjCheck(handle) if ((( PObject)handle)-> stage == csDead) return
 
-#define SHIFT_X(X)    X + sys gp_transform.x
-#define SHIFT_Y(Y)    sys last_size.y - (Y) - 1 + sys gp_transform.y
-#define SHIFT_XY(X,Y) X += sys gp_transform.x,Y = sys last_size.y - (Y) - 1 + sys gp_transform.y
+#define SHIFT_Y(Y)    Y = sys last_size.y - (Y) - 1 - sys transform2.y
 
 typedef struct _HandleOptions_ {
 	unsigned aptWM_PAINT             : 1;       // true if inside WM_PAINT
@@ -339,7 +337,6 @@ typedef struct _PaintSaveData
 	FillPattern    fill_pattern;
 	Point          fill_pattern_offset;
 	int            rop, rop2;
-	Point          transform;
 	Font           font;
 	Bool           text_opaque, text_out_baseline;
 } PaintSaveData, *PPaintSaveData;
@@ -479,8 +476,6 @@ typedef struct _DrawableData
 	Point          fill_pattern_offset;
 	int            rop;
 	int            rop2;
-	Point          transform;
-	Point          gp_transform;
 
 	/* Basic widget fields */
 	HWND           handle;              // Windows handle of a widget

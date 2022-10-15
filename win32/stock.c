@@ -284,10 +284,14 @@ select_brush( Handle self)
 	/* image brush is not cacheable */
 	fg = sys rq_brush.color;
 	if ( var fillPatternImage ) {
+
+		if ( PObject(var fillPatternImage)->stage != csNormal )
+			return false;
+
 		b.lbHatch = (LONG_PTR) 0;
 
 		if ( PImage(var fillPatternImage)->type == imBW && !dsys(var fillPatternImage)options.aptIcon ) {
-			if ( sys rq_brush.back_color == fg )
+			if ( sys fg == sys bg )
 				mono_workaround = true;
 			else
 				b.lbHatch = (LONG_PTR) image_create_mono_pattern_dib(var fillPatternImage,fg,sys rq_brush.back_color);
@@ -398,10 +402,13 @@ stylus_is_complex( Handle self )
 }
 
 static PDCObject
-alloc_gp_image_brush( Handle self )
+alloc_gp_image_brush( Handle self)
 {
 	GpTexture *t;
 	PDCObject ret;
+
+	if ( PObject(var fillPatternImage)->stage != csNormal )
+		return NULL;
 
 	if (( t = image_create_gp_pattern( self, var fillPatternImage, sys alpha )) == NULL)
 		return NULL;
@@ -424,10 +431,14 @@ select_gp_brush(Handle self)
 	PDCObject ret;
 	Bool is_solid;
 	POINT offset;
+	int alpha;
 
 	is_solid = sys rq_brush.logbrush.lbStyle == BS_SOLID;
 
-	if ( var fillPatternImage ) {
+	if ( !is_solid && var fillPatternImage ) {
+		if ( PObject(var fillPatternImage)->stage != csNormal )
+			return false;
+
 		if (( ret = alloc_gp_image_brush(self)) != NULL )
 			goto SUCCESS;
 		else
@@ -436,12 +447,30 @@ select_gp_brush(Handle self)
 
 	memset(&key, 0, sizeof(key));
 	key.type = DCO_GP_BRUSH;
-	fg = sys rq_brush.color;
-	bg = sys rq_brush.back_color;
+
+	alpha = sys alpha;
+	switch ( sys rop ) {
+	case ropNotPut:
+		fg = ~sys rq_brush.color;
+		bg = ~sys rq_brush.back_color;
+		break;
+	case ropBlackness:
+		fg = bg = 0;
+		break;
+	case ropWhiteness:
+		fg = bg = 0xffffff;
+		break;
+	case ropNoOper:
+		fg = bg = alpha = 0;
+		break;
+	default:
+		fg = sys rq_brush.color;
+		bg = sys rq_brush.back_color;
+	}
 	b = (fg >> 16) & 0xff;
 	g = (fg & 0xff00) >> 8;
 	r = fg & 0xff;
-	key.fg = (sys alpha << 24) | (r << 16) | (g << 8) | b;
+	key.fg = (alpha << 24) | (r << 16) | (g << 8) | b;
 	key.opaque = sys rop2 == ropCopyPut;
 	if ( !is_solid ) {
 		key.opaque = (sys rop2 == ropCopyPut) ? 1 : 0;
@@ -1967,13 +1996,12 @@ hwnd_enter_paint( Handle self)
 	apc_gp_set_line_pattern( self,
 		( Byte*)(( sys line_pattern_len > sizeof(sys line_pattern)) ? sys line_pattern : ( Byte*)&sys line_pattern),
 		sys line_pattern_len);
-	apc_gp_set_matrix( self, sys matrix);
 	apc_gp_set_rop( self, sys rop);
 	apc_gp_set_rop2( self, sys rop2);
-	apc_gp_set_transform( self, sys transform. x, sys transform. y);
-	if ( var fillPatternImage )
-		apc_gp_set_fill_image( self, var fillPatternImage);
-	else
+	if ( var fillPatternImage ) {
+		if ( PObject(var fillPatternImage)->stage == csNormal )
+			apc_gp_set_fill_image( self, var fillPatternImage);
+	} else
 		apc_gp_set_fill_pattern( self, sys fill_pattern);
 
 	apt_clear( aptDCChangeLock);

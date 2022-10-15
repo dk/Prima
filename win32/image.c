@@ -1412,8 +1412,8 @@ apc_gp_stretch_image( Handle self, Handle image,
 	req. src_y = img->h - src_y - src_h;
 	req. src_w = src_w;
 	req. src_h = src_h;
-	req. dst_x = sys gp_transform.x + dst_x;
-	req. dst_y = sys gp_transform.y + sys last_size. y - dst_y - dst_h;
+	req. dst_x = dst_x - sys transform2.x;
+	req. dst_y = sys last_size.y - dst_y - dst_h - sys transform2.y;
 	req. dst_w = dst_w;
 	req. dst_h = dst_h;
 	req. rop   = rop;

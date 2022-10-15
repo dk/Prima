@@ -116,6 +116,7 @@ make_brush(Handle self, int* mix)
 			sys rop2 != ropNoOper ||
 			sys rq_brush.logbrush.lbStyle != BS_DIBPATTERNPT || (
 				var fillPatternImage &&
+				PObject(var fillPatternImage)->stage == csNormal &&
 				PImage(var fillPatternImage)->type != imBW &&
 				dsys(var fillPatternImage)options.aptIcon
 			)
@@ -128,6 +129,7 @@ make_brush(Handle self, int* mix)
 		apc_gp_set_rop( self, ropAndPut );
 		apc_gp_set_color( self, 0);
 		apc_gp_set_back_color( self, 0xffffff);
+
 		STYLUS_USE_BRUSH;
 		(*mix) = 10;
 		return true;
@@ -153,30 +155,6 @@ make_brush(Handle self, int* mix)
 }
 
 Bool
-apc_gp_bar( Handle self, int x1, int y1, int x2, int y2)
-{objCheck false;{
-	HDC  ps = sys ps;
-	int mix = 0;
-
-	check_swap( x1, x2);
-	check_swap( y1, y2);
-	SHIFT_XY(x1,y1);
-	SHIFT_XY(x2,y2);
-
-	SelectObject( sys ps, std_hollow_pen);
-	STYLUS_FREE_PEN;
-
-	while ( make_brush(self, &mix)) {
-		if ( !Rectangle( ps, x1, y2, x2 + 1, y1 + 1)) {
-			apiErr;
-			return false;
-		}
-	}
-
-	return true;
-}}
-
-Bool
 apc_gp_bars( Handle self, int nr, Rect *rr)
 {objCheck false;{
 	HDC     ps = sys ps;
@@ -188,19 +166,19 @@ apc_gp_bars( Handle self, int nr, Rect *rr)
 	STYLUS_FREE_PEN;
 
 	while ( make_brush(self, &mix)) {
-		for ( i = 0; i < nr; i++, rr++) {
-			Rect xr = *rr;
+		Rect *r = rr;
+		for ( i = 0; i < nr; i++, r++) {
+			Rect xr = *r;
 			check_swap( xr.left, xr.right);
 			check_swap( xr.bottom, xr.top);
-			SHIFT_XY( xr.left, xr.bottom);
-			SHIFT_XY( xr.right, xr.top);
-			if ( !( ok = Rectangle( ps, xr.left, xr.top, xr.left + 1, xr.bottom + 1))) {
+			SHIFT_Y( xr.bottom);
+			SHIFT_Y( xr.top);
+			if ( !( ok = Rectangle( ps, xr.left, xr.top, xr.right + 1, xr.bottom + 1))) {
 				apiErr;
 				break;
 			}
 		}
 	}
-
 	return ok;
 }}
 
@@ -231,7 +209,7 @@ apc_gp_alpha( Handle self, int alpha, int x1, int y1, int x2, int y2)
 	h = y2 - y1 + 1;
 
 	y1 = y2;
-	SHIFT_XY(x1,y1);
+	SHIFT_Y(y1);
 
 	dc     = GetDC(NULL);
 	buf_dc = CreateCompatibleDC(dc);
@@ -298,8 +276,8 @@ apc_gp_clear( Handle self, int x1, int y1, int x2, int y2)
 	}
 	check_swap( x1, x2);
 	check_swap( y1, y2);
-	SHIFT_XY(x1,y1);
-	SHIFT_XY(x2,y2);
+	SHIFT_Y(y1);
+	SHIFT_Y(y2);
 	if ( !( ok = Rectangle( sys ps, x1, y2, x2 + 1, y1 + 1)))
 		apiErr;
 
@@ -320,8 +298,9 @@ apc_gp_draw_poly( Handle self, int numPts, Point * points)
 		return false;
 
 	for ( i = 0; i < numPts; i++)  {
-		p[i].x = SHIFT_X(points[i].x);
-		p[i].y = SHIFT_Y(points[i].y);
+		p[i].x = points[i].x;
+		p[i].y = points[i].y;
+		SHIFT_Y(p[i].y);
 	}
 	if ( p[0]. x != p[numPts - 1].x || p[0]. y != p[numPts - 1].y || numPts == 2)
 		adjust_line_end_LONG( p[numPts - 2].x, p[numPts - 2].y, &p[numPts - 1].x, &p[numPts - 1].y);
@@ -357,7 +336,7 @@ apc_gp_draw_poly2( Handle self, int numPts, Point * points)
 	}
 
 	for ( i = 0; i < numPts; i++)  {
-		p[i].x = SHIFT_X(points[i].x);
+		p[i].x = points[i].x;
 		p[i].y = SHIFT_Y(points[i].y);
 		pts[i] = 2;
 		if ( i & 1)
@@ -409,7 +388,7 @@ apc_gp_fill_poly( Handle self, int numPts, Point * points)
 		return false;
 
 	for ( i = 0; i < numPts; i++)  {
-		p[i].x = SHIFT_X(points[i].x);
+		p[i].x = points[i].x;
 		p[i].y = SHIFT_Y(points[i].y);
 	}
 	if ( numPts == 2 )
@@ -499,6 +478,7 @@ apc_gp_fill_poly( Handle self, int numPts, Point * points)
 			sys rop2 == ropNoOper &&
 			sys rq_brush.logbrush.lbStyle == BS_DIBPATTERNPT && (
 				!var fillPatternImage || (
+					PObject(var fillPatternImage)->stage == csNormal &&
 					PImage(var fillPatternImage)->type == imBW &&
 					!dsys(var fillPatternImage)options.aptIcon
 				)
@@ -535,7 +515,7 @@ apc_gp_flood_fill( Handle self, int x, int y, Color borderColor, Bool singleBord
 {objCheck false;{
 	HDC ps = sys ps;
 	STYLUS_USE_BRUSH;
-	SHIFT_XY(x,y);
+	SHIFT_Y(y);
 	if ( !ExtFloodFill( ps, x, y, remap_color( borderColor, true),
 		singleBorder ? FLOODFILLSURFACE : FLOODFILLBORDER)) apiErrRet;
 	return true;
@@ -545,7 +525,7 @@ Color
 apc_gp_get_pixel( Handle self, int x, int y)
 {objCheck clInvalid;{
 	COLORREF c;
-	SHIFT_XY(x,y);
+	SHIFT_Y(y);
 	c = GetPixel( sys ps, x, y);
 	if ( c == CLR_INVALID) return clInvalid;
 	return remap_color(( Color) c, false);
@@ -564,8 +544,8 @@ apc_gp_line( Handle self, int x1, int y1, int x2, int y2)
 	HDC ps = sys ps;
 
 	adjust_line_end_int( x1, y1, &x2, &y2);
-	SHIFT_XY(x1,y1);
-	SHIFT_XY(x2,y2);
+	SHIFT_Y(y1);
+	SHIFT_Y(y2);
 
 	if (EMULATE_OPAQUE_LINE) {
 		STYLUS_USE_OPAQUE_LINE;
@@ -606,8 +586,8 @@ apc_gp_rectangle( Handle self, int x1, int y1, int x2, int y2)
 		y1--;
 		y2--;
 	}
-	SHIFT_XY(x1,y1);
-	SHIFT_XY(x2,y2);
+	SHIFT_Y(y1);
+	SHIFT_Y(y2);
 
 	if ( EMULATE_OPAQUE_LINE ) {
 		STYLUS_USE_OPAQUE_LINE;
@@ -626,7 +606,7 @@ Bool
 apc_gp_set_pixel( Handle self, int x, int y, Color color)
 {
 	objCheck false;
-	SHIFT_XY(x,y);
+	SHIFT_Y(y);
 	SetPixelV( sys ps, x, y, remap_color( color, true));
 	return true;
 }
@@ -867,22 +847,16 @@ apc_gp_get_rop2( Handle self)
 	return ( GetBkMode( sys ps) == OPAQUE) ? ropCopyPut : ropNoOper;
 }
 
-Point
-apc_gp_get_transform( Handle self)
-{
-	Point p = {0,0};
-	objCheck p;
-	if ( !sys ps) return sys transform;
-	p = sys gp_transform;
-	p. y = -p. y;
-	p. x += sys transform2. x;
-	p. y -= sys transform2. y;
-	return p;
-}
-
 #define pal_ok ((sys bpp <= 8) && ( sys pal))
 
-#define COLOR_CHANGE_FREE_BRUSH (var fillPatternImage ? ((PImage(var fillPatternImage)->type == imBW) && !dsys(var fillPatternImage)options.aptIcon) : true )
+#define COLOR_CHANGE_FREE_BRUSH ( \
+	( \
+		var fillPatternImage && \
+		PObject(var fillPatternImage)->stage == csNormal \
+	) ? \
+		((PImage(var fillPatternImage)->type == imBW) && !dsys(var fillPatternImage)options.aptIcon) : \
+		true \
+)
 
 Bool
 apc_gp_set_back_color( Handle self, Color color)
@@ -945,6 +919,10 @@ apply_fill_pattern_offset( Handle self )
 	Point o = sys fill_pattern_offset;
 	int w, h;
 	if ( var fillPatternImage ) {
+		if ( PObject(var fillPatternImage)->stage != csNormal ) {
+			o.x = o.y = 0;
+			return o;
+		}
 		Handle i = PDrawable(self)->fillPatternImage;
 		h = PDrawable(i)-> h;
 		w = PDrawable(i)-> w;
@@ -996,9 +974,7 @@ apc_gp_set_fill_pattern( Handle self, FillPattern pattern)
 		b-> logbrush.lbHatch = (LONG_PTR) 0;
 		b-> back_color       = GetBkColor( ps);
 		memcpy( b-> fill_pattern, pattern, sizeof( FillPattern));
-
 		offset = apply_fill_pattern_offset(self);
-		SetBrushOrgEx( sys ps, offset.x, offset.y, NULL);
 		if ( CURRENT_GP_BRUSH != NULL ) {
 			GdipResetTextureTransform(CURRENT_GP_BRUSH);
 			GdipTranslateTextureTransform(CURRENT_GP_BRUSH,offset.x,offset.y,MatrixOrderPrepend);
@@ -1144,20 +1120,6 @@ apc_gp_set_rop2( Handle self, int rop)
 }
 
 Bool
-apc_gp_set_transform( Handle self, int x, int y)
-{
-	objCheck false;
-	if ( !sys ps) {
-		sys transform. x = x;
-		sys transform. y = y;
-		return true;
-	}
-	sys gp_transform.x = x - sys transform2.x;
-	sys gp_transform.y = - ( y + sys transform2.y );
-	return true;
-}
-
-Bool
 apc_gp_push(Handle self, GCStorageFunction * destructor, void * user_data, unsigned int user_data_size)
 {
 	int size;
@@ -1196,7 +1158,6 @@ apc_gp_push(Handle self, GCStorageFunction * destructor, void * user_data, unsig
 
 		state->paint.rq_pen      = sys rq_pen;
 		state->paint.rq_brush    = sys rq_brush;
-		state->common.transform  = sys gp_transform;
 	} else {
 		state->common.line_pattern_len = sys line_pattern_len;
 		if ( state->common.line_pattern_len > sizeof(sys line_pattern)) {
@@ -1207,7 +1168,6 @@ apc_gp_push(Handle self, GCStorageFunction * destructor, void * user_data, unsig
 		} else
 			state->common.line_pattern = sys line_pattern;
 		state->nonpaint.palette = palette_create(self);
-		state->common.transform = sys transform;
 	}
 
 	memcpy( state->common.fill_pattern, sys fill_pattern, sizeof(FillPattern));
@@ -1252,7 +1212,6 @@ apc_gp_pop( Handle self, void * user_data)
 		sys rq_brush            = state-> paint.rq_brush;
 
 		sys pal                 = GetCurrentObject(sys ps, OBJ_PAL);
-		sys gp_transform        = state->common.transform;
 
 		if (sys graphics) {
 			HRGN rgn;
@@ -1281,7 +1240,6 @@ apc_gp_pop( Handle self, void * user_data)
 		sys line_pattern    = state->common.line_pattern;
 		if ( sys pal ) DeleteObject( sys pal);
 		sys pal            = state-> nonpaint.palette;
-		sys transform      = state-> common.transform;
 	}
 
 	memcpy( sys fill_pattern, state->common.fill_pattern, sizeof(FillPattern));

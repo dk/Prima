@@ -441,7 +441,7 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flag
 		STYLUS_USE_TEXT;
 		if ( opa != bk) SetBkMode( ps, opa);
 	}
-	SHIFT_XY(X,Y);
+	SHIFT_Y(Y);
 
 	if ( use_alpha ) {
 		if ( is_apt( aptTextOpaque))
@@ -601,7 +601,7 @@ apc_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 		s = 0.0;
 	}
 
-	SHIFT_XY(x,y);
+	SHIFT_Y(y);
 	fxx = xx = x;
 	fyy = yy = y;
 	savelen = t->len;

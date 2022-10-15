@@ -92,6 +92,10 @@ prima_get_fill_pattern_offsets( Handle self, int * x, int * y )
 	int Y = XX-> size.y;
 	if ( XX-> fp_stipple || XX-> fp_tile ) {
 		Handle i = PDrawable(self)->fillPatternImage;
+		if ( PObject(var fillPatternImage)->stage != csNormal ) {
+			*x = *y = 0;
+			return;
+		}
 		h = PDrawable(i)-> h;
 		w = PDrawable(i)-> w;
 	} else {
@@ -212,7 +216,8 @@ Unbuffered:
 	apc_gp_set_back_color( self, XX-> saved_back);
 
 	if ( PDrawable(self)-> fillPatternImage ) {
-		apc_gp_set_fill_image( self, PDrawable(self)-> fillPatternImage);
+		if ( PObject(PDrawable(self)->fillPatternImage)->stage == csNormal )
+			apc_gp_set_fill_image( self, PDrawable(self)-> fillPatternImage);
 	} else {
 		FillPattern fp;
 		memcpy( fp, XX->fill_pattern, sizeof(fp));
@@ -1479,7 +1484,10 @@ apc_gp_set_alpha( Handle self, int alpha)
 			return true;
 		XX-> alpha = alpha;
 		guts.xrender_pen_dirty = true;
-		if ( PDrawable(self)-> fillPatternImage )
+		if (
+			PDrawable(self)-> fillPatternImage &&
+			PObject(PDrawable(self)->fillPatternImage)->stage == csNormal
+		)
 			apc_gp_set_fill_image( self, PDrawable(self)-> fillPatternImage);
 	} else {
 		XX-> alpha = alpha;

@@ -250,7 +250,11 @@ pen_create_tile(Handle self, Pixmap tile)
 	XRenderPictureAttributes xrp_attr;
 	xrp_attr.repeat = RepeatNormal;
 
-	if ( PDrawable(self)-> fillPatternImage && !X(PDrawable(self)-> fillPatternImage)->type.icon ) {
+	if (
+		PDrawable(self)-> fillPatternImage &&
+		PObject(PDrawable(self)->fillPatternImage)->stage == csNormal &&
+		!X(PDrawable(self)-> fillPatternImage)->type.icon
+	) {
 		GC gc;
 		XGCValues gcv;
 

@@ -413,7 +413,7 @@ Drawable_fillPattern( Handle self, Bool set, SV * svpattern)
 	if ( !set) {
 		AV * av;
 		FillPattern * fp;
-		if ( var-> fillPatternImage )
+		if ( var-> fillPatternImage && PObject(var-> fillPatternImage)->stage == csNormal)
 			return newSVsv( PObject(var->fillPatternImage)->mate );
 
 		if ( !( fp = apc_gp_get_fill_pattern( self))) return NULL_SV;

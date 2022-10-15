@@ -109,15 +109,20 @@ apc_gp_get_antialias( Handle self)
 }
 
 Bool
-apc_gp_aa_bar( Handle self, double x1, double y1, double x2, double y2)
+apc_gp_aa_bars( Handle self, int nr, NRect *rr)
 {
 	double dy = sys last_size. y;
-	Point t = sys gp_transform;
+	Point t = sys transform2;
 	objCheck false;
 
 	if (( is_apt(aptDeviceBitmap) && ((PDeviceBitmap)self)->type == dbtBitmap)) {
+		Bool ok;
 		PImage pt;
+		Rect *bars;
 		if ( sys alpha < 127 ) return true;
+
+		if ( !( bars = prima_array_convert( nr * 4, rr, 'd', NULL, 'i')))
+			return false;
 
 		/* emulate transparency on a bitmap by xor/and */
 		if (
@@ -130,40 +135,64 @@ apc_gp_aa_bar( Handle self, double x1, double y1, double x2, double y2)
 				)
 			)
 		) {
-			Bool ok;
 			Color fg, bg;
-			int rop = apc_gp_get_rop(self);
+			int rop;
+			rop = apc_gp_get_rop(self);
 			fg = apc_gp_get_color(self);
 			bg = apc_gp_get_back_color(self);
 			apc_gp_set_color(self, 0);
 			apc_gp_set_back_color(self, 0xffffff);
 			apc_gp_set_rop(self, ropAndPut);
-			ok = apc_gp_bar(self, x1 + .5, y1 + .5, x2 + .5, y2 + .5);
+			ok = apc_gp_bars(self, nr, bars);
 			apc_gp_set_rop(self, ropXor);
 			apc_gp_set_color(self, fg);
 			apc_gp_set_back_color(self, 0);
-			ok |= apc_gp_bar(self, x1 + .5, y1 + .5, x2 + .5, y2 + .5);
+			ok |= apc_gp_bars(self, nr, bars);
 			apc_gp_set_rop(self, rop);
 			apc_gp_set_back_color(self, bg);
-			return ok;
+		} else {
+			ok = apc_gp_bars(self, nr, bars);
 		}
-		return apc_gp_bar(self, x1 + .5, y1 + .5, x2 + .5, y2 + .5);
-	}
 
-	x2 -= x1 - 1;
-	y2 -= y1 - 1;
-	x1 += t.x;
-	y1 = t.y + dy - y1 - y2;
+		free(bars);
+		return ok;
+	}
 
 	STYLUS_USE_GP_BRUSH;
 	if ( !CURRENT_GP_BRUSH ) return false;
-	GPCALL GdipFillRectangle(
-		sys graphics,
-		CURRENT_GP_BRUSH,
-		x1, y1, x2, y2
-	);
-	apiGPErrCheckRet(false);
 
+	if ( nr > 1 ) {
+		int i;
+		RectF *rects, *rri;
+		NRect *rrn;
+		if ( !( rects = malloc(sizeof(RectF) * nr)))
+			return false;
+		for ( i = 0, rrn = rr, rri = rects; i < nr; i++) {
+			rri->X      = rrn->left - t.x;
+			rri->Y      = dy - rrn->top - t.y - 1.0;
+			rri->Width  = rrn->left - rrn-> right  + 1.0;
+			rri->Height = rrn->top  - rrn-> bottom + 1.0;
+		}
+
+		GPCALL GdipFillRectangles(
+			sys graphics,
+			CURRENT_GP_BRUSH,
+			rects, nr
+		);
+
+		free(rects);
+	} else {
+		GPCALL GdipFillRectangle(
+			sys graphics,
+			CURRENT_GP_BRUSH,
+			rr->left     - t.x,
+			dy - rr->top - t.y      - 1.0,
+			rr->right - rr-> left   + 1.0,
+			rr->top   - rr-> bottom + 1.0
+		);
+	}
+
+	apiGPErrCheckRet(false);
 	return true;
 }
 
@@ -172,7 +201,7 @@ apc_gp_aa_fill_poly( Handle self, int numPts, NPoint * points)
 {
 	int i;
 	double dy = sys last_size. y;
-	Point t = sys gp_transform;
+	Point t = sys transform2;
 	GpPointF *p;
 	objCheck false;
 
@@ -182,11 +211,8 @@ apc_gp_aa_fill_poly( Handle self, int numPts, NPoint * points)
 		PImage pt;
 		if ( sys alpha < 127 ) return true;
 
-		if ( !( p = malloc(( numPts + 1) * sizeof( Point)))) return false;
-		for ( i = 0; i < numPts; i++) {
-			p[i].x = points[i].x + .5;
-			p[i].y = points[i].y + .5;
-		}
+		if ( !( p = prima_array_convert(( numPts + 1 ) * 2, points, 'd', NULL, 'i')))
+			return false;
 
 		/* emulate transparency on a bitmap by xor/and */
 		if (
@@ -225,8 +251,8 @@ apc_gp_aa_fill_poly( Handle self, int numPts, NPoint * points)
 		return false;
 
 	for ( i = 0; i < numPts; i++)  {
-		p[i].X = t.x + points[i].x;
-		p[i].Y = t.y + dy - points[i].y;
+		p[i].X = points[i].x - t.x;
+		p[i].Y = dy - points[i].y - t.y;
 	}
 
 	STYLUS_USE_GP_BRUSH;
