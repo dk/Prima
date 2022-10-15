@@ -92,7 +92,7 @@ prima_get_fill_pattern_offsets( Handle self, int * x, int * y )
 	int Y = XX-> size.y;
 	if ( XX-> fp_stipple || XX-> fp_tile ) {
 		Handle i = PDrawable(self)->fillPatternImage;
-		if ( PObject(var fillPatternImage)->stage != csNormal ) {
+		if ( PObject(PDrawable(self)->fillPatternImage)->stage != csNormal ) {
 			*x = *y = 0;
 			return;
 		}
