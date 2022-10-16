@@ -404,20 +404,6 @@ Widget_close( Handle self)
 	return canClose;
 }
 
-Bool
-Widget_custom_paint( Handle self)
-{
-	PList  list;
-	void * ret;
-	enter_method;
-	if ( my-> on_paint != Widget_on_paint) return true;
-	if ( var-> eventIDs == NULL) return false;
-	ret = hash_fetch( var-> eventIDs, "Paint", 5);
-	if ( ret == NULL) return false;
-	list = var-> events + PTR2UV( ret) - 1;
-	return list-> count > 0;
-}
-
 /*::d */
 void
 Widget_detach( Handle self, Handle objectHandle, Bool kill)

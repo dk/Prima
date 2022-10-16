@@ -125,7 +125,6 @@ object Prima::Widget( Prima::Drawable)
 	method   void     cleanup();
 	public   void     client_to_screen();
 	method   Bool     close();
-	c_only   Bool     custom_paint();
 	method   void     detach( Handle objectHandle, Bool kill);
 	method   void     done();
 	method   DNDResp  dnd_start(int dnd_actions = dndCopy, Bool default_pointers = 1);
