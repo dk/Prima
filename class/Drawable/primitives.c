@@ -249,7 +249,7 @@ Drawable_fillpoly(Handle self, SV * points)
 			Point *pt, t;
 			t.x = floor(var->current_state.matrix[4] + .5);
 			t.y = floor(var->current_state.matrix[5] + .5);
-			for ( i = 0, pt = p; i < count; i++, p++) {
+			for ( i = 0, pt = p; i < count; i++, pt++) {
 				pt->x += t.x;
 				pt->y += t.y;
 			}
