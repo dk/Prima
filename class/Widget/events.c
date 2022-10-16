@@ -379,6 +379,8 @@ SIZE_EVENT:;
 		my-> set_centered( self, var-> growMode & gmXCenter, var-> growMode & gmYCenter);
 	if ( !event-> gen. B)
 		my-> first_that( self, (void*) Widget_size_notify, &event-> gen. R);
+	var-> w = event-> gen. P. x;
+	var-> h = event-> gen. P. y;
 	if ( doNotify) {
 		Point oldSize;
 		oldSize. x = event-> gen. R. left;
