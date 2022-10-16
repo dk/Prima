@@ -160,6 +160,7 @@ Drawable_bars( Handle self, SV * rects)
 Bool
 Drawable_clear( Handle self, double x1, double y1, double x2, double y2)
 {
+	Bool ok;
 	Bool is_pure_rect = false;
 	NRect nrect = {x1,y1,x2,y2};
 	NPoint npoly[4];
@@ -179,30 +180,25 @@ Drawable_clear( Handle self, double x1, double y1, double x2, double y2)
 			FLOORN( npoly, 8 );
 	}
 
-	if ( IS_AA) {
-		Bool ok;
-		if ( !my->graphic_context_push(self)) return false;
-		apc_gp_set_color(self, apc_gp_get_back_color(self));
-		apc_gp_set_rop(self, ropCopyPut);
-		apc_gp_set_fill_pattern(self, fillPatterns[fpSolid]);
-		ok = is_pure_rect ?
-			apc_gp_aa_bars( self, 1, &nrect):
-			apc_gp_aa_fill_poly( self, 4, npoly);
-		my->graphic_context_pop(self);
-		return ok;
-	} else if ( is_pure_rect) {
+	if ( !var->antialias && is_pure_rect )
 		return apc_gp_clear(self, x1, y1, x2, y2);
-	} else {
-		Bool ok;
+
+	if ( !my->graphic_context_push(self)) return false;
+	apc_gp_set_alpha(self, 255);
+	apc_gp_set_color(self, apc_gp_get_back_color(self));
+	apc_gp_set_rop(self, ropCopyPut);
+	apc_gp_set_fill_pattern(self, fillPatterns[fpSolid]);
+	if ( is_pure_rect )
+		ok = apc_gp_aa_bars( self, 1, &nrect);
+	else if ( var-> antialias )
+		ok = apc_gp_aa_fill_poly( self, 4, npoly);
+	else {
 		Point poly[4];
-		if ( !my->graphic_context_push(self)) return false;
-		apc_gp_set_color(self, apc_gp_get_back_color(self));
-		apc_gp_set_rop(self, ropCopyPut);
-		apc_gp_set_fill_pattern(self, fillPatterns[fpSolid]);
+		prima_array_convert( 8, npoly, 'd', poly, 'i');
 		ok = apc_gp_fill_poly( self, 4, poly);
-		my->graphic_context_pop(self);
-		return ok;
 	}
+	my->graphic_context_pop(self);
+	return ok;
 }
 
 Bool

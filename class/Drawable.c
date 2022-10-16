@@ -316,6 +316,8 @@ Drawable_put_image_indirect( Handle self, Handle image, int x, int y, int xFrom,
 		warn("This method is not available on this class because it is not a system Drawable object. You need to implement your own");
 		return false;
 	}
+	x += var-> current_state.matrix[4];
+	y += var-> current_state.matrix[5];
 	if ( xLen == xDestLen && yLen == yDestLen)
 		ok = apc_gp_put_image( self, image, x, y, xFrom, yFrom, xLen, yLen, rop);
 	else
@@ -577,6 +579,8 @@ SV *
 Drawable_pixel( Handle self, Bool set, int x, int y, SV * color)
 {
 	CHECK_GP(0);
+	x += var-> current_state.matrix[4];
+	y += var-> current_state.matrix[5];
 	if (!set)
 		return newSViv( apc_gp_get_pixel( self, x, y));
 	apc_gp_set_pixel( self, x, y, SvIV( color));
@@ -611,7 +615,6 @@ Drawable_region( Handle self, Bool set, Handle mask)
 
 			apc_gp_set_region(self, region);
 			Object_destroy(region);
-
 		} else
 			apc_gp_set_region(self, NULL_HANDLE);
 

@@ -177,6 +177,8 @@ Drawable_text_out( Handle self, SV * text, int x, int y, int from, int len)
 		if ((len = Drawable_check_length(from,len,dlen)) == 0)
 			return true;
 		c_text = Drawable_hop_text(c_text, utf8, from);
+		x += var-> current_state.matrix[4];
+		y += var-> current_state.matrix[5];
 		ok = apc_gp_text_out( self, c_text, x, y, len, utf8 ? toUTF8 : 0);
 		if ( !ok) perl_error();
 	} else if ( SvTYPE( SvRV( text)) == SVt_PVAV) {
@@ -189,6 +191,8 @@ Drawable_text_out( Handle self, SV * text, int x, int y, int from, int len)
 		if (( len = Drawable_check_length(from,len,t.len)) == 0)
 			return true;
 		Drawable_hop_glyphs(&t, from, len);
+		x += var-> current_state.matrix[4];
+		y += var-> current_state.matrix[5];
 		ok = apc_gp_glyphs_out( self, &t, x, y);
 		if ( !ok) perl_error();
 	} else {
