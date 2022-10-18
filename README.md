@@ -226,6 +226,11 @@ Visit http://www.prima.eu.org/ for the recent versions of the toolkit. You can
 use github.com/dk/Prima to keep in touch. The mailing list on the toolkit is
 available, you can ask questions there. See the Prima homepage for details.
 
+Online documentation at MetaCPAN: https://metacpan.org/dist/Prima/view/Prima.pm
+
+Printable documentation: http://prima.eu.org/download/Prima.pdf
+
+
 Copyright
 =========
 
