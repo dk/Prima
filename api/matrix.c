@@ -75,24 +75,6 @@ prima_matrix_apply2_int_to_int( Matrix matrix, Point *src, Point *dst, int n)
 	}
 }
 
-Bool
-prima_matrix_read_sv( SV * m, Matrix ctx)
-{
-	AV * av;
-	if ( m && SvOK(m) && SvROK(m) && SvTYPE(av = (AV*)SvRV(m)) == SVt_PVAV && av_len(av) == 5) {
-		int i;
-		for ( i = 0; i < 6; i++) {
-			SV ** sv = av_fetch( av, i, 0);
-			ctx[i] = (sv && *sv && SvOK(*sv)) ? SvIV(*sv) : 0;
-		}
-		return true;
-	} else {
-		warn("Bad array returned by .matrix");
-		prima_matrix_set_identity(ctx);
-		return false;
-	}
-}
-
 void
 prima_matrix_set_identity( Matrix m)
 {
