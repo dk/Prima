@@ -260,13 +260,13 @@ prima_read_array( SV * points, char * procName, char type, int div, int min, int
 		}
 		switch (type) {
 		case 'i':
-			*(((int*)p) + i) = SvIV( *psv);
+			*(((int*)p) + i) = floor( SvNV( *psv) + .5 );
 			break;
 		case 'd':
 			*(((double*)p) + i) = SvNV( *psv);
 			break;
 		case 's':
-			*(((int16_t*)p) + i) = SvIV( *psv);
+			*(((int16_t*)p) + i) = floor( SvIV( *psv) + .5 );
 			break;
 		case 'S':
 			*(((uint16_t*)p) + i) = SvUV( *psv);
