@@ -124,7 +124,7 @@ prima_read_point( SV *rv_av, int * pt, int number, char * error)
 	register dst_t* d = (dst_t*)dst;              \
 	for ( i = 0; i < n_points; i++) {             \
 		register src_t x = *(s++);            \
-		*(d++) = x + ((x < 0) ? -.5 : +.5);   \
+		*(d++) = floor(x + .5);               \
 	}}                                            \
 	break                                         \
 
