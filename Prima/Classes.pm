@@ -715,8 +715,9 @@ sub graphic_context
 	my $cb   = pop;
 	return unless $self->graphic_context_push;
 	$self->set(@_);
-	$cb->();
-	return $self->graphic_context_pop;
+	my $ok = $cb->();
+	return unless $self->graphic_context_pop;
+	return $ok;
 }
 
 sub translate
