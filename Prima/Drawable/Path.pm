@@ -368,7 +368,7 @@ sub points
 		}
 		for my $ppp ( @{$self->{points}}) {
 			@$ppp = grep { @$_ > 2 } @$ppp;
-			Prima::array::deduplicate($_,2) for @$ppp;
+			Prima::array::deduplicate($_,2,4) for @$ppp;
 		}
 		$self->{last_matrix} = $self->{curr}->{matrix};
 	}
@@ -413,15 +413,15 @@ sub matrix_apply
 
 sub get_approximate_matrix_scaling
 {
-	my $m = shift->{curr}->{matrix};
-	my $r = $m->[A];
-	$r = $m->[B] if $r < $m->[B];
-	$r = $m->[C] if $r < $m->[C];
-	$r = $m->[D] if $r < $m->[D];
+	my @m = map { abs $_ } @{ shift->{curr}->{matrix} };
+	my $r = $m[A];
+	$r = $m[B] if $r < $m[B];
+	$r = $m[C] if $r < $m[C];
+	$r = $m[D] if $r < $m[D];
 	return $r;
 }
 
-sub __map_round { map { int($_ + (($_ < 0) ? -.5 : .5)) } @_ }
+sub __map_round { map { int(Prima::Utils::floor($_ + .5)) } @_ }
 
 sub _save
 {
@@ -903,7 +903,11 @@ sub widen
 		$opt;
 	} qw(lineWidth lineJoin lineEnd linePattern);
 
-	my $pp = [ map { @$_ } @{$self->points} ];
+	my $pp;
+	{
+		local $self->{subpixel} = 1;
+		$pp = [ map { @$_ } @{$self->points} ];
+	}
 	return $dst if $lp eq lp::Null;
 	$pp = poly2patterns($pp, $lp, $lw, !$self->{subpixel}) if $lp ne lp::Solid;
 
@@ -1122,7 +1126,7 @@ sub region
 	$rgnop //= rgnop::Union;
 	$reg ? $reg->combine($_, $rgnop) : ($reg = $_)
 		for map { Prima::Region->new( polygon => $_, fillMode => $mode) } $self->points(fill => 1);
-	return $reg;
+	return $reg // Prima::Region->new;
 }
 
 sub _debug_commands

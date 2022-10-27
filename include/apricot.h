@@ -3529,6 +3529,9 @@ extern Bool
 apc_region_create( Handle self, PRegionRec rec);
 
 extern Bool
+apc_region_create_boxes( Handle self, PBoxRegionRec rec);
+
+extern Bool
 apc_region_destroy( Handle self);
 
 extern Bool

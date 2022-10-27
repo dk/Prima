@@ -285,8 +285,8 @@ XS(Prima_array_deduplicate_FROMPERL)
 	dXSARGS;
 	void *ref, *cmp;
 	char * letter;
-	size_t i, new_size, length, orig_length, item_size, cmp_length;
-	if ( items != 2)
+	size_t i, new_size, length, orig_length, item_size, cmp_length, min_length;
+	if ( items != 3)
 		croak ("Invalid usage of ::deduplicate");
 
 	if ( !prima_array_parse( ST(0), &ref, &length, &letter)) {
@@ -301,6 +301,11 @@ XS(Prima_array_deduplicate_FROMPERL)
 
 	if ( length < 2 * cmp_length )
 		goto EXIT;
+
+	min_length = SvIV(ST(2));
+	if ( min_length >= length )
+		goto EXIT;
+	min_length += cmp_length;
 
 	switch (*letter) {
 	case 'i':
@@ -330,10 +335,13 @@ XS(Prima_array_deduplicate_FROMPERL)
 		if ( memcmp( cmp, new_ref, cmp_length * item_size ) != 0 ) {
 			new_size += cmp_length;
 			cmp = new_ref;
-		} else {
+		} else if ( length >= min_length ) {
 			memmove( cmp, new_ref, (length - i) * item_size);
 			length -= cmp_length;
 			i -= cmp_length;
+		} else {
+			new_size = min_length - cmp_length;
+			break;
 		}
 	}
 

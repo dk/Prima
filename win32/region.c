@@ -162,15 +162,15 @@ rgn_polygon(Handle self, PolygonRegionRec * r)
 		if ( max < r->points[i].y)
 			max = r->points[i].y;
 	}
-	max++;
 	for ( i = 0; i < r->n_points; i++) {
 		xp[i].x = r->points[i].x;
-		xp[i].y = max - r->points[i].y - 1;
+		xp[i].y = max - r->points[i].y;
 	}
 	if ( open ) {
 		xp[i].x = r->points[0].x;
-		xp[i].y = max - r->points[0].y - 1;
+		xp[i].y = max - r->points[0].y;
 	}
+	max++;
 
 	APERTURE = max;
 	REGION = CreatePolygonRgn( xp, r->n_points, 

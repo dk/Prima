@@ -245,16 +245,13 @@ sub stroke_img_primitive
 	$path->$request(@_);
 	my $ok = 1;
 
-	if ( int($self->lineWidth + .5) == 0 ) {
+	return $self->graphic_context( sub {
 		# paths produce floating point coordinates and line end arcs,
 		# here we need internal pixel-wise plotting
 		$self-> matrix( $Prima::matrix::identity );
-		for my $pp ( map { @$_ } @{ $path->points } ) {
-			last unless $ok &= $self->polyline($pp);
-		}
-		$self-> matrix( $matrix );
-		return $ok;
-	}
+		$self-> lineWidth(0);
+		return $path->stroke;
+	}) if $self->lineWidth < 1.5;
 
 	my %widen;
 	my $method;
@@ -334,7 +331,7 @@ sub stroke_imgaa_primitive
 
 	return unless $self->graphic_context_push;
 	$self->fillPattern(fp::Solid);
-	$self->fillMode(fm::Winding);
+	$self->fillMode(fm::Winding | fm::Overlay);
 	$self->matrix($Prima::matrix::identity);
 	$self->color($self->backColor) if $lp eq lp::Null;
 	my $ok = 1;
@@ -378,20 +375,17 @@ sub stroke_primitive
 	my $path = $self->new_path;
 	$path->$request(@_);
 
-	if (!$self->antialias && $self->alpha == 255 && $self->lineWidth < 1.5) {
-		return unless $self->graphic_context_push;
+	return $self->graphic_context( sub {
 		$self-> lineWidth(0);
-		my $ok = $path->stroke;
-		$self->graphic_context_pop;
-		return $ok;
-	}
+		return $path->stroke;
+	} ) if !$self->antialias && $self->alpha == 255 && $self->lineWidth < 1.5;
 
 	$path = $path->widen(
 		linePattern => ( $lp eq lp::Null) ? lp::Solid : $lp,
 	);
 	return unless $self->graphic_context_push;
 	$self->fillPattern(fp::Solid);
-	$self->fillMode(fm::Winding);
+	$self->fillMode(fm::Winding | fm::Overlay);
 	$self->color($self->backColor) if $lp eq lp::Null;
 	my $ok = $path->fill;
 	$self->graphic_context_pop;

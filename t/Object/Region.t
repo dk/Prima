@@ -251,23 +251,42 @@ sub render
 	$b->bar(0,0,$b->size);
 }
 
-$r = Prima::Region->new( polygon => [0,0,0,5,5,5,5,0, 0,0,0,2,2,2,2,0], fillMode => fm::Winding|fm::Overlay);
+$r = Prima::Region->new( polygon => [0,0,0,5,5,5,5,0, 0,0,0,2,2,2,2,0], fillMode => fm::Winding);
 render($r);
 is( $b->sum, 25 * 255, "polygon with winding");
 ok( $r->equals( Prima::Region->new(box => $r->get_boxes)), "is equal (4)");
 
-$r = Prima::Region->new( polygon => [0,0,0,5,5,5,5,0, 0,0,0,2,2,2,2,0], fillMode => fm::Alternate|fm::Overlay);
-render($r);
-is( $b->sum, 24 * 255, "polygon without winding");
-ok( $r->equals( Prima::Region->new(box => $r->get_boxes)), "is equal (5)");
-
-ok( 
+ok(
 	$b->pixel(0,0) != 0 &&
 	$b->pixel(1,0) != 0 &&
 	$b->pixel(0,1) != 0 &&
-	$b->pixel(1,1) == 0,
-	"pixels are in correct position"
+	$b->pixel(1,1) != 0,
+	"pixels are in correct position (1)"
 );
+
+$r = Prima::Region->new( polygon => [0,0,0,5,5,5,5,0, 0,0,0,2,2,2,2,0], fillMode => fm::Alternate);
+render($r);
+is( $b->sum, 21 * 255, "polygon without winding");
+ok( $r->equals( Prima::Region->new(box => $r->get_boxes)), "is equal (5)");
+
+ok(
+	$b->pixel(0,0) == 0 &&
+	$b->pixel(1,0) == 0 &&
+	$b->pixel(0,1) == 0 &&
+	$b->pixel(1,1) == 0,
+	"pixels are in correct position (2)"
+);
+
+$r = Prima::Region->new( polygon => [0,0,0,5,5,5,5,0, 0,0,0,2,2,2,2,0], fillMode => fm::Winding|fm::Overlay);
+render($r);
+is( $b->sum, 25 * 255, "overlay polygon with winding");
+ok( $r->equals( Prima::Region->new(box => $r->get_boxes)), "is equal (6)");
+
+$r = Prima::Region->new( polygon => [0,0,0,5,5,5,5,0, 0,0,0,2,2,2,2,0], fillMode => fm::Alternate|fm::Overlay);
+render($r);
+is( $b->sum, 22 * 255, "overlay polygon without winding");
+ok( $r->equals( Prima::Region->new(box => $r->get_boxes)), "is equal (7)");
+
 my $d = $b->data;
 render($b->to_region);
 is_bytes($d, $b->data, "region to image and back is okay");

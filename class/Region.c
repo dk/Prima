@@ -1,5 +1,6 @@
 #include "apricot.h"
 #include "Region.h"
+#include "img_conv.h"
 #include "Image.h"
 #include <Region.inc>
 
@@ -66,7 +67,7 @@ Region_init( Handle self, HV * profile)
 			r. type = rgnEmpty;
 			break;
 		}
-		r. data. polygon. fill_mode = pexist(fillMode) ? pget_i(fillMode) : fmOverlay;
+		r. data. polygon. fill_mode = pexist(fillMode) ? pget_i(fillMode) : (fmOverlay | fmWinding);
 		break;
 	case rgnEmpty:
 		break;
@@ -85,7 +86,17 @@ Region_init( Handle self, HV * profile)
 		}
 	}
 CREATE:
-	ok = apc_region_create( self, &r);
+	if ( r.type == rgnPolygon ) {
+		PBoxRegionRec x;
+		if ( !( x = img_region_polygon( r.data.polygon.points, r.data.polygon.n_points, r.data.polygon.fill_mode)))
+			ok = false;
+		if ( ok ) {
+			ok = apc_region_create_boxes(self, x);
+			free( x);
+		}
+	} else {
+		ok = apc_region_create( self, &r);
+	}
 	if ( r. type == rgnPolygon   ) free( r. data. polygon. points );
 	if ( r. type == rgnRectangle ) free( r. data. box. boxes );
 	if ( free_image ) Object_destroy(r.data.image);

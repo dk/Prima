@@ -340,6 +340,7 @@ extern Bool img_region_foreach(
 	RegionCallbackFunc *cb, void *param
 );
 extern Bool img_point_in_region( int x, int y, PBoxRegionRec region);
+extern PBoxRegionRec img_region_polygon( Point *Pts, int Count, int rule);
 
 /* istXXX function */
 typedef double FilterFunc( const double x );

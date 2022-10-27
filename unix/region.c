@@ -149,15 +149,15 @@ rgn_polygon(Handle self, PolygonRegionRec * r)
 		if ( max < r->points[i].y)
 			max = r->points[i].y;
 	}
-	max++;
 	for ( i = 0; i < r->n_points; i++) {
 		xp[i].x = r->points[i].x;
-		xp[i].y = max - r->points[i].y - 1;
+		xp[i].y = max - r->points[i].y;
 	}
 	if ( open ) {
 		xp[i].x = r->points[0].x;
-		xp[i].y = max - r->points[0].y - 1;
+		xp[i].y = max - r->points[0].y;
 	}
+	max++;
 
 	pAPERTURE = max;
 	pREGION = XPolygonRegion( xp, r->n_points, 
@@ -293,6 +293,12 @@ apc_region_create( Handle self, PRegionRec rec)
 	default:
 		return false;
 	}
+}
+
+Bool
+apc_region_create_boxes( Handle self, PBoxRegionRec rec)
+{
+	return rgn_rect(self, rec->n_boxes, rec->boxes);
 }
 
 Bool
@@ -656,7 +662,7 @@ apc_region_copy_rects( Handle self)
 		dst-> y = aperture - src-> y2;
 		dst-> width  = src-> x2 - src->x1;
 		dst-> height = src-> y2 - src->y1;
-/*		printf("%d: %d %d %d %d => %d %d %d %d\n", aperture, src->x1, src->y1, src->x2, src->y2, dst->x, dst->y, dst-> width, dst->height); */
+		/* printf("%d: %d %d %d %d => %d %d %d %d\n", aperture, src->x1, src->y1, src->x2, src->y2, dst->x, dst->y, dst-> width, dst->height);  */
 	}
 
 	return ret;
