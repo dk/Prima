@@ -395,7 +395,7 @@ apc_region_copy_rects( Handle self)
 	REGION *region;
 
 	region = (REGION*) pREGION;
-	if ( !( ret = img_region_alloc( NULL, region->numRects )))
+	if ( !( ret = img_region_new( region->numRects )))
 		return NULL;
 
 	ret-> n_boxes = region-> numRects;

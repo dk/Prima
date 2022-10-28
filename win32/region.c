@@ -20,12 +20,6 @@ extern "C" {
 #define REGION GET_REGION(self)->region
 #define APERTURE GET_REGION(self)->aperture
 
-static Bool
-rgn_rect(Handle self, int count, Box * r)
-{
-	return true;
-}
-
 Bool
 apc_region_create( Handle self, PRegionRec rec)
 {
@@ -300,7 +294,7 @@ apc_region_copy_rects( Handle self)
 	size = GetRegionData( REGION, size, rgndata);
 	if ( size == 0) return NULL;
 
-	if ( !( ret = img_region_alloc( NULL, rgndata-> rdh. nCount )))
+	if ( !( ret = img_region_new( rgndata-> rdh. nCount )))
 		return NULL;
 
 	ret-> n_boxes = rgndata->rdh. nCount;

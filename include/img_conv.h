@@ -333,6 +333,7 @@ extern void img_fill_alpha_buf( Byte * dst, Byte * src, int width, int bpp);
 typedef Bool RegionCallbackFunc( int x, int y, int w, int h, void * param);
 
 extern Box img_region_box(PRegionRec region);
+#define img_region_new(sz) img_region_alloc(NULL,sz)
 extern PRegionRec img_region_alloc(PRegionRec old_region, int n_size);
 extern PRegionRec img_region_extend(PRegionRec region, int x, int y, int width, int height);
 extern Bool img_region_foreach(

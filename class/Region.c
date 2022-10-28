@@ -147,7 +147,7 @@ Region_clone_data( Handle self, PRegionRec data)
 {
 	PRegionRec copy;
 
-	if ( !( copy = img_region_alloc( NULL, data->n_boxes )))
+	if ( !( copy = img_region_new( data->n_boxes )))
 		return NULL;
 	copy-> n_boxes = data-> n_boxes;
 	memcpy( copy-> boxes, data-> boxes, data-> n_boxes * sizeof(Box) );

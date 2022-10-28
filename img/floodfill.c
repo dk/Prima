@@ -14,7 +14,6 @@ typedef struct {
 	int           first;
 	PList  *      lists;
 	PRegionRec    new_region;
-	int           new_region_size;
 } FillSession;
 
 static Bool
@@ -121,10 +120,9 @@ fs_intersect( int x1, int y, int w, int h, FillSession * fs)
 	int i, j, x2;
 
 	x2 = x1 + w - 1;
-	for ( i = 0; i < h; i++) 
+	for ( i = 0; i < h; i++)
 		if (( l = fs-> lists[y + i - fs->first]) != NULL )
 			for ( j = 0, items = l->items; j < l-> count; j+=2) {
-				Box * box;
 				int left  = (int) (*(items++));
 				int right = (int) (*(items++));
 				if ( left < x1 )
@@ -133,19 +131,8 @@ fs_intersect( int x1, int y, int w, int h, FillSession * fs)
 					right = x2;
 				if ( left > right )
 					continue;
-				if ( fs-> new_region-> n_boxes >= fs-> new_region_size ) {
-					PRegionRec n;
-					fs-> new_region_size *= 2;
-					if ( !( n = img_region_alloc( fs-> new_region, fs-> new_region_size)))
-						return false;
-					fs-> new_region = n;
-				}
-				box = fs-> new_region-> boxes + fs-> new_region-> n_boxes;
-				box-> x      = left;
-				box-> y      = y + i;
-				box-> width  = right - left + 1;
-				box-> height = 1;
-				fs-> new_region-> n_boxes++;
+				if ( !img_region_extend( fs-> new_region, left, y + i, right - left + 1, 1))
+					return false;
 			}
 
 	return true;
@@ -157,7 +144,7 @@ img_flood_fill( Handle self, int x, int y, ColorPixel color, Bool single_border,
 	Bool ok = true;
 	Box box;
 	FillSession fs;
-	
+
 	fs.i             = ( PIcon ) self;
 	fs.color         = color;
 	fs.bpp           = fs.i->type & imBPP;
@@ -177,8 +164,7 @@ img_flood_fill( Handle self, int x, int y, ColorPixel color, Bool single_border,
 		fs. clip. top    = fs.i->h - 1;
 	}
 
-	fs. new_region_size = (fs. clip. top - fs. clip. bottom + 1) * 4;
-	if ( !( fs. new_region = img_region_alloc(NULL, fs. new_region_size)))
+	if ( !( fs. new_region = img_region_new((fs. clip. top - fs. clip. bottom + 1) * 4)))
 		return false;
 
 	fs. first = fs. clip. bottom;

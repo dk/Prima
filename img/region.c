@@ -65,7 +65,7 @@ img_region_extend(PRegionRec region, int x, int y, int width, int height)
 {
 	Box *r;
 	if ( !region ) {
-		if ( !( region = img_region_alloc( NULL, 32 )))
+		if ( !( region = img_region_new( 32 )))
 			return NULL;
 	}
 	if ( region-> size == region-> n_boxes ) {
@@ -144,7 +144,7 @@ img_region_mask( Handle mask)
 	h = PImage( mask)-> h;
 	idata  = PImage( mask)-> data;
 
-	if ( !( rdata = img_region_alloc(NULL, 256)))
+	if ( !( rdata = img_region_new(256)))
 		return NULL;
 
 	count = 0;
@@ -870,7 +870,6 @@ PtsToRegion(
     register int numFullPtBlocks,
     register int iCurPtBlock,
     POINTBLOCK *FirstPtBlock,
-    PRegionRec reg,
     int outline)
 {
     register Box  *rects;
@@ -878,14 +877,12 @@ PtsToRegion(
     register POINTBLOCK *CurPtBlock;
     register int i;
     register int numRects;
-    PRegionRec prevReg = reg;
+    PRegionRec reg;
 
     numRects = ((numFullPtBlocks * NUMPTSTOBUFFER) + iCurPtBlock) >> 1;
 
-    if ( !( reg = img_region_alloc(prevReg, numRects))) {
-       free( prevReg );
-       return 0;
-    }
+    if ( !( reg = img_region_new(numRects)))
+       return NULL;
 
     CurPtBlock = FirstPtBlock;
     rects = reg->boxes - 1;
@@ -998,7 +995,7 @@ static PRegionRec
 rect_region( Box * box)
 {
 	PRegionRec reg;
-	if ( !( reg = img_region_alloc(NULL, 1)))
+	if ( !( reg = img_region_new(1)))
 		return NULL;
 	reg->n_boxes= 1;
 	reg->boxes[0] = *box;
@@ -1045,13 +1042,13 @@ img_region_polygon(
 
     if (Count < 2) {
         DEBUG("not enought points");
-    	return img_region_alloc(NULL, 0);
+    	return img_region_new(0);
     }
 
     if (is_hline( Pts, Count, &single)) {
 	if ( !outline ) {
            DEBUG("got invisible hline");
-    	   return img_region_alloc(NULL, 0);
+    	   return img_region_new(0);
 	}
         DEBUG("got hline %d %d %d %d\n", single.x, single.y, single.width, single.height);
     	return rect_region(&single);
@@ -1062,12 +1059,8 @@ img_region_polygon(
     	return rect_region(&single);
     }
 
-    if (! (region = img_region_alloc(NULL, 0))) return NULL;
-
-    if (! (pETEs = malloc(Count * sizeof(EdgeTableEntry)))) {
-	free(region);
+    if (! (pETEs = malloc(Count * sizeof(EdgeTableEntry))))
 	return NULL;
-    }
 
     pts = FirstPtBlock.pts;
     CreateETandAET(Count, Pts, &ET, &AET, pETEs, &SLLBlock, outline);
@@ -1173,7 +1166,7 @@ img_region_polygon(
         }
     }
     FreeStorage(SLLBlock.next);
-    region = PtsToRegion(numFullPtBlocks, iPts, &FirstPtBlock, region, outline);
+    region = PtsToRegion(numFullPtBlocks, iPts, &FirstPtBlock, outline);
     for (curPtBlock = FirstPtBlock.next; --numFullPtBlocks >= 0;) {
 	tmpPtBlock = curPtBlock->next;
 	free(curPtBlock);
