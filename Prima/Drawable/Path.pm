@@ -933,14 +933,16 @@ sub widen
 
 	my @dst;
 	my $lw2 = $lw / 2;
-	for my $p ( @$pp ) {
+	for ( @$pp ) {
+		next unless @$_;
+
 		my (@u,@d);
-		next unless @$p;
-		my $closed = $p->[0] == $p->[-2] && $p->[1] == $p->[-1];
-		my $last = @$p - ($closed ? 4 : 2);
+		my @p = Prima::array::list($_); # expand once as access is expensive
+		my $closed = $p[0] == $p[-2] && $p[1] == $p[-1];
+		my $last = @p - ($closed ? 4 : 2);
 
 		if ( $last == 0 ) {
-			my ($x,$y) = @$p;
+			my ($x,$y) = @p;
 			if ( $le == le::Square || $no_line_ends ) {
 				$dst->line( 
 					$x - $lw2, $y - $lw2,
@@ -958,14 +960,14 @@ sub widen
 		my ($firstout, $firstin, $firstsign);
 		for ( my $i = 0; $i <= $last; $i += 2 ) {
 			$opt{callback}->(
-				$i, $p, {
+				$i, \@p, {
 					lineJoin  => sub { $lj = shift },
 					lineEnd   => sub { $le = shift },
 					lineWidth => sub { $lw2 = ($lw = shift) / 2 },
 				}
 			) if $opt{callback};
 			if ( !$closed && ($i == 0 || $i == $last )) {
-				my ( $xo, $yo, $xa, $ya) = @$p[ $i ? (map { $i + $_ } 0,1,-2,-1) : (0..3)];
+				my ( $xo, $yo, $xa, $ya) = @p[ $i ? (map { $i + $_ } 0,1,-2,-1) : (0..3)];
         	        	my $theta = atan2( $ya - $yo, $xa - $xo );
 				if ( $le == le::Flat || $no_line_ends) {
 					my ($sin, $cos) = (sin($theta + $PI_2), cos($theta + $PI_2));
@@ -999,7 +1001,7 @@ sub widen
 				} else {
 					($prev, $next) = ($i - 2, 0);
 				}
-				my ($xo,$yo,$xa,$ya,$xb,$yb) = @$p[$i,$i+1,$prev,$prev+1,$next,$next+1];
+				my ($xo,$yo,$xa,$ya,$xb,$yb) = @p[$i,$i+1,$prev,$prev+1,$next,$next+1];
 				my $dya = $yo - $ya;
 				my $dxa = $xo - $xa;
 				my $dyb = $yb - $yo;

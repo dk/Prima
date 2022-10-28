@@ -84,6 +84,13 @@ sub clone
 	return __PACKAGE__->new($pack, $buf);
 }
 
+sub list
+{
+	die "bad array" unless is_array($_[0]);
+	my $self = tied @{$_[0]};
+	return unpack($self->[PACK] . '*', $self->[REF]);
+}
+
 sub TIEARRAY  { bless \@_, shift }
 sub FETCH     { unpack( $_[0]->[PACK], CORE::substr( $_[0]->[REF], $_[1] * $_[0]->[SIZE], $_[0]->[SIZE] )) }
 sub STORE     { CORE::substr( $_[0]->[REF], $_[1] * $_[0]->[SIZE], $_[0]->[SIZE], pack( $_[0]->[PACK], $_[2] )) }
