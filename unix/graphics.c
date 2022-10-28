@@ -72,9 +72,10 @@ prima_get_gc( PDrawableSysData selfxx)
 	if (!XX->gcl) {
 		gcv. graphics_exposures = false;
 		gcv. cap_style = CapProjecting;
+		gcv. line_width = 1;
 		XX-> gc = XCreateGC( DISP,
 			(bitmap || layered) ? XX-> gdrawable : guts. root,
-			GCGraphicsExposures | GCCapStyle,
+			GCGraphicsExposures | GCCapStyle | GCLineWidth,
 			&gcv);
 		XCHECKPOINT;
 		if (( XX->gcl = alloc1z( GCList)))

@@ -1277,7 +1277,11 @@ handle_menu_expose( XEvent *ev, XWindow win, Handle self)
 		XGCValues gcv;
 		gcv. graphics_exposures = false;
 		gcv. cap_style          = CapProjecting;
-		draw. gc = XCreateGC( DISP, X(owner)->gdrawable, GCGraphicsExposures | GCCapStyle, &gcv);
+		gcv. line_width         = 1;
+		draw. gc = XCreateGC( DISP, X(owner)->gdrawable,
+			GCGraphicsExposures | GCCapStyle | GCLineWidth,
+			&gcv
+		);
 		draw. c  = XX->argb_c;
 	} else {
 		draw. gc = guts. menugc;
