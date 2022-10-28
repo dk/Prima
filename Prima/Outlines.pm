@@ -81,10 +81,14 @@ sub init_images
 
 	my $i = 0;
 	my $uis = $::application->uiScaling;
-	@imageSize = map { $uis * $_ } (11,11);
+	my $iw = int( $uis * 11 + .5);
+	$iw++ unless $iw % 2;
+	@imageSize = ($iw, $iw);
 	my $xd = int(2 * $uis + .5);
 	my $lw = int( $uis + .5);
-	my @c = map { $_ / 2 } @imageSize;
+	$lw-- if $lw > 1 && $lw % 2;
+	my @c = map { int ( $_ / 2 ) } @imageSize;
+
 	for my $i (0,1) {
 		$images[$i] = Prima::DeviceBitmap->new(
 			size      => \@imageSize,
@@ -94,7 +98,7 @@ sub init_images
 		$images[$i]->clear;
 		$images[$i]->lineWidth($lw);
 		$images[$i]->lineEnd(le::Square);
-		$images[$i]->rectangle(0,0,$imageSize[0]-$lw%2,$imageSize[1]-$lw%2);
+		$images[$i]->rectangle(0,0,$imageSize[0]-1,$imageSize[1]-1);
 		$images[$i]->color(cl::Black);
 		$images[$i]->line( $xd, $c[1], $imageSize[0]-$xd-1, $c[1] );
 	}
