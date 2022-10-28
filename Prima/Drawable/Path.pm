@@ -488,11 +488,12 @@ sub _close
 sub _line
 {
 	my ( $self, $line ) = @_;
-	if ( $self->{subpixel} ) {
-		push @{ $self->{points}->[-1]->[-1] }, @{ $self-> matrix_apply( $line ) };
-	} else {
-		push @{ $self->{points}->[-1]->[-1] }, __map_round(@{ $self-> matrix_apply( $line ) });
-	}
+	Prima::array::append( $self->{points}->[-1]->[-1],
+		Prima::Drawable->render_polyline( $line,
+			matrix  => $self->{curr}->{matrix},
+			integer => !$self->{subpixel},
+		)
+	);
 }
 
 sub _spline
