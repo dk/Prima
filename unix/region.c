@@ -4,118 +4,24 @@
 #define pREGION GET_REGION(self)->region
 #define pAPERTURE GET_REGION(self)->aperture
 
-Region
-prima_region_create( Handle mask)
+Bool
+apc_region_create( Handle self, PRegionRec rec)
 {
-	unsigned long w, h, x, y, size = 256, count = 0;
-	Region	  rgn = None;
-	Byte	   * idata;
-	XRectangle * current, * rdata;
-	Bool	  set = 0;
+	int i, aperture, count;
+	Box *rr, *r;
+	pREGION = XCreateRegion();
 
-	if ( !mask)
-		return None;
+	r = rec ? rec->boxes : NULL;
+	count = rec ? rec->n_boxes : 0;
 
-	w = PImage( mask)-> w;
-	h = PImage( mask)-> h;
-	/*
-		XUnionRegion is actually SLOWER than the image scan -
-		- uncomment if this is wrong
-	if ( X( mask)-> cached_region) {
-		rgn = XCreateRegion();
-		XUnionRegion( rgn, X( mask)-> cached_region, rgn);
-		return rgn;
-	}
-	*/
-
-	idata  = PImage( mask)-> data + PImage( mask)-> dataSize - PImage( mask)-> lineSize;
-
-	rdata = ( XRectangle*) malloc( size * sizeof( XRectangle));
-	if ( !rdata) {
-		warn("Not enough memory");
-		return None;
-	}
-
-	count = 0;
-	current = rdata;
-	current--;
-
-	for ( y = 0; y < h; y++) {
-		for ( x = 0; x < w; x++) {
-			if ( idata[ x >> 3] == 0) {
-				x += 7;
-				continue;
-			}
-			if ( idata[ x >> 3] & ( 1 << ( 7 - ( x & 7)))) {
-				if ( set && current-> y == y && current-> x + current-> width == x)
-					current-> width++;
-				else {
-					set = 1;
-					if ( count >= size) {
-						void * xrdata = realloc( rdata, ( size *= 3) * sizeof( XRectangle));
-						if ( !xrdata) {
-							warn("Not enough memory");
-							free( rdata);
-							return None;
-						}
-						rdata = xrdata;
-						current = rdata;
-						current += count - 1;
-					}
-					count++;
-					current++;
-					current-> x   = x;
-					current-> y   = y;
-					current-> width  = 1;
-					current-> height = 1;
-				}
-			}
+	if ( r ) {
+		aperture = r->y + r->height;
+		for ( i = 0, rr = r; i < count; i++, rr++) {
+			if ( aperture < rr->y + rr->height)
+				aperture = rr->y + rr->height;
 		}
-		idata -= PImage( mask)-> lineSize;
-	}
-
-	if ( set) {
-		rgn = XCreateRegion();
-		for ( x = 0, current = rdata; x < count; x++, current++)
-			XUnionRectWithRegion( current, rgn, rgn);
-
-		/*
-		X( mask)-> cached_region = XCreateRegion();
-		XUnionRegion( X( mask)-> cached_region, rgn, X( mask)-> cached_region);
-		*/
-	}
-	free( rdata);
-
-	return rgn;
-}
-
-static Bool
-rgn_empty(Handle self)
-{
-	XRectangle xr;
-	pREGION = XCreateRegion();
-	xr. x = 0;
-	xr. y = 0;
-	xr. width  = 1;
-	xr. height = 1;
-	XUnionRectWithRegion( &xr, pREGION, pREGION);
-	XXorRegion( pREGION, pREGION, pREGION);
-	pAPERTURE = 0;
-	return true;
-}
-
-static Bool
-rgn_rect(Handle self, int count, Box * r)
-{
-	int i, aperture;
-	Box * rr;
-	pREGION = XCreateRegion();
-
-	aperture = r->y + r->height;
-	for ( i = 0, rr = r; i < count; i++, rr++) {
-		if ( aperture < rr->y + rr->height)
-			aperture = rr->y + rr->height;
-	}
+	} else
+		aperture = 0;
 
 	for ( i = 0; i < count; i++, r++) {
 		XRectangle xr;
@@ -127,178 +33,6 @@ rgn_rect(Handle self, int count, Box * r)
 	}
 	pAPERTURE = aperture;
 	return true;
-}
-
-static Bool
-rgn_polygon(Handle self, PolygonRegionRec * r)
-{
-	int i, max, open, xp_points;
-	XPoint * xp;
-
-	open =
-		r->points[r->n_points-1].x != r->points[0].x ||
-		r->points[r->n_points-1].y != r->points[0].y;
-	xp_points = r->n_points + (open ? 1 : 0);
-
-	if ( !( xp = malloc( sizeof(XPoint) * xp_points ))) {
-		warn("Not enough memory");
-		return false;
-	}
-
-	for ( i = 0, max = 0; i < r->n_points; i++) {
-		if ( max < r->points[i].y)
-			max = r->points[i].y;
-	}
-	for ( i = 0; i < r->n_points; i++) {
-		xp[i].x = r->points[i].x;
-		xp[i].y = max - r->points[i].y;
-	}
-	if ( open ) {
-		xp[i].x = r->points[0].x;
-		xp[i].y = max - r->points[0].y;
-	}
-	max++;
-
-	pAPERTURE = max;
-	pREGION = XPolygonRegion( xp, r->n_points, 
-		((r-> fill_mode & fmWinding) == fmAlternate) ? EvenOddRule : WindingRule);
-
-	if (( r->fill_mode & fmOverlay) == 0) goto NO_OVERLAY;
-
-	/* superimpose polyline points using Bresenham
-	because x11 regions are as broken as filled shapes */
-	for ( i = 0; i < xp_points-1; i++) {
-		int curr_maj, curr_min, to_maj, delta_maj, delta_min;
-		int delta_y, delta_x;
-		int dir = 0, d, d_inc1, d_inc2;
-		int inc_maj, inc_min;
-		int x, y, acc_x = 0, acc_y = INT_MIN, ox;
-		XPoint a = xp[i], b = xp[i+1];
-		delta_y = b.y - a.y;
-		delta_x = b.x - a.x;
-		if (abs(delta_y) > abs(delta_x)) dir = 1;
-
-		if (dir) {
-			curr_maj = a.y;
-			curr_min = a.x;
-			to_maj = b.y;
-			delta_maj = delta_y;
-			delta_min = delta_x;
-		} else {
-			curr_maj = a.x;
-			curr_min = a.y;
-			to_maj = b.x;
-			delta_maj = delta_x;
-			delta_min = delta_y;
-		}
-
-		if (delta_maj != 0)
-			inc_maj = (abs(delta_maj)==delta_maj ? 1 : -1);
-		else
-			inc_maj = 0;
-
-		if (delta_min != 0)
-			inc_min = (abs(delta_min)==delta_min ? 1 : -1);
-		else
-			inc_min = 0;
-
-		delta_maj = abs(delta_maj);
-		delta_min = abs(delta_min);
-
-		d      = (delta_min << 1) - delta_maj;
-		d_inc1 = (delta_min << 1);
-		d_inc2 = ((delta_min - delta_maj) << 1);
-
-		x = INT_MIN;
-		while(1) {
-			ox = x;
-			if (dir) {
-				x = curr_min;
-				y = curr_maj;
-			} else {
-				x = curr_maj;
-				y = curr_min;
-			}
-			if ( acc_y != y ) {
-				if ( acc_y > INT_MIN) {
-					XRectangle xr;
-					xr. y = acc_y;
-					xr. height = 1;
-					if (ox < acc_x) {
-						xr.x = ox;
-						xr.width = acc_x - ox + 1;
-					} else {
-						xr.x = acc_x;
-						xr.width = ox - acc_x + 1;
-					}
-					XUnionRectWithRegion( &xr, pREGION, pREGION);
-				}
-				acc_x = x;
-				acc_y = y;
-			}
-
-			if (curr_maj == to_maj) break;
-			curr_maj += inc_maj;
-			if (d < 0) {
-				d += d_inc1;
-			} else {
-				d += d_inc2;
-				curr_min += inc_min;
-			}
-		}
-		if ( acc_y > INT_MIN) {
-			XRectangle xr;
-			xr. y = acc_y;
-			xr. height = 1;
-			if (x < acc_x) {
-				xr.x = x;
-				xr.width = acc_x - x + 1;
-			} else {
-				xr.x = acc_x;
-				xr.width = x - acc_x + 1;
-			}
-			XUnionRectWithRegion( &xr, pREGION, pREGION);
-		}
-	}
-
-NO_OVERLAY:
-	free( xp );
-	return true;
-}
-
-static Bool
-rgn_image(Handle self, Handle image)
-{
-	pREGION = prima_region_create(image);
-
-	if ( !pREGION )
-		pREGION = XCreateRegion();
-	else
-		pAPERTURE = PImage(image)->h;
-	return true;
-}
-
-Bool
-apc_region_create( Handle self, PRegionRec rec)
-{
-	switch( rec-> type ) {
-	case rgnEmpty:
-		return rgn_empty(self);
-	case rgnRectangle:
-		return rgn_rect(self, rec->data.box.n_boxes, rec->data.box.boxes);
-	case rgnPolygon:
-		return rgn_polygon(self, &rec->data.polygon);
-	case rgnImage:
-		return rgn_image(self, rec->data.image);
-	default:
-		return false;
-	}
-}
-
-Bool
-apc_region_create_boxes( Handle self, PBoxRegionRec rec)
-{
-	return rgn_rect(self, rec->n_boxes, rec->boxes);
 }
 
 Bool
@@ -570,6 +304,7 @@ apc_gp_get_region( Handle self, Handle rgn)
 	Pixmap pixmap;
 	XImage * i;
 	Image pi;
+	PRegionRec rgnrec2;
 	Region rgn2;
 
 	if ( !XF_IN_PAINT(XX)) return false;
@@ -620,8 +355,22 @@ apc_gp_get_region( Handle self, Handle rgn)
 	prima_copy_xybitmap( pi.data, (Byte*)i-> data, w, h, pi.lineSize, i-> bytes_per_line);
 	XDestroyImage( i);
 
-	rgn2 = prima_region_create((Handle) &pi);
+	rgnrec2 = img_region_mask(( Handle) &pi);
 	free(pi.data);
+	if ( rgnrec2) {
+		int i, count = rgnrec2->n_boxes, aperture = pi.h;
+		Box *r = rgnrec2->boxes;
+		rgn2 = XCreateRegion();
+		for ( i = 0; i < count; i++, r++) {
+			XRectangle xr;
+			xr. x = r-> x;
+			xr. y = aperture - r->y - r->height;
+			xr. width  = r-> width;
+			xr. height = r-> height;
+			XUnionRectWithRegion( &xr, rgn2, rgn2);
+		}
+		free(rgnrec2);
+	}
 
 	if ( GET_REGION(rgn)-> region )
 		XDestroyRegion(  GET_REGION(rgn)-> region );
@@ -646,18 +395,14 @@ apc_region_copy_rects( Handle self)
 	REGION *region;
 
 	region = (REGION*) pREGION;
-	ret = malloc(sizeof(RegionRec) + sizeof(Box) * region->numRects);
-	if ( ret == NULL ) {
-		warn("Not enough memory\n");
+	if ( !( ret = img_region_alloc( NULL, region->numRects )))
 		return NULL;
-	}
 
-	ret-> type = rgnRectangle;
-	ret-> data. box. n_boxes = region-> numRects;
+	ret-> n_boxes = region-> numRects;
 	src = region->rects;
-	dst = ret-> data. box. boxes = (Box*) (((Byte*)ret) + sizeof(RegionRec));
+	dst = ret-> boxes;
 	aperture = pAPERTURE;
-	for ( i = 0; i < ret->data. box. n_boxes; i++, src++, dst++) {
+	for ( i = 0; i < ret->n_boxes; i++, src++, dst++) {
 		dst-> x = src-> x1;
 		dst-> y = aperture - src-> y2;
 		dst-> width  = src-> x2 - src->x1;

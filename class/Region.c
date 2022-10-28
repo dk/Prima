@@ -13,93 +13,111 @@ extern "C" {
 #define my  ((( PRegion) self)-> self)
 #define var (( PRegion) self)
 
+static Box*
+rgn_rect( HV * profile, Bool is_box, int * n_boxes )
+{
+	char *t;
+	SV ** box_entry;
+	Box *boxes;
+
+	t  = is_box ? "box" : "rect";
+	box_entry = hv_fetch( profile, t, (I32) strlen(t), 0);
+	if (( boxes = (Box*) prima_read_array(
+		*box_entry, "Region::new", 'i',
+		4, 1, -1,
+		n_boxes, NULL
+	)) == NULL) {
+		*n_boxes = 0;
+		return NULL;
+	}
+
+	if ( !is_box ) {
+		int i;
+		Box * box = boxes;
+		for ( i = 0; i < *n_boxes; i++, box++) {
+			box-> width  -= box-> x;
+			box-> height -= box-> y;
+		}
+	}
+
+	return boxes;
+}
+
+static PRegionRec
+rgn_polygon( HV * profile )
+{
+	dPROFILE;
+	Bool do_free;
+	int count, fill_mode;
+	PRegionRec rgn;
+	Point *points;
+
+	if (( points = (Point*) prima_read_array(
+		pget_sv(polygon), "Region::polygon", 'i',
+		2, 2, -1,
+		&count, &do_free)
+	) == NULL)
+		return NULL;
+
+	fill_mode = pexist(fillMode) ? pget_i(fillMode) : (fmOverlay | fmWinding);
+
+	rgn = img_region_polygon( points, count, fill_mode );
+	if ( do_free ) free( points );
+
+	return rgn;
+}
+
+static PRegionRec
+rgn_image( HV * profile )
+{
+	dPROFILE;
+	Handle mask;
+	PRegionRec rgn;
+	Bool free_image = false;
+
+	mask = pget_H(image);
+	if ( !kind_of( mask, CImage )) {
+		warn("Not an image passed");
+		return NULL;
+	}
+	if (( PImage(mask)->type & imBPP ) != 1 ) {
+		mask = CImage(mask)->dup(mask);
+		CImage(mask)->set_conversion(mask, ictNone);
+		CImage(mask)->set_type(mask, imbpp1 | imGrayScale);
+		free_image = true;
+	}
+
+	rgn = img_region_mask( mask );
+	if ( free_image ) Object_destroy(mask);
+
+	return rgn;
+}
+
 void
 Region_init( Handle self, HV * profile)
 {
-	dPROFILE;
-	RegionRec r;
-	char *t = NULL;
-	Bool free_image = false, ok;
-
-	r. type = rgnEmpty;
+	Bool ok;
+	RegionRec r, *pr = &r;
 
 	inherited-> init( self, profile);
 
 	if ( pexist(rect)) {
-		t = "rect";
-		r. type = rgnRectangle;
+		r.boxes = rgn_rect(profile, 0, &r.n_boxes);
 	} else if (pexist(box)) {
-		t = "box";
-		r. type = rgnRectangle;
+		r.boxes = rgn_rect(profile, 1, &r.n_boxes);
 	} else if (pexist(polygon)) {
-		r. type = rgnPolygon;
+		pr = rgn_polygon(profile);
 	} else if (pexist(image)) {
-		r. type = rgnImage;
+		pr = rgn_image(profile);
+	} else {
+		r.n_boxes = 0;
+		r.boxes   = NULL;
 	}
 
-	switch (r. type) {
-	case rgnRectangle: {
-		SV ** box_entry = hv_fetch( profile, t, (I32) strlen(t), 0);
-		if (( r. data. box. boxes = (Box*) prima_read_array(
-			*box_entry, "Region::new", 'i',
-			4, 1, -1,
-			&r. data. box. n_boxes, NULL
-		)) == NULL) {
-			r. type = rgnEmpty;
-			break;
-		}
-		if ( strncmp(t, "rect", 4) == 0 ) {
-			int i;
-			Box * box = r. data. box. boxes;
-			for ( i = 0; i < r. data. box. n_boxes; i++, box++) {
-				box-> width  -= box-> x;
-				box-> height -= box-> y;
-			}
-		}
-		break;
-	}
-	case rgnPolygon:
-		if (( r. data. polygon. points = (Point*) prima_read_array(
-			pget_sv(polygon), "Region::polygon", 'i',
-			2, 2, -1,
-			&r. data. polygon. n_points, NULL)
-		) == NULL) {
-			r. type = rgnEmpty;
-			break;
-		}
-		r. data. polygon. fill_mode = pexist(fillMode) ? pget_i(fillMode) : (fmOverlay | fmWinding);
-		break;
-	case rgnEmpty:
-		break;
-	case rgnImage:
-		r. data. image = pget_H(image);
-		if ( !kind_of( r. data. image, CImage )) {
-			warn("Not an image passed");
-			r. type = rgnEmpty;
-			goto CREATE;
-		}
-		if (( PImage(r.data.image)->type & imBPP ) != 1 ) {
-			r.data.image = CImage(r.data.image)->dup(r.data.image);
-			CImage(r.data.image)->set_conversion(r.data.image, ictNone);
-			CImage(r.data.image)->set_type(r.data.image, imbpp1 | imGrayScale);
-			free_image = true;
-		}
-	}
-CREATE:
-	if ( r.type == rgnPolygon ) {
-		PBoxRegionRec x;
-		if ( !( x = img_region_polygon( r.data.polygon.points, r.data.polygon.n_points, r.data.polygon.fill_mode)))
-			ok = false;
-		if ( ok ) {
-			ok = apc_region_create_boxes(self, x);
-			free( x);
-		}
-	} else {
-		ok = apc_region_create( self, &r);
-	}
-	if ( r. type == rgnPolygon   ) free( r. data. polygon. points );
-	if ( r. type == rgnRectangle ) free( r. data. box. boxes );
-	if ( free_image ) Object_destroy(r.data.image);
+	ok = apc_region_create(self, pr);
+	if ( pr != &r && pr != NULL )
+		free(pr);
+
 	opt_set( optDirtyRegion);
 	CORE_INIT_TRANSIENT(Region);
 	if (!ok)
@@ -127,34 +145,12 @@ Region_create_from_data( Handle self, PRegionRec data)
 PRegionRec
 Region_clone_data( Handle self, PRegionRec data)
 {
-	int size, extras;
 	PRegionRec copy;
 
-	size = sizeof(RegionRec);
-	extras = 0;
-	switch (data->type) {
-	case rgnRectangle:
-		extras = data->data.box.n_boxes * sizeof(Box);
-		break;
-	case rgnPolygon:
-		extras = data->data.polygon.n_points * sizeof(Point);
-		break;
-	}
-
-	size += extras;
-	if ( !( copy = malloc(size))) return NULL;
-	memcpy(copy, data, sizeof(RegionRec));
-
-	switch (data->type) {
-	case rgnRectangle:
-		copy->data.box.boxes = (Box*) (((Byte*)copy) + sizeof(RegionRec));
-		memcpy( copy->data.box.boxes, data->data.box.boxes, extras);
-		break;
-	case rgnPolygon:
-		copy->data.polygon.points = (Point*) (((Byte*)copy) + sizeof(RegionRec));
-		memcpy( copy->data.polygon.points, data->data.polygon.points, extras);
-		break;
-	}
+	if ( !( copy = img_region_alloc( NULL, data->n_boxes )))
+		return NULL;
+	copy-> n_boxes = data-> n_boxes;
+	memcpy( copy-> boxes, data-> boxes, data-> n_boxes * sizeof(Box) );
 
 	return copy;
 }
@@ -212,9 +208,9 @@ Region_get_boxes( Handle self)
 
 	if (( data = my->update_change(self, false)) == NULL)
 		return NULL_SV;
-	if (( ret = prima_array_new(data-> data. box. n_boxes * sizeof(Box))) == NULL)
+	if (( ret = prima_array_new(data-> n_boxes * sizeof(Box))) == NULL)
 		return NULL_SV;
-	memcpy( prima_array_get_storage(ret), data->data.box.boxes, data-> data. box. n_boxes * sizeof(Box));
+	memcpy( prima_array_get_storage(ret), data->boxes, data->n_boxes * sizeof(Box));
 	return prima_array_tie( ret, sizeof(int), "i");
 }
 

@@ -278,7 +278,7 @@ img_polyline( Handle dest, int n_points, Point * points, PImgPaintContext ctx)
 	int type     = i->type;
 	int maskType = kind_of(dest, CIcon) ? i->maskType : 0;
 	ImgSegmentedLineRec rec;
-	BoxRegionRec dummy_region;
+	RegionRec dummy_region;
 	Box dummy_region_box, *pbox;
 	Point* pp;
 	Rect  enclosure;

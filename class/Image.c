@@ -530,7 +530,7 @@ Image_put_image_indirect( Handle self, Handle image, int x, int y, int xFrom, in
 	}
 
 	ret = img_put( self, image, x + (*matrix)[4], y + (*matrix)[5], xFrom, yFrom, xDestLen, yDestLen, xLen, yLen, rop,
-		var->regionData ? &var->regionData-> data. box : NULL, color);
+		var->regionData, color);
 	my-> update_change( self);
 	return ret;
 }
@@ -593,24 +593,13 @@ Image_clipRect( Handle self, Bool set, Rect r)
 	if ( var-> stage > csFrozen) return r;
 
 	if ( set) {
-		PRegionRec reg;
 		if ( var-> regionData ) {
 			free(var->regionData);
 			var->regionData = NULL;
 		}
-		if ((reg = malloc(sizeof(RegionRec) + sizeof(Box))) != NULL) {
-			Box *box;
-			reg->type = rgnRectangle;
-			reg-> data. box. n_boxes = 1;
-			box = reg-> data. box. boxes = (Box*) (((Byte*)reg) + sizeof(RegionRec));
-			box-> x = r.left;
-			box-> y = r.bottom;
-			box-> width  = r.right - r.left + 1;
-			box-> height = r.top - r.bottom + 1;
-			var->regionData = reg;
-		}
+		var->regionData = img_region_extend( NULL, r.left, r.bottom, r.right-r.left+1, r.top-r.bottom+1 );
 	} else if ( var-> regionData ) {
-		Box box   = img_region_box( &var->regionData->data.box);
+		Box box   = img_region_box( var->regionData);
 		r.left    = box.x;
 		r.bottom  = box.y;
 		r.right   = box.x + box.width  - 1;

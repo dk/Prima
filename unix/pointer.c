@@ -230,7 +230,6 @@ load_pointer_font( void)
 static void
 draw_poly( Handle self, int n_points, Point * pts, int dx, int dy)
 {
-	RegionRec rgnrec, *prgnrec;
 	PIcon i = (PIcon) self;
 	ImgPaintContext ctx = {
 		{0,0,0,0},
@@ -245,24 +244,12 @@ draw_poly( Handle self, int n_points, Point * pts, int dx, int dy)
 	};
 	Image mask;
 	img_fill_dummy(&mask, i->w, i->h, i->maskType, i->mask, NULL);
-
-	Handle rgn = (Handle) create_object("Prima::Region", "");
-	apc_region_destroy(rgn);
-	rgnrec.type = rgnPolygon;
-	rgnrec.data.polygon.n_points  = n_points;
-	rgnrec.data.polygon.points    = pts;
-	rgnrec.data.polygon.fill_mode = fmWinding;
-	apc_region_create(rgn, &rgnrec);
-	apc_region_offset(rgn, dx, dy);
-	prgnrec = apc_region_copy_rects(rgn);
-	Object_destroy(rgn);
-
-	ctx.region = &prgnrec->data.box;
+	ctx.region = img_region_polygon( pts, n_points, fmWinding);
 	memset( &ctx.color, 0xff, sizeof(ctx.color));
 	img_bar( self, 0, 0, i->w, i-> h, &ctx);
 	memset( &ctx.color, 0x0, sizeof(ctx.color));
 	img_bar((Handle) &mask, 0, 0, i->w, i-> h, &ctx);
-	free(prgnrec);
+	free(ctx.region);
 	ctx.region = NULL;
 
 	memset( &ctx.color, 0x0, sizeof(ctx.color));

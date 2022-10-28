@@ -260,7 +260,7 @@ prepare_fill_context(Handle self, PImgPaintContext ctx)
 		ctx-> rop &= ~(0xff << ropSrcAlphaShift);
 		ctx-> rop |= ropSrcAlpha | ( var-> alpha << ropSrcAlphaShift );
 	}
-	ctx-> region = var->regionData ? &var->regionData-> data. box : NULL;
+	ctx-> region = var->regionData;
 	ctx-> patternOffset = my->get_fillPatternOffset(self);
 	ctx-> transparent = my->get_rop2(self) == ropNoOper;
 
@@ -303,7 +303,7 @@ prepare_line_context( Handle self, unsigned char * lp, ImgPaintContext * ctx)
 		ctx-> rop &= ~(0xff << ropSrcAlphaShift);
 		ctx-> rop |= ropSrcAlpha | ( var-> alpha << ropSrcAlphaShift );
 	}
-	ctx->region = var->regionData ? &var->regionData-> data. box : NULL;
+	ctx->region = var->regionData;
 	ctx->transparent = my->get_rop2(self) == ropNoOper;
 	if ( my-> linePattern == Drawable_linePattern) {
 		int lplen;
@@ -533,7 +533,7 @@ Image_clear(Handle self, double x1, double y1, double x2, double y2)
 			Image_color2pixel( self, my->get_backColor(self), ctx.color);
 			*ctx.backColor      = *ctx.color;
 			ctx.rop             = my->get_rop(self);
-			ctx.region          = var->regionData ? &var->regionData-> data. box : NULL;
+			ctx.region          = var->regionData;
 			ctx.patternOffset.x = ctx.patternOffset.y = 0;
 			ctx.transparent     = false;
 			memset( ctx.pattern, 0xff, sizeof(ctx.pattern));

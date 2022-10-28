@@ -9,7 +9,7 @@ extern "C" {
 
 Bool
 img_region_foreach(
-	PBoxRegionRec region, 
+	PRegionRec region, 
 	int dstX, int dstY, int dstW, int dstH,
 	RegionCallbackFunc callback, void * param
 ) {
@@ -42,25 +42,50 @@ img_region_foreach(
 	return true;
 }
 
-PBoxRegionRec
-img_region_alloc(PBoxRegionRec old_region, int n_boxes)
+PRegionRec
+img_region_alloc(PRegionRec old_region, int n_size)
 {
-	PBoxRegionRec ret = NULL;
-	ssize_t size = sizeof(BoxRegionRec) + n_boxes * sizeof(Box);
+	PRegionRec ret = NULL;
+	ssize_t size = sizeof(RegionRec) + n_size * sizeof(Box);
 	if ( old_region ) {
 		if (( ret = realloc(old_region, size)) == NULL)
 			return NULL;
 	} else {
 		if (( ret = malloc(size)) == NULL)
 			return NULL;
-		bzero(ret, sizeof(BoxRegionRec));
+		bzero(ret, sizeof(RegionRec));
 	}
-	ret->boxes = (Box*) (((Byte*)ret) + sizeof(BoxRegionRec));
+	ret->boxes = (Box*) (((Byte*)ret) + sizeof(RegionRec));
+	ret->size  = n_size;
 	return ret;
 }
 
+PRegionRec
+img_region_extend(PRegionRec region, int x, int y, int width, int height)
+{
+	Box *r;
+	if ( !region ) {
+		if ( !( region = img_region_alloc( NULL, 32 )))
+			return NULL;
+	}
+	if ( region-> size == region-> n_boxes ) {
+		PRegionRec old = region;
+		if ( !( region = img_region_alloc( old, region-> size * 3 ))) {
+			free( region );
+			return NULL;
+		}
+	}
+	r = region->boxes + region->n_boxes;
+	r->x = x;
+	r->y = y;
+	r->width = width;
+	r->height = height;
+	region-> n_boxes++;
+	return region;
+}
+
 Box
-img_region_box(PBoxRegionRec region)
+img_region_box(PRegionRec region)
 {
 	int i, n = 0;
 	Box ret, *curr = NULL;
@@ -69,8 +94,8 @@ img_region_box(PBoxRegionRec region)
 	if ( region != NULL && region-> n_boxes > 0 ) {
 		n        = region-> n_boxes;
 		curr     = region->boxes;
-		r.left   = curr->x; 
-		r.bottom = curr->y; 
+		r.left   = curr->x;
+		r.bottom = curr->y;
 		r.right  = curr->x + curr->width;
 		r.top    = curr->y + curr->height;
 		curr++;
@@ -92,7 +117,7 @@ img_region_box(PBoxRegionRec region)
 }
 
 Bool
-img_point_in_region( int x, int y, PBoxRegionRec region)
+img_point_in_region( int x, int y, PRegionRec region)
 {
 	int i;
 	Box * b;
@@ -103,6 +128,59 @@ img_point_in_region( int x, int y, PBoxRegionRec region)
 	return false;
 }
 
+PRegionRec
+img_region_mask( Handle mask)
+{
+	unsigned long w, h, x, y, count = 0;
+	Byte	   * idata;
+	Box * current;
+	PRegionRec rdata;
+	Bool	  set = 0;
+
+	if ( !mask)
+		return NULL;
+
+	w = PImage( mask)-> w;
+	h = PImage( mask)-> h;
+	idata  = PImage( mask)-> data;
+
+	if ( !( rdata = img_region_alloc(NULL, 256)))
+		return NULL;
+
+	count = 0;
+	current = rdata-> boxes;
+	current--;
+
+	for ( y = 0; y < h; y++) {
+		for ( x = 0; x < w; x++) {
+			if ( idata[ x >> 3] == 0) {
+				x += 7;
+				continue;
+			}
+			if ( idata[ x >> 3] & ( 1 << ( 7 - ( x & 7)))) {
+				if ( set && current-> y == y && current-> x + current-> width == x)
+					current-> width++;
+				else {
+					PRegionRec xrdata;
+					set = 1;
+					if ( !( xrdata = img_region_extend( rdata, x, y, 1, 1)))
+						return NULL;
+					if ( xrdata != rdata ) {
+						rdata = xrdata;
+						current = rdata->boxes;
+						current += count - 1;
+					}
+					count++;
+					current++;
+				}
+			}
+		}
+		idata += PImage( mask)-> lineSize;
+	}
+
+	return rdata;
+}
+
 /*
 
 The code below is based on the libX11 region implementation
@@ -111,7 +189,8 @@ Differences:
   - extents are not calculated
   - recognizes fmOverlay
   - 4-point rectangular polyline is recognized as a RECT but contrary to the
-    X11 implementation returns inclusive-exclusive coordinates when fmOverlay is unset
+    X11 implementation is NOT a special case, and returns inclusive-exclusive
+    coordinates when fmOverlay is unset.
 
 */
 
@@ -786,12 +865,12 @@ FreeStorage(
  *     stack by the calling procedure.
  *
  */
-static PBoxRegionRec
+static PRegionRec
 PtsToRegion(
     register int numFullPtBlocks,
     register int iCurPtBlock,
     POINTBLOCK *FirstPtBlock,
-    PBoxRegionRec reg,
+    PRegionRec reg,
     int outline)
 {
     register Box  *rects;
@@ -799,7 +878,7 @@ PtsToRegion(
     register POINTBLOCK *CurPtBlock;
     register int i;
     register int numRects;
-    PBoxRegionRec prevReg = reg;
+    PRegionRec prevReg = reg;
 
     numRects = ((numFullPtBlocks * NUMPTSTOBUFFER) + iCurPtBlock) >> 1;
 
@@ -915,10 +994,10 @@ is_rect( Point *pts, int Count, int outline, Box *single)
    return false;
 }
 
-static PBoxRegionRec
+static PRegionRec
 rect_region( Box * box)
 {
-	PBoxRegionRec reg;
+	PRegionRec reg;
 	if ( !( reg = img_region_alloc(NULL, 1)))
 		return NULL;
 	reg->n_boxes= 1;
@@ -933,13 +1012,13 @@ rect_region( Box * box)
  *     encoding of the resultant bitmap -- the run-length
  *     encoding is in the form of an array of rectangles.
  */
-PBoxRegionRec
+PRegionRec
 img_region_polygon(
     Point     *Pts,		     /* the pts                 */
     int       Count,                 /* number of pts           */
     int	rule)			     /* winding rule */
 {
-    PBoxRegionRec region;
+    PRegionRec region;
     register EdgeTableEntry *pAET;   /* Active Edge Table       */
     register int y;                  /* current scanline        */
     register int iPts = 0;           /* number of pts in buffer */

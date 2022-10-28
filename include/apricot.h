@@ -3474,29 +3474,9 @@ typedef struct {
 
 /* regions */
 
-#define rgnEmpty     0
-#define rgnRectangle 1
-#define rgnPolygon   2
-#define rgnImage     3
-
 typedef struct {
-	int n_points;
-	int fill_mode;
-	Point* points;
-} PolygonRegionRec;
-
-typedef struct {
-	int n_boxes;
+	int n_boxes, size;
 	Box* boxes;
-} BoxRegionRec, *PBoxRegionRec;
-
-typedef struct {
-	int type;
-	union {
-		BoxRegionRec box;
-		PolygonRegionRec polygon;
-		Handle image;
-	} data;
 } RegionRec, *PRegionRec;
 
 #define RGNOP(const_name) CONSTANT(rgnop,const_name)
@@ -3527,9 +3507,6 @@ END_TABLE(rgn,UV)
 
 extern Bool
 apc_region_create( Handle self, PRegionRec rec);
-
-extern Bool
-apc_region_create_boxes( Handle self, PBoxRegionRec rec);
 
 extern Bool
 apc_region_destroy( Handle self);

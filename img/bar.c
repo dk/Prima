@@ -445,7 +445,7 @@ tile( int x, int y, int w, int h, TileCallbackFunc *tiler, TileCallbackRec* tx)
 	PImage dest          = (PImage) tx->dest;
 	PImage tile          = (PImage) tx->ctx->tile;
 	Point offset         = tx->ctx->patternOffset;
-	PBoxRegionRec region = tx->ctx->region;
+	PRegionRec region    = tx->ctx->region;
 	int dx, dy, tw = tile->w, th = tile->h, X2 = w + x, Y2 = h + y;
 
 	tx->src_stride       = PImage(tile)-> lineSize;

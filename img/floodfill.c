@@ -13,7 +13,7 @@ typedef struct {
 	Bool          single_border;
 	int           first;
 	PList  *      lists;
-	PBoxRegionRec new_region;
+	PRegionRec    new_region;
 	int           new_region_size;
 } FillSession;
 
@@ -134,7 +134,7 @@ fs_intersect( int x1, int y, int w, int h, FillSession * fs)
 				if ( left > right )
 					continue;
 				if ( fs-> new_region-> n_boxes >= fs-> new_region_size ) {
-					PBoxRegionRec n;
+					PRegionRec n;
 					fs-> new_region_size *= 2;
 					if ( !( n = img_region_alloc( fs-> new_region, fs-> new_region_size)))
 						return false;

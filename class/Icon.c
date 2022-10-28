@@ -820,13 +820,10 @@ Icon_bar_alpha( Handle self, int alpha, int x1, int y1, int x2, int y2)
 			y2 = floor(nrect.top    + .5);
 		} else {
 			Handle rgn1;
-			RegionRec rgndata;
+			PRegionRec rgndata;
 			int i;
 			Point poly[4];
 
-			rgndata.type                  = rgnPolygon;
-			rgndata.data.polygon.n_points = 4;
-			rgndata.data.polygon.points   = poly;
 			prima_matrix_apply2_to_int( var->current_state.matrix, npoly, poly, 4 );
 			x1 = x2 = poly[0].x;
 			y1 = y2 = poly[0].y;
@@ -836,17 +833,17 @@ Icon_bar_alpha( Handle self, int alpha, int x1, int y1, int x2, int y2)
 				if ( x2 < poly[i].x ) x2 = poly[i].x;
 				if ( y2 < poly[i].y ) y2 = poly[i].y;
 			}
+			rgndata = img_region_polygon( poly, 4, fmWinding | fmOverlay );
+			rgn1 = Region_create_from_data( NULL_HANDLE, rgndata );
+			free( rgndata );
 
-			rgn1 = Region_create_from_data( NULL_HANDLE, &rgndata );
 			if ( var-> regionData ) {
 				Handle rgn2 = Region_create_from_data( NULL_HANDLE, var->regionData );
 				Region_combine(rgn1, rgn2, rgnopUnion);
 				Object_destroy(rgn2);
 			}
 			rgn = Region_update_change(rgn1, true);
-			free_rgn = true;
 			Object_destroy(rgn1);
-
 		}
 	}
 
@@ -858,7 +855,7 @@ Icon_bar_alpha( Handle self, int alpha, int x1, int y1, int x2, int y2)
 	ctx.transparent     = false;
 	ctx. color[0]       = alpha & 0xff;
 	ctx. rop            = ropCopyPut;
-	ctx. region         = rgn ? &rgn-> data.box : NULL;
+	ctx. region         = rgn;
 	img_bar((Handle) &dummy, x1, y1, x2 - x1 + 1, y2 - y1 + 1, &ctx);
 
 	if ( free_rgn ) free(rgn);

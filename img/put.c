@@ -7,7 +7,7 @@ extern "C" {
 
 
 static Bool
-img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int dstW, int dstH, int srcW, int srcH, int rop, PBoxRegionRec region);
+img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int dstW, int dstH, int srcW, int srcH, int rop, PRegionRec region);
 
 typedef struct {
 	int srcX;
@@ -74,7 +74,7 @@ img_put(
 	int dstX, int dstY, int srcX, int srcY,
 	int dstW, int dstH, int srcW, int srcH,
 	int rop,
-	PBoxRegionRec region, Byte * color
+	PRegionRec region, Byte * color
 ) {
 	Point srcSz, dstSz;
 	int asrcW, asrcH;
@@ -469,7 +469,7 @@ img_put_alpha_single( int x, int y, int w, int h, ImgPutAlphaCallbackRec * ptr)
 	Converts images to either 8 or 24 bits before processing
 */
 static Bool
-img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int dstW, int dstH, int srcW, int srcH, int rop, PBoxRegionRec region)
+img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int dstW, int dstH, int srcW, int srcH, int rop, PRegionRec region)
 {
 	int bpp, bytes, mls, als, xrop;
 	unsigned int src_alpha = 0, dst_alpha = 0;

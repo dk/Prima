@@ -20,113 +20,27 @@ extern "C" {
 #define REGION GET_REGION(self)->region
 #define APERTURE GET_REGION(self)->aperture
 
-HRGN
-region_create( Handle mask)
-{
-	LONG w, h, x, y, size = 256;
-	HRGN    rgn = NULL;
-	Byte    * idata;
-	RGNDATA * rdata = NULL;
-	RECT    * current;
-	Bool      set = 0;
-
-	if ( !mask)
-		return NULL;
-
-	dobjCheck( mask) NULL;
-
-	w = PImage( mask)-> w;
-	h = PImage( mask)-> h;
-	if ( dsys( mask) s. image. img_cached_region) {
-		rgn = CreateRectRgn(0,0,0,0);
-		CombineRgn( rgn, dsys( mask) s. image. img_cached_region, NULL, RGN_COPY);
-		return rgn;
-	}
-
-	idata  = PImage( mask)-> data + PImage( mask)-> dataSize - PImage( mask)-> lineSize;
-
-	rdata = ( RGNDATA*) malloc( sizeof( RGNDATAHEADER) + size * sizeof( RECT));
-	if ( !rdata) {
-		warn("Not enough memory");
-		return NULL;
-	}
-
-	rdata-> rdh. nCount = 0;
-	current = ( RECT * ) &( rdata-> Buffer);
-	current--;
-
-	for ( y = 0; y < h; y++) {
-		for ( x = 0; x < w; x++) {
-			if ( idata[ x >> 3] == 0) {
-				x += 7;
-				continue;
-			}
-			if ( idata[ x >> 3] & ( 1 << ( 7 - ( x & 7)))) {
-				if ( set && current-> top == y && current-> right == x)
-					current-> right++;
-				else {
-					set = 1;
-					if ( rdata-> rdh. nCount >= size) {
-						void * xrdata = ( RGNDATA *) realloc( rdata, sizeof( RGNDATAHEADER) + ( size *= 3) * sizeof( RECT));
-						if ( !xrdata) {
-							free( rdata);
-							return NULL;
-						}
-						rdata = xrdata;
-						current = ( RECT * ) &( rdata-> Buffer);
-						current += rdata-> rdh. nCount - 1;
-					}
-					rdata-> rdh. nCount++;
-					current++;
-					current-> left   = x;
-					current-> top    = y;
-					current-> right  = x + 1;
-					current-> bottom = y + 1;
-				}
-			}
-		}
-		idata -= PImage( mask)-> lineSize;
-	}
-
-
-	if ( set) {
-		rdata-> rdh. dwSize          = sizeof( RGNDATAHEADER);
-		rdata-> rdh. iType           = RDH_RECTANGLES;
-		rdata-> rdh. nRgnSize        = rdata-> rdh. nCount * sizeof( RECT);
-		rdata-> rdh. rcBound. left   = 0;
-		rdata-> rdh. rcBound. top    = 0;
-		rdata-> rdh. rcBound. right  = h;
-		rdata-> rdh. rcBound. bottom = w;
-
-		if ( !( rgn = ExtCreateRegion( NULL,
-			sizeof( RGNDATAHEADER) + ( rdata-> rdh. nCount * sizeof( RECT)), rdata))) {
-			apcErr( 900);
-		}
-
-		dsys( mask) s. image. img_cached_region = CreateRectRgn(0,0,0,0);
-		CombineRgn( dsys( mask) s. image. img_cached_region, rgn, NULL, RGN_COPY);
-	} else {
-		dsys( mask) s. image. img_cached_region = rgn = CreateRectRgn(0,0,0,0);
-	}
-	free( rdata);
-
-	return rgn;
-}
-
-
-static Bool
-rgn_empty(Handle self)
-{
-	REGION = CreateRectRgn(0,0,0,0);
-	APERTURE = 0;
-	return true;
-}
-
 static Bool
 rgn_rect(Handle self, int count, Box * r)
 {
-	int i, h;
-	Box * rr;
+	return true;
+}
+
+Bool
+apc_region_create( Handle self, PRegionRec rec)
+{
+	int i, h, count;
+	Box *rr, *r;
+
+	if ( rec == NULL ) {
+		REGION = CreateRectRgn(0,0,0,0);
+		APERTURE = 0;
+		return true;
+	}
+
+	r = rec->boxes;
+	count = rec->n_boxes;
+
 	h = r->y + r->height;
 	for ( i = 0, rr = r; i < count; i++, rr++) {
 		if ( h < rr->y + rr->height)
@@ -140,172 +54,6 @@ rgn_rect(Handle self, int count, Box * r)
 		DeleteObject(reg);
 	}
 	return true;
-}
-
-static Bool
-rgn_polygon(Handle self, PolygonRegionRec * r)
-{
-	int i, max, open, xp_points;
-	POINT * xp;
-
-	open =
-		r->points[r->n_points-1].x != r->points[0].x ||
-		r->points[r->n_points-1].y != r->points[0].y;
-	xp_points = r->n_points + (open ? 1 : 0);
-
-	if ( !( xp = malloc( sizeof(POINT) * xp_points ))) {
-		warn("Not enough memory");
-		return false;
-	}
-
-	for ( i = 0, max = 0; i < r->n_points; i++) {
-		if ( max < r->points[i].y)
-			max = r->points[i].y;
-	}
-	for ( i = 0; i < r->n_points; i++) {
-		xp[i].x = r->points[i].x;
-		xp[i].y = max - r->points[i].y;
-	}
-	if ( open ) {
-		xp[i].x = r->points[0].x;
-		xp[i].y = max - r->points[0].y;
-	}
-	max++;
-
-	APERTURE = max;
-	REGION = CreatePolygonRgn( xp, r->n_points, 
-		((r-> fill_mode & fmWinding) == fmAlternate) ? ALTERNATE : WINDING);
-	if (( r->fill_mode & fmOverlay) == 0) goto NO_OVERLAY;
-
-	/* superimpose polyline points using Bresenham
-	because windows regions are as broken as filled shapes */
-	for ( i = 0; i < xp_points-1; i++) {
-		int curr_maj, curr_min, to_maj, delta_maj, delta_min;
-		int delta_y, delta_x;
-		int dir = 0, d, d_inc1, d_inc2;
-		int inc_maj, inc_min;
-		int x, y, acc_x = 0, acc_y = INT_MIN, ox;
-		POINT a = xp[i], b = xp[i+1];
-		delta_y = b.y - a.y;
-		delta_x = b.x - a.x;
-		if (abs(delta_y) > abs(delta_x)) dir = 1;
-
-		if (dir) {
-			curr_maj = a.y;
-			curr_min = a.x;
-			to_maj = b.y;
-			delta_maj = delta_y;
-			delta_min = delta_x;
-		} else {
-			curr_maj = a.x;
-			curr_min = a.y;
-			to_maj = b.x;
-			delta_maj = delta_x;
-			delta_min = delta_y;
-		}
-
-		if (delta_maj != 0)
-			inc_maj = (abs(delta_maj)==delta_maj ? 1 : -1);
-		else
-			inc_maj = 0;
-
-		if (delta_min != 0)
-			inc_min = (abs(delta_min)==delta_min ? 1 : -1);
-		else
-			inc_min = 0;
-
-		delta_maj = abs(delta_maj);
-		delta_min = abs(delta_min);
-
-		d      = (delta_min << 1) - delta_maj;
-		d_inc1 = (delta_min << 1);
-		d_inc2 = ((delta_min - delta_maj) << 1);
-
-		while(1) {
-			ox = x;
-			if (dir) {
-				x = curr_min;
-				y = curr_maj;
-			} else {
-				x = curr_maj;
-				y = curr_min;
-			}
-			if ( acc_y != y ) {
-				if ( acc_y > INT_MIN) {
-					HRGN reg;
-					int x1, x2;
-					if (ox < acc_x) {
-						x1 = ox;
-						x2 = acc_x;
-					} else {
-						x1 = acc_x;
-						x2 = ox;
-					}
-					reg = CreateRectRgn(x1, acc_y, x2+1, acc_y + 1);
-					CombineRgn( REGION, REGION, reg, RGN_OR);
-					DeleteObject(reg);
-				}
-				acc_x = x;
-				acc_y = y;
-			}
-
-			if (curr_maj == to_maj) break;
-			curr_maj += inc_maj;
-			if (d < 0) {
-				d += d_inc1;
-			} else {
-				d += d_inc2;
-				curr_min += inc_min;
-			}
-		}
-		if ( acc_y > INT_MIN) {
-			HRGN reg;
-			int x1, x2;
-			if (x < acc_x) {
-				x1 = x;
-				x2 = acc_x;
-			} else {
-				x1 = acc_x;
-				x2 = x;
-			}
-			reg = CreateRectRgn(x1, acc_y, x2+1, acc_y + 1);
-			CombineRgn( REGION, REGION, reg, RGN_OR);
-			DeleteObject(reg);
-		}
-	}
-
-NO_OVERLAY:
-	free( xp );
-	return true;
-}
-
-static Bool
-rgn_image(Handle self, Handle image)
-{
-	REGION = region_create(image);
-
-	if ( !REGION )
-		REGION = CreateRectRgn(0,0,0,0);
-	else
-		APERTURE = PImage(image)->h;
-	return true;
-}
-
-Bool
-apc_region_create( Handle self, PRegionRec rec)
-{
-	switch( rec-> type ) {
-	case rgnEmpty:
-		return rgn_empty(self);
-	case rgnRectangle:
-		return rgn_rect(self, rec->data.box.n_boxes, rec->data.box.boxes);
-	case rgnPolygon:
-		return rgn_polygon(self, &rec->data.polygon);
-	case rgnImage:
-		return rgn_image(self, rec->data.image);
-	default:
-		return false;
-	}
 }
 
 Bool
@@ -552,19 +300,14 @@ apc_region_copy_rects( Handle self)
 	size = GetRegionData( REGION, size, rgndata);
 	if ( size == 0) return NULL;
 
-	ret = malloc(sizeof(RegionRec) + sizeof(Box) * rgndata-> rdh. nCount );
-	if ( ret == NULL ) {
-		free(ret);
-		warn("Not enough memory\n");
+	if ( !( ret = img_region_alloc( NULL, rgndata-> rdh. nCount )))
 		return NULL;
-	}
 
-	ret-> type = rgnRectangle;
-	ret-> data. box. n_boxes = rgndata->rdh. nCount;
+	ret-> n_boxes = rgndata->rdh. nCount;
 	src = (RECT*) &(rgndata->Buffer);
-	dst = ret-> data. box. boxes = (Box*) (((Byte*)ret) + sizeof(RegionRec));
+	dst = ret-> boxes;
 	aperture = APERTURE;
-	for ( i = 0; i < ret->data. box. n_boxes; i++, src++, dst++) {
+	for ( i = 0; i < ret->n_boxes; i++, src++, dst++) {
 		dst-> x = src-> left;
 		dst-> y = aperture - src-> bottom;
 		dst-> width  = src-> right - src->left;
