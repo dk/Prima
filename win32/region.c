@@ -3,6 +3,7 @@
 #include "apricot.h"
 #endif
 #include "guts.h"
+#include "img_conv.h"
 #include "Image.h"
 
 #ifdef __cplusplus
@@ -26,7 +27,7 @@ apc_region_create( Handle self, PRegionRec rec)
 	int i, h, count;
 	Box *rr, *r;
 
-	if ( rec == NULL ) {
+	if ( rec == NULL || rec-> n_boxes == 0) {
 		REGION = CreateRectRgn(0,0,0,0);
 		APERTURE = 0;
 		return true;
@@ -294,7 +295,7 @@ apc_region_copy_rects( Handle self)
 	size = GetRegionData( REGION, size, rgndata);
 	if ( size == 0) return NULL;
 
-	if ( !( ret = img_region_new( rgndata-> rdh. nCount )))
+	if ( !( ret = img_region_alloc( NULL, rgndata-> rdh. nCount )))
 		return NULL;
 
 	ret-> n_boxes = rgndata->rdh. nCount;

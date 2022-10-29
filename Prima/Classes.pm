@@ -86,7 +86,7 @@ sub clone
 
 sub list
 {
-	die "bad array" unless is_array($_[0]);
+	return @{$_[0]} unless is_array($_[0]);
 	my $self = tied @{$_[0]};
 	return unpack($self->[PACK] . '*', $self->[REF]);
 }
