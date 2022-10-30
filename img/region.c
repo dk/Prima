@@ -5,7 +5,13 @@
 extern "C" {
 #endif
 
+#if 0
+#define _DEBUG
+#define DEBUG if(1)printf
+#else
 #define DEBUG if(0)printf
+#endif
+
 
 Bool
 img_region_foreach(
@@ -48,6 +54,8 @@ img_region_alloc(PRegionRec old_region, int n_size)
 	PRegionRec ret = NULL;
 	ssize_t size = sizeof(RegionRec) + n_size * sizeof(Box);
 	if ( old_region ) {
+		if ( n_size <= old_region->size )
+			return old_region;
 		if (( ret = realloc(old_region, size)) == NULL)
 			return NULL;
 	} else {
@@ -64,17 +72,20 @@ PRegionRec
 img_region_extend(PRegionRec region, int x, int y, int width, int height)
 {
 	Box *r;
+
 	if ( !region ) {
 		if ( !( region = img_region_new( 32 )))
 			return NULL;
 	}
+
 	if ( region-> size == region-> n_boxes ) {
 		PRegionRec old = region;
 		if ( !( region = img_region_alloc( old, region-> size * 3 ))) {
-			free( region );
+			free( old );
 			return NULL;
 		}
 	}
+
 	r = region->boxes + region->n_boxes;
 	r->x = x;
 	r->y = y;
@@ -181,6 +192,284 @@ img_region_mask( Handle mask)
 	return rdata;
 }
 
+/* special case, a polyline that is a single scanline - alternating fill is not handled (should it at all?) */
+static Bool
+is_hline( Point *pts, int count, Box *hliner)
+{
+	int i;
+	hliner->x      = pts[0].x;
+	hliner->y      = pts[0].y;
+	hliner->height = 1;
+	hliner->width  = 1;
+	for ( i = 1, pts++; i < count; i++, pts++) {
+		if ( pts->y != hliner->y ) return false;
+		if ( pts->x < hliner->x ) {
+			hliner-> width += hliner->x - pts->x;
+			hliner->x = pts->x;
+		} else if ( pts->x >= hliner->x + hliner->width ) {
+			hliner->width += pts->x - hliner->x - hliner->width + 1;
+		}
+	}
+
+	return true;
+}
+
+static Bool
+is_rect( Point *pts, int Count, int outline, Box *single)
+{
+    if (((Count == 4) ||
+	 ((Count == 5) && (pts[4].x == pts[0].x) && (pts[4].y == pts[0].y))) &&
+	(((pts[0].y == pts[1].y) &&
+	  (pts[1].x == pts[2].x) &&
+	  (pts[2].y == pts[3].y) &&
+	  (pts[3].x == pts[0].x)) ||
+	 ((pts[0].x == pts[1].x) &&
+	  (pts[1].y == pts[2].y) &&
+	  (pts[2].x == pts[3].x) &&
+	  (pts[3].y == pts[0].y)))
+   ) {
+	     int x2, y2;
+	     single->x = MIN(pts[0].x, pts[2].x);
+	     single->y = MIN(pts[0].y, pts[2].y);
+	     x2 = MAX(pts[0].x, pts[2].x);
+	     y2 = MAX(pts[0].y, pts[2].y);
+	     if ( !outline ) {
+	     	x2--;
+		y2--;
+	     }
+	     single->width  = x2 - single->x + 1;
+	     single->height = y2 - single->y + 1;
+	     return true;
+   }
+   return false;
+}
+
+static PRegionRec
+rect_region( Box * box)
+{
+	PRegionRec reg;
+	if ( !( reg = img_region_new(1)))
+		return NULL;
+	reg->n_boxes= 1;
+	reg->boxes[0] = *box;
+	return reg;
+}
+
+static void
+populate_scanline2box( PRegionRec region, int *scanline2box )
+{
+	int i,j,ly,ymin;
+	Box *box;
+
+	ymin = region-> boxes[0].y;
+	DEBUG("scanlines:");
+	for (
+		i = j = 0, ly = ymin - 1, box = region->boxes;
+		i < region->n_boxes;
+		i++, box++
+	) {
+		if ( box->y != ly ) {
+			scanline2box[j++] = i;
+			DEBUG("%d=%d ", j-1, i);
+		}
+		ly = box->y;
+	}
+	DEBUG("\n");
+}
+
+static PRegionRec
+add_hline( PRegionRec region, int *scanline2box, int x, int y, int width )
+{
+	int ymax, ymin;
+	if ( region-> n_boxes == 0 ) {
+		scanline2box[0] = 0;
+		DEBUG("new rgn\n");
+		return img_region_extend(region, x, y, width, 1);
+	}
+	ymin = region-> boxes[0].y;
+	ymax = region-> boxes[region-> n_boxes - 1].y;
+
+	/* no holes, better return intact */
+	if ( y != ymin - 1 && y != ymax + 1)
+		return region;
+
+	if ( y == ymin - 1 ) {
+		Box* box;
+		/* stuff before */
+		if ( !( region = img_region_extend(region, 0, 0, 0, 0)))
+			return NULL;
+		box = region->boxes;
+		memmove( box + 1, box, (region-> n_boxes - 1) * sizeof(Box));
+		box-> x      = x;
+		box-> y      = y;
+		box-> width  = width;
+		box-> height = 1;
+		populate_scanline2box(region, scanline2box);
+		DEBUG("stuff before\n");
+		return region;
+	} else {
+		/* stuff after */
+		scanline2box[ ymax - ymin + 1] = region->n_boxes;
+		DEBUG("stuff after; scanline(%d) = %d\n", ymax-ymin+1, region->n_boxes);
+		return img_region_extend(region, x, y, width, 1);
+	}
+}
+
+static PRegionRec
+union_hline( PRegionRec region, int *scanline2box, int x, int y, int width )
+{
+	int i, ymin, ymax, box_offset;
+	Box *box;
+	DEBUG("add %d %d %d\n", x, y, width);
+	if ( region-> n_boxes == 0 )
+		return add_hline( region, scanline2box, x, y, width );
+	ymin = region-> boxes[0].y;
+	ymax = region-> boxes[region-> n_boxes - 1].y;
+	if ( y < ymin || y > ymax )
+		return add_hline( region, scanline2box, x, y, width );
+
+	/* expand hline, if any, strictly by 1 pixel left or right - or don't at all */
+	box_offset = scanline2box[y - ymin];
+	DEBUG("scan for scanline %d offs %d\n", y - ymin, box_offset);
+	box = region->boxes + box_offset;
+	for ( i = box_offset; i < region-> n_boxes && box->y == y; i++, box++) {
+		if ( box->x == x + 1 ) {
+			DEBUG("add left to %d %d %d %d\n", box->x, box->y, box->width, box->height);
+			box->x--;
+			box->width++;
+			break;
+		} else if ( box-> x + box-> width == x ) {
+			DEBUG("add right to %d %d %d %d\n", box->x, box->y, box->width, box->height);
+			box->width++;
+			break;
+		}
+	}
+
+	return region;
+}
+
+static PRegionRec
+superimpose_outline( PRegionRec region, Point *pts, int count)
+{
+	int i, ymin, ymax, n_scanlines, *scanline2box;
+
+	/* fill quick access table. It might be extended with new scanlines by y, but never
+	with new entries by x */
+	if ( region-> n_boxes > 0 ) {
+		ymin = region-> boxes[0].y;
+		ymax = region-> boxes[region-> n_boxes - 1].y;
+		n_scanlines = ymax - ymin + 1;
+		DEBUG("ymin %d ymax %d\n",ymin, ymax);
+	} else {
+		n_scanlines = 0;
+		ymin = ymax = 0;
+	}
+	/* space for 1-2 extra scanlines (1 up, 1 down), but never more, most probably will be needed */
+	if ( !( scanline2box = malloc((n_scanlines + 2) * sizeof(int))))
+		return region;
+	populate_scanline2box(region, scanline2box);
+
+	/* superimpose polyline points using Bresenham
+	because regions are as broken as filled shapes */
+	for ( i = 0; i < count - 1; i++) {
+		int curr_maj, curr_min, to_maj, delta_maj, delta_min;
+		int delta_y, delta_x;
+		int dir = 0, d, d_inc1, d_inc2;
+		int inc_maj, inc_min;
+		int x, y, acc_x = 0, acc_y = INT_MIN, ox;
+		Point a = pts[i], b = pts[i+1];
+		delta_y = b.y - a.y;
+		delta_x = b.x - a.x;
+		if (abs(delta_y) > abs(delta_x)) dir = 1;
+
+		if (dir) {
+			curr_maj = a.y;
+			curr_min = a.x;
+			to_maj = b.y;
+			delta_maj = delta_y;
+			delta_min = delta_x;
+		} else {
+			curr_maj = a.x;
+			curr_min = a.y;
+			to_maj = b.x;
+			delta_maj = delta_x;
+			delta_min = delta_y;
+		}
+
+		if (delta_maj != 0)
+			inc_maj = (abs(delta_maj)==delta_maj ? 1 : -1);
+		else
+			inc_maj = 0;
+
+		if (delta_min != 0)
+			inc_min = (abs(delta_min)==delta_min ? 1 : -1);
+		else
+			inc_min = 0;
+
+		delta_maj = abs(delta_maj);
+		delta_min = abs(delta_min);
+
+		d      = (delta_min << 1) - delta_maj;
+		d_inc1 = (delta_min << 1);
+		d_inc2 = ((delta_min - delta_maj) << 1);
+
+		x = INT_MIN;
+		while(1) {
+			ox = x;
+			if (dir) {
+				x = curr_min;
+				y = curr_maj;
+			} else {
+				x = curr_maj;
+				y = curr_min;
+			}
+			if ( acc_y != y ) {
+				if ( acc_y > INT_MIN) {
+					int xx, width;
+					if (ox < acc_x) {
+						xx = ox;
+						width = acc_x - ox + 1;
+					} else {
+						xx = acc_x;
+						width = ox - acc_x + 1;
+					}
+					if (!( region = union_hline( region, scanline2box, xx, acc_y, width)))
+						goto EXIT;
+				}
+				acc_x = x;
+				acc_y = y;
+			}
+
+			if (curr_maj == to_maj) break;
+			curr_maj += inc_maj;
+			if (d < 0) {
+				d += d_inc1;
+			} else {
+				d += d_inc2;
+				curr_min += inc_min;
+			}
+		}
+		if ( acc_y > INT_MIN) {
+			int xx, width;
+			if (x < acc_x) {
+				xx = x;
+				width = acc_x - x + 1;
+			} else {
+				xx = acc_x;
+				width = xx - acc_x + 1;
+			}
+			if (!( region = union_hline( region, scanline2box, xx, acc_y, width)))
+				goto EXIT;
+		}
+	}
+
+EXIT:
+	free(scanline2box);
+	return region;
+}
+
+
+
 /*
 
 The code below is based on the libX11 region implementation
@@ -244,6 +533,8 @@ SOFTWARE.
 #define LARGE_COORDINATE 1000000
 #define SMALL_COORDINATE -LARGE_COORDINATE
 
+#undef MAXSHORT
+#undef MINSHORT
 #define MAXSHORT 32767
 #define MINSHORT -MAXSHORT
 #ifndef MAX
@@ -436,6 +727,9 @@ typedef struct _EdgeTableEntry {
      struct _EdgeTableEntry *back;       /* for insertion sort   */
      struct _EdgeTableEntry *nextWETE;   /* for winding num rule */
      int ClockWise;        /* flag for winding number rule       */
+#ifdef _DEBUG
+     Point p1, p2;
+#endif
 } EdgeTableEntry;
 
 
@@ -465,6 +759,12 @@ typedef struct _ScanLineListBlock {
      struct _ScanLineListBlock *next;
 } ScanLineListBlock;
 
+#ifdef _DEBUG
+#define EDGE_DEBUG(p) p->p1.x,p->p1.y,p->p2.x,p->p2.y
+#else
+#define EDGE_DEBUG(p) 0,0,0,0
+#endif
+
 
 
 /*
@@ -480,9 +780,9 @@ typedef struct _ScanLineListBlock {
  *     the caller when the edge has been removed so he
  *     can reorder the Winding Active Edge Table.
  */
-#define EVALUATEEDGEWINDING(pAET, pPrevAET, y, fixWAET, outline) { \
-   if (pAET->ymax == y - outline) {          /* leaving this edge */ \
-      DEBUG("edge exit at %d\n", y);\
+#define EVALUATEEDGEWINDING(pAET, pPrevAET, y, fixWAET) { \
+   if (pAET->ymax == y) {          /* leaving this edge */ \
+      DEBUG("v edge exit\n");\
       pPrevAET->next = pAET->next; \
       pAET = pPrevAET->next; \
       fixWAET = 1; \
@@ -491,7 +791,7 @@ typedef struct _ScanLineListBlock {
    } \
    else { \
       BRESINCRPGONSTRUCT(pAET->bres); \
-      DEBUG("edge update at %d, new x = %d\n", y, pAET->bres.minor_axis);\
+      DEBUG("| edge update x=%d\n", pAET->bres.minor_axis);\
       pPrevAET = pAET; \
       pAET = pAET->next; \
    } \
@@ -505,9 +805,9 @@ typedef struct _ScanLineListBlock {
  *     x value to be ready for the next scanline.
  *     The even-odd rule is in effect.
  */
-#define EVALUATEEDGEEVENODD(pAET, pPrevAET, y, outline) { \
-   if (pAET->ymax == y - outline) {          /* leaving this edge */ \
-      DEBUG("edge exit at %d\n", y);\
+#define EVALUATEEDGEEVENODD(pAET, pPrevAET, y) { \
+   if (pAET->ymax == y) {          /* leaving this edge */ \
+      DEBUG("v edge exit\n");\
       pPrevAET->next = pAET->next; \
       pAET = pPrevAET->next; \
       if (pAET) \
@@ -515,7 +815,7 @@ typedef struct _ScanLineListBlock {
    } \
    else { \
       BRESINCRPGONSTRUCT(pAET->bres); \
-      DEBUG("edge update at %d, new x = %d\n", y, pAET->bres.minor_axis);\
+      DEBUG("| edge update x=%d\n", pAET->bres.minor_axis);\
       pPrevAET = pAET; \
       pAET = pAET->next; \
    } \
@@ -570,7 +870,6 @@ InsertEdgeInET(
 
         pSLL->next = pPrevSLL->next;
         pSLL->edgelist = (EdgeTableEntry *)NULL;
-	DEBUG("scanline %d: new edgelist\n", scanline);
         pPrevSLL->next = pSLL;
     }
     pSLL->scanline = scanline;
@@ -627,8 +926,7 @@ CreateETandAET(
     EdgeTable *ET,
     EdgeTableEntry *AET,
     register EdgeTableEntry *pETEs,
-    ScanLineListBlock   *pSLLBlock,
-    int outline)
+    ScanLineListBlock   *pSLLBlock)
 {
     register Point *top, *bottom;
     register Point *PrevPt, *CurrPt;
@@ -636,7 +934,6 @@ CreateETandAET(
     int dy;
 
     if (count < 2)  return;
-    outline = outline ? 0 : 1;
 
     /*
      *  initialize the Active Edge Table
@@ -668,7 +965,11 @@ CreateETandAET(
         /*
          *  find out which point is above and which is below.
          */
-	DEBUG("edge %d: %d.%d - %d.%d\n", count, PrevPt->x, PrevPt->y, CurrPt->x, CurrPt->y);
+	DEBUG("new edge %d.%d-%d.%d\n", PrevPt->x, PrevPt->y, CurrPt->x, CurrPt->y);
+#ifdef _DEBUG
+	pETEs->p1 = *PrevPt;
+	pETEs->p2 = *CurrPt;
+#endif
         if (PrevPt->y > CurrPt->y)
         {
             bottom = PrevPt, top = CurrPt;
@@ -686,7 +987,6 @@ CreateETandAET(
         if (bottom->y != top->y)
         {
             pETEs->ymax = bottom->y - 1;  /* -1 so we don't get last scanline */
-	    DEBUG("set ymax=%d %d\n", pETEs->ymax, outline);
 
             /*
              *  initialize integer edge algorithm
@@ -696,10 +996,8 @@ CreateETandAET(
 
             InsertEdgeInET(ET, pETEs, top->y, &pSLLBlock, &iSLLBlock);
 
-	    if (PrevPt->y > ET->ymax) {
+	    if (PrevPt->y > ET->ymax)
 		ET->ymax = PrevPt->y;
-		DEBUG("adjust ymax=%d because prev pt.x=%d\n", ET->ymax, PrevPt->x);
-	    }
 	    if (PrevPt->y < ET->ymin)
 		ET->ymin = PrevPt->y;
             pETEs++;
@@ -725,6 +1023,9 @@ loadAET(
 {
     register EdgeTableEntry *pPrevAET;
     register EdgeTableEntry *tmp;
+#ifdef _DEBUG
+    EdgeTableEntry *saveAET = AET;
+#endif
 
     pPrevAET = AET;
     AET = AET->next;
@@ -743,8 +1044,18 @@ loadAET(
         pPrevAET->next = ETEs;
         pPrevAET = ETEs;
 
+	DEBUG("^ edge %d.%d-%d.%d enter\n", EDGE_DEBUG(ETEs));
         ETEs = tmp;
     }
+#ifdef _DEBUG
+    DEBUG("active edges: ");
+    AET = saveAET->next;
+    while ( AET ) {
+       DEBUG("x=%d(%d.%d-%d.%d) ", AET->bres.minor_axis, EDGE_DEBUG(AET));
+       AET = AET->next;
+    }
+    DEBUG("\n");
+#endif
 }
 
 /*
@@ -881,7 +1192,7 @@ PtsToRegion(
 
     numRects = ((numFullPtBlocks * NUMPTSTOBUFFER) + iCurPtBlock) >> 1;
 
-    if ( !( reg = img_region_new(numRects)))
+    if ( !( reg = img_region_new(numRects + outline)))
        return NULL;
 
     CurPtBlock = FirstPtBlock;
@@ -896,14 +1207,10 @@ PtsToRegion(
 	DEBUG("numFullPtBlocks=%d i=%d\n", numFullPtBlocks, i);
 	for (pts = CurPtBlock->pts; i--; pts += 2) {
 	    DEBUG("i=%d %d.%d - %d.%d\n", i, pts->x, pts->y, pts[1].x, pts[1].y);
-	    if (pts->x == pts[1].x && !outline) {
-	        DEBUG("skip\n");
-		continue;
-	    }
 	    if (numRects &&
 	        pts->x == rects->x &&
-		pts->y == rects->y + rects->height &&
-		pts[1].x == rects->x + rects->width &&
+		pts->y == rects->y + rects->height - 1 &&
+		pts[1].x == rects->x + rects->width - 1 &&
 		(
 		    numRects == 1 ||
 		    rects[-1].y != rects->y
@@ -939,68 +1246,24 @@ PtsToRegion(
     return reg;
 }
 
-/* special case, a polyline that is a single scanline - alternating fill is not handled (should it at all?) */
-static Bool
-is_hline( Point *pts, int count, Box *hliner)
-{
-	int i;
-	hliner->x      = pts[0].x;
-	hliner->y      = pts[0].y;
-	hliner->height = 1;
-	hliner->width  = 1;
-	for ( i = 1, pts++; i < count; i++, pts++) {
-		if ( pts->y != hliner->y ) return false;
-		if ( pts->x < hliner->x ) {
-			hliner-> width += hliner->x - pts->x;
-			hliner->x = pts->x;
-		} else if ( pts->x >= hliner->x + hliner->width ) {
-			hliner->width += pts->x - hliner->x - hliner->width + 1;
-		}
-	}
+/*
 
-	return true;
-}
+ 1. Add the intersection point
+ 3. Send out the buffer if filled
 
-static Bool
-is_rect( Point *pts, int Count, int outline, Box *single)
-{
-    if (((Count == 4) ||
-	 ((Count == 5) && (pts[4].x == pts[0].x) && (pts[4].y == pts[0].y))) &&
-	(((pts[0].y == pts[1].y) &&
-	  (pts[1].x == pts[2].x) &&
-	  (pts[2].y == pts[3].y) &&
-	  (pts[3].x == pts[0].x)) ||
-	 ((pts[0].x == pts[1].x) &&
-	  (pts[1].y == pts[2].y) &&
-	  (pts[2].x == pts[3].x) &&
-	  (pts[3].y == pts[0].y)))
-   ) {
-	     int x2, y2;
-	     single->x = MIN(pts[0].x, pts[2].x);
-	     single->y = MIN(pts[0].y, pts[2].y);
-	     x2 = MAX(pts[0].x, pts[2].x);
-	     y2 = MAX(pts[0].y, pts[2].y);
-	     if ( !outline ) {
-	     	x2--;
-		y2--;
-	     }
-	     single->width  = x2 - single->x + 1;
-	     single->height = y2 - single->y + 1;
-	     return true;
+ */
+
+#define ADD_POINT                                     \
+   pts->x = pAET->bres.minor_axis,  pts->y = y;       \
+   DEBUG("+p %d %d\n", pts->x, pts->y);               \
+   pts++, iPts++;                                     \
+   if (iPts == NUMPTSTOBUFFER) {                      \
+       tmpPtBlock = malloc(sizeof(POINTBLOCK));       \
+       curPtBlock->next = tmpPtBlock;                 \
+       curPtBlock = tmpPtBlock;                       \
+       pts = curPtBlock->pts;                         \
+       numFullPtBlocks++;    iPts = 0;                \
    }
-   return false;
-}
-
-static PRegionRec
-rect_region( Box * box)
-{
-	PRegionRec reg;
-	if ( !( reg = img_region_new(1)))
-		return NULL;
-	reg->n_boxes= 1;
-	reg->boxes[0] = *box;
-	return reg;
-}
 
 /*
  *     polytoregion
@@ -1034,6 +1297,11 @@ img_region_polygon(
     int outline;
     Box single;
 
+#undef  NORMAL
+#define NORMAL    0
+#define ENTERING  1
+#define EXITING  -1
+
     outline = (rule & fmOverlay) ? 1 : 0;
     rule    = (rule & fmWinding) ? 0 : 1;
     DEBUG("init: %s %s\n", rule ? "alt" : "wind", outline ? "outl" : "raw");
@@ -1063,7 +1331,7 @@ img_region_polygon(
 	return NULL;
 
     pts = FirstPtBlock.pts;
-    CreateETandAET(Count, Pts, &ET, &AET, pETEs, &SLLBlock, outline);
+    CreateETandAET(Count, Pts, &ET, &AET, pETEs, &SLLBlock);
     pSLL = ET.scanlines.next;
     curPtBlock = &FirstPtBlock;
 
@@ -1071,7 +1339,9 @@ img_region_polygon(
         /*
          *  for each scanline
          */
-        for (y = ET.ymin; y < ET.ymax + outline; y++) {
+	DEBUG("for %d <=> %d\n", ET.ymin, ET.ymax);
+        for (y = ET.ymin; y < ET.ymax; y++) {
+	    DEBUG("== %d ==\n", y);
             /*
              *  Add a new edge to the active edge table when we
              *  get to the next edge.
@@ -1087,21 +1357,8 @@ img_region_polygon(
              *  for each active edge
              */
             while (pAET) {
-                pts->x = pAET->bres.minor_axis,  pts->y = y;
-                pts++, iPts++;
-
-                /*
-                 *  send out the buffer
-                 */
-                if (iPts == NUMPTSTOBUFFER) {
-                    tmpPtBlock = malloc(sizeof(POINTBLOCK));
-                    curPtBlock->next = tmpPtBlock;
-                    curPtBlock = tmpPtBlock;
-                    pts = curPtBlock->pts;
-                    numFullPtBlocks++;
-                    iPts = 0;
-                }
-                EVALUATEEDGEEVENODD(pAET, pPrevAET, y, outline);
+		ADD_POINT;
+                EVALUATEEDGEEVENODD(pAET, pPrevAET, y);
             }
             (void) InsertionSort(&AET);
         }
@@ -1111,12 +1368,12 @@ img_region_polygon(
          *  for each scanline
          */
 	DEBUG("for %d <=> %d\n", ET.ymin, ET.ymax);
-        for (y = ET.ymin; y < ET.ymax + outline; y++) {
+        for (y = ET.ymin; y < ET.ymax; y++) {
+	    DEBUG("== %d ==\n", y);
             /*
              *  Add a new edge to the active edge table when we
              *  get to the next edge.
              */
-	    DEBUG("pSLL->scanline=%d\n", pSLL ? pSLL->scanline : -1);
             if (pSLL != NULL && y == pSLL->scanline) {
                 loadAET(&AET, pSLL->edgelist);
                 computeWAET(&AET);
@@ -1130,29 +1387,15 @@ img_region_polygon(
              *  for each active edge
              */
             while (pAET) {
-	        DEBUG("y=%d\n", y);
                 /*
                  *  add to the buffer only those edges that
                  *  are in the Winding active edge table.
                  */
                 if (pWETE == pAET) {
-                    pts->x = pAET->bres.minor_axis,  pts->y = y;
-		    DEBUG("+p %d %d\n", pts->x, pts->y);
-                    pts++, iPts++;
-
-                    /*
-                     *  send out the buffer
-                     */
-                    if (iPts == NUMPTSTOBUFFER) {
-                        tmpPtBlock = malloc(sizeof(POINTBLOCK));
-                        curPtBlock->next = tmpPtBlock;
-                        curPtBlock = tmpPtBlock;
-                        pts = curPtBlock->pts;
-                        numFullPtBlocks++;    iPts = 0;
-                    }
+		    ADD_POINT;
                     pWETE = pWETE->nextWETE;
                 }
-                EVALUATEEDGEWINDING(pAET, pPrevAET, y, fixWAET, outline);
+                EVALUATEEDGEWINDING(pAET, pPrevAET, y, fixWAET);
             }
 
             /*
@@ -1173,6 +1416,8 @@ img_region_polygon(
 	curPtBlock = tmpPtBlock;
     }
     free(pETEs);
+    if (outline)
+    	region = superimpose_outline(region, Pts, Count);
     return(region);
 }
 

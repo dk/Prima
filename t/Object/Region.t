@@ -284,7 +284,7 @@ ok( $r->equals( Prima::Region->new(box => $r->get_boxes)), "is equal (6)");
 
 $r = Prima::Region->new( polygon => [0,0,0,5,5,5,5,0, 0,0,0,2,2,2,2,0], fillMode => fm::Alternate|fm::Overlay);
 render($r);
-is( $b->sum, 22 * 255, "overlay polygon without winding");
+is( $b->sum, 23 * 255, "overlay polygon without winding");
 ok( $r->equals( Prima::Region->new(box => $r->get_boxes)), "is equal (7)");
 
 my $d = $b->data;
