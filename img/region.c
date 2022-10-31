@@ -342,18 +342,19 @@ union_hline( PRegionRec region, int *scanline2box, int x, int y, int width )
 	for ( i = box_offset; i < region-> n_boxes && box->y == y; i++, box++) {
 		int r1 = box-> x + box-> width;
 		int r2 = x + width;
-		if ( x >= box->x && x <= r1 ) {
+		if ( x >= box->x && x <= r1 + 1 ) {
 			if ( r2 > r1 ) {
-				DEBUG("add right to %d %d\n", box->x, box->width);
+				DEBUG("add right: w %d -> %d\n", box->width, box-> width + r2 - r1);
 				box->width += r2 - r1;
 			}
 			return region;
-		} else if ( x < box->x && r2 >= box-> x ) {
-			DEBUG("add left to %d %d\n", box->x, box->width);
+		} else if ( x < box->x && r2 >= box-> x - 1) {
+			DEBUG("add left: %d %d -> ", box->x, box->width);
 			if ( x < box->x )
 				box->x = x;
 			if ( r2 < r1 ) r2 = r1;
 			box->width = r2 - box->x;
+			DEBUG("%d %d\n", box->x, box->width);
 			return region;
 		}
 	}
@@ -363,11 +364,12 @@ union_hline( PRegionRec region, int *scanline2box, int x, int y, int width )
 	if ( !( region = img_region_alloc( region, region->size * 2)))
 		return NULL;
 	box = region->boxes + box_offset;
-	memmove( box, box + 1, sizeof(Box) * (region->n_boxes - box_offset));
+	memmove( box + 1, box, sizeof(Box) * (region->n_boxes - box_offset));
 	box->x = x;
 	box->y = y;
 	box->width  = width;
 	box->height = 1;
+	region->n_boxes++;
 	populate_scanline2box(region, scanline2box);
 
 	return region;
