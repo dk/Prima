@@ -192,6 +192,14 @@ img_region_mask( Handle mask)
 	return rdata;
 }
 
+
+#ifndef MAX
+#define MAX(a,b) (((a) > (b)) ? (a) : (b))
+#endif
+#ifndef MIN
+#define MIN(a,b) (((a) < (b)) ? (a) : (b))
+#endif
+
 /* special case, a polyline that is a single scanline - alternating fill is not handled (should it at all?) */
 static Bool
 is_hline( Point *pts, int count, Box *hliner)
@@ -537,12 +545,6 @@ SOFTWARE.
 #undef MINSHORT
 #define MAXSHORT 32767
 #define MINSHORT -MAXSHORT
-#ifndef MAX
-#define MAX(a,b) (((a) > (b)) ? (a) : (b))
-#endif
-#ifndef MIN
-#define MIN(a,b) (((a) < (b)) ? (a) : (b))
-#endif
 
 /*
  * number of points to buffer before sending them off
