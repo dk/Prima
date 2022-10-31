@@ -336,22 +336,39 @@ union_hline( PRegionRec region, int *scanline2box, int x, int y, int width )
 	if ( y < ymin || y > ymax )
 		return add_hline( region, scanline2box, x, y, width );
 
-	/* expand hline, if any, strictly by 1 pixel left or right - or don't at all */
+	/* expand hline, if any, strictly by 1 pixel left or right */
 	box_offset = scanline2box[y - ymin];
-	DEBUG("scan for scanline %d offs %d\n", y - ymin, box_offset);
 	box = region->boxes + box_offset;
 	for ( i = box_offset; i < region-> n_boxes && box->y == y; i++, box++) {
-		if ( box->x == x + 1 ) {
-			DEBUG("add left to %d %d %d %d\n", box->x, box->y, box->width, box->height);
-			box->x--;
-			box->width++;
-			break;
-		} else if ( box-> x + box-> width == x ) {
-			DEBUG("add right to %d %d %d %d\n", box->x, box->y, box->width, box->height);
-			box->width++;
-			break;
+		int r1 = box-> x + box-> width;
+		int r2 = x + width;
+		if ( x >= box->x && x <= r1 ) {
+			if ( r2 > r1 ) {
+				DEBUG("add right to %d %d\n", box->x, box->width);
+				box->width += r2 - r1;
+			}
+			return region;
+		} else if ( x < box->x && r2 >= box-> x ) {
+			DEBUG("add left to %d %d\n", box->x, box->width);
+			if ( x < box->x )
+				box->x = x;
+			if ( r2 < r1 ) r2 = r1;
+			box->width = r2 - box->x;
+			return region;
 		}
 	}
+
+	/* need to insert a rectangle and recalculate the scanline2box */
+	DEBUG("insert\n");
+	if ( !( region = img_region_alloc( region, region->size * 2)))
+		return NULL;
+	box = region->boxes + box_offset;
+	memmove( box, box + 1, sizeof(Box) * (region->n_boxes - box_offset));
+	box->x = x;
+	box->y = y;
+	box->width  = width;
+	box->height = 1;
+	populate_scanline2box(region, scanline2box);
 
 	return region;
 }
@@ -389,6 +406,7 @@ superimpose_outline( PRegionRec region, Point *pts, int count)
 		delta_y = b.y - a.y;
 		delta_x = b.x - a.x;
 		if (abs(delta_y) > abs(delta_x)) dir = 1;
+		DEBUG("edge %d.%d-%d.%d\n", a.x,a.y,b.x,b.y);
 
 		if (dir) {
 			curr_maj = a.y;
@@ -464,7 +482,7 @@ superimpose_outline( PRegionRec region, Point *pts, int count)
 				width = acc_x - x + 1;
 			} else {
 				xx = acc_x;
-				width = xx - acc_x + 1;
+				width = x - acc_x + 1;
 			}
 			if (!( region = union_hline( region, scanline2box, xx, acc_y, width)))
 				goto EXIT;
@@ -475,8 +493,6 @@ EXIT:
 	free(scanline2box);
 	return region;
 }
-
-
 
 /*
 
@@ -1299,11 +1315,6 @@ img_region_polygon(
     int outline;
     Box single;
 
-#undef  NORMAL
-#define NORMAL    0
-#define ENTERING  1
-#define EXITING  -1
-
     outline = (rule & fmOverlay) ? 1 : 0;
     rule    = (rule & fmWinding) ? 0 : 1;
     DEBUG("init: %s %s\n", rule ? "alt" : "wind", outline ? "outl" : "raw");
@@ -1418,8 +1429,10 @@ img_region_polygon(
 	curPtBlock = tmpPtBlock;
     }
     free(pETEs);
-    if (outline)
-    	region = superimpose_outline(region, Pts, Count);
+    if (outline) {
+    	PRegionRec new = superimpose_outline(region, Pts, Count);
+	if (new) region = new;
+    }
     return(region);
 }
 
