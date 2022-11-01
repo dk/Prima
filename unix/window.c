@@ -1148,7 +1148,7 @@ apc_window_set_icon( Handle self, Handle icon)
 		GC gc;
 		XGCValues gcv;
 
-		and = XCreatePixmap( DISP, guts. root, i-> w, i-> h, guts.depth);
+		and = XCreatePixmap( DISP, guts. root, i-> w, i-> h, 1);
 		if ( !and) {
 			XFreePixmap( DISP, xor);
 			goto FAIL;
@@ -1157,8 +1157,8 @@ apc_window_set_icon( Handle self, Handle icon)
 		gcv. graphics_exposures = false;
 		gc = XCreateGC( DISP, and, GCGraphicsExposures, &gcv);
 		if ( X(icon)-> image_cache. icon) {
-			XSetBackground( DISP, gc, 0xffffffff);
-			XSetForeground( DISP, gc, 0x00000000);
+			XSetBackground( DISP, gc, 1);
+			XSetForeground( DISP, gc, 0);
 			prima_put_ximage( and, gc, X(icon)-> image_cache. icon, 0, 0, 0, 0, i-> w, i-> h);
 		} else {
 			XSetForeground( DISP, gc, guts. monochromeMap[1]);
