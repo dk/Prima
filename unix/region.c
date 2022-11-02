@@ -305,7 +305,7 @@ apc_gp_get_region( Handle self, Handle rgn)
 	XImage * i;
 	Image pi;
 	PRegionRec rgnrec2;
-	Region rgn2;
+	Region rgn2 = (Region) 0;
 
 	if ( !XF_IN_PAINT(XX)) return false;
 
