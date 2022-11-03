@@ -1148,7 +1148,9 @@ apc_window_set_icon( Handle self, Handle icon)
 		GC gc;
 		XGCValues gcv;
 
-		and = XCreatePixmap( DISP, guts. root, i-> w, i-> h, 1);
+		/* 1 and guts.idepth works for twitham, but guts.depth works for others */
+		and = XCreatePixmap( DISP, guts. root, i-> w, i-> h, guts.idepth);
+		/* warn("in window.c: depth=%d, idepth=%d", guts.depth, guts.idepth); */
 		if ( !and) {
 			XFreePixmap( DISP, xor);
 			goto FAIL;
@@ -1157,8 +1159,8 @@ apc_window_set_icon( Handle self, Handle icon)
 		gcv. graphics_exposures = false;
 		gc = XCreateGC( DISP, and, GCGraphicsExposures, &gcv);
 		if ( X(icon)-> image_cache. icon) {
-			XSetBackground( DISP, gc, 1);
-			XSetForeground( DISP, gc, 0);
+			XSetBackground( DISP, gc, 0xffffffff);
+			XSetForeground( DISP, gc, 0x00000000);
 			prima_put_ximage( and, gc, X(icon)-> image_cache. icon, 0, 0, 0, 0, i-> w, i-> h);
 		} else {
 			XSetForeground( DISP, gc, guts. monochromeMap[1]);
