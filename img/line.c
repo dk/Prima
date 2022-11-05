@@ -468,6 +468,221 @@ img_polyline( Handle dest, int n_points, Point * points, PImgPaintContext ctx)
 	return true;
 }
 
+static NPolyPolyline*
+nppl_alloc( NPolyPolyline *old, unsigned int new_size)
+{
+	NPolyPolyline *p;
+	unsigned int sz =  sizeof(NPolyPolyline) + sizeof(NPoint) * new_size;
+	if ( old == NULL ) {
+		if ( !( p = malloc(sz)))
+			return NULL;
+		bzero( p, sz );
+	} else {
+		if ( new_size < old->size )
+			return old;
+		if ( !( p = realloc( old, sz )))
+			return NULL;
+		if (old->prev) old->prev->next = p;
+	}
+	p->size = new_size;
+	p->points = p->buf;
+	return p;
+}
+
+NPolyPolyline*
+img_polyline2patterns( NPoint * points, int n_points, double line_width, char * line_pattern, Bool integer_precision)
+{
+	NPolyPolyline *dst = NULL, *curr = NULL;
+	int i, pattern_len;
+	float pattern_buf[256], *pattern, sqrt_table[1024];
+	semistatic_t pattern_array;
+	Bool ok = false, closed, strokecolor, new_point, new_stroke, black, joiner;
+	int step;
+	float advance, strokelen, pixlen, draw, plotted;
+	double dx, dy;
+	NPoint a, b, a1, b1, r;
+
+	if (integer_precision)
+		bzero(sqrt_table, sizeof(sqrt_table));
+
+	/*
+	convert line pattern with respect to the line width.
+	lpNull results in an empty line, and lpSolid is same as points by definition
+	*/
+	if (( pattern_len = strlen(line_pattern)) < 2)
+		return NULL;
+	semistatic_init(&pattern_array, &pattern_buf, sizeof(float), sizeof(pattern_buf) / sizeof(float));
+	if ( !semistatic_expand(&pattern_array, pattern_len)) {
+		warn("Not enough memory");
+		goto EXIT;
+	}
+	if ( line_width < 1.0) line_width = 1.0;
+	pattern = (float*)pattern_array.heap;
+	for ( i = 0; i < pattern_len; i++, pattern++)
+		*pattern = 1.0 + line_width * ( line_pattern[i] - 1 );
+	pattern = (float*)pattern_array.heap;
+
+	closed = points[0].x == points[n_points-1].x && points[0].y == points[n_points-1].y;
+	i = step = 0;
+	strokecolor = joiner = false;
+	new_point = new_stroke = true;
+	advance = strokelen = 0.0;
+	while ( 1 ) {
+		float next_seg_advance;
+
+		/* open next segment */
+		if ( advance <= 0.0 && new_stroke ) {
+			strokecolor = !strokecolor;
+			strokelen   = pattern[step++];
+			if ( step >= pattern_len ) step = 0;
+			joiner = 0;
+			if ( strokecolor ) {
+				NPolyPolyline*p;
+				if ( !( p = nppl_alloc(NULL, 32)))
+					goto EXIT;
+				if ( curr != NULL ) {
+					curr->next = p;
+					p->prev = curr;
+					curr = p;
+				} else
+					curr = dst = p;
+			}
+		}
+
+		/* advance to new point */
+		if ( new_point ) {
+			double dl;
+			a = points[i++];
+			if ( i >= n_points ) break;
+			b = points[i];
+			dx = b.x - a.x;
+			dy = b.y - a.y;
+			dl = dx * dx + dy * dy;
+			if ( integer_precision && dl < 1024 ) {
+				int ix = dl + .5;
+				if ( ix > 0 && sqrt_table[ix] == 0.0 )
+					sqrt_table[ix] = sqrtf(ix);
+				pixlen = sqrt_table[ix];
+			} else
+				pixlen = sqrtf(dl);
+
+			if (pixlen > 0.0) {
+				r.x = dx / pixlen;
+				r.y = dy / pixlen;
+			} else
+				r.x = r.y = 1.0;
+			if ( integer_precision )
+				pixlen = floor( pixlen + .5 );
+			if (
+				( i == n_points - 1 && !closed ) ||
+				( pixlen == 0.0 )
+			)
+				pixlen += 1.0;
+			else {
+				b.x -= r.x;
+				b.y -= r.y;
+			}
+			a1 = a;
+			b1 = b;
+			plotted = 0.0;
+			if ( joiner && advance == 0.0 && curr && curr-> n_points > 0 )
+				curr->n_points--;
+			joiner = false;
+		}
+
+		/* do we draw? */
+		if ( advance > 0.0 ) {
+			draw  = advance;
+			black = false;
+		} else {
+			draw  = strokelen;
+			black = strokecolor;
+		}
+		next_seg_advance = black ? line_width - 1.0 : 1.0;
+
+#define ADD_POINT \
+	if ( black && curr ) { /* curr should be definitely non-NULL by now */ \
+		if ( curr->n_points > curr-> size - 2) {                       \
+			if ( !( curr = nppl_alloc(curr, curr->size * 2)))      \
+				goto EXIT;                                     \
+		}                                                              \
+		curr->points[curr->n_points++] = a1;                           \
+		curr->points[curr->n_points++] = b1;                           \
+	}
+		if ( draw < pixlen ) {
+			/* normal line segment, ends before to pattern segment */
+			plotted += draw;
+			if ( draw > 1.0 ) {
+				b1.x = (plotted - 1.0) * r.x + a.x;
+				b1.y = (plotted - 1.0) * r.y + a.y;
+			} else
+				b1 = a1;
+			ADD_POINT;
+			pixlen -= draw;
+			advance += (advance > 0.0) ? -draw : next_seg_advance;
+			a1.x = b1.x + r.x;
+			a1.y = b1.y + r.y;
+			new_point = false;
+			new_stroke = true;
+		} else if ( draw == pixlen ) {
+			/* exact match that ends line by pattern end */
+			ADD_POINT;
+			new_stroke = new_point = true;
+			advance += (advance > 0.0) ? -draw : next_seg_advance;
+			joiner = black;
+		} else if ( black && draw == 1.0 && pixlen <= 0 ) {
+			/* skip tail */
+			new_stroke = new_point = true;
+			advance = next_seg_advance;
+		} else {
+			/* also normal line end, ends after pattern segment, join and continue */
+			ADD_POINT;
+			new_point = true;
+			new_stroke = false;
+			if ( advance > 0 )
+				advance -= pixlen;
+			else {
+				strokelen -= pixlen;
+				joiner = black;
+			}
+		}
+#undef ADD_POINT
+	}
+
+	/* finalize */
+	if ( curr && curr-> n_points == 0) {
+		NPolyPolyline *p = curr->prev;
+		free(curr);
+		curr = p;
+		if ( p ) p->next = NULL;
+		if ( dst == curr ) dst = NULL;
+	}
+	if ( closed && pattern[0] > 1.0 && strokelen > 1.0 && curr != dst ) {
+		NPolyPolyline *p = curr;
+		curr = curr->prev;
+		curr->next = NULL;
+		if ( curr->n_points > curr-> size - p-> n_points) {
+			if ( !( curr = nppl_alloc(curr, curr->size + p-> n_points)))
+				goto EXIT;
+		}
+		memcpy( p->points, curr-> points + curr->n_points, p->n_points);
+		free( p );
+	}
+
+
+EXIT:
+	if ( !ok ) {
+		while (dst) {
+			NPolyPolyline* p = dst->next;
+			free(dst);
+			dst = p;
+		}
+		dst = NULL;
+	}
+	semistatic_done(&pattern_array);
+	return dst;
+}
+
 #ifdef __cplusplus
 }
 #endif
