@@ -917,8 +917,6 @@ sub widen
 	if ( $no_line_ends && $lw < 1.5 ) {
 		for my $p ( @$pp ) {
 			$dst->line($p);
-			$dst->line([map { @{$p}[-2*$_,-2*$_+1] } 1..@$p/2 ])
-				if $lp eq lp::Solid;
 			$dst->open;
 		}
 		return $dst;

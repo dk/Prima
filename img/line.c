@@ -490,7 +490,7 @@ nppl_alloc( NPolyPolyline *old, unsigned int new_size)
 }
 
 NPolyPolyline*
-img_polyline2patterns( NPoint * points, int n_points, double line_width, char * line_pattern, Bool integer_precision)
+img_polyline2patterns( NPoint * points, int n_points, double line_width, unsigned char * line_pattern, Bool integer_precision)
 {
 	NPolyPolyline *dst = NULL, *curr = NULL;
 	int i, pattern_len;
@@ -509,7 +509,7 @@ img_polyline2patterns( NPoint * points, int n_points, double line_width, char * 
 	convert line pattern with respect to the line width.
 	lpNull results in an empty line, and lpSolid is same as points by definition
 	*/
-	if (( pattern_len = strlen(line_pattern)) < 2)
+	if (( pattern_len = strlen((char*) line_pattern)) < 2)
 		return NULL;
 	semistatic_init(&pattern_array, &pattern_buf, sizeof(float), sizeof(pattern_buf) / sizeof(float));
 	if ( !semistatic_expand(&pattern_array, pattern_len)) {
@@ -668,7 +668,7 @@ img_polyline2patterns( NPoint * points, int n_points, double line_width, char * 
 		memcpy( p->points, curr-> points + curr->n_points, p->n_points);
 		free( p );
 	}
-
+	ok = true;
 
 EXIT:
 	if ( !ok ) {

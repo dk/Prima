@@ -1,5 +1,6 @@
 #include "apricot.h"
 #include "guts.h"
+#include "img_conv.h"
 #include "Drawable.h"
 #include "Drawable_private.h"
 
@@ -363,6 +364,58 @@ EXIT:
 	}
 }
 
+static SV *
+render_wide_line( double *buffer, unsigned int n_point, DrawablePaintState *state, unsigned char * line_pattern, Bool integer_precision )
+{
+	AV *path;
+	NPolyPolyline* poly = NULL;
+
+	if (
+		(strcmp((char*) line_pattern, (char*) lpSolid) == 0) &&
+		(
+			(integer_precision && state->line_width <= 1.5) ||
+			state->line_width <= 1.0
+		)
+	)
+		return NULL_SV;
+
+	if ( !( poly = img_polyline2patterns((NPoint*) buffer, n_point, state->line_width, line_pattern, integer_precision)))
+		return NULL_SV;
+
+	path = newAV();
+
+	if (integer_precision && state->line_width <= 1.5) {
+		/* no line widening, return as is */
+		NPolyPolyline* p = poly;
+		while (p) {
+			int i;
+			NPoint *pp;
+			AV * line = newAV();
+			av_push(line, newSVpv( "line", 0 ));
+			for ( i = 0, pp = p->points; i < p->n_points; i++, pp++) {
+				if ( integer_precision ) {
+					av_push(line, newSViv( floor( pp->x + .5)));
+					av_push(line, newSViv( floor( pp->y + .5)));
+				} else {
+					av_push(line, newSVnv( pp->x ));
+					av_push(line, newSVnv( pp->y ));
+				}
+			}
+			av_push( path, newRV_noinc((SV*) line));
+			p = p->next;
+		}
+	}
+
+
+	while (poly) {
+		NPolyPolyline* p = poly->next;
+		free(poly);
+		poly = p;
+	}
+
+	return newRV_noinc((SV*) path);
+}
+
 SV *
 Drawable_render_polyline( SV * obj, SV * points, HV * profile)
 {
@@ -370,11 +423,11 @@ Drawable_render_polyline( SV * obj, SV * points, HV * profile)
 	int count;
 	Bool free_input = false, free_buffer = false, as_integer = false;
 	double *input = NULL, *buffer = NULL, box[4];
-	SV * ret;
+	SV * ret = NULL_SV;
 	void * storage;
 
 	if (( input = (double*) prima_read_array( points, "render_polyline", 'd', 2, 1, -1, &count, &free_input)) == NULL)
-		goto FAIL;
+		goto EXIT;
 
 	if ( pexist(integer)) as_integer = pget_B(integer);
 
@@ -384,11 +437,11 @@ Drawable_render_polyline( SV * obj, SV * points, HV * profile)
 			pget_sv(matrix),
 			"render_polyline.matrix", 'd', 1, 6, 6, NULL, NULL)
 		) == NULL) 
-			goto FAIL;
+			goto EXIT;
 		if ( !( buffer = malloc(sizeof(double) * 2 * count))) {
 			free(cmatrix);
 			warn("Not enough memory");
-			goto FAIL;
+			goto EXIT;
 		}
 		free_buffer = true;
 		prima_matrix_apply2( cmatrix, (NPoint*)input, (NPoint*)buffer, count);
@@ -422,6 +475,40 @@ Drawable_render_polyline( SV * obj, SV * points, HV * profile)
 		free_buffer = false;
 		buffer = box;
 		count  = 2;
+	} else if (pexist(path) && pget_B(path)) {
+		Handle self;
+		DrawablePaintState state;
+		unsigned char * line_pattern;
+
+		self = gimme_the_mate(obj);
+		if ( self ) {
+			state = var->current_state;
+		} else {
+			state.line_width   = 1.0;
+			state.miter_limit  = 10.0;
+			state.line_end     = leSquare;
+			state.line_join    = ljMiter;
+		}
+		line_pattern = lpSolid; 
+
+		if ( pexist(lineWidth))
+			state.line_width = pget_f(lineWidth);
+		if ( pexist(miterLimit))
+			state.miter_limit = pget_f(miterLimit);
+		if ( pexist(lineEnd))
+			state.line_end = pget_i(lineEnd);
+		if ( pexist(lineJoin))
+			state.line_join = pget_i(lineJoin);
+		if ( pexist(linePattern))
+			line_pattern = (unsigned char*) pget_c(linePattern);
+		else if (self != NULL_HANDLE) {
+			SV * lp = my->get_linePattern(self);
+			if ( lp && lp != NULL_SV) line_pattern = (unsigned char*) SvPV_nolen(lp);
+		}
+
+		ret = render_wide_line( buffer, count, &state, line_pattern, as_integer );
+		if ( ret == NULL_SV ) ret = newSVsv(points);
+		goto EXIT;
 	}
 
 	ret = prima_array_new(count * 2 * (as_integer ? sizeof(int) : sizeof(double)));
@@ -436,11 +523,11 @@ Drawable_render_polyline( SV * obj, SV * points, HV * profile)
 		as_integer ? sizeof(int) : sizeof(double),
 		as_integer ? "i" : "d");
 
-FAIL:
+EXIT:
 	if ( free_buffer ) free( buffer );
 	if ( free_input ) free(input);
 	hv_clear(profile); /* old gencls bork */
-	return NULL_SV;
+	return ret;
 }
 
 SV *

@@ -334,7 +334,7 @@ typedef struct _NPolyPolyline {
 	NPoint *points;
 	NPoint buf[1];
 } NPolyPolyline;
-extern NPolyPolyline* img_polyline2patterns( NPoint * points, int n_points, double line_width, char * line_pattern, Bool integer_precision);
+extern NPolyPolyline* img_polyline2patterns( NPoint * points, int n_points, double line_width, unsigned char * line_pattern, Bool integer_precision);
 
 /* regions */
 typedef Bool RegionCallbackFunc( int x, int y, int w, int h, void * param);
