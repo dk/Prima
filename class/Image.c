@@ -94,6 +94,7 @@ Image_init( Handle self, HV * profile)
 	}
 	apc_image_create( self);
 	my->update_change( self);
+	my-> set_antialias( self, pget_B( antialias)); /* Drawable cannot set it without type */
 	CORE_INIT_TRANSIENT(Image);
 }
 
