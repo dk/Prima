@@ -1129,7 +1129,7 @@ sub widen_new
 	return $dst;
 }
 
-*widen = \&widen_old;
+*widen = \&widen_new;
 
 sub extents
 {

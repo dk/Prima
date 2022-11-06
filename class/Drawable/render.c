@@ -417,14 +417,14 @@ collide_commands(AV * path, PList up, PList down, Bool integer_precision)
 		sv = prima_array_new(datum_size * m * 2);
 		if ( integer_precision ) {
 			int *dest = (int*) prima_array_get_storage(sv);
-			for ( j = i; j < n + m; j++ ) {
-				double *src = (double*) PARAM(j);
-				*(dest++) = floor( *(src++) + .5);
-				*(dest++) = floor( *(src++) + .5);
+			for ( j = i; j < i + m; j++ ) {
+				int *src = (int*) PARAM(j);
+				*(dest++) = *(src++);
+				*(dest++) = *(src++);
 			}
 		} else {
 			double *dest = (double*) prima_array_get_storage(sv);
-			for ( j = i; j < n + m; j += 2 ) {
+			for ( j = i; j < i + m; j++ ) {
 				double *src = (double*) PARAM(j);
 				*(dest++) = *(src++);
 				*(dest++) = *(src++);
@@ -475,7 +475,7 @@ widen_line(AV * path, NPolyPolyline *poly, DrawablePaintState *state, Bool integ
 		if ( p-> n_points == 0 ) goto NEXT;
 		no_line_ends = state->line_width < 2.5 && integer_precision;
 		closed =
-			(p->points[0].y == p->points[p->n_points-1].y) &&
+			(p->points[0].x == p->points[p->n_points-1].x) &&
 			(p->points[0].y == p->points[p->n_points-1].y);
 		last = p->n_points - (closed ? 2 : 1);
 
@@ -489,7 +489,9 @@ widen_line(AV * path, NPolyPolyline *poly, DrawablePaintState *state, Bool integ
 
 #define TEMP_ADD_POINT(list,x,y) {                                                 \
 	if ( list_add(list,CMD_LINE) < 0) goto FAIL;                               \
-	if ( list_add(list,(Handle)lines.heap) < 0) goto FAIL;                     \
+	if ( list_add(list,                                                        \
+		(Handle)(((Byte*)lines.heap) + lines.count*datum_size)             \
+		) < 0) goto FAIL;                                                  \
 	TEMP_ADD_VAL(x);                                                           \
 	TEMP_ADD_VAL(y);                                                           \
 }
@@ -537,7 +539,7 @@ widen_line(AV * path, NPolyPolyline *poly, DrawablePaintState *state, Bool integ
 				if ( state-> line_end == leFlat || no_line_ends ) {
 					double s = sin(theta + PI_2), c = cos(theta + PI_2);
 					TEMP_ADD_POINT( &up, o.x + lw2 * c, o.y + lw2 * s);
-					TEMP_ADD_POINT( &up, o.x - lw2 * c, o.x - lw2 * s);
+					TEMP_ADD_POINT( &up, o.x - lw2 * c, o.y - lw2 * s);
 				} else if ( state->line_end == leSquare ) {
 					TEMP_ADD_POINT( &up, o.x - SQRT_2 * cos(theta - PI_4), o.y - SQRT_2 * sin(theta - PI_4));
 					TEMP_ADD_POINT( &up, o.x - SQRT_2 * cos(theta + PI_4), o.y - SQRT_2 * sin(theta + PI_4));
