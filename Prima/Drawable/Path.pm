@@ -885,7 +885,7 @@ sub poly2patterns
 
 # Adapted from wine/dlls/gdi32/path.c:WidenPath()
 # (c) Martin Boehme, Huw D M Davies, Dmitry Timoshkov, Alexandre Julliard
-sub widen
+sub widen_old
 {
 	my ( $self, %opt ) = @_;
 	$self->acquire;
@@ -917,6 +917,8 @@ sub widen
 	if ( $no_line_ends && $lw < 1.5 ) {
 		for my $p ( @$pp ) {
 			$dst->line($p);
+			$dst->line([map { @{$p}[-2*$_,-2*$_+1] } 1..@$p/2 ])
+				if $lp eq lp::Solid; # so fill() won't autoclose the shape, if any
 			$dst->open;
 		}
 		return $dst;
@@ -1084,6 +1086,50 @@ sub widen
 	}
 	return $dst;
 }
+
+sub widen_new
+{
+	my ( $self, %opt ) = @_;
+	$self->acquire;
+
+	my $dst = ref($self)->new( undef,
+		%$self,
+		canvas   => $self->{canvas},
+		commands => [],
+	);
+
+	my @pp;
+	{
+		local $self->{subpixel} = 1;
+		@pp = map { @$_ } @{$self->points};
+	}
+
+	for my $p ( @pp ) {
+		next unless @$p;
+		my $cmds = $self->{canvas}->render_polyline( $p, %opt,
+			path    => 1,
+			integer => $self->{subpixel} ? 0 : 1,
+		);
+
+		for ( my $i = 0; $i < @$cmds;) {
+			my $cmd = $cmds->[$i++];
+			if ( $cmd eq 'line') {
+				$dst->line( $cmds->[$i++] );
+			} elsif ( $cmd eq 'arc') {
+				$dst->arc( @{ $cmds->[$i++] } );
+			} elsif ( $cmd eq 'open') {
+				$dst->open;
+			} else {
+				warn "** panic: unknown render_polyline command '$cmd'";
+				last;
+			}
+		}
+	}
+
+	return $dst;
+}
+
+*widen = \&widen_old;
 
 sub extents
 {
