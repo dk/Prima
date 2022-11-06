@@ -389,7 +389,7 @@ EXIT:
 }
 
 static void
-collide_commands(AV * path, PList up, PList down, Bool integer_precision)
+collide_commands(void * heap, AV * path, PList up, PList down, Bool integer_precision)
 {
 	SV * sv;
 	int i, j, n, n_up_cmd, m;
@@ -418,14 +418,14 @@ collide_commands(AV * path, PList up, PList down, Bool integer_precision)
 		if ( integer_precision ) {
 			int *dest = (int*) prima_array_get_storage(sv);
 			for ( j = i; j < i + m; j++ ) {
-				int *src = (int*) PARAM(j);
+				int *src = ((int*)(heap)) + (int) PARAM(j);
 				*(dest++) = *(src++);
 				*(dest++) = *(src++);
 			}
 		} else {
 			double *dest = (double*) prima_array_get_storage(sv);
 			for ( j = i; j < i + m; j++ ) {
-				double *src = (double*) PARAM(j);
+				double *src = ((double*)(heap)) + (int) PARAM(j);
 				*(dest++) = *(src++);
 				*(dest++) = *(src++);
 			}
@@ -482,16 +482,15 @@ widen_line(AV * path, NPolyPolyline *poly, DrawablePaintState *state, Bool integ
 
 #define TEMP_ADD_VAL(v)                                                            \
 	if ( integer_precision ) {                                                 \
-		if ( !semistatic_push(lines, int, floor(v + .5))) goto FAIL;       \
+		semistatic_push(lines, int, floor(v + .5));                        \
 	} else {                                                                   \
-		if ( !semistatic_push(lines, double, v)) goto FAIL;                \
+		semistatic_push(lines, double, v);                                 \
 	}
 
 #define TEMP_ADD_POINT(list,x,y) {                                                 \
-	if ( list_add(list,CMD_LINE) < 0) goto FAIL;                               \
-	if ( list_add(list,                                                        \
-		(Handle)(((Byte*)lines.heap) + lines.count*datum_size)             \
-		) < 0) goto FAIL;                                                  \
+	if ( list_add(list,CMD_LINE) < 0)              goto FAIL;                  \
+	if ( !semistatic_expand(&lines,lines.count+2)) goto FAIL;                  \
+	if ( list_add(list, (Handle)lines.count) < 0)  goto FAIL;                  \
 	TEMP_ADD_VAL(x);                                                           \
 	TEMP_ADD_VAL(y);                                                           \
 }
@@ -658,7 +657,7 @@ widen_line(AV * path, NPolyPolyline *poly, DrawablePaintState *state, Bool integ
 		}
 
 	NEXT:
-		collide_commands(path, &up, &down, integer_precision);
+		collide_commands(lines.heap, path, &up, &down, integer_precision);
 		NEW_CMD("open");
 		up.count = down.count = 0;
 		p = p->next;
