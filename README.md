@@ -106,7 +106,7 @@ You'll need homebrew, XQuartz, and a set of extra libraries.
 - install support libraries:
 
   brew install libiconv libxcomposite libxrandr libxcursor libxft fribidi fontconfig
-     freetype giflib gtk+ harfbuzz jpeg libpng libtiff webp libxpm
+     freetype giflib gtk+3 harfbuzz jpeg libpng libtiff webp libxpm libheif
 
 Note: if Prima crashes in libxft, do this: remove libxft and install custom built xorg libraries, either very minimal
 

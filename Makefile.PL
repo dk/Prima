@@ -1023,6 +1023,11 @@ MSCVER
 	if ($^O eq 'solaris') {
 		push @LIBPATH, '/opt/csw/lib';
 	}
+
+	if ( $^O eq 'darwin') {
+		push @INCPATH, '/opt/homebrew/include';
+		push @LIBPATH, '/opt/homebrew/lib';
+	}
 }
 
 sub setup_defines
