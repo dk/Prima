@@ -2097,6 +2097,17 @@ By default the result is returned as a set of floating point numerics, however
 if integer results are needed, the results are transformed to integers using
 the I<< int = float + ((float < 0) ? -0.5 : 0.5) >> formula.
 
+=item path BOOLEAN
+
+If set, treats polyline as a path that will get applied C<lineEnd>,
+C<lineJoin>, C<linePattern>,and C<miterLimit> properties (either from the object
+or from %OPTIONS) and returns a set of commands that would represent the final
+shape. The commands are: I<arc> (6 arguments, same as the C<arc> primitive),
+I<line> with 1 argument, a polyline array (respects the C<integer> option), and
+I<open> with no arguments.
+
+See L<Prima::Drawable::Path/widen> for usage.
+
 =back
 
 =item render_spline \@VERTICES, %OPTIONS
