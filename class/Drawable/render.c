@@ -734,10 +734,7 @@ render_wide_line( NPoint *points, unsigned int n_points, DrawablePaintState *sta
 
 	if (
 		(strcmp((char*) line_pattern, (char*) lpSolid) == 0) &&
-		(
-			(integer_precision && state->line_width <= 1.5) ||
-			state->line_width <= 1.0
-		)
+		integer_precision && state->line_width <= 1.5
 	)
 		return NULL;
 
