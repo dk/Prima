@@ -77,6 +77,9 @@ Drawable_read_glyphs( PGlyphsOutRec t, SV * text, Bool indexes_required, const c
 Bool
 Drawable_switch_font( Handle self, uint16_t fid);
 
+Bool
+Drawable_read_line_ends(DrawablePaintState *state, SV *lineEnd);
+
 #ifdef __cplusplus
 }
 #endif

@@ -15,6 +15,7 @@ extern "C" {
 #define inherited CDrawable->
 #define my  ((( PImage) self)-> self)
 #define var (( PImage) self)
+#define GS  var->current_state
 
 static void Image_reset_notifications( Handle self);
 
@@ -371,6 +372,10 @@ gc_destroy( Handle self, void * user_data, unsigned int user_data_size, Bool in_
 {
 	PPaintState state = ( PPaintState ) user_data;
 	if ( state-> region ) free( state-> region );
+	if ( state-> parent_data.line_end_cb[0] )
+		SvREFCNT_dec( state-> parent_data.line_end_cb[0] );
+	if ( state-> parent_data.line_end_cb[1] )
+		SvREFCNT_dec( state-> parent_data.line_end_cb[1] );
 }
 
 Bool
@@ -385,6 +390,10 @@ Image_graphic_context_push(Handle self)
 	state.antialias   = var-> antialias;
 	state.rop         = var-> extraROP;
 	state.region      = var-> regionData ? Region_clone_data(NULL_HANDLE, var->regionData) : NULL;
+	if ( state.parent_data.line_end_cb[0] )
+		SvREFCNT_inc(state.parent_data.line_end_cb[0]);
+	if ( state.parent_data.line_end_cb[1] )
+		SvREFCNT_inc(state.parent_data.line_end_cb[1]);
 
 	return apc_gp_push(self, gc_destroy, &state, sizeof(state));
 }
@@ -397,6 +406,10 @@ Image_graphic_context_pop(Handle self)
 
 	if (!apc_gp_pop( self, &state)) return false;
 
+	if ( GS.line_end_cb[0] )
+		SvREFCNT_dec(GS.line_end_cb[0]);
+	if ( GS.line_end_cb[1] )
+		SvREFCNT_dec(GS.line_end_cb[1]);
 	var-> current_state = state.parent_data;
 	var-> alpha         = state.alpha;
 	var-> antialias     = state.antialias;
@@ -516,7 +529,7 @@ Image_put_image_indirect( Handle self, Handle image, int x, int y, int xFrom, in
 {
 	Bool ret;
 	Byte * color = NULL, colorbuf[ MAX_SIZEOF_PIXEL ];
-	Matrix * matrix = &var->current_state.matrix;
+	Matrix * matrix = &GS.matrix;
 
 	if ( is_opt( optInDrawInfo)) return false;
 	if ( image == NULL_HANDLE) return false;

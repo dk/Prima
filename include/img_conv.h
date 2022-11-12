@@ -330,6 +330,7 @@ extern void img_fill_alpha_buf( Byte * dst, Byte * src, int width, int bpp);
 
 typedef struct _NPolyPolyline {
 	unsigned int n_points, size;
+	double theta; /* tangent for single-point polylines */
 	struct _NPolyPolyline *next, *prev;
 	NPoint *points;
 	NPoint buf[1];

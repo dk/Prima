@@ -486,7 +486,39 @@ nppl_alloc( NPolyPolyline *old, unsigned int new_size)
 	}
 	p->size = new_size;
 	p->points = p->buf;
+	p->theta = -1000000.0;
 	return p;
+}
+
+static void
+fill_tangent(NPolyPolyline *p, NPoint prev, NPoint next)
+{
+	int div = 0;
+	double theta = 0.0;
+/*
+when drawing a line where pattern produces a single point - either
+because line pattern has a 1-pixel segment, or a last stroke can
+only fix a single pixel - there is a problem with proper calculation
+of tangent when widening such a point to a shape. Normally the widening
+algorithm is capable of finding out a tangent for plotting line ends that
+are rotated correspondingly to the tangent, but for a single point this
+doesn't work. So we help it by filling the tangent for such single points
+(and only for single points)
+*/
+	/*  printf("theta? %g.%g - %g.%g - %g.%g\n",
+		prev.x, prev.y,
+		p->points[0].x, p->points[0].y,
+		next.x, next.y); */
+	if ( p->points[0].x != prev.x || p->points[0].y != prev.y ) {
+		theta += atan2( p->points[0].y - prev.y, p->points[0].x - prev.x);
+		div++;
+	}
+	if ( p->points[0].x != next.x || p->points[0].y != next.y ) {
+		theta += atan2( next.y - p->points[0].y, next.x - p->points[0].x);
+		div++;
+	}
+	p->theta = (div > 0) ? theta / div : 0.0;
+	/* printf("THETA = %g (%d)\n", p->theta * 360 / 3.14, div); */
 }
 
 NPolyPolyline*
@@ -497,10 +529,11 @@ img_polyline2patterns( NPoint * points, int n_points, double line_width, unsigne
 	float pattern_buf[256], *pattern, sqrt_table[1024];
 	semistatic_t pattern_array;
 	Bool ok = false, closed, strokecolor, new_point, new_stroke, black, joiner;
+	Bool pivot_detected, pivot_registered;
 	int step;
 	float advance, strokelen, pixlen, draw, plotted;
 	double dx, dy;
-	NPoint a, b, a1, b1, r;
+	NPoint a, b, a1, b1, r, last_a, last_b;
 
 	if (integer_precision)
 		bzero(sqrt_table, sizeof(sqrt_table));
@@ -524,9 +557,11 @@ img_polyline2patterns( NPoint * points, int n_points, double line_width, unsigne
 
 	closed = points[0].x == points[n_points-1].x && points[0].y == points[n_points-1].y;
 	i = step = 0;
-	strokecolor = joiner = false;
+	strokecolor = joiner = pivot_detected = pivot_registered = false;
 	new_point = new_stroke = true;
 	advance = strokelen = 0.0;
+	last_a = a = points[0];
+	last_b = b = points[1];
 	while ( 1 ) {
 		float next_seg_advance;
 
@@ -540,12 +575,18 @@ img_polyline2patterns( NPoint * points, int n_points, double line_width, unsigne
 				NPolyPolyline*p;
 				if ( !( p = nppl_alloc(NULL, 32)))
 					goto EXIT;
+				/* printf("new segment %g.%g %g.%g / %g.%g %g.%g\n", a.x, a.y, b.x, b.y, last_a.x, last_a.y, last_b.x, last_b.y); */
 				if ( curr != NULL ) {
+					if ( curr-> n_points == 1 )
+						fill_tangent(curr, last_a, last_b);
 					curr->next = p;
 					p->prev = curr;
 					curr = p;
 				} else
 					curr = dst = p;
+				last_a = a;
+				last_b = b;
+				pivot_registered = false;
 			}
 		}
 
@@ -584,6 +625,7 @@ img_polyline2patterns( NPoint * points, int n_points, double line_width, unsigne
 			}
 			a1 = a;
 			b1 = b;
+			/* printf("np %g.%g - %g.%g\n", a.x, a.y, b.x, b.y); */
 			plotted = 0.0;
 			if ( joiner && advance == 0.0 && curr && curr-> n_points > 0 )
 				curr->n_points--;
@@ -599,15 +641,29 @@ img_polyline2patterns( NPoint * points, int n_points, double line_width, unsigne
 			black = strokecolor;
 		}
 		next_seg_advance = black ? line_width - 1.0 : 1.0;
+		if ( pivot_detected ) {
+			if ( !pivot_registered ) {
+				last_b = b;
+				/* printf("pivot %g.%g\n", b.x, b.y); */
+				pivot_registered = true;
+			}
+			pivot_detected = false;
+		}
 
-#define ADD_POINT \
+#define ADD_POINT(aa,bb) \
 	if ( black && curr ) { /* curr should be definitely non-NULL by now */ \
 		if ( curr->n_points > curr-> size - 2) {                       \
 			if ( !( curr = nppl_alloc(curr, curr->size * 2)))      \
 				goto EXIT;                                     \
 		}                                                              \
-		curr->points[curr->n_points++] = a1;                           \
-		curr->points[curr->n_points++] = b1;                           \
+		if ( curr->n_points == 0 ||                                    \
+			curr->points[curr->n_points-1].x != aa.x ||            \
+			curr->points[curr->n_points-1].y != aa.y)              \
+			curr->points[curr->n_points++] = aa;                   \
+		if ( curr->n_points == 0 ||                                    \
+			curr->points[curr->n_points-1].x != bb.x ||            \
+			curr->points[curr->n_points-1].y != bb.y)              \
+			curr->points[curr->n_points++] = bb;                   \
 	}
 		if ( draw < pixlen ) {
 			/* normal line segment, ends before to pattern segment */
@@ -617,7 +673,7 @@ img_polyline2patterns( NPoint * points, int n_points, double line_width, unsigne
 				b1.y = (plotted - 1.0) * r.y + a.y;
 			} else
 				b1 = a1;
-			ADD_POINT;
+			ADD_POINT(a1,b1);
 			pixlen -= draw;
 			advance += (advance > 0.0) ? -draw : next_seg_advance;
 			a1.x = b1.x + r.x;
@@ -626,8 +682,8 @@ img_polyline2patterns( NPoint * points, int n_points, double line_width, unsigne
 			new_stroke = true;
 		} else if ( draw == pixlen ) {
 			/* exact match that ends line by pattern end */
-			ADD_POINT;
-			new_stroke = new_point = true;
+			ADD_POINT(a1,b);
+			new_stroke = new_point = pivot_detected = true;
 			advance += (advance > 0.0) ? -draw : next_seg_advance;
 			joiner = black;
 		} else if ( black && draw == 1.0 && pixlen <= 0 ) {
@@ -636,7 +692,7 @@ img_polyline2patterns( NPoint * points, int n_points, double line_width, unsigne
 			advance = next_seg_advance;
 		} else {
 			/* also normal line end, ends after pattern segment, join and continue */
-			ADD_POINT;
+			ADD_POINT(a1,b);
 			new_point = true;
 			new_stroke = false;
 			if ( advance > 0 )
@@ -648,6 +704,8 @@ img_polyline2patterns( NPoint * points, int n_points, double line_width, unsigne
 		}
 #undef ADD_POINT
 	}
+	if ( curr-> n_points == 1 )
+		fill_tangent(curr, last_a, last_b);
 
 	/* finalize */
 	if ( curr && curr-> n_points == 0) {
@@ -669,6 +727,21 @@ img_polyline2patterns( NPoint * points, int n_points, double line_width, unsigne
 		free( p );
 	}
 	ok = true;
+
+/*
+	{
+		int n = 0;
+		NPolyPolyline* p = dst;
+		if ( !p ) printf("#0: [NULL]\n");
+		while (p) {
+			int i;
+			printf("#%d: ", n++);
+			for ( i = 0; i < p->n_points; i++) printf("%g.%g ", p->points[i].x, p->points[i].y);
+			p = p->next;
+			printf("\n");
+		}
+	}
+*/
 
 EXIT:
 	if ( !ok ) {

@@ -880,7 +880,14 @@ sub poly2patterns
 			unshift @$first, @$last[2 .. $#$last];
 		}
 	}
-	return \@dst;
+	my @r;
+	for my $r ( @dst ) {
+		my $n = Prima::array->new_double;
+		push @$n, @$r;
+		Prima::array::deduplicate($n,2,2);
+		push @r, $n;
+	}
+	return \@r;
 }
 
 # Adapted from wine/dlls/gdi32/path.c:WidenPath()
@@ -1130,6 +1137,7 @@ sub widen_new
 }
 
 *widen = \&widen_new;
+#*widen = \&widen_old;
 
 sub extents
 {

@@ -14,6 +14,7 @@ extern "C" {
 #define inherited CComponent->
 #define my  ((( PDrawable) self)-> self)
 #define var (( PDrawable) self)
+#define GS  var->current_state
 
 #define gpARGS            Bool inPaint = opt_InPaint
 #define gpENTER(fail)     if ( !inPaint) if ( !my-> begin_paint_info( self)) return (fail)
@@ -38,7 +39,7 @@ Drawable_init( Handle self, HV * profile)
 	my-> set_backColor    ( self, pget_i ( backColor));
 	my-> set_fillMode     ( self, pget_i ( fillMode));
 	my-> set_fillPattern  ( self, pget_sv( fillPattern));
-	my-> set_lineEnd      ( self, pget_i ( lineEnd));
+	my-> set_lineEnd      ( self, pget_sv( lineEnd));
 	my-> set_lineJoin     ( self, pget_i ( lineJoin));
 	my-> set_linePattern  ( self, pget_sv( linePattern));
 	my-> set_lineWidth    ( self, pget_f ( lineWidth));
@@ -100,7 +101,12 @@ Drawable_begin_paint( Handle self)
 	if ( var-> stage > csFrozen) return false;
 	if ( is_opt( optInDrawInfo)) my-> end_paint_info( self);
 	opt_set( optInDraw);
-	var->saved_state = var->current_state;
+	var->saved_state = GS;
+
+	if ( GS.line_end_cb[0])
+		SvREFCNT_inc(GS.line_end_cb[0]);
+	if ( GS.line_end_cb[1])
+		SvREFCNT_inc(GS.line_end_cb[1]);
 	return true;
 }
 
@@ -109,7 +115,11 @@ Drawable_end_paint( Handle self)
 {
 	Drawable_clear_font_abc_caches( self);
 	opt_clear( optInDraw);
-	var->current_state = var->saved_state;
+	if ( GS.line_end_cb[0])
+		SvREFCNT_dec(GS.line_end_cb[0]);
+	if ( GS.line_end_cb[1])
+		SvREFCNT_dec(GS.line_end_cb[1]);
+	GS = var->saved_state;
 	var->alpha     = apc_gp_get_alpha(self);
 	var->antialias = apc_gp_get_antialias( self );
 }
@@ -121,7 +131,11 @@ Drawable_begin_paint_info( Handle self)
 	if ( is_opt( optInDraw))     return true;
 	if ( is_opt( optInDrawInfo)) return false;
 	opt_set( optInDrawInfo);
-	var->saved_state = var->current_state;
+	var->saved_state = GS;
+	if ( GS.line_end_cb[0])
+		SvREFCNT_inc(GS.line_end_cb[0]);
+	if ( GS.line_end_cb[1])
+		SvREFCNT_inc(GS.line_end_cb[1]);
 	return true;
 }
 
@@ -132,7 +146,11 @@ Drawable_end_paint_info( Handle self)
 	opt_clear( optInDrawInfo);
 	var->alpha     = apc_gp_get_alpha(self);
 	var->antialias = apc_gp_get_antialias( self );
-	var->current_state = var->saved_state;
+	if ( GS.line_end_cb[0])
+		SvREFCNT_dec(GS.line_end_cb[0]);
+	if ( GS.line_end_cb[1])
+		SvREFCNT_dec(GS.line_end_cb[1]);
+	GS = var->saved_state;
 }
 
 void
@@ -181,23 +199,46 @@ Drawable_set( Handle self, HV * profile)
 	inherited set( self, profile);
 }
 
+static void
+gc_destroy( Handle self, void * user_data, unsigned int user_data_size, Bool in_paint)
+{
+	DrawablePaintState *state = ( DrawablePaintState* ) user_data;
+	if ( state-> line_end_cb[0] )
+		SvREFCNT_dec( state-> line_end_cb[0] );
+	if ( state-> line_end_cb[1] )
+		SvREFCNT_dec( state-> line_end_cb[1] );
+}
+
 Bool
 Drawable_graphic_context_push(Handle self)
 {
-	return apc_gp_push(self, NULL, &var->current_state, sizeof(var->current_state));
+	DrawablePaintState state;
+	state = GS;
+	if ( state.line_end_cb[0] )
+		SvREFCNT_inc(state.line_end_cb[0]);
+	if ( state.line_end_cb[1] )
+		SvREFCNT_inc(state.line_end_cb[1]);
+	return apc_gp_push(self, gc_destroy, &state, sizeof(state));
 }
 
 Bool
 Drawable_graphic_context_pop(Handle self)
 {
-	Bool ok = apc_gp_pop(self, &var->current_state);
+	DrawablePaintState state;
+	if ( !apc_gp_pop(self, &state))
+		return false;
+	if ( GS.line_end_cb[0] )
+		SvREFCNT_dec(GS.line_end_cb[0]);
+	if ( GS.line_end_cb[1] )
+		SvREFCNT_dec(GS.line_end_cb[1]);
+	GS = state;
 	if ( var-> fillPatternImage && PObject(var-> fillPatternImage)->stage != csNormal) {
 		unprotect_object(var-> fillPatternImage);
 		var-> fillPatternImage = NULL_HANDLE;
 	}
 	var->alpha     = apc_gp_get_alpha(self);
 	var->antialias = apc_gp_get_antialias( self );
-	return ok;
+	return true;
 }
 
 int
@@ -473,21 +514,108 @@ Drawable_fillPatternOffset( Handle self, Bool set, Point fpo)
 	return fpo;
 }
 
-
-int
-Drawable_lineEnd( Handle self, Bool set, int lineEnd)
+Bool
+Drawable_read_line_ends(DrawablePaintState *state, SV *lineEnd)
 {
-	if (!set) return var->current_state.line_end;
-	if ( lineEnd < 0 || lineEnd > leMax ) lineEnd = 0;
-	return var->current_state.line_end = lineEnd;
+	SV *rv;
+	if ( !SvROK(lineEnd)) {
+		int le = SvIV( lineEnd );
+		if ( le < 0 || le > leMax ) le = 0;
+		state->line_end[0] = state->line_end[1] = le;
+		return true;
+	}
+
+	rv = SvRV(lineEnd);
+	if ( SvTYPE(rv) == SVt_PVCV) {
+		state->line_end_cb[0] = state->line_end_cb[1] = lineEnd;
+		state->line_end[0]    = state->line_end[1]    = leCustom;
+	} else if ( SvTYPE(rv) == SVt_PVAV) {
+		int i;
+		AV* av = (AV*) rv;
+
+		for ( i = 0; i < 2; i++) {
+			SV **holder = av_fetch( av, i, 0);
+			if ( !( holder && *holder && SvOK(*holder) )) {
+				warn("lineEnd: bad array");
+				return false;
+			}
+			if ( SvROK(*holder) && SvTYPE(SvRV(*holder)) == SVt_PVCV) {
+				state->line_end[i]    = leCustom;
+				state->line_end_cb[i] = *holder;
+			} else {
+				int le = SvIV(*holder);
+				if ( le < 0 || le > leMax ) le = 0;
+				state->line_end[i] = le;
+			}
+		}
+	} else {
+		warn("lineEnd: bad scalar");
+		return false;
+	}
+
+	return true;
+}
+
+SV*
+Drawable_lineEnd( Handle self, Bool set, SV *lineEnd)
+{
+	if (!set) {
+		AV * av;
+		if (
+			GS.line_end[0] != leCustom &&
+			GS.line_end[0] == GS.line_end[1]
+		)
+			return newSViv(GS.line_end[0]);
+
+		if (
+			GS.line_end[0] == leCustom &&
+			GS.line_end[1] == leCustom &&
+			GS.line_end_cb[0] == GS.line_end_cb[1]
+		)
+			return newSVsv(GS.line_end_cb[0]);
+
+		av = newAV();
+		av_push(av, ( GS.line_end[0] == leCustom ) ?
+			newSVsv(GS.line_end_cb[0]) :
+			newSViv( GS.line_end[0]));
+		av_push(av, ( GS.line_end[1] == leCustom ) ?
+			newSVsv(GS.line_end_cb[1]) :
+			newSViv( GS.line_end[1]));
+		return newRV_noinc((SV*)av);
+	}
+
+	if ( GS.line_end_cb[0] ) {
+		SvREFCNT_dec( GS.line_end_cb[0] );
+		GS.line_end[0]    = leRound;
+		GS.line_end_cb[0] = NULL;
+	}
+	if ( GS.line_end_cb[1] ) {
+		SvREFCNT_dec( GS.line_end_cb[1] );
+		GS.line_end[1]    = leRound;
+		GS.line_end_cb[1] = NULL;
+	}
+
+	if ( !Drawable_read_line_ends( &GS, lineEnd ))
+		return NULL_SV;
+	if ( GS.line_end_cb[0] && GS.line_end_cb[0] == GS.line_end_cb[1]) {
+		GS.line_end_cb[0] = GS.line_end_cb[1] = newSVsv( GS.line_end_cb[0] );
+		SvREFCNT_inc(GS.line_end_cb[0]);
+	} else {
+		if ( GS.line_end_cb[0] )
+			GS.line_end_cb[0] = newSVsv( GS.line_end_cb[0] );
+		if ( GS.line_end_cb[1] )
+			GS.line_end_cb[1] = newSVsv( GS.line_end_cb[1] );
+	}
+
+	return NULL_SV;
 }
 
 int
 Drawable_lineJoin( Handle self, Bool set, int lineJoin)
 {
-	if (!set) return var->current_state.line_join;
+	if (!set) return GS.line_join;
 	if ( lineJoin < 0 || lineJoin > leMax ) lineJoin = 0;
-	return var->current_state.line_join = lineJoin;
+	return GS.line_join = lineJoin;
 }
 
 SV *
@@ -510,9 +638,9 @@ Drawable_linePattern( Handle self, Bool set, SV * pattern)
 double
 Drawable_lineWidth( Handle self, Bool set, double lineWidth)
 {
-	if (!set) return var->current_state.line_width;
+	if (!set) return GS.line_width;
 	if ( lineWidth < 0.0 ) lineWidth = 0.0;
-	return var->current_state.line_width = lineWidth;
+	return GS.line_width = lineWidth;
 }
 
 SV *
@@ -549,9 +677,9 @@ Drawable_matrix( Handle self, Bool set, SV * svmatrix)
 double
 Drawable_miterLimit( Handle self, Bool set, double miterLimit)
 {
-	if (!set) return var->current_state.miter_limit;
+	if (!set) return GS.miter_limit;
 	if ( miterLimit < 0.0 )  miterLimit = 0.0;
-	return var->current_state.miter_limit = miterLimit;
+	return GS.miter_limit = miterLimit;
 }
 
 SV *

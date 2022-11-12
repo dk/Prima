@@ -2864,6 +2864,11 @@ LE(Square)
 #define    leRound          2
 LE(Round)
 #define    leMax            2
+#define    leCustom       (leMax + 1)
+#define    leCmdPoint       1
+LE(CmdPoint)
+#define    leCmdArc         2
+LE(CmdArc)
 END_TABLE(le,UV)
 #undef LE
 
@@ -3540,11 +3545,12 @@ apc_region_copy_rects( Handle self);
 
 /* gp functions */
 typedef struct {
-	int line_end;
+	int line_end[2];
 	int line_join;
 	double line_width;
 	double miter_limit;
 	Matrix matrix;
+	SV *line_end_cb[2];
 } DrawablePaintState;
 
 extern Bool

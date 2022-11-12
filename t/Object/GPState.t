@@ -53,7 +53,17 @@ test( fillPattern => $fpx1, $fpx2);
 $d->fillPattern(fp::Solid);
 
 test( fillMode => fm::Alternate, fm::Winding);
+
+$d->lineEnd([ sub {1}, 1]);
+$d->graphic_context( lineEnd => 0, sub {
+	is( $d->lineEnd, 0, 'in.lineEnd complex');
+});
+my $le = $d->lineEnd;
+is(ref($le), 'ARRAY', 'out.lineEnd complex 1');
+is($le->[1], 1, 'out.lineEnd complex 2');
+is($le->[0]->(), 1, 'out.lineEnd complex 3');
 test( lineEnd => le::Square, le::Flat);
+
 test( lineJoin => lj::Round, lj::Bevel);
 test( linePattern => lp::Dash, lp::Dot);
 test( lineWidth => 5, 2);

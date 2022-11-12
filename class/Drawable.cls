@@ -23,7 +23,7 @@ object Prima::Drawable ( Prima::Component)
 	property     SV *          fillPattern;
 	property     Point         fillPatternOffset;
 	property     int           height;
-	property     int           lineEnd;
+	property     SV *          lineEnd;
 	property     int           lineJoin;
 	property     SV *          linePattern;
 	property     double        lineWidth;
