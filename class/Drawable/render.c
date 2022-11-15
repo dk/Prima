@@ -538,6 +538,9 @@ lineend_Custom( WidenStruct *w, NPoint o, double theta, int index)
 		c  = cos(theta + PI_2),
 		rt = RAD * (theta + PI_2);
 
+	c = floor( c * 1.0e15 + .5 ) / 1.0e15;
+	s = floor( s * 1.0e15 + .5 ) / 1.0e15;
+
 	for ( i = 0, pc = p->commands; i < p->n_commands; i++, pc++) {
 		double *pts = (*pc)->args;
 		switch ((*pc)->command ) {

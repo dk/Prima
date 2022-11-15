@@ -532,7 +532,7 @@ sub _spline
 			%$options,
 			integer => !$self->{subpixel},
 		)
-	)
+	);
 }
 
 # Reference:
@@ -824,7 +824,7 @@ sub to_line_end
 
 		if ( $cmd eq 'arc') {
 			my ( $from, $to, $rel ) = @param;
-			my $cubics = $self->arc2cubics( 0, 0, 2, 2, $from, $to);
+			my $cubics = $self->arc2cubics( 0, 0, 4, 4, $from, $to);
 			if ( $rel ) {
 				my ($lx,$ly) = @last_point;
 				my $pts = $cubics->[0];
