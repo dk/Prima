@@ -103,62 +103,6 @@ sub point2pixel
 	return @res;
 }
 
-our $PI = 3.14159265358979323846264338327950288419716939937510;
-our $RAD = 180.0 / $PI;
-
-# L.Maisonobe 2003
-# http://www.spaceroots.org/documents/ellipse/elliptical-arc.pdf
-sub arc2cubics
-{
-	my ( $self, $x, $y, $dx, $dy, $start, $end) = @_;
-
-	my ($reverse, @out);
-	($start, $end, $reverse) = ( $end, $start, 1 ) if $start > $end;
-
-	push @out, $start;
-	# see defects appearing after 45 degrees:
-	# https://pomax.github.io/bezierinfo/#circles_cubic
-	while (1) {
-		if ( $end - $start > 45 ) {
-			push @out, $start += 45;
-			$start += 45;
-		} else {
-			push @out, $end;
-			last;
-		}
-	}
-	@out = map { $_ / $RAD } @out;
-
-	my $rx = $dx / 2;
-	my $ry = $dy / 2;
-
-	my @cubics;
-	for ( my $i = 0; $i < $#out; $i++) {
-		my ( $a1, $a2 ) = @out[$i,$i+1];
-		my $b           = $a2 - $a1;
-		my ( $sin1, $cos1, $sin2, $cos2) = ( sin($a1), cos($a1), sin($a2), cos($a2) );
-		my @d1  = ( -$rx * $sin1, -$ry * $cos1 );
-		my @d2  = ( -$rx * $sin2, -$ry * $cos2 );
-		my $tan = sin( $b / 2 ) / cos( $b / 2 );
-		my $a   = sin( $b ) * (sqrt( 4 + 3 * $tan * $tan) - 1) / 3;
-		my @p1  = ( $rx * $cos1, $ry * $sin1 );
-		my @p2  = ( $rx * $cos2, $ry * $sin2 );
-		my @points = (
-			@p1,
-			$p1[0] + $a * $d1[0],
-			$p1[1] - $a * $d1[1],
-			$p2[0] - $a * $d2[0],
-			$p2[1] + $a * $d2[1],
-			@p2
-		);
-		$points[$_] += $x for 0,2,4,6;
-		$points[$_] += $y for 1,3,5,7;
-		@points[0,1,2,3,4,5,6,7] = @points[6,7,4,5,2,3,0,1] if $reverse;
-		push @cubics, \@points;
-	}
-	return \@cubics;
-}
-
 sub conic2curve
 {
 	my ($self, $x0, $y0, $x1, $y1, $x2, $y2) = @_;
@@ -772,7 +716,7 @@ sub _spline
 sub _arc
 {
 	my ( $self, $from, $to, $rel ) = @_;
-	my $cubics = $self->canvas->arc2cubics(
+	my $cubics = Prima::Drawable::Path->arc2cubics(
 		0, 0, 2, 2,
 		$from, $to);
 

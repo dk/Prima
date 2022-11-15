@@ -2869,6 +2869,8 @@ LE(Round)
 #define    leCmdOpen      (leMax + 3)
 #define    leCmdArc       (leMax + 4)
 #define    leCmdLine      (leMax + 5)
+#define    leCmdConic     (leMax + 6)
+#define    leCmdCubic     (leMax + 7)
 END_TABLE(le,UV)
 #undef LE
 

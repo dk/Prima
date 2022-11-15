@@ -755,6 +755,118 @@ sub flatten
 	);
 }
 
+# L.Maisonobe 2003
+# http://www.spaceroots.org/documents/ellipse/elliptical-arc.pdf
+sub arc2cubics
+{
+	my ( undef, $x, $y, $dx, $dy, $start, $end) = @_;
+
+	my ($reverse, @out);
+	($start, $end, $reverse) = ( $end, $start, 1 ) if $start > $end;
+
+	push @out, $start;
+	# see defects appearing after 45 degrees:
+	# https://pomax.github.io/bezierinfo/#circles_cubic
+	while (1) {
+		if ( $end - $start > 45 ) {
+			push @out, $start += 45;
+			$start += 45;
+		} else {
+			push @out, $end;
+			last;
+		}
+	}
+	@out = map { $_ / $RAD } @out;
+
+	my $rx = $dx / 2;
+	my $ry = $dy / 2;
+
+	my @cubics;
+	for ( my $i = 0; $i < $#out; $i++) {
+		my ( $a1, $a2 ) = @out[$i,$i+1];
+		my $b           = $a2 - $a1;
+		my ( $sin1, $cos1, $sin2, $cos2) = ( sin($a1), cos($a1), sin($a2), cos($a2) );
+		my @d1  = ( -$rx * $sin1, -$ry * $cos1 );
+		my @d2  = ( -$rx * $sin2, -$ry * $cos2 );
+		my $tan = sin( $b / 2 ) / cos( $b / 2 );
+		my $a   = sin( $b ) * (sqrt( 4 + 3 * $tan * $tan) - 1) / 3;
+		my @p1  = ( $rx * $cos1, $ry * $sin1 );
+		my @p2  = ( $rx * $cos2, $ry * $sin2 );
+		my @points = (
+			@p1,
+			$p1[0] + $a * $d1[0],
+			$p1[1] - $a * $d1[1],
+			$p2[0] - $a * $d2[0],
+			$p2[1] + $a * $d2[1],
+			@p2
+		);
+		$points[$_] += $x for 0,2,4,6;
+		$points[$_] += $y for 1,3,5,7;
+		@points[0,1,2,3,4,5,6,7] = @points[6,7,4,5,2,3,0,1] if $reverse;
+		push @cubics, \@points;
+	}
+	@cubics = reverse @cubics if $reverse;
+	return \@cubics;
+}
+
+sub to_line_end
+{
+	my ($self, $opt_prescale) = @_;
+	local $self->{stack} = [];
+	local $self->{curr}  = {
+		matrix => [ identity ],
+		( map { $_, $self->{$_} } qw(precision ) )
+	};
+	my $c = $self->{commands};
+	my @dst;
+	my @last_point = (0,0);
+	for ( my $i = 0; $i < @$c; ) {
+		my ($cmd,$len) = @$c[$i,$i+1];
+		my @param = @$c[$i+2..$i+$len+1];
+		$i += $len + 2;
+
+		if ( $cmd eq 'arc') {
+			my ( $from, $to, $rel ) = @param;
+			my $cubics = $self->arc2cubics( 0, 0, 2, 2, $from, $to);
+			if ( $rel ) {
+				my ($lx,$ly) = @last_point;
+				my $pts = $cubics->[0];
+				my $m = $self->{curr}->{matrix};
+				my @s = $self->matrix_apply( $pts->[0], $pts->[1]);
+				$m->[4] += $lx - $s[0];
+				$m->[5] += $ly - $s[1];
+			}
+			for my $c (@$cubics) {
+				my $poly = $self-> matrix_apply( $c );
+				push @dst, 'cubic' => $poly;
+				@last_point = @$poly[-2,-1];
+			}
+		} elsif ( $cmd eq 'relative') {
+			my $m  = $self->{curr}->{matrix};
+			my ( $x0, $y0 ) = $self-> matrix_apply(0, 0);
+			$m->[X] += $last_point[0] - $x0;
+			$m->[Y] += $last_point[1] - $y0;
+		} elsif ( $cmd eq 'line') {
+			push @dst, line => $self-> matrix_apply($param[0]);
+			@last_point = @{$dst[-1]}[-2,-1];
+		} elsif ( $cmd eq 'spline') {
+			my ( $points, $options) = @param;
+			push @dst,
+				((($options->{degree} // 2) == 2) ? 'conic' : 'cubic'),
+				$self-> matrix_apply($points)
+				;
+			@last_point = @{$dst[-1]}[-2,-1];
+		} elsif ( $cmd =~ /^(open|close|moveto)$/) {
+			# no warnings, just ignore
+			last;
+		} else {
+			$self-> can("_$cmd")-> ( $self, @param );
+		}
+	}
+
+	return \@dst;
+}
+
 sub contours
 {
 	my $self = shift;
@@ -1155,6 +1267,10 @@ sub widen_new
 				$dst->line( $param );
 			} elsif ( $cmd =~ /^(arc|arc2)$/) {
 				$dst->$cmd( @$param );
+			} elsif ( $cmd eq 'conic') {
+				$dst->spline( $param, degree => 2 );
+			} elsif ( $cmd eq 'cubic') {
+				$dst->spline( $param, degree => 3 );
 			} elsif ( $cmd eq 'open') {
 				$dst->open;
 			} else {

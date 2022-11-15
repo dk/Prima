@@ -578,13 +578,26 @@ Drawable_read_line_ends(SV *lineEnd, DrawablePaintState *state)
 				min = 1;
 				max = -1;
 				cmd_dst = leCmdLine;
+			} else if ( strcmp(cmd_src, "conic") == 0) {
+				div = 2;
+				min = 2;
+				max = -1;
+				cmd_dst = leCmdConic;
+			} else if ( strcmp(cmd_src, "cubic") == 0) {
+				div = 2;
+				min = 3;
+				max = -1;
+				cmd_dst = leCmdCubic;
 			} else if ( strcmp(cmd_src, "arc") == 0) {
 				div = 1;
 				min = 6;
 				max = 6;
 				cmd_dst = leCmdArc;
-			} else if ( strcmp(cmd_src, "open") == 0) {
-				warn("command 'open' is not allowed in lineEnd descriptors");
+			} else if (
+				( strcmp(cmd_src, "open") == 0 ) ||
+				( strcmp(cmd_src, "arc2") == 0 )
+			) {
+				warn("command '%s' is not allowed in lineEnd descriptors", cmd_src);
 				goto FAIL;
 			} else {
 				warn("Unknown command #%d in lineEnd descriptor %d", i, j);
@@ -728,6 +741,12 @@ produce_line_ends(Handle self)
 				break;
 			case leCmdLine:
 				av_push(av2, newSVpv("line", 0));
+				break;
+			case leCmdConic:
+				av_push(av2, newSVpv("conic", 0));
+				break;
+			case leCmdCubic:
+				av_push(av2, newSVpv("cubic", 0));
 				break;
 			default:
 				warn("panic: bad line_end #%d structure", i);

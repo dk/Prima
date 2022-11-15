@@ -371,9 +371,6 @@ EXIT:
 #define RAD (180.0 / PI)
 #define SQRT_2 1.4142135623731
 
-#define CMD_LINE  (Handle) 0
-#define CMD_ARC   (Handle) 1
-
 #define NEW_CMD(w,cmd)    av_push((w).path, newSVpv(cmd,0));
 #define ADD_SV(w,sv)      av_push((w).path, sv)
 #define ADD_AV(w)         av_push((w).path, newRV_noinc((SV*) av))
@@ -414,13 +411,20 @@ collide_commands(WidenStruct *w)
 	n = (up->count + down->count) / 2;
 	n_up_cmd = up->count / 2;
 	for ( i = 0; i < n; i++) {
-		if ( ITEM(i) == CMD_ARC ) {
-			NEW_CMD(*w, "arc2");
+		if ( ITEM(i) != leCmdLine ) {
+			switch (ITEM(i)) {
+			case leCmdArc:   NEW_CMD(*w, "arc2");  break;
+			case leCmdConic: NEW_CMD(*w, "conic"); break;
+			case leCmdCubic: NEW_CMD(*w, "cubic"); break;
+			default:
+				warn("panic: bad internal path array");
+				continue;
+			}
 			ADD_SV(*w, newRV_noinc((SV*) PARAM(i)));
 			continue;
 		}
 		for ( j = i, m = 0; j < n; j++ ) {
-			if ( ITEM(j) != CMD_LINE ) break;
+			if ( ITEM(j) != leCmdLine ) break;
 			m++;
 		}
 		sv = prima_array_new(w->datum_size * m * 2);
@@ -452,7 +456,7 @@ collide_commands(WidenStruct *w)
 static Bool
 temp_add_point(WidenStruct *w, List* list, double x, double y)
 {
-	if ( list_add(list,CMD_LINE) < 0) return false;
+	if ( list_add(list,leCmdLine) < 0) return false;
 	if ( !semistatic_expand(&w->lines,w->lines.count+2)) return false;
 	if ( list_add(list, (Handle)w->lines.count) < 0) return false;
 	if ( w->integer_precision ) {
@@ -469,7 +473,7 @@ static Bool
 temp_add_arc(List *list, double x, double y, double d1, double d2, double as, double ae)
 {
 	AV *av;
-	if ( list_add(list,CMD_ARC) < 0) return false;
+	if ( list_add(list,leCmdArc) < 0) return false;
 	ADD_ARC(x,y,d1,d2,as,ae);
 	if ( list_add(list,(Handle) av) < 0) {
 		av_undef(av);
@@ -482,6 +486,26 @@ temp_add_arc(List *list, double x, double y, double d1, double d2, double as, do
 	if ( !temp_add_point(w,list,x,y)) goto FAIL;
 #define TEMP_ADD_ARC(list,x,y,d,as,ae) \
 	if ( !temp_add_arc(list,x,y,d,d,as,ae)) goto FAIL;
+
+static Bool
+temp_add_spline(List *list, PPathCommand pc, NPoint o, double s, double c, double lw2)
+{
+	int i;
+	AV *av;
+	if ( list_add(list, pc->command) < 0) return false;
+	av = newAV();
+	for ( i = 0; i < pc->n_args;  ) {
+		double x = pc->args[i++] * lw2;
+		double y = pc->args[i++] * lw2;
+		av_push( av, newSVnv( x * c - y * s + o.x ));
+		av_push( av, newSVnv( x * s + y * c + o.y ));
+	}
+	if ( list_add(list,(Handle) av) < 0) {
+		av_undef(av);
+		return false;
+	}
+	return true;
+}
 
 static Bool
 lineend_Square( WidenStruct *w, NPoint o, double theta)
@@ -543,6 +567,11 @@ lineend_Custom( WidenStruct *w, NPoint o, double theta, int index)
 					))
 					return false;
 			}
+			break;
+		case leCmdConic:
+		case leCmdCubic:
+			if ( !temp_add_spline( &w->up, *pc, o, s, c, w->lw2))
+				return false;
 			break;
 		default:
 			warn("panic: bad line_end #%d structure", i);
@@ -794,10 +823,10 @@ FAIL:
 	if ( !ok ) {
 		int i;
 		for ( i = 0; i < w.up.count; i+=2)
-			if (w.up.items[i] == CMD_ARC)
+			if (w.up.items[i] != leCmdLine)
 				av_undef((AV*) w.up.items[i+1]);
 		for ( i = 0; i < w.down.count; i+=2)
-			if (w.down.items[i] == CMD_ARC)
+			if (w.down.items[i] != leCmdLine)
 				av_undef((AV*) w.down.items[i+1]);
 	}
 	semistatic_done(&w.lines);
