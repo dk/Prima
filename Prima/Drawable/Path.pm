@@ -515,13 +515,12 @@ sub _close
 sub _line
 {
 	my ( $self, $line ) = @_;
-	Prima::array::append( $_ = $self->{points}->[-1]->[-1],
+	Prima::array::append( $self->{points}->[-1]->[-1],
 		Prima::Drawable->render_polyline( $line,
 			matrix  => $self->{curr}->{matrix},
 			integer => !$self->{subpixel},
 		)
 	);
-	print "LINE @$line => @$_\n";
 }
 
 sub _spline
