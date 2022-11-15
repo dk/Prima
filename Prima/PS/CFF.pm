@@ -120,7 +120,7 @@ sub evacuate_next_subfont
 	}
 
 	# charsets and privates
-	my @bbox        = map { Prima::Utils::floor(($_ // 0) + .5) } @{ $v->{bbox} };
+	my @bbox        = Prima::Utils::nearest_i( map { $_ // 0 } @{ $v->{bbox} } );
 	my $charset_str = pack('Cn*', 0, @charset); # mode 0, glyph list
 	my $private_str = num( $bbox[1], -$bbox[1] ) . blue_values;
 

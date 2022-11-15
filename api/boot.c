@@ -293,6 +293,8 @@ register_xsubs( void)
 	newXS( "Prima::options", Prima_options, "Prima");
 	newXS( "Prima::Utils::getdir", Utils_getdir_FROMPERL, "Prima::Utils");
 	newXS( "Prima::Utils::stat", Utils_stat_FROMPERL, "Prima::Utils");
+	newXS( "Prima::Utils::nearest_i", Utils_nearest_i_FROMPERL, "Prima::Utils");
+	newXS( "Prima::Utils::nearest_d", Utils_nearest_d_FROMPERL, "Prima::Utils");
 	newXS( "Prima::Utils::DIRHANDLE::DESTROY", Utils_closedir_FROMPERL, "Prima::Utils");
 	newXS( "Prima::Object::create",  create_from_Perl, "Prima::Object");
 	newXS( "Prima::Object::destroy", destroy_from_Perl, "Prima::Object");

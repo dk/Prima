@@ -33,7 +33,7 @@ sub get_font
 
 sub int32($)
 {
-	my $n = Prima::Utils::floor( $_[0] + .5 );
+	my $n = Prima::Utils::nearest_i( $_[0] );
 	if (-107 <= $n && $n <= 107) {
 		return chr($n + 139);
 	} elsif (108 <= $n && $n <= 1131) {

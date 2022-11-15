@@ -126,7 +126,6 @@ sub shear
 	$self-> matrix(1,$y,$x,1,0,0);
 }
 
-
 sub rotate
 {
 	my ( $self, $angle ) = @_;
@@ -134,6 +133,7 @@ sub rotate
 	$angle /= $RAD;
 	my $cos = cos($angle);
 	my $sin = sin($angle);
+	($sin, $cos) = Prima::Utils::nearest_d($sin, $cos);;
 	$self->matrix($cos, $sin, -$sin, $cos, 0, 0);
 }
 
@@ -450,8 +450,6 @@ sub get_approximate_matrix_scaling
 	return $r;
 }
 
-sub __map_round { map { int(Prima::Utils::floor($_ + .5)) } @_ }
-
 sub _save
 {
 	my $self = shift;
@@ -498,7 +496,7 @@ sub  _moveto
 	($mx, $my) = $self->matrix_apply($mx, $my);
 	my ($lx, $ly) = $rel ? $self->last_point : (0,0);
 	my $arr = $self->new_array;
-	push @$arr, $self->{subpixel} ? ($lx + $mx, $ly + $my) : __map_round($lx + $mx, $ly + $my);
+	push @$arr, $self->{subpixel} ? ($lx + $mx, $ly + $my) : Prima::Utils::nearest_i($lx + $mx, $ly + $my);
 	push @{$self->{points}->[-1]}, $arr;
 }
 
@@ -517,12 +515,13 @@ sub _close
 sub _line
 {
 	my ( $self, $line ) = @_;
-	Prima::array::append( $self->{points}->[-1]->[-1],
+	Prima::array::append( $_ = $self->{points}->[-1]->[-1],
 		Prima::Drawable->render_polyline( $line,
 			matrix  => $self->{curr}->{matrix},
 			integer => !$self->{subpixel},
 		)
 	);
+	print "LINE @$line => @$_\n";
 }
 
 sub _spline
@@ -581,7 +580,7 @@ sub arc2nurbs
 		@points[0,1,4,5] = @points[4,5,0,1] if $reverse;
 
 		push @set, [
-			\@points,
+			Prima::Utils::nearest_d(\@points),
 			closed    => 0,
 			degree    => 2,
 			weights   => \@weights,
@@ -612,14 +611,13 @@ sub _arc
 	$xopt{precision} = $self->{curr}->{precision} // 24;
 	$xopt{precision} = $scaling if $xopt{precision} // 24 > $scaling;
 	$xopt{integer}   = !$self->{subpixel};
-
 	for my $set ( @$nurbset ) {
 		my ( $points, @options ) = @$set;
 		my $poly = $self-> matrix_apply( $points );
 		my $m = $self->{curr}->{matrix};
 		if ( $xopt{integer} && $xopt{precision} < 3) {
 			my $n = $self->new_array;
-			push @$n, __map_round(@$poly[0,1,-2,-1]);
+			push @$n, Prima::Utils::nearest_i(@$poly[0,1,-2,-1]);
 			$poly = $n;
 		} elsif ($xopt{precision} >= 2) {
 			$poly = Prima::Drawable->render_spline( $poly, @options, %xopt);
@@ -803,7 +801,7 @@ sub arc2cubics
 		$points[$_] += $x for 0,2,4,6;
 		$points[$_] += $y for 1,3,5,7;
 		@points[0,1,2,3,4,5,6,7] = @points[6,7,4,5,2,3,0,1] if $reverse;
-		push @cubics, \@points;
+		push @cubics, Prima::Utils::nearest_d(\@points);
 	}
 	@cubics = reverse @cubics if $reverse;
 	return \@cubics;

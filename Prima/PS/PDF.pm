@@ -544,7 +544,7 @@ END
 
 			my $font_desc = $self-> new_dummy_obj;
 			my $charset_str = join('', map { "/$_" } @$charset);
-			my @bbox = map { Prima::Utils::floor(($_ // 0) + .5) } @{ $frec->{bbox} };
+			my @bbox = Prima::Utils::nearest_i( map { $_ // 0 } @{ $frec->{bbox} } );
 
 			$self-> emit_new_object($font_desc, <<FONT);
 <<

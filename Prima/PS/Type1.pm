@@ -100,7 +100,7 @@ sub evacuate
 /UnderlineThickness 50 def
 FONT_HDR
 		$emit->("/$_ $h->{$_} def\n") for sort keys %$h;
-		my @bbox = map { Prima::Utils::floor(($_ // 0) + .5) } @{ $v->{bbox} };
+		my @bbox = Prima::Utils::nearest_i( map {$_ // 0} @{ $v->{bbox} } );
 		$emit->(<<FONT_HDR2);
 end def
 /FontBBox {@bbox} def

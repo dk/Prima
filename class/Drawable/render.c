@@ -98,17 +98,17 @@ render_point(
 		double f;
 		f = v[s] / v[s+2];
 		if ( result )
-			result-> x = ( f < 0 ) ? (f - .5) : (f + .5);
+			result-> x = floor( f + .5 );
 		else
 			nresult-> x = f;
 		f = v[s+1] / v[s+2];
 		if ( result )
-			result-> y = ( f < 0 ) ? (f - .5) : (f + .5);
+			result-> y = floor( f + .5 );
 		else
 			nresult-> y = f;
 	} else if ( result ) {
-		result-> x = (v[s] < 0) ? (v[s] - .5) : (v[s] + .5);
-		result-> y = (v[s+1] < 0) ? (v[s+1] - .5) : (v[s+1] + .5);
+		result-> x = floor(v[s] + .5);
+		result-> y = floor(v[s+1] + .5);
 	} else {
 		nresult-> x = v[s];
 		nresult-> y = v[s+1];

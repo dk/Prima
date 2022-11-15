@@ -64,6 +64,8 @@ XS( Object_alive_FROMPERL);
 XS( Component_set_notification_FROMPERL);
 XS( Component_event_hook_FROMPERL);
 XS(Utils_getdir_FROMPERL);
+XS(Utils_nearest_i_FROMPERL);
+XS(Utils_nearest_d_FROMPERL);
 XS(Utils_stat_FROMPERL);
 XS(Utils_closedir_FROMPERL);
 XS(Prima_array_deduplicate_FROMPERL);

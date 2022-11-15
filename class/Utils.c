@@ -36,6 +36,85 @@ long Utils_floor( double x)
 	return floor( x);
 }
 
+
+XS(Utils_nearest_i_FROMPERL)
+{
+	dXSARGS;
+
+	if ( items == 0 ) {
+		SPAGAIN;
+	} else if ( items == 1 ) {
+		SV *x = ST(0);
+		SPAGAIN;
+		SP -= items;
+		if ( !SvROK(x)) {
+			XPUSHs( newSViv( floor( SvNV(x) + .5 )  ) );
+		}
+		else if ( SvTYPE( x = SvRV(x) ) != SVt_PVAV ) {
+			XPUSHs( NULL_SV );
+		} else {
+			int i,l;
+			AV *sav, *dav;
+			sav = (AV*)x;
+			l   = av_len(sav);
+			dav = newAV();
+			for ( i = 0; i <= l; i++) {
+				SV **h;
+				if ( !( h = av_fetch(sav, i, 0)) || !SvOK(*h))
+					break;
+				av_push(dav, newSViv( floor(SvNV(*h) + .5) ));
+			}
+			XPUSHs( newRV_noinc((SV*) dav) );
+		}
+	} else {
+		int i;
+		EXTEND( sp, items );
+		for ( i = 0; i < items; i++ )
+			PUSHs( newSViv( floor(SvNV(ST(i)) + .5) ));
+	}
+	PUTBACK;
+	return;
+}
+
+XS(Utils_nearest_d_FROMPERL)
+{
+	dXSARGS;
+
+	if ( items == 0 ) {
+		SPAGAIN;
+	} else if ( items == 1 ) {
+		SV *x = ST(0);
+		SPAGAIN;
+		SP -= items;
+		if ( !SvROK(x)) {
+			XPUSHs( newSVnv( floor( SvNV(x) * 1.0e15 + .5 ) / 1.0e15 ) );
+		}
+		else if ( SvTYPE( x = SvRV(x) ) != SVt_PVAV ) {
+			XPUSHs( NULL_SV );
+		} else {
+			int i,l;
+			AV *sav, *dav;
+			sav = (AV*)x;
+			l   = av_len(sav);
+			dav = newAV();
+			for ( i = 0; i <= l; i++) {
+				SV **h;
+				if ( !( h = av_fetch(sav, i, 0)) || !SvOK(*h))
+					break;
+				av_push(dav, newSVnv( floor(SvNV(*h) * 1.0e15 + .5) / 1.0e15 ));
+			}
+			XPUSHs( newRV_noinc((SV*) dav) );
+		}
+	} else {
+		int i;
+		EXTEND( sp, items );
+		for ( i = 0; i < items; i++ )
+			PUSHs( newSVnv( floor(SvNV(ST(i)) * 1.0e15 + .5) / 1.0e15 ));
+	}
+	PUTBACK;
+	return;
+}
+
 static Bool
 is_valid_utf8( unsigned char * str )
 {
