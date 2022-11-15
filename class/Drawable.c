@@ -76,6 +76,7 @@ Drawable_init( Handle self, HV * profile)
 void
 Drawable_done( Handle self)
 {
+	Drawable_line_end_refcnt(&GS, -1);
 	if ( var-> fillPatternImage ) {
 		unprotect_object(var-> fillPatternImage);
 		var-> fillPatternImage = NULL_HANDLE;
@@ -103,10 +104,7 @@ Drawable_begin_paint( Handle self)
 	opt_set( optInDraw);
 	var->saved_state = GS;
 
-	if ( GS.line_end_cb[0])
-		SvREFCNT_inc(GS.line_end_cb[0]);
-	if ( GS.line_end_cb[1])
-		SvREFCNT_inc(GS.line_end_cb[1]);
+	Drawable_line_end_refcnt(&GS, +1);
 	return true;
 }
 
@@ -115,10 +113,7 @@ Drawable_end_paint( Handle self)
 {
 	Drawable_clear_font_abc_caches( self);
 	opt_clear( optInDraw);
-	if ( GS.line_end_cb[0])
-		SvREFCNT_dec(GS.line_end_cb[0]);
-	if ( GS.line_end_cb[1])
-		SvREFCNT_dec(GS.line_end_cb[1]);
+	Drawable_line_end_refcnt(&GS, -1);
 	GS = var->saved_state;
 	var->alpha     = apc_gp_get_alpha(self);
 	var->antialias = apc_gp_get_antialias( self );
@@ -132,10 +127,7 @@ Drawable_begin_paint_info( Handle self)
 	if ( is_opt( optInDrawInfo)) return false;
 	opt_set( optInDrawInfo);
 	var->saved_state = GS;
-	if ( GS.line_end_cb[0])
-		SvREFCNT_inc(GS.line_end_cb[0]);
-	if ( GS.line_end_cb[1])
-		SvREFCNT_inc(GS.line_end_cb[1]);
+	Drawable_line_end_refcnt(&GS, +1);
 	return true;
 }
 
@@ -146,10 +138,7 @@ Drawable_end_paint_info( Handle self)
 	opt_clear( optInDrawInfo);
 	var->alpha     = apc_gp_get_alpha(self);
 	var->antialias = apc_gp_get_antialias( self );
-	if ( GS.line_end_cb[0])
-		SvREFCNT_dec(GS.line_end_cb[0]);
-	if ( GS.line_end_cb[1])
-		SvREFCNT_dec(GS.line_end_cb[1]);
+	Drawable_line_end_refcnt(&GS, -1);
 	GS = var->saved_state;
 }
 
@@ -202,22 +191,14 @@ Drawable_set( Handle self, HV * profile)
 static void
 gc_destroy( Handle self, void * user_data, unsigned int user_data_size, Bool in_paint)
 {
-	DrawablePaintState *state = ( DrawablePaintState* ) user_data;
-	if ( state-> line_end_cb[0] )
-		SvREFCNT_dec( state-> line_end_cb[0] );
-	if ( state-> line_end_cb[1] )
-		SvREFCNT_dec( state-> line_end_cb[1] );
+	Drawable_line_end_refcnt( ( DrawablePaintState* ) user_data, -1 );
 }
 
 Bool
 Drawable_graphic_context_push(Handle self)
 {
-	DrawablePaintState state;
-	state = GS;
-	if ( state.line_end_cb[0] )
-		SvREFCNT_inc(state.line_end_cb[0]);
-	if ( state.line_end_cb[1] )
-		SvREFCNT_inc(state.line_end_cb[1]);
+	DrawablePaintState state = GS;
+	Drawable_line_end_refcnt(&state, 1);
 	return apc_gp_push(self, gc_destroy, &state, sizeof(state));
 }
 
@@ -227,10 +208,7 @@ Drawable_graphic_context_pop(Handle self)
 	DrawablePaintState state;
 	if ( !apc_gp_pop(self, &state))
 		return false;
-	if ( GS.line_end_cb[0] )
-		SvREFCNT_dec(GS.line_end_cb[0]);
-	if ( GS.line_end_cb[1] )
-		SvREFCNT_dec(GS.line_end_cb[1]);
+	Drawable_line_end_refcnt(&state, -1);
 	GS = state;
 	if ( var-> fillPatternImage && PObject(var-> fillPatternImage)->stage != csNormal) {
 		unprotect_object(var-> fillPatternImage);
@@ -515,97 +493,280 @@ Drawable_fillPatternOffset( Handle self, Bool set, Point fpo)
 }
 
 Bool
-Drawable_read_line_ends(DrawablePaintState *state, SV *lineEnd)
+Drawable_read_line_ends(SV *lineEnd, DrawablePaintState *state)
 {
+	int i;
+	AV* av;
 	SV *rv;
+	List tmp_lists[4];
+
+	bzero(tmp_lists, sizeof(tmp_lists));
+
+	bzero( &state->line_end, sizeof(state->line_end));
+	state->line_end[0].type = leRound;
+	state->line_end[1].type = state->line_end[2].type = state->line_end[3].type = leDefault;
+
 	if ( !SvROK(lineEnd)) {
 		int le = SvIV( lineEnd );
 		if ( le < 0 || le > leMax ) le = 0;
-		state->line_end[0] = state->line_end[1] = le;
+		state->line_end[0].type = le;
 		return true;
 	}
 
 	rv = SvRV(lineEnd);
-	if ( SvTYPE(rv) == SVt_PVCV) {
-		state->line_end_cb[0] = state->line_end_cb[1] = lineEnd;
-		state->line_end[0]    = state->line_end[1]    = leCustom;
-	} else if ( SvTYPE(rv) == SVt_PVAV) {
-		int i;
-		AV* av = (AV*) rv;
-
-		for ( i = 0; i < 2; i++) {
-			SV **holder = av_fetch( av, i, 0);
-			if ( !( holder && *holder && SvOK(*holder) )) {
-				warn("lineEnd: bad array");
-				return false;
-			}
-			if ( SvROK(*holder) && SvTYPE(SvRV(*holder)) == SVt_PVCV) {
-				state->line_end[i]    = leCustom;
-				state->line_end_cb[i] = *holder;
-			} else {
-				int le = SvIV(*holder);
-				if ( le < 0 || le > leMax ) le = 0;
-				state->line_end[i] = le;
-			}
-		}
-	} else {
+	if ( SvTYPE(rv) != SVt_PVAV) {
 		warn("lineEnd: bad scalar");
 		return false;
 	}
+	av = (AV*) rv;
+
+	i = av_len(av);
+	if ( i > 3 ) warn("lineEnd: only 4 items are understood, the rest is ignored");
+
+	/* parse SVs */
+	for ( i = 0; i < 4; i++) {
+		int j, l;
+		AV *av2;
+		SV **holder = av_fetch( av, i, 0);
+		if ( !( holder && *holder && SvOK(*holder) ) || SvTYPE(*holder) == SVt_NULL) {
+			if ( i == 0 ) {
+				warn("lineEnd: first item in array cannot be undef");
+				goto FAIL;
+			}
+			state->line_end[i].type = leDefault;
+			continue;
+		}
+
+		if ( !SvROK(*holder)) {
+			int le = SvIV(*holder);
+			if ( le < 0 || le > leMax ) le = 0;
+			state->line_end[i].type = le;
+			continue;
+		}
+		rv = SvRV(*holder);
+		if ( SvTYPE(rv) != SVt_PVAV) {
+			warn("lineEnd: command array expected in lineEnd descriptor %d", i);
+			goto FAIL;
+		}
+
+		list_create(&tmp_lists[i], 16, 16);
+		av2 = (AV*) rv;
+		l = av_len(av2);
+		for ( j = 0; j <= l; j += 2) {
+			SV *param;
+			char *cmd_src;
+			int div, min, max, cmd_dst, n_points;
+			double *params;
+			PPathCommand pathcmd;
+
+			holder = av_fetch(av2, j, 0);
+			if ( !( holder && *holder && SvOK(*holder) )) {
+				warn("bad array item %d in lineEnd descriptor %d\n", j, i);
+				goto FAIL;
+			}
+			cmd_src = SvPV(*holder, PL_na);
+
+			holder = av_fetch(av2, j+1, 0);
+			if ( !( holder && *holder && SvOK(*holder) )) {
+				warn("bad array item %d in lineEnd descriptor %d\n", j + 1, i);
+				goto FAIL;
+			}
+			param = *holder;
+
+			if ( strcmp(cmd_src, "line") == 0) {
+				div = 2;
+				min = 1;
+				max = -1;
+				cmd_dst = leCmdLine;
+			} else if ( strcmp(cmd_src, "arc") == 0) {
+				div = 1;
+				min = 6;
+				max = 6;
+				cmd_dst = leCmdArc;
+			} else if ( strcmp(cmd_src, "open") == 0) {
+				warn("command 'open' is not allowed in lineEnd descriptors");
+				goto FAIL;
+			} else {
+				warn("Unknown command #%d in lineEnd descriptor %d", i, j);
+				goto FAIL;
+			}
+
+			if ( !( params = prima_read_array( param, "lineEnd", 'd', div, min, max, &n_points, NULL)))
+				goto FAIL;
+			if ( !( pathcmd = malloc(sizeof(PathCommand)))) {
+				free(params);
+				goto FAIL;
+			}
+			pathcmd-> command = cmd_dst;
+			pathcmd-> n_args  = n_points * div;
+			list_add( &tmp_lists[i], (Handle) pathcmd);
+			list_add( &tmp_lists[i], (Handle) params);
+		}
+
+		state->line_end[i].type = (tmp_lists[i].count == 0) ? leFlat : leCustom;
+	}
+
+	/* compactify into a single-block structure */
+	for ( i = 0; i < 4; i++) {
+		if ( state->line_end[i].type == leCustom ) {
+			int j, k, sz, n;
+			PPath p;
+			n = tmp_lists[i].count / 2;
+			sz = sizeof(Path) + sizeof(PPathCommand) * (n - 1);
+			for ( j = 0; j < tmp_lists[i].count; j += 2 ) {
+				PPathCommand pc = (PPathCommand) list_at(&tmp_lists[i], j );
+				sz += sizeof(PathCommand) + (pc->n_args - 1) * sizeof(double);
+			}
+
+			if ( !( p = malloc(sz))) goto FAIL;
+			p->refcnt     = 0;
+			p->n_commands = n;
+			p->commands   = p->commands_buf;
+
+			sz = sizeof(Path) + sizeof(PPathCommand) * (n - 1);
+			for ( j = k = 0; j < tmp_lists[i].count; j += 2, k++ ) {
+				PPathCommand pc_dst;
+				PPathCommand pc_src = (PPathCommand) list_at(&tmp_lists[i], j );
+				double *data        = (double*)      list_at(&tmp_lists[i], j + 1 );
+
+				p->commands[k] = pc_dst = (PPathCommand)(((Byte*) p) + sz);
+				*pc_dst      = *pc_src;
+				pc_dst->args = pc_dst-> args_buf;
+				memcpy( pc_dst->args, data, pc_src->n_args * sizeof(double));
+				sz += sizeof(PathCommand) + (pc_src->n_args - 1) * sizeof(double);
+			}
+
+			state->line_end[i].path = p;
+		}
+		list_delete_all(&tmp_lists[i], true);
+	}
 
 	return true;
+
+FAIL:
+	for ( i = 0; i < 4; i++) {
+		if ( state->line_end[i].type == leCustom ) {
+			state->line_end[i].type = (i == 0) ? leRound : leDefault;
+			free(state->line_end[i].path);
+			state->line_end[i].path = NULL;
+		}
+		list_delete_all(&tmp_lists[i], true);
+	}
+
+	return false;
+}
+
+void
+Drawable_line_end_refcnt( DrawablePaintState *gs, int delta)
+{
+	int i;
+	for ( i = 0; i < 4; i++) {
+		if ( gs->line_end[i].type == leCustom ) {
+			PPath p = gs->line_end[i].path;
+			if ( delta < 0 ) {
+				if ( p-> refcnt-- <= 0 ) {
+					free(p);
+					gs->line_end[i].path = NULL;
+					gs->line_end[i].type = (i == 0) ? leRound : leDefault;
+				}
+			} else
+				p-> refcnt++;
+		}
+	}
+}
+
+static SV*
+produce_line_ends(Handle self)
+{
+	int i, items;
+	AV *av, *av2, *av3;
+
+	if (
+		GS.line_end[0].type != leCustom &&
+		GS.line_end[1].type == leDefault &&
+		GS.line_end[2].type == leDefault &&
+		GS.line_end[3].type == leDefault
+	)
+		return newSViv(GS.line_end[0].type);
+
+	av = newAV();
+	items = 4;
+
+	/* skip undefs in tail */
+	while (items > 0 && GS.line_end[items-1].type == leDefault)
+		items--;
+
+	for ( i = 0; i < items; i++) {
+		int j, k;
+		PPath p;
+		PPathCommand *pc;
+
+		switch ( GS.line_end[i].type ) {
+		case leDefault:
+			av_push(av, NULL_SV);
+			continue;
+		case leCustom:
+			break;
+		default:
+			av_push(av, newSViv(GS.line_end[i].type));
+			continue;
+		}
+
+		if ( !( p = GS.line_end[i].path)) {
+			warn("panic: bad line_end #%d structure", i);
+			av_push(av, NULL_SV);
+			continue;
+		}
+
+		av2 = newAV();
+		av_push(av, newRV_noinc((SV*) av2));
+
+		for ( j = 0, pc = p->commands; j < p->n_commands; j++, pc++) {
+			switch ( (*pc)->command ) {
+			case leCmdArc:
+				av_push(av2, newSVpv("arc", 0));
+				break;
+			case leCmdLine:
+				av_push(av2, newSVpv("line", 0));
+				break;
+			default:
+				warn("panic: bad line_end #%d structure", i);
+				return false;
+			}
+
+			av3 = newAV();
+			av_push(av2, newRV_noinc((SV*) av3));
+			for ( k = 0; k < (*pc)->n_args; k++)
+				av_push(av3, newSVnv((*pc)->args[k]));
+		}
+	}
+
+	return newRV_noinc((SV*) av);
 }
 
 SV*
 Drawable_lineEnd( Handle self, Bool set, SV *lineEnd)
 {
-	if (!set) {
-		AV * av;
-		if (
-			GS.line_end[0] != leCustom &&
-			GS.line_end[0] == GS.line_end[1]
-		)
-			return newSViv(GS.line_end[0]);
+	int i;
+	if (!set)
+		return produce_line_ends(self);
 
-		if (
-			GS.line_end[0] == leCustom &&
-			GS.line_end[1] == leCustom &&
-			GS.line_end_cb[0] == GS.line_end_cb[1]
-		)
-			return newSVsv(GS.line_end_cb[0]);
-
-		av = newAV();
-		av_push(av, ( GS.line_end[0] == leCustom ) ?
-			newSVsv(GS.line_end_cb[0]) :
-			newSViv( GS.line_end[0]));
-		av_push(av, ( GS.line_end[1] == leCustom ) ?
-			newSVsv(GS.line_end_cb[1]) :
-			newSViv( GS.line_end[1]));
-		return newRV_noinc((SV*)av);
+	for ( i = 0; i < 4; i++) {
+		if ( GS.line_end[i].type == leCustom ) {
+			PPath p = GS.line_end[i].path;
+			if ( p-> refcnt-- <= 0 )
+				free(p);
+			GS.line_end[i].path = NULL;
+		}
+		GS.line_end[i].type = (i == 0) ? leRound : leDefault;
 	}
 
-	if ( GS.line_end_cb[0] ) {
-		SvREFCNT_dec( GS.line_end_cb[0] );
-		GS.line_end[0]    = leRound;
-		GS.line_end_cb[0] = NULL;
-	}
-	if ( GS.line_end_cb[1] ) {
-		SvREFCNT_dec( GS.line_end_cb[1] );
-		GS.line_end[1]    = leRound;
-		GS.line_end_cb[1] = NULL;
-	}
-
-	if ( !Drawable_read_line_ends( &GS, lineEnd ))
+	if ( !Drawable_read_line_ends( lineEnd, &GS ))
 		return NULL_SV;
-	if ( GS.line_end_cb[0] && GS.line_end_cb[0] == GS.line_end_cb[1]) {
-		GS.line_end_cb[0] = GS.line_end_cb[1] = newSVsv( GS.line_end_cb[0] );
-		SvREFCNT_inc(GS.line_end_cb[0]);
-	} else {
-		if ( GS.line_end_cb[0] )
-			GS.line_end_cb[0] = newSVsv( GS.line_end_cb[0] );
-		if ( GS.line_end_cb[1] )
-			GS.line_end_cb[1] = newSVsv( GS.line_end_cb[1] );
-	}
+
+	for ( i = 0; i < 4; i++)
+		if ( GS.line_end[i].type == leCustom )
+			GS.line_end[i].path-> refcnt++;
 
 	return NULL_SV;
 }

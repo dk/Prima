@@ -6,6 +6,8 @@ extern "C" {
 #endif
 
 #undef  my
+#undef  var
+#undef inherited
 #define inherited CDrawable->
 #define my  ((( PImage) self)-> self)
 #define var (( PImage) self)

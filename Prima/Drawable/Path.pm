@@ -231,14 +231,43 @@ sub circular_arc
 sub arc
 {
 	my $self = shift;
-	@_ > 5 or Carp::croak('bad parameters to arcto');
+	@_ > 5 or Carp::croak('bad parameters to arc');
 	my ( $cx, $cy, $dx, $dy, $from, $to, $tilt) = @_;
 	return $self if $from == $to;
-	$self-> save->
-		matrix( $dx / 2, 0, 0, $dy / 2, $cx, $cy )->
-		rotate( $tilt // 0.0)->
-		circular_arc( $from, $to )->
-		restore;
+	if ( $tilt // 0.0 ) {
+		return $self-> save->
+			scale( $dx / 2, $dy / 2)->
+			rotate( $tilt)->
+			translate( $cx, $cy )->
+			circular_arc( $from, $to )->
+			restore;
+	} else {
+		return $self-> save->
+			matrix( $dx / 2, 0, 0, $dy / 2, $cx, $cy )->
+			circular_arc( $from, $to )->
+			restore;
+	}
+}
+
+sub arc2
+{
+	my $self = shift;
+	@_ > 5 or Carp::croak('bad parameters to arc');
+	my ( $cx, $cy, $dx, $dy, $from, $to, $tilt) = @_;
+	return $self if $from == $to;
+	if ( $tilt // 0.0 ) {
+       		$self-> save->
+			rotate( $tilt)->
+			translate( $cx, $cy )->
+			scale( $dx / 2, $dy / 2)->
+			circular_arc( $from, $to )->
+			restore;
+	} else {
+		return $self-> save->
+			matrix( $dx / 2, 0, 0, $dy / 2, $cx, $cy )->
+			circular_arc( $from, $to )->
+			restore;
+	}
 }
 
 sub rarc
@@ -587,6 +616,7 @@ sub _arc
 	for my $set ( @$nurbset ) {
 		my ( $points, @options ) = @$set;
 		my $poly = $self-> matrix_apply( $points );
+		my $m = $self->{curr}->{matrix};
 		if ( $xopt{integer} && $xopt{precision} < 3) {
 			my $n = $self->new_array;
 			push @$n, __map_round(@$poly[0,1,-2,-1]);
@@ -1119,11 +1149,12 @@ sub widen_new
 		);
 
 		for ( my $i = 0; $i < @$cmds;) {
-			my $cmd = $cmds->[$i++];
+			my $cmd   = $cmds->[$i++];
+			my $param = $cmds->[$i++];
 			if ( $cmd eq 'line') {
-				$dst->line( $cmds->[$i++] );
-			} elsif ( $cmd eq 'arc') {
-				$dst->arc( @{ $cmds->[$i++] } );
+				$dst->line( $param );
+			} elsif ( $cmd =~ /^(arc|arc2)$/) {
+				$dst->$cmd( @$param );
 			} elsif ( $cmd eq 'open') {
 				$dst->open;
 			} else {

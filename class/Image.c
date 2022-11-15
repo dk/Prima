@@ -1,6 +1,7 @@
 #include "img.h"
 #include "apricot.h"
 #include "guts.h"
+#include "Drawable_private.h"
 #include "Image.h"
 #include "Image_private.h"
 #include "Region.h"
@@ -372,10 +373,7 @@ gc_destroy( Handle self, void * user_data, unsigned int user_data_size, Bool in_
 {
 	PPaintState state = ( PPaintState ) user_data;
 	if ( state-> region ) free( state-> region );
-	if ( state-> parent_data.line_end_cb[0] )
-		SvREFCNT_dec( state-> parent_data.line_end_cb[0] );
-	if ( state-> parent_data.line_end_cb[1] )
-		SvREFCNT_dec( state-> parent_data.line_end_cb[1] );
+	Drawable_line_end_refcnt(&state->parent_data, -1);
 }
 
 Bool
@@ -390,10 +388,7 @@ Image_graphic_context_push(Handle self)
 	state.antialias   = var-> antialias;
 	state.rop         = var-> extraROP;
 	state.region      = var-> regionData ? Region_clone_data(NULL_HANDLE, var->regionData) : NULL;
-	if ( state.parent_data.line_end_cb[0] )
-		SvREFCNT_inc(state.parent_data.line_end_cb[0]);
-	if ( state.parent_data.line_end_cb[1] )
-		SvREFCNT_inc(state.parent_data.line_end_cb[1]);
+	Drawable_line_end_refcnt(&state.parent_data, +1);
 
 	return apc_gp_push(self, gc_destroy, &state, sizeof(state));
 }
@@ -406,10 +401,7 @@ Image_graphic_context_pop(Handle self)
 
 	if (!apc_gp_pop( self, &state)) return false;
 
-	if ( GS.line_end_cb[0] )
-		SvREFCNT_dec(GS.line_end_cb[0]);
-	if ( GS.line_end_cb[1] )
-		SvREFCNT_dec(GS.line_end_cb[1]);
+	Drawable_line_end_refcnt(&GS, -1);
 	var-> current_state = state.parent_data;
 	var-> alpha         = state.alpha;
 	var-> antialias     = state.antialias;

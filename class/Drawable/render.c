@@ -415,7 +415,7 @@ collide_commands(WidenStruct *w)
 	n_up_cmd = up->count / 2;
 	for ( i = 0; i < n; i++) {
 		if ( ITEM(i) == CMD_ARC ) {
-			NEW_CMD(*w, "arc");
+			NEW_CMD(*w, "arc2");
 			ADD_SV(*w, newRV_noinc((SV*) PARAM(i)));
 			continue;
 		}
@@ -503,64 +503,54 @@ lineend_Round( WidenStruct *w, NPoint o, double theta)
 }
 
 
-typedef Bool LineendCustomPointProc( WidenStruct *w, NPoint o, NPoint f);
-typedef Bool LineendCustomArcProc( WidenStruct *w, NPoint o, NPoint c, NPoint d, NPoint arc);
-
 static Bool
 lineend_Custom( WidenStruct *w, NPoint o, double theta, int index)
 {
-	int i;
-	double *pts, x, y;
-	size_t l;
-	Bool ok = false;
-	SV *sv, *tied;
-	double s = sin(theta + PI_2), c = cos(theta + PI_2), rt = RAD * (theta + PI_2);
+	int i, j;
+	PPathCommand *pc;
+	PPath p    = w->state->line_end[index].path;
+	double
+		s  = sin(theta + PI_2),
+		c  = cos(theta + PI_2),
+		rt = RAD * (theta + PI_2);
 
-	sv   = prima_array_new(0);
-	tied = prima_array_tie( sv, sizeof(double), "d");
-	cv_call_perl( tied, SvRV(w->state->line_end_cb[index]), "i", index + 1);
-
-	if ( !prima_array_parse( tied, (void**) &pts, &l, NULL))
-		goto EXIT;
-
-	for ( i = 0; i < l; ) {
-		int cmd = pts[i++];
-		switch (cmd) {
-		case leCmdPoint:
-			if ( i + 2 > l ) {
-				warn("malformed le::CmdLine at position #%d: need 2 numbers", i);
-				goto EXIT;
-			}
-			x = pts[i++] * w->lw2;
-			y = pts[i++] * w->lw2;
-			if ( !temp_add_point( w, &w->up,
-				x * c - y * s + o.x,
-				x * s + y * c + o.y
-				))
-				goto EXIT;
-			break;
-		case leCmdArc:
-			if ( i + 6 > l ) {
-				warn("malformed le::CmdArc at position #%d: need 6 numbers", i);
-				goto EXIT;
-			}
+	for ( i = 0, pc = p->commands; i < p->n_commands; i++, pc++) {
+		double *pts = (*pc)->args;
+		switch ((*pc)->command ) {
+		case leCmdArc: {
+			double x = pts[0] * w->lw2;
+			double y = pts[1] * w->lw2;
+			AV *av;
 			if ( !temp_add_arc( &w->up,
-				pts[i] + o.x, pts[i+1] + o.y,
-				pts[i+2] * w->state->line_width, pts[i+3] * w->state->line_width,
-				pts[i+4] + rt, pts[i+5] + rt))
-				goto EXIT;
-			i += 6;
+				x + o.x,
+				y + o.y,
+				pts[2] * w->state->line_width,
+				pts[3] * w->state->line_width,
+				pts[4],
+				pts[5]))
+				return false;
+			av = (AV*) list_at(&w->up, w->up.count - 1);
+			av_push( av, newSVnv( rt ));
+			break;
+		}
+		case leCmdLine:
+			for ( j = 0; j < (*pc)->n_args;  ) {
+				double x = pts[j++] * w->lw2;
+				double y = pts[j++] * w->lw2;
+				if ( !temp_add_point( w, &w->up,
+					x * c - y * s + o.x,
+					x * s + y * c + o.y
+					))
+					return false;
+			}
 			break;
 		default:
-			warn("malformed array: bad command at index #%d (expected le::CmdArc or le::CmdPoint)", i);
-			goto EXIT;
+			warn("panic: bad line_end #%d structure", i);
+			return false;
 		}
 	}
 
-	ok = true;
-EXIT:
-	sv_free(tied);
-	return ok;
+	return true;
 }
 
 static Bool
@@ -578,7 +568,7 @@ static Bool
 widen_line(AV * path, NPolyPolyline *poly, DrawablePaintState *state, Bool integer_precision)
 {
 	Byte line_storage[16384];
-	NPolyPolyline* p;
+	NPolyPolyline* p, *last_p;
 	int n_points;
 	WidenStruct w;
 
@@ -592,11 +582,13 @@ widen_line(AV * path, NPolyPolyline *poly, DrawablePaintState *state, Bool integ
 	w.state             = state;
 	w.lw2               = state->line_width / 2;
 
-	p = poly;
+	p = last_p = poly;
+	if ( !p ) return false;
 	n_points = 0;
 	while (p) {
 		n_points += p->n_points;
 		p = p->next;
+		if (p) last_p = p;
 	}
 	list_create( &w.up,   n_points, n_points );
 	list_create( &w.down, n_points, n_points );
@@ -618,28 +610,42 @@ widen_line(AV * path, NPolyPolyline *poly, DrawablePaintState *state, Bool integ
 		last = p->n_points - (closed ? 2 : 1);
 
 		if ( last <= 0 ) {
-			/* single pixel line, draw a rectangle or ellipse */
-			NPoint f = p->points[0];
-			Bool shape_used = true;
-			switch (no_line_ends ? leSquare : state->line_end[0]) {
-			case leSquare:
-				lineend_Square(&w, f, p->theta);
-				lineend_Square(&w, f, p->theta + PI);
-				break;
-			case leRound:
-				lineend_Round(&w, f, p->theta);
-				lineend_Round(&w, f, p->theta + PI);
-				break;
-			case leCustom:
-				lineend_Custom(&w, f, p->theta, 0);
-				lineend_Custom(&w, f, p->theta + PI, 1);
-				break;
-			default:
-				shape_used = false;
+			/* single pixel line */
+			int j, indexes[2];
+			Bool shape_used = false;
+			double theta    = p->theta;
+			NPoint f        = p->points[0];
+
+			indexes[0] = (p == poly)   ? 2 : 0;
+			indexes[1] = (p == last_p) ? 3 : 1;
+			for ( j = 0; j < 2; j++) {
+				int ix = indexes[j], type;
+				while ( ix > 0 && state->line_end[ix].type == leDefault) 
+					ix = (ix == 3) ? 1 : 0;
+				type = state->line_end[ix].type;
+				if ( type != leCustom && no_line_ends )
+					type = leSquare;
+
+				switch (type) {
+				case leSquare:
+					shape_used = true;
+					lineend_Square(&w, f, theta);
+					break;
+				case leRound:
+					shape_used = true;
+					lineend_Round(&w, f, theta);
+					break;
+				case leCustom:
+					shape_used = true;
+					lineend_Custom(&w, f, theta, ix);
+					break;
+				}
+				theta += PI;
 			}
 			if ( shape_used ) {
 				collide_commands(&w);
 				NEW_CMD(w, "open");
+				ADD_SV(w, NULL_SV);
 			}
 			goto NEXT;
 		}
@@ -648,12 +654,23 @@ widen_line(AV * path, NPolyPolyline *poly, DrawablePaintState *state, Bool integ
 			/* end points */
 			if ( !closed && ( i == 0 || i == last )) {
 				Bool ok;
-				NPoint o = p->points[i], a = p->points[i ? last - 1 : 1];
+				NPoint
+					o    = p->points[i],
+					a    = p->points[i ? last - 1 : 1];
+				int    ix    = (i == 0) ?
+						((p == poly  ) ? 2 : 0) :
+						((p == last_p) ? 3 : 1);
+				int    type;
 				double theta = atan2( a.y - o.y, a.x - o.x );
-				switch ( no_line_ends ? leFlat : state->line_end[(i == 0) ? 0 : 1]) {
-				case leSquare : ok = lineend_Square(&w, o, theta); break;
-				case leRound  : ok = lineend_Round (&w, o, theta); break;
-				case leCustom : ok = lineend_Custom(&w, o, theta, (i == 0) ? 0 : 1); break;
+				while ( ix > 0 && state->line_end[ix].type == leDefault) 
+					ix = (ix == 3) ? 1 : 0;
+				type = (state->line_end[ix].type != leCustom && no_line_ends) ?
+					leFlat :
+					state->line_end[ix].type;
+				switch ( type ) {
+				case leSquare : ok = lineend_Square(&w, o, theta);     break;
+				case leRound  : ok = lineend_Round (&w, o, theta);     break;
+				case leCustom : ok = lineend_Custom(&w, o, theta, ix); break;
 				default       : ok = lineend_Flat  (&w, o, theta);
 				}
 				if ( !ok ) goto FAIL;
@@ -768,6 +785,7 @@ widen_line(AV * path, NPolyPolyline *poly, DrawablePaintState *state, Bool integ
 	NEXT:
 		collide_commands(&w);
 		NEW_CMD(w, "open");
+		ADD_SV(w, NULL_SV);
 		p = p->next;
 	}
 	ok = true;
@@ -834,8 +852,6 @@ render_wide_line( NPoint *points, unsigned int n_points, DrawablePaintState *sta
 	if (
 		state-> line_width < 0.0 ||
 		state-> miter_limit < 0.0 ||
-		state-> line_end[0] < 0 || state-> line_end[0] > leCustom ||
-		state-> line_end[1] < 0 || state-> line_end[1] > leCustom ||
 		state-> line_join < 0 || state-> line_join > ljMax
 	)
 		return NULL;
@@ -950,11 +966,11 @@ Drawable_render_polyline( SV * obj, SV * points, HV * profile)
 		if ( self ) {
 			state = var->current_state;
 		} else {
-			state.line_width   = 1.0;
-			state.miter_limit  = 10.0;
-			state.line_end[0]  = leSquare;
-			state.line_end[1]  = leSquare;
-			state.line_join    = ljMiter;
+			state.line_width       = 1.0;
+			state.miter_limit      = 10.0;
+			state.line_join        = ljMiter;
+			state.line_end[0].type = leSquare;
+			state.line_end[1].type = state.line_end[2].type = state.line_end[3].type = leDefault;
 		}
 		line_pattern = lpSolid; 
 
@@ -963,7 +979,7 @@ Drawable_render_polyline( SV * obj, SV * points, HV * profile)
 		if ( pexist(miterLimit))
 			state.miter_limit = pget_f(miterLimit);
 		if ( pexist(lineEnd))
-			if ( !Drawable_read_line_ends(&state, pget_sv(lineEnd)))
+			if ( !Drawable_read_line_ends(pget_sv(lineEnd), &state))
 				goto EXIT;
 		if ( pexist(lineJoin))
 			state.line_join = pget_i(lineJoin);

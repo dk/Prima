@@ -78,7 +78,10 @@ Bool
 Drawable_switch_font( Handle self, uint16_t fid);
 
 Bool
-Drawable_read_line_ends(DrawablePaintState *state, SV *lineEnd);
+Drawable_read_line_ends(SV *lineEnd, DrawablePaintState *state);
+
+void
+Drawable_line_end_refcnt( DrawablePaintState *gs, int delta);
 
 #ifdef __cplusplus
 }

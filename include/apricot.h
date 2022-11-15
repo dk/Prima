@@ -2865,10 +2865,10 @@ LE(Square)
 LE(Round)
 #define    leMax            2
 #define    leCustom       (leMax + 1)
-#define    leCmdPoint       1
-LE(CmdPoint)
-#define    leCmdArc         2
-LE(CmdArc)
+#define    leDefault      (leMax + 2)
+#define    leCmdOpen      (leMax + 3)
+#define    leCmdArc       (leMax + 4)
+#define    leCmdLine      (leMax + 5)
 END_TABLE(le,UV)
 #undef LE
 
@@ -3543,14 +3543,32 @@ apc_region_get_handle( Handle self);
 extern PRegionRec
 apc_region_copy_rects( Handle self);
 
+typedef struct {
+	unsigned int command;
+	unsigned int n_args;
+	double *args;
+	double args_buf[1];
+} PathCommand, *PPathCommand;
+
+typedef struct {
+	int refcnt;
+	int n_commands;
+	PPathCommand *commands;
+	PPathCommand commands_buf[1];
+} Path, *PPath;
+
+typedef struct {
+	int type;
+	Path *path;
+} LineEnd, *PLineEnd;
+
 /* gp functions */
 typedef struct {
-	int line_end[2];
+	LineEnd line_end[4];
 	int line_join;
 	double line_width;
 	double miter_limit;
 	Matrix matrix;
-	SV *line_end_cb[2];
 } DrawablePaintState;
 
 extern Bool
