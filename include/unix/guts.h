@@ -457,7 +457,8 @@ typedef struct {
 #define AI_XdndActionList                49
 #define AI_XdndActionDescription         50
 #define AI_PLAINTEXT_MIME                51
-#define AI_count                         52
+#define AI_NET_WM_ICON                   52
+#define AI_count                         53
 
 #define FXA_RESOLUTION_X            pguts->atoms[AI_FXA_RESOLUTION_X           ]
 #define FXA_RESOLUTION_Y            pguts->atoms[AI_FXA_RESOLUTION_Y           ]
@@ -514,6 +515,7 @@ typedef struct {
 #define XdndActionList              pguts->atoms[AI_XdndActionList             ]
 #define XdndActionDescription       pguts->atoms[AI_XdndActionDescription      ]
 #define PLAINTEXT_MIME              pguts->atoms[AI_PLAINTEXT_MIME             ]
+#define NET_WM_ICON                 pguts->atoms[AI_NET_WM_ICON                ]
 
 #define DEBUG_FONTS 0x01
 #define DEBUG_CLIP  0x02

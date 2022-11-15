@@ -1110,12 +1110,14 @@ apc_window_set_icon( Handle self, Handle icon)
 	XIconSize * sz = NULL;
 	Pixmap xor, and;
 	XWMHints wmhints;
-	int n;
+	unsigned long *p;
+	int n, maxp;
 
 	if ( !icon || i-> w == 0 || i-> h == 0) {
 		if ( !XX-> flags. has_icon) return true;
 		XX-> flags. has_icon = false;
 		XDeleteProperty( DISP, X_WINDOW, XA_WM_HINTS);
+		XDeleteProperty( DISP, X_WINDOW, NET_WM_ICON);
 		wmhints. flags = InputHint;
 		wmhints. input = false;
 		XSetWMHints( DISP, X_WINDOW, &wmhints);
@@ -1142,7 +1144,68 @@ apc_window_set_icon( Handle self, Handle icon)
 		XFree( sz);
 	}
 
-	xor = prima_std_pixmap( icon, CACHE_LOW_RES);
+	/* NET_WM_ICON apparently wants rectangular icons */
+	maxp = (i->w > i->h) ? i->w : i->h;
+	if (( p = malloc( sizeof(unsigned long) * ( 2 + maxp * maxp))) != NULL ) {
+		int x, y, padx, pady;
+		Byte *sx, *sa;
+		unsigned long *d;
+		Bool is_icon = kind_of(icon, CIcon);
+
+		if ( i->type != 24 || ( is_icon && i->maskType != imbpp8)) {
+			if ( i == (PIcon) icon)
+				i = (PIcon) CIcon((Handle)i)->dup(icon);
+			if (i->type != 24)
+				CIcon(i)->set_type((Handle) i, 24);
+			if (is_icon && i->maskType != imbpp8)
+				CIcon(i)->set_maskType((Handle) i, imbpp8);
+		}
+
+		bzero( p, sizeof(unsigned long) * ( 2 + maxp * maxp));
+		p[0] = maxp;
+		p[1] = maxp;
+		d    = p + 2;
+		sx   = i->data + i->lineSize * (i->h - 1);
+		padx = pady = 0;
+		if ( i-> w != i-> h ) {
+			if ( i-> w > i-> h )
+				pady = i-> w - i-> h;
+			else
+				padx = i-> h - i-> w;
+		}
+		d += maxp * pady / 2 + padx / 2;
+		if ( is_icon ) {
+			for (
+				y = 0, sa = i->mask + i->maskLine * (i->h - 1);
+				y < i-> h;
+				y++, sx -= i->lineSize, sa -= i->maskLine, d += padx
+			) {
+				Byte *sxx = sx, *saa = sa;
+				for ( x = 0; x < i-> w; x++, sxx += 3) {
+					*(d++) =
+						sxx[0] |
+						( sxx[1] << 8 ) |
+						( sxx[2] << 16 ) |
+						( *(saa++) << 24 );
+				}
+			}
+		} else {
+			for ( y = 0; y < i-> h; y++, sx -= i->lineSize, d += padx) {
+				Byte *sxx = sx;
+				for ( x = 0; x < i-> w; x++, sxx += 3)
+					*(d++) =
+						sxx[0] |
+						( sxx[1] << 8 ) |
+						( sxx[2] << 16 ) |
+						( 0xff << 24 );
+			}
+		}
+		XChangeProperty( DISP, X_WINDOW, NET_WM_ICON, XA_CARDINAL, 32,
+			PropModeReplace, (unsigned char*) p, 2 + maxp * maxp);
+		free(p);
+	}
+
+	xor = prima_std_pixmap(( Handle)i, CACHE_LOW_RES);
 	if ( !xor) goto FAIL;
 	{
 		GC gc;
@@ -1156,10 +1219,10 @@ apc_window_set_icon( Handle self, Handle icon)
 
 		gcv. graphics_exposures = false;
 		gc = XCreateGC( DISP, and, GCGraphicsExposures, &gcv);
-		if ( X(icon)-> image_cache. icon) {
+		if ( X(i)-> image_cache. icon) {
 			XSetBackground( DISP, gc, 0xffffffff);
 			XSetForeground( DISP, gc, 0x00000000);
-			prima_put_ximage( and, gc, X(icon)-> image_cache. icon, 0, 0, 0, 0, i-> w, i-> h);
+			prima_put_ximage( and, gc, X(i)-> image_cache. icon, 0, 0, 0, 0, i-> w, i-> h);
 		} else {
 			XSetForeground( DISP, gc, guts. monochromeMap[1]);
 			XFillRectangle( DISP, and, gc, 0, 0, i-> w + 1, i-> h + 1);
