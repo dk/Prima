@@ -1148,13 +1148,12 @@ apc_window_set_icon( Handle self, Handle icon)
 		GC gc;
 		XGCValues gcv;
 
-		/* 1 bit icon mask has worked in X11 for 3 decades,
-		   but only guts.depth = 24 works for Wayland.
-		   Propose we stick with 1 and someone fix the XWM or
-		   WWM of Wayland's compsitor to understand the 1 bit
-		   icon mask that has worked for 30 years. */
-		/* warn("in window.c: depth=%d, idepth=%d", guts.depth, guts.idepth); */
-		and = XCreatePixmap( DISP, guts. root, i-> w, i-> h, 1);
+		/* 1 bit icon mask worked in X11 forever, but only
+		   guts.depth = 24 works for some modern WM.  We'll go
+		   with display depth by default but let user choose
+		   the old way if needed via environment variable. */
+		and = XCreatePixmap( DISP, guts. root, i-> w, i-> h,
+				     getenv("PRIMA1BITMASK") ? 1 : guts.depth);
 		if ( !and) {
 			XFreePixmap( DISP, xor);
 			goto FAIL;
