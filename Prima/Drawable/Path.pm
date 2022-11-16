@@ -78,6 +78,14 @@ sub restore          { shift->cmd('restore') } # no checks for underflow here, t
 sub precision        { shift->cmd(set => precision => shift) }
 sub antialias        { $#_ ? $_[0]->{antialias} = $_[1] : $_[0]->{antialias} }
 
+sub reset
+{
+	$_[0]->{commands} = [];
+	delete $_[0]->{points};
+	delete $_[0]->{stack};
+	delete $_[0]->{curr};
+}
+
 sub matrix_multiply
 {
 	my ( $m1, $m2 ) = @_;
@@ -1241,7 +1249,7 @@ sub widen_new
 			my $param = $cmds->[$i++];
 			if ( $cmd eq 'line') {
 				$dst->line( $param );
-			} elsif ( $cmd =~ /^(arc|arc2)$/) {
+			} elsif ( $cmd eq 'arc') {
 				$dst->$cmd( @$param );
 			} elsif ( $cmd eq 'conic') {
 				$dst->spline( $param, degree => 2 );

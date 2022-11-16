@@ -1072,6 +1072,7 @@ CLEAR
 sub line
 {
 	my ( $self, $x1, $y1, $x2, $y2) = @_;
+	return $self->SUPER::line($x1, $y1, $x2, $y2) if $self-> is_custom_line;
 	( $x1, $y1, $x2, $y2) = float_format($self-> pixel2point( $x1, $y1, $x2, $y2));
 	$self-> stroke("h $x1 $y1 m $x2 $y2 l S");
 }
@@ -1315,6 +1316,7 @@ package
 use base qw(Prima::PS::Drawable::Path);
 
 my %dict = (
+	newpath   => '',
 	lineto    => 'l',
 	moveto    => 'm',
 	curveto   => 'c',

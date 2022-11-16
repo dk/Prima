@@ -515,7 +515,7 @@ Drawable_read_line_ends(SV *lineEnd, DrawablePaintState *state)
 
 	rv = SvRV(lineEnd);
 	if ( SvTYPE(rv) != SVt_PVAV) {
-		warn("lineEnd: bad scalar");
+		warn("lineEnd: not an array passed");
 		return false;
 	}
 	av = (AV*) rv;

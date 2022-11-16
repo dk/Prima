@@ -137,6 +137,12 @@ sub spool
 	return 1;
 }
 
+sub is_custom_line
+{
+	my $self = shift;
+	return $self->{lineEnd_is_simple} ? 0 : 1;
+}
+
 # properties
 
 sub color
@@ -158,9 +164,13 @@ sub fillPatternOffset
 sub lineEnd
 {
 	return $_[0]-> SUPER::lineEnd unless $#_;
-	$_[0]-> SUPER::lineEnd($_[1]);
-	return unless $_[0]-> {can_draw};
-	$_[0]-> {changed}-> {lineEnd} = 1;
+	my ( $self, $le ) = @_;
+	$self-> SUPER::lineEnd($le);
+	return unless $self-> {can_draw};
+	my $oleis = $self->{lineEnd_is_simple} ? 1 : 0;
+	if (($self->{lineEnd_is_simple} = ($le =~ /^\d+$/) ? 1 : 0)) {
+		$self-> {changed}-> {lineEnd} = 1;
+	}
 }
 
 sub lineJoin
@@ -285,7 +295,7 @@ sub grayscale
 sub graphic_context_push
 {
 	my $self = shift;
-	return 0 unless $self->graphic_context_push;
+	return 0 unless $self->SUPER::graphic_context_push;
 	my $stack = $self->{gc_stack} //= [];
 	push @$stack, {
 		(map { $_,  $self->$_()  } qw(rotate scale reversed grayscale)),
@@ -297,7 +307,7 @@ sub graphic_context_push
 sub graphic_context_pop
 {
 	my $self = shift;
-	return unless $self->graphic_context_pop;
+	return unless $self->SUPER::graphic_context_pop;
 	my $stack = $self->{gc_stack} //= [];
 	my $item = pop @$stack or return 0;
 	@{$self->{$_}} = @{$item->{$_}} for qw(resolution clipRect);
@@ -628,9 +638,76 @@ sub text_shape
 
 sub render_glyph {}
 
+# primitive emulation
+
+sub primitive
+{
+	my ( $self, $path ) = @_;
+
+	my $dst  = $self->new_path;
+
+	my $src = Prima::Drawable::Path->new( undef, subpixel => 1 );
+	for ( my $i = 0; $i < @$path; ) {
+		my $cmd   = $path->[$i++];
+		my $param = $path->[$i++];
+		if ( $cmd eq 'line') {
+			$src->line( $param );
+		} else {
+			$src->$cmd( @$param );
+		}
+	}
+
+	my $fp = $self->fillPattern;
+	$self->fillPattern(fp::Solid);
+
+	my @pp = map { @$_ } @{$src->points};
+	for my $p ( @pp ) {
+		next unless @$p;
+		my $cmds = $self->render_polyline( $p, path => 1, integer => 0);
+		for ( my $i = 0; $i < @$cmds;) {
+			my $cmd   = $cmds->[$i++];
+			my $param = $cmds->[$i++];
+			if ( $cmd eq 'line') {
+				$dst->line( $param );
+			} elsif ( $cmd eq 'arc') {
+				$dst->$cmd( @$param );
+			} elsif ( $cmd eq 'conic') {
+				$dst->spline( $param, degree => 2 );
+			} elsif ( $cmd eq 'cubic') {
+				$dst->spline( $param, degree => 3 );
+			} elsif ( $cmd eq 'open') {
+				$dst->close;
+				$dst->open;
+			} else {
+				warn "** panic: unknown render_polyline command '$cmd'";
+				last;
+			}
+		}
+		$dst->close;
+		$dst->open;
+	}
+	$dst->fill;
+
+	$self->fillPattern($fp);
+}
+
+sub line
+{
+	my ( $self, $x1, $y1, $x2, $y2) = @_;
+	$self->primitive([ line => [$x1, $y1, $x2, $y2]]);
+}
+
 package
 	Prima::PS::Drawable::Path;
 use base qw(Prima::Drawable::Path);
+
+sub reset
+{
+	$_[0]->SUPER::reset();
+	delete $_[0]->{entries};
+	delete $_[0]->{last_matrix};
+	delete $_[0]->{last_point};
+}
 
 sub entries
 {
@@ -640,6 +717,7 @@ sub entries
 		local $self->{curr}  = { matrix => [ $self-> identity ] };
 		my $c = $self->{commands};
 		$self-> {entries} = [];
+		$self-> emit( $self->dict->{newpath});
 		for ( my $i = 0; $i < @$c; ) {
 			my ($cmd,$len) = @$c[$i,$i+1];
 			$self-> can("_$cmd")-> ( $self, @$c[$i+2..$i+$len+1] );
