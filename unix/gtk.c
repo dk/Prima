@@ -149,7 +149,13 @@ make_screenshot(int x, int y, int w, int h)
 	GError          *error = NULL;
 	char             filename[256];
 
-	app = g_application_new("org.gnome.Screenshot", G_APPLICATION_FLAGS_NONE);
+	app = g_application_new("org.gnome.Screenshot", 
+#ifdef G_APPLICATION_DEFAULT_FLAGS
+		G_APPLICATION_DEFAULT_FLAGS
+#else
+		G_APPLICATION_FLAGS_NONE
+#endif
+	);
 	if ( !g_application_register (app, NULL, NULL)) {
 		g_object_unref(app);
 		Mdebug("cannot register another gtk application\n");
