@@ -249,27 +249,6 @@ sub arc
 	}
 }
 
-sub arc2
-{
-	my $self = shift;
-	@_ > 5 or Carp::croak('bad parameters to arc');
-	my ( $cx, $cy, $dx, $dy, $from, $to, $tilt) = @_;
-	return $self if $from == $to;
-	if ( $tilt // 0.0 ) {
-       		$self-> save->
-			rotate( $tilt)->
-			translate( $cx, $cy )->
-			scale( $dx / 2, $dy / 2)->
-			circular_arc( $from, $to )->
-			restore;
-	} else {
-		return $self-> save->
-			matrix( $dx / 2, 0, 0, $dy / 2, $cx, $cy )->
-			circular_arc( $from, $to )->
-			restore;
-	}
-}
-
 sub rarc
 {
 	my $self = shift;

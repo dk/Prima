@@ -413,7 +413,7 @@ collide_commands(WidenStruct *w)
 	for ( i = 0; i < n; i++) {
 		if ( ITEM(i) != leCmdLine ) {
 			switch (ITEM(i)) {
-			case leCmdArc:   NEW_CMD(*w, "arc2");  break;
+			case leCmdArc:   NEW_CMD(*w, "arc");  break;
 			case leCmdConic: NEW_CMD(*w, "conic"); break;
 			case leCmdCubic: NEW_CMD(*w, "cubic"); break;
 			default:
@@ -534,8 +534,7 @@ lineend_Custom( WidenStruct *w, NPoint o, double theta, int index)
 	PPath p    = w->state->line_end[index].path;
 	double
 		s  = sin(theta + PI_2),
-		c  = cos(theta + PI_2),
-		rt = RAD * (theta + PI_2);
+		c  = cos(theta + PI_2);
 
 	c = floor( c * 1.0e15 + .5 ) / 1.0e15;
 	s = floor( s * 1.0e15 + .5 ) / 1.0e15;
@@ -543,22 +542,6 @@ lineend_Custom( WidenStruct *w, NPoint o, double theta, int index)
 	for ( i = 0, pc = p->commands; i < p->n_commands; i++, pc++) {
 		double *pts = (*pc)->args;
 		switch ((*pc)->command ) {
-		case leCmdArc: {
-			double x = pts[0] * w->lw2;
-			double y = pts[1] * w->lw2;
-			AV *av;
-			if ( !temp_add_arc( &w->up,
-				x + o.x,
-				y + o.y,
-				pts[2] * w->lw2,
-				pts[3] * w->lw2,
-				pts[4],
-				pts[5]))
-				return false;
-			av = (AV*) list_at(&w->up, w->up.count - 1);
-			av_push( av, newSVnv( rt ));
-			break;
-		}
 		case leCmdLine:
 			for ( j = 0; j < (*pc)->n_args;  ) {
 				double x = pts[j++] * w->lw2;

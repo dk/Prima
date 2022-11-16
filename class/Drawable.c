@@ -588,14 +588,9 @@ Drawable_read_line_ends(SV *lineEnd, DrawablePaintState *state)
 				min = 3;
 				max = -1;
 				cmd_dst = leCmdCubic;
-			} else if ( strcmp(cmd_src, "arc") == 0) {
-				div = 1;
-				min = 6;
-				max = 6;
-				cmd_dst = leCmdArc;
 			} else if (
 				( strcmp(cmd_src, "open") == 0 ) ||
-				( strcmp(cmd_src, "arc2") == 0 )
+				( strcmp(cmd_src, "arc") == 0 )
 			) {
 				warn("command '%s' is not allowed in lineEnd descriptors", cmd_src);
 				goto FAIL;
