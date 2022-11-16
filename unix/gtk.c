@@ -150,7 +150,7 @@ make_screenshot(int x, int y, int w, int h)
 	char             filename[256];
 
 	app = g_application_new("org.gnome.Screenshot", 
-#ifdef G_APPLICATION_DEFAULT_FLAGS
+#ifdef GLIB_AVAILABLE_ENUMERATOR_IN_2_74
 		G_APPLICATION_DEFAULT_FLAGS
 #else
 		G_APPLICATION_FLAGS_NONE
