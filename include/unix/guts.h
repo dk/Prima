@@ -668,7 +668,9 @@ typedef struct _UnixGuts
 		long XFillArcs;
 		long XFillPolygon;
 		long XFillRectangles;
+		long NetWMIcon;
 		long request_length;
+		long extended_request_length;
 	}                            limits;
 	Bool                         local_connection;
 	Cursor                       null_pointer;

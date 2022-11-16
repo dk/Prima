@@ -1146,6 +1146,14 @@ apc_window_set_icon( Handle self, Handle icon)
 
 	/* NET_WM_ICON apparently wants rectangular icons */
 	maxp = (i->w > i->h) ? i->w : i->h;
+	if ( maxp > guts.limits.NetWMIcon ) {
+		Point z = { guts.limits.NetWMIcon, guts.limits.NetWMIcon};
+		if ( i == (PIcon) icon)
+			i = (PIcon) CIcon((Handle)i)->dup(icon);
+		i-> self-> size(( Handle) i, true, z);
+		maxp = guts.limits.NetWMIcon;
+	}
+
 	if (( p = malloc( sizeof(unsigned long) * ( 2 + maxp * maxp))) != NULL ) {
 		int x, y, padx, pady;
 		Byte *sx, *sa;

@@ -345,14 +345,18 @@ init_x11( char * error_buf )
 	guts. mouse_buttons = XGetPointerMapping( DISP, guts. buttons_map, 256);
 	XCHECKPOINT;
 
-	guts. limits. request_length = XMaxRequestSize( DISP);
-	guts. limits. XDrawLines = guts. limits. request_length - 3;
-	guts. limits. XFillPolygon = guts. limits. request_length - 4;
-	guts. limits. XDrawSegments = (guts. limits. request_length - 3) / 2;
-	guts. limits. XDrawRectangles = (guts. limits. request_length - 3) / 2;
-	guts. limits. XFillRectangles = (guts. limits. request_length - 3) / 2;
-	guts. limits. XFillArcs =
+	guts. limits. request_length    = XMaxRequestSize( DISP);
+	guts. limits. extended_request_length = XExtendedMaxRequestSize( DISP);
+	if ( guts. limits. extended_request_length == 0 )
+		guts. limits. extended_request_length = guts. limits. request_length;
+	guts. limits. XDrawLines        = guts. limits. request_length - 3;
+	guts. limits. XFillPolygon      = guts. limits. request_length - 4;
+	guts. limits. XDrawSegments     = (guts. limits. request_length - 3) / 2;
+	guts. limits. XDrawRectangles   = (guts. limits. request_length - 3) / 2;
+	guts. limits. XFillRectangles   = (guts. limits. request_length - 3) / 2;
+	guts. limits. XFillArcs         =
 		guts. limits. XDrawArcs = (guts. limits. request_length - 3) / 3;
+	guts. limits. NetWMIcon         = sqrt(guts. limits. extended_request_length - 16);
 	XCHECKPOINT;
 	SCREEN = DefaultScreen( DISP);
 
