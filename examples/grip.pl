@@ -24,7 +24,7 @@ use warnings;
 use Prima;
 use Prima::ImageViewer;
 use Prima::Application;
-use Prima::RubberBand;
+use Prima::Widget::RubberBand;
 use Prima::Drawable::Subcanvas;
 
 package Generic;
