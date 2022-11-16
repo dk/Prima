@@ -84,6 +84,7 @@ use vars qw(
 	%cache_find_files
 	$binary_prereq
 	$compiler_type
+	$compiler_subtype
 	$compiler_version
 	@Prima_exports
 	$win32_use_dlltool
@@ -920,6 +921,16 @@ GLIBC
 sub setup_compiler
 {
 	printlog "Compiler: $compiler_type\n";
+	if ( $compiler_type eq 'gcc' ) {
+		my $r = `$compiler_type -v 2>&1`;
+		if ( $r =~ /^(.*)\s+version\s+([\d\.]+)/) {
+			$compiler_subtype = $1;
+			$compiler_version = $2;
+			if ( $compiler_subtype =~ /Apple clang/ ) {
+				$cmd_options{EXTRA_CCFLAGS} .= " -Wno-compound-token-split-by-macro";
+			}
+		}
+	}
 
 	printlog "Checking if can compile... ";
 	compile('int a;', 1) or die "no " . see_makefile_log;
@@ -1026,7 +1037,7 @@ MSCVER
 
 	if ( $^O eq 'darwin') {
 		push @INCPATH, '/opt/homebrew/include';
-		push @LIBPATH, '/opt/homebrew/lib';
+		push @LIBPATH, '/opt/homebrew/lib', '/opt/homebrew/opt/libiconv/lib';
 	}
 }
 
