@@ -383,12 +383,6 @@ stylus_is_complex( Handle self )
 	if ( sys rq_brush.logbrush.lbStyle == BS_DIBPATTERNPT)
 		return true;
 
-	if (
-		( sys rq_pen.logpen.lopnStyle != PS_SOLID) &&
-		( sys rq_pen.logpen.lopnStyle != PS_NULL)
-	)
-		return true;
-
 	rop = GetROP2( sys ps);
 	if (
 		( rop != R2_COPYPEN) &&
