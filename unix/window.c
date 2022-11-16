@@ -1173,7 +1173,7 @@ apc_window_set_icon( Handle self, Handle icon)
 			else
 				padx = i-> h - i-> w;
 		}
-		d += maxp * pady / 2 + padx / 2;
+		d += maxp * (pady / 2) + padx / 2;
 		if ( is_icon ) {
 			for (
 				y = 0, sa = i->mask + i->maskLine * (i->h - 1);

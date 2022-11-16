@@ -526,7 +526,6 @@ lineend_Round( WidenStruct *w, NPoint o, double theta)
 	);
 }
 
-
 static Bool
 lineend_Custom( WidenStruct *w, NPoint o, double theta, int index)
 {
@@ -551,8 +550,8 @@ lineend_Custom( WidenStruct *w, NPoint o, double theta, int index)
 			if ( !temp_add_arc( &w->up,
 				x + o.x,
 				y + o.y,
-				pts[2] * w->state->line_width,
-				pts[3] * w->state->line_width,
+				pts[2] * w->lw2,
+				pts[3] * w->lw2,
 				pts[4],
 				pts[5]))
 				return false;
