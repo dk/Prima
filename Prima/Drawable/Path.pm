@@ -153,6 +153,8 @@ sub line
 	$self->cmd( line => $p );
 }
 
+*polyline = \&line;
+
 sub rline
 {
 	my $self = shift;

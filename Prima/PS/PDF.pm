@@ -772,6 +772,7 @@ sub compress
 sub arc
 {
 	my ( $self, $x, $y, $dx, $dy, $start, $end) = @_;
+	return $self->primitive( arc => $x, $y, $dx, $dy, $start, $end) if $self-> is_custom_line;
 	( $x, $y, $dx, $dy) = $self-> pixel2point( $x, $y, $dx, $dy);
 
 	my $cubics  = $self-> arc2cubics($x, $y, $dx, $dy, $start, $end);
@@ -783,6 +784,7 @@ sub arc
 sub chord
 {
 	my ( $self, $x, $y, $dx, $dy, $start, $end) = @_;
+	return $self->primitive( chord => $x, $y, $dx, $dy, $start, $end) if $self-> is_custom_line(1);
 	( $x, $y, $dx, $dy) = $self-> pixel2point( $x, $y, $dx, $dy);
 
 	my $cubics  = $self-> arc2cubics($x, $y, $dx, $dy, $start, $end);
@@ -794,6 +796,7 @@ sub chord
 sub ellipse
 {
 	my ( $self, $x, $y, $dx, $dy) = @_;
+	return $self->primitive( ellipse => $x, $y, $dx, $dy) if $self-> is_custom_line(1);
 	( $x, $y, $dx, $dy) = $self-> pixel2point( $x, $y, $dx, $dy);
 
 	my $cubics  = $self-> arc2cubics($x, $y, $dx, $dy, 0, 360);
@@ -828,6 +831,7 @@ sub fill_ellipse
 sub sector
 {
 	my ( $self, $x, $y, $dx, $dy, $start, $end) = @_;
+	return $self->primitive( sector => $x, $y, $dx, $dy, $start, $end) if $self-> is_custom_line(1);
 	( $x, $y, $dx, $dy) = $self-> pixel2point( $x, $y, $dx, $dy);
 
 	my $cubics  = $self-> arc2cubics($x, $y, $dx, $dy, $start, $end);
@@ -1019,6 +1023,7 @@ sub text_out
 sub rectangle
 {
 	my ( $self, $x1, $y1, $x2, $y2) = @_;
+	return $self->primitive( rectangle => $x1, $y1, $x2, $y2) if $self-> is_custom_line(1);
 	( $x1, $y1, $x2, $y2) = $self-> pixel2point( $x1, $y1, $x2, $y2);
 	$x2 -= $x1;
 	$y2 -= $y1;
@@ -1072,7 +1077,7 @@ CLEAR
 sub line
 {
 	my ( $self, $x1, $y1, $x2, $y2) = @_;
-	return $self->SUPER::line($x1, $y1, $x2, $y2) if $self-> is_custom_line;
+	return $self->primitive(line => $x1, $y1, $x2, $y2) if $self-> is_custom_line;
 	( $x1, $y1, $x2, $y2) = float_format($self-> pixel2point( $x1, $y1, $x2, $y2));
 	$self-> stroke("h $x1 $y1 m $x2 $y2 l S");
 }
@@ -1080,6 +1085,7 @@ sub line
 sub lines
 {
 	my ( $self, $array) = @_;
+	return $self->primitive( lines => $array ) if $self->is_custom_line;
 	my $i;
 	my $c = scalar @$array;
 	my @a = float_format($self-> pixel2point( @$array));
@@ -1094,6 +1100,7 @@ sub lines
 sub polyline
 {
 	my ( $self, $array) = @_;
+	return $self->primitive( polyline => $array ) if $self->is_custom_line;
 	my $i;
 	my $c = scalar @$array;
 	my @a = $self-> pixel2point( @$array);

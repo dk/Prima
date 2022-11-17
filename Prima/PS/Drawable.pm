@@ -139,8 +139,10 @@ sub spool
 
 sub is_custom_line
 {
-	my $self = shift;
-	return $self->{lineEnd_is_simple} ? 0 : 1;
+	my ($self, $for_closed_shapes) = shift;
+	return $self->{lineEnd_flags} ? (
+		$for_closed_shapes ? ( $self->{lineEnd_flags} & 2 ) : 0
+	) : 1;
 }
 
 # properties
@@ -167,8 +169,10 @@ sub lineEnd
 	my ( $self, $le ) = @_;
 	$self-> SUPER::lineEnd($le);
 	return unless $self-> {can_draw};
-	my $oleis = $self->{lineEnd_is_simple} ? 1 : 0;
-	if (($self->{lineEnd_is_simple} = ($le =~ /^\d+$/) ? 1 : 0)) {
+	$self->{lineEnd_flags} = ref($le) ? 1 : 0;
+	if ( $self->{lineEnd_flags} ) {
+		$self->{lineEnd_flags} |= 2 if !defined($le->[2]) && !defined($le->[3]);
+	} else {
 		$self-> {changed}-> {lineEnd} = 1;
 	}
 }
@@ -642,20 +646,12 @@ sub render_glyph {}
 
 sub primitive
 {
-	my ( $self, $path ) = @_;
+	my ( $self, $cmd, @param ) = @_;
 
 	my $dst  = $self->new_path;
 
 	my $src = Prima::Drawable::Path->new( undef, subpixel => 1 );
-	for ( my $i = 0; $i < @$path; ) {
-		my $cmd   = $path->[$i++];
-		my $param = $path->[$i++];
-		if ( $cmd eq 'line') {
-			$src->line( $param );
-		} else {
-			$src->$cmd( @$param );
-		}
-	}
+	$src->$cmd(@param);
 
 	my $fp = $self->fillPattern;
 	$self->fillPattern(fp::Solid);
@@ -689,12 +685,6 @@ sub primitive
 	$dst->fill;
 
 	$self->fillPattern($fp);
-}
-
-sub line
-{
-	my ( $self, $x1, $y1, $x2, $y2) = @_;
-	$self->primitive([ line => [$x1, $y1, $x2, $y2]]);
 }
 
 package
@@ -816,7 +806,18 @@ sub _arc
 sub stroke
 {
 	my $self = shift;
-	$self-> canvas-> stroke( join("\n", @{ $self->entries }, $self->dict->{stroke} ));
+	my $c = $self->canvas;
+	return $self-> canvas-> stroke( join("\n", @{ $self->entries }, $self->dict->{stroke} ))
+		if $c-> is_custom_line;
+
+	my $path = Prima::Drawable::Path-> new( undef,
+		subpixel => 1,
+		commands => $self->commands,
+	);
+	for ( map { @$_ } @{ $path->points }) {
+		next if 4 > @$_;
+		$c->primitive( polyline => $_ );
+	}
 }
 
 sub fill
