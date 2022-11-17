@@ -36,6 +36,7 @@ class/DeviceBitmap.cls
 class/Drawable.c
 class/Drawable/mapper.c
 class/Drawable/fonts.c
+class/Drawable/line_ends.c
 class/Drawable/primitives.c
 class/Drawable/render.c
 class/Drawable/text.c
