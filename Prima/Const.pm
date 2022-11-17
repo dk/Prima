@@ -74,6 +74,17 @@ package
     fp; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# fill styles & font pitches
 package
     le; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# line ends
+
+sub Arrow { [
+	conic => [1,0,2.5,0,2.5,-0.5],
+	line  => [0,2.5],
+	conic => [-2.5,-0.5,-2.5,0,-1,0]
+] }
+
+sub Rhombus { [
+	line  => [1,0,1.5,1,0,4,-1.5,1,-1,0],
+] }
+
 package
     lj; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# line joins
 package

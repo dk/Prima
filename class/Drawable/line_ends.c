@@ -324,10 +324,30 @@ Drawable_lineEnd( Handle self, Bool set, SV *lineEnd)
 SV*
 Drawable_lineEndIndex( Handle self, Bool set, int index, SV *lineEnd)
 {
-	if ( index < 0 || index > 3 )
+	if ( index > 3 )
 		return NULL_SV;
-	if (!set)
+	if (!set) {
+		if ( index < 0 ) {
+			if ( index < -4 )
+				return NULL_SV;
+			index = -index - 1;
+			if ( GS.line_end[index].type == leDefault )
+				index = 0;
+		}
 		return produce_line_end(self, index);
+	} else {
+		if ( index < -1 )
+			return NULL_SV;
+		if ( index == -1 ) {
+			int i;
+			for ( i = 1; i < 4; i++) {
+				if (GS.line_end[i].type == leDefault) {
+					GS.line_end[i] = GS.line_end[0];
+					line_end_refcnt( &GS, i, +1);
+				}
+			}
+		}
+	}
 
 	line_end_refcnt( &GS, index, -1);
 	if ( !read_line_end( lineEnd, &GS, index ))
