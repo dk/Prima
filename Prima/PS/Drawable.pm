@@ -302,8 +302,8 @@ sub graphic_context_push
 	return 0 unless $self->SUPER::graphic_context_push;
 	my $stack = $self->{gc_stack} //= [];
 	push @$stack, {
-		(map { $_,  $self->$_()  } qw(rotate scale reversed grayscale)),
-		(map { $_, [$self->$_()] } qw(resolution clipRect))
+		(map { $_,  $self->$_()  } qw(rotate reversed grayscale)),
+		(map { $_, [$self->$_()] } qw(resolution scale clipRect))
 	};
 	return 1;
 }
@@ -314,8 +314,8 @@ sub graphic_context_pop
 	return unless $self->SUPER::graphic_context_pop;
 	my $stack = $self->{gc_stack} //= [];
 	my $item = pop @$stack or return 0;
-	@{$self->{$_}} = @{$item->{$_}} for qw(resolution clipRect);
-	$self->{$_} = $item->{$_} for qw(rotate scale reversed grayscale);
+	@{$self->{$_}} = @{$item->{$_}} for qw(resolution scale clipRect);
+	$self->{$_} = $item->{$_} for qw(rotate reversed grayscale);
 	$self->change_transform;
 	return 1;
 }
@@ -653,9 +653,6 @@ sub primitive
 	my $src = Prima::Drawable::Path->new( undef, subpixel => 1 );
 	$src->$cmd(@param);
 
-	my $fp = $self->fillPattern;
-	$self->fillPattern(fp::Solid);
-
 	my @pp = map { @$_ } @{$src->points};
 	for my $p ( @pp ) {
 		next unless @$p;
@@ -682,9 +679,12 @@ sub primitive
 		$dst->close;
 		$dst->open;
 	}
-	$dst->fill;
 
-	$self->fillPattern($fp);
+	if ( $self->graphic_context_push ) {
+		$self->fillPattern(fp::Solid);
+		$dst->fill;
+		$self->graphic_context_pop;
+	}
 }
 
 package

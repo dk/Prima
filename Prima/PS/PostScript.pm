@@ -457,10 +457,34 @@ sub copies
 	$_[0]-> {copies} = $_[1] unless $_[0]-> get_paint_state;
 }
 
+sub matrix
+{
+	return $_[0]-> SUPER::matrix unless $#_;
+	my ( $self, $m ) = @_;
+	$self->SUPER::matrix($m);
+	$self->emit("[@$m] SM")
+}
+
 sub pageDevice
 {
 	return $_[0]-> {pageDevice} unless $#_;
 	$_[0]-> {pageDevice} = $_[1] unless $_[0]-> get_paint_state;
+}
+
+sub graphic_context_push
+{
+	my $self = shift;
+	return 0 unless $self->SUPER::graphic_context_push;
+	$self->emit(':');
+	return 1;
+}
+
+sub graphic_context_pop
+{
+	my $self = shift;
+	$self->emit(';');
+	return unless $self->SUPER::graphic_context_pop;
+	return 1;
 }
 
 # primitives

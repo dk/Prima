@@ -769,6 +769,30 @@ sub compress
 	$self-> {compress} = $_[1];
 }
 
+sub matrix
+{
+	return $_[0]-> SUPER::matrix unless $#_;
+	my ( $self, $m ) = @_;
+	$self->SUPER::matrix($m);
+	$self->emit("@$m cm")
+}
+
+sub graphic_context_push
+{
+	my $self = shift;
+	return 0 unless $self->SUPER::graphic_context_push;
+	$self->emit_content('q');
+	return 1;
+}
+
+sub graphic_context_pop
+{
+	my $self = shift;
+	$self->emit_content('Q');
+	return unless $self->SUPER::graphic_context_pop;
+	return 1;
+}
+
 sub arc
 {
 	my ( $self, $x, $y, $dx, $dy, $start, $end) = @_;
