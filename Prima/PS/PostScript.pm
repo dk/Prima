@@ -144,6 +144,10 @@ sub fill
 		if ($self-> {changed}-> {fill}) {
 			if ( $self-> {fpType} eq 'F') {
 				$self-> emit( $self-> cmd_rgb( $c));
+			} elsif ( $self->{fpType} =~ /^Color/ ) {
+					$self-> emit(<<IMGPAT);
+\/Pattern SS Pat_$self->{fpType} SC
+IMGPAT
 			} else {
 				my ( $r, $g, $b) = (
 					int((($c & 0xff0000) >> 16) * 100 / 256 + 0.5) / 100,
@@ -413,15 +417,18 @@ sub fillPattern
 	return unless $_[0]-> {can_draw};
 
 	my $self = $_[0];
-	my @fp  = @{$self-> SUPER::fillPattern};
-	my $solidBack = ! grep { $_ != 0 } @fp;
-	my $solidFore = ! grep { $_ != 0xff } @fp;
+	my $fp  = $self-> SUPER::fillPattern;
+	my ($solidBack, $solidFore) = (0,0);
 	my $fpid;
-	my @scaleto = $self-> pixel2point( 8, 8);
-	if ( !$solidBack && !$solidFore) {
-		$fpid = join( '', map { sprintf("%02x", $_)} @fp);
-		unless ( exists $self-> {fp_hash}-> {$fpid}) {
-			$self-> emit( <<PATTERNDEF);
+
+	if( (ref($fp) // '') eq 'ARRAY') {
+		$solidBack = ! grep { $_ != 0    } @$fp;
+		$solidFore = ! grep { $_ != 0xff } @$fp;
+		my @scaleto = $self-> pixel2point( 8, 8);
+		if ( !$solidBack && !$solidFore) {
+			$fpid = join( '', map { sprintf("%02x", $_)} @$fp);
+			unless ( exists $self-> {fp_hash}-> {$fpid}) {
+				$self-> emit( <<PATTERNDEF);
 <<
 \/PatternType 1 \% Tiling pattern
 \/PaintType 2 \% Uncolored
@@ -442,6 +449,82 @@ e
 \/Pat_$fpid ~ d
 
 PATTERNDEF
+				$self-> {fp_hash}-> {$fpid} = 1;
+			}
+		}
+	} elsif ( UNIVERSAL::isa($fp, 'Prima::Image')) {
+		$fpid = "$fp";
+		$fpid =~ s/^Prima::(Image|Icon)=HASH\((.*)\)/$2/; # most common case
+		$fpid =~ s/(\W)/sprintf("%02x", ord($1))/ge;      # just in case
+
+		my $icon    = $fp->isa('Prima::Icon');
+		my @sz      = $fp-> size;
+		my @scaleto = $self-> pixel2point( @sz );
+		unless ( exists $self-> {fp_hash}-> {$fpid}) {
+			my $imagemask = '';
+			if ( $fp->type == im::BW ) {
+				$fpid = "Mono_$fpid";
+				my $imgdef = '';
+				my $ls     = $fp->lineSize;
+				my $stride = int($fp-> width / 8) +!!+ ($fp->width % 8);
+				my $data   = $fp->data;
+				for my $y ( 0 .. $fp->height - 1 ) {
+					$imgdef .= unpack("H*", substr($data, $y * $ls, $stride));
+				}
+				$self-> emit( <<PATTERNDEF);
+<<
+\/PatternType 1 \% Tiling pattern
+\/PaintType 2 \% Uncolored
+\/TilingType 1
+\/BBox [ 0 0 @scaleto]
+\/XStep $scaleto[0]
+\/YStep $scaleto[1]
+\/PaintProc { b
+:
+@scaleto Z
+@sz t
+[$sz[0] 0 0 $sz[0] 0 0]
+< $imgdef > I
+;
+e
+} bind
+>> MX MP
+\/Pat_$fpid ~ d
+
+PATTERNDEF
+			} else {
+				$fpid = "Color_$fpid";
+				$fp = $self->prepare_image($fp);
+				my $imgdef = '';
+				my $imgcdef = ($fp->type & im::GrayScale) ? 'image' : 'false 3 colorimage';
+				my $ls     = $fp->lineSize;
+				my $stride = $fp->get_bpp * $fp->width / 8;
+				my $data   = $fp->data;
+				for my $y ( 0 .. $fp->height - 1 ) {
+					$imgdef .= unpack("H*", substr($data, $y * $ls, $stride));
+				}
+				$self-> emit( <<PATTERNDEF);
+<<
+\/PatternType 1 \% Tiling pattern
+\/PaintType 1 \% Colored
+\/TilingType 1
+\/BBox [ 0 0 @scaleto]
+\/XStep $scaleto[0]
+\/YStep $scaleto[1]
+\/PaintProc { b
+:
+@scaleto Z
+@sz 8
+[$sz[0] 0 0 $sz[0] 0 0]
+< $imgdef > $imgcdef
+;
+e
+} bind
+>> MX MP
+\/Pat_$fpid ~ d
+
+PATTERNDEF
+			}
 			$self-> {fp_hash}-> {$fpid} = 1;
 		}
 	}
@@ -857,10 +940,14 @@ PIXEL
 	$self-> {changed}-> {fill} = 1;
 }
 
-sub put_image_indirect
+sub prepare_image
 {
-	return 0 unless $_[0]-> {can_draw};
-	my ( $self, $image, $x, $y, $xFrom, $yFrom, $xDestLen, $yDestLen, $xLen, $yLen) = @_;
+	my ( $self, $image, $xFrom, $yFrom, $xLen, $yLen) = @_;
+
+	my @is = $image-> size;
+	$_ //= 0 for $xFrom, $yFrom;
+	$xLen //= $is[0];
+	$yLen //= $is[1];
 
 	my $touch;
 	$touch = 1, $image = $image-> image if $image-> isa('Prima::DeviceBitmap');
@@ -899,20 +986,29 @@ sub put_image_indirect
 		$touch = 1;
 	}
 
+	return $image;
+}
+
+sub put_image_indirect
+{
+	return 0 unless $_[0]-> {can_draw};
+	my ( $self, $image, $x, $y, $xFrom, $yFrom, $xDestLen, $yDestLen, $xLen, $yLen) = @_;
+
 	my @is = $image-> size;
 	($x, $y, $xDestLen, $yDestLen) = $self-> pixel2point( $x, $y, $xDestLen, $yDestLen);
 	my @fullScale = (
 		$is[0] / $xLen * $xDestLen,
 		$is[1] / $yLen * $yDestLen,
 	);
+	float_inplace($x, $y, @fullScale);
+	$self-> emit(": $x $y T @fullScale Z");
 
+	$image = $self->prepare_image($image, $xFrom, $yFrom, $xLen, $yLen);
 	my $g  = $image-> data;
 	my $bt = ( $image-> type & im::BPP) * $is[0] / 8;
 	my $ls = $image->lineSize;
 	my ( $i, $j);
-	float_inplace($x, $y, @fullScale);
 
-	$self-> emit(": $x $y T @fullScale Z");
 	$self-> emit("/scanline $bt string d");
 	$self-> emit("@is 8 [$is[0] 0 0 $is[1] 0 0]");
 	$self-> emit('{currentfile scanline readhexstring pop}');
