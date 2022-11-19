@@ -18,7 +18,7 @@
 #	define _GNU_SOURCE
 #endif
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && (_MSC_VER < 1700)
 	#define BROKEN_COMPILER       1
 	#define BROKEN_PERL_PLATFORM  1
 	#define snprintf              _snprintf
