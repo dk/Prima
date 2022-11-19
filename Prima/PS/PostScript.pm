@@ -455,7 +455,7 @@ sub emit_pattern
 	my @scaleto = $self-> pixel2point(@sz);
 
 	# PatternType 1 = Tiling pattern
-	# PaintType   1 = Clored
+	# PaintType   1 = Colored
 	# PaintType   2 = Uncolored
 	$self-> emit( <<PATTERNDEF);
 <<

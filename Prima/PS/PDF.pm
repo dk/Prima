@@ -795,7 +795,7 @@ EI Q
 PAT
 
 	# PatternType 1 = Tiling pattern
-	# PaintType   1 = Clored
+	# PaintType   1 = Colored
 	# PaintType   2 = Uncolored
 	$self-> emit_new_object( $xid, <<PATTERNDEF);
 <<
