@@ -719,6 +719,63 @@ sub primitive
 	}
 }
 
+sub prepare_image
+{
+	my ( $self, $image, $xFrom, $yFrom, $xLen, $yLen) = @_;
+
+	my @is = $image-> size;
+	$_ //= 0 for $xFrom, $yFrom;
+	$xLen //= $is[0];
+	$yLen //= $is[1];
+
+	my $touch;
+	$touch = 1, $image = $image-> image if $image-> isa('Prima::DeviceBitmap');
+
+	unless ( $xFrom == 0 && $yFrom == 0 && $xLen == $image-> width && $yLen == $image-> height) {
+		$image = $image-> extract( $xFrom, $yFrom, $xLen, $yLen);
+		$touch = 1;
+	}
+
+	my $ib = $image-> get_bpp;
+	if ( $ib != $self-> get_bpp) {
+		$image = $image-> dup unless $touch;
+		if ( $self-> {grayscale} || $image-> type & im::GrayScale) {
+			$image-> type( im::Byte);
+		} else {
+			$image-> type( im::RGB);
+		}
+		$touch = 1;
+	} elsif ( $self-> {grayscale} || $image-> type & im::GrayScale) {
+		$image = $image-> dup unless $touch;
+		$image-> type( im::Byte);
+		$touch = 1;
+	}
+
+	$ib = $image-> get_bpp;
+	if ($ib != 8 && $ib != 24) {
+		$image = $image-> dup unless $touch;
+		$image-> type( im::RGB);
+		$touch = 1;
+	}
+
+	if ( $image-> type == im::RGB ) {
+		# invert BGR -> RGB
+		$image = $image-> dup unless $touch;
+		$image-> set(data => $image->data, type => im::fmtBGR | im::RGB);
+		$touch = 1;
+	}
+
+	if ( $image-> isa('Prima::Icon')) {
+		if ( $image-> maskType != 1 && $image-> maskType != 8) {
+			$image = $image-> dup unless $touch;
+			$image-> set(maskType => 1);
+			$touch = 1;
+		}
+	}
+
+	return $image;
+}
+
 package
 	Prima::PS::Drawable::Path;
 use base qw(Prima::Drawable::Path);

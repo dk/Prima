@@ -128,7 +128,7 @@ sub fill
 		$r1 == rop::NoOper &&
 		$r2 == rop::NoOper;
 
-	if ( $r2 != rop::NoOper && $self-> {fpType} ne 'F') {
+	if ( $r2 != rop::NoOper && $self-> {fpType} ne 'F' && $self->{fpType} !~ /^Color/ ) {
 		my $bk =
 			( $r2 == rop::Blackness) ? 0 :
 			( $r2 == rop::Whiteness) ? 0xffffff : $self-> backColor;
@@ -419,13 +419,16 @@ sub emit_pattern
 {
 	my ( $self, $fpid, $fp) = @_;
 
+	return if exists $self-> {fp_hash}-> {$fpid};
+	$self-> {fp_hash}-> {$fpid} = 1;
+
 	my (@sz, $imgdef, $imgcdef, $depth, $paint);
 	$imgdef = '';
 	if ( ref($fp) eq 'ARRAY') {
 		@sz      = (8,8);
 		$paint   = 2;
 		$imgcdef = 'I';
-		$depth   = 't';
+		$depth   = 'f';
 		$imgdef  = join( '', map { sprintf("%02x", $_)} @$fp);
 	} else {
 		@sz = $fp->size;
@@ -448,6 +451,7 @@ sub emit_pattern
 			$imgdef .= unpack("H*", substr($data, $y * $ls, $stride));
 		}
 	}
+
 	my @scaleto = $self-> pixel2point(@sz);
 
 	# PatternType 1 = Tiling pattern
@@ -492,10 +496,7 @@ sub fillPattern
 		my @scaleto = $self-> pixel2point( 8, 8);
 		if ( !$solidBack && !$solidFore) {
 			$fpid = join( '', map { sprintf("%02x", $_)} @$fp);
-			unless ( exists $self-> {fp_hash}-> {$fpid}) {
-				$self-> emit_pattern($fpid, $fp);
-				$self-> {fp_hash}-> {$fpid} = 1;
-			}
+			$self-> emit_pattern($fpid, $fp);
 		}
 	} elsif ( UNIVERSAL::isa($fp, 'Prima::Image')) {
 		$fpid = "$fp";
@@ -504,10 +505,9 @@ sub fillPattern
 		$fpid = (( $fp->type == im::BW ) ? "Mono_" : "Color_") . $fpid;
 
 		my $icon    = $fp->isa('Prima::Icon'); # XXX
-		unless ( exists $self-> {fp_hash}-> {$fpid}) {
-			$self-> emit_pattern($fpid, $fp);
-			$self-> {fp_hash}-> {$fpid} = 1;
-		}
+		$self-> emit_pattern($fpid, $fp);
+	} else {
+		$solidFore = 1;
 	}
 	$self-> {fpType} = $solidBack ? 'B' : ( $solidFore ? 'F' : $fpid);
 	$self-> {changed}-> {fill} = 1;
@@ -919,55 +919,6 @@ N $x $y M 0 0 L F
 ;
 PIXEL
 	$self-> {changed}-> {fill} = 1;
-}
-
-sub prepare_image
-{
-	my ( $self, $image, $xFrom, $yFrom, $xLen, $yLen) = @_;
-
-	my @is = $image-> size;
-	$_ //= 0 for $xFrom, $yFrom;
-	$xLen //= $is[0];
-	$yLen //= $is[1];
-
-	my $touch;
-	$touch = 1, $image = $image-> image if $image-> isa('Prima::DeviceBitmap');
-
-	unless ( $xFrom == 0 && $yFrom == 0 && $xLen == $image-> width && $yLen == $image-> height) {
-		$image = $image-> extract( $xFrom, $yFrom, $xLen, $yLen);
-		$touch = 1;
-	}
-
-	my $ib = $image-> get_bpp;
-	if ( $ib != $self-> get_bpp) {
-		$image = $image-> dup unless $touch;
-		if ( $self-> {grayscale} || $image-> type & im::GrayScale) {
-			$image-> type( im::Byte);
-		} else {
-			$image-> type( im::RGB);
-		}
-		$touch = 1;
-	} elsif ( $self-> {grayscale} || $image-> type & im::GrayScale) {
-		$image = $image-> dup unless $touch;
-		$image-> type( im::Byte);
-		$touch = 1;
-	}
-
-	$ib = $image-> get_bpp;
-	if ($ib != 8 && $ib != 24) {
-		$image = $image-> dup unless $touch;
-		$image-> type( im::RGB);
-		$touch = 1;
-	}
-
-	if ( $image-> type == im::RGB ) {
-		# invert BGR -> RGB
-		$image = $image-> dup unless $touch;
-		$image-> set(data => $image->data, type => im::fmtBGR | im::RGB);
-		$touch = 1;
-	}
-
-	return $image;
 }
 
 sub put_image_indirect

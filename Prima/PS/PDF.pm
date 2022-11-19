@@ -132,7 +132,7 @@ sub fill
 		$self-> emit_content( "/GSA$al gs");
 		$self-> {changed}-> {alpha} = 0;
 	}
-	if ( $r2 != rop::NoOper && $self-> {fpType} ne 'F') {
+	if ( $r2 != rop::NoOper && $self-> {fpType} ne 'F' && !$self->{color_patterns}->{$self->{fpType}}) {
 		my $bk =
 			( $r2 == rop::Blackness) ? 0 :
 			( $r2 == rop::Whiteness) ? 0xffffff : $self-> backColor;
@@ -148,6 +148,8 @@ sub fill
 		if ($self-> {changed}-> {fill}) {
 			if ( $self-> {fpType} eq 'F') {
 				$self-> emit_content( lc $self-> cmd_rgb( $c));
+			} elsif ( $self->{color_patterns}->{$self->{fpType}} ) {
+				$self-> emit_content("/Pattern cs /P$self->{fpType} scn");
 			} else {
 				my ( $r, $g, $b) = (
 					int((($c & 0xff0000) >> 16) * 100 / 256 + 0.5) / 100,
@@ -388,6 +390,7 @@ ROOT
 	$self-> {pages}         = [$self->{page_object} ];
 	$self-> {page_refs}     = [];
 	$self-> {page_patterns} = {};
+	$self-> {color_patterns}= {};
 	$self-> {page_images}   = [];
 	$self-> {page_fonts}    = {};
 	$self-> {page_rops}     = {};
@@ -666,6 +669,7 @@ sub new_page
 	push @{$self-> {pages}}, $self->{page_object};
 	$self-> {page_refs}      = [];
 	$self-> {page_patterns}  = {};
+	$self-> {color_patterns} = {};
 	$self-> {page_images}    = [];
 	$self-> {page_fonts}     = {};
 	$self-> {page_rops}      = {};
@@ -705,43 +709,103 @@ sub alpha
 	$self-> {changed}->{alpha} = 1;
 }
 
-sub fillPattern
+sub emit_pattern
 {
-	return $_[0]-> SUPER::fillPattern unless $#_;
-	$_[0]-> SUPER::fillPattern( $_[1]);
-	return unless $_[0]-> {can_draw};
+	my ( $self, $fpid, $fp) = @_;
 
-	my $self = $_[0];
-	my @fp  = @{$self-> SUPER::fillPattern};
-	my $solidBack = ! grep { $_ != 0 } @fp;
-	my $solidFore = ! grep { $_ != 0xff } @fp;
-	my $fpid;
-	my @scaleto = $self-> pixel2point( 8, 8);
 	my $xid;
-	if ( !$solidBack && !$solidFore) {
-		$fpid = join( '', map { sprintf("%02x", $_)} @fp);
-		unless ( exists $self-> {fp_hash}-> {$fpid}) {
-			$xid  = $self-> new_dummy_obj;
-			my $bits = pack('C*', @fp);
-			my $patdef = <<PAT;
+	unless ( exists $self-> {fp_hash}-> {$fpid}) {
+		$xid  = $self-> new_dummy_obj;
+		$self-> {fp_hash}-> {$fpid} = $xid;
+		$self->{page_patterns}->{$xid}++;
+	} else {
+		$xid = $self-> {fp_hash}-> {$fpid};
+		$self->{page_patterns}->{$xid}++;
+		return $xid;
+	}
+
+	my (@sz, $imgdef, $depth, $paint, $proc, $cs, $imagemask, $maskdef);
+	$imgdef  = '';
+	$maskdef = '';
+	$paint     = 2;
+	$depth     = '1';
+	$proc      = 'ImageB';
+	$cs        = 'G';
+	$imagemask = 'true';
+	if ( ref($fp) eq 'ARRAY') {
+		@sz        = (8,8);
+		$imgdef    = pack('C*', @$fp);
+	} else {
+		@sz = $fp->size;
+		my ( $ls, $stride, $data );
+		if ( $fp->type == im::BW ) {
+			$stride    = int($fp-> width / 8) +!!+ ($fp->width % 8);
+		} else {
+			$paint     = 1;
+			$fp        = $self->prepare_image($fp);
+			$depth     = $fp->get_bpp;
+			$imagemask = 'false';
+			if ( $depth != 8 ) {
+				$depth   = 8;
+				$proc    = 'ImageC';
+				$cs      = 'RGB';
+			} else {
+				$proc    = 'ImageI';
+				$cs      = 'G';
+			}
+			$stride  = $fp->get_bpp * $fp->width / 8;
+			$self->{color_patterns}->{$xid} = 1;
+		}
+		$ls      = $fp->lineSize;
+		$data    = $fp->data;
+		for my $y ( 0 .. $fp->height - 1 ) {
+			$imgdef .= substr($data, $y * $ls, $stride);
+		}
+
+		if ( $fp->isa('Prima::Icon')) {
+			$maskdef = <<MASKDEF;
 q
 BI
 /IM true
 /W 8
 /H 8
 /BPC 1
-ID $bits
+/CS /G
+MASKDEF
+			$maskdef  .= "ID ";
+			$ls        = $fp->maskLineSize;
+			$data      = $fp->mask;
+			$stride    = int($fp-> width / 8) +!!+ ($fp->width % 8);
+			for my $y ( 0 .. $fp->height - 1 ) {
+				$maskdef .= substr($data, $y * $ls, $stride);
+			}
+			$maskdef  .= "\nEI Q\n";
+		}
+	}
+	my $patdef  = <<PAT . $maskdef;
+q
+BI
+/IM $imagemask
+/W $sz[0]
+/H $sz[1]
+/BPC $depth
+/CS /$cs
+ID $imgdef
 EI Q
 PAT
-			$self-> emit_new_object( $xid, <<PATTERNDEF);
+
+	# PatternType 1 = Tiling pattern
+	# PaintType   1 = Clored
+	# PaintType   2 = Uncolored
+	$self-> emit_new_object( $xid, <<PATTERNDEF);
 <<
 /Type /Pattern
 /BBox [0 0 1 1]
 /Length ${ \length $patdef }
-/PaintType 2 % Uncolored
-/PatternType 1 % Tiling pattern
+/PaintType $paint
+/PatternType 1
 /Resources <<
-/ProcSet [ /PDF /ImageB ]
+/ProcSet [ /PDF /$proc ]
 >>
 /TilingType 1
 /XStep 1
@@ -752,11 +816,37 @@ $patdef
 endstream
 endobj
 PATTERNDEF
-			$self-> {fp_hash}-> {$fpid} = $xid;
-		} else {
-			$xid = $self-> {fp_hash}-> {$fpid};
+
+	return $xid;
+}
+
+sub fillPattern
+{
+	return $_[0]-> SUPER::fillPattern unless $#_;
+	$_[0]-> SUPER::fillPattern( $_[1]);
+	return unless $_[0]-> {can_draw};
+
+	my $self = $_[0];
+	my $fp   = $self-> SUPER::fillPattern;
+	my ($solidBack, $solidFore) = (0,0);
+	my $xid;
+	if( (ref($fp) // '') eq 'ARRAY') {
+		$solidBack = ! grep { $_ != 0    } @$fp;
+		$solidFore = ! grep { $_ != 0xff } @$fp;
+		if ( !$solidBack && !$solidFore) {
+			my $fpid = join( '', map { sprintf("%02x", $_)} @$fp);
+			$xid  = $self-> emit_pattern($fpid, $fp);
 		}
-		$self->{page_patterns}->{$xid}++;
+	} elsif ( UNIVERSAL::isa($fp, 'Prima::Image')) {
+		my $fpid = "$fp";
+		$fpid =~ s/^Prima::(Image|Icon)=HASH\((.*)\)/$2/; # most common case
+		$fpid =~ s/(\W)/sprintf("%02x", ord($1))/ge;      # just in case
+		$fpid = (( $fp->type == im::BW ) ? "Mono_" : "Color_") . $fpid;
+
+		my $icon    = $fp->isa('Prima::Icon'); # XXX
+		$xid  = $self-> emit_pattern($fpid, $fp);
+	} else {
+		$solidFore = 1;
 	}
 	$self-> {fpType} = $solidBack ? 'B' : ( $solidFore ? 'F' : $xid);
 	$self-> {changed}-> {fill} = 1;
@@ -1184,42 +1274,7 @@ sub put_image_indirect
 	my ( $self, $image, $x, $y, $xFrom, $yFrom, $xDestLen, $yDestLen, $xLen, $yLen, $rop) = @_;
 	return 1 if $rop == rop::NoOper;
 
-	my $touch;
-	$touch = 1, $image = $image-> image if $image-> isa('Prima::DeviceBitmap');
-
-	unless ( $xFrom == 0 && $yFrom == 0 && $xLen == $image-> width && $yLen == $image-> height) {
-		$image = $image-> extract( $xFrom, $yFrom, $xLen, $yLen);
-		$touch = 1;
-	}
-
-	my $ib = $image-> get_bpp;
-	if ( $ib != $self-> get_bpp) {
-		$image = $image-> dup unless $touch;
-		if ( $self-> {grayscale} || $image-> type & im::GrayScale) {
-			$image-> type( im::Byte);
-		} else {
-			$image-> type( im::RGB);
-		}
-		$touch = 1;
-	} elsif ( $self-> {grayscale} || $image-> type & im::GrayScale) {
-		$image = $image-> dup unless $touch;
-		$image-> type( im::Byte);
-		$touch = 1;
-	}
-
-	$ib = $image-> get_bpp;
-	if ($ib != 8 && $ib != 24) {
-		$image = $image-> dup unless $touch;
-		$image-> type( im::RGB);
-		$touch = 1;
-	}
-
-	if ( $image-> type == im::RGB ) {
-		# invert BGR -> RGB
-		$image = $image-> dup unless $touch;
-		$image-> set(data => $image->data, type => im::fmtBGR | im::RGB);
-		$touch = 1;
-	}
+	$image = $self->prepare_image($image, $xFrom, $yFrom, $xLen, $yLen);
 
 	my @is = $image-> size;
 	($x, $y, $xDestLen, $yDestLen) = $self-> pixel2point( $x, $y, $xDestLen, $yDestLen);
@@ -1231,11 +1286,6 @@ sub put_image_indirect
 	my $xid2;
 	my $mask = '';
 	if ( $image-> isa('Prima::Icon')) {
-		if ( $image-> maskType != 1 && $image-> maskType != 8) {
-			$image = $image-> dup unless $touch;
-			$image-> set(maskType => 1);
-			$touch = 1;
-		}
 		my $obj;
 		($xid2, $obj) = $self-> new_file_obj;
 		my $g  = $image-> mask;
