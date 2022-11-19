@@ -973,6 +973,7 @@ EOF
 		$passthru_options{LDDLFLAGS} .= " $OPENMP";
 		my @savelibs = @LIBS;
 #		push @LIBS, 'gomp' if $compiler_type eq 'gcc';
+		push @LIBS, 'vcompd' if $compiler_type eq 'cl';
 		if ( compile_and_run($text)) {
 		YES_OPENMP:
 			$DEFINES{HAVE_OPENMP} = 1;

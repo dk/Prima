@@ -13,7 +13,7 @@ int
 prima_omp_max_threads(void)
 {
 	return
-#ifdef HAVE_OPENMP
+#if defined(HAVE_OPENMP) && !defined(_MSC_VER)
 		omp_get_max_threads()
 #else
 		1
@@ -25,7 +25,7 @@ int
 prima_omp_thread_num(void)
 {
 	return
-#ifdef HAVE_OPENMP
+#if defined(HAVE_OPENMP) && !defined(_MSC_VER)
 		omp_get_thread_num()
 #else
 		0
@@ -36,7 +36,7 @@ prima_omp_thread_num(void)
 void
 prima_omp_set_num_threads(int num)
 {
-#ifdef HAVE_OPENMP
+#if defined(HAVE_OPENMP) && !defined(_MSC_VER)
 	omp_set_num_threads(num);
 #endif
 }
