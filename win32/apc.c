@@ -1,5 +1,4 @@
 #include "win32\win32guts.h"
-#error 2
 #include <commdlg.h>
 #ifndef _APRICOT_H_
 #include "apricot.h"
