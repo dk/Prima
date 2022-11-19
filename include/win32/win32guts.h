@@ -6,6 +6,12 @@
 #define Rect xxRect
 #define Color xxColor
 #define Point xxPoint
+#ifdef _MSC_VER
+#undef __inline__
+#define __inline__
+#undef CALLBACK
+#define CALLBACK
+#endif
 #include <gdiplus/gdiplus.h>
 #undef Rect
 #undef Color

@@ -18,7 +18,7 @@
 #	define _GNU_SOURCE
 #endif
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && (_MSC_VER < 1700)
 	#define BROKEN_COMPILER       1
 	#define BROKEN_PERL_PLATFORM  1
 	#define snprintf              _snprintf
@@ -4061,6 +4061,9 @@ apc_fs_opendir( const char *path, PDirHandleRec dh);
 extern int
 apc_fs_open_file( const char* path, Bool is_utf8, int flags, int mode);
 
+#ifndef PATH_MAX
+# define PATH_MAX 2047
+#endif
 #define PATH_MAX_UTF8 (PATH_MAX*6)
 extern Bool
 apc_fs_readdir( PDirHandleRec dh, char * entry);
