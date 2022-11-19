@@ -141,8 +141,8 @@ sub is_custom_line
 {
 	my ($self, $for_closed_shapes) = shift;
 	return $self->{lineEnd_flags} ? (
-		$for_closed_shapes ? ( $self->{lineEnd_flags} & 2 ) : 0
-	) : 1;
+		$for_closed_shapes ? ( $self->{lineEnd_flags} & 2 ) : 1
+	) : 0;
 }
 
 # properties
@@ -163,18 +163,41 @@ sub fillPatternOffset
 	$_[0]-> {changed}-> {fillPatternOffset} = 1;
 }
 
+sub lineTail  { shift->line_properties( lineTail  => @_ ); }
+sub lineHead  { shift->line_properties( lineHead  => @_ ); }
+sub arrowTail { shift->line_properties( arrowTail => @_ ); }
+sub arrowHead { shift->line_properties( arrewHead => @_ ); }
+
+sub update_custom_line
+{
+	my ( $self, $le ) = @_;
+	$le //= $self->SUPER::lineEnd;
+	my $lp = (length($self->linePattern) > 1) ? 1 : 0;
+	$self->{lineEnd_flags} = ref($le) ? 1 : $lp;
+	if ( $self->{lineEnd_flags} ) {
+		$self->{lineEnd_flags} |= 2 if $lp || defined($le->[2]) || defined($le->[3]);
+	} else {
+		$self-> {changed}-> {lineEnd} = 1;
+	}
+}
+
+sub line_properties
+{
+	my ( $self, $lp, @cmd ) = @_;
+	$lp = "SUPER::" . $lp;
+	return $self-> $lp unless @cmd;
+	$self->$lp(@cmd);
+	return unless $self-> {can_draw};
+	$self-> update_custom_line;
+}
+
 sub lineEnd
 {
 	return $_[0]-> SUPER::lineEnd unless $#_;
 	my ( $self, $le ) = @_;
 	$self-> SUPER::lineEnd($le);
 	return unless $self-> {can_draw};
-	$self->{lineEnd_flags} = ref($le) ? 1 : 0;
-	if ( $self->{lineEnd_flags} ) {
-		$self->{lineEnd_flags} |= 2 if !defined($le->[2]) && !defined($le->[3]);
-	} else {
-		$self-> {changed}-> {lineEnd} = 1;
-	}
+	$self-> update_custom_line( $le );
 }
 
 sub lineJoin
@@ -197,6 +220,7 @@ sub linePattern
 	$_[0]-> SUPER::linePattern($_[1]);
 	return unless $_[0]-> {can_draw};
 	$_[0]-> {changed}-> {linePattern} = 1;
+	$_[0]-> update_custom_line;
 }
 
 sub lineWidth
@@ -681,6 +705,14 @@ sub primitive
 	}
 
 	if ( $self->graphic_context_push ) {
+		if ( $self-> rop2 == rop::CopyPut ) {
+			my $color = $self->color;
+			$self->color($self->backColor);
+			$self->lineEnd(le::Flat);
+			$self->linePattern(lp::Solid);
+			$self->$cmd(@param);
+			$self->color($color);
+		}
 		$self->fillPattern(fp::Solid);
 		$dst->fill;
 		$self->graphic_context_pop;

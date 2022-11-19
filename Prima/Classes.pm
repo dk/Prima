@@ -736,10 +736,10 @@ sub translate
 	$_[0]->matrix($m);
 }
 
-sub lineTail  { $#_ ? $_[0]->lineEndIndex(-1, $_[1]) : $_[0]->lineEndIndex(0) }
-sub lineHead  { $#_ ? $_[0]->lineEndIndex(1, $_[1])  : $_[0]->lineEndIndex(1) }
-sub arrowTail { $#_ ? $_[0]->lineEndIndex(2, $_[1])  : $_[0]->lineEndIndex(2) }
-sub arrowHead { $#_ ? $_[0]->lineEndIndex(3, $_[1])  : $_[0]->lineEndIndex(3) }
+sub lineTail  { $#_ ? $_[0]->lineEndIndex(-1, $_[1])  : $_[0]->lineEndIndex(-1) }
+sub lineHead  { $#_ ? $_[0]->lineEndIndex(-2, $_[1])  : $_[0]->lineEndIndex(-2) }
+sub arrowTail { $#_ ? $_[0]->lineEndIndex(-3, $_[1])  : $_[0]->lineEndIndex(-3) }
+sub arrowHead { $#_ ? $_[0]->lineEndIndex(-4, $_[1])  : $_[0]->lineEndIndex(-4) }
 
 package Prima::Image;
 use vars qw( @ISA);

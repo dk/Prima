@@ -324,29 +324,33 @@ Drawable_lineEnd( Handle self, Bool set, SV *lineEnd)
 SV*
 Drawable_lineEndIndex( Handle self, Bool set, int index, SV *lineEnd)
 {
-	if ( index > 3 )
+	if ( index > 3 || index < -4 )
 		return NULL_SV;
+	/*
+		leDefault is special, depending on the index:
+		0 (line tail) cannot be leDefault, because other may reference it
+		1 (line head) if leDefault, same as 0
+		2 (arrow tail) if leDefault, same as 0
+		3 (arrow head) if leDefault, same as 1, which if is also leDefault, then same as 0
+	*/
 	if (!set) {
 		if ( index < 0 ) {
-			if ( index < -4 )
-				return NULL_SV;
 			index = -index - 1;
-			if ( GS.line_end[index].type == leDefault )
-				index = 0;
+			while ( index > 0 && GS.line_end[index].type == leDefault)
+				index = (index == 3) ? 1 : 0;
 		}
 		return produce_line_end(self, index);
-	} else {
-		if ( index < -1 )
-			return NULL_SV;
-		if ( index == -1 ) {
-			int i;
-			for ( i = 1; i < 4; i++) {
-				if (GS.line_end[i].type == leDefault) {
-					GS.line_end[i] = GS.line_end[0];
-					line_end_refcnt( &GS, i, +1);
-				}
+	} else if ( index == -1 ) {
+		int i;
+		for ( i = 1; i < 3; i++) {
+			if (GS.line_end[i].type == leDefault) {
+				GS.line_end[i] = GS.line_end[0];
+				line_end_refcnt( &GS, i, +1);
 			}
 		}
+	} else if ( index == -2 && GS.line_end[3].type == leDefault) {
+		GS.line_end[3] = GS.line_end[1];
+		line_end_refcnt( &GS, 3, +1);
 	}
 
 	line_end_refcnt( &GS, index, -1);

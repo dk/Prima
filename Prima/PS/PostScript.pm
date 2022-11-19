@@ -229,10 +229,15 @@ sub stroke
 			if ( length( $lp) == 1) {
 				$self-> emit('[] 0 SD');
 			} else {
-				my @x = split('', $lp);
+				my $lw = $self->lineWidth;
+				my @x = map { ord } split('', $lp);
 				push( @x, 0) if scalar(@x) % 1;
-				@x = map { ord($_) } @x;
-				$self-> emit("[@x] 0 SD");
+				my @lp;
+				for ( my $i = 0; $i < @x; $i += 2 ) {
+					push @lp, $x[$i];
+					push @lp, ($x[$i+1] - 1) * $lw / 2;
+				}
+				$self-> emit("[@lp] 0 SD");
 			}
 			$self-> {changed}-> {linePattern} = 0;
 		}
@@ -410,6 +415,66 @@ sub pages { $_[0]-> {pages} }
 
 # properties
 
+sub emit_pattern
+{
+	my ( $self, $fpid, $fp) = @_;
+
+	my (@sz, $imgdef, $imgcdef, $depth, $paint);
+	$imgdef = '';
+	if ( ref($fp) eq 'ARRAY') {
+		@sz      = (8,8);
+		$paint   = 2;
+		$imgcdef = 'I';
+		$depth   = 't';
+		$imgdef  = join( '', map { sprintf("%02x", $_)} @$fp);
+	} else {
+		@sz = $fp->size;
+		my ( $ls, $stride, $data );
+		if ( $fp->type == im::BW ) {
+			$paint   = 2;
+			$depth   = 't';
+			$imgcdef = 'I';
+			$stride  = int($fp-> width / 8) +!!+ ($fp->width % 8);
+		} else {
+			$paint   = 1;
+			$depth   = '8';
+			$imgcdef = ($fp->type & im::GrayScale) ? 'image' : 'false 3 colorimage';
+			$fp      = $self->prepare_image($fp);
+			$stride  = $fp->get_bpp * $fp->width / 8;
+		}
+		$ls      = $fp->lineSize;
+		$data    = $fp->data;
+		for my $y ( 0 .. $fp->height - 1 ) {
+			$imgdef .= unpack("H*", substr($data, $y * $ls, $stride));
+		}
+	}
+	my @scaleto = $self-> pixel2point(@sz);
+
+	# PatternType 1 = Tiling pattern
+	# PaintType   1 = Clored
+	# PaintType   2 = Uncolored
+	$self-> emit( <<PATTERNDEF);
+<<
+\/PatternType 1
+\/PaintType $paint
+\/TilingType 1
+\/BBox [ 0 0 @scaleto]
+\/XStep $scaleto[0]
+\/YStep $scaleto[1]
+\/PaintProc { b
+:
+@scaleto Z
+@sz $depth
+[$sz[0] 0 0 $sz[0] 0 0]
+< $imgdef > $imgcdef
+;
+e
+} bind
+>> MX MP
+\/Pat_$fpid ~ d
+PATTERNDEF
+}
+
 sub fillPattern
 {
 	return $_[0]-> SUPER::fillPattern unless $#_;
@@ -428,27 +493,7 @@ sub fillPattern
 		if ( !$solidBack && !$solidFore) {
 			$fpid = join( '', map { sprintf("%02x", $_)} @$fp);
 			unless ( exists $self-> {fp_hash}-> {$fpid}) {
-				$self-> emit( <<PATTERNDEF);
-<<
-\/PatternType 1 \% Tiling pattern
-\/PaintType 2 \% Uncolored
-\/TilingType 1
-\/BBox [ 0 0 @scaleto]
-\/XStep $scaleto[0]
-\/YStep $scaleto[1]
-\/PaintProc { b
-:
-@scaleto Z
-8 8 t
-[8 0 0 8 0 0]
-< $fpid > I
-;
-e
-} bind
->> MX MP
-\/Pat_$fpid ~ d
-
-PATTERNDEF
+				$self-> emit_pattern($fpid, $fp);
 				$self-> {fp_hash}-> {$fpid} = 1;
 			}
 		}
@@ -456,75 +501,11 @@ PATTERNDEF
 		$fpid = "$fp";
 		$fpid =~ s/^Prima::(Image|Icon)=HASH\((.*)\)/$2/; # most common case
 		$fpid =~ s/(\W)/sprintf("%02x", ord($1))/ge;      # just in case
+		$fpid = (( $fp->type == im::BW ) ? "Mono_" : "Color_") . $fpid;
 
-		my $icon    = $fp->isa('Prima::Icon');
-		my @sz      = $fp-> size;
-		my @scaleto = $self-> pixel2point( @sz );
+		my $icon    = $fp->isa('Prima::Icon'); # XXX
 		unless ( exists $self-> {fp_hash}-> {$fpid}) {
-			my $imagemask = '';
-			if ( $fp->type == im::BW ) {
-				$fpid = "Mono_$fpid";
-				my $imgdef = '';
-				my $ls     = $fp->lineSize;
-				my $stride = int($fp-> width / 8) +!!+ ($fp->width % 8);
-				my $data   = $fp->data;
-				for my $y ( 0 .. $fp->height - 1 ) {
-					$imgdef .= unpack("H*", substr($data, $y * $ls, $stride));
-				}
-				$self-> emit( <<PATTERNDEF);
-<<
-\/PatternType 1 \% Tiling pattern
-\/PaintType 2 \% Uncolored
-\/TilingType 1
-\/BBox [ 0 0 @scaleto]
-\/XStep $scaleto[0]
-\/YStep $scaleto[1]
-\/PaintProc { b
-:
-@scaleto Z
-@sz t
-[$sz[0] 0 0 $sz[0] 0 0]
-< $imgdef > I
-;
-e
-} bind
->> MX MP
-\/Pat_$fpid ~ d
-
-PATTERNDEF
-			} else {
-				$fpid = "Color_$fpid";
-				$fp = $self->prepare_image($fp);
-				my $imgdef = '';
-				my $imgcdef = ($fp->type & im::GrayScale) ? 'image' : 'false 3 colorimage';
-				my $ls     = $fp->lineSize;
-				my $stride = $fp->get_bpp * $fp->width / 8;
-				my $data   = $fp->data;
-				for my $y ( 0 .. $fp->height - 1 ) {
-					$imgdef .= unpack("H*", substr($data, $y * $ls, $stride));
-				}
-				$self-> emit( <<PATTERNDEF);
-<<
-\/PatternType 1 \% Tiling pattern
-\/PaintType 1 \% Colored
-\/TilingType 1
-\/BBox [ 0 0 @scaleto]
-\/XStep $scaleto[0]
-\/YStep $scaleto[1]
-\/PaintProc { b
-:
-@scaleto Z
-@sz 8
-[$sz[0] 0 0 $sz[0] 0 0]
-< $imgdef > $imgcdef
-;
-e
-} bind
->> MX MP
-\/Pat_$fpid ~ d
-
-PATTERNDEF
-			}
+			$self-> emit_pattern($fpid, $fp);
 			$self-> {fp_hash}-> {$fpid} = 1;
 		}
 	}
@@ -872,7 +853,7 @@ CLEAR
 sub line
 {
 	my ( $self, $x1, $y1, $x2, $y2) = @_;
-	return $self->primitive( line => $x1, $y1, $x2, $y2);
+	return $self->primitive( line => $x1, $y1, $x2, $y2) if $self-> is_custom_line(1);
 	( $x1, $y1, $x2, $y2) = float_format($self-> pixel2point( $x1, $y1, $x2, $y2));
 	$self-> stroke("N $x1 $y1 M $x2 $y2 l O");
 }
@@ -880,7 +861,7 @@ sub line
 sub lines
 {
 	my ( $self, $array) = @_;
-	return $self->primitive( lines => $array );
+	return $self->primitive( lines => $array ) if $self-> is_custom_line(1);
 	my $i;
 	my $c = scalar @$array;
 	my @a = float_format($self-> pixel2point( @$array));
@@ -895,7 +876,7 @@ sub lines
 sub polyline
 {
 	my ( $self, $array) = @_;
-	return $self->primitive( polyline => $array );
+	return $self->primitive( polyline => $array ) if $self-> is_custom_line(1);
 	my $i;
 	my $c = scalar @$array;
 	my @a = float_format($self-> pixel2point( @$array));
