@@ -761,28 +761,8 @@ sub emit_pattern
 		for my $y ( 0 .. $fp->height - 1 ) {
 			$imgdef .= substr($data, $y * $ls, $stride);
 		}
-
-		if ( $fp->isa('Prima::Icon')) {
-			$maskdef = <<MASKDEF;
-q
-BI
-/IM true
-/W 8
-/H 8
-/BPC 1
-/CS /G
-MASKDEF
-			$maskdef  .= "ID ";
-			$ls        = $fp->maskLineSize;
-			$data      = $fp->mask;
-			$stride    = int($fp-> width / 8) +!!+ ($fp->width % 8);
-			for my $y ( 0 .. $fp->height - 1 ) {
-				$maskdef .= substr($data, $y * $ls, $stride);
-			}
-			$maskdef  .= "\nEI Q\n";
-		}
 	}
-	my $patdef  = <<PAT . $maskdef;
+	my $patdef  = <<PAT;
 q
 BI
 /IM $imagemask
