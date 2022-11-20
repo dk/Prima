@@ -87,36 +87,34 @@ sub change_transform
 	my ( $self, $gsave ) = @_;
 	return if $self-> {delay};
 
-	my @tp = $self-> translate;
 	my @cr = $self-> clipRect;
-	my @sc = $self-> scale;
-	my $ro = $self-> rotate;
 	my $rg = $self-> region;
+	my $m  = $self-> matrix;
 	$cr[2] -= $cr[0];
 	$cr[3] -= $cr[1];
 	my $doClip = grep { $_ != 0 } @cr;
-	my $doTR   = grep { $_ != 0 } @tp;
-	my $doSC   = grep { $_ != 0 } @sc;
+	my $doMx   = !$m->is_identity;
 
-	if ( !$doClip && !$doTR && !$doSC && !$ro) {
+	if ( !$doClip && !$doMx) {
 		$self-> emit(':') if $gsave;
 		return;
 	}
 
 	@cr = $self-> pixel2point( @cr);
-	@tp = $self-> pixel2point( @tp);
 	my $mcr3 = -$cr[3];
 
 	$self-> emit(';') unless $gsave;
 	$self-> emit(':');
-	float_inplace(@cr, @tp, @sc, $mcr3, $ro);
+	float_inplace(@cr, $mcr3, @$m);
 	$self-> emit(<<CLIP) if $doClip;
 N $cr[0] $cr[1] M 0 $cr[3] L $cr[2] 0 L 0 $mcr3 L X C
 CLIP
-	$self-> emit("@tp T") if $doTR;
+	if ( $doMx ) {
+		my @tm = $self-> pixel2point( @$m[4,5] );
+		my @xm = @$m[0..3];
+		$self-> emit("[@xm @tm] SM") if $doMx;
+	}
 	$self-> emit($rg-> apply_offset) if $rg && !$doClip;
-	$self-> emit("@sc Z") if $doSC;
-	$self-> emit("$ro R") if $ro != 0;
 	$self-> {changed}-> {$_} = 1 for qw(fill linePattern lineWidth lineJoin lineEnd miterLimit font);
 }
 
@@ -458,6 +456,8 @@ sub emit_pattern
 	# PaintType   1 = Colored
 	# PaintType   2 = Uncolored
 	$self-> emit( <<PATTERNDEF);
+:
+[1 0 0 1 0 0] SM
 <<
 \/PatternType 1
 \/PaintType $paint
@@ -476,6 +476,7 @@ e
 } bind
 >> MX MP
 \/Pat_$fpid ~ d
+;
 PATTERNDEF
 }
 
@@ -519,14 +520,6 @@ sub copies
 {
 	return $_[0]-> {copies} unless $#_;
 	$_[0]-> {copies} = $_[1] unless $_[0]-> get_paint_state;
-}
-
-sub matrix
-{
-	return $_[0]-> SUPER::matrix unless $#_;
-	my ( $self, $m ) = @_;
-	$self->SUPER::matrix($m);
-	$self->emit("[@$m] SM")
 }
 
 sub pageDevice
@@ -1111,14 +1104,6 @@ left, bottom, right and top margins in points.
 =item ::reversed
 
 if 1, a 90 degrees rotated document layout is assumed
-
-=item ::rotate and ::scale
-
-along with Prima::Drawable::translate provide PS-specific
-transformation matrix manipulations. ::rotate is number,
-measured in degrees, counter-clockwise. ::scale is array of
-two numbers, respectively x- and y-scale. 1 is 100%, 2 is 200%
-etc.
 
 =back
 

@@ -79,43 +79,33 @@ sub change_transform
 		$ps->[1] - $pm->[3] - $pm->[1]
 	);
 
-	my @tp = $self-> translate;
 	my @cr = $self-> clipRect;
-	my @sc = $self-> scale;
-	my $ro = $self-> rotate;
 	my $rg = $self-> region;
-	if ( $self->{reversed}) {
-		$ro += 90; $tp[1] -= ($self->point2pixel($pm[2]))[0];
-		$ro /= $Prima::PS::Drawable::RAD;
-	}
 
 	$cr[2] -= $cr[0];
 	$cr[3] -= $cr[1];
 	my $doClip = grep { $_ != 0 } @cr;
-	my $doSC   = grep { $_ != 0 } @sc;
-	my $doTR   = grep { $_ != 0 } @tp;
 
 	@cr = $self-> pixel2point( @cr);
-	@tp = $self-> pixel2point( @tp );
-	my $mcr3 = -$cr[3];
 
 	$self-> emit_content('Q') unless $gsave;
 	$self-> emit_content('q');
 
-	float_inplace(@pm, @cr, @tp, @sc);
 	$self-> emit_content("h @pm re W n");
-	$self-> emit_content("1 0 0 1 $pm[0] $pm[1] cm");
-	if ($ro != 0) {
-		my $sin1 = sin($ro);
-		my $cos  = cos($ro);
-		my $sin2 = -$sin1;
-		float_inplace($cos, $sin1, $sin2);
-		$self-> emit_content("$cos $sin1 $sin2 $cos 0 0 cm");
+
+	my $m  = $self-> matrix;
+	if ( $self->{reversed}) {
+		$$m[5] -= ($self->point2pixel($pm[2]))[0];
+		$m->rotate(90);
 	}
+	my @tm = $self-> pixel2point( @$m[4,5] );
+	$tm[$_] += $pm[$_] for 0,1;
+	my @xm = @$m[0..3];
+	float_inplace(@pm, @cr, @xm, @tm);
+	$self-> emit_content("@xm @tm cm");
+
 	$self-> emit_content("h @cr re W n") if $doClip;
-	$self-> emit_content("1 0 0 1 @tp cm") if $doTR;
 	$self-> emit_content($rg-> apply_offset . " n") if $rg && !$doClip;
-	$self-> emit_content("$sc[0] 0 0 $sc[1] 0 0 cm") if $doSC;
 	$self-> {changed}-> {$_} = 1 for qw(fill linePattern lineWidth lineJoin lineEnd miterLimit font);
 }
 
@@ -839,14 +829,6 @@ sub compress
 	$self-> {compress} = $_[1];
 }
 
-sub matrix
-{
-	return $_[0]-> SUPER::matrix unless $#_;
-	my ( $self, $m ) = @_;
-	$self->SUPER::matrix($m);
-	$self->emit("@$m cm")
-}
-
 sub graphic_context_push
 {
 	my $self = shift;
@@ -869,7 +851,7 @@ sub arc
 	return $self->primitive( arc => $x, $y, $dx, $dy, $start, $end) if $self-> is_custom_line;
 	( $x, $y, $dx, $dy) = $self-> pixel2point( $x, $y, $dx, $dy);
 
-	my $cubics  = $self-> arc2cubics($x, $y, $dx, $dy, $start, $end);
+	my $cubics  = Prima::Drawable::Path->arc2cubics($x, $y, $dx, $dy, $start, $end);
 	my $content = "@{ $cubics->[0] }[0,1] m\n";
 	$content   .= "@{$_}[2..7] c\n" for @$cubics;
 	$self-> stroke( $content . " S");
@@ -881,7 +863,7 @@ sub chord
 	return $self->primitive( chord => $x, $y, $dx, $dy, $start, $end) if $self-> is_custom_line(1);
 	( $x, $y, $dx, $dy) = $self-> pixel2point( $x, $y, $dx, $dy);
 
-	my $cubics  = $self-> arc2cubics($x, $y, $dx, $dy, $start, $end);
+	my $cubics  = Prima::Drawable::Path->arc2cubics($x, $y, $dx, $dy, $start, $end);
 	my $content = "@{ $cubics->[0] }[0,1] m\n";
 	$content   .= "@{$_}[2..7] c\n" for @$cubics;
 	$self-> stroke( $content . " h S");
@@ -893,7 +875,7 @@ sub ellipse
 	return $self->primitive( ellipse => $x, $y, $dx, $dy) if $self-> is_custom_line(1);
 	( $x, $y, $dx, $dy) = $self-> pixel2point( $x, $y, $dx, $dy);
 
-	my $cubics  = $self-> arc2cubics($x, $y, $dx, $dy, 0, 360);
+	my $cubics  = Prima::Drawable::Path->arc2cubics($x, $y, $dx, $dy, 0, 360);
 	my $content = "@{ $cubics->[0] }[0,1] m\n";
 	$content   .= "@{$_}[2..7] c\n" for @$cubics;
 	$self-> stroke( $content . " h S");
@@ -904,7 +886,7 @@ sub fill_chord
 	my ( $self, $x, $y, $dx, $dy, $start, $end) = @_;
 	( $x, $y, $dx, $dy) = $self-> pixel2point( $x, $y, $dx, $dy);
 
-	my $cubics  = $self-> arc2cubics($x, $y, $dx, $dy, $start, $end);
+	my $cubics  = Prima::Drawable::Path->arc2cubics($x, $y, $dx, $dy, $start, $end);
 	my $content = "@{ $cubics->[0] }[0,1] m\n";
 	$content   .= "@{$_}[2..7] c\n" for @$cubics;
 	my $F = (($self-> fillMode & fm::Winding) == fm::Alternate) ? 'f*' : 'f';
@@ -916,7 +898,7 @@ sub fill_ellipse
 	my ( $self, $x, $y, $dx, $dy) = @_;
 	( $x, $y, $dx, $dy) = $self-> pixel2point( $x, $y, $dx, $dy);
 
-	my $cubics  = $self-> arc2cubics($x, $y, $dx, $dy, 0, 360);
+	my $cubics  = Prima::Drawable::Path->arc2cubics($x, $y, $dx, $dy, 0, 360);
 	my $content = "@{ $cubics->[0] }[0,1] m\n";
 	$content   .= "@{$_}[2..7] c\n" for @$cubics;
 	$self-> stroke( $content . " h f");
@@ -928,7 +910,7 @@ sub sector
 	return $self->primitive( sector => $x, $y, $dx, $dy, $start, $end) if $self-> is_custom_line(1);
 	( $x, $y, $dx, $dy) = $self-> pixel2point( $x, $y, $dx, $dy);
 
-	my $cubics  = $self-> arc2cubics($x, $y, $dx, $dy, $start, $end);
+	my $cubics  = Prima::Drawable::Path->arc2cubics($x, $y, $dx, $dy, $start, $end);
 	my $content = "$x $y m @{ $cubics->[0] }[0,1] l\n";
 	$content   .= "@{$_}[2..7] c\n" for @$cubics;
 	$self-> stroke( $content . " h S");
@@ -939,7 +921,7 @@ sub fill_sector
 	my ( $self, $x, $y, $dx, $dy, $start, $end) = @_;
 	( $x, $y, $dx, $dy) = $self-> pixel2point( $x, $y, $dx, $dy);
 
-	my $cubics  = $self-> arc2cubics($x, $y, $dx, $dy, $start, $end);
+	my $cubics  = Prima::Drawable::Path->arc2cubics($x, $y, $dx, $dy, $start, $end);
 	my $content = "$x $y m @{ $cubics->[0] }[0,1] l\n";
 	$content   .= "@{$_}[2..7] c" for @$cubics;
 	my $F = (($self-> fillMode & fm::Winding) == fm::Alternate) ? 'f*' : 'f';
@@ -1492,14 +1474,6 @@ left, bottom, right and top margins in points.
 =item ::reversed
 
 if 1, a 90 degrees rotated document layout is assumed
-
-=item ::rotate and ::scale
-
-along with Prima::Drawable::translate provide PS-specific
-transformation matrix manipulations. ::rotate is number,
-measured in degrees, counter-clockwise. ::scale is array of
-two numbers, respectively x- and y-scale. 1 is 100%, 2 is 200%
-etc.
 
 =back
 

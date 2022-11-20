@@ -259,20 +259,20 @@ sub rop2
 	$self-> SUPER::rop2( $rop);
 }
 
-sub translate
-{
-	return $_[0]-> SUPER::translate unless $#_;
-	my $self = shift;
-	$self-> SUPER::translate(@_);
-	$self-> change_transform;
-}
-
 sub clipRect
 {
 	return @{$_[0]-> {clipRect}} unless $#_;
 	$_[0]-> {clipRect} = [@_[1..4]];
 	$_[0]-> {region} = undef;
 	$_[0]-> change_transform;
+}
+
+sub matrix
+{
+	return $_[0]->SUPER::matrix unless $#_;
+	my ( $self, @m ) = @_;
+	$self->SUPER::matrix(@m);
+	$self->change_transform;
 }
 
 sub region
@@ -282,10 +282,10 @@ sub region
 
 sub scale
 {
-	return @{$_[0]-> {scale}} unless $#_;
-	my $self = shift;
-	$self-> {scale} = [@_[0,1]];
-	$self-> change_transform;
+	my ( $self, @scale ) = @_;
+	my $m = $self-> matrix;
+	$m->scale(@scale);
+	$self->matrix($m);
 }
 
 sub reversed
@@ -298,10 +298,11 @@ sub reversed
 
 sub rotate
 {
-	return $_[0]-> {rotate} unless $#_;
-	my $self = $_[0];
-	$self-> {rotate} = $_[1];
-	$self-> change_transform;
+	my ( $self, $angle ) = @_;
+	return if $angle == 0.0;
+	my $m = $self-> matrix;
+	$m->rotate($angle);
+	$self->matrix($m);
 }
 
 sub resolution
