@@ -214,7 +214,7 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
 			sys last_size. x = r. right  - r. left;
 			sys y_override = sys last_size. y = r. bottom - r. top;
 			sys handle = frame;
-			SetWindowLongPtr( frame, GWLP_USERDATA, ( LONG) self);
+			SetWindowLongPtr( frame, GWLP_USERDATA, (LONG_PTR) self);
 		}
 		break;
 	case WC_CUSTOM:
@@ -249,8 +249,7 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
 	sys owner   = ownerView;
 	if ( !reset)
 		sys pointer = LoadCursor( guts. instance, IDC_ARROW);
-	SetWindowLongPtr( ret, GWLP_USERDATA, ( LONG) self);
-
+	SetWindowLongPtr( ret, GWLP_USERDATA, (LONG_PTR) self);
 	if ( reset)
 	{
 		int i;

@@ -86,7 +86,8 @@ typedef enum _MONITOR_DPI_TYPE {
 static HRESULT (__stdcall *SetProcessDpiAwareness)(PROCESS_DPI_AWARENESS)  = NULL;
 static HRESULT (__stdcall *GetDpiForMonitor)(HMONITOR,MONITOR_DPI_TYPE,UINT*,UINT*) = NULL;
 static HRESULT (__stdcall *DwmIsCompositionEnabled)(BOOL *pfEnabled) = NULL;
-#ifndef _MSC_VER
+
+#if WINVER < 0x0600
 static BOOL    (__stdcall *GetUserPreferredUILanguages)(DWORD dwFlags, PULONG pulNumLanguages, PZZWSTR pwszLanguagesBuffer, PULONG pcchLanguagesBuffer) = NULL;
 #endif
 
@@ -95,8 +96,10 @@ my_GetUserPreferredUILanguages(
 	DWORD dwFlags, PULONG pulNumLanguages,
 	PZZWSTR pwszLanguagesBuffer, PULONG pcchLanguagesBuffer
 ) {
+#if WINVER < 0x0600
 	if ( GetUserPreferredUILanguages == NULL) 
 		return false;
+#endif
 	return GetUserPreferredUILanguages(dwFlags, pulNumLanguages, pwszLanguagesBuffer, pcchLanguagesBuffer);
 }
 
@@ -246,10 +249,12 @@ window_subsystem_init( char * error_buf)
 		if ( mod ) {
 			LOAD_FUNC(mod, DwmIsCompositionEnabled);
 		}
+#if WINVER < 0x0600
 		mod = LoadLibrary("KERNEL32.DLL");
 		if ( mod ) {
 			LOAD_FUNC(mod, GetUserPreferredUILanguages);
 		}
+#endif
 	}
 
 	/* Win8 - high dpi awareness stuff */

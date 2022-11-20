@@ -1040,6 +1040,42 @@ MSCVER
 		push @INCPATH, '/opt/homebrew/include';
 		push @LIBPATH, '/opt/homebrew/lib', '/opt/homebrew/opt/libiconv/lib';
 	}
+
+	if ( $Win32 ) {
+		printlog "Checking if can compile with GDI+... ";
+		my $gdip = compile(<<'MSCVER');
+#include <windows.h>
+#ifdef _MSC_VER
+#undef __inline__
+#define __inline__
+#undef CALLBACK
+#define CALLBACK
+#endif
+#include <gdiplus/gdiplus.h>
+int main() {
+	ULONG_PTR t;
+	GdiplusStartupInput id = { 1, NULL, 0, 0 };
+	GdiplusStartup(&t, &id, NULL);
+	return 0;
+}
+MSCVER
+		unless ( length $gdip ) {
+			printlog "no\n";
+			print <<GDIP;
+
+** Error: Cannot complile with GDI+. If your compiler is MSVC, then it can only
+compile GDI+ headers in C++ mode. Grab a copy of the headers adapted for C at
+
+   http://prima.eu.org/download/gdiplus.zip,
+
+and unpack it in the include catalog so that the headers are in 
+./include/gdiplus/*.h
+
+GDIP
+			exit 1;
+		}
+		printlog "yes\n";
+	}
 }
 
 sub setup_defines
