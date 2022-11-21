@@ -87,34 +87,49 @@ sub change_transform
 	my ( $self, $gsave ) = @_;
 	return if $self-> {delay};
 
-	my @cr = $self-> clipRect;
+	my ($doClip, @cr);
 	my $rg = $self-> region;
-	my $m  = $self-> matrix;
-	$cr[2] -= $cr[0];
-	$cr[3] -= $cr[1];
-	my $doClip = grep { $_ != 0 } @cr;
-	my $doMx   = !$m->is_identity;
+	unless ( $rg ) {
+		@cr   = $self-> clipRect;
+		$cr[2]  -= $cr[0];
+		$cr[3]  -= $cr[1];
+		$doClip  = grep { $_ != 0 } @cr;
+	}
 
-	if ( !$doClip && !$doMx) {
+	my $m = $self-> matrix;
+	if ( $self->{reversed}) {
+		my @t = @$m[4,5];
+		@$m[4,5] = (0,0);
+		$m->rotate(90);
+		my ($x) = $self->point2pixel($self->{pageSize}->[0] - $self->{pageMargins}->[0] - $self->{pageMargins}->[2]);
+		$m->translate($x, 0);
+		$m->translate(-$t[0], $t[1]);
+	}
+	my $doMx = !$m->is_identity;
+
+	if ( !$doClip && !$doMx && !$rg) {
 		$self-> emit(':') if $gsave;
 		return;
 	}
 
-	@cr = $self-> pixel2point( @cr);
-	my $mcr3 = -$cr[3];
-
 	$self-> emit(';') unless $gsave;
 	$self-> emit(':');
-	float_inplace(@cr, $mcr3, @$m);
-	$self-> emit(<<CLIP) if $doClip;
-N $cr[0] $cr[1] M 0 $cr[3] L $cr[2] 0 L 0 $mcr3 L X C
-CLIP
+
+	if ( $rg ) {
+		$self-> emit($rg-> apply_offset);
+	} elsif ( $doClip ) {
+		@cr = $self-> pixel2point( @cr);
+		float_inplace(@cr);
+		$self-> emit("N $cr[0] $cr[1] M 0 $cr[3] L $cr[2] 0 L 0 -$cr[3] L X C");
+	}
+
 	if ( $doMx ) {
 		my @tm = $self-> pixel2point( @$m[4,5] );
 		my @xm = @$m[0..3];
-		$self-> emit("[@xm @tm] SM") if $doMx;
+		float_inplace(@xm, @tm);
+		$self-> emit("[@xm @tm] SM");
 	}
-	$self-> emit($rg-> apply_offset) if $rg && !$doClip;
+
 	$self-> {changed}-> {$_} = 1 for qw(fill linePattern lineWidth lineJoin lineEnd miterLimit font);
 }
 

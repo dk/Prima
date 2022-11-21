@@ -79,14 +79,18 @@ sub change_transform
 		$ps->[1] - $pm->[3] - $pm->[1]
 	);
 
-	my @cr = $self-> clipRect;
+	my ($doClip, @cr);
 	my $rg = $self-> region;
 
-	$cr[2] -= $cr[0];
-	$cr[3] -= $cr[1];
-	my $doClip = grep { $_ != 0 } @cr;
+	unless ( $rg ) {
+		@cr = $self-> clipRect;
+		$cr[2] -= $cr[0];
+		$cr[3] -= $cr[1];
+		$doClip = grep { $_ != 0 } @cr;
 
-	@cr = $self-> pixel2point( @cr);
+		@cr = $self-> pixel2point( @cr);
+		float_inplace(@cr);
+	}
 
 	$self-> emit_content('Q') unless $gsave;
 	$self-> emit_content('q');
@@ -101,11 +105,14 @@ sub change_transform
 	my @tm = $self-> pixel2point( @$m[4,5] );
 	$tm[$_] += $pm[$_] for 0,1;
 	my @xm = @$m[0..3];
-	float_inplace(@pm, @cr, @xm, @tm);
+	float_inplace(@pm, @xm, @tm);
 	$self-> emit_content("@xm @tm cm");
 
-	$self-> emit_content("h @cr re W n") if $doClip;
-	$self-> emit_content($rg-> apply_offset . " n") if $rg && !$doClip;
+	if ( $rg ) {
+		$self-> emit_content($rg-> apply_offset . " n");
+	} elsif ( $doClip ) {
+		$self-> emit_content("h @cr re W n");
+	}
 	$self-> {changed}-> {$_} = 1 for qw(fill linePattern lineWidth lineJoin lineEnd miterLimit font);
 }
 
