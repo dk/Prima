@@ -926,7 +926,7 @@ sub setup_compiler
 		if ( $r =~ /^(.*)\s+version\s+([\d\.]+)/) {
 			$compiler_subtype = $1;
 			$compiler_version = $2;
-			if ( $compiler_subtype =~ /Apple clang/ ) {
+			if ( $compiler_subtype =~ /clang/ ) {
 				$cmd_options{EXTRA_CCFLAGS} .= " -Wno-compound-token-split-by-macro";
 			}
 		}
