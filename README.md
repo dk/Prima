@@ -30,6 +30,10 @@ Debian/Ubuntu
   apt-get install libgtk3.0-dev libgif-dev libjpeg-dev libtiff-dev libxpm-dev 
       libwebp-dev libfribidi-dev libharfbuzz-dev libthai-dev libheif-dev
 
+FreeBSD
+-------
+  pkg install gtk3 fribidi harfbuzz libxpm libthai pkgconf tiff webp giflib libheif
+
 OpenSUSE
 --------
 
