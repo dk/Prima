@@ -357,6 +357,12 @@ if (sizeof(s1) != (s2)) { \
 #undef TYPECHECK
 
 	bzero(&prima_guts, sizeof(prima_guts));
+#ifdef WITH_FRIBIDI
+	prima_guts.use_fribidi = true;
+#endif
+#ifdef WITH_LIBTHAI
+	prima_guts.use_libthai = true;
+#endif
 	list_create( &prima_guts.static_objects, 16, 16);
 	list_create( &prima_guts.static_hashes,  16, 16);
 	list_create( &prima_guts.post_destroys,  16, 16);

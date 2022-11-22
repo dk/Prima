@@ -118,7 +118,9 @@ or linux-homebrew's (not tested)
 
   brew install linuxbrew/xorg/libxft
 
-- install libthai from https://github.com/phondanai/homebrew-libthai (not tested)
+- install libthai:
+
+  brew install dk/libthai/libthai
 
 Bidirectional input and complex scripts
 ---------------------------------------

@@ -11,21 +11,7 @@ XSLockManager g_XSLock;
 CPerlObj* pPerl;
 #endif
 
-PrimaGuts prima_guts = {
-	.use_fribidi =
-#ifdef WITH_FRIBIDI
-		true
-#else
-		false
-#endif
-		,
-	.use_libthai =
-#ifdef WITH_LIBTHAI
-		1
-#else
-		0
-#endif
-};
+PrimaGuts prima_guts;
 
 Handle
 create_mate( SV *perlObject)
