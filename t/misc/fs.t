@@ -105,8 +105,8 @@ sub check
 	ok( $ok = chdir($dn), "$id: chdir");
 	diag($!) unless $ok;
 	my $ncwd = getcwd;
-	setenv( PWD => $ncwd );
-	is( getenv( 'PWD' ), $ncwd, "$id: getenv");
+	setenv( WHATEVER => $ncwd );
+	is( getenv( 'WHATEVER' ), $ncwd, "$id: getenv");
 
 	my $dn_local = Prima::Utils::sv2local($dn);
 	if ( defined $dn_local ) {
