@@ -1235,7 +1235,7 @@ DLERR
 sub setup_pkgconfig
 {
 	printlog "Checking for pkg-config... ";
-	my $v = `pkg-config --version`;
+	my $v = `pkg-config --version` // '';
 	if ( $Win32 && $? ) {
 		$v = `pkg-config.bat --version`;
 		$PKGCONFIG = 'pkg-config.bat';
