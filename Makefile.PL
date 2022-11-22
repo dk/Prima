@@ -922,7 +922,7 @@ sub setup_compiler
 {
 	printlog "Compiler: $compiler_type\n";
 	if ( $compiler_type eq 'gcc' ) {
-		my $r = `$compiler_type -v 2>&1`;
+		my $r = `$Config{cc} -v 2>&1`;
 		if ( $r =~ /^(.*)\s+version\s+([\d\.]+)/) {
 			$compiler_subtype = $1;
 			$compiler_version = $2;
