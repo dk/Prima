@@ -29,8 +29,8 @@ extern "C" {
 	int dstLine = LINE_SIZE(width,dstType);
 
 #define dCLAMP(SourceType,DestType)                            \
-	SourceType min = minimum_##DestType##Value;            \
-	SourceType max = maximum_##DestType##Value;
+	SourceType min = (SourceType) minimum_##DestType##Value;\
+	SourceType max = (SourceType) maximum_##DestType##Value;
 
 #define LOOP_OPEN(SourceType,DestType,xmul)                    \
 	for ( y = 0; y < var->h; y++)                          \
