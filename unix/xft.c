@@ -2678,5 +2678,5 @@ prima_xft_init_font_substitution(void)
 }
 
 #else
-#error Required: Xft version 2.1.0 or higher; fontconfig version 2.0.1 or higher. To compile without Xft, re-run 'perl Makefile.PL WITH_XFT=0'
+#warning Required Xft version 2.1.0 or higher; fontconfig version 2.0.1 or higher. To compile without Xft, re-run 'perl Makefile.PL WITH_XFT=0'
 #endif /* USE_XFT */
