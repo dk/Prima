@@ -68,6 +68,7 @@ use vars qw(
 	$unix
 	$cygwin
 	$mingw
+	$MacOSX,
 	$platform
 	$flavor
 	$path_sep
@@ -245,6 +246,7 @@ sub setup_variables
 		$platform = 'unix';
 		$unix = 1;
 		$DL_LOAD_FLAGS = -1; # check later
+		$MacOSX = ($^O eq 'darwin') ? 1 : 0;
 	}
 
 	$DL_LOAD_FLAGS = $cmd_options{DL_LOAD_FLAGS} if defined $cmd_options{DL_LOAD_FLAGS};
@@ -573,7 +575,7 @@ sub cc_command_line
 	$cc .= ' ' . join(' ', map { "$LDLIBFLAG$_$LD_LIB_EXT"} @LIBS);
 	$cc .= " $passthru_options{LIBS}" if length $passthru_options{LIBS};
 	$cc .= " $cmd_options{EXTRA_LDFLAGS}" if length $cmd_options{EXTRA_LDFLAGS};
-	$cc =~ s/\-bundle// if $^O eq 'darwin';
+	$cc =~ s/\-bundle// if $MacOSX;
 
 	return $cc;
 }
@@ -1036,7 +1038,7 @@ MSCVER
 		push @LIBPATH, '/opt/csw/lib';
 	}
 
-	if ( $^O eq 'darwin') {
+	if ( $MacOSX ) {
 		push @INCPATH, '/opt/homebrew/include';
 		push @LIBPATH, '/opt/homebrew/lib', '/opt/homebrew/opt/libiconv/lib';
 	}
@@ -1264,7 +1266,7 @@ MIXED
 
 	# it is mac's broken XQuartz setup?
 	my $xquartz_pkgconfig_path = '/opt/X11/lib/pkgconfig';
-	if ( $^O eq 'darwin' && !exists $ENV{PKG_CONFIG_PATH} && -d $xquartz_pkgconfig_path) {
+	if ( $MacOSX && !exists $ENV{PKG_CONFIG_PATH} && -d $xquartz_pkgconfig_path) {
 		printlog "trying PKG_CONFIG_PATH=$xquartz_pkgconfig_path... ";
 		my $add_path;
 		null_output;
@@ -1683,7 +1685,7 @@ differently from Gnome environment. You might want to install
 WARNING
 		return;
 	}
-	if ( $^O eq 'darwin') {
+	if ( $MacOSX ) {
 		printlog "without X11... ";
 		$DEFINES{WITH_GTK_NONX11} = 1 unless compile( "#include <gdk/gdkx.h>\nint main() { return 0; }\n");
 	}
@@ -1824,6 +1826,10 @@ Consider fixing your installation.
 LIBTHAI
 	$END .= <<LIBTHAI if $Win32 and not $cygwin;
 Get libthai binary from http://prima.eu.org/download/libthai-0.1.29-win64.zip
+
+LIBTHAI
+	$END .= <<LIBTHAI if $MacOSX;
+Get it with `brew install dk/libthai/libthai`
 
 LIBTHAI
 }
