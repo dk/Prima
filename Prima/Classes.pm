@@ -2192,9 +2192,9 @@ sub on_paint
 
 	my @ln = $canvas->text_split_lines($self->text) or return;
 	my ($x, $y, $fh) = ( 3, $size[1] - 1, $self->font->height);
-	for (@ln) {
-		$y -= ref ? $_->height($canvas) : $fh;
-		$canvas-> text_shape_out( $_, $x, $y);
+	for my $t (@ln) {
+		$y -= ref($t) ? $t->height($canvas) : $fh;
+		$canvas-> text_shape_out( $t, $x, $y);
 	}
 }
 
