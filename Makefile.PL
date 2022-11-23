@@ -68,7 +68,7 @@ use vars qw(
 	$unix
 	$cygwin
 	$mingw
-	$MacOSX,
+	$MacOSX
 	$platform
 	$flavor
 	$path_sep
