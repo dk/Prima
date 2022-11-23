@@ -1324,7 +1324,7 @@ sub _debug_commands
 	for ( my $i = 0; $i < @$c; ) {
 		my ($cmd,$len) = @$c[$i,$i+1];
 		my @p = @$c[$i+2..$i+$len+1];
-		@p = map { 'ARRAY' eq ref ? "[@$_]" : $_ } @p;
+		@p = map { 'ARRAY' eq ref($_) ? "[@$_]" : $_ } @p;
 		print STDERR ".$cmd(@p)\n";
 		$i += $len + 2;
 	}
