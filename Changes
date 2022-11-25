@@ -1,9 +1,34 @@
 Revision history for Perl module Prima
 
 1.67 20XX-XX-XX
- - Add interactive links in Label
-   -- generic link support is added, too
- - Pod-embedded base64-encoded images are supported in podview and tooltips
+ - Links and tooltips extended functionality:
+   -- Added interactive links in Label
+   -- Markup recognizes hyperlinks now with new "L<URL|text>" syntax
+   -- Generic link opening is handled by new module Prima::Widget::Link
+   -- Pod-embedded base64-encoded images are supported in podview and tooltips
+ - Some modules were spit and moved to Prima::Widget:: namespace
+ - Compilation update for the latest MSVC
+ - use Prima qw(MsgBox and the like) re-exports symbols to the caller level:
+      message() will do now instead of Prima::MsgBox::message()
+ - Added conversion helpers:
+   -- Prima::Image.to_rgba()
+   -- cl::to_gray_byte(), cl::to_gray_rgb(), cl::from_gray_byte()
+ - ColorDialog and ColorComboBox support grayscale mode
+ - Image.rotate() has new fill parameter
+ - Major rewrite of plotting primitives by Drawable:
+   -- lineEnd,linePattern,lineWidth,miterLimit,lineJoin are served by
+      Prima::Drawable::Path now if lineWidth > 0
+   -- Note: antialiased lines with width = 0 are invisible now!
+   -- Prima::Drawable::Path is heavily optimized
+   -- Drawable.matrix() is supported for all plotting primitives
+   -- Drawable.translate() is a syntax sugar for matrix operations
+   -- Drawable line ends are customizable now (see Drawable.pod, "Line ends" )
+   -- Regions defined by polylines and images are internally plotted
+  - Drawable.render_pattern emulates fill patterns distorted via matrix transformations
+  - X11:
+    -- better support of window icons
+    -- better support of multiple monitors
+
 
 1.66 2022-08-20
  - Add HEIF image support

@@ -541,7 +541,7 @@ sub render_pattern
 	# that is inversely transformed. I.e not this:
 	#
 	#  .......
-        #  .     .
+	#  .     .
 	#  . __  .
 	#  ./_/...
 	#

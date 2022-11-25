@@ -786,6 +786,8 @@ the 'logical' (0,0) point.
 As noted before, these three properties cannot be used in when an object
 is in the disabled state.
 
+=head2 Line ends
+
 =head1 API
 
 =head2 Graphic context properties
@@ -2046,10 +2048,10 @@ C<fillPattern> property.  Since Prima does not provide an individual property
 that would govern specifically the matrix of a fill pattern, this method can be
 used to implement this functionality.
 
-Specifically respects C<preserveType> property and if sets, changed the
-resulting pattern type back to the original type. In case or ARRAY or INDEX
-fillPattern, always generates a C<im::BW> image, so it can be used both in
-C<rop2> transparent and opaque modes, line the original pattern.
+Also respects C<preserveType> property and if it is set, changes the resulting
+pattern image type back to the original type. In case where fillPattern is
+given by ARRAY or INDEX, always generates a C<im::BW> image, so it can be used
+both in C<rop2> transparent and opaque modes, like the original pattern.
 
 Options:
 
@@ -2057,8 +2059,8 @@ Options:
 
 =item color COLOR, alpha 0-255
 
-If C<margin> is used, pre-fills target image with this color.
-C<alpha> is used to pre-fill the target image's mask with this value, if the image is an icon.
+If C<margin> is used, pre-fills target image with this color. C<alpha> is used
+to pre-fill the target image's mask with this value, if the image is an icon.
 
 =item margin XY | [ X, Y ]
 
