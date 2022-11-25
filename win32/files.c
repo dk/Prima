@@ -323,7 +323,6 @@ apc_getdir( const char *dirname, Bool is_utf8)
 	else
 		dname = ( char*) dirname;
 
-
 	if (( dh = opendir( dirname)) && (dirlist = plist_create( 50, 50))) {
 		while (( de = readdir( dh))) {
 			list_add( dirlist, (Handle)duplicate_string( de-> d_name));
@@ -381,7 +380,7 @@ apc_getdir( const char *dirname, Bool is_utf8)
 
 	dirname_w = is_utf8 ?
 		alloc_utf8_to_wchar( dirname, -1, NULL) :
-		alloc_ascii_to_wchar( dirname, -1);
+		alloc_ascii_to_wchar( dirname, NULL);
 
 	len = wcslen(dirname_w);
 	if (len > MAX_PATH) {
@@ -443,7 +442,7 @@ path2wchar(const char *name, Bool is_utf8, int * size)
 		text = alloc_utf8_to_wchar( name, *size, size);
 	} else {
 		*size = strlen( name) + 1;
-		text = alloc_ascii_to_wchar( name, *size);
+		text = alloc_ascii_to_wchar( name, size);
 	}
 	if ( !text ) errno = ENOMEM;
 	return text;
@@ -585,7 +584,8 @@ wstr2ascii( WCHAR * src, int * len, Bool fail_if_cannot )
 	int srclen = *len;
 	DWORD flags = 0;
 #ifdef WC_ERR_INVALID_CHARS
-	if ( fail_if_cannot ) flags |= WC_ERR_INVALID_CHARS;
+	if ( fail_if_cannot && !guts.wc2mb_is_fragile)
+		flags |= WC_ERR_INVALID_CHARS;
 #endif
 	if (( *len = WideCharToMultiByte(CP_ACP, flags, src, srclen, NULL, 0, NULL, false)) == 0 )
 		return NULL;
@@ -601,7 +601,7 @@ wstr2ascii( WCHAR * src, int * len, Bool fail_if_cannot )
 		char * ret2 = ret;
 		xlen = srclen;
 		while (xlen--) if ( *(src++) == L'?' ) nq1++;
-		xlen = srclen;
+		xlen = *len;
 		while (xlen--) if ( *(ret2++) == '?' ) nq2++;
 		if ( nq2 > nq1 ) {
 			free(ret);
@@ -617,7 +617,7 @@ apc_fs_from_local(const char * text, int * len)
 {
 	char * ret;
 	WCHAR * buf;
-	if ( !( buf = alloc_ascii_to_wchar( text, *len)))
+	if ( !( buf = alloc_ascii_to_wchar( text, len)))
 		return NULL;
 	ret = alloc_wchar_to_utf8( buf, len );
 	free( buf );

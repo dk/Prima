@@ -374,6 +374,16 @@ window_subsystem_init( char * error_buf)
 		guts. ole_initialized = (r == S_OK || r == S_FALSE );
 	}
 
+	switch (GetACP()) {
+	case 50220: case 50221: case 50222: case 50225: case 50227: case 50229:
+	case 57002: case 57003: case 57004: case 57005: case 57006: case 57007:
+	case 57008: case 57009: case 57010: case 57011: case 65000: case 42:
+		guts.wc2mb_is_fragile = true;
+		break;
+	default:
+		guts.wc2mb_is_fragile = false;
+	}
+
 	return true;
 }
 

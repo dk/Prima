@@ -248,6 +248,7 @@ typedef struct _WinGuts
 	char           language_descr[32];
 	Bool           application_stop_signal;
 	long           apc_error;
+	Bool           wc2mb_is_fragile;     // cannot properly process current ACP
 } WinGuts, *PWinGuts;
 
 typedef struct _WindowData
@@ -666,7 +667,7 @@ extern Bool         aa_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y, i
 extern void         aa_free_arena(Handle self, Bool for_reuse);
 extern WCHAR *      alloc_utf8_to_wchar( const char * utf8, int length, int * mb_len);
 extern WCHAR *      alloc_utf8_to_wchar_visual( const char * utf8, int length, int * mb_len);
-extern WCHAR *      alloc_ascii_to_wchar( const char * text, int length);
+extern WCHAR *      alloc_ascii_to_wchar( const char * text, int *length);
 extern char *       alloc_wchar_to_utf8( WCHAR * src, int * len );
 extern int          apcUpdateWindow( HWND wnd );
 extern int          arc_completion( double * angleStart, double * angleEnd, int * needFigure);

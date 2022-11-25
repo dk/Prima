@@ -55,7 +55,7 @@ map_text_accel( PMenuItemReg i)
 		text = alloc_utf8_to_wchar( i-> text, prima_utf8_length( i-> text, -1), &l1);
 	} else {
 		l1 = strlen( i-> text);
-		text = alloc_ascii_to_wchar( i-> text, l1);
+		text = alloc_ascii_to_wchar( i-> text, &l1);
 	}
 
 	if ( i-> accel ) {
@@ -65,7 +65,7 @@ map_text_accel( PMenuItemReg i)
 			accel = alloc_utf8_to_wchar( i-> accel, prima_utf8_length( i-> accel, -1), &l2);
 		} else {
 			l2 = strlen( i-> accel);
-			accel = alloc_ascii_to_wchar( i-> accel, l2);
+			accel = alloc_ascii_to_wchar( i-> accel, &l2);
 		}
 	}
 

@@ -502,13 +502,25 @@ char2wchar( WCHAR * dest, char * src, int lim)
 }
 
 WCHAR *
-alloc_ascii_to_wchar( const char * text, int length)
+alloc_ascii_to_wchar( const char * text, int *length)
 {
 	WCHAR * ret;
-	if ( text == NULL ) text = "";
-	if ( length < 0) length = strlen( text) + 1;
-	if ( !( ret = malloc( length * sizeof( WCHAR)))) return NULL;
-	MultiByteToWideChar( CP_ACP, MB_PRECOMPOSED, text, length, ret, length * 2);
+	int src_len, dst_len;
+
+	src_len = length ? *length : -1;
+	if ( length )
+		*length = 0;
+	if ( text == NULL || src_len == 0 )
+		return NULL;
+	if ( src_len < 0)
+		src_len = strlen( text) + 1;
+	if ( ( dst_len = MultiByteToWideChar( CP_ACP, MB_PRECOMPOSED, text, src_len, NULL, 0)) <= 0)
+		return NULL;
+	if ( length )
+		*length = dst_len;
+	if ( !( ret = malloc( dst_len * sizeof( WCHAR)))) return NULL;
+	MultiByteToWideChar( CP_ACP, MB_PRECOMPOSED, text, src_len, ret, dst_len * 2);
+
 	return ret;
 }
 
