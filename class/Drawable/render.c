@@ -539,6 +539,11 @@ lineend_Custom( WidenStruct *w, NPoint o, double theta, int index)
 	c = floor( c * 1.0e15 + .5 ) / 1.0e15;
 	s = floor( s * 1.0e15 + .5 ) / 1.0e15;
 
+	if ( !temp_add_point( w, &w->up,
+		w->lw2 * c + o.x,
+		w->lw2 * s + o.y
+		)) return false;
+
 	for ( i = 0, pc = p->commands; i < p->n_commands; i++, pc++) {
 		double *pts = (*pc)->args;
 		switch ((*pc)->command ) {
@@ -563,6 +568,11 @@ lineend_Custom( WidenStruct *w, NPoint o, double theta, int index)
 			return false;
 		}
 	}
+
+	if ( !temp_add_point( w, &w->up,
+		-w->lw2 * c + o.x,
+		-w->lw2 * s + o.y
+		)) return false;
 
 	return true;
 }

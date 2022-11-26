@@ -156,6 +156,8 @@ Bool
 Drawable_read_line_ends(SV *lineEnd, DrawablePaintState *state)
 {
 	int i;
+	Bool four_individual_constants;
+	SV **holder;
 	AV* av;
 	SV *rv;
 
@@ -173,22 +175,35 @@ Drawable_read_line_ends(SV *lineEnd, DrawablePaintState *state)
 		return false;
 	}
 	av = (AV*) rv;
-	if ( av_len(av) > 3 ) warn("lineEnd: only 4 items are understood, the rest is ignored");
 
-	/* parse SVs */
-	for ( i = 0; i < 4; i++) {
-		SV **holder = av_fetch( av, i, 0);
-		if ( !( holder && *holder && SvOK(*holder) ) || SvTYPE(*holder) == SVt_NULL) {
-			if ( i == 0 ) {
-				warn("lineEnd: first item in array cannot be undef");
-				goto FAIL;
+	/* is it a leCustom for all 4 or 4 separate entries? */
+	holder  = av_fetch(av, 0, 0);
+	four_individual_constants = (holder && *holder && SvOK(*holder)) ?
+		(SvNOK(*holder) || SvROK(*holder)) :
+		false;
+
+	if ( four_individual_constants ) {
+		if ( av_len(av) > 3 ) warn("lineEnd: only 4 items are understood, the rest is ignored");
+
+		/* parse SVs */
+		for ( i = 0; i < 4; i++) {
+			holder = av_fetch( av, i, 0);
+			if ( !( holder && *holder && SvOK(*holder) ) || SvTYPE(*holder) == SVt_NULL) {
+				if ( i == 0 ) {
+					warn("lineEnd: first item in array cannot be undef");
+					goto FAIL;
+				}
+				state->line_end[i].type = leDefault;
+				continue;
 			}
-			state->line_end[i].type = leDefault;
-			continue;
-		}
 
-		if ( !read_line_end(*holder, state, i))
+			if ( !read_line_end(*holder, state, i))
+				goto FAIL;
+		}
+	} else {
+		if ( !read_line_end(lineEnd, state, 0))
 			goto FAIL;
+		state->line_end[1].type = state->line_end[2].type = state->line_end[3].type = leDefault;
 	}
 
 	return true;
@@ -287,12 +302,15 @@ produce_line_ends(Handle self)
 	AV *av;
 
 	if (
-		GS.line_end[0].type != leCustom &&
 		GS.line_end[1].type == leDefault &&
 		GS.line_end[2].type == leDefault &&
 		GS.line_end[3].type == leDefault
-	)
-		return newSViv(GS.line_end[0].type);
+	) {
+		if ( GS.line_end[0].type != leCustom )
+			return newSViv(GS.line_end[0].type);
+		else
+			return produce_line_end(self, 0);
+	}
 
 	av = newAV();
 	items = 4;
@@ -328,7 +346,7 @@ Drawable_lineEndIndex( Handle self, Bool set, int index, SV *lineEnd)
 		return NULL_SV;
 	/*
 		leDefault is special, depending on the index:
-		0 (line tail) cannot be leDefault, because other may reference it
+		0 (line tail) cannot be leDefault, because others may reference it
 		1 (line head) if leDefault, same as 0
 		2 (arrow tail) if leDefault, same as 0
 		3 (arrow head) if leDefault, same as 1, which if is also leDefault, then same as 0
