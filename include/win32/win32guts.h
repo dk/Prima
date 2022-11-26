@@ -11,8 +11,6 @@
 #define __inline__ inline
 #undef __extension__
 #define __extension__
-#undef CALLBACK
-#define CALLBACK
 #endif
 #include <gdiplus/gdiplus.h>
 #undef Rect
