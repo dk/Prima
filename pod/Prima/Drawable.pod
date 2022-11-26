@@ -877,7 +877,7 @@ and individual commands accept arbitrary number of vertices, but no less than 1 
 The commands are executed sequentially on a coordinate grid where line width is
 assumed to be 1, the plotting starts from point at (1,0), and ends at (-1,0).
 
-For example, this is a definition of C<le::Arrow>:
+For example, this is the definition of C<le::Arrow>:
 
      [
 	conic => [1,0,2.5,0,2.5,-0.5],
