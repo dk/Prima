@@ -62,7 +62,7 @@ sub test
 	}
 }
 
-my $all = 0;
+my $all = 1;
 
 test( "U1G1 U1G1",
         # 4     0 5        6
