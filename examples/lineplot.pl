@@ -11,6 +11,7 @@ my %opt = (
 	lpp => 'lp::DotDot',
 	ml  => 10,
 	lw  => 28,
+	sc  => 1,
 );
 $opt{ml} = 10;
 my $aperture = 12;
@@ -18,9 +19,6 @@ my $capture;
 my $prelight;
 my @points;
 @points = (100,200,200,200,200,100,50,10);
-
-sub le::Arrow2     { le::scale( Arrow     => 2    ) }
-sub le::Spearhead2 { le::scale( Spearhead => 1, 3 ) }
 
 
 sub group
@@ -46,6 +44,12 @@ sub lw
 	$mw->repaint;
 }
 
+sub scale
+{
+	$opt{sc} = $mw->menu->text($_[1]);
+	$mw->repaint;
+}
+
 $mw = Prima::MainWindow->new(
 	size => [ 400, 431 ],
 	text => 'Line plotter',
@@ -58,7 +62,15 @@ $mw = Prima::MainWindow->new(
 			[],
 			[ 'E~xit' => sub { $_[0]->destroy } ],
 		]],
-		[ '~End' => [ group le => qw(Flat Square Round Arrow Arrow2 Spearhead Spearhead2) ]],
+		[ '~End' => [ group le => qw(Flat Square Round Arrow Cusp InvCusp Knob Rect RoundRect Spearhead Tail) ]],
+		[ 'End ~scale' => [
+			[ '(' , 0.5  => \&scale ],
+			[ ''  , 0.75 => \&scale ],
+			[ '*' , 1    => \&scale ],
+			[ ''  , 1.25 => \&scale ],
+			[ ''  , 1.5  => \&scale ],
+			[ ')' , 1.75 => \&scale ],
+		]],
 		[ '~Join' => [
 			group(lj => qw(Round Bevel Miter)),
 			[],
@@ -93,7 +105,7 @@ $mw = Prima::MainWindow->new(
 		my ( $self, $canvas ) = @_;
 		my ( $w, $h ) = $self-> size;
 		$canvas->clear();
-		$canvas->lineEnd($opt{le});
+		$canvas->lineEnd(le::scale( $opt{le}, $opt{sc} ));
 		$canvas->lineJoin($opt{lj});
 		$canvas->miterLimit($opt{ml});
 		my $c = $prelight // $capture // -1;

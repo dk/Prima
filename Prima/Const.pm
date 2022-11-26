@@ -81,8 +81,24 @@ sub Arrow { [
 	conic => [-2.5,-0.5,-2.5,0,-1,0]
 ] }
 
+sub Cusp { [
+	line  => [0,2],
+] }
+
+sub InvCusp { [
+	line  => [1,2,0,0,-1,2],
+] }
+
 sub Spearhead { [
 	line  => [1.5,1,0,4,-1.5,1],
+] }
+
+sub RoundRect { [
+	conic => [0,-1.5,1.5,-1.5,1.5,0,1.5,1.5,0,1.5,-1.5,1.5,-1.5,0,-1.5,-1.5,0,-1.5],
+] }
+
+sub Rect { [
+	line  => [0,-1.5,1.5,-1.5,1.5,1.5,-1.5,1.5,-1.5,-1.5,0,-1.5],
 ] }
 
 sub Knob { [
@@ -670,7 +686,11 @@ See L<Prima::Drawable/lineEnd>
 	le::Round
 
 	le::Arrow
+	le::Cusp
+	le::InvCusp
 	le::Knob
+	le::Rect
+	le::RoundRect
 	le::Spearhead
 	le::Tail
 

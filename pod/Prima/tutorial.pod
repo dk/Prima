@@ -439,7 +439,12 @@ just plain text otherwise:
 
    =for podview <img src="illustration.gif" cut=1 title="Horizontal font measurements">
 
-   =for html <p><img src="https://raw.githubusercontent.com/me/myproject/master/illustration.gif"><!--
+   =for html <p>
+   <figure>
+   <img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/leadings.gif">
+   <figcaption>Horizontal font measurements</figcaption>
+   </figure>
+   <!--
 
       .. plain text illustration ..
 

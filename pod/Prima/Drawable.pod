@@ -494,7 +494,12 @@ Negative if the ascent line is above the external leading line.
 
 =for podview <img src="leadings.gif" cut=1 title="Horizontal font measurements">
 
-=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/leadings.gif"><!--
+=for html <p>
+<figure>
+<img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/leadings.gif">
+<figcaption>Horizontal font measurements</figcaption>
+</figure>
+<!--
 
           ------------- external leading line
 
@@ -821,25 +826,29 @@ tangent and width. Details of the descriptor syntax are given below, but there a
 also non-hardcoded line end constants defined by this method, that one can use
 as well:
 
-=for podview <img src="lineends2.gif" cut=1>
-
-=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/lineends2.gif"><!--
-
   le::Arrow
+  le::Cusp
+  le::InvCusp
   le::Knob
+  le::Rect
+  le::RoundRect
   le::Spearhead
   le::Tail
 
-=for html -->
-
-=for podview </cut>
-
-These descriptors could also be arbitrarily transformed (f ex scaled):
+These descriptors could be arbitrarily transformed (f ex scaled):
 
    # all three lines produce the same effect
    $x->lineEnd( le::scale( Arrow => 1.5 ) );
    $x->lineEnd( le::transform( le::Arrow, [1.5,0,0,1.5,0,0] ) );
    $x->lineEnd( le::transform( le::Arrow, Prima::matrix->new->scale(1.5) ) );
+
+=for podview <img src="lineends2.gif" title="Line ends with x 1.5 scaling">
+
+=for html <p>
+<figure>
+<img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/lineends2.gif">
+<figcaption>Line ends with x 1.5 scaling</figcaption>
+</figure>
 
 =item lineEnd accessors
 
@@ -1174,8 +1183,12 @@ can be one of
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/lineends1.gif"><!--
 
   le::Arrow
+  le::Cusp
+  le::InvCusp
   le::Flat
   le::Knob
+  le::Rect
+  le::RoundRect
   le::Spearhead
   le::Square
   le::Round
