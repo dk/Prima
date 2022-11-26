@@ -396,97 +396,21 @@ superimpose_outline( PRegionRec region, Point *pts, int count)
 		return region;
 	populate_scanline2box(region, scanline2box);
 
-	/* superimpose polyline points using Bresenham
-	because regions are as broken as filled shapes */
+	/* superimpose either horizontal segments or individual vertexes as single pixels */
 	for ( i = 0; i < count; i++) {
-		int curr_maj, curr_min, to_maj, delta_maj, delta_min;
-		int delta_y, delta_x;
-		int dir = 0, d, d_inc1, d_inc2;
-		int inc_maj, inc_min;
-		int x, y, acc_x = 0, acc_y = INT_MIN, ox;
 		Point a = pts[i], b = pts[(i == count - 1) ? 0 : i + 1];
-		delta_y = b.y - a.y;
-		delta_x = b.x - a.x;
-		if (abs(delta_y) > abs(delta_x)) dir = 1;
-		DEBUG("edge %d.%d-%d.%d\n", a.x,a.y,b.x,b.y);
-
-		if (dir) {
-			curr_maj = a.y;
-			curr_min = a.x;
-			to_maj = b.y;
-			delta_maj = delta_y;
-			delta_min = delta_x;
+		if ( a.y == b.y ) {
+			if ( a.x > b.x ) {
+				int z = a.x;
+				a.x = b.x;
+				b.x = z;
+			}
+			DEBUG("edge %d.%d-%d.%d\n", a.x,a.y,b.x,b.y);
+			if (!( region = union_hline( region, scanline2box, a.x, a.y, b.x - a.x + 1)))
+				goto EXIT;
 		} else {
-			curr_maj = a.x;
-			curr_min = a.y;
-			to_maj = b.x;
-			delta_maj = delta_x;
-			delta_min = delta_y;
-		}
-
-		if (delta_maj != 0)
-			inc_maj = (abs(delta_maj)==delta_maj ? 1 : -1);
-		else
-			inc_maj = 0;
-
-		if (delta_min != 0)
-			inc_min = (abs(delta_min)==delta_min ? 1 : -1);
-		else
-			inc_min = 0;
-
-		delta_maj = abs(delta_maj);
-		delta_min = abs(delta_min);
-
-		d      = (delta_min << 1) - delta_maj;
-		d_inc1 = (delta_min << 1);
-		d_inc2 = ((delta_min - delta_maj) << 1);
-
-		x = INT_MIN;
-		while(1) {
-			ox = x;
-			if (dir) {
-				x = curr_min;
-				y = curr_maj;
-			} else {
-				x = curr_maj;
-				y = curr_min;
-			}
-			if ( acc_y != y ) {
-				if ( acc_y > INT_MIN) {
-					int xx, width;
-					if (ox < acc_x) {
-						xx = ox;
-						width = acc_x - ox + 1;
-					} else {
-						xx = acc_x;
-						width = ox - acc_x + 1;
-					}
-					if (!( region = union_hline( region, scanline2box, xx, acc_y, width)))
-						goto EXIT;
-				}
-				acc_x = x;
-				acc_y = y;
-			}
-
-			if (curr_maj == to_maj) break;
-			curr_maj += inc_maj;
-			if (d < 0) {
-				d += d_inc1;
-			} else {
-				d += d_inc2;
-				curr_min += inc_min;
-			}
-		}
-		if ( acc_y > INT_MIN) {
-			int xx, width;
-			if (x < acc_x) {
-				xx = x;
-				width = acc_x - x + 1;
-			} else {
-				xx = acc_x;
-				width = x - acc_x + 1;
-			}
-			if (!( region = union_hline( region, scanline2box, xx, acc_y, width)))
+			DEBUG("vertex %d.%d\n", a.x,a.y);
+			if (!( region = union_hline( region, scanline2box, a.x, a.y, 1)))
 				goto EXIT;
 		}
 	}
