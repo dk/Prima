@@ -973,7 +973,7 @@ its context is neither recorded nor used as a template
 =item fillMode INTEGER
 
 Affects filling style of complex polygonal shapes filled by C<fillpoly>.
-If C<fm::Winding>, the filled shape contains no holes; if C<fm::EvenOdd>, holes are present
+If C<fm::Winding>, the filled shape contains no holes; if C<fm::Alternate>, holes are present
 where the shape edges cross.
 
 C<fm::Overlay> flag can be combined with these to counter an intrinsic defect
