@@ -19,6 +19,10 @@ my $prelight;
 my @points;
 @points = (100,200,200,200,200,100,50,10);
 
+sub le::Arrow2     { le::scale( Arrow     => 2    ) }
+sub le::Spearhead2 { le::scale( Spearhead => 1, 3 ) }
+
+
 sub group
 {
 	my $class = shift;
@@ -54,7 +58,7 @@ $mw = Prima::MainWindow->new(
 			[],
 			[ 'E~xit' => sub { $_[0]->destroy } ],
 		]],
-		[ '~End' => [ group le => qw(Flat Square Round) ]],
+		[ '~End' => [ group le => qw(Flat Square Round Arrow Arrow2 Spearhead Spearhead2) ]],
 		[ '~Join' => [
 			group(lj => qw(Round Bevel Miter)),
 			[],

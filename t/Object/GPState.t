@@ -60,6 +60,8 @@ $d->graphic_context( lineEnd => 0, sub {
 });
 my $le = $d->lineEnd;
 is_deeply($le, [[line => [1,2]], 1], 'out.lineEnd complex 1');
+$d->lineEnd([line => [1,2]]);
+is_deeply($d->lineEnd, [line => [1,2]]);
 test( lineEnd => le::Square, le::Flat);
 
 test( lineJoin => lj::Round, lj::Bevel);

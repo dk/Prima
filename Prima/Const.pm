@@ -81,9 +81,38 @@ sub Arrow { [
 	conic => [-2.5,-0.5,-2.5,0,-1,0]
 ] }
 
-sub Rhombus { [
-	line  => [1,0,1.5,1,0,4,-1.5,1,-1,0],
+sub Spearhead { [
+	line  => [1.5,1,0,4,-1.5,1],
 ] }
+
+sub Knob { [
+	conic => [0,-1.5,1.5,-1.5,1.5,0],
+	conic => [1.5,0,1.5,1.5,0,1.5],
+	conic => [0,1.5,-1.5,1.5,-1.5,0],
+	conic => [-1.5,0,-1.5,-1.5,0,-1.5],
+] }
+
+sub Tail { [
+	line  => [ 2,1,2,2.25,0,1.75,-2,2.25,-2,1 ]
+] }
+
+sub transform
+{
+	my ( $le, $matrix ) = @_;
+	unless ( ref($le) ) {
+		my $can = __PACKAGE__->can($le);
+		return $le unless $can;
+		$le = $can->();
+	}
+
+	my @new;
+	for ( my $i = 0; $i < @$le; $i += 2 ) {
+		push @new, $$le[$i], Prima::matrix::transform($matrix, $$le[$i+1]);
+	}
+	return \@new;
+}
+
+sub scale { transform( $_[0], [ $_[1],0,0,$_[2] // $_[1],0,0 ] ) }
 
 package
     lj; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# line joins
@@ -639,6 +668,11 @@ See L<Prima::Drawable/lineEnd>
 	le::Flat
 	le::Square
 	le::Round
+
+	le::Arrow
+	le::Knob
+	le::Spearhead
+	le::Tail
 
 =head2 lj::  - line join styles
 
