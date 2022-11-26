@@ -22,7 +22,7 @@ Revision history for Perl module Prima
    -- Prima::Drawable::Path is heavily optimized
    -- Drawable.matrix() is supported for all plotting primitives
    -- Drawable.translate() is a syntax sugar for matrix operations
-   -- Drawable line ends are customizable now (see Drawable.pod, "Line ends" )
+   -- Drawable line ends are customizable now (see Drawable.pod, "Custom line end styles" )
    -- Regions defined by polylines and images are internally plotted
   - Drawable.render_pattern emulates fill patterns distorted via matrix transformations
   - X11:

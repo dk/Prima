@@ -118,7 +118,7 @@ It must be noted that some information methods like get_text_width()
 work even under the disabled state; the object is switched to
 the information state implicitly if it is necessary.
 
-See also: L<graphic_context>.
+See also: L</graphic_context>.
 
 =head2 Color space
 
@@ -207,7 +207,7 @@ export its palette to an output device, because images usually are not
 subject to automatic dithering algorithms. Prima::ImageViewer module
 employs this scheme.
 
-=head2 Antialiasing and alpha (render mode)
+=head2 Antialiasing and alpha
 
 If the system has capability for antialiased drawing and alpha rendering, Prima
 can use it. The render mode can be turned on by calling
@@ -786,7 +786,110 @@ the 'logical' (0,0) point.
 As noted before, these three properties cannot be used in when an object
 is in the disabled state.
 
-=head2 Line ends
+=head2 Custom line end styles
+
+Prima uses own plotting mechanism in L<Prima::Drawable::Path> to produce all
+primitive shapes, including lines. The way lines are plotted is governed by
+properties C<lineEnd>, C<lineJoin>, C<linePattern>, and C<miterLimit>.  All of
+these properties are described below, however C<lineEnd> provides rich
+capabilities to generate custom line ends, and this is what described in this
+section.
+
+=over
+
+=item le:: namespace
+
+There are 3 predefined C<le::> constants
+
+=for podview <img src="lineends.gif" cut=1>
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/lineends.gif"><!--
+
+  le::Flat
+  le::Square
+  le::Round
+
+=for html -->
+
+=for podview </cut>
+
+that are hardcoded in Prima, that are accepted by the C<lineEnd> property.
+
+It is also possible to supply an array descriptor that defines a set of
+primitives that plots a line cap, tranformed with respect to the current line
+tangent and width. Details of the descriptor syntax are given below, but there are
+also non-hardcoded line end constants defined by this method, that one can use
+as well:
+
+=for podview <img src="lineends2.gif" cut=1>
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/lineends2.gif"><!--
+
+  le::Arrow
+  le::Knob
+  le::Spearhead
+  le::Tail
+
+=for html -->
+
+=for podview </cut>
+
+These descriptors could also be arbitrarily transformed (f ex scaled):
+
+   # all three lines produce the same effect
+   $x->lineEnd( le::scale( Arrow => 1.5 ) );
+   $x->lineEnd( le::transform( le::Arrow, [1.5,0,0,1.5,0,0] ) );
+   $x->lineEnd( le::transform( le::Arrow, Prima::matrix->new->scale(1.5) ) );
+
+=item lineEnd accessors
+
+The C<lineEnd> property can accept up to 4 line end definitions, depending on
+syntax.  When Prima plots lines, depending on the location of a line end, one
+of these 4 definitions is selected. Each definition also has its own property
+- see L</lineHead>, L</lineTail>, L</arrowHead>, and L</arrowTail>, or a
+index-based accessor C<lineEndIndex>:
+
+=for podview <img src="lineends3.gif" cut=1>
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/lineends3.gif"><!--
+
+                   [ lineHeads and lineTails ]
+            \____    ____    ___     __   ____   ___\
+            /                                       /
+         arrowTail                                  arrowHead
+
+=for html -->
+
+=for podview </cut>
+
+=item Line end syntax
+
+The syntax for custom line end style is:
+
+   syntax  ::= array of pairs
+   pair    ::= command, array of points
+   command ::= line or conic or cubic
+   points  ::= set of x,y coordinate pairs (vertices)
+
+and individual commands accept arbitrary number of vertices, but no less than 1 for C<line>,
+2 for C<conic>, and 3 for C<cubic>.
+
+The commands are executed sequentially on a coordinate grid where line width is
+assumed to be 1, the plotting starts from point at (1,0), and ends at (-1,0).
+
+For example, this is a definition of C<le::Arrow>:
+
+     [
+	conic => [1,0,2.5,0,2.5,-0.5],
+	line  => [0,2.5],
+	conic => [-2.5,-0.5,-2.5,0,-1,0]
+     ]
+
+=for podview <img src="lineends4.gif">
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/lineends4.gif">
+
+=back
 
 =head1 API
 
@@ -812,7 +915,24 @@ image, C<pixel>, and C<bar_alpha> calls.
 It will not be possible to turn the property on if the system does not
 support it. Also, monochrome images won't support it as well.
 
-See L<Antialiasing and alpha>.
+See L</"Antialiasing and alpha">.
+
+=item arrowHead
+
+Defines the style to paint line heads on starting or ending points used to
+define a line or polygon. Is never used on closed shapes. If C<undef>, the
+heads are painted with the same style as C<lineHead>
+
+Default value: C<le::Round>. Cannot be C<undef>.
+
+=item arrowTail
+
+Defines the style to paint line tails on starting or ending points used to
+define a line or polygon. Is never used on closed shapes. If C<undef>, the
+heads are painted with the same style as C<lineTail>; if it is also C<undef>,
+then the style of C<lineHead> is used.
+
+Default value: C<undef>
 
 =item backColor COLOR
 
@@ -839,7 +959,7 @@ Set-call discards the previous C<::region> value.
 
 Note: C<::clipRect> can not be used while the object is in the paint-disabled state,
 its context is neither recorded nor used as a template
-( see L<"Graphic context and canvas">) -- except on images.
+( see L</"Graphic context and canvas">) -- except on images.
 
 =item fillMode INTEGER
 
@@ -970,7 +1090,7 @@ Synopsis:
      width => 22
    );
 
-See L<"Fonts"> for the detailed descriptions.
+See L</Fonts> for the detailed descriptions.
 
 Applies to text_out(), get_text_width(), get_text_box(), get_font_abc(), get_font_def(),
 render_glyph().
@@ -1036,24 +1156,65 @@ Returns whether the font is enabled or not
 
 =back
 
+=item lineHead
+
+Defines the style to paint line heads in patterned lines only, on line segments
+that do not lie on line starting or ending points used to define a line or
+polygon.
+
+Default value: C<undef>
+
 =item lineEnd VALUE
 
 Selects a line ending cap for plotting primitives. VALUE
 can be one of
 
-=for podview <img src="lineends.gif" cut=1>
+=for podview <img src="lineends1.gif" cut=1>
 
-=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/lineends.gif"><!--
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/lineends1.gif"><!--
 
+  le::Arrow
   le::Flat
+  le::Knob
+  le::Spearhead
   le::Square
   le::Round
+  le::Tail
 
 =for html -->
 
 =for podview </cut>
 
-constants. le::Round is the default value.
+constants, C<undef>, a custom line end description, or an array of four where
+each entry is one of the values above.
+
+The C<undef> value is only accepted in the array syntax, and not for the index
+0 (L</lineHead>).  The other indexes behave differently if are set to C<undef> -
+see more in L</lineTail>, L</arrowHead>, L</arrowTail>, L</lineEndIndex>.
+
+C<le::Round> is the default value.
+
+See also: C<Custom line end styles>.
+
+=item lineEndIndex INDEX, VALUE
+
+Same as C<lineEnd> except only addresses a single line ending style.
+
+Allows VALUE to be C<undef> for indexes 1,2,3; depending on the index, the line
+style will be different ( see more in L</lineTail>, L</arrowHead>, L</arrowTail> ).
+
+Allows special negative INDEX values, that behave differently if the line end
+style is C<undef>: while positive INDEX queries may return C<undef>, or
+possibly affect neighbor indexing (if these are, in turn, C<undef>s), negative
+INDEX never return C<undef> on get-calls, and never affect neighbor styles on
+set-calls.
+
+The following lookup rules are used if a line end style is undef:
+
+  #0 - can never be undef
+  #1 - if undef, same as #0
+  #2 - if undef, same as #0
+  #3 - if undef, same as #1, and if it also is undef, then same as #0
 
 =item lineJoin VALUE
 
@@ -1107,6 +1268,15 @@ patterns. In Win9x, for example, lp::DashDotDot is much different from
 its string definition.
 
 Default value is lp::Solid.
+
+=item lineTail
+
+Defines the style to paint line tails in patterned lines only, on line segments
+that do not lie on line starting or ending points used to define a line or
+polygon.  If C<undef>, line tails are painted with the same style as
+C<lineHead>.
+
+Default value: C<undef>
 
 =item lineWidth WIDTH
 
@@ -1181,7 +1351,7 @@ On getting, OBJECT is either undef or Prima::Region object.
 
 Note: C<::region> can not be used while the object is in the paint-disabled state,
 its context is neither recorded nor used as a template
-( see L<"Graphic context and canvas">).
+( see L</"Graphic context and canvas">).
 
 =item resolution X, Y
 
@@ -1192,13 +1362,13 @@ device resolution in dpi.
 
 Selects raster operation that applies to foreground color plotting routines.
 
-See also: C<::rop2>, L<"Raster operations">.
+See also: C<::rop2>, L</"Raster operations">.
 
 =item rop2 OPERATION
 
 Selects raster operation that applies to background color plotting routines.
 
-See also: C<::rop>, L<"Raster operations">.
+See also: C<::rop>, L</"Raster operations">.
 
 =item textOpaque FLAG
 
@@ -1230,7 +1400,7 @@ is equivalent to
 
 Note: C<::translate> can not be used while the object is in the paint-disabled state,
 its context is neither recorded nor used as a template
-( see L<"Graphic context and canvas">).
+( see L</"Graphic context and canvas">).
 
 =back
 
@@ -1765,7 +1935,7 @@ C<$@> contains the error.
 Once the object is in enabled state, painting and drawing
 methods can perform write operations on a canvas.
 
-See also: C<end_paint>, C<begin_paint_info>, L<"Graphic context and canvas">
+See also: C<end_paint>, C<begin_paint_info>, L</"Graphic context and canvas">
 
 =item begin_paint_info
 
@@ -1774,7 +1944,7 @@ C<$@> contains the error.
 The object information state is same as enabled state ( see C<begin_paint>),
 except painting and drawing methods do not change the object canvas.
 
-See also: C<end_paint_info>, C<begin_paint>, L<"Graphic context and canvas">
+See also: C<end_paint_info>, C<begin_paint>, L</"Graphic context and canvas">
 
 =item can_draw_alpha
 
@@ -1791,13 +1961,13 @@ See also: C<has_alpha_layer>
 
 Exits the enabled state and returns the object to a disabled state.
 
-See also: C<begin_paint>, L<"Graphic context and canvas">
+See also: C<begin_paint>, L</"Graphic context and canvas">
 
 =item end_paint_info
 
 Exits the information state and returns the object to a disabled state.
 
-See also: C<begin_paint_info>, L<"Graphic context and canvas">
+See also: C<begin_paint_info>, L</"Graphic context and canvas">
 
 =item font_match \%SOURCE, \%DEST, PICK = 1
 
@@ -1821,7 +1991,7 @@ Member of C<Prima::Application> and C<Prima::Printer>, does not
 present in C<Prima::Drawable>.
 
 Returns an array of font metric hashes for a given font FAMILY
-and ENCODING.  Every hash has full set of elements described in L<"Fonts">.
+and ENCODING.  Every hash has full set of elements described in L</"Fonts">.
 
 If called without parameters, returns an array of same hashes
 where each hash represents a member of font family from every
@@ -1857,7 +2027,7 @@ The result is an integer array reference, where every character
 glyph is referred by three integers, each triplet containing
 A, B and C values.
 
-For detailed explanation of ABC meaning, see L<"Font ABC metrics">;
+For detailed explanation of ABC meaning, see L</"Font ABC metrics">;
 
 Context used: font
 
@@ -1897,7 +2067,7 @@ C<ps::Enabled> for the enabled state, C<ps::Information> for the information sta
 For brevity, mb::Disabled is equal to 0 so this allows for simple boolean testing whether one can
 get/set graphical properties on an object.
 
-See L<"Graphic context and canvas"> for more.
+See L</"Graphic context and canvas"> for more.
 
 =item get_physical_palette
 
@@ -1933,7 +2103,7 @@ string.
 If ADD_OVERHANG is 1, the first character's absolute A value and the last
 character's absolute C value are added to the string if they are negative.
 
-See more on ABC values at L<"Font ABC metrics">.
+See more on ABC values at L</"Font ABC metrics">.
 
 Context used: font
 
@@ -2117,7 +2287,7 @@ See L<Prima::Drawable::Path/widen> for usage.
 Renders B-spline curve from set of VERTICES to a polyline with given options.
 
 The method is internally used by C<spline> and C<fill_spline>, and is provided
-for cases when these are insufficient. See description of options in L<spline>.
+for cases when these are insufficient. See description of options in L</spline>.
 
 =item text_wrap TEXT, WIDTH, OPTIONS, [TAB_INDENT = 8, FROM = 0, LENGTH = -1, GLYPHS]
 
