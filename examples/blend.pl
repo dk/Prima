@@ -96,8 +96,9 @@ sub repaint
 	my $sb = $w->SliderB;
 	if ( $sa->enabled ) {
 		$canvas->put_image(0,0,$base);
-		$canvas->put_image(0,0,$ia, rop::alpha( rop::SrcOver, $sa->value));
-		$canvas->put_image(0,0,$ib, rop::alpha( $rop_val, $sb->value));
+		$precanvas->put_image(0,0,$ia, rop::alpha( rop::SrcCopy, $sa->value));
+		$precanvas->put_image(0,0,$ib, rop::alpha( $rop_val, $sb->value));
+		$canvas->put_image(0,0,$precanvas,rop::SrcOver);
 	} else {
 		$canvas->put_image(0,0,$a);
 		$canvas->put_image(0,0,$b,$rop_val);
