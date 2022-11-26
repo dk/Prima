@@ -75,42 +75,42 @@ package
 package
     le; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# line ends
 
-sub Arrow { [
+use constant Arrow => [
 	conic => [1,0,2.5,0,2.5,-0.5],
 	line  => [0,2.5],
 	conic => [-2.5,-0.5,-2.5,0,-1,0]
-] }
+];
 
-sub Cusp { [
+use constant Cusp => [
 	line  => [0,2],
-] }
+];
 
-sub InvCusp { [
+use constant InvCusp => [
 	line  => [1,2,0,0,-1,2],
-] }
+];
 
-sub Spearhead { [
+use constant Spearhead => [
 	line  => [1.5,1,0,4,-1.5,1],
-] }
+];
 
-sub RoundRect { [
+use constant RoundRect => [
 	conic => [0,-1.5,1.5,-1.5,1.5,0,1.5,1.5,0,1.5,-1.5,1.5,-1.5,0,-1.5,-1.5,0,-1.5],
-] }
+];
 
-sub Rect { [
+use constant Rect => [
 	line  => [0,-1.5,1.5,-1.5,1.5,1.5,-1.5,1.5,-1.5,-1.5,0,-1.5],
-] }
+];
 
-sub Knob { [
+use constant Knob => [
 	conic => [0,-1.5,1.5,-1.5,1.5,0],
 	conic => [1.5,0,1.5,1.5,0,1.5],
 	conic => [0,1.5,-1.5,1.5,-1.5,0],
 	conic => [-1.5,0,-1.5,-1.5,0,-1.5],
-] }
+];
 
-sub Tail { [
+use constant Tail => [
 	line  => [ 2,1,2,2.25,0,1.75,-2,2.25,-2,1 ]
-] }
+];
 
 sub transform
 {

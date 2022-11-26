@@ -793,8 +793,8 @@ is in the disabled state.
 
 =head2 Custom line end styles
 
-Prima uses own plotting mechanism in L<Prima::Drawable::Path> to produce all
-primitive shapes, including lines. The way lines are plotted is governed by
+Prima uses its own plotting mechanism in L<Prima::Drawable::Path> to produce
+all primitive shapes, including lines. The way lines are plotted is governed by
 properties C<lineEnd>, C<lineJoin>, C<linePattern>, and C<miterLimit>.  All of
 these properties are described below, however C<lineEnd> provides rich
 capabilities to generate custom line ends, and this is what described in this
@@ -804,7 +804,7 @@ section.
 
 =item le:: namespace
 
-There are 3 predefined C<le::> constants
+There are 3 predefined C<le::> integer constants
 
 =for podview <img src="lineends.gif" cut=1>
 
@@ -819,12 +819,14 @@ There are 3 predefined C<le::> constants
 =for podview </cut>
 
 that are hardcoded in Prima, that are accepted by the C<lineEnd> property.
+These constants are somewhat limited in the way one can operate them, for the sake
+of efficiency.
 
 It is also possible to supply an array descriptor that defines a set of
-primitives that plots a line cap, tranformed with respect to the current line
-tangent and width. Details of the descriptor syntax are given below, but there are
-also non-hardcoded line end constants defined by this method, that one can use
-as well:
+primitives that plots a line cap, automatically transformed with respect to the
+current line tangent and width. Details of the descriptor syntax itself are given in
+the next section, while here the set of non-hardcoded line end functions is listed,
+that is also suitable for use in the C<lineEnd> property.
 
   le::Arrow
   le::Cusp
@@ -979,10 +981,10 @@ where the shape edges cross.
 C<fm::Overlay> flag can be combined with these to counter an intrinsic defect
 of filled shaped both in Win32 and X11 that don't exactly follow polygon
 vertices. When supplied, it overlays a polygon over the filled shape, so that
-the latter falls exactly in the boundaries defined by vertices. This is desirable
-when one wants to follow polygon vertices, but is not desirable when a shape has
-holes in it connected in a way that the polygon overlay may leave connection edges
-over them.
+the latter falls exactly in the boundaries defined by vertices. This is
+desirable when one wants the shape to be defined exactly by polygon vertices,
+but is not desirable when a shape has holes in it and is connected in a way
+that the polygon overlay may leave visible connection edges over them.
 
 =for podview <img src="windings.gif">
 
@@ -1207,7 +1209,7 @@ see more in L</lineTail>, L</arrowHead>, L</arrowTail>, L</lineEndIndex>.
 
 C<le::Round> is the default value.
 
-See also: C<Custom line end styles>.
+See also: L<Custom line end styles>.
 
 =item lineEndIndex INDEX, VALUE
 
