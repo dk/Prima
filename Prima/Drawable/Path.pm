@@ -1254,9 +1254,9 @@ sub widen_new
 			} elsif ( $cmd eq 'arc') {
 				$dst->$cmd( @$param );
 			} elsif ( $cmd eq 'conic') {
-				$dst->spline( $param, degree => 2 );
+				$dst->spline( $param, degree => 2, closed => 0 );
 			} elsif ( $cmd eq 'cubic') {
-				$dst->spline( $param, degree => 3 );
+				$dst->spline( $param, degree => 3, closed => 0 );
 			} elsif ( $cmd eq 'open') {
 				$dst->open;
 			} else {

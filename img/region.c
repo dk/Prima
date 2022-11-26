@@ -398,13 +398,13 @@ superimpose_outline( PRegionRec region, Point *pts, int count)
 
 	/* superimpose polyline points using Bresenham
 	because regions are as broken as filled shapes */
-	for ( i = 0; i < count - 1; i++) {
+	for ( i = 0; i < count; i++) {
 		int curr_maj, curr_min, to_maj, delta_maj, delta_min;
 		int delta_y, delta_x;
 		int dir = 0, d, d_inc1, d_inc2;
 		int inc_maj, inc_min;
 		int x, y, acc_x = 0, acc_y = INT_MIN, ox;
-		Point a = pts[i], b = pts[i+1];
+		Point a = pts[i], b = pts[(i == count - 1) ? 0 : i + 1];
 		delta_y = b.y - a.y;
 		delta_x = b.x - a.x;
 		if (abs(delta_y) > abs(delta_x)) dir = 1;
