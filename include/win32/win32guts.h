@@ -9,6 +9,8 @@
 #ifdef _MSC_VER
 #undef __inline__
 #define __inline__ inline
+#undef __extension__
+#define __extension__
 #undef CALLBACK
 #define CALLBACK
 #endif

@@ -53,7 +53,8 @@ use vars qw(
 	$SHQUOTE
 	$DEFFILE
 	$OPTIMIZE
-	$OPENMP
+	$CC_OPENMP
+	$LD_OPENMP
 	%ALL_PM_INSTALL
 	%ALL_MAN_INSTALL
 	%MODVERSIONS
@@ -380,7 +381,8 @@ sub setup_environment
 		$LDOUTFLAG    = '/OUT:';
 		$LD_LIB_EXT   = '.lib';
 		$OPTIMIZE     = '-Zi' if $cmd_options{DEBUG};
-		$OPENMP       = '/openmp';
+		$CC_OPENMP    = '/openmp';
+		$LD_OPENMP    = '';
 		# link flag is /DEBUG, but we don't care because ActiveState has it on by default anyway
 	}
 	else {
@@ -392,7 +394,8 @@ sub setup_environment
 		$LDOUTFLAG    = '-o ';
 		$LD_LIB_EXT   = '';
 		$OPTIMIZE     = '-g' if $cmd_options{DEBUG};
-		$OPENMP       = '-fopenmp';
+		$CC_OPENMP    = '-fopenmp';
+		$LD_OPENMP    = '-fopenmp';
 		$OPTIMIZE    .= ' -Wall' if gcc;
 		if ($cmd_options{DEBUG}) {
 			$passthru_options{LDDLFLAGS} .= ' -g';
@@ -971,8 +974,8 @@ main()
 EOF
 		my $savecc = $cmd_options{EXTRA_CCFLAGS};
 		my $saveld = $passthru_options{LDDLFLAGS};
-		$cmd_options{EXTRA_CCFLAGS} .= " $OPENMP";
-		$passthru_options{LDDLFLAGS} .= " $OPENMP";
+		$cmd_options{EXTRA_CCFLAGS} .= " $CC_OPENMP";
+		$passthru_options{LDDLFLAGS} .= " $LD_OPENMP";
 		my @savelibs = @LIBS;
 #		push @LIBS, 'gomp' if $compiler_type eq 'gcc';
 		push @LIBS, 'vcompd' if $compiler_type eq 'cl';
@@ -984,7 +987,8 @@ EOF
 			if ( $captured_makefile_log =~ /recompile with (\-fpic)/i) {
 				printlog "no, trying with $1 ...";
 				$cmd_options{EXTRA_CCFLAGS} .= " $1";
-				$OPENMP .= " $1";
+				$CC_OPENMP .= " $1";
+				$LD_OPENMP .= " $1";
 				goto YES_OPENMP if compile($text);
 			}
 
@@ -1050,6 +1054,8 @@ MSCVER
 #ifdef _MSC_VER
 #undef __inline__
 #define __inline__ inline
+#undef __extension__
+#define __extension__
 #undef CALLBACK
 #define CALLBACK
 #endif
@@ -2211,7 +2217,7 @@ sub create_config_pm
 		$libsi = '$(lib)' . "/auto/Prima/${LIB_PREFIX}Prima$LIB_EXT";
 	}
 
-	my $cc_openmp = $cmd_options{WITH_OPENMP} ? $OPENMP : '';
+	my $cc_openmp = $cmd_options{WITH_OPENMP} ? $CC_OPENMP : '';
 
 	open F, "> Prima/Config.pm" or die "cannot open Prima/Config.pm:$!\n";
 	print F <<CONFIG;

@@ -1201,7 +1201,7 @@ apc_system_action( const char * params)
 
 			if ( strcmp( params, " exists") == 0) {
 				char * p = ( char *) malloc(12);
-				if ( p) snprintf( p, 12, PR_HANDLE_FMT, ( Handle) guts. console);
+				if ( p) snprintf( p, 12, "%p", ( Handle) guts. console);
 				return p;
 			} else
 			if ( strcmp( params, " hide") == 0)     { ShowWindow( guts. console, SW_HIDE); } else
