@@ -313,8 +313,10 @@ clipboard_get_data(int cfid, PClipboardDataRec c, void * p1, void * p2)
 		}
 		default: {
 			char *ptr;
-			if (( c-> length = GlobalSize( p1)) == 0)
+			if (( c-> length = GlobalSize( p1)) == 0) {
+				c-> data = NULL;
 				return true; /* not an error */
+			}
 			if ( !( ptr = ( char*) GlobalLock( p1)))
 				apiErrRet;
 			if (( c-> data = malloc( c-> length)))
