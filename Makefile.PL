@@ -187,33 +187,33 @@ sub setup_argv
 	$ARGV_STR = join(' ', @ARGV);
 
 	%cmd_options = (
-		X11BASE       => undef,
-		WITH_XFT      => 1,
-		WITH_HARFBUZZ => 1,
-		WITH_FRIBIDI   => 1,
-		WITH_ICONV    => 1,
-		WITH_GTK2     => 0,
-		WITH_GTK3     => 1,
-		WITH_OPENMP   => 1,
-		WITH_COCOA    => ($^O eq 'darwin'),
-		WITH_LIBTHAI  => 1,
-		CYGWIN_WINAPI => 0,
-		DEBUG         => 0,
-		EXTRA_CCFLAGS => '',
-		EXTRA_LDFLAGS => '',
-		VERBOSE       => 0,
+		X11BASE       => $ENV{PRIMA_X11BASE}, # Default value of undef is ok
+		WITH_XFT      => $ENV{PRIMA_WITH_XFT}      // 1,
+		WITH_HARFBUZZ => $ENV{PRIMA_WITH_HARFBUZZ} // 1,
+		WITH_FRIBIDI  => $ENV{PRIMA_WITH_FRIBIDI}  // 1,
+		WITH_ICONV    => $ENV{PRIMA_WITH_ICONV}    // 1,
+		WITH_GTK2     => $ENV{PRIMA_WITH_GTK2}     // 0,
+		WITH_GTK3     => $ENV{PRIMA_WITH_GTK3}     // 1,
+		WITH_OPENMP   => $ENV{PRIMA_WITH_OPENMP}   // 1,
+		WITH_COCOA    => $ENV{PRIMA_WITH_COCOA}    // ($^O eq 'darwin'),
+		WITH_LIBTHAI  => $ENV{PRIMA_WITH_LIBTHAI}  // 1,
+		CYGWIN_WINAPI => $ENV{PRIMA_CYGWIN_WINAPI} // 0,
+		DEBUG         => $ENV{PRIMA_DEBUG}         // 0,
+		EXTRA_CCFLAGS => $ENV{PRIMA_EXTRA_CCFLAGS} // '',
+		EXTRA_LDFLAGS => $ENV{PRIMA_EXTRA_LDFLAGS} // '',
+		VERBOSE       => $ENV{PRIMA_VERBOSE}       // 0,
 
 		# service vars
-		AUTOMATED_RUN => 0,
-		DL_LOAD_FLAGS => undef,
+		AUTOMATED_RUN => $ENV{PRIMA_AUTOMATED_RUN} // 0,
+		DL_LOAD_FLAGS => $ENV{PRIMA_DL_LOAD_FLAGS}, # Default value of undef is ok
 	);
 
 	%passthru_options = (
-		DEFINE        => '',
-		LIBS          => '',
-		INC           => '',
-		LD            => $Config{ld},
-		LDDLFLAGS     => $Config{lddlflags},
+		DEFINE        => $ENV{PRIMA_DEFINE}        // '',
+		LIBS          => $ENV{PRIMA_LIBS}          // '',
+		INC           => $ENV{PRIMA_INC}           // '',
+		LD            => $ENV{PRIMA_LD}            // $Config{ld},
+		LDDLFLAGS     => $ENV{PRIMA_LDDLFLAGS}     // $Config{lddlflags},
 	);
 
 	@ARGV = grep {
