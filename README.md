@@ -260,7 +260,7 @@ Credits
  - Johannes Blankenstein
  - Mike Castle
  - H.Merijn Brand
-  - Richard Morgan
+ - Richard Morgan
  - Kevin Ryde
  - Chris Marshall
  - Slaven Rezic
