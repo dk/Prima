@@ -289,8 +289,9 @@ sub on_paint
 		$canvas-> color( $clr[1]);
 
 		if ( $self->{style} eq 'xp') {
-			$canvas-> backColor( $c3d[0]);
+			$canvas-> backColor( $c3d[1]);
 			$canvas-> fillPattern([(0xAA,0x55) x 4]);
+			$canvas-> rop2(rop::CopyPut);
 			$canvas-> bar( @r);
 			$canvas-> fillPattern(fp::Solid);
 		} else {
