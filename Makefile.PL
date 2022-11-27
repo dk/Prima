@@ -2433,7 +2433,6 @@ sub command_bindist
 			($d, $f) = ('', $path);
 		}
 		next if $d =~ m[^(t|img|include|win32|unix|api|class)(/|$)];
-		print "$d\n";
 		if ( length $d ) {
 			$dirs{ "$DISTNAME/$d" }++;
 			push @files, "$d/$f";
