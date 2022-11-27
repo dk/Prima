@@ -194,7 +194,7 @@ Try running the toolkit examples, by default installed in
 INSTALLSITEARCH/Prima/examples directory ( find it by running perl
 -V:installsitearch ). All examples and programs included into the distribution
 can be run either by their name or with perl as argument - for example,
-..../generic or perl ..../generic .  ( perl ..../generic.bat for win32 )
+..../helloworld or perl ..../helloworld .  ( perl ..../helloworld.bat for win32 )
 
 Typical code starts with
 
