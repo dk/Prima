@@ -527,6 +527,7 @@ sub Roller_Paint
 	}
 
 	$canvas-> color( cl::Black);
+	$step = int($step);
 	$canvas-> rectangle( $step, $step, $size[0] - $step, $size[1] - $step);
 	$d = int( $v * ($size[1]-$step * 2));
 	$canvas-> rectangle( 0, $d, $size[0]-1, $d + $step * 2 - 1);
