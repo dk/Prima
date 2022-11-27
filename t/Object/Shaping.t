@@ -89,7 +89,7 @@ FAIL:
 		$_ = '-' . ($_ & ~to::RTL) for grep { /^\d+$/ && $_ & to::RTL } @$got;
 		$_ = '-' . ($_ & ~to::RTL) for grep { /^\d+$/ && $_ & to::RTL } @$exp;
 	}
-	diag(sprintf("got [@$got], expected [@$exp]"));
+	diag(sprintf("got [@$got], expected [@$exp] font=%s", $w->font->name));
 }
 
 sub t2
