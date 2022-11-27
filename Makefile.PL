@@ -2420,38 +2420,39 @@ sub command_bindist
 	}
 
 	clean_dist;
-	my @dirs;
+	my %dirs;
 	my @files;
-	finddepth( sub {
-		return if $_ eq '.' ||
-			($_ eq 'Makefile' && $File::Find::dir eq $CWD) ||
-			m/^\./;
-		return if /\.(pdb|ncb|opt|dsp|dsw)$/i; # MSVC
-		my $f = "$File::Find::dir/$_";
-		return if $f =~ /include.generic|\.git|\.swp|\.log|blib|dll.base|dll.exp|Prima.bs|Prima.def/;
-		return if $f =~ /\.(c|cls|h)$/i;
-		return if $f =~ /$CWD.(img|include|win32|unix|api|class|Makefile.old)/i;
-		if ( -d $f) {
-			$f =~ s/^$CWD/$DISTNAME/;
-			push @dirs, $f;
+
+	open MAN, "<", "MANIFEST" or die "Cannot open MANIFEST:$!\n";
+	for my $path (<MAN>) {
+		chomp $path;
+		my ( $d, $f );
+		if ( $path =~ m[^(.+)/([^\/]+)$]) {
+			($d, $f) = ($1, $2);
 		} else {
-			return if $f =~ m/$Config{_o}$/;
+			($d, $f) = ('', $path);
+		}
+		next if $d =~ m[^(t|img|include|win32|unix|api|class)(/|$)];
+		print "$d\n";
+		if ( length $d ) {
+			$dirs{ "$DISTNAME/$d" }++;
+			push @files, "$d/$f";
+		} else {
+			$dirs{ $DISTNAME }++;
 			push @files, $f;
 		}
-	}, $CWD);
+	}
 
 	print "Creating directories...\n";
-	push @dirs, "$DISTNAME/auto/Prima";
-	for ( @dirs) {
+	$dirs{ "$DISTNAME/auto/Prima" }++;
+	for ( sort keys %dirs) {
 		next if -d $_;
 		cleanup( "Can't mkdir $_") unless mkpath $_;
 	}
 
 	print "Copying files...\n";
 	for ( @files) {
-		my $f = $_;
-		$f =~ s/^$CWD/$DISTNAME/;
-		cleanup("Error copying $_ to $_") unless copy $_, $f;
+		cleanup("Error copying $_ to $DISTNAME/$_") unless copy $_, "$DISTNAME/$_";
 	}
 	for (<blib/arch/auto/Prima/*>) {
 		next if m/(\.exists|Prima\.bs|Prima\.pdb)$/;
