@@ -171,8 +171,8 @@ apc_gp_bars( Handle self, int nr, Rect *rr)
 			Rect xr = *r;
 			check_swap( xr.left, xr.right);
 			check_swap( xr.bottom, xr.top);
-			SHIFT_Y( xr.bottom);
-			SHIFT_Y( xr.top);
+			SHIFT_XY( xr.left,  xr.bottom);
+			SHIFT_XY( xr.right, xr.top);
 			if ( !( ok = Rectangle( ps, xr.left, xr.top, xr.right + 1, xr.bottom + 1))) {
 				apiErr;
 				break;
@@ -209,7 +209,7 @@ apc_gp_alpha( Handle self, int alpha, int x1, int y1, int x2, int y2)
 	h = y2 - y1 + 1;
 
 	y1 = y2;
-	SHIFT_Y(y1);
+	SHIFT_XY(x1,y1);
 
 	dc     = GetDC(NULL);
 	buf_dc = CreateCompatibleDC(dc);
@@ -276,8 +276,8 @@ apc_gp_clear( Handle self, int x1, int y1, int x2, int y2)
 	}
 	check_swap( x1, x2);
 	check_swap( y1, y2);
-	SHIFT_Y(y1);
-	SHIFT_Y(y2);
+	SHIFT_XY(x1,y1);
+	SHIFT_XY(x2,y2);
 	if ( !( ok = Rectangle( sys ps, x1, y2, x2 + 1, y1 + 1)))
 		apiErr;
 
@@ -300,7 +300,7 @@ apc_gp_draw_poly( Handle self, int numPts, Point * points)
 	for ( i = 0; i < numPts; i++)  {
 		p[i].x = points[i].x;
 		p[i].y = points[i].y;
-		SHIFT_Y(p[i].y);
+		SHIFT_POINT(p[i]);
 	}
 	if ( p[0]. x != p[numPts - 1].x || p[0]. y != p[numPts - 1].y || numPts == 2)
 		adjust_line_end_LONG( p[numPts - 2].x, p[numPts - 2].y, &p[numPts - 1].x, &p[numPts - 1].y);
@@ -337,7 +337,8 @@ apc_gp_draw_poly2( Handle self, int numPts, Point * points)
 
 	for ( i = 0; i < numPts; i++)  {
 		p[i].x = points[i].x;
-		p[i].y = SHIFT_Y(points[i].y);
+		p[i].y = points[i].y;
+		SHIFT_POINT(p[i]);
 		pts[i] = 2;
 		if ( i & 1)
 			adjust_line_end_LONG( p[i - 1].x, p[i - 1].y, &p[i].x, &p[i].y);
@@ -389,7 +390,8 @@ apc_gp_fill_poly( Handle self, int numPts, Point * points)
 
 	for ( i = 0; i < numPts; i++)  {
 		p[i].x = points[i].x;
-		p[i].y = SHIFT_Y(points[i].y);
+		p[i].y = points[i].y;
+		SHIFT_POINT(p[i]);
 	}
 	if ( numPts == 2 )
 		adjust_line_end_LONG( p[0].x, p[0].y, &p[1].x, &p[1].y);
@@ -515,7 +517,7 @@ apc_gp_flood_fill( Handle self, int x, int y, Color borderColor, Bool singleBord
 {objCheck false;{
 	HDC ps = sys ps;
 	STYLUS_USE_BRUSH;
-	SHIFT_Y(y);
+	SHIFT_XY(x,y);
 	if ( !ExtFloodFill( ps, x, y, remap_color( borderColor, true),
 		singleBorder ? FLOODFILLSURFACE : FLOODFILLBORDER)) apiErrRet;
 	return true;
@@ -525,7 +527,7 @@ Color
 apc_gp_get_pixel( Handle self, int x, int y)
 {objCheck clInvalid;{
 	COLORREF c;
-	SHIFT_Y(y);
+	SHIFT_XY(x,y);
 	c = GetPixel( sys ps, x, y);
 	if ( c == CLR_INVALID) return clInvalid;
 	return remap_color(( Color) c, false);
@@ -544,8 +546,8 @@ apc_gp_line( Handle self, int x1, int y1, int x2, int y2)
 	HDC ps = sys ps;
 
 	adjust_line_end_int( x1, y1, &x2, &y2);
-	SHIFT_Y(y1);
-	SHIFT_Y(y2);
+	SHIFT_XY(x1,y1);
+	SHIFT_XY(x2,y2);
 
 	if (EMULATE_OPAQUE_LINE) {
 		STYLUS_USE_OPAQUE_LINE;
@@ -586,8 +588,8 @@ apc_gp_rectangle( Handle self, int x1, int y1, int x2, int y2)
 		y1--;
 		y2--;
 	}
-	SHIFT_Y(y1);
-	SHIFT_Y(y2);
+	SHIFT_XY(x1,y1);
+	SHIFT_XY(x2,y2);
 
 	if ( EMULATE_OPAQUE_LINE ) {
 		STYLUS_USE_OPAQUE_LINE;
@@ -606,7 +608,7 @@ Bool
 apc_gp_set_pixel( Handle self, int x, int y, Color color)
 {
 	objCheck false;
-	SHIFT_Y(y);
+	SHIFT_XY(x,y);
 	SetPixelV( sys ps, x, y, remap_color( color, true));
 	return true;
 }

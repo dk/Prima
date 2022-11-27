@@ -1043,6 +1043,8 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
 	apt_set( aptWinPS);
 	apt_set( aptCompatiblePS);
 	apt_assign( aptWM_PAINT, insideOnPaint);
+	sys effective_view. x = var w;
+	sys effective_view. y = var h;
 
 	if ( is_apt( aptLayeredPaint )) {
 		sys ps = sys layered_paint_surface;
@@ -1067,10 +1069,10 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
 		HDC dc;
 
 		GetClipBox( sys ps, &r);
-		var w = r. right  - r. left;
-		var h = r. bottom - r. top;
+		sys effective_view.x = r. right  - r. left;
+		sys effective_view.y = r. bottom - r. top;
 
-		if ( var w == 0 || var h == 0) {
+		if ( sys effective_view.x  == 0 || sys effective_view.y == 0) {
 			if ( !EndPaint(( HWND) var handle, &sys paint_struct)) apiErr;
 			apt_clear( aptWinPS);
 			apt_clear( aptWM_PAINT);
@@ -1091,7 +1093,7 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
 		if ( guts. display_bm_info. bmiHeader. biBitCount == 8)
 			apt_clear( aptCompatiblePS);
 
-		bm = CreateCompatibleBitmap( sys ps, var w, var h);
+		bm = CreateCompatibleBitmap( sys ps, sys effective_view.x, sys effective_view.y);
 
 		if ( bm) {
 			sys ps2 = sys ps;
@@ -1340,7 +1342,11 @@ apc_widget_end_paint( Handle self)
 	} else if ( is_opt( optBuffered)) {
 		apt_clear( aptBitmap);
 		if ( sys bm != NULL) {
-			if ( !BitBlt( sys ps2, sys transform2. x, sys transform2. y, var w, var h, sys ps, 0, 0, SRCCOPY)) apiErr;
+			if ( !BitBlt( sys ps2,
+				sys transform2. x, sys transform2. y,
+				sys effective_view.x, sys effective_view.y,
+				sys ps, 0, 0, SRCCOPY
+				)) apiErr;
 			if ( sys stock_bitmap)
 				SelectObject( sys ps, sys stock_bitmap);
 			DeleteObject( sys bm);

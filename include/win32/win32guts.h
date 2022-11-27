@@ -145,7 +145,10 @@ typedef HANDLE SOCKETHANDLE;
 #define objCheck          if ( var stage == csDead) return
 #define dobjCheck(handle) if ((( PObject)handle)-> stage == csDead) return
 
-#define SHIFT_Y(Y)    Y = sys last_size.y - (Y) - 1 - sys transform2.y
+#define SHIFT_X(X)     X -= sys transform2.x
+#define SHIFT_Y(Y)     Y = sys last_size.y - (Y) - 1 - sys transform2.y
+#define SHIFT_XY(X,Y)  if ( 1 ) { SHIFT_X(X); SHIFT_Y(Y); }
+#define SHIFT_POINT(P) SHIFT_XY(P.x,P.y)
 
 typedef struct _HandleOptions_ {
 	unsigned aptWM_PAINT             : 1;       // true if inside WM_PAINT
@@ -501,6 +504,7 @@ typedef struct _DrawableData
 	HDC            ps2;                 // original HDC
 	HPALETTE       pal2;                // original palette
 	Point          transform2;          // necessary additional transposition
+	Point          effective_view;      // area to be drawn, possibly with a backed bitmap
 
 	/* Positioning support fields */
 	Point          last_size;           // last actual size
