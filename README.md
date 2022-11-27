@@ -260,7 +260,7 @@ Credits
  - Johannes Blankenstein
  - Mike Castle
  - H.Merijn Brand
- - Richard Morgan
+  - Richard Morgan
  - Kevin Ryde
  - Chris Marshall
  - Slaven Rezic
@@ -285,4 +285,7 @@ Credits
  - Maximilian Lika
  - kmx
  - Mario Roy
+ - Timothy Witham
+ - Mohammad S Anwar
+ - Jean-Damien Durand
 
