@@ -249,13 +249,13 @@ apc_pointer_get_bitmap( Handle self, Handle icon)
 	ICONINFO  ii;
 	PIcon     i = ( PIcon) icon;
 	HDC dc;
-	XBITMAPINFO bi = {{
-		sizeof( BITMAPINFOHEADER), 0, 0, 1, 1
-	}};
+	XBITMAPINFO bi;
 	BITMAP bitmap;
 
-	bi. header.biWidth = guts. pointer_size. x;
-	bi. header.biHeight = guts. pointer_size. y;
+	bzero( &bi, sizeof(bi));
+	bi.header.biSize     = sizeof(BITMAPINFOHEADER);
+	bi.header.biPlanes   = 1;
+	bi.header.biBitCount = 1;
 
 	if ( icon == NULL_HANDLE)
 		apcErrRet( errInvParams);
@@ -276,11 +276,14 @@ apc_pointer_get_bitmap( Handle self, Handle icon)
 		dsys( icon) ps = dc;
 		dsys( icon) bm = ii. hbmColor;
 		image_query_bits( icon, false);
+		bi.header.biWidth    = i-> w;
+		bi.header.biHeight   = i-> h;
 		if ( !GetDIBits( dc, ii. hbmMask, 0, i-> h, i-> mask, ( BITMAPINFO*) &bi, DIB_RGB_COLORS)) apiErr;
 		dsys( icon) ps = ops;
 		dsys( icon) bm = obm;
 	} else {
-		bi. header.biHeight *= 2;
+		bi.header.biWidth    = i-> w;
+		bi.header.biHeight   = i-> h * 2;
 		if ( !GetDIBits( dc, ii. hbmMask, 0, i-> h, i-> data, ( BITMAPINFO*) &bi, DIB_RGB_COLORS)) apiErr;
 		if ( !GetDIBits( dc, ii. hbmMask, i-> h, i-> h, i-> mask, ( BITMAPINFO*) &bi, DIB_RGB_COLORS)) apiErr;
 	}
