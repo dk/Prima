@@ -90,7 +90,7 @@ run_next(PTextShapeRec t, PBidiRunRec r)
 	if ( r->i >= r->vis_len ) return 0;
 
 	rtl  = t->analysis[r->i];
-	if ( t-> fonts ) font = t->fonts[r->i];
+	font = t->fonts ? t->fonts[r->i] : 0;
 	for ( ; r->i < r->vis_len + 1; r->i++) {
 		if (
 			r->i >= r->vis_len ||          /* eol */

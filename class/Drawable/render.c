@@ -197,7 +197,7 @@ Drawable_render_spline( SV * obj, SV * points, HV * profile)
 	Point *rendered, *storage;
 	NPoint *nrendered, *nstorage;
 	SV *ret;
-	Bool ok, closed, as_integer;
+	Bool ok, closed, as_integer = false;
 	int i, j, degree, precision, n_points, final_size, k, dim, n_add_points, temp_size,
 		tangent, last_tangent;
 	double *knots, *weights, t, dt, *weighted, *temp;
