@@ -562,6 +562,11 @@ img_polyline2patterns( NPoint * points, int n_points, double line_width, unsigne
 	advance = strokelen = 0.0;
 	last_a = a = points[0];
 	last_b = b = points[1];
+	/* these are not needed, but hush the compiler warning */
+	a1.x = a1.y = r.x = r.y = 0;
+	plotted = false;
+	pixlen = 0.0;
+
 	while ( 1 ) {
 		float next_seg_advance;
 
