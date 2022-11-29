@@ -1721,6 +1721,19 @@ sub setup_x11_extension
 	}
 }
 
+sub setup_xrandr
+{
+	setup_x11_extension('xrandr');
+	return unless ( $MODVERSIONS{xrandr} // '') =~ m/^(\d+)\.(\d+)/;
+	return unless $1 * 100 + $2 >= 1.5;
+	$DEFINES{HAVE_XRANDR_1_5} = 1;
+}
+
+sub setup_xcomposite
+{
+	setup_x11_extension('xcomposite');
+}
+
 sub setup_xlibs
 {
 	have_header( "X11/extensions/shape.h", "X11/X.h", "X11/Xlib.h", "X11/Xutil.h");
@@ -1738,7 +1751,8 @@ NO_HARFBUZZ
 	$cmd_options{WITH_ICONV} = 0 unless $cmd_options{WITH_XFT}; # iconv is used for xft only
 	setup_iconv() if $cmd_options{WITH_ICONV};
 	setup_gtk() if $cmd_options{WITH_GTK2} || $cmd_options{WITH_GTK3};
-	setup_x11_extension($_) for qw(xrandr xcomposite);
+	setup_xrandr();
+	setup_xcomposite();
 
 	if ( $use_pkgconfig ) {
 		$DEFINES{HAVE_X11_XCURSOR_XCURSOR_H} = 1 if pkgconfig('xcursor');

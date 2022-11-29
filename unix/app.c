@@ -1012,7 +1012,7 @@ apc_application_get_size( Handle self)
 Box *
 apc_application_get_monitor_rects( Handle self, int * nrects)
 {
-#if defined(HAVE_X11_EXTENSIONS_XRANDR_H) && (RANDR_MAJOR > 1 || (RANDR_MAJOR == 1 && RANDR_MINOR > 3))
+#if defined(HAVE_X11_EXTENSIONS_XRANDR_H) && defined(HAVE_XRANDR_1_5)
 	XRRMonitorInfo *m;
 	Box * ret = NULL;
 	int n;
