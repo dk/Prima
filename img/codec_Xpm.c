@@ -3,12 +3,16 @@
 #define Font            XFont
 #define Window          XWindow
 #undef FUNC
-#undef Bool
-#define Bool BOOL
+#ifdef __MINGW32__
+#	undef Bool
+#	define Bool BOOL
+#endif
 #include <X11/xpm.h>
 #undef Font
 #undef Drawable
-#undef Bool
+#ifdef __MINGW32__
+#	undef Bool
+#endif
 #undef Window
 #define ComplexShape 0
 #define XBool int
