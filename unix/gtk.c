@@ -313,10 +313,11 @@ prima_gtk_init(void)
 	}
 #endif
 
-#if PERL_REVISION == 5 && PERL_VERSION == 20
-/* perl bug in 5.20.0, see more at https://rt.perl.org/Ticket/Display.html?id=122105 */
+        /* after 5.20.0 perl doesn't tolerate changes to setlocale, see more at:
+	   https://rt.perl.org/Ticket/Display.html?id=122105
+           https://rt.perl.org/Ticket/Display.html?id=133945 */
 	gtk_disable_setlocale();
-#endif
+
 	if ( !gtk_parse_args (&argc, NULL) || (
 		display =
 #if GTK_MAJOR_VERSION == 2
@@ -336,10 +337,6 @@ prima_gtk_init(void)
 		ret = gdk_x11_display_get_xdisplay(display);
 #endif
 	}
-#if PERL_REVISION == 5 && PERL_VERSION >= 22
-/* https://rt.perl.org/Ticket/Display.html?id=133945 */
-	sync_locale();
-#endif
 
 #ifdef DBUS_SCREENSHOT
 	gtk_app = g_application_new ("org.prima", G_APPLICATION_NON_UNIQUE);
