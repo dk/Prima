@@ -532,6 +532,7 @@ Widget_pack_slaves( Handle self)
 
 	width = height = maxWidth = maxHeight = 0;
 	for (
+<<<<<<< HEAD
 		slavePtr = masterPtr;
 		slavePtr != NULL;
 		slavePtr = ( PWidget) slavePtr-> geomInfo. next
@@ -540,6 +541,13 @@ Widget_pack_slaves( Handle self)
 			(slavePtr-> geomInfo. side == TOP   ) ||
 			(slavePtr-> geomInfo. side == BOTTOM)
 		) {
+=======
+		slavePtr=masterPtr;
+		slavePtr != NULL;
+		slavePtr = ( PWidget) slavePtr-> geomInfo. next
+	) {
+		if ((slavePtr-> geomInfo. side == TOP) || (slavePtr-> geomInfo. side == BOTTOM)) {
+>>>>>>> 4e27a2c5 (retab)
 			tmp = slave_width( slavePtr, width);
 			if (tmp > maxWidth) maxWidth = tmp;
 			height += slave_height(slavePtr,0);
@@ -596,6 +604,7 @@ Widget_pack_slaves( Handle self)
 	cavityX = cavityY = x = y = 0;
 	cavityWidth = size. x;
 	cavityHeight = size. y;
+<<<<<<< HEAD
 	for (
 		slavePtr = masterPtr;
 		slavePtr != NULL;
@@ -605,6 +614,10 @@ Widget_pack_slaves( Handle self)
 			(slavePtr-> geomInfo. side == TOP   ) ||
 			(slavePtr-> geomInfo. side == BOTTOM)
 		) {
+=======
+	for ( slavePtr=masterPtr; slavePtr != NULL; slavePtr = ( PWidget) slavePtr-> geomInfo. next) {
+		if ((slavePtr-> geomInfo. side == TOP) || (slavePtr-> geomInfo. side == BOTTOM)) {
+>>>>>>> 4e27a2c5 (retab)
 			frameWidth = cavityWidth;
 			frameHeight = slave_height(slavePtr,0);
 			if (slavePtr-> geomInfo. expand)
@@ -1074,7 +1087,11 @@ Widget_place_slaves( Handle self)
 	masterHeight = size. y;
 
 	for (
+<<<<<<< HEAD
 		slave = master;
+=======
+		slave=master;
+>>>>>>> 4e27a2c5 (retab)
 		slave != NULL;
 		slave = ( PWidget) slave-> geomInfo. next
 	) {
