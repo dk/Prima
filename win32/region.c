@@ -209,6 +209,7 @@ apc_gp_set_clip_rect( Handle self, Rect c)
 	c. bottom += sys transform2. y;
 	check_swap( c. top, c. bottom);
 	check_swap( c. left, c. right);
+	select_world_transform(self, false);
 	if ( !( rgn = CreateRectRgn(
 		c. left,  sys last_size. y - c. top,
 		c. right + 1, sys last_size. y - c. bottom - 1))
@@ -233,6 +234,7 @@ apc_gp_get_region( Handle self, Handle mask)
 
 	objCheck false;
 	if ( !is_opt( optInDraw) || !sys ps) return false;
+	select_world_transform(self, false);
 
 	if ( !mask ) {
 		rgn = CreateRectRgn(0,0,0,0);
@@ -258,6 +260,7 @@ apc_gp_set_region( Handle self, Handle region)
 	objCheck false;
 
 	if ( !is_opt( optInDraw) || !sys ps) return true;
+	select_world_transform(self, false);
 
 	if ( !region) {
 		SelectClipRgn( sys ps, NULL);

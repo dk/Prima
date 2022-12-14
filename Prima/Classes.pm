@@ -189,6 +189,13 @@ sub new
 	return $self;
 }
 
+sub apply
+{
+	my ( $self, $canvas ) = @_;
+	$canvas->matrix($self);
+	return $self;
+}
+
 sub set
 {
 	my $self = shift;
@@ -204,7 +211,7 @@ sub C           { $#_ ? $_[0]->[2] = $_[1] : $_[0]->[2]               }
 sub D           { $#_ ? $_[0]->[3] = $_[1] : $_[0]->[3]               }
 sub X           { $#_ ? $_[0]->[4] = $_[1] : $_[0]->[4]               }
 sub Y           { $#_ ? $_[0]->[5] = $_[1] : $_[0]->[5]               }
-sub translate   { $_[0]->[4]+=$_[1]; $_[0]->[5]+=$_[2];     $_[0]     }
+sub translate   { $_[0]->[4]+=$_[1]; $_[0]->[5]+=$_[2]//$_[1]; $_[0]  }
 sub scale       { $_[0]->multiply([$_[1],0,0,$_[2] // $_[1],0,0])     }
 sub shear       { $_[0]->multiply([1,$_[2] // $_[1],$_[1],1,0,0])     }
 sub is_identity { 0 == (grep { $identity->[$_] != $_[0]->[$_] } 0..5) }
@@ -214,7 +221,7 @@ our $RAD = 180.0 / $PI;
 sub rotate
 {
 	my ( $self, $angle ) = @_;
-	return if $angle == 0.0;
+	return $self if $angle == 0.0;
 	$angle /= $RAD;
 	my $cos = cos($angle);
 	my $sin = sin($angle);

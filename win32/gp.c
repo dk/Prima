@@ -164,6 +164,7 @@ apc_gp_bars( Handle self, int nr, Rect *rr)
 
 	SelectObject( ps, std_hollow_pen);
 	STYLUS_FREE_PEN;
+	select_world_transform(self, false);
 
 	while ( make_brush(self, &mix)) {
 		Rect *r = rr;
@@ -198,6 +199,7 @@ apc_gp_alpha( Handle self, int alpha, int x1, int y1, int x2, int y2)
 	))
 	return false;
 
+	select_world_transform(self, false);
 	if ( x1 < 0 && y1 < 0 && x2 < 0 && y2 < 0) {
 		x1 = y1 = 0;
 		x2 = sys last_size. x - 1;
@@ -266,6 +268,7 @@ apc_gp_clear( Handle self, int x1, int y1, int x2, int y2)
 	HDC      ps   = sys ps;
 	HGDIOBJ  o1, o2;
 
+	select_world_transform(self, false);
 	o1 = SelectObject( ps, std_hollow_pen);
 	o2 = SelectObject( ps, stylus_get_solid_brush(sys bg));
 
@@ -294,6 +297,7 @@ apc_gp_draw_poly( Handle self, int numPts, Point * points)
 	POINT *p;
 	Bool ok;
 
+	select_world_transform(self, false);
 	if ((p = malloc( sizeof(POINT) * numPts)) == NULL)
 		return false;
 
@@ -327,6 +331,7 @@ apc_gp_draw_poly2( Handle self, int numPts, Point * points)
 	DWORD * pts;
 	POINT * p;
 
+	select_world_transform(self, false);
 	pts = ( DWORD *) malloc( sizeof( DWORD) * numPts);
 	if ( !pts) return false;
 	p = malloc( sizeof(POINT) * numPts);
@@ -385,6 +390,7 @@ apc_gp_fill_poly( Handle self, int numPts, Point * points)
 	POINT *p;
 	int mix = 0;
 
+	select_world_transform(self, false);
 	if ((p = malloc( sizeof(POINT) * numPts)) == NULL)
 		return false;
 
@@ -518,6 +524,7 @@ apc_gp_flood_fill( Handle self, int x, int y, Color borderColor, Bool singleBord
 	HDC ps = sys ps;
 	STYLUS_USE_BRUSH;
 	SHIFT_XY(x,y);
+	select_world_transform(self, false);
 	if ( !ExtFloodFill( ps, x, y, remap_color( borderColor, true),
 		singleBorder ? FLOODFILLSURFACE : FLOODFILLBORDER)) apiErrRet;
 	return true;
@@ -528,6 +535,7 @@ apc_gp_get_pixel( Handle self, int x, int y)
 {objCheck clInvalid;{
 	COLORREF c;
 	SHIFT_XY(x,y);
+	select_world_transform(self, false);
 	c = GetPixel( sys ps, x, y);
 	if ( c == CLR_INVALID) return clInvalid;
 	return remap_color(( Color) c, false);
@@ -545,6 +553,7 @@ apc_gp_line( Handle self, int x1, int y1, int x2, int y2)
 {objCheck false;{
 	HDC ps = sys ps;
 
+	select_world_transform(self, false);
 	adjust_line_end_int( x1, y1, &x2, &y2);
 	SHIFT_XY(x1,y1);
 	SHIFT_XY(x2,y2);
@@ -577,6 +586,7 @@ apc_gp_rectangle( Handle self, int x1, int y1, int x2, int y2)
 	HDC     ps = sys ps;
 	HGDIOBJ old;
 
+	select_world_transform(self, false);
 	check_swap( x1, x2);
 	check_swap( y1, y2);
 
@@ -608,6 +618,7 @@ Bool
 apc_gp_set_pixel( Handle self, int x, int y, Color color)
 {
 	objCheck false;
+	select_world_transform(self, false);
 	SHIFT_XY(x,y);
 	SetPixelV( sys ps, x, y, remap_color( color, true));
 	return true;

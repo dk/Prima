@@ -3856,6 +3856,9 @@ extern Bool
 apc_gp_set_rop2( Handle self, int rop);
 
 extern Bool
+apc_gp_set_text_matrix( Handle self, Matrix matrix);
+
+extern Bool
 apc_gp_set_text_opaque( Handle self, Bool opaque);
 
 extern Bool
