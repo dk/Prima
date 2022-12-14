@@ -523,24 +523,25 @@ Widget_pack_slaves( Handle self)
 	*/
 
 	width = height = maxWidth = maxHeight = 0;
-	for (slavePtr=masterPtr; slavePtr != NULL;
-			slavePtr = ( PWidget) slavePtr-> geomInfo. next) {
+	for (
+		slavePtr=masterPtr;
+		slavePtr != NULL;
+		slavePtr = ( PWidget) slavePtr-> geomInfo. next
+	) {
 		if ((slavePtr-> geomInfo. side == TOP) || (slavePtr-> geomInfo. side == BOTTOM)) {
-				tmp = slave_width( slavePtr, width);
-				if (tmp > maxWidth) maxWidth = tmp;
-				height += slave_height(slavePtr,0);
+			tmp = slave_width( slavePtr, width);
+			if (tmp > maxWidth) maxWidth = tmp;
+			height += slave_height(slavePtr,0);
 		} else {
-				tmp = slave_height(slavePtr, height);
-				if (tmp > maxHeight) maxHeight = tmp;
-				width += slave_width(slavePtr,0);
+			tmp = slave_height(slavePtr, height);
+			if (tmp > maxHeight) maxHeight = tmp;
+			width += slave_width(slavePtr,0);
 		}
 	}
-	if (width > maxWidth) {
+	if (width > maxWidth)
 		maxWidth = width;
-	}
-	if (height > maxHeight) {
+	if (height > maxHeight)
 		maxHeight = height;
-	}
 
 	/*
 	* If the total amount of space needed in the parent window has
@@ -560,9 +561,9 @@ Widget_pack_slaves( Handle self)
 		my-> set_geomSize( self, p);
 		size = my-> get_size( self);
 		/* if size didn't change, that means, that no cmSize came, and thus
-			the actual repacking of slaves never took place */
+		the actual repacking of slaves never took place */
 		if ( oldsize. x != size. x || oldsize. y != size. y)
-				return;
+			return;
 	} else {
 		size = my-> get_size( self);
 	}
@@ -583,55 +584,55 @@ Widget_pack_slaves( Handle self)
 	cavityHeight = size. y;
 	for ( slavePtr=masterPtr; slavePtr != NULL; slavePtr = ( PWidget) slavePtr-> geomInfo. next) {
 		if ((slavePtr-> geomInfo. side == TOP) || (slavePtr-> geomInfo. side == BOTTOM)) {
-				frameWidth = cavityWidth;
-				frameHeight = slave_height(slavePtr,0);
-				if (slavePtr-> geomInfo. expand)
-					frameHeight += YExpansion(slavePtr, cavityHeight);
-				cavityHeight -= frameHeight;
-				if (cavityHeight < 0) {
-					frameHeight += cavityHeight;
-					cavityHeight = 0;
-				}
-				frameX = cavityX;
-				if (slavePtr-> geomInfo. side == BOTTOM) {
-					frameY = cavityY;
-					cavityY += frameHeight;
-				} else {
-					frameY = cavityY + cavityHeight;
-				}
-		} else {
-				frameHeight = cavityHeight;
-				frameWidth = slave_width(slavePtr,0);
-				if (slavePtr->  geomInfo. expand)
-					frameWidth += XExpansion(slavePtr, cavityWidth);
-				cavityWidth -= frameWidth;
-				if (cavityWidth < 0) {
-					frameWidth += cavityWidth;
-					cavityWidth = 0;
-				}
+			frameWidth = cavityWidth;
+			frameHeight = slave_height(slavePtr,0);
+			if (slavePtr-> geomInfo. expand)
+				frameHeight += YExpansion(slavePtr, cavityHeight);
+			cavityHeight -= frameHeight;
+			if (cavityHeight < 0) {
+				frameHeight += cavityHeight;
+				cavityHeight = 0;
+			}
+			frameX = cavityX;
+			if (slavePtr-> geomInfo. side == BOTTOM) {
 				frameY = cavityY;
-				if (slavePtr-> geomInfo. side == LEFT) {
-					frameX = cavityX;
-					cavityX += frameWidth;
-				} else {
-					frameX = cavityX + cavityWidth;
-				}
+				cavityY += frameHeight;
+			} else {
+				frameY = cavityY + cavityHeight;
+			}
+		} else {
+			frameHeight = cavityHeight;
+			frameWidth = slave_width(slavePtr,0);
+			if (slavePtr->  geomInfo. expand)
+				frameWidth += XExpansion(slavePtr, cavityWidth);
+			cavityWidth -= frameWidth;
+			if (cavityWidth < 0) {
+				frameWidth += cavityWidth;
+				cavityWidth = 0;
+			}
+			frameY = cavityY;
+			if (slavePtr-> geomInfo. side == LEFT) {
+				frameX = cavityX;
+				cavityX += frameWidth;
+			} else {
+				frameX = cavityX + cavityWidth;
+			}
 		}
 
 		/*
-			* Now that we've got the size of the frame for the window,
-			* compute the window's actual size and location using the
-			* fill, padding, and frame factors.
-			*/
+		* Now that we've got the size of the frame for the window,
+		* compute the window's actual size and location using the
+		* fill, padding, and frame factors.
+		*/
 
 		borderX = slavePtr-> geomInfo. pad.x;
 		borderY = slavePtr-> geomInfo. pad.y;
 		width = slavePtr->  geomSize. x + slavePtr-> geomInfo. ipad.x;
 		if (slavePtr->  geomInfo. fillx || (width > (frameWidth - borderX)))
-				width = frameWidth - borderX;
+			width = frameWidth - borderX;
 		height = slavePtr->  geomSize. y + slavePtr-> geomInfo. ipad.y;
 		if (slavePtr->  geomInfo. filly || (height > (frameHeight - borderY)))
-				height = frameHeight - borderY;
+			height = frameHeight - borderY;
 		borderX /= 2;
 		borderY /= 2;
 		if ( width < slavePtr-> sizeMin.x) width = slavePtr-> sizeMin.x;
@@ -786,18 +787,18 @@ Widget_packInfo( Handle self, Bool set, SV * packInfo)
 		switch ( p-> anchorx) {
 		case WEST:
 			pset_c( anchor,
-					(( p-> anchory == NORTH) ? "nw" : (( p-> anchory == CENTER) ? "w" : "sw"))
-					);
+				(( p-> anchory == NORTH) ? "nw" : (( p-> anchory == CENTER) ? "w" : "sw"))
+			);
 			break;
 		case CENTER:
 			pset_c( anchor,
-					(( p-> anchory == NORTH) ? "n" : (( p-> anchory == CENTER) ? "center" : "s"))
-					);
+				(( p-> anchory == NORTH) ? "n" : (( p-> anchory == CENTER) ? "center" : "s"))
+			);
 			break;
 		case EAST:
 			pset_c( anchor,
-					(( p-> anchory == NORTH) ? "ne" : (( p-> anchory == CENTER) ? "e" : "se"))
-					);
+				(( p-> anchory == NORTH) ? "ne" : (( p-> anchory == CENTER) ? "e" : "se"))
+			);
 			break;
 		}
 
@@ -1051,8 +1052,11 @@ Widget_place_slaves( Handle self)
 	masterWidth  = size. x;
 	masterHeight = size. y;
 
-	for (slave=master; slave != NULL;
-			slave = ( PWidget) slave-> geomInfo. next) {
+	for (
+		slave=master;
+		slave != NULL;
+		slave = ( PWidget) slave-> geomInfo. next
+	) {
 		Point sz;
 		register GeomInfo* slavePtr = &slave-> geomInfo;
 
@@ -1068,42 +1072,42 @@ Widget_place_slaves( Handle self)
 		y1 = slavePtr->y + (slavePtr->relY*masterHeight);
 		y = (int) (y1 + ((y1 > 0) ? 0.5 : -0.5));
 		if (slavePtr-> use_w || slavePtr-> use_rw) {
-				width = 0;
-				if (slavePtr-> use_w) {
-					width += slave->geomSize.x;
-				}
-				if (slavePtr-> use_rw) {
-					/*
-					* The code below is a bit tricky.  In order to round
-					* correctly when both relX and relWidth are specified,
-					* compute the location of the right edge and round that,
-					* then compute width.  If we compute the width and round
-					* it, rounding errors in relX and relWidth accumulate.
-					*/
+			width = 0;
+			if (slavePtr-> use_w) {
+				width += slave->geomSize.x;
+			}
+			if (slavePtr-> use_rw) {
+				/*
+				* The code below is a bit tricky.  In order to round
+				* correctly when both relX and relWidth are specified,
+				* compute the location of the right edge and round that,
+				* then compute width.  If we compute the width and round
+				* it, rounding errors in relX and relWidth accumulate.
+				*/
 
-					x2 = x1 + (slavePtr->relWidth*masterWidth);
-					tmp = (int) (x2 + ((x2 > 0) ? 0.5 : -0.5));
-					width += tmp - x;
-				}
+				x2 = x1 + (slavePtr->relWidth*masterWidth);
+				tmp = (int) (x2 + ((x2 > 0) ? 0.5 : -0.5));
+				width += tmp - x;
+			}
 		} else {
 				width = sz. x;
 		}
 		if (slavePtr-> use_h || slavePtr-> use_rh) {
-				height = 0;
-				if (slavePtr->use_h) {
-					height += slave->geomSize. y;
-				}
-				if (slavePtr->use_rh) {
-					/*
-					* See note above for rounding errors in width computation.
-					*/
+			height = 0;
+			if (slavePtr->use_h) {
+				height += slave->geomSize. y;
+			}
+			if (slavePtr->use_rh) {
+				/*
+				* See note above for rounding errors in width computation.
+				*/
 
-					y2 = y1 + (slavePtr->relHeight*masterHeight);
-					tmp = (int) (y2 + ((y2 > 0) ? 0.5 : -0.5));
-					height += tmp - y;
-				}
+				y2 = y1 + (slavePtr->relHeight*masterHeight);
+				tmp = (int) (y2 + ((y2 > 0) ? 0.5 : -0.5));
+				height += tmp - y;
+			}
 		} else {
-				height = sz. y;
+			height = sz. y;
 		}
 
 		/*
@@ -1156,18 +1160,18 @@ Widget_placeInfo( Handle self, Bool set, SV * placeInfo)
 		switch ( p-> anchorx) {
 		case WEST:
 			pset_c( anchor,
-					(( p-> anchory == NORTH) ? "nw" : (( p-> anchory == CENTER) ? "w" : "sw"))
-					);
+				(( p-> anchory == NORTH) ? "nw" : (( p-> anchory == CENTER) ? "w" : "sw"))
+			);
 			break;
 		case CENTER:
 			pset_c( anchor,
-					(( p-> anchory == NORTH) ? "n" : (( p-> anchory == CENTER) ? "center" : "s"))
-					);
+				(( p-> anchory == NORTH) ? "n" : (( p-> anchory == CENTER) ? "center" : "s"))
+			);
 			break;
 		case EAST:
 			pset_c( anchor,
-					(( p-> anchory == NORTH) ? "ne" : (( p-> anchory == CENTER) ? "e" : "se"))
-					);
+				(( p-> anchory == NORTH) ? "ne" : (( p-> anchory == CENTER) ? "e" : "se"))
+			);
 			break;
 		}
 
