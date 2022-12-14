@@ -184,6 +184,8 @@ typedef struct _HandleOptions_ {
 	unsigned aptClipByChildren       : 1;       // cached clipping by children
 	unsigned aptIgnoreSizeMessages   : 1;       // during window recreation
 	unsigned aptGDIPlus              : 1;       // uses GDI+
+	unsigned aptWantWorldTransform   : 1;       // SetWorldTransform is wanted
+	unsigned aptUsedWorldTransform   : 1;       // SetWorldTransform is applied
 } HandleOptions;
 
 #define CLIPBOARD_MAIN 0
@@ -755,6 +757,7 @@ extern void         socket_rehash( void);
 extern Bool         select_pen(Handle self);
 extern Bool         select_brush(Handle self);
 extern Bool         select_gp_brush(Handle self);
+extern Bool         select_world_transform(Handle self, Bool want_transform);
 extern void         stylus_clean( void);
 extern PDCObject    stylus_fetch( void * key );
 extern Bool         stylus_is_complex(Handle self);

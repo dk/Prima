@@ -432,6 +432,8 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flag
 		len = mb_len;
 	}
 
+	select_world_transform(self, true);
+
 	use_alpha = sys alpha < 255;
 	use_path = (GetROP2( sys ps) != R2_COPYPEN) && !use_alpha;
 	if ( use_path ) {
@@ -441,7 +443,7 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flag
 		STYLUS_USE_TEXT;
 		if ( opa != bk) SetBkMode( ps, opa);
 	}
-	SHIFT_XY(X,Y);
+	//SHIFT_XY(X,Y);
 
 	if ( use_alpha ) {
 		if ( is_apt( aptTextOpaque))
@@ -589,6 +591,8 @@ apc_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 		if ( opa != bk) SetBkMode( ps, opa);
 	}
 
+	select_world_transform(self, true);
+
 	if ( var font. direction != 0) {
 		if ( sys font_sin == sys font_cos && sys font_sin == 0.0 ) {
 			sys font_sin = sin( var font. direction / GRAD);
@@ -601,7 +605,7 @@ apc_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 		s = 0.0;
 	}
 
-	SHIFT_XY(x,y);
+	//SHIFT_XY(x,y);
 	fxx = xx = x;
 	fyy = yy = y;
 	savelen = t->len;
@@ -2012,6 +2016,44 @@ apc_gp_get_glyph_outline( Handle self, int index, int flags, int ** buffer)
 	return r_size;
 }
 
+
+Bool
+select_world_transform(Handle self, Bool want_transform)
+{
+	objCheck 0;
+
+ 	if ( !is_apt( aptWantWorldTransform ) || is_apt( aptUsedWorldTransform ))
+		return true;
+
+	apt_set( aptUsedWorldTransform );
+
+	if ( want_transform ) {
+		Matrix *m = &var current_state.matrix;
+		XFORM xf  = {
+			(*m)[0], -((*m)[1]), -(*m)[2], ((*m)[3]),
+			(*m)[4] - sys transform2.x,
+			sys last_size.y - (*m)[5] - 1 - sys transform2.y
+		};
+		printf("%g %g %g %g %g %g\n",
+			xf.eM11, xf.eM12,
+			xf.eM21, xf.eM22,
+			xf.eDx, xf.eDy);
+		return SetWorldTransform( sys ps, &xf );
+	} else {
+		XFORM xf = { 1.0, 0.0, 0.0, 1.0, 0.0, 0.0 };
+		return SetWorldTransform( sys ps, &xf );
+	}
+}
+
+Bool
+apc_gp_set_text_matrix( Handle self, Matrix matrix)
+{
+	objCheck 0;
+	apt_assign( aptWantWorldTransform, !prima_matrix_is_identity( matrix ));
+	apt_clear( aptUsedWorldTransform );
+	return true;
+}
+
 Bool
 apc_gp_get_text_out_baseline( Handle self)
 {
@@ -2033,7 +2075,6 @@ apc_gp_set_text_opaque( Handle self, Bool opaque)
 	apt_assign( aptTextOpaque, opaque);
 	return true;
 }
-
 
 Bool
 apc_gp_set_text_out_baseline( Handle self, Bool baseline)

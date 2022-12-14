@@ -539,13 +539,17 @@ Drawable_matrix( Handle self, Bool set, SV * svmatrix)
 		return sv_bless(svmatrix, gv_stashpv("Prima::matrix", GV_ADD));
 	} else {
 		if ( SvROK(svmatrix) && ( SvTYPE( SvRV(svmatrix)) == SVt_PVAV)) {
-			Matrix *matrix = & var-> current_state.matrix;
+			Matrix matrix;
 			AV * av = ( AV *) SvRV(svmatrix);
 			if ( av_len( av) != 5) goto FAIL;
 			for ( i = 0; i < 6; i++) {
 				SV ** holder = av_fetch( av, i, 0);
 				if ( !holder) goto FAIL;
-				(*matrix)[i] = SvNV( *holder);
+				matrix[i] = SvNV( *holder);
+			}
+			if ( memcmp(matrix, var->current_state.matrix, sizeof(matrix)) != 0) {
+				memcpy(&var->current_state.matrix, matrix, sizeof(matrix));
+				apc_gp_set_text_matrix( self, matrix);
 			}
 		} else {
 		FAIL:
