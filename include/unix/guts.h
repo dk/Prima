@@ -255,8 +255,9 @@ typedef struct _FontKey
 	int width;
 	int style;
 	int pitch;
-	int direction;
 	int vector;
+	int direction;
+	int matrix[4];
 	char name[ 256];
 } FontKey, *PFontKey;
 
@@ -887,6 +888,7 @@ typedef struct _drawable_sys_data
 		unsigned layered_requested        : 1;
 		unsigned iconic                   : 1;
 		unsigned mapped                   : 1;
+		unsigned matrix_used              : 1;
 		unsigned modal                    : 1;
 		unsigned kill_current_region      : 1;
 		unsigned opaque                   : 1;
@@ -919,8 +921,7 @@ typedef struct _drawable_sys_data
 #ifdef USE_XFT
 	XftDraw  * xft_drawable;
 	uint32_t * xft_map8;
-	double     xft_font_cos;
-	double     xft_font_sin;
+	Matrix     xft_font_matrix;
 	XftDraw  * xft_shadow_drawable;
 	Point      xft_shadow_extentions;
 	Pixmap     xft_shadow_pixmap;
@@ -1476,7 +1477,7 @@ extern void
 prima_xft_gp_destroy( Handle self );
 
 extern Bool
-prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, XftFont ** xft_result);
+prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Matrix *matrix, XftFont ** xft_result);
 
 extern Bool
 prima_xft_set_font( Handle self, PFont font);
@@ -1493,7 +1494,7 @@ prima_xft_get_text_width( PCachedFont self, const char * text, int len,
 			Point * overhangs);
 
 extern int
-prima_xft_get_glyphs_width( PCachedFont self, PGlyphsOutRec glyphs,
+prima_xft_get_glyphs_width( Handle self, PCachedFont selfxx, PGlyphsOutRec glyphs,
 			Point * overhangs);
 
 extern Point *
@@ -1524,7 +1525,7 @@ extern int
 prima_xft_get_glyph_outline( Handle self, int index, int flags, int ** buffer);
 
 extern PCachedFont
-prima_xft_get_cache( PFont font);
+prima_xft_get_cache( PFont font, Matrix *matrix);
 
 extern uint32_t *
 prima_xft_map8( const char * encoding);

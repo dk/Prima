@@ -454,6 +454,9 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flag
 	if ( PObject( self)-> options. optInDrawInfo) return false;
 	if ( !XF_IN_PAINT(XX)) return false;
 
+	x += PDrawable(self)-> current_state.matrix[4];
+	y += PDrawable(self)-> current_state.matrix[5];
+
 	if ( len == 0) return true;
 	if ( len > 65535 ) len = 65535;
 	flags &= ~toGlyphs;
@@ -502,6 +505,9 @@ apc_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 
 	if ( t->len == 0) return true;
 	if ( t->len > 65535 ) t->len = 65535;
+
+	x += PDrawable(self)-> current_state.matrix[4];
+	y += PDrawable(self)-> current_state.matrix[5];
 
 #ifdef USE_XFT
 	if ( XX-> font-> xft)
@@ -764,7 +770,7 @@ apc_gp_get_glyphs_width( Handle self, PGlyphsOutRec t)
 
 #ifdef USE_XFT
 	if ( X(self)-> font-> xft)
-		return prima_xft_get_glyphs_width( X(self)-> font, t, NULL);
+		return prima_xft_get_glyphs_width( self, X(self)-> font, t, NULL);
 #endif
 
 	SWAP_BYTES(t->glyphs,t->len);

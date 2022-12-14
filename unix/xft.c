@@ -70,6 +70,8 @@ TO DO
 #define FC_WIDTH "width"
 #endif
 
+#define MY_MATRIX (PDrawable(self)->current_state.matrix)
+
 static int xft_debug_indent = 0;
 #define XFTdebug if (pguts->debug & DEBUG_FONTS) xft_debug
 
@@ -115,8 +117,9 @@ static CharSetInfo utf8_charset         = { "iso10646-1",   NULL, 0, 1 };
 #define MAX_GLYPH_SIZE (guts.limits.request_length / 256)
 
 #define ROUND_DIRECTION 1000.0
-#define IS_ZERO(a)  ((int)(a*ROUND_DIRECTION)==0)
-#define ROUGHLY(a) (((int)(a*ROUND_DIRECTION))/ROUND_DIRECTION)
+#define IS_ZERO(a)   ((int)(a*ROUND_DIRECTION)==0)
+#define ROUND2INT(a) ((int)(a*ROUND_DIRECTION))
+#define ROUGHLY(a)   (ROUND2INT(a)/ROUND_DIRECTION)
 
 
 static PHash encodings    = NULL;
@@ -134,10 +137,11 @@ typedef struct {
 	XftFont *orig_base, *xft_base_font;
 	uint32_t fid;
 	uint16_t *fonts;
+	Matrix *matrix;
 } FontContext;
 
 static void
-font_context_init( FontContext * fc, Font * font, uint16_t * fonts, XftFont * orig, XftFont * base)
+font_context_init( FontContext * fc, Font * font, uint16_t * fonts, XftFont * orig, XftFont * base, Matrix *matrix)
 {
 	bzero(fc, sizeof(FontContext));
 	fc->font      = *font;
@@ -145,6 +149,7 @@ font_context_init( FontContext * fc, Font * font, uint16_t * fonts, XftFont * or
 	fc->orig_base = fc->xft_base_font = base;
 	fc->fid       = 0;
 	fc->fonts     = fonts;
+	fc->matrix    = matrix;
 }
 
 static void
@@ -175,15 +180,15 @@ font_context_next( FontContext * fc )
 	CP(direction)
 #undef CP
 
-	prima_xft_font_pick( NULL_HANDLE, &src, &dst, NULL, &fc->xft_font);
+	prima_xft_font_pick( NULL_HANDLE, &src, &dst, NULL, fc->matrix, &fc->xft_font);
 	if ( !fc->orig_base )
 		return;
 
-	if ( IS_ZERO(fc->font.direction))
+	if ( IS_ZERO(fc->font.direction) && (!fc->matrix || prima_matrix_is_translated_only(*(fc->matrix))))
 		fc-> xft_base_font = fc->xft_font;
 	else {
 		dst.direction = 0;
-		prima_xft_font_pick( NULL_HANDLE, &dst, &dst, NULL, &fc->xft_base_font);
+		prima_xft_font_pick( NULL_HANDLE, &dst, &dst, NULL, fc->matrix, &fc->xft_base_font);
 	}
 }
 
@@ -480,7 +485,7 @@ STOP_2:;
 }
 
 static void
-xft_build_font_key( PFontKey key, PFont f, Bool bySize)
+xft_build_font_key( PFontKey key, PFont f, Bool bySize, Matrix *matrix)
 {
 	bzero( key, sizeof( FontKey));
 	key-> height = bySize ? -f-> size : f-> height;
@@ -488,7 +493,14 @@ xft_build_font_key( PFontKey key, PFont f, Bool bySize)
 	key-> style  = f-> style & ~(fsUnderlined|fsOutline|fsStruckOut) & fsMask;
 	key-> pitch  = f-> pitch & fpMask;
 	key-> vector = (f-> vector == fvBitmap) ? 0 : 1;
-	key-> direction = ROUGHLY(f-> direction);
+	key-> direction = ROUND2INT(f-> direction);
+	if ( matrix ) {
+		/* don't mix matrix and direction to avoid sin/cos calls */
+		int i;
+		for ( i = 0; i < 4; i++) key->matrix[i] = ROUND2INT( (*matrix)[i] );
+	} else {
+		key->matrix[0] = key->matrix[3] = ROUND_DIRECTION;
+	}
 	strcpy( key-> name, f-> name);
 }
 
@@ -501,7 +513,7 @@ try_size( Handle self, Font f, double size)
 	f. size = size + 0.5;
 	f. direction = 0.0;
 	xft_debug_indent++;
-	prima_xft_font_pick( self, &f, &f, &size, &xft);
+	prima_xft_font_pick( self, &f, &f, &size, NULL, &xft);
 	xft_debug_indent--;
 	return xft;
 }
@@ -617,11 +629,11 @@ find_good_font_by_family( Font * f, int fc_spacing )
 }
 
 static void
-xft_store_font(Font * k, Font * v, Bool by_size, XftFont * xft, XftFont * xft_base)
+xft_store_font(Font * k, Font * v, Bool by_size, XftFont * xft, Matrix * matrix, XftFont * xft_base)
 {
 	FontKey key;
 	PCachedFont kf;
-	xft_build_font_key( &key, k, by_size);
+	xft_build_font_key( &key, k, by_size, matrix);
 	if ( !hash_fetch( guts. font_hash, &key, sizeof(FontKey))) {
 		if (( kf = malloc( sizeof( CachedFont)))) {
 			bzero( kf, sizeof( CachedFont));
@@ -660,7 +672,7 @@ my_XftFontMatch(Display        *dpy,
 }
 
 Bool
-prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, XftFont ** xft_result)
+prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Matrix *matrix, XftFont ** xft_result)
 {
 	FcPattern *request, *match;
 	FcResult res = FcResultNoMatch;
@@ -698,7 +710,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
 
 	/* see if the font is not present in xft - the hashed negative matches
 			are stored with width=0, as the width alterations are derived */
-	xft_build_font_key( &key, &requested_font, by_size);
+	xft_build_font_key( &key, &requested_font, by_size, matrix);
 	XFTdebug("want %dx%d.%s.%s.%s/%s^%g.%d", key.height, key. width, _F_DEBUG_STYLE(key.style), _F_DEBUG_PITCH(key.pitch), key.name, requested_font.encoding, ROUGHLY(requested_font.direction), requested_font.vector);
 
 	key. width = 0;
@@ -726,6 +738,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
 		if ( xft_result ) *xft_result = kf-> xft;
 		return true;
 	}
+
 	/* see if the non-xscaled font exists */
 	if ( key. width != 0) {
 		key. width = 0;
@@ -734,7 +747,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
 			s. width = d. width = 0;
 			XFTdebug("try nonscaled font");
 			xft_debug_indent++;
-			prima_xft_font_pick( self, &s, &d, size, NULL);
+			prima_xft_font_pick( self, &s, &d, size, NULL, NULL);
 			xft_debug_indent--;
 		}
 		if ( kf || ( kf = hash_fetch( guts. font_hash, &key, sizeof( FontKey)))) {
@@ -748,22 +761,27 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
 			requested_font. width = 0;
 		}
 	}
+
 	/* see if the non-rotated font exists */
-	if ( !IS_ZERO(key. direction)) {
+	if ( !IS_ZERO(key. direction) || ( matrix && !prima_matrix_is_translated_only(*matrix)) ) {
 		key. direction = 0.0;
 		key. width = requested_font. width;
+		key. matrix[0] = key. matrix[3] = ROUND_DIRECTION;
+		key. matrix[1] = key. matrix[2] = 0;
 		if ( !( kf_base = hash_fetch( guts. font_hash, &key, sizeof( FontKey)))) {
 			Font s = *source, d = *dest;
 			s. direction = d. direction = 0.0;
 			XFTdebug("try nonrotated font");
 			xft_debug_indent++;
-			prima_xft_font_pick( self, &s, &d, size, NULL);
+			prima_xft_font_pick( self, &s, &d, size, NULL, NULL);
 			xft_debug_indent--;
 			/* if fails, cancel rotation and see if the base font is banned  */
-			if ( !( kf_base = hash_fetch( guts. font_hash, &key, sizeof( FontKey))))
+			if ( !( kf_base = hash_fetch( guts. font_hash, &key, sizeof( FontKey)))) {
 				requested_font. direction = 0.0;
+				matrix = NULL;
+			}
 		}
-		if ( !IS_ZERO(requested_font. direction)) {
+		if ( !IS_ZERO(requested_font. direction) || matrix != NULL ) {
 			/* as requested_font. height != FC_PIXEL_SIZE, read the correct request
 				from the non-rotated font */
 			if ( FcPatternGetDouble( kf_base-> xft-> pattern, FC_PIXEL_SIZE, 0, &pixel_size) == FcResultMatch) {
@@ -797,7 +815,11 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
 		( requested_font. style & fsBold) ? FC_WEIGHT_BOLD :
 		( requested_font. style & fsThin) ? FC_WEIGHT_THIN : FC_WEIGHT_NORMAL);
 	FcPatternAddBool( request, FC_SCALABLE, requested_font. vector > fvBitmap );
-	if ( !IS_ZERO(requested_font. direction) || requested_font. width != 0) {
+	if (
+		!IS_ZERO(requested_font. direction) ||
+		requested_font. width != 0 ||
+		( matrix && !prima_matrix_is_translated_only(*matrix))
+	) {
 		FcMatrix mat;
 		FcMatrixInit(&mat);
 		if ( requested_font. width != 0) {
@@ -806,6 +828,13 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
 		}
 		if ( !IS_ZERO(requested_font. direction))
 			FcMatrixRotate( &mat, cos(requested_font.direction * 3.14159265358 / 180.0), sin(requested_font.direction * 3.14159265358 / 180.0));
+		if ( matrix ) {
+			FcMatrix result;
+			FcMatrix m = { (*matrix)[0], (*matrix)[1], (*matrix)[2], (*matrix)[3] };
+			FcMatrixMultiply( &result, &mat, &m);
+			XFTdebug("FcMatrixMutiply %g %g %g %g",  (*matrix)[0], (*matrix)[1], (*matrix)[2], (*matrix)[3]);
+			mat = result;
+		}
 		FcPatternAddMatrix( request, FC_MATRIX, &mat);
 	}
 
@@ -847,7 +876,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
 				s.undef.name = 0;
 				XFTdebug("try fixed pitch");
 				try_xft_monospace_emulation_by_name++;
-				ret = prima_xft_font_pick( self, &s, dest, size, xft_result);
+				ret = prima_xft_font_pick( self, &s, dest, size, matrix, xft_result);
 				try_xft_monospace_emulation_by_name--;
 				XFTdebug("fixed pitch done");
 				return ret;
@@ -855,7 +884,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
 				Bool ret;
 				XFTdebug("force ugly monospace");
 				force_xft_monospace_emulation++;
-				ret = prima_xft_font_pick( self, source, dest, size, xft_result);
+				ret = prima_xft_font_pick( self, source, dest, size, matrix, xft_result);
 				force_xft_monospace_emulation--;
 				return ret;
 			}
@@ -885,7 +914,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
 				strcpy(s.name, proportional_font);
 				XFTdebug("try variable pitch");
 				FcPatternDestroy( match);
-				return prima_xft_font_pick( self, &s, dest, size, xft_result);
+				return prima_xft_font_pick( self, &s, dest, size, matrix, xft_result);
 			} else {
 				XFTdebug("variable pitch is not found within family %s", font_with_family.family);
 			}
@@ -913,7 +942,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
 	if ( requested_font. vector > fvBitmap ) {
 		FcBool scalable;
 		if (( FcPatternGetBool( match, FC_SCALABLE, 0, &scalable) == FcResultMatch) && !scalable) {
-			xft_build_font_key( &key, &requested_font, by_size);
+			xft_build_font_key( &key, &requested_font, by_size, NULL);
 			key. width = 0;
 			hash_store( mismatch, &key, sizeof( FontKey), (void*)1);
 			XFTdebug("refuse bitmapped font");
@@ -947,7 +976,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
 			if ( !guts. xft_priority) {
 				XFTdebug("name mismatch");
 			NAME_MISMATCH:
-				xft_build_font_key( &key, &requested_font, by_size);
+				xft_build_font_key( &key, &requested_font, by_size, NULL);
 				key. width = 0;
 				hash_store( mismatch, &key, sizeof( FontKey), (void*)1);
 				FcPatternDestroy( match);
@@ -976,7 +1005,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
 	/* load the font */
 	xf = XftFontOpenPattern( DISP, match);
 	if ( !xf) {
-		xft_build_font_key( &key, &requested_font, by_size);
+		xft_build_font_key( &key, &requested_font, by_size, NULL);
 		key. width = 0;
 		hash_store( mismatch, &key, sizeof( FontKey), (void*)1);
 		XFTdebug("XftFontOpenPattern error");
@@ -1082,10 +1111,10 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
 
 	if ( cache_results ) {
 		/* create hash entry for subsequent loads of same font */
-		xft_store_font(&requested_font, &loaded_font, by_size, xf, kf_base ? kf_base-> xft : xf);
+		xft_store_font(&requested_font, &loaded_font, by_size, xf, matrix, kf_base ? kf_base-> xft : xf);
 		/* and with the matched by height and size */
 		for ( i = 0; i < 2; i++)
-			xft_store_font(&loaded_font, &loaded_font, i, xf, kf_base ? kf_base-> xft : xf);
+			xft_store_font(&loaded_font, &loaded_font, i, xf, matrix, kf_base ? kf_base-> xft : xf);
 	}
 
 	*dest = loaded_font;
@@ -1098,28 +1127,56 @@ prima_xft_set_font( Handle self, PFont font)
 {
 	DEFXX;
 	CharSetInfo * csi;
-	PCachedFont kf = prima_xft_get_cache( font);
-	if ( !kf) return false;
+	PCachedFont kf;
+	Bool need_matrix, need_rotation;
+
+	if ( prima_matrix_is_translated_only( MY_MATRIX )) {
+		kf = prima_xft_get_cache( font, NULL);
+		if ( !kf) return false;
+	} else if (!( kf = prima_xft_get_cache( font, &MY_MATRIX ))) {
+		Font f;
+		kf = prima_xft_get_cache( font, NULL);
+		if ( !kf) return false;
+
+		f = kf->font;
+		prima_xft_font_pick( self, &f, &f, NULL, &MY_MATRIX, NULL);
+		if (!( kf = prima_xft_get_cache( font, &MY_MATRIX )))
+			return false;
+	}
+
 	XX-> font = kf;
 	if ( !( csi = hash_fetch( encodings, font-> encoding, strlen( font-> encoding))))
 		csi = locale;
 	XX-> xft_map8 = csi-> map;
-	if ( IS_ZERO(PDrawable( self)-> font. direction)) {
-		XX-> xft_font_sin = 0.0;
-		XX-> xft_font_cos = 1.0;
+
+	need_matrix   = !prima_matrix_is_translated_only( MY_MATRIX );
+	need_rotation = !IS_ZERO(PDrawable( self)-> font. direction);
+	if ( need_matrix || need_rotation ) {
+		Matrix m1, m2;
+		prima_matrix_set_identity(&m1);
+		if ( need_rotation ) {
+			double s = sin( font-> direction / 57.29577951);
+			double c = cos( font-> direction / 57.29577951);
+			m1[0] = c;
+			m1[1] = s;
+			m1[2] = -s;
+			m1[3] = c;
+		}
+		memcpy( m2, MY_MATRIX, sizeof(Matrix));
+		m2[4] = m2[5] = 0.0;
+		prima_matrix_multiply( m1, m2, &XX->xft_font_matrix );
 	} else {
-		XX-> xft_font_sin = sin( font-> direction / 57.29577951);
-		XX-> xft_font_cos = cos( font-> direction / 57.29577951);
+		prima_matrix_set_identity(&XX->xft_font_matrix);
 	}
 	return true;
 }
 
 PCachedFont
-prima_xft_get_cache( PFont font)
+prima_xft_get_cache( PFont font, Matrix *matrix)
 {
 	FontKey key;
 	PCachedFont kf;
-	xft_build_font_key( &key, font, false);
+	xft_build_font_key( &key, font, false, matrix);
 	kf = ( PCachedFont) hash_fetch( guts. font_hash, &key, sizeof( FontKey));
 	if ( !kf || !kf-> xft) return NULL;
 	return kf;
@@ -1345,15 +1402,15 @@ prima_xft_get_text_width(
 }
 
 int
-prima_xft_get_glyphs_width( PCachedFont self, PGlyphsOutRec t, Point * overhangs)
+prima_xft_get_glyphs_width( Handle self, PCachedFont selfxx, PGlyphsOutRec t, Point * overhangs)
 {
 	int i, ret = 0;
 	FontContext fc;
 
-	font_context_init(&fc, &self->font, t->fonts, self->xft_base, NULL);
+	font_context_init(&fc, &selfxx->font, t->fonts, selfxx->xft_base, NULL, &MY_MATRIX);
 	if ( overhangs) overhangs-> x = overhangs-> y = 0;
 
-	t->len = check_width(self, t->len);
+	t->len = check_width(selfxx, t->len);
 	for ( i = 0; i < t->len; i++) {
 		FT_UInt ft_index;
 		XGlyphInfo glyph;
@@ -1390,7 +1447,7 @@ get_box( Handle self, Point * ovx, int advance )
 		for ( i = 0; i < 4; i++) pt[i]. y += XX-> font-> font. descent;
 	}
 
-	if ( !IS_ZERO(PDrawable( self)-> font. direction)) {
+	if ( !IS_ZERO(PDrawable( self)-> font. direction)) { /* XXX */
 		int i;
 		double s = sin( PDrawable( self)-> font. direction / 57.29577951);
 		double c = cos( PDrawable( self)-> font. direction / 57.29577951);
@@ -1420,7 +1477,7 @@ prima_xft_get_glyphs_box( Handle self, PGlyphsOutRec t)
 {
 	Point ovx;
 	return get_box(self, &ovx, prima_xft_get_glyphs_width(
-		X(self)-> font, t, &ovx
+		self, X(self)-> font, t, &ovx
 	));
 }
 
@@ -1503,7 +1560,7 @@ XftDrawGlyph_layered( PDrawableSysData selfxx,
 	than requested. We track this and align the reference point when it
 	deviates from the ideal line */
 static void
-xft_draw_glyphs( PDrawableSysData selfxx,
+xft_draw_glyphs( Handle self, PDrawableSysData selfxx,
 		_Xconst XftColor *color, int x, int y,
 		_Xconst FcChar32 *string, int len,
 		PGlyphsOutRec t)
@@ -1513,11 +1570,12 @@ xft_draw_glyphs( PDrawableSysData selfxx,
 	FontContext fc;
 	uint16_t * advances  = t ? t->advances : NULL;
 	int16_t  * positions = t ? t->positions : NULL;
-	Bool straight = IS_ZERO(XX-> font-> font. direction);
+	Bool straight = IS_ZERO(XX-> font-> font. direction) && prima_matrix_is_translated_only(MY_MATRIX);
 
 	font_context_init(&fc, &XX->font->font, 
 		t ? t->fonts : NULL, 
-		XX->font->xft, advances ? NULL : XX->font->xft_base);
+		XX->font->xft, advances ? NULL : XX->font->xft_base,
+		&MY_MATRIX);
 
 	ox = x;
 	oy = y;
@@ -1547,15 +1605,10 @@ xft_draw_glyphs( PDrawableSysData selfxx,
 			if ( advances ) {
 				register int x, y;
 				shift += *(advances++);
-				x = *(positions++);
-				y = *(positions++);
-				if ( straight ) {
-					dx = x;
-					dy = y;
-				} else {
-					dx = (int)(x * XX-> xft_font_cos + 0.5) - (int)(y * XX-> xft_font_sin + .5);
-					dy = (int)(x * XX-> xft_font_sin + 0.5) + (int)(y * XX-> xft_font_cos + .5);
-				}
+				dx = x = *(positions++);
+				dy = y = *(positions++);
+				if ( !straight )
+					prima_matrix_apply_int_to_int( XX-> xft_font_matrix, &dx, &dy);
 			} else
 				goto CHECK_EXTENTS;
 		} else {
@@ -1568,8 +1621,10 @@ xft_draw_glyphs( PDrawableSysData selfxx,
 			cx = ox + shift;
 			cy = oy;
 		} else {
-			cx = ox + (int)(shift * XX-> xft_font_cos + 0.5);
-			cy = oy - (int)(shift * XX-> xft_font_sin + 0.5);
+			int ax = shift, ay = 0;
+			prima_matrix_apply_int_to_int( XX-> xft_font_matrix, &ax, &ay);
+			cx = ox + ax;
+			cy = oy - ay;
 		}
 		if ( XX-> flags. layered && EMULATE_ALPHA_CLEARING)
 			XftDrawGlyph_layered( XX, color, fc.xft_font, x + dx, y - dy, ft_index);
@@ -1584,14 +1639,14 @@ xft_draw_glyphs( PDrawableSysData selfxx,
 }
 
 static void
-my_XftDrawString32( PDrawableSysData selfxx,
+my_XftDrawString32( Handle self, PDrawableSysData selfxx,
 		_Xconst XftColor *color, int x, int y,
 		_Xconst FcChar32 *string, int len)
 {
-	if ( IS_ZERO(XX-> font-> font. direction) && !XX-> flags. layered )
+	if ( IS_ZERO(XX-> font-> font. direction) && prima_matrix_is_translated_only(MY_MATRIX) && !XX-> flags. layered )
 		XftDrawString32( XX-> xft_drawable, color, XX-> font-> xft, x, y, string, len);
 	else
-		xft_draw_glyphs( XX, color, x, y, string, len, NULL);
+		xft_draw_glyphs( self, XX, color, x, y, string, len, NULL);
 }
 
 static int
@@ -1718,8 +1773,7 @@ overstrike( Handle self, int x, int y, Point *ovx, int advance)
 {
 	DEFXX;
 	int d  = - PDrawable(self)-> font. descent;
-	int ay, x1, y1, x2, y2;
-	double c = XX-> xft_font_cos, s = XX-> xft_font_sin;
+	int x1, y1, x2, y2;
 
 	XSetFillStyle( DISP, XX-> gc, FillSolid);
 	if ( !XX-> flags. brush_fore) {
@@ -1732,20 +1786,28 @@ overstrike( Handle self, int x, int y, Point *ovx, int advance)
 	advance += ovx->y;
 
 	if ( PDrawable( self)-> font. style & fsUnderlined) {
-		ay = d;
-		x1 = x - ovx->x * c - ay * s + 0.5;
-		y1 = y - ovx->x * s + ay * c + 0.5;
-		x2 = x + advance * c - ay * s + 0.5;
-		y2 = y + advance * s + ay * c + 0.5;
+		x1 = ovx->x;
+		x2 = advance;
+		y1 = y2 = d;
+		prima_matrix_apply_int_to_int( XX->xft_font_matrix, &x1, &y1);
+		prima_matrix_apply_int_to_int( XX->xft_font_matrix, &x2, &y2);
+		x1 = x - x1;
+		y1 = y - y1;
+		x2 = x + x2;
+		y2 = y + y2;
 		XDrawLine( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y1), x2, REVERT( y2));
 	}
 
 	if ( PDrawable( self)-> font. style & fsStruckOut) {
-		ay = (XX-> font-> font.ascent - XX-> font-> font.internalLeading)/2;
-		x1 = x - ovx->x * c - ay * s + 0.5;
-		y1 = y - ovx->x * s + ay * c + 0.5;
-		x2 = x + advance * c - ay * s + 0.5;
-		y2 = y + advance * s + ay * c + 0.5;
+		x1 = ovx->x;
+		x2 = advance;
+		y1 = y2 = (XX-> font-> font.ascent - XX-> font-> font.internalLeading)/2;
+		prima_matrix_apply_int_to_int( XX->xft_font_matrix, &x1, &y1);
+		prima_matrix_apply_int_to_int( XX->xft_font_matrix, &x2, &y2);
+		x1 = x - x1;
+		y1 = y - y1;
+		x2 = x + x2;
+		y2 = y + y2;
 		XDrawLine( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y1), x2, REVERT( y2));
 	}
 }
@@ -1798,8 +1860,8 @@ open_text_blit(Handle self, int x, int y, int dx, int rop, TextBlit * tb)
 	p[2].y = p[3].y = tb->dy;
 	rc. left = rc. right = rc. top = rc. bottom = 0;
 	for ( i = 1; i < 4; i++) {
-		int x = p[i].x * XX-> xft_font_cos - p[i].y * XX-> xft_font_sin + 0.5;
-		int y = p[i].x * XX-> xft_font_sin + p[i].y * XX-> xft_font_cos + 0.5;
+		int x = p[i].x, y = p[i].y;
+		prima_matrix_apply_int_to_int( XX->xft_font_matrix, &x, &y);
 		if ( rc. left    > x) rc. left   = x;
 		if ( rc. right   < x) rc. right  = x;
 		if ( rc. bottom  > y) rc. bottom = y;
@@ -1889,10 +1951,16 @@ prima_xft_text_out( Handle self, const char * text, int x, int y, int len, int f
 
 	SHIFT(x,y);
 	RANGE2(x,y);
+
 	/* xft doesn't allow shifting glyph reference point - need to adjust manually */
+	baseline.x = - PDrawable(self)-> font. descent;
+	baseline.y = - PDrawable(self)-> font. descent;
+	prima_matrix_apply_int_to_int( XX-> xft_font_matrix, &baseline.x, &baseline.y);
+	baseline.y +=  XX-> font-> font. descent;
+	/* XXX ???
 	baseline.x = - PDrawable(self)-> font. descent * XX-> xft_font_sin;
 	baseline.y = - PDrawable(self)-> font. descent * ( 1 - XX-> xft_font_cos )
-					+ XX-> font-> font. descent;
+	*/
 	if ( !XX-> flags. base_line) {
 		x += baseline.x;
 		y += baseline.y;
@@ -1911,7 +1979,7 @@ prima_xft_text_out( Handle self, const char * text, int x, int y, int len, int f
 			flags | toAddOverhangs, X(self)-> xft_map8, NULL);
 		if (!open_text_blit(self, x, y, dx, rop, &tb))
 			goto COPY_PUT;
-		my_XftDrawString32( XX, &xftcolor,
+		my_XftDrawString32( self, XX, &xftcolor,
 			tb.dx + baseline.x, tb.height - tb.dy - baseline.y,
 			ucs4, len);
 		close_text_blit(XX, &tb);
@@ -1919,7 +1987,7 @@ prima_xft_text_out( Handle self, const char * text, int x, int y, int len, int f
 		y -= baseline.y;
 	} else {
 	COPY_PUT:
-		my_XftDrawString32( XX, &xftcolor, x, REVERT( y) + 1, ucs4, len);
+		my_XftDrawString32( self, XX, &xftcolor, x, REVERT( y) + 1, ucs4, len);
 	}
 	free( ucs4);
 	XCHECKPOINT; 
@@ -1962,9 +2030,14 @@ prima_xft_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 	SHIFT(x,y);
 	RANGE2(x,y);
 	/* xft doesn't allow shifting glyph reference point - need to adjust manually */
+	baseline.x = - PDrawable(self)-> font. descent;
+	baseline.y = - PDrawable(self)-> font. descent;
+	prima_matrix_apply_int_to_int( XX-> xft_font_matrix, &baseline.x, &baseline.y);
+	baseline.y +=  XX-> font-> font. descent;
+	/* XXX ???
 	baseline.x = - PDrawable(self)-> font. descent * XX-> xft_font_sin;
 	baseline.y = - PDrawable(self)-> font. descent * ( 1 - XX-> xft_font_cos )
-					+ XX-> font-> font. descent;
+	*/
 	if ( !XX-> flags. base_line) {
 		x += baseline.x;
 		y += baseline.y;
@@ -1975,10 +2048,10 @@ prima_xft_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 		/* emulate rops by blitting the text */
 		int dx;
 		TextBlit tb;
-		dx = prima_xft_get_glyphs_width( XX-> font, t, NULL);
+		dx = prima_xft_get_glyphs_width( self, XX-> font, t, NULL);
 		if (!open_text_blit(self, x, y, dx, rop, &tb))
 			goto COPY_PUT;
-		xft_draw_glyphs(XX, &xftcolor,
+		xft_draw_glyphs(self, XX, &xftcolor,
 			tb.dx + baseline.x, tb.height - tb.dy - baseline.y,
 			NULL, 0, t);
 		close_text_blit(XX, &tb);
@@ -1986,7 +2059,7 @@ prima_xft_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 		y -= baseline.y;
 	} else {
 	COPY_PUT:
-		xft_draw_glyphs(XX, &xftcolor, x, REVERT(y) + 1, NULL, 0, t);
+		xft_draw_glyphs(self, XX, &xftcolor, x, REVERT(y) + 1, NULL, 0, t);
 	}
 	XCHECKPOINT;
 
@@ -1994,7 +2067,7 @@ prima_xft_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 		Point ovx;
 		t-> flags |= toAddOverhangs;
 		overstrike(self, x, y, &ovx, prima_xft_get_glyphs_width(
-			XX-> font, t, &ovx) - 1);
+			self, XX-> font, t, &ovx) - 1);
 	}
 	XFLUSH;
 
@@ -2216,7 +2289,7 @@ prima_xft_parse( char * ppFontNameSize, Font * font)
 		}
 	}
 	FcPatternDestroy( p);
-	if ( !prima_xft_font_pick( NULL_HANDLE, &f, &def, NULL, NULL)) return false;
+	if ( !prima_xft_font_pick( NULL_HANDLE, &f, &def, NULL, NULL, NULL)) return false;
 	*font = def;
 	XFTdebug( "parsed ok: %d.%s", def.size, def.name);
 	return true;
@@ -2403,7 +2476,7 @@ prima_xft_mapper_query_ranges(PFont font, int * count, unsigned int * flags)
 	XftFont * xft = NULL;
 	unsigned long * ranges;
 	strlcpy(name, font->name, 256);
-	prima_xft_font_pick( NULL_HANDLE, font, font, NULL, &xft);
+	prima_xft_font_pick( NULL_HANDLE, font, font, NULL, NULL, &xft);
 	*flags = 0 | MAPPER_FLAGS_SYNTHETIC_PITCH;
 	if ( !xft || strcmp( font->name, name ) != 0 ) {
 		*count = 0;
