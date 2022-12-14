@@ -1608,7 +1608,7 @@ apc_font_pick( Handle self, PFont source, PFont dest)
 {
 #ifdef USE_XFT
 	if ( guts. use_xft) {
-		if ( prima_xft_font_pick( self, source, dest, NULL, NULL))
+		if ( prima_xft_font_pick( self, source, dest, NULL, NULL, NULL))
 			return true;
 	}
 #endif
@@ -1846,7 +1846,7 @@ apc_menu_set_font( Handle self, PFont font)
 
 #ifdef USE_XFT
 	if ( guts. use_xft) {
-		kf = prima_xft_get_cache( font);
+		kf = prima_xft_get_cache( font, &PDrawable(self)-> current_state.matrix);
 		if ( kf) xft_metrics = 1;
 	}
 #endif
@@ -2192,5 +2192,20 @@ apc_gp_get_mapper_ranges(PFont font, int * count, unsigned int * flags)
 	*count = 0;
 	*flags = 0;
 	return NULL;
+}
+
+Bool
+apc_gp_set_text_matrix( Handle self, Matrix matrix)
+{
+#ifdef USE_XFT
+	DEFXX;
+	Bool old_matrix_used  = XX->flags.matrix_used;
+	XX->flags.matrix_used = !prima_matrix_is_translated_only(matrix);
+	if ( do_xft && (old_matrix_used || XX->flags.matrix_used )) {
+		Font f = PDrawable(self)->font;
+		return prima_xft_set_font( self, &f);
+	}
+#endif
+	return true;
 }
 
