@@ -360,8 +360,11 @@ Widget_move_notify( Handle self, Handle child, Point * moveTo)
 static int
 slave_width( register PWidget slavePtr, register int plus)
 {
-	register int width = slavePtr-> geomSize. x + slavePtr-> geomInfo. pad.x +
-								slavePtr-> geomInfo. ipad.x + plus;
+	register int width =
+		slavePtr-> geomSize. x +
+		slavePtr-> geomInfo. pad.x +
+		slavePtr-> geomInfo. ipad.x +
+		plus;
 	if ( width < slavePtr-> sizeMin.x) width = slavePtr-> sizeMin.x;
 	if ( width > slavePtr-> sizeMax.x) width = slavePtr-> sizeMax.x;
 	return width;
@@ -370,8 +373,11 @@ slave_width( register PWidget slavePtr, register int plus)
 static int
 slave_height( register PWidget slavePtr, register int plus)
 {
-	register int height = slavePtr-> geomSize.y + slavePtr-> geomInfo. pad.y +
-								slavePtr-> geomInfo. ipad.y + plus;
+	register int height =
+		slavePtr-> geomSize.y +
+		slavePtr-> geomInfo. pad.y +
+		slavePtr-> geomInfo. ipad.y +
+		plus;
 	if ( height < slavePtr-> sizeMin.y) height = slavePtr-> sizeMin.y;
 	if ( height > slavePtr-> sizeMax.y) height = slavePtr-> sizeMax.y;
 	return height;
@@ -379,9 +385,8 @@ slave_height( register PWidget slavePtr, register int plus)
 
 static int
 XExpansion(slavePtr, cavityWidth)
-	register PWidget slavePtr;		        /* First in list of remaining slaves. */
-	int cavityWidth;			/* Horizontal space left for all
-													* remaining slaves. */
+	register PWidget slavePtr; /* First in list of remaining slaves. */
+	int cavityWidth;           /* Horizontal space left for all remaining slaves. */
 {
 	int numExpand, minExpand, curExpand;
 	int childWidth;
@@ -399,25 +404,26 @@ XExpansion(slavePtr, cavityWidth)
 
 	minExpand = cavityWidth;
 	numExpand = 0;
-	for (; slavePtr != NULL;
-		slavePtr = ( PWidget) slavePtr-> geomInfo. next) {
+	for (
+		;
+		slavePtr != NULL;
+		slavePtr = ( PWidget) slavePtr-> geomInfo. next
+	) {
 		childWidth = slave_width(slavePtr, 0);
 		if ((slavePtr-> geomInfo. side == TOP) || (slavePtr-> geomInfo. side == BOTTOM)) {
-				curExpand = (cavityWidth - childWidth)/numExpand;
-				if (curExpand < minExpand) {
-					minExpand = curExpand;
-				}
+			curExpand = (cavityWidth - childWidth)/numExpand;
+			if (curExpand < minExpand)
+				minExpand = curExpand;
 		} else {
-				cavityWidth -= childWidth;
-				if (slavePtr->geomInfo. expand) {
-					numExpand++;
-				}
+			cavityWidth -= childWidth;
+			if (slavePtr->geomInfo. expand)
+				numExpand++;
 		}
 	}
-	curExpand = cavityWidth/numExpand;
-	if (curExpand < minExpand) {
+
+	curExpand = cavityWidth / numExpand;
+	if (curExpand < minExpand) 
 		minExpand = curExpand;
-	}
 	return (minExpand < 0) ? 0 : minExpand;
 }
 /*
@@ -455,24 +461,26 @@ YExpansion(slavePtr, cavityHeight)
 
 	minExpand = cavityHeight;
 	numExpand = 0;
-	for (; slavePtr != NULL; slavePtr = (PWidget) slavePtr->geomInfo. next) {
+	for (
+		;
+		slavePtr != NULL;
+		slavePtr = (PWidget) slavePtr->geomInfo. next
+	) {
 		childHeight = slave_height(slavePtr, 0);
 		if ((slavePtr-> geomInfo. side == LEFT) || (slavePtr-> geomInfo. side == RIGHT)) {
-				curExpand = (cavityHeight - childHeight)/numExpand;
-				if (curExpand < minExpand) {
-					minExpand = curExpand;
-				}
+			curExpand = (cavityHeight - childHeight)/numExpand;
+			if (curExpand < minExpand)
+				minExpand = curExpand;
 		} else {
-				cavityHeight -= childHeight;
-				if (slavePtr-> geomInfo. expand) {
-					numExpand++;
-				}
+			cavityHeight -= childHeight;
+			if (slavePtr-> geomInfo. expand)
+				numExpand++;
 		}
 	}
+
 	curExpand = cavityHeight/numExpand;
-	if (curExpand < minExpand) {
+	if (curExpand < minExpand) 
 		minExpand = curExpand;
-	}
 	return (minExpand < 0) ? 0 : minExpand;
 }
 
@@ -524,11 +532,14 @@ Widget_pack_slaves( Handle self)
 
 	width = height = maxWidth = maxHeight = 0;
 	for (
-		slavePtr=masterPtr;
+		slavePtr = masterPtr;
 		slavePtr != NULL;
 		slavePtr = ( PWidget) slavePtr-> geomInfo. next
 	) {
-		if ((slavePtr-> geomInfo. side == TOP) || (slavePtr-> geomInfo. side == BOTTOM)) {
+		if (
+			(slavePtr-> geomInfo. side == TOP   ) ||
+			(slavePtr-> geomInfo. side == BOTTOM)
+		) {
 			tmp = slave_width( slavePtr, width);
 			if (tmp > maxWidth) maxWidth = tmp;
 			height += slave_height(slavePtr,0);
@@ -551,9 +562,12 @@ Widget_pack_slaves( Handle self)
 	* resize us.
 	*/
 
-	if ((((maxWidth != my-> get_geomWidth(self)))
-				|| (maxHeight != my-> get_geomHeight(self)))
-				&& is_opt( optPackPropagate)) {
+	if (
+		is_opt( optPackPropagate) && (
+			maxWidth  != my-> get_geomWidth(self) ||
+			maxHeight != my-> get_geomHeight(self)
+		)
+	) {
 		Point p, oldsize;
 		p. x = maxWidth;
 		p. y = maxHeight;
@@ -582,8 +596,15 @@ Widget_pack_slaves( Handle self)
 	cavityX = cavityY = x = y = 0;
 	cavityWidth = size. x;
 	cavityHeight = size. y;
-	for ( slavePtr=masterPtr; slavePtr != NULL; slavePtr = ( PWidget) slavePtr-> geomInfo. next) {
-		if ((slavePtr-> geomInfo. side == TOP) || (slavePtr-> geomInfo. side == BOTTOM)) {
+	for (
+		slavePtr = masterPtr;
+		slavePtr != NULL;
+		slavePtr = ( PWidget) slavePtr-> geomInfo. next
+	) {
+		if (
+			(slavePtr-> geomInfo. side == TOP   ) ||
+			(slavePtr-> geomInfo. side == BOTTOM)
+		) {
 			frameWidth = cavityWidth;
 			frameHeight = slave_height(slavePtr,0);
 			if (slavePtr-> geomInfo. expand)
@@ -635,9 +656,9 @@ Widget_pack_slaves( Handle self)
 			height = frameHeight - borderY;
 		borderX /= 2;
 		borderY /= 2;
-		if ( width < slavePtr-> sizeMin.x) width = slavePtr-> sizeMin.x;
+		if ( width  < slavePtr-> sizeMin.x) width  = slavePtr-> sizeMin.x;
 		if ( height < slavePtr-> sizeMin.y) height = slavePtr-> sizeMin.y;
-		if ( width > slavePtr-> sizeMax.x) width = slavePtr-> sizeMax.x;
+		if ( width  > slavePtr-> sizeMax.x) width  = slavePtr-> sizeMax.x;
 		if ( height > slavePtr-> sizeMax.y) height = slavePtr-> sizeMax.y;
 		switch (slavePtr-> geomInfo. anchorx) {
 		case WEST:
@@ -888,10 +909,10 @@ Widget_packInfo( Handle self, Bool set, SV * packInfo)
 				croak("%s: invalid 'anchor'", "Prima::Widget::pack");
 		}
 
-		if ( pexist( ipad)) var-> geomInfo. ipad. x = var-> geomInfo. ipad. y = pget_i( ipad);
+		if ( pexist( ipad))  var-> geomInfo. ipad. x = var-> geomInfo. ipad. y = pget_i( ipad);
 		if ( pexist( ipadx)) var-> geomInfo. ipad. x = pget_i( ipadx);
 		if ( pexist( ipady)) var-> geomInfo. ipad. y = pget_i( ipady);
-		if ( pexist( pad)) var-> geomInfo. pad. x = var-> geomInfo. pad. y = pget_i( pad);
+		if ( pexist( pad))   var-> geomInfo. pad. x  = var-> geomInfo. pad. y = pget_i( pad);
 		if ( pexist( padx))  var-> geomInfo. pad. x  = pget_i( padx);
 		if ( pexist( pady))  var-> geomInfo. pad. y  = pget_i( pady);
 
@@ -1053,7 +1074,7 @@ Widget_place_slaves( Handle self)
 	masterHeight = size. y;
 
 	for (
-		slave=master;
+		slave = master;
 		slave != NULL;
 		slave = ( PWidget) slave-> geomInfo. next
 	) {
