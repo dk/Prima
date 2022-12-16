@@ -25,6 +25,8 @@ extern "C" {
 #define FONTMAPPER_VECTOR_BASE 9 /* 512 chars or 64 bytes per vector - make sure it's greater than 256, text_wrap/abc depends on that */
 #define FONTMAPPER_VECTOR_MASK ((1 << FONTMAPPER_VECTOR_BASE) - 1)
 
+#define VAR_MATRIX var->current_state.matrix
+
 typedef struct {
 	Font   font;
 	List   vectors;
