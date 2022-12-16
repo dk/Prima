@@ -1961,6 +1961,10 @@ hwnd_enter_paint( Handle self)
 	apc_gp_push(self, NULL, NULL, 0);
 	sys ps = save_ps;
 
+	apt_clear(aptWantWorldTransform);
+	apt_clear(aptUsedWorldTransform);
+	apt_clear(aptCachedWorldTransform);
+
 	SetGraphicsMode( sys ps, GM_ADVANCED);
 	sys stock_pen   = GetCurrentObject( sys ps, OBJ_PEN);
 	sys stock_brush = GetCurrentObject( sys ps, OBJ_BRUSH);
@@ -2069,10 +2073,12 @@ hwnd_leave_paint( Handle self)
 	sys stock_palette = NULL;
 	stylus_release(self);
 	sys bpp = 0;
+	select_world_transform(self, false);
 
 	save_ps = sys ps;
 	sys ps = 0;
 	apc_gp_pop(self, NULL);
+
 	sys ps = save_ps;
 }
 

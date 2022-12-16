@@ -382,6 +382,7 @@ sub stroke_primitive
 
 	$path = $path->widen(
 		linePattern => ( $lp eq lp::Null) ? lp::Solid : $lp,
+		(!$self->antialias && $self->lineWidth == 0) ? (lineWidth => 1) : (),
 	);
 	return unless $self->graphic_context_push;
 	$self->fillPattern(fp::Solid);

@@ -115,6 +115,8 @@ apc_gp_aa_bars( Handle self, int nr, NRect *rr)
 	Point t = sys transform2;
 	objCheck false;
 
+	select_world_transform(self, false);
+
 	if (( is_apt(aptDeviceBitmap) && ((PDeviceBitmap)self)->type == dbtBitmap)) {
 		Bool ok;
 		PImage pt;
@@ -204,6 +206,8 @@ apc_gp_aa_fill_poly( Handle self, int numPts, NPoint * points)
 	Point t = sys transform2;
 	GpPointF *p;
 	objCheck false;
+
+	select_world_transform(self, false);
 
 	if (( is_apt(aptDeviceBitmap) && ((PDeviceBitmap)self)->type == dbtBitmap)) {
 		Bool ok;
