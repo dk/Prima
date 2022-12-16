@@ -44,8 +44,6 @@ extern PHash font_substitutions;
 #define N_STYLES   (1 + STYLE_MASK)
 extern int   font_mapper_default_id[N_STYLES];
 
-#define VAR_MATRIX var->current_state.matrix
-
 void
 Drawable_clear_font_abc_caches( Handle self);
 
