@@ -535,7 +535,8 @@ Image_put_image_indirect( Handle self, Handle image, int x, int y, int xFrom, in
 		color = colorbuf;
 	}
 
-	ret = img_put( self, image, x + (*matrix)[4], y + (*matrix)[5], xFrom, yFrom, xDestLen, yDestLen, xLen, yLen, rop,
+	prima_matrix_apply_int_to_int( matrix, &x, &y );
+	ret = img_put( self, image, x, y, xFrom, yFrom, xDestLen, yDestLen, xLen, yLen, rop,
 		var->regionData, color);
 	my-> update_change( self);
 	return ret;

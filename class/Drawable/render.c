@@ -938,8 +938,8 @@ Drawable_render_polyline( SV * obj, SV * points, HV * profile)
 	if ( pexist(integer)) as_integer = pget_B(integer);
 
 	if ( pexist(matrix) ) {
-		double *cmatrix;
-		if (( cmatrix = (double*) prima_read_array(
+		Matrix *cmatrix;
+		if (( cmatrix = (Matrix*) prima_read_array(
 			pget_sv(matrix),
 			"render_polyline.matrix", 'd', 1, 6, 6, NULL, NULL)
 		) == NULL) 
@@ -950,7 +950,7 @@ Drawable_render_polyline( SV * obj, SV * points, HV * profile)
 			goto EXIT;
 		}
 		free_buffer = true;
-		prima_matrix_apply2( cmatrix, (NPoint*)input, (NPoint*)buffer, count);
+		prima_matrix_apply2(cmatrix, (NPoint*)input, (NPoint*)buffer, count);
 		free(cmatrix);
 	} else {
 		buffer = input;
