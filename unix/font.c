@@ -1002,7 +1002,7 @@ dump_font( PFont f)
 }
 
 void
-prima_build_font_key( PFontKey key, PFont f, Bool bySize)
+build_font_key( PFontKey key, PFont f, Bool bySize)
 {
 	bzero( key, sizeof( FontKey));
 	key-> height = bySize ? -f-> size : f-> height;
@@ -1021,7 +1021,7 @@ prima_find_known_font( PFont font, Bool refill, Bool bySize)
 	FontKey key;
 	PCachedFont kf;
 
-	prima_build_font_key( &key, font, bySize);
+	build_font_key( &key, font, bySize);
 	kf = hash_fetch( guts. font_hash, &key, sizeof( FontKey));
 	if ( kf && refill) {
 		memcpy( font, &kf-> font, sizeof( Font));
@@ -1369,13 +1369,13 @@ AGAIN:
 		if ( -underlinePos + underlineThickness / 2 > s-> max_bounds. descent)
 			underlinePos = -s-> max_bounds. descent + underlineThickness / 2;
 
-		prima_build_font_key( &key, font, bySize);
+		build_font_key( &key, font, bySize);
 		Fdebug("font cache add: %d(%d)x%d.%s.%s %s/%s\n", f-> font.height, f-> font.size, f->font.width, _F_DEBUG_STYLE(f-> font. style), _F_DEBUG_PITCH(f->font. pitch), f-> font.name, f-> font.encoding);
 		if ( !add_font_to_cache( &key, f, name, s, underlinePos, underlineThickness))
 			return;
 		askedDefaultPitch = font-> pitch == fpDefault;
 		memcpy( font, &f-> font, sizeof( Font));
-		prima_build_font_key( &key, font, false);
+		build_font_key( &key, font, false);
 		if ( !hash_fetch( guts. font_hash, &key, sizeof( FontKey))) {
 			if ( !add_font_to_cache( &key, f, name, s, underlinePos, underlineThickness))
 				return;
@@ -1384,7 +1384,7 @@ AGAIN:
 		if ( askedDefaultPitch && font-> pitch != fpDefault) {
 			int pitch = font-> pitch;
 			font-> pitch = fpDefault;
-			prima_build_font_key( &key, font, false);
+			build_font_key( &key, font, false);
 			if ( !hash_fetch( guts. font_hash, &key, sizeof( FontKey))) {
 				if ( !add_font_to_cache( &key, f, name, s, underlinePos, underlineThickness))
 					return;
@@ -1892,9 +1892,11 @@ apc_gp_get_glyph_outline( Handle self, int index, int flags, int ** buffer)
 
 
 Bool
-prima_update_rotated_fonts( PCachedFont f, const char * text, int len, Bool wide, double direction, PRotatedFont * result,
+prima_update_rotated_fonts( PCachedFont f, const char * text, int len, Bool wide, double direction, Matrix matrix, PRotatedFont * result,
 	Bool * ok_to_not_rotate)
 {
+	Fixed fm[4], im[4];
+	Matrix cm;
 	PRotatedFont * pr = &f-> rotated;
 	PRotatedFont r = NULL;
 	int i;
@@ -1902,17 +1904,53 @@ prima_update_rotated_fonts( PCachedFont f, const char * text, int len, Bool wide
 	while ( direction < 0)     direction += 360.0;
 	while ( direction > 360.0) direction -= 360.0;
 
-	/* granulate direction */
+	/* granulate direction and matrix */
 	{
-		double g;
-		int x = f-> fs-> max_bounds. width;
-		int y = f-> fs-> max_bounds. ascent + f-> fs-> max_bounds. descent;
-		if ( x < y) x = y;
-		g = fabs(0.785398 - atan2(x+1,x)) * 90.0 / 3.14159265358;
-		if ( g > 0) direction = floor(direction / g) * g;
+		int i;
+		Matrix m1, inv;
+		double d, ad, bc;
+		prima_matrix_set_identity(m1);
+		if ( direction != 0.0 ) {
+			double s = sin( direction / 57.29577951);
+			double c = cos( direction / 57.29577951);
+			m1[0] = c;
+			m1[1] = s;
+			m1[2] = -s;
+			m1[3] = c;
+		}
+		if ( prima_matrix_is_identity(matrix)) {
+			COPY_MATRIX(m1, cm);
+		} else {
+			Matrix m2;
+			COPY_MATRIX_WITHOUT_TRANSLATION( matrix, m2 );
+			prima_matrix_multiply( m1, m2, cm);
+		}
+
+		/* can inverse? */
+		ad = cm[0] * cm[3];
+		bc = cm[1] * cm[2];
+		if ( ad - bc == 0.0 )
+			return false;
+		d = ad - bc;
+
+		for ( i = 0; i < 4; i++) {
+			/* bitmap fonts don't require much precision anyway */
+			double m = floor( cm[i] * 1000.0 ) / 1000.0;
+			if ( m < -8192.0 ) m = -8192.0;
+			if ( m >  8192.0 ) m =  8192.0;
+			fm[i].l = m * UINT16_PRECISION;
+
+			inv[i] = cm[i] / d;
+			if ( inv[i] < -8192.0 ) inv[i] = -8192.0;
+			if ( inv[i] >  8192.0 ) inv[i] =  8192.0;
+		}
+		im[0].l =  inv[3] * UINT16_PRECISION;
+		im[1].l = -inv[1] * UINT16_PRECISION;
+		im[2].l = -inv[2] * UINT16_PRECISION;
+		im[3].l =  inv[0] * UINT16_PRECISION;
 	}
 
-	if ( direction == 0.0) {
+	if ( direction == 0.0 && prima_matrix_is_translated_only(matrix)) {
 		if ( ok_to_not_rotate) *ok_to_not_rotate = true;
 		return false;
 	}
@@ -1920,7 +1958,7 @@ prima_update_rotated_fonts( PCachedFont f, const char * text, int len, Bool wide
 
 	/* finding record for given direction */
 	while (*pr) {
-		if ((*pr)-> direction == direction) {
+		if (memcmp( (*pr)-> matrix, fm, sizeof(fm)) == 0) {
 			r = *pr;
 			break;
 		}
@@ -1928,8 +1966,7 @@ prima_update_rotated_fonts( PCachedFont f, const char * text, int len, Bool wide
 	}
 
 	if ( !r) { /* creating startup values for new entry */
-		double sin1, cos1, sin2, cos2, rad;
-		int    rbox_x[4], rbox_y[4], box_x[4], box_y[4], box[4];
+		int    i, rbox_x[4], rbox_y[4], box_x[4], box_y[4], box[4];
 		XGCValues xgv;
 
 		r = *pr = malloc( sizeof( RotatedFont));
@@ -1938,7 +1975,6 @@ prima_update_rotated_fonts( PCachedFont f, const char * text, int len, Bool wide
 			return false;
 		}
 		bzero( r, sizeof( RotatedFont));
-		r-> direction = direction;
 		r-> first1  = f-> fs-> min_byte1;
 		r-> first2  = f-> fs-> min_char_or_byte2;
 		r-> width   = ( f-> fs-> max_char_or_byte2 > 255 ? 255 : f-> fs-> max_char_or_byte2)
@@ -1962,11 +1998,9 @@ prima_update_rotated_fonts( PCachedFont f, const char * text, int len, Bool wide
 			}
 			bzero( r-> map, r-> length * sizeof( void*));
 		}
-		rad = direction * 3.14159265358 / 180.0;
-		r-> sin. l = ( sin1 = sin( -rad)) * UINT16_PRECISION;
-		r-> cos. l = ( cos1 = cos( -rad)) * UINT16_PRECISION;
-		r-> sin2.l = ( sin2 = sin(  rad)) * UINT16_PRECISION;
-		r-> cos2.l = ( cos2 = cos(  rad)) * UINT16_PRECISION;
+
+		memcpy(r->matrix,  fm, sizeof(fm));
+		memcpy(r->inverse, im, sizeof(im));
 
 /*
 	1(0,y)  2(x,y)
@@ -1975,9 +2009,11 @@ prima_update_rotated_fonts( PCachedFont f, const char * text, int len, Bool wide
 		box_x[0] = box_y[0] = box_x[1] = box_y[3] = 0;
 		r-> orgBox. x = box_x[2] = box_x[3] = f-> fs-> max_bounds. width;
 		r-> orgBox. y = box_y[1] = box_y[2] = f-> fs-> max_bounds. ascent + f-> fs-> max_bounds. descent;
+
 		for ( i = 0; i < 4; i++) {
-			rbox_x[i] = box_x[i] * cos2 - box_y[i] * sin2 + 0.5;
-			rbox_y[i] = box_x[i] * sin2 + box_y[i] * cos2 + 0.5;
+			rbox_x[i] = box_x[i];
+			rbox_y[i] = box_y[i];
+			prima_matrix_apply_int_to_int(cm, &rbox_x[i], &rbox_y[i]);
 			box[i] = 0;
 		}
 		for ( i = 0; i < 4; i++) {
@@ -2076,20 +2112,21 @@ FAILED:
 			Byte * dst = ndata + px-> bytes_per_line_alias * ( r-> dimension. y - 1);
 
 			for ( y = r-> shift. y; y < r-> shift. y + r-> dimension. y; y++) {
-				lx. l = r-> shift. x * r-> cos. l - y * r-> sin. l;
-				if ( fast)
-					lx. l += UINT16_PRECISION/2;
-				ly. l = r-> shift. x * r-> sin. l + y * r-> cos. l + UINT16_PRECISION/2;
+				lx. l = r-> shift. x * r-> inverse[0]. l + y * r-> inverse[2]. l;
+				ly. l = r-> shift. x * r-> inverse[1]. l + y * r-> inverse[3]. l + UINT16_PRECISION/2;
 				if ( fast) {
+					lx. l += UINT16_PRECISION/2;
 					for ( x = 0; x < r-> dimension. x; x++) {
-					if ( ly. i. i >= 0 && ly. i. i < r-> orgBox. y &&
-						lx. i. i >= 0 && lx. i. i < r-> orgBox. x) {
+						if (
+							ly. i. i >= 0 && ly. i. i < r-> orgBox. y &&
+							lx. i. i >= 0 && lx. i. i < r-> orgBox. x
+						) {
 							Byte * src = r-> arena_bits + r-> lineSize * ly. i. i;
 							if ( src[ lx . i. i >> 3] & ( 1 << ( 7 - ( lx . i. i & 7))))
 								dst[ x >> 3] |= 1 << ( 7 - ( x & 7));
 						}
-						lx. l += r-> cos. l;
-						ly. l += r-> sin. l;
+						lx. l += r-> inverse[0]. l;
+						ly. l += r-> inverse[1]. l;
 					}
 				} else {
 					for ( x = 0; x < r-> dimension. x; x++) {
@@ -2109,8 +2146,8 @@ FAILED:
 							if ( pv >= UINT16_PRECISION/2)
 								dst[ x >> 3] |= 1 << ( 7 - ( x & 7));
 						}
-						lx. l += r-> cos. l;
-						ly. l += r-> sin. l;
+						lx. l += r-> inverse[0]. l;
+						ly. l += r-> inverse[1]. l;
 					}
 				}
 				dst -= px-> bytes_per_line_alias;

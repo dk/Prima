@@ -213,7 +213,6 @@ typedef struct _FontInfo {
 } FontInfo, *PFontInfo;
 
 typedef struct _RotatedFont {
-	double       direction;
 	int          first1;
 	int          first2;
 	int          height;
@@ -229,7 +228,8 @@ typedef struct _RotatedFont {
 	int          lineSize;
 	int          defaultChar1;
 	int          defaultChar2;
-	Fixed        sin, cos, sin2, cos2;
+	Fixed        matrix[4];
+	Fixed        inverse[4];
 	struct       RotatedFont *next;
 } RotatedFont, *PRotatedFont;
 
@@ -1304,7 +1304,7 @@ prima_update_cursor( Handle self);
 
 extern Bool
 prima_update_rotated_fonts( PCachedFont f, const char * text, int len, Bool wide,
-	double direction, PRotatedFont *result, Bool * ok_to_not_rotate);
+	double direction, Matrix matrix, PRotatedFont *result, Bool * ok_to_not_rotate);
 
 extern void
 prima_free_rotated_entry( PCachedFont f);
@@ -1389,9 +1389,6 @@ prima_find_known_font( PFont font, Bool refill, Bool bySize);
 
 extern void
 prima_font_pp2font( char * ppFontNameSize, PFont font);
-
-extern void
-prima_build_font_key( PFontKey key, PFont f, Bool bySize);
 
 extern Bool
 prima_core_font_pick( Handle self, Font * source, Font * dest);

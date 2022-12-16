@@ -76,10 +76,10 @@ prima_matrix_apply2_int_to_int( Matrix matrix, Point *src, Point *dst, int n)
 }
 
 void
-prima_matrix_set_identity( Matrix *m)
+prima_matrix_set_identity( Matrix m)
 {
-	bzero(*m, sizeof(Matrix));
-	(*m)[0] = (*m)[3] = 1.0;
+	bzero(m, sizeof(Matrix));
+	m[0] = m[3] = 1.0;
 }
 
 Bool
@@ -178,14 +178,14 @@ prima_matrix_is_square_rectangular( Matrix matrix, NRect *src_dest_rect, NPoint 
 }
 
 void
-prima_matrix_multiply( Matrix m1, Matrix m2, Matrix *result)
+prima_matrix_multiply( Matrix m1, Matrix m2, Matrix result)
 {
-	(*result)[0] = m1[0] * m2[0] + m1[1] * m2[2];
-	(*result)[1] = m1[0] * m2[1] + m1[1] * m2[3];
-	(*result)[2] = m1[2] * m2[0] + m1[3] * m2[2];
-	(*result)[3] = m1[2] * m2[1] + m1[3] * m2[3];
-	(*result)[4] = m1[4] * m2[0] + m1[5] * m2[2] + m2[4];
-	(*result)[5] = m1[4] * m2[1] + m1[5] * m2[3] + m2[5];
+	result[0] = m1[0] * m2[0] + m1[1] * m2[2];
+	result[1] = m1[0] * m2[1] + m1[1] * m2[3];
+	result[2] = m1[2] * m2[0] + m1[3] * m2[2];
+	result[3] = m1[2] * m2[1] + m1[3] * m2[3];
+	result[4] = m1[4] * m2[0] + m1[5] * m2[2] + m2[4];
+	result[5] = m1[4] * m2[1] + m1[5] * m2[3] + m2[5];
 }
 
 

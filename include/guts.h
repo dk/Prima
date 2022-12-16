@@ -130,6 +130,10 @@ semistatic_done( semistatic_t * s);
 
 /* Matrix */
 #define COPY_MATRIX(src,dst) memcpy(dst,src,sizeof(Matrix))
+#define COPY_MATRIX_WITHOUT_TRANSLATION(src,dst) { \
+	memcpy(dst,src,sizeof(double)*4);\
+	dst[4] = dst[5] = 0.0;\
+}
 
 void
 prima_matrix_apply( Matrix matrix, double *x, double *y);
@@ -150,13 +154,10 @@ void
 prima_matrix_apply2_int_to_int( Matrix matrix, Point *src, Point *dst, int n_points);
 
 void
-prima_matrix_multiply( Matrix m1, Matrix m2, Matrix *result);
+prima_matrix_multiply( Matrix m1, Matrix m2, Matrix result);
 
 Point*
 prima_matrix_transform_to_int( Matrix martix, NPoint *src, Bool src_is_modifiable, int n_points);
-
-Bool
-prima_matrix_read_sv( SV * matrix, Matrix ctx);
 
 Bool
 prima_matrix_is_identity( Matrix matrix);
@@ -165,7 +166,7 @@ Bool
 prima_matrix_is_translated_only( Matrix matrix);
 
 void
-prima_matrix_set_identity( Matrix *matrix);
+prima_matrix_set_identity( Matrix matrix);
 
 Bool
 prima_matrix_is_square_rectangular( Matrix matrix, NRect *src_dest_rect, NPoint *dest_polygon);

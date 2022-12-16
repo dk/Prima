@@ -14,6 +14,8 @@ extern "C" {
 #define my  ((( PIcon) self)-> self)
 #define var (( PIcon) self)
 
+#define VAR_MATRIX var->current_state.matrix
+
 static void
 produce_mask( Handle self)
 {
@@ -402,7 +404,7 @@ Icon_maskPixel( Handle self, Bool set, int x, int y, SV * pixel)
 		if ( opt_InPaint)
 			return inherited pixel(self,false,x,y,pixel);
 
-		pt = prima_matrix_apply_to_int( var->current_state.matrix, x, y );
+		pt = prima_matrix_apply_to_int( VAR_MATRIX, x, y );
 		x = pt.x;
 		y = pt.y;
 
@@ -427,7 +429,7 @@ Icon_maskPixel( Handle self, Bool set, int x, int y, SV * pixel)
 		if ( is_opt( optInDraw))
 			return inherited pixel(self,true,x,y,pixel);
 
-		pt = prima_matrix_apply_to_int( var->current_state.matrix, x, y );
+		pt = prima_matrix_apply_to_int( VAR_MATRIX, x, y );
 		x = pt.x;
 		y = pt.y;
 
@@ -813,7 +815,7 @@ Icon_bar_alpha( Handle self, int alpha, int x1, int y1, int x2, int y2)
 		NRect nrect = {x1,y1,x2,y2};
 		NPoint npoly[4];
 
-		if ( prima_matrix_is_square_rectangular( var->current_state.matrix, &nrect, npoly)) {
+		if ( prima_matrix_is_square_rectangular( VAR_MATRIX, &nrect, npoly)) {
 			x1 = floor(nrect.left   + .5);
 			y1 = floor(nrect.bottom + .5);
 			x2 = floor(nrect.right  + .5);
@@ -824,7 +826,7 @@ Icon_bar_alpha( Handle self, int alpha, int x1, int y1, int x2, int y2)
 			int i;
 			Point poly[4];
 
-			prima_matrix_apply2_to_int( var->current_state.matrix, npoly, poly, 4 );
+			prima_matrix_apply2_to_int( VAR_MATRIX, npoly, poly, 4 );
 			x1 = x2 = poly[0].x;
 			y1 = y2 = poly[0].y;
 			for ( i = 1; i < 4; i++) {
