@@ -376,14 +376,23 @@ Drawable_polyline(Handle self, SV * lines)
 Bool
 Drawable_rectangle( Handle self, double x1, double y1, double x2, double y2)
 {
+	NPoint npoly[4];
+	NRect nrect = {x1,y1,x2,y2};
+
 	CHECK_GP(false);
 	if ( EMULATED_LINE )
 		return primitive( self, 0, "snnnn", "rectangle", x1,y1,x2,y2);
 
-	prima_matrix_apply( &VAR_MATRIX, &x1, &y1);
-	prima_matrix_apply( &VAR_MATRIX, &x2, &y2);
-
-	return apc_gp_rectangle(self, x1, y1, x2, y2);
+	if ( prima_matrix_is_square_rectangular( &VAR_MATRIX, &nrect, npoly)) {
+		Rect r;
+		prima_array_convert( 4, &nrect, 'd', &r, 'i');
+		return apc_gp_rectangle(self, r.left, r.bottom, r.right, r.top);
+	} else {
+		Point poly[5];
+		prima_array_convert( 8, &npoly, 'd', &poly, 'i');
+		poly[4] = poly[0];
+		return apc_gp_draw_poly( self, 5, poly);
+	}
 }
 
 Bool
