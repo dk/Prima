@@ -12,8 +12,6 @@ extern "C" {
 #define my  ((( PImage) self)-> self)
 #define var (( PImage) self)
 
-#define VAR_MATRIX var->current_state.matrix
-
 Bool
 Image_read_pixel( Handle self, SV * pixel, ColorPixel *output );
 

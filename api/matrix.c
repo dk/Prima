@@ -6,40 +6,40 @@ extern "C" {
 #endif
 
 void
-prima_matrix_apply( Matrix *matrix, double *x, double *y)
+prima_matrix_apply( Matrix matrix, double *x, double *y)
 {
-	double xx = (*matrix)[0] * (*x) + (*matrix)[2] * (*y) + (*matrix)[4];
-	double yy = (*matrix)[1] * (*x) + (*matrix)[3] * (*y) + (*matrix)[5];
+	double xx = matrix[0] * (*x) + matrix[2] * (*y) + matrix[4];
+	double yy = matrix[1] * (*x) + matrix[3] * (*y) + matrix[5];
 	*x = xx;
 	*y = yy;
 }
 
 Point
-prima_matrix_apply_to_int( Matrix *matrix, double x, double y)
+prima_matrix_apply_to_int( Matrix matrix, double x, double y)
 {
 	Point p;
-	p.x = floor( (*matrix)[0] * x + (*matrix)[2] * y + (*matrix)[4] + .5 );
-	p.y = floor( (*matrix)[1] * x + (*matrix)[3] * y + (*matrix)[5] + .5 );
+	p.x = floor( matrix[0] * x + matrix[2] * y + matrix[4] + .5 );
+	p.y = floor( matrix[1] * x + matrix[3] * y + matrix[5] + .5 );
 	return p;
 }
 
 void
-prima_matrix_apply_int_to_int( Matrix *matrix, int *x, int *y)
+prima_matrix_apply_int_to_int( Matrix matrix, int *x, int *y)
 {
 	Point p;
-	p.x = floor( (*matrix)[0] * *x + (*matrix)[2] * *y + (*matrix)[4] + .5 );
-	p.y = floor( (*matrix)[1] * *x + (*matrix)[3] * *y + (*matrix)[5] + .5 );
+	p.x = floor( matrix[0] * *x + matrix[2] * *y + matrix[4] + .5 );
+	p.y = floor( matrix[1] * *x + matrix[3] * *y + matrix[5] + .5 );
 	*x = p.x;
 	*y = p.y;
 }
 
 void
-prima_matrix_apply2( Matrix *matrix, NPoint *src, NPoint *dst, int n)
+prima_matrix_apply2( Matrix matrix, NPoint *src, NPoint *dst, int n)
 {
 	int i;
 	for ( i = 0; i < n; i++) {
-		register double xx = (*matrix)[0] * (*src).x + (*matrix)[2] * (*src).y + (*matrix)[4];
-		register double yy = (*matrix)[1] * (*src).x + (*matrix)[3] * (*src).y + (*matrix)[5];
+		register double xx = matrix[0] * (*src).x + matrix[2] * (*src).y + matrix[4];
+		register double yy = matrix[1] * (*src).x + matrix[3] * (*src).y + matrix[5];
 		(*dst).x = xx;
 		(*dst).y = yy;
 		src++;
@@ -48,12 +48,12 @@ prima_matrix_apply2( Matrix *matrix, NPoint *src, NPoint *dst, int n)
 }
 
 void
-prima_matrix_apply2_to_int( Matrix *matrix, NPoint *src, Point *dst, int n)
+prima_matrix_apply2_to_int( Matrix matrix, NPoint *src, Point *dst, int n)
 {
 	int i;
 	for ( i = 0; i < n; i++) {
-		register double xx = (*matrix)[0] * (*src).x + (*matrix)[2] * (*src).y + (*matrix)[4];
-		register double yy = (*matrix)[1] * (*src).x + (*matrix)[3] * (*src).y + (*matrix)[5];
+		register double xx = matrix[0] * (*src).x + matrix[2] * (*src).y + matrix[4];
+		register double yy = matrix[1] * (*src).x + matrix[3] * (*src).y + matrix[5];
 		(*dst).x = floor( xx + .5 );
 		(*dst).y = floor( yy + .5 );
 		src++;
@@ -62,12 +62,12 @@ prima_matrix_apply2_to_int( Matrix *matrix, NPoint *src, Point *dst, int n)
 }
 
 void
-prima_matrix_apply2_int_to_int( Matrix *matrix, Point *src, Point *dst, int n)
+prima_matrix_apply2_int_to_int( Matrix matrix, Point *src, Point *dst, int n)
 {
 	int i;
 	for ( i = 0; i < n; i++) {
-		register double xx = (*matrix)[0] * (*src).x + (*matrix)[2] * (*src).y + (*matrix)[4];
-		register double yy = (*matrix)[1] * (*src).x + (*matrix)[3] * (*src).y + (*matrix)[5];
+		register double xx = matrix[0] * (*src).x + matrix[2] * (*src).y + matrix[4];
+		register double yy = matrix[1] * (*src).x + matrix[3] * (*src).y + matrix[5];
 		(*dst).x = floor( xx + .5 );
 		(*dst).y = floor( yy + .5 );
 		src++;
@@ -83,14 +83,14 @@ prima_matrix_set_identity( Matrix *m)
 }
 
 Bool
-prima_matrix_is_identity( Matrix *m)
+prima_matrix_is_identity( Matrix m)
 {
 	Matrix identity = {1.0,0.0,0.0,1.0,0.0,0.0};
 	return memcmp(m, identity, sizeof(Matrix)) == 0;
 }
 
 Bool
-prima_matrix_is_translated_only( Matrix *m)
+prima_matrix_is_translated_only( Matrix m)
 {
 	double translate_only[4] = {1.0,0.0,0.0,1.0};
 	return memcmp(m, translate_only, sizeof(translate_only)) == 0;
@@ -98,7 +98,7 @@ prima_matrix_is_translated_only( Matrix *m)
 
 
 Point*
-prima_matrix_transform_to_int( Matrix *matrix, NPoint *src, Bool src_is_modifiable, int n_points)
+prima_matrix_transform_to_int( Matrix matrix, NPoint *src, Bool src_is_modifiable, int n_points)
 {
 	unsigned char mbuf[256];
 	semistatic_t local_points;
@@ -140,7 +140,7 @@ prima_matrix_transform_to_int( Matrix *matrix, NPoint *src, Bool src_is_modifiab
 }
 
 Bool
-prima_matrix_is_square_rectangular( Matrix *matrix, NRect *src_dest_rect, NPoint *dest_polygon)
+prima_matrix_is_square_rectangular( Matrix matrix, NRect *src_dest_rect, NPoint *dest_polygon)
 {
 	NPoint *p = dest_polygon;
 	p[0].x = p[3].x = src_dest_rect->left;
@@ -178,14 +178,14 @@ prima_matrix_is_square_rectangular( Matrix *matrix, NRect *src_dest_rect, NPoint
 }
 
 void
-prima_matrix_multiply( Matrix *m1, Matrix *m2, Matrix *result)
+prima_matrix_multiply( Matrix m1, Matrix m2, Matrix *result)
 {
-	(*result)[0] = (*m1)[0] * (*m2)[0] + (*m1)[1] * (*m2)[2];
-	(*result)[1] = (*m1)[0] * (*m2)[1] + (*m1)[1] * (*m2)[3];
-	(*result)[2] = (*m1)[2] * (*m2)[0] + (*m1)[3] * (*m2)[2];
-	(*result)[3] = (*m1)[2] * (*m2)[1] + (*m1)[3] * (*m2)[3];
-	(*result)[4] = (*m1)[4] * (*m2)[0] + (*m1)[5] * (*m2)[2] + (*m2)[4];
-	(*result)[5] = (*m1)[4] * (*m2)[1] + (*m1)[5] * (*m2)[3] + (*m2)[5];
+	(*result)[0] = m1[0] * m2[0] + m1[1] * m2[2];
+	(*result)[1] = m1[0] * m2[1] + m1[1] * m2[3];
+	(*result)[2] = m1[2] * m2[0] + m1[3] * m2[2];
+	(*result)[3] = m1[2] * m2[1] + m1[3] * m2[3];
+	(*result)[4] = m1[4] * m2[0] + m1[5] * m2[2] + m2[4];
+	(*result)[5] = m1[4] * m2[1] + m1[5] * m2[3] + m2[5];
 }
 
 
