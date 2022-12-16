@@ -184,7 +184,7 @@ font_context_next( FontContext * fc )
 	if ( !fc->orig_base )
 		return;
 
-	if ( IS_ZERO(fc->font.direction) && (!fc->matrix || prima_matrix_is_translated_only(*(fc->matrix))))
+	if ( IS_ZERO(fc->font.direction) && (!fc->matrix || prima_matrix_is_translated_only(fc->matrix)))
 		fc-> xft_base_font = fc->xft_font;
 	else {
 		dst.direction = 0;
@@ -763,7 +763,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Mat
 	}
 
 	/* see if the non-rotated font exists */
-	if ( !IS_ZERO(key. direction) || ( matrix && !prima_matrix_is_translated_only(*matrix)) ) {
+	if ( !IS_ZERO(key. direction) || ( matrix && !prima_matrix_is_translated_only(matrix)) ) {
 		key. direction = 0.0;
 		key. width = requested_font. width;
 		key. matrix[0] = key. matrix[3] = ROUND_DIRECTION;
@@ -818,7 +818,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Mat
 	if (
 		!IS_ZERO(requested_font. direction) ||
 		requested_font. width != 0 ||
-		( matrix && !prima_matrix_is_translated_only(*matrix))
+		( matrix && !prima_matrix_is_translated_only(matrix))
 	) {
 		FcMatrix mat;
 		FcMatrixInit(&mat);
@@ -1130,7 +1130,7 @@ prima_xft_set_font( Handle self, PFont font)
 	PCachedFont kf;
 	Bool need_matrix, need_rotation;
 
-	if ( prima_matrix_is_translated_only( MY_MATRIX )) {
+	if ( prima_matrix_is_translated_only( &MY_MATRIX )) {
 		kf = prima_xft_get_cache( font, NULL);
 		if ( !kf) return false;
 	} else if (!( kf = prima_xft_get_cache( font, &MY_MATRIX ))) {
@@ -1149,7 +1149,7 @@ prima_xft_set_font( Handle self, PFont font)
 		csi = locale;
 	XX-> xft_map8 = csi-> map;
 
-	need_matrix   = !prima_matrix_is_translated_only( MY_MATRIX );
+	need_matrix   = !prima_matrix_is_translated_only( &MY_MATRIX );
 	need_rotation = !IS_ZERO(PDrawable( self)-> font. direction);
 	if ( need_matrix || need_rotation ) {
 		Matrix m1, m2;
@@ -1164,7 +1164,7 @@ prima_xft_set_font( Handle self, PFont font)
 		}
 		memcpy( m2, MY_MATRIX, sizeof(Matrix));
 		m2[4] = m2[5] = 0.0;
-		prima_matrix_multiply( m1, m2, &XX->xft_font_matrix );
+		prima_matrix_multiply( &m1, &m2, &XX->xft_font_matrix );
 	} else {
 		prima_matrix_set_identity(&XX->xft_font_matrix);
 	}
@@ -1570,7 +1570,7 @@ xft_draw_glyphs( Handle self, PDrawableSysData selfxx,
 	FontContext fc;
 	uint16_t * advances  = t ? t->advances : NULL;
 	int16_t  * positions = t ? t->positions : NULL;
-	Bool straight = IS_ZERO(XX-> font-> font. direction) && prima_matrix_is_translated_only(MY_MATRIX);
+	Bool straight = IS_ZERO(XX-> font-> font. direction) && prima_matrix_is_translated_only(&MY_MATRIX);
 
 	font_context_init(&fc, &XX->font->font, 
 		t ? t->fonts : NULL, 
@@ -1608,7 +1608,7 @@ xft_draw_glyphs( Handle self, PDrawableSysData selfxx,
 				dx = x = *(positions++);
 				dy = y = *(positions++);
 				if ( !straight )
-					prima_matrix_apply_int_to_int( XX-> xft_font_matrix, &dx, &dy);
+					prima_matrix_apply_int_to_int(&XX-> xft_font_matrix, &dx, &dy);
 			} else
 				goto CHECK_EXTENTS;
 		} else {
@@ -1622,7 +1622,7 @@ xft_draw_glyphs( Handle self, PDrawableSysData selfxx,
 			cy = oy;
 		} else {
 			int ax = shift, ay = 0;
-			prima_matrix_apply_int_to_int( XX-> xft_font_matrix, &ax, &ay);
+			prima_matrix_apply_int_to_int( &XX-> xft_font_matrix, &ax, &ay);
 			cx = ox + ax;
 			cy = oy - ay;
 		}
@@ -1643,7 +1643,7 @@ my_XftDrawString32( Handle self, PDrawableSysData selfxx,
 		_Xconst XftColor *color, int x, int y,
 		_Xconst FcChar32 *string, int len)
 {
-	if ( IS_ZERO(XX-> font-> font. direction) && prima_matrix_is_translated_only(MY_MATRIX) && !XX-> flags. layered )
+	if ( IS_ZERO(XX-> font-> font. direction) && prima_matrix_is_translated_only(&MY_MATRIX) && !XX-> flags. layered )
 		XftDrawString32( XX-> xft_drawable, color, XX-> font-> xft, x, y, string, len);
 	else
 		xft_draw_glyphs( self, XX, color, x, y, string, len, NULL);
@@ -1789,8 +1789,8 @@ overstrike( Handle self, int x, int y, Point *ovx, int advance)
 		x1 = ovx->x;
 		x2 = advance;
 		y1 = y2 = d;
-		prima_matrix_apply_int_to_int( XX->xft_font_matrix, &x1, &y1);
-		prima_matrix_apply_int_to_int( XX->xft_font_matrix, &x2, &y2);
+		prima_matrix_apply_int_to_int( &XX->xft_font_matrix, &x1, &y1);
+		prima_matrix_apply_int_to_int( &XX->xft_font_matrix, &x2, &y2);
 		x1 = x - x1;
 		y1 = y - y1;
 		x2 = x + x2;
@@ -1802,8 +1802,8 @@ overstrike( Handle self, int x, int y, Point *ovx, int advance)
 		x1 = ovx->x;
 		x2 = advance;
 		y1 = y2 = (XX-> font-> font.ascent - XX-> font-> font.internalLeading)/2;
-		prima_matrix_apply_int_to_int( XX->xft_font_matrix, &x1, &y1);
-		prima_matrix_apply_int_to_int( XX->xft_font_matrix, &x2, &y2);
+		prima_matrix_apply_int_to_int( &XX->xft_font_matrix, &x1, &y1);
+		prima_matrix_apply_int_to_int( &XX->xft_font_matrix, &x2, &y2);
 		x1 = x - x1;
 		y1 = y - y1;
 		x2 = x + x2;
@@ -1861,7 +1861,7 @@ open_text_blit(Handle self, int x, int y, int dx, int rop, TextBlit * tb)
 	rc. left = rc. right = rc. top = rc. bottom = 0;
 	for ( i = 1; i < 4; i++) {
 		int x = p[i].x, y = p[i].y;
-		prima_matrix_apply_int_to_int( XX->xft_font_matrix, &x, &y);
+		prima_matrix_apply_int_to_int( &XX->xft_font_matrix, &x, &y);
 		if ( rc. left    > x) rc. left   = x;
 		if ( rc. right   < x) rc. right  = x;
 		if ( rc. bottom  > y) rc. bottom = y;
@@ -1955,7 +1955,7 @@ prima_xft_text_out( Handle self, const char * text, int x, int y, int len, int f
 	/* xft doesn't allow shifting glyph reference point - need to adjust manually */
 	baseline.x = - PDrawable(self)-> font. descent;
 	baseline.y = - PDrawable(self)-> font. descent;
-	prima_matrix_apply_int_to_int( XX-> xft_font_matrix, &baseline.x, &baseline.y);
+	prima_matrix_apply_int_to_int( &XX-> xft_font_matrix, &baseline.x, &baseline.y);
 	baseline.y +=  XX-> font-> font. descent;
 	/* XXX ???
 	baseline.x = - PDrawable(self)-> font. descent * XX-> xft_font_sin;
@@ -2032,7 +2032,7 @@ prima_xft_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 	/* xft doesn't allow shifting glyph reference point - need to adjust manually */
 	baseline.x = - PDrawable(self)-> font. descent;
 	baseline.y = - PDrawable(self)-> font. descent;
-	prima_matrix_apply_int_to_int( XX-> xft_font_matrix, &baseline.x, &baseline.y);
+	prima_matrix_apply_int_to_int( &XX-> xft_font_matrix, &baseline.x, &baseline.y);
 	baseline.y +=  XX-> font-> font. descent;
 	/* XXX ???
 	baseline.x = - PDrawable(self)-> font. descent * XX-> xft_font_sin;

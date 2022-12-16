@@ -65,7 +65,7 @@ Drawable_bar( Handle self, double x1, double y1, double x2, double y2)
 	NPoint npoly[4];
 	CHECK_GP(false);
 
-	if ( prima_matrix_is_square_rectangular( var->current_state.matrix, &nrect, npoly)) {
+	if ( prima_matrix_is_square_rectangular( &VAR_MATRIX, &nrect, npoly)) {
 		Rect r;
 		if ( !var->antialias ) FLOOR4(x1,y1,x2,y2);
 		if (IS_AA)
@@ -97,7 +97,7 @@ Drawable_bars( Handle self, SV * rects)
 	NRect nrect = {0.0,0.0,1.0,1.0};
 	NPoint npoly[4];
 
-	if ( !IS_AA && prima_matrix_is_identity( var->current_state.matrix )) {
+	if ( !IS_AA && prima_matrix_is_identity( &VAR_MATRIX )) {
 		Bool do_free;
 		Rect *p;
 		if (( p = prima_read_array( rects, "Drawable::bars",
@@ -112,13 +112,13 @@ Drawable_bars( Handle self, SV * rects)
 		'd', 4, 0, -1, &count, NULL)) == NULL)
 		return false;
 
-	is_rect = prima_matrix_is_square_rectangular( var->current_state.matrix, &nrect, npoly);
+	is_rect = prima_matrix_is_square_rectangular( &VAR_MATRIX, &nrect, npoly);
 
 	if ( is_rect ) {
 		int i;
 		NRect *r;
 		for ( i = 0, r = p; i < count; i++, r++)
-			prima_matrix_is_square_rectangular( var->current_state.matrix, r, npoly);
+			prima_matrix_is_square_rectangular( &VAR_MATRIX, r, npoly);
 
 		if ( IS_AA ) {
 			if ( !var->antialias ) FLOORN( p, count * 4 );
@@ -136,7 +136,7 @@ Drawable_bars( Handle self, SV * rects)
 		int i;
 		NRect *r;
 		for ( i = 0, r = (NRect*) p; i < count; i++, r++) {
-			prima_matrix_is_square_rectangular( var->current_state.matrix, r, npoly);
+			prima_matrix_is_square_rectangular( &VAR_MATRIX, r, npoly);
 			if ( IS_AA ) {
 				if ( !var->antialias )
 					FLOORN(npoly, 8);
@@ -173,7 +173,7 @@ Drawable_clear( Handle self, double x1, double y1, double x2, double y2)
 		nrect.top    = y2 = var-> h - 1;
 		is_pure_rect = true;
 	} else {
-		if ( prima_matrix_is_square_rectangular( var->current_state.matrix, &nrect, npoly)) {
+		if ( prima_matrix_is_square_rectangular( &VAR_MATRIX, &nrect, npoly)) {
 			FLOOR4(nrect.left,nrect.bottom,nrect.right,nrect.top);
 			is_pure_rect = true;
 		} else if ( !var-> antialias )
@@ -231,8 +231,8 @@ Drawable_fillpoly(Handle self, SV * points)
 	Bool ret = false;
 	CHECK_GP(false);
 
-	if ( !IS_AA && prima_matrix_is_translated_only(var-> current_state.matrix)) {
-		Bool is_identity = prima_matrix_is_identity(var->current_state.matrix);
+	if ( !IS_AA && prima_matrix_is_translated_only(&VAR_MATRIX)) {
+		Bool is_identity = prima_matrix_is_identity(&VAR_MATRIX);
 		/* fast integer case */
 		if (( p = prima_read_array(
 			points, "fillpoly", 'i',
@@ -243,8 +243,8 @@ Drawable_fillpoly(Handle self, SV * points)
 		if ( !is_identity ) {
 			int i;
 			Point *pt, t;
-			t.x = floor(var->current_state.matrix[4] + .5);
-			t.y = floor(var->current_state.matrix[5] + .5);
+			t.x = floor(VAR_MATRIX[4] + .5);
+			t.y = floor(VAR_MATRIX[5] + .5);
 			for ( i = 0, pt = p; i < count; i++, pt++) {
 				pt->x += t.x;
 				pt->y += t.y;
@@ -254,7 +254,7 @@ Drawable_fillpoly(Handle self, SV * points)
 		goto EXIT;
 	} else if (
 		var-> alpha == 255 && var->antialias &&
-		prima_matrix_is_identity( var->current_state.matrix)
+		prima_matrix_is_identity( &VAR_MATRIX)
 	) {
 		/* fast double case */
 		if (( p = prima_read_array(
@@ -274,7 +274,7 @@ Drawable_fillpoly(Handle self, SV * points)
 			NULL
 		)) == NULL)
 			return false;
-		prima_matrix_apply2( var->current_state.matrix, p, p, count);
+		prima_matrix_apply2( &VAR_MATRIX, p, p, count);
 
 		if ( IS_AA ) {
 			if ( !var->antialias )
@@ -301,8 +301,8 @@ Drawable_line(Handle self, double x1, double y1, double x2, double y2)
 	if (EMULATED_LINE)
 		return primitive( self, 0, "snnnn", "line", x1, y1, x2, y2);
 
-	prima_matrix_apply( var->current_state.matrix, &x1, &y1);
-	prima_matrix_apply( var->current_state.matrix, &x2, &y2);
+	prima_matrix_apply( &VAR_MATRIX, &x1, &y1);
+	prima_matrix_apply( &VAR_MATRIX, &x2, &y2);
 
 	return apc_gp_line(self,
 		x1, y1, x2, y2
@@ -317,8 +317,8 @@ read_polypoints( Handle self, SV * points, char * procName, int min, Bool (*proc
 	Bool ret = false;
 	Bool do_free = true, want_new_array, want_double;
 
-	want_double    = !prima_matrix_is_translated_only( var->current_state.matrix );
-	want_new_array = want_double ? true : !prima_matrix_is_identity( var->current_state.matrix );
+	want_double    = !prima_matrix_is_translated_only( &VAR_MATRIX );
+	want_new_array = want_double ? true : !prima_matrix_is_identity( &VAR_MATRIX );
 
 	if (( p = prima_read_array( points, procName,
 		want_double ? 'd' : 'i',
@@ -331,14 +331,14 @@ read_polypoints( Handle self, SV * points, char * procName, int min, Bool (*proc
 		Point *np;
 		if ( !( np = malloc( count * sizeof(Point))))
 			goto EXIT;
-		prima_matrix_apply2_to_int( var->current_state.matrix, (NPoint*)p, np, count);
+		prima_matrix_apply2_to_int( &VAR_MATRIX, (NPoint*)p, np, count);
 		free(p);
 		p = np;
 	} else if ( want_new_array ) {
 		int i;
 		Point t, *pt;
-		t.x = floor( var->current_state.matrix[4] + .5);
-		t.y = floor( var->current_state.matrix[5] + .5);
+		t.x = floor( VAR_MATRIX[4] + .5);
+		t.y = floor( VAR_MATRIX[5] + .5);
 		for ( i = 0, pt = (Point*) p; i < count; i++, pt++) {
 			pt->x += t.x;
 			pt->y += t.y;
@@ -380,8 +380,8 @@ Drawable_rectangle( Handle self, double x1, double y1, double x2, double y2)
 	if ( EMULATED_LINE )
 		return primitive( self, 0, "snnnn", "rectangle", x1,y1,x2,y2);
 
-	prima_matrix_apply( var->current_state.matrix, &x1, &y1);
-	prima_matrix_apply( var->current_state.matrix, &x2, &y2);
+	prima_matrix_apply( &VAR_MATRIX, &x1, &y1);
+	prima_matrix_apply( &VAR_MATRIX, &x2, &y2);
 
 	return apc_gp_rectangle(self, x1, y1, x2, y2);
 }
