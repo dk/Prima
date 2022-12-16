@@ -210,7 +210,6 @@ apc_gp_alpha( Handle self, int alpha, int x1, int y1, int x2, int y2)
 	w = x2 - x1 + 1;
 	h = y2 - y1 + 1;
 
-	y1 = y2;
 	SHIFT_XY(x1,y1);
 
 	dc     = GetDC(NULL);
@@ -1169,8 +1168,12 @@ apc_gp_push(Handle self, GCStorageFunction * destructor, void * user_data, unsig
 		state->paint.font_sin  = sys font_sin;
 		state->paint.font_cos  = sys font_cos;
 
-		state->paint.rq_pen      = sys rq_pen;
-		state->paint.rq_brush    = sys rq_brush;
+		state->paint.rq_pen    = sys rq_pen;
+		state->paint.rq_brush  = sys rq_brush;
+
+		state->paint.wt_want   = is_apt(aptWantWorldTransform);
+		state->paint.wt_used   = is_apt(aptUsedWorldTransform);
+		state->paint.wt_cached = is_apt(aptCachedWorldTransform);
 	} else {
 		state->common.line_pattern_len = sys line_pattern_len;
 		if ( state->common.line_pattern_len > sizeof(sys line_pattern)) {
@@ -1223,6 +1226,9 @@ apc_gp_pop( Handle self, void * user_data)
 		sys font_cos            = state-> paint.font_cos;
 		sys rq_pen              = state-> paint.rq_pen;
 		sys rq_brush            = state-> paint.rq_brush;
+		apt_assign(aptWantWorldTransform  , state->paint.wt_want  );
+		apt_assign(aptUsedWorldTransform  , state->paint.wt_used  );
+		apt_assign(aptCachedWorldTransform, state->paint.wt_cached);
 
 		sys pal                 = GetCurrentObject(sys ps, OBJ_PAL);
 
@@ -1280,6 +1286,39 @@ apc_gp_pop( Handle self, void * user_data)
 
 	return true;
 }
+
+Bool
+select_world_transform(Handle self, Bool want_transform)
+{
+	objCheck 0;
+
+	if (
+		is_apt( aptCachedWorldTransform ) &&
+		( (want_transform ? 1 : 0) == is_apt( aptUsedWorldTransform ))
+	)
+		return true;
+
+	apt_set( aptCachedWorldTransform );
+	apt_assign( aptUsedWorldTransform, want_transform );
+	SetViewportOrgEx( sys ps, 0, 0, NULL );
+
+	if ( !is_apt( aptWantWorldTransform ))
+		return true;
+
+	if ( want_transform ) {
+		Matrix *m = &var current_state.matrix;
+		XFORM xf  = {
+			(*m)[0], -((*m)[1]),
+			-((*m)[2]), (*m)[3],
+			0, 0
+		};
+		return SetWorldTransform( sys ps, &xf );
+	} else {
+		XFORM xf = { 1.0, 0.0, 0.0, 1.0, 0.0, 0.0 };
+		return SetWorldTransform( sys ps, &xf );
+	}
+}
+
 
 #ifdef __cplusplus
 }

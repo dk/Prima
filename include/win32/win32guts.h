@@ -184,8 +184,9 @@ typedef struct _HandleOptions_ {
 	unsigned aptClipByChildren       : 1;       // cached clipping by children
 	unsigned aptIgnoreSizeMessages   : 1;       // during window recreation
 	unsigned aptGDIPlus              : 1;       // uses GDI+
-	unsigned aptWantWorldTransform   : 1;       // SetWorldTransform is wanted
-	unsigned aptUsedWorldTransform   : 1;       // SetWorldTransform is applied
+	unsigned aptWantWorldTransform   : 1;       // SetWorldTransform is wanted for text
+	unsigned aptUsedWorldTransform   : 1;       // SetWorldTransform(matrix) mode is on currently
+	unsigned aptCachedWorldTransform : 1;       // SetWorldTransform doesn't need to be called repeatedly
 } HandleOptions;
 
 #define CLIPBOARD_MAIN 0
@@ -428,6 +429,7 @@ typedef struct _PaintState
 		RQBrush    rq_brush;
 		PDCFont    dc_font;
 		float      font_sin, font_cos;
+		Bool       wt_want, wt_used, wt_cached;
 	} paint;
 	struct {
 		HPALETTE   palette;
