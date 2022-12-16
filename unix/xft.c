@@ -830,7 +830,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Mat
 			FcMatrixRotate( &mat, cos(requested_font.direction * 3.14159265358 / 180.0), sin(requested_font.direction * 3.14159265358 / 180.0));
 		if ( matrix ) {
 			FcMatrix result;
-			FcMatrix m = { (*matrix)[0], (*matrix)[1], (*matrix)[2], (*matrix)[3] };
+			FcMatrix m = { (*matrix)[0], (*matrix)[2], (*matrix)[1], (*matrix)[3] };
 			FcMatrixMultiply( &result, &mat, &m);
 			XFTdebug("FcMatrixMutiply %g %g %g %g",  (*matrix)[0], (*matrix)[1], (*matrix)[2], (*matrix)[3]);
 			mat = result;
