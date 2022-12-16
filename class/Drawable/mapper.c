@@ -275,7 +275,7 @@ Drawable_find_font(uint32_t c, int pitch, int style, uint16_t preferred_font)
 		}
 	}
 
-	def_style = (style >= 0) ? style : 0;
+	def_style = (style >= 0) ? (style & STYLE_MASK) : 0;
 	if ( font_mapper_default_id[def_style] == -1 ) {
 		Font font;
 		char *key;
