@@ -170,7 +170,7 @@ gp_text_out_rotated(
 			real_ay += positions[i * 2 + 1];
 		}
 		rx. l = real_ax * r-> matrix[0]. l + real_ay * r-> matrix[2]. l + UINT16_PRECISION/2;
-		ry. l = real_ax * r-> matrix[1]. l + real_ay * r-> matrix[4]. l + UINT16_PRECISION/2;
+		ry. l = real_ax * r-> matrix[1]. l + real_ay * r-> matrix[3]. l + UINT16_PRECISION/2;
 		dsx = x + rx. i. i - psx;
 		dsy = REVERT( y + ry. i. i) + psy - r-> dimension. y + 1;
 
