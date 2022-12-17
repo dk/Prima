@@ -1980,14 +1980,12 @@ prima_xft_text_out( Handle self, const char * text, int x, int y, int len, int f
 		TextBlit tb;
 		dx = prima_xft_get_text_width( XX-> font, text, len,
 			flags | toAddOverhangs, X(self)-> xft_map8, NULL);
-		if (!open_text_blit(self, x, y, dx, rop, &tb))
+		if (!open_text_blit(self, x - baseline.x, y - baseline.y, dx, rop, &tb))
 			goto COPY_PUT;
 		my_XftDrawString32( self, XX, &xftcolor,
 			tb.dx + baseline.x, tb.height - tb.dy - baseline.y,
 			ucs4, len);
 		close_text_blit(XX, &tb);
-		x -= baseline.x;
-		y -= baseline.y;
 	} else {
 	COPY_PUT:
 		my_XftDrawString32( self, XX, &xftcolor, x, REVERT( y) + 1, ucs4, len);
@@ -2047,14 +2045,12 @@ prima_xft_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 		int dx;
 		TextBlit tb;
 		dx = prima_xft_get_glyphs_width( self, XX-> font, t, NULL);
-		if (!open_text_blit(self, x, y, dx, rop, &tb))
+		if (!open_text_blit(self, x - baseline.x, y - baseline.y, dx, rop, &tb))
 			goto COPY_PUT;
 		xft_draw_glyphs(self, XX, &xftcolor,
 			tb.dx + baseline.x, tb.height - tb.dy - baseline.y,
 			NULL, 0, t);
 		close_text_blit(XX, &tb);
-		x -= baseline.x;
-		y -= baseline.y;
 	} else {
 	COPY_PUT:
 		xft_draw_glyphs(self, XX, &xftcolor, x, REVERT(y) + 1, NULL, 0, t);
