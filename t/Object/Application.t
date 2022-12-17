@@ -5,8 +5,6 @@ use Test::More;
 use Prima::sys::Test;
 use Prima::Application;
 
-plan tests => 14;
-
 my $a = $::application;
 
 my @sz = $a->size;
@@ -19,6 +17,8 @@ SKIP: {
 		skip "not compiled with gtk", 3 unless $a->get_system_info->{gui} == gui::GTK;
 	} elsif ( $^O =~ /win32/i && $::application->pixel(0,0) == cl::Invalid) {
 		skip "rdesktop", 3;
+	} elsif ( $::application->get_bpp < 8 ) {
+		skip "depth too low", 3;
 	}
 
 	reset_flag;
@@ -31,7 +31,7 @@ SKIP: {
 			) : ('Widget')),
 		rect => [0,0,5,5],
 		color => cl::White,
-		backColor => cl::Black,
+		backColor => cl::LightGreen,
 		onPaint => sub {
 			my $w = shift;
 			$w->rop2(rop::CopyPut);
@@ -49,11 +49,11 @@ SKIP: {
 	ok( $i && $i->width == 2 && $i->height == 1, "some bitmap grabbing succeeded");
 	skip "no bitmap", 1 unless $i;
 
-	$i->type(im::BW);
+	$i->type(im::RGB);
 	my ( $a, $b ) = ( $i->pixel(0,0), $i->pixel(1,0) );
-	($a,$b) = ($b,$a) if $b < $a;
-	is($a, 0, "one pixel is black");
-	is($b, 255, "another is white");
+	skip "no access to screen", 1 if $a == 0 && $b == 0;
+	is($a, cl::White, "one pixel is white");
+	is($b, cl::LightGreen, "another is green");
 	$w->destroy;
 }
 
@@ -134,3 +134,4 @@ $::application->close;
 $e = $::application->yield(1);
 ok(!$e, "yield returns 0 on application.close");
 
+done_testing;
