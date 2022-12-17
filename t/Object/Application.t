@@ -30,7 +30,7 @@ SKIP: {
 				onTop => 1,
 			) : ('Widget')),
 		rect => [0,0,5,5],
-		color => cl::White,
+		color => cl::LightRed,
 		backColor => cl::LightGreen,
 		onPaint => sub {
 			my $w = shift;
@@ -50,10 +50,12 @@ SKIP: {
 	skip "no bitmap", 1 unless $i;
 
 	$i->type(im::RGB);
-	my ( $a, $b ) = ( $i->pixel(0,0), $i->pixel(1,0) );
-	skip "no access to screen", 1 if $a == 0 && $b == 0;
-	is($a, cl::White, "one pixel is white");
-	is($b, cl::LightGreen, "another is green");
+	my ( $A, $B ) = ( $i->pixel(0,0), $i->pixel(1,0) );
+	skip "no access to screen", 1 if $A == 0 && $B == 0;
+	my ($r, $g, $b) = cl::to_rgb($A);
+	ok($r > 0x80 && $g < 0x40 && $b < 0x40, "one pixel is red");
+	($r, $g, $b) = cl::to_rgb($B);
+	ok($r < 0x40 && $g > 0x80 && $b < 0x40, "another is green");
 	$w->destroy;
 }
 
@@ -70,6 +72,7 @@ SKIP: {
 	$a-> pixel( 10, 10, 0xFFFFFF);
 	my $wh = $a-> pixel( 10, 10);
 	$a-> pixel( 10, 10, $pix);
+	skip "cannot sync display", 2 if $bl == $wh;
 	my ( $xr, $xg, $xb) = (( $wh & 0xFF0000) >> 16, ( $wh & 0xFF00) >> 8, $wh & 0xFF);
 	$wh =  ( $xr + $xg + $xb ) / 3;
 	is( $bl, 0, "black pixel");
