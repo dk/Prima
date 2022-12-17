@@ -1744,28 +1744,33 @@ static void
 paint_text_background( Handle self, Point * p, int x, int y )
 {
 	DEFXX;
-
 	int i;
-	FillPattern fp;
 	Matrix m;
-	memcpy( &fp, apc_gp_get_fill_pattern( self), sizeof( FillPattern));
-	XSetForeground( DISP, XX-> gc, XX-> back. primary);
-	XX-> flags. brush_back = 0;
-	XX-> flags. brush_fore = 1;
-	XX-> fore. balance = 0;
-	XSetFunction( DISP, XX-> gc, GXcopy);
-	apc_gp_set_fill_pattern( self, fillPatterns[fpSolid]);
+	XGCValues old_gcv, gcv;
+	XPoint xp[4];
+
+	XGetGCValues( DISP, XX-> gc, GCForeground|GCFunction|GCFillStyle, &old_gcv);
+
+	gcv. foreground = XX-> back. primary;
+	gcv. function   = GXcopy;
+	gcv. fill_style = FillSolid;
+	XChangeGC( DISP, XX-> gc, GCForeground|GCFunction|GCFillStyle, &gcv);
+
 	COPY_MATRIX_WITHOUT_TRANSLATION( MY_MATRIX, m );
 	m[4] = x;
-	m[5] = y - PDrawable(self)-> font. descent;
+	m[5] = y;
 	prima_matrix_apply2_int_to_int( m, p, p, 4);
 	i = p[2].x; p[2].x = p[3].x; p[3].x = i;
 	i = p[2].y; p[2].y = p[3].y; p[3].y = i;
+	for ( i = 0; i < 4; i++) {
+		xp[i].x = (short) p[i].x + XX-> btransform.x;
+		xp[i].y = (short) REVERT(p[i].y + XX-> btransform.y);
+		RANGE2(xp[i].x, xp[i].y);
+	}
 
-	apc_gp_fill_poly( self, 4, p);
-	apc_gp_set_rop( self, XX-> rop);
-	apc_gp_set_color( self, XX-> fore. color);
-	apc_gp_set_fill_pattern( self, fp);
+	XFillPolygon( DISP, XX-> gdrawable, XX-> gc, xp, 4, Convex, CoordModeOrigin);
+
+	XChangeGC( DISP, XX-> gc, GCForeground|GCFunction|GCFillStyle, &old_gcv);
 }
 
 /* emulate over- and understriking */
@@ -1956,14 +1961,9 @@ prima_xft_text_out( Handle self, const char * text, int x, int y, int len, int f
 	RANGE2(x,y);
 
 	/* xft doesn't allow shifting glyph reference point - need to adjust manually */
-	baseline.x = 0;//- PDrawable(self)-> font. descent;
-	baseline.y = - PDrawable(self)-> font. descent;
+	baseline.x = 0;
+	baseline.y = PDrawable(self)-> font. descent;
 	prima_matrix_apply_int_to_int( XX-> xft_font_matrix, &baseline.x, &baseline.y);
-	//baseline.y +=  XX-> font-> font. descent;
-	/* XXX ???
-	baseline.x = - PDrawable(self)-> font. descent * XX-> xft_font_sin;
-	baseline.y = - PDrawable(self)-> font. descent * ( 1 - XX-> xft_font_cos )
-	*/
 	if ( !XX-> flags. base_line) {
 		x += baseline.x;
 		y += baseline.y;
@@ -2033,14 +2033,9 @@ prima_xft_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 	SHIFT(x,y);
 	RANGE2(x,y);
 	/* xft doesn't allow shifting glyph reference point - need to adjust manually */
-	baseline.x = - PDrawable(self)-> font. descent;
-	baseline.y = - PDrawable(self)-> font. descent;
+	baseline.x = 0;
+	baseline.y = XX-> font-> font. descent;
 	prima_matrix_apply_int_to_int( XX-> xft_font_matrix, &baseline.x, &baseline.y);
-	baseline.y +=  XX-> font-> font. descent;
-	/* XXX ???
-	baseline.x = - PDrawable(self)-> font. descent * XX-> xft_font_sin;
-	baseline.y = - PDrawable(self)-> font. descent * ( 1 - XX-> xft_font_cos )
-	*/
 	if ( !XX-> flags. base_line) {
 		x += baseline.x;
 		y += baseline.y;
