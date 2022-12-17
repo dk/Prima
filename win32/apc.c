@@ -183,7 +183,16 @@ apc_application_get_bitmap( Handle self, Handle image, int x, int y, int xLen, i
 		return false;
 	}
 	bm2 = SelectObject( dc2, bm);
-	BitBlt( dc2, 0, 0, xLen, yLen, dc, x, sys last_size.y - y - yLen, SRCCOPY);
+	if ( !BitBlt( dc2, 0, 0, xLen, yLen, dc, x, sys last_size.y - y - yLen, SRCCOPY)) {
+		apiErr;
+		SelectObject( dc2, bm2);
+		SelectPalette( dc, hp3, 1);
+		SelectPalette( dc2, hp2, 1);
+		DeleteObject( hp);
+		dc_free();
+		return false;
+	}
+
 	SelectObject( dc2, bm2);
 	SelectPalette( dc2, hp2, 1);
 	DeleteObject( hp);

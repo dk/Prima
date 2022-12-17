@@ -464,6 +464,11 @@ window_subsystem_done()
 	if ( std_unchecked_bitmap && std_unchecked_bitmap != (HBITMAP)-1)
 		DeleteObject( std_unchecked_bitmap);
 	SetErrorMode( guts. error_mode);
+
+	if ( guts.get_pixel_needs_emulation == 1 ) {
+		DeleteDC( guts.get_pixel_dc_dst);
+		dc_free();
+	}
 }
 
 void

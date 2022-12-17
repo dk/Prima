@@ -255,6 +255,9 @@ typedef struct _WinGuts
 	Bool           application_stop_signal;
 	long           apc_error;
 	Bool           wc2mb_is_fragile;     // cannot properly process current ACP
+
+	int            get_pixel_needs_emulation; // 0 - not tried, -1 - no, 1 - yes
+	HDC            get_pixel_dc_src, get_pixel_dc_dst;
 } WinGuts, *PWinGuts;
 
 typedef struct _WindowData

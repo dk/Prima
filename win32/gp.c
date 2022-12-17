@@ -532,10 +532,81 @@ apc_gp_flood_fill( Handle self, int x, int y, Color borderColor, Bool singleBord
 Color
 apc_gp_get_pixel( Handle self, int x, int y)
 {objCheck clInvalid;{
+	int xx = x, yy = y;
 	COLORREF c;
 	SHIFT_XY(x,y);
 	select_world_transform(self, false);
-	c = GetPixel( sys ps, x, y);
+
+	if (
+		self == prima_guts.application &&
+		guts.get_pixel_needs_emulation == 1
+	) {
+		HPALETTE hp = NULL, hp2 = NULL, hp3 = NULL;
+
+		if ( sys bpp <= 8 ) {
+			XLOGPALETTE lpg;
+			lpg.palNumEntries = GetSystemPaletteEntries( guts.get_pixel_dc_src, 0, 256, lpg. palPalEntry);
+			lpg.palVersion = 0x300;
+			hp  = CreatePalette(( LOGPALETTE*)&lpg);
+			hp2 = SelectPalette( guts.get_pixel_dc_dst, hp, 0);
+			hp3 = SelectPalette( guts.get_pixel_dc_src, hp, 1);
+			RealizePalette(guts.get_pixel_dc_dst);
+		}
+
+		if ( BitBlt(
+			guts.get_pixel_dc_dst, 0, 0, 1, 1,
+			guts.get_pixel_dc_src, x, y, SRCCOPY
+		)) {
+			c = GetPixel( guts.get_pixel_dc_dst, 0, 0);
+		} else {
+			c = CLR_INVALID;
+			apiErr;
+		}
+		if ( sys bpp <= 8 ) {
+			SelectPalette( guts.get_pixel_dc_dst, hp2, 1);
+			SelectPalette( guts.get_pixel_dc_src, hp3, 1);
+			DeleteObject( hp);
+		}
+	} else
+		c = GetPixel( sys ps, x, y);
+
+	if ( c == CLR_INVALID) {
+		if (
+			self == prima_guts.application &&
+			guts.get_pixel_needs_emulation == 0
+		) {
+			c = GetPixel( sys ps, 0, 0);
+			if ( c == CLR_INVALID ) {
+				HDC dc_src, dc_dst;
+				HBITMAP bm;
+
+				if (!( dc_src = dc_alloc()))
+					goto FAIL;
+
+				if ( !( dc_dst = CreateCompatibleDC(dc_src))) {
+					dc_free();
+					goto FAIL;
+				}
+
+				if ( !( bm = CreateCompatibleBitmap(dc_src, 1, 1))) {
+					DeleteDC( dc_dst );
+					dc_free();
+					goto FAIL;
+				}
+
+				SelectObject( dc_dst, bm);
+				guts.get_pixel_dc_src = dc_src;
+				guts.get_pixel_dc_dst = dc_dst;
+
+				guts.get_pixel_needs_emulation = 1;
+				return apc_gp_get_pixel( self, xx, yy);
+			} else {
+			FAIL:
+				guts.get_pixel_needs_emulation = -1;
+			}
+		}
+	}
+
 	if ( c == CLR_INVALID) return clInvalid;
 	return remap_color(( Color) c, false);
 }}
