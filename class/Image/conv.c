@@ -19,9 +19,11 @@ extern "C" {
 #define var (( PImage) self)
 
 Handle
-Image_convert_to_icon( Handle self, int maskType )
+Image_convert_to_icon( Handle self, int maskType, SV * mask_fill )
 {
-	return Icon_create_from_image( self, maskType );
+	if ( maskType != 1 && maskType != 8 )
+		croak("Image.convert_to_icon: maskType must be either 1 or 8");
+	return Icon_create_from_image( self, maskType, mask_fill );
 }
 
 void

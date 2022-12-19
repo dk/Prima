@@ -913,10 +913,10 @@ Returns a scaline from Y in the same raw format as C<data>
 Applies shearing to the image. If the shearing is needed only for one axis, set
 shear factor for the other one to zero.
 
-=item to_icon fill => $MASK_TEMPLATE, %options
+=item convert_to_icon $MASK_DEPTH, $MASK_TEMPLATE
 
-Creates an icon from image, with optional C<fill> scalar used for newly populate mask.
-Applies C<%options> to a new object, if any
+Creates an icon from image, with C<$MASK_DEPTH> integer (can be either 1 or 8),
+and $C<$MASK_TEMPLATE> scalar used for newly populate mask.
 
 =item to_rgba TYPE=undef
 

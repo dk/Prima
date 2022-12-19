@@ -555,7 +555,7 @@ Icon_stretch( Handle self, int width, int height)
 }
 
 Handle
-Icon_create_from_image( Handle self, int maskType )
+Icon_create_from_image( Handle self, int maskType, SV * mask_fill)
 {
 	Handle obj;
 	PIcon dst;
@@ -568,12 +568,34 @@ Icon_create_from_image( Handle self, int maskType )
 	dst->owner      = src->owner;
 	dst->conversion = src->conversion ;
 	dst->scaling    = src->scaling;
-	dst-> palSize   = src-> palSize;
+	dst->palSize    = src-> palSize;
 	dst->options.optPreserveType = src->options.optPreserveType;
+	dst->autoMasking = amNone;
 	memcpy( dst-> palette, src->palette, 768);
 	memcpy( dst-> data   , src->data   , src->dataSize);
 	memcpy( dst-> stats, src->stats, sizeof( src->stats));
-	if ( maskType == imbpp8)
+
+	if ( mask_fill && SvOK(mask_fill) && SvPOK(mask_fill)) {
+		STRLEN len;
+		int sz;
+		Byte *bits;
+
+		bits = (Byte*) SvPV(mask_fill, len);
+		sz  = (len > dst->maskSize) ? dst->maskSize : len;
+		if ( sz == 0 ) {
+			/* well... */
+		} else if ( sz == 1 ) {
+			memset( dst-> mask, *bits, dst->maskSize );
+		} else {
+			Byte *fill = dst->mask;
+			int left   = dst->maskSize;
+			while (left > 0) {
+				memcpy( fill, bits, (left > sz) ? left : sz);
+				left -= sz;
+				fill += sz;
+			}
+		}
+	} else if ( maskType == imbpp8)
 		memset( dst-> mask, 0xff, dst-> maskSize );
 
 	return obj;

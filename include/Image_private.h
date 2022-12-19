@@ -24,7 +24,7 @@ void
 Image_color2pixel( Handle self, Color color, Byte * pixel);
 
 Handle
-Icon_create_from_image( Handle self, int maskType );
+Icon_create_from_image( Handle self, int maskType, SV * mask_fill );
 
 #ifdef __cplusplus
 }

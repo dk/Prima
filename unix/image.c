@@ -2703,7 +2703,7 @@ put_transformed(Handle self, Handle image, int x, int y, int rop, Matrix matrix)
 		return apc_gp_put_image( self, image, x, y, 0, 0, i->w, i-> h, rop);
 	} else {
 		Handle ok;
-		Handle icon = i->self->convert_to_icon(image, imbpp8);
+		Handle icon = i->self->convert_to_icon(image, imbpp8, NULL);
 		CIcon(icon)->matrix_transform(icon, matrix, fill);
 		ok = apc_gp_put_image( self, icon, x, y, 0, 0, PIcon(icon)->w, PIcon(icon)->h, ropXorPut);
 		Object_destroy(icon);

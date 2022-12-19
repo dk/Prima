@@ -46,7 +46,7 @@ object Prima::Image( Prima::Drawable)
 	method Bool   can_draw_alpha();
 	method Bool   chord( double x, double y, double dX, double dY, double startAngle, double endAngle);
 	static SV   * codecs( SV * dummy, int codecID = -1);
-	c_only Handle convert_to_icon( int maskType );
+	method Handle convert_to_icon( int maskType, SV * mask_fill );
 	method Bool   clear(double x1=-1, double y1=-1, double x2=-1, double y2=-1);
 	c_only void   create_empty( int width, int height, int type);
 	method void   done();

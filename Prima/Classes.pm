@@ -862,42 +862,14 @@ sub to_rgba
 {
 	my ($self, $type) = @_;
 
-	unless ( defined $type ) {
-		$type = ( $self->type & im::GrayScale ) ? im::Byte : im::RGB;
-	}
+	$type //= ( $self->type & im::GrayScale ) ? im::Byte : im::RGB;
 
-	if ( $self->isa('Prima::Icon')) {
-		return $self->clone( type => $type, maskType => im::bpp8 );
-	} else {
-		my $i = $self->to_icon( maskType => 8, fill => "\xff" );
-		$i->type($type);
-		return $i;
-	}
-}
+	return $self->clone( type => $type, maskType => im::bpp8 )
+		if $self->isa('Prima::Icon');
 
-sub to_icon
-{
-	my ( $self, %set ) = @_;
-	return if $self->isa('Prima::Icon');
-
-	my $fill = delete $set{fill};
-	my $type = delete $set{maskType} // 1;
-	my @size = $self->size;
-
-	return Prima::Icon->new(
-		%set,
-		size     => \@size,
-		maskType => $type,
-		( map { $_ => $self->$_() } qw(
-			data type palette scaling conversion preserveType
-		)),
-		(( defined $fill && length $fill ) ? (
-			autoMasking => am::None,
-			mask        => ( $fill x ((
-				($size[0] * $type + 31 ) / 32 * 4 * $size[1]
-			) / length $fill ))
-		) : ())
-	);
+	my $i = $self->convert_to_icon( 8, "\xff" );
+	$i->type($type);
+	return $i;
 }
 
 sub load_stream
