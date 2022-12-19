@@ -876,7 +876,7 @@ sub load_stream
 {
 	shift;
 	require Prima::Image::base64;
-	my ($ok, $error) = Prima::Image::base64::load_icon(@_);
+	my ($ok, $error) = Prima::Image::base64::load_image(@_);
 	$@ = $error unless $ok;
 	return $ok;
 }
