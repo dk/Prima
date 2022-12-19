@@ -832,23 +832,23 @@ integral_rotate( Handle self, int degrees, PImage output)
 
 /* max image size is 16K, so best precision we need is 1/32 K */
 static void
-roundoff(float * matrix, int count)
+roundoff(double *m, int count)
 {
 	while ( count-- ) {
-		*matrix = floorf(*matrix * 32768.0 + 0.5) / 32768.0;
-		matrix++;
+		m[count] = floorf(m[count] * 32768.0 + 0.5) / 32768.0;
+		m++;
 	}
 }
 
 /* very special case for rotation */
 static int
-check_rotated_case( Handle self, float *matrix, PImage output, ColorPixel fill)
+check_rotated_case( Handle self, Matrix matrix, PImage output, ColorPixel fill)
 {
 	if ( matrix[4] != 0.0 || matrix[5] != 0.0 ) return -1;
 
 	if ( matrix[0] == matrix[3] && matrix[1] == -matrix[2] ) {
 		float angle = acos(matrix[0]);
-		float sin1  = sin( angle );
+		double sin1  = sin( angle );
 		roundoff( &sin1, 1);
 		if ( sin1 == matrix[1] ) {
 			float cos1 = matrix[0];
@@ -954,9 +954,9 @@ direct 2D transformation, but that's yet to be measured.
 
 */
 static void
-ldu( float *matrix, ImgOpPipeline *iop)
+ldu( Matrix matrix, ImgOpPipeline *iop)
 {
-	float local_matrix[4];
+	Matrix local_matrix;
 
 	memset( iop, 0, sizeof(ImgOpPipeline));
 	if ( matrix[0] == 0.0 ) {
@@ -1002,7 +1002,7 @@ debug_pipeline( ImgOpPipeline * iop)
 /* check two ldu variants, with and without prerequisite rotation90.
 Select the one that has less scale/shear factor to avoid distortions and interim image being too big */
 static void
-select_ldu( float *matrix, ImgOpPipeline *iop)
+select_ldu( Matrix matrix, ImgOpPipeline *iop)
 {
 	int select_first = true;
 	ImgOpPipeline p1, p2;
@@ -1013,7 +1013,7 @@ select_ldu( float *matrix, ImgOpPipeline *iop)
 	debug_pipeline(&p1);
 #endif
 	if ( p1.steps[p1.n_steps - 1].cmd != STEP_ROTATE_90 ) {
-		float m2[4] = { matrix[1], -matrix[0], matrix[3], -matrix[2] };
+		Matrix m2 = { matrix[1], -matrix[0], matrix[3], -matrix[2] };
 		ldu(m2, &p2);
 		if ( p2.steps[p2.n_steps - 1].cmd != STEP_ROTATE_90) {
 			int i;
@@ -1090,7 +1090,7 @@ add_offsetting( float mx, float my, ImgOpPipeline *iop)
    and addionally checks whether 90/180/270 integral rotation can be applied. */
 
 Bool
-img_2d_transform( Handle self, float *matrix, ColorPixel fill, PImage output)
+img_2d_transform( Handle self, Matrix matrix, ColorPixel fill, PImage output)
 {
 	int applied_steps = 0, n, step, type, channels;
 	Point p[4], dimensions[MAX_STEPS+1], offsets[MAX_STEPS];
@@ -1102,7 +1102,7 @@ img_2d_transform( Handle self, float *matrix, ColorPixel fill, PImage output)
 
 	matrix[4] = matrix[4] - floorf(matrix[4]);
 	matrix[5] = matrix[5] - floorf(matrix[5]);
-	roundoff(matrix, 6);
+	roundoff((double*) matrix, 6);
 
 	if ((n = check_rotated_case(self, matrix, output, fill)) >= 0)
 		return n;

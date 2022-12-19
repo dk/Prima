@@ -71,6 +71,7 @@ object Prima::Image( Prima::Drawable)
 	weird  PList  load( SV * className, SV *filename, HV * profile);
 	c_only void   make_empty();
 	method void   map( Color color);
+	c_only Bool   matrix_transform( Matrix matrix, ColorPixel fill);
 	method void   mirror( Bool vertically );
 	import SV *   notification_types();
 	method Bool   polyline( SV * points);

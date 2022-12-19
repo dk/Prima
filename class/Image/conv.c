@@ -910,27 +910,19 @@ Image_stats( Handle self, Bool set, int index, double value)
 }
 
 Bool
-Image_transform( Handle self, HV * profile )
+Image_matrix_transform( Handle self, Matrix matrix, ColorPixel fill)
 {
-	dPROFILE;
 	Image i;
 	int desired_type = var->type;
-	float matrix[6];
-	ColorPixel fill;
 
 	if (( desired_type & imBPP) <= 8)
 		desired_type = (desired_type & imGrayScale) ? imByte : imRGB;
-
-	if ( !pexist(matrix)) {
-		warn("'matrix' is required");
-		goto FAIL;
-	}
 
 	if (var->type != desired_type) {
 		Bool ok;
 		int type = var->type;
 		my->set_type( self, desired_type );
-		ok = my->transform( self, profile );
+		ok = my->matrix_transform( self, matrix, fill );
 		if ( is_opt( optPreserveType)) {
 			int conv = var-> conversion;
 			my-> set_conversion( self, ictNone);
@@ -940,24 +932,6 @@ Image_transform( Handle self, HV * profile )
 		return ok;
 	}
 
-	{
-		int i;
-		double *cmatrix;
-		if (( cmatrix = (double*) prima_read_array(
-			pget_sv(matrix),
-			"transform.matrix", 'd', 1, 6, 6, NULL, NULL)
-		) == NULL)
-			goto FAIL;
-		for ( i = 0; i < 6; i++)
-			matrix[i] = cmatrix[i];
-		free(cmatrix);
-	}
-
-	bzero(fill, sizeof(fill));
-	if ( pexist(fill))
-		Image_read_pixel( self, pget_sv(fill), &fill );
-
-	hv_clear(profile);
 	if (!img_2d_transform( self, matrix, fill, &i ))
 		return false;
 
@@ -974,6 +948,40 @@ Image_transform( Handle self, HV * profile )
 	}
 
 	return true;
+}
+
+Bool
+Image_transform( Handle self, HV * profile )
+{
+	dPROFILE;
+	Matrix matrix;
+	ColorPixel fill;
+
+	if ( !pexist(matrix)) {
+		warn("'matrix' is required");
+		goto FAIL;
+	}
+
+	{
+		int i;
+		double *cmatrix;
+		if (( cmatrix = (double*) prima_read_array(
+			pget_sv(matrix),
+			"transform.matrix", 'd', 1, 6, 6, NULL, NULL)
+		) == NULL)
+			goto FAIL;
+
+		for ( i = 0; i < 6; i++)
+			matrix[i] = cmatrix[i];
+		free(cmatrix);
+	}
+
+	bzero(fill, sizeof(fill));
+	if ( pexist(fill))
+		Image_read_pixel( self, pget_sv(fill), &fill );
+
+	hv_clear(profile);
+	return my-> matrix_transform( self, matrix, fill );
 
 FAIL:
 	hv_clear(profile);

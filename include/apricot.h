@@ -3648,7 +3648,7 @@ extern Bool
 apc_gp_stretch_image( Handle self, Handle image,
 	int x, int y, int xFrom, int yFrom,
 	int xDestLen, int yDestLen, int xLen, int yLen,
-	int rop);
+	int rop, Bool use_matrix);
 
 #define TO(const_name) CONSTANT(to,const_name)
 START_TABLE(to,UV)

@@ -2691,7 +2691,8 @@ apc_image_end_paint( Handle self)
 Bool
 apc_gp_stretch_image( Handle self, Handle image,
 	int dst_x, int dst_y, int src_x, int src_y,
-	int dst_w, int dst_h, int src_w, int src_h, int rop)
+	int dst_w, int dst_h, int src_w, int src_h,
+	int rop, Bool use_matrix)
 {
 	DEFXX;
 	PDrawableSysData YY = X(image);
@@ -2805,7 +2806,15 @@ apc_gp_stretch_image( Handle self, Handle image,
 		obj = CImage(image)->extract( image, src_x, src_y, src_w, src_h );
 		if ( !obj ) return false;
 		CImage(obj)-> set_scaling( obj, istBox );
-		CImage(obj)-> stretch( obj, dst_w, dst_h );
+		if ( use_matrix ) {
+			Matrix m;
+			COPY_MATRIX_WITHOUT_TRANSLATION( PDrawable(self)->current_state.matrix, m);
+			m[0] *= (double) img->w / dst_w;
+			m[3] *= (double) img->h / dst_h;
+			CImage(obj)-> matrix_transform(obj, matrix, (ColorPixel) 0);
+		} else {
+			CImage(obj)-> stretch( obj, dst_w, dst_h );
+		}
 		ok  = apc_gp_put_image( self, obj, dst_x, dst_y, 0, 0, dst_w, dst_h, rop);
 	} else {
 		return apc_gp_put_image( self, image, dst_x, dst_y, 0, 0, dst_w, dst_h, rop);

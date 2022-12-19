@@ -328,7 +328,7 @@ Drawable_width( Handle self, Bool set, int width)
 Bool
 Drawable_put_image_indirect( Handle self, Handle image, int x, int y, int xFrom, int yFrom, int xDestLen, int yDestLen, int xLen, int yLen, int rop)
 {
-	Bool ok;
+	Bool ok, use_matrix;
 	CHECK_GP(false);
 	if ( image == NULL_HANDLE) return false;
 	if ( !(PObject(image)-> options.optSystemDrawable)) {
@@ -336,10 +336,11 @@ Drawable_put_image_indirect( Handle self, Handle image, int x, int y, int xFrom,
 		return false;
 	}
 	prima_matrix_apply_int_to_int(VAR_MATRIX, &x, &y);
-	if ( xLen == xDestLen && yLen == yDestLen)
+	use_matrix = !prima_matrix_is_translated_only(VAR_MATRIX);
+	if ( xLen == xDestLen && yLen == yDestLen && !use_matrix)
 		ok = apc_gp_put_image( self, image, x, y, xFrom, yFrom, xLen, yLen, rop);
 	else
-		ok = apc_gp_stretch_image( self, image, x, y, xFrom, yFrom, xDestLen, yDestLen, xLen, yLen, rop);
+		ok = apc_gp_stretch_image( self, image, x, y, xFrom, yFrom, xDestLen, yDestLen, xLen, yLen, rop, use_matrix);
 	if ( !ok) perl_error();
 	return ok;
 }
