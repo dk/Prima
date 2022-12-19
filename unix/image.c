@@ -2688,6 +2688,29 @@ apc_image_end_paint( Handle self)
 	return true;
 }
 
+
+Bool
+put_transformed(Handle self, Handle image, int x, int y, int rop, Matrix matrix)
+{
+	ColorPixel fill;
+	PImage i = (PImage) image;
+	PDrawableSysData YY = X(image);
+
+	memset(&fill, 0x0, sizeof(fill));
+	if ( XT_IS_ICON(YY)) {
+		i->self->set_preserveType(image, 0);
+		i->self->matrix_transform(image, matrix, fill);
+		return apc_gp_put_image( self, image, x, y, 0, 0, i->w, i-> h, rop);
+	} else {
+		Handle ok;
+		Handle icon = i->self->convert_to_icon(image, imbpp8);
+		CIcon(icon)->matrix_transform(icon, matrix, fill);
+		ok = apc_gp_put_image( self, icon, x, y, 0, 0, PIcon(icon)->w, PIcon(icon)->h, ropXorPut);
+		Object_destroy(icon);
+		return ok;
+	}
+}
+
 Bool
 apc_gp_stretch_image( Handle self, Handle image,
 	int dst_x, int dst_y, int src_x, int src_y,
@@ -2792,7 +2815,7 @@ apc_gp_stretch_image( Handle self, Handle image,
 			o->palette[1].g = (XX->back. color >> 8) & 0xff;
 			o->palette[1].b = (XX->back. color >> 16) & 0xff;
 		}
-		ok = apc_gp_stretch_image( self, obj, dst_x, dst_y, 0, 0, dst_w, dst_h, src_w, src_h, rop);
+		ok = apc_gp_stretch_image( self, obj, dst_x, dst_y, 0, 0, dst_w, dst_h, src_w, src_h, rop, use_matrix);
 	} else if ( src == SRC_LAYERED ) {
 		obj = ( Handle) create_object("Prima::Icon", "");
 		ok = prima_query_argb_rect( obj, X(image)-> gdrawable, src_x, PDrawable(image)-> h - src_h - src_y, src_w, src_h);
@@ -2800,22 +2823,24 @@ apc_gp_stretch_image( Handle self, Handle image,
 			Object_destroy( obj );
 			return false;
 		}
-		ok = apc_gp_stretch_image( self, obj, dst_x, dst_y, 0, 0, dst_w, dst_h, src_w, src_h, rop);
+		ok = apc_gp_stretch_image( self, obj, dst_x, dst_y, 0, 0, dst_w, dst_h, src_w, src_h, rop, use_matrix);
 	} else if ( img->w != dst_w || img->h != dst_h || src_x != 0 || src_y != 0) {
 		/* extract local bits */
 		obj = CImage(image)->extract( image, src_x, src_y, src_w, src_h );
 		if ( !obj ) return false;
 		CImage(obj)-> set_scaling( obj, istBox );
 		if ( use_matrix ) {
-			Matrix m;
-			COPY_MATRIX_WITHOUT_TRANSLATION( PDrawable(self)->current_state.matrix, m);
-			m[0] *= (double) img->w / dst_w;
-			m[3] *= (double) img->h / dst_h;
-			CImage(obj)-> matrix_transform(obj, matrix, (ColorPixel) 0);
+			Matrix m1, m2, m3;
+			prima_matrix_set_identity(m1);
+			m1[0] = (double) dst_w / img->w;
+			m1[3] = (double) dst_h / img->h;
+			COPY_MATRIX_WITHOUT_TRANSLATION( PDrawable(self)->current_state.matrix, m2);
+			prima_matrix_multiply(m1, m2, m3);
+			ok = put_transformed( self, obj, dst_x, dst_y, rop, m3);
 		} else {
 			CImage(obj)-> stretch( obj, dst_w, dst_h );
+			ok  = apc_gp_put_image( self, obj, dst_x, dst_y, 0, 0, dst_w, dst_h, rop);
 		}
-		ok  = apc_gp_put_image( self, obj, dst_x, dst_y, 0, 0, dst_w, dst_h, rop);
 	} else {
 		return apc_gp_put_image( self, image, dst_x, dst_y, 0, 0, dst_w, dst_h, rop);
 	}

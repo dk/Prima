@@ -307,34 +307,22 @@ gp_text_out_rotated(
 	return true;
 }
 
-static void
-paint_text_background( Handle self, const char * text, int x, int y, int len, int flags)
+void
+prima_paint_text_background( Handle self, Point * p, int x, int y )
 {
-	DEFXX;
-	int i;
-	Point * p;
-	FillPattern fp;
 	Matrix m;
-
-	memcpy( &fp, apc_gp_get_fill_pattern( self), sizeof( FillPattern));
-	p = gp_get_text_box( self, text, len, flags);
-	XSetForeground( DISP, XX-> gc, XX-> back. primary);
-	XX-> flags. brush_back = 0;
-	XX-> flags. brush_fore = 1;
-	XX-> fore. balance = 0;
-	XSetFunction( DISP, XX-> gc, GXcopy);
-	apc_gp_set_fill_pattern( self, fillPatterns[fpSolid]);
 	COPY_MATRIX_WITHOUT_TRANSLATION( MY_MATRIX, m );
 	m[4] = x;
 	m[5] = y;
-	prima_matrix_apply2_int_to_int( m, p, p, 4);
-	i = p[2].x; p[2].x = p[3].x; p[3].x = i;
-	i = p[2].y; p[2].y = p[3].y; p[3].y = i;
+	prima_paint_box( self, p[2].x, p[2].y, m, X(self)->back.primary);
+}
 
-	apc_gp_fill_poly( self, 4, p);
-	apc_gp_set_rop( self, XX-> rop);
-	apc_gp_set_color( self, XX-> fore. color);
-	apc_gp_set_fill_pattern( self, fp);
+static void
+paint_text_background( Handle self, const char * text, int x, int y, int len, int flags)
+{
+	Point * p;
+	p = gp_get_text_box( self, text, len, flags);
+	prima_paint_text_background( self, p, x, y);
 	free( p);
 }
 

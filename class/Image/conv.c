@@ -18,6 +18,12 @@ extern "C" {
 #define my  ((( PImage) self)-> self)
 #define var (( PImage) self)
 
+Handle
+Image_convert_to_icon( Handle self, int maskType )
+{
+	return Icon_create_from_image( self, maskType );
+}
+
 void
 Image_color2pixel( Handle self, Color color, Byte * pixel)
 {

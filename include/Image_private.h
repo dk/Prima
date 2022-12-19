@@ -23,6 +23,9 @@ Image_set_extended_data( Handle self, HV * profile);
 void
 Image_color2pixel( Handle self, Color color, Byte * pixel);
 
+Handle
+Icon_create_from_image( Handle self, int maskType );
+
 #ifdef __cplusplus
 }
 #endif

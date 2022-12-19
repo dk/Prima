@@ -554,6 +554,31 @@ Icon_stretch( Handle self, int width, int height)
 	var-> autoMasking = am;
 }
 
+Handle
+Icon_create_from_image( Handle self, int maskType )
+{
+	Handle obj;
+	PIcon dst;
+	PImage src = (PImage) self;
+
+	obj = ( Handle) create_object("Prima::Icon", "");
+	CIcon( obj)-> create_empty_icon( obj, var->w, var->h, var->type, maskType);
+	dst = (PIcon) obj;
+
+	dst->owner      = src->owner;
+	dst->conversion = src->conversion ;
+	dst->scaling    = src->scaling;
+	dst-> palSize   = src-> palSize;
+	dst->options.optPreserveType = src->options.optPreserveType;
+	memcpy( dst-> palette, src->palette, 768);
+	memcpy( dst-> data   , src->data   , src->dataSize);
+	memcpy( dst-> stats, src->stats, sizeof( src->stats));
+	if ( maskType == imbpp8)
+		memset( dst-> mask, 0xff, dst-> maskSize );
+
+	return obj;
+}
+
 void
 Icon_create_empty( Handle self, int width, int height, int type)
 {
@@ -902,13 +927,12 @@ Icon_rotate( Handle self, double degrees, SV * svfill)
 }
 
 Bool
-Icon_transform( Handle self, HV * profile )
+Icon_matrix_transform( Handle self, Matrix matrix, ColorPixel fill)
 {
-	dPROFILE;
 	Bool ok;
 	Image dummy;
 	int autoMasking = var->autoMasking, maskType = var->maskType;
-	SV * matrix = NULL;
+	ColorPixel icon_fill;
 	var->autoMasking = amNone;
 
 	var->updateLock++;
@@ -919,28 +943,22 @@ Icon_transform( Handle self, HV * profile )
 	dummy.scaling = var->scaling;
 	dummy.mate    = var->mate;
 
-	pdelete( fill );
+	bzero(&icon_fill, sizeof(icon_fill));
 
-	if ( pexist(matrix)) {
-		matrix = pget_sv(matrix);
-		++SvREFCNT(matrix);
-	}
-
-	ok = inherited transform(self, profile);
+	ok = inherited matrix_transform(self, matrix, icon_fill);
 	if ( ok ) {
-		pset_sv( matrix, matrix );
-		ok = Image_transform((Handle) &dummy, profile );
-		hv_clear(profile);
+		Image i;
+		ok = img_2d_transform((Handle) &dummy, matrix, icon_fill, &i );
 		if ( ok ) {
-			var-> mask     = dummy.data;
-			var-> maskLine = dummy. lineSize;
-			var-> maskSize = dummy. dataSize;
-			if ( var->w != dummy.w || var->h != dummy.h)
+			free( var-> mask );
+			var-> mask     = i.data;
+			var-> maskLine = i.lineSize;
+			var-> maskSize = i.dataSize;
+			if ( var->w != i.w || var->h != i.h)
 				croak("panic: icon object inconsistent after 2d transform");
 		}
+		return false;
 	}
-	if ( matrix )
-		--SvREFCNT(matrix);
 
 	if (maskType != imbpp8 && is_opt( optPreserveType))
 		my-> set_maskType( self, maskType);

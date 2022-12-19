@@ -1740,39 +1740,6 @@ setup_alpha(PDrawableSysData selfxx, XftColor * xftcolor, XftFont ** font)
 	}
 }
 
-static void
-paint_text_background( Handle self, Point * p, int x, int y )
-{
-	DEFXX;
-	int i;
-	Matrix m;
-	XGCValues old_gcv, gcv;
-	XPoint xp[4];
-
-	XGetGCValues( DISP, XX-> gc, GCForeground|GCFunction|GCFillStyle, &old_gcv);
-
-	gcv. foreground = XX-> back. primary;
-	gcv. function   = GXcopy;
-	gcv. fill_style = FillSolid;
-	XChangeGC( DISP, XX-> gc, GCForeground|GCFunction|GCFillStyle, &gcv);
-
-	COPY_MATRIX_WITHOUT_TRANSLATION( MY_MATRIX, m );
-	m[4] = x;
-	m[5] = y;
-	prima_matrix_apply2_int_to_int( m, p, p, 4);
-	i = p[2].x; p[2].x = p[3].x; p[3].x = i;
-	i = p[2].y; p[2].y = p[3].y; p[3].y = i;
-	for ( i = 0; i < 4; i++) {
-		xp[i].x = (short) p[i].x + XX-> btransform.x;
-		xp[i].y = (short) REVERT(p[i].y + XX-> btransform.y);
-		RANGE2(xp[i].x, xp[i].y);
-	}
-
-	XFillPolygon( DISP, XX-> gdrawable, XX-> gc, xp, 4, Convex, CoordModeOrigin);
-
-	XChangeGC( DISP, XX-> gc, GCForeground|GCFunction|GCFillStyle, &old_gcv);
-}
-
 /* emulate over- and understriking */
 static void
 overstrike( Handle self, int x, int y, Point *ovx, int advance)
@@ -1953,7 +1920,7 @@ prima_xft_text_out( Handle self, const char * text, int x, int y, int len, int f
 	/* paint background if opaque */
 	if ( XX-> flags. opaque) {
 		Point * p = prima_xft_get_text_box( self, text, len, flags);
-		paint_text_background( self, p, x, y );
+		prima_paint_text_background( self, p, x, y );
 		free( p);
 	}
 
@@ -2024,7 +1991,7 @@ prima_xft_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 	/* paint background if opaque */
 	if ( XX-> flags. opaque) {
 		Point * p = prima_xft_get_glyphs_box( self, t);
-		paint_text_background( self, p, x, y );
+		prima_paint_text_background( self, p, x, y );
 		free( p);
 	}
 
