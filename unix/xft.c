@@ -137,11 +137,11 @@ typedef struct {
 	XftFont *orig_base, *xft_base_font;
 	uint32_t fid;
 	uint16_t *fonts;
-	Matrix *matrix;
+	Matrix matrix;
 } FontContext;
 
 static void
-font_context_init( FontContext * fc, Font * font, uint16_t * fonts, XftFont * orig, XftFont * base, Matrix *matrix)
+font_context_init( FontContext * fc, Font * font, uint16_t * fonts, XftFont * orig, XftFont * base, Matrix matrix)
 {
 	bzero(fc, sizeof(FontContext));
 	fc->font      = *font;
@@ -149,7 +149,7 @@ font_context_init( FontContext * fc, Font * font, uint16_t * fonts, XftFont * or
 	fc->orig_base = fc->xft_base_font = base;
 	fc->fid       = 0;
 	fc->fonts     = fonts;
-	fc->matrix    = matrix;
+	COPY_MATRIX(matrix, fc->matrix);
 }
 
 static void
@@ -184,7 +184,7 @@ font_context_next( FontContext * fc )
 	if ( !fc->orig_base )
 		return;
 
-	if ( IS_ZERO(fc->font.direction) && (!fc->matrix || prima_matrix_is_translated_only(*(fc->matrix))))
+	if ( IS_ZERO(fc->font.direction) && (!fc->matrix || prima_matrix_is_translated_only(fc->matrix)))
 		fc-> xft_base_font = fc->xft_font;
 	else {
 		dst.direction = 0;
@@ -485,7 +485,7 @@ STOP_2:;
 }
 
 static void
-xft_build_font_key( PFontKey key, PFont f, Bool bySize, Matrix *matrix)
+xft_build_font_key( PFontKey key, PFont f, Bool bySize, Matrix matrix)
 {
 	bzero( key, sizeof( FontKey));
 	key-> height = bySize ? -f-> size : f-> height;
@@ -497,7 +497,7 @@ xft_build_font_key( PFontKey key, PFont f, Bool bySize, Matrix *matrix)
 	if ( matrix ) {
 		/* don't mix matrix and direction to avoid sin/cos calls */
 		int i;
-		for ( i = 0; i < 4; i++) key->matrix[i] = ROUND2INT( (*matrix)[i] );
+		for ( i = 0; i < 4; i++) key->matrix[i] = ROUND2INT( matrix[i] );
 	} else {
 		key->matrix[0] = key->matrix[3] = ROUND_DIRECTION;
 	}
@@ -629,7 +629,7 @@ find_good_font_by_family( Font * f, int fc_spacing )
 }
 
 static void
-xft_store_font(Font * k, Font * v, Bool by_size, XftFont * xft, Matrix * matrix, XftFont * xft_base)
+xft_store_font(Font * k, Font * v, Bool by_size, XftFont * xft, Matrix matrix, XftFont * xft_base)
 {
 	FontKey key;
 	PCachedFont kf;
@@ -672,7 +672,7 @@ my_XftFontMatch(Display        *dpy,
 }
 
 Bool
-prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Matrix *matrix, XftFont ** xft_result)
+prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Matrix matrix, XftFont ** xft_result)
 {
 	FcPattern *request, *match;
 	FcResult res = FcResultNoMatch;
@@ -763,7 +763,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Mat
 	}
 
 	/* see if the non-rotated font exists */
-	if ( !IS_ZERO(key. direction) || ( matrix && !prima_matrix_is_translated_only(*matrix)) ) {
+	if ( !IS_ZERO(key. direction) || ( matrix && !prima_matrix_is_translated_only(matrix)) ) {
 		key. direction = 0.0;
 		key. width = requested_font. width;
 		key. matrix[0] = key. matrix[3] = ROUND_DIRECTION;
@@ -818,7 +818,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Mat
 	if (
 		!IS_ZERO(requested_font. direction) ||
 		requested_font. width != 0 ||
-		( matrix && !prima_matrix_is_translated_only(*matrix))
+		( matrix && !prima_matrix_is_translated_only(matrix))
 	) {
 		FcMatrix mat;
 		FcMatrixInit(&mat);
@@ -830,9 +830,9 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Mat
 			FcMatrixRotate( &mat, cos(requested_font.direction * 3.14159265358 / 180.0), sin(requested_font.direction * 3.14159265358 / 180.0));
 		if ( matrix ) {
 			FcMatrix result;
-			FcMatrix m = { (*matrix)[0], (*matrix)[2], (*matrix)[1], (*matrix)[3] };
+			FcMatrix m = { matrix[0], matrix[2], matrix[1], matrix[3] };
 			FcMatrixMultiply( &result, &mat, &m);
-			XFTdebug("FcMatrixMutiply %g %g %g %g",  (*matrix)[0], (*matrix)[1], (*matrix)[2], (*matrix)[3]);
+			XFTdebug("FcMatrixMutiply %g %g %g %g", matrix[0], matrix[1], matrix[2], matrix[3]);
 			mat = result;
 		}
 		FcPatternAddMatrix( request, FC_MATRIX, &mat);
@@ -1133,14 +1133,14 @@ prima_xft_set_font( Handle self, PFont font)
 	if ( prima_matrix_is_translated_only( MY_MATRIX )) {
 		kf = prima_xft_get_cache( font, NULL);
 		if ( !kf) return false;
-	} else if (!( kf = prima_xft_get_cache( font, &MY_MATRIX ))) {
+	} else if (!( kf = prima_xft_get_cache( font, MY_MATRIX ))) {
 		Font f;
 		kf = prima_xft_get_cache( font, NULL);
 		if ( !kf) return false;
 
 		f = kf->font;
-		prima_xft_font_pick( self, &f, &f, NULL, &MY_MATRIX, NULL);
-		if (!( kf = prima_xft_get_cache( font, &MY_MATRIX )))
+		prima_xft_font_pick( self, &f, &f, NULL, MY_MATRIX, NULL);
+		if (!( kf = prima_xft_get_cache( font, MY_MATRIX )))
 			return false;
 	}
 
@@ -1171,7 +1171,7 @@ prima_xft_set_font( Handle self, PFont font)
 }
 
 PCachedFont
-prima_xft_get_cache( PFont font, Matrix *matrix)
+prima_xft_get_cache( PFont font, Matrix matrix)
 {
 	FontKey key;
 	PCachedFont kf;
@@ -1406,7 +1406,7 @@ prima_xft_get_glyphs_width( Handle self, PCachedFont selfxx, PGlyphsOutRec t, Po
 	int i, ret = 0;
 	FontContext fc;
 
-	font_context_init(&fc, &selfxx->font, t->fonts, selfxx->xft_base, NULL, &MY_MATRIX);
+	font_context_init(&fc, &selfxx->font, t->fonts, selfxx->xft_base, NULL, MY_MATRIX);
 	if ( overhangs) overhangs-> x = overhangs-> y = 0;
 
 	t->len = check_width(selfxx, t->len);
@@ -1574,7 +1574,7 @@ xft_draw_glyphs( Handle self, PDrawableSysData selfxx,
 	font_context_init(&fc, &XX->font->font, 
 		t ? t->fonts : NULL, 
 		XX->font->xft, advances ? NULL : XX->font->xft_base,
-		&MY_MATRIX);
+		MY_MATRIX);
 
 	ox = x;
 	oy = y;

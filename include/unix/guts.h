@@ -1474,7 +1474,7 @@ extern void
 prima_xft_gp_destroy( Handle self );
 
 extern Bool
-prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Matrix *matrix, XftFont ** xft_result);
+prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Matrix matrix, XftFont ** xft_result);
 
 extern Bool
 prima_xft_set_font( Handle self, PFont font);
@@ -1522,7 +1522,7 @@ extern int
 prima_xft_get_glyph_outline( Handle self, int index, int flags, int ** buffer);
 
 extern PCachedFont
-prima_xft_get_cache( PFont font, Matrix *matrix);
+prima_xft_get_cache( PFont font, Matrix matrix);
 
 extern uint32_t *
 prima_xft_map8( const char * encoding);

@@ -1846,7 +1846,7 @@ apc_menu_set_font( Handle self, PFont font)
 
 #ifdef USE_XFT
 	if ( guts. use_xft) {
-		kf = prima_xft_get_cache( font, &PDrawable(self)-> current_state.matrix);
+		kf = prima_xft_get_cache( font, NULL);
 		if ( kf) xft_metrics = 1;
 	}
 #endif
