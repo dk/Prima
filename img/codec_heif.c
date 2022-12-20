@@ -287,6 +287,11 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
 	if ( !( l-> ctx = heif_context_alloc()))
 		SET_ERROR("cannot create context");
 
+#if LIBHEIF_NUMERIC_VERSION > 10e0100
+	/* https://github.com/strukturag/libheif/pull/737 - multi-threading crashes sometimes */
+	heif_context_set_max_decoding_threads(l->ctx, 0);
+#endif
+
 	CALL heif_context_read_from_reader(l->ctx, &reader, fi->req, NULL);
 	CHECK_HEIF_ERROR;
 
