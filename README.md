@@ -27,7 +27,7 @@ Prerequisites
 Debian/Ubuntu
 -------------
 
-  apt-get install libgtk3.0-dev libgif-dev libjpeg-dev libtiff-dev libxpm-dev 
+  apt-get install libgtk-3-dev libgif-dev libjpeg-dev libtiff-dev libxpm-dev 
       libwebp-dev libfribidi-dev libharfbuzz-dev libthai-dev libheif-dev
 
 FreeBSD
