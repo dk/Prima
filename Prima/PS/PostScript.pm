@@ -195,10 +195,12 @@ sub stroke
 		$r1 == rop::NoOper &&
 		$r2 == rop::NoOper;
 
+	my $lw_changed;
 	if ( $self-> {changed}-> {lineWidth}) {
 		my ($lw) = $self-> pixel2point($self-> lineWidth);
 		$self-> emit( float_format($lw) . ' SW');
 		$self-> {changed}-> {lineWidth} = 0;
+		$lw_changed++;
 	}
 
 	if ( $self-> {changed}-> {lineEnd}) {
@@ -238,18 +240,19 @@ sub stroke
 			( $r1 == rop::Blackness) ? 0 :
 			( $r1 == rop::Whiteness) ? 0xffffff : $self-> color;
 
-		if ( $self-> {changed}-> {linePattern}) {
+		if ( $self-> {changed}-> {linePattern} || $lw_changed ) {
 			if ( length( $lp) == 1) {
-				$self-> emit('[] 0 SD');
+				$self-> emit('[] 0 SD') if $self-> {changed}-> {linePattern};
 			} else {
-				my $lw = $self->lineWidth;
+				my $lw = $self->lineWidth || 2.0; # because to be divided by 2
 				my @x = map { ord } split('', $lp);
 				push( @x, 0) if scalar(@x) % 1;
 				my @lp;
 				for ( my $i = 0; $i < @x; $i += 2 ) {
-					push @lp, $x[$i];
-					push @lp, ($x[$i+1] - 1) * $lw / 2;
+					push @lp, ($x[$i] - 1) * $lw / 2;
+					push @lp, ($x[$i+1]) * $lw / 2;
 				}
+				@lp = map { $_ || 0.001 } @lp;
 				$self-> emit("[@lp] 0 SD");
 			}
 			$self-> {changed}-> {linePattern} = 0;
@@ -861,7 +864,7 @@ CLEAR
 sub line
 {
 	my ( $self, $x1, $y1, $x2, $y2) = @_;
-	return $self->primitive( line => $x1, $y1, $x2, $y2) if $self-> is_custom_line(1);
+	return $self->primitive( line => $x1, $y1, $x2, $y2) if $self-> is_custom_line;
 	( $x1, $y1, $x2, $y2) = float_format($self-> pixel2point( $x1, $y1, $x2, $y2));
 	$self-> stroke("N $x1 $y1 M $x2 $y2 l O");
 }
@@ -869,7 +872,7 @@ sub line
 sub lines
 {
 	my ( $self, $array) = @_;
-	return $self->primitive( lines => $array ) if $self-> is_custom_line(1);
+	return $self->primitive( lines => $array ) if $self-> is_custom_line;
 	my $i;
 	my $c = scalar @$array;
 	my @a = float_format($self-> pixel2point( @$array));
@@ -884,7 +887,7 @@ sub lines
 sub polyline
 {
 	my ( $self, $array) = @_;
-	return $self->primitive( polyline => $array ) if $self-> is_custom_line(1);
+	return $self->primitive( polyline => $array ) if $self-> is_custom_line;
 	my $i;
 	my $c = scalar @$array;
 	my @a = float_format($self-> pixel2point( @$array));

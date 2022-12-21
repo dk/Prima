@@ -896,13 +896,18 @@ render_wide_line( NPoint *points, unsigned int n_points, DrawablePaintState *sta
 
 	path = newAV();
 
-	if (integer_precision && state->line_width <= 1.5) {
+	if (
+		integer_precision ?
+			(state->line_width <= 1.5) :
+			(state->line_width <= 0.0)
+	) {
 		/* no line widening, return as is */
 		NPolyPolyline* p = poly;
 		while (p) {
 			av_push( path, newSVpv("line", 0));
 			av_push( path, render_line2fill( p->points, p->n_points, integer_precision));
 			av_push( path, newSVpv("open", 0));
+			av_push( path, NULL_SV);
 			p = p->next;
 		}
 		ok = true;

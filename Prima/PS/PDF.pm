@@ -177,10 +177,12 @@ sub stroke
 		$r1 == rop::NoOper &&
 		$r2 == rop::NoOper;
 
+	my $lw_changed;
 	if ( $self-> {changed}-> {lineWidth}) {
 		my ($lw) = $self-> pixel2point($self-> lineWidth);
 		$self-> emit_content( float_format($lw) . ' w');
 		$self-> {changed}-> {lineWidth} = 0;
+		$lw_changed = 1;
 	}
 
 	if ( $self-> {changed}-> {lineEnd}) {
@@ -226,14 +228,20 @@ sub stroke
 			( $r1 == rop::Blackness) ? 0 :
 			( $r1 == rop::Whiteness) ? 0xffffff : $self-> color;
 
-		if ( $self-> {changed}-> {linePattern}) {
+		if ( $self-> {changed}-> {linePattern} || $lw_changed) {
 			if ( length( $lp) == 1) {
-				$self-> emit_content('[] 0 d');
+				$self-> emit_content('[] 0 d') if $self->{changed}->{linePattern};
 			} else {
-				my @x = split('', $lp);
+				my $lw = $self->lineWidth || 2.0; # because to be divided by 2
+				my @x = map { ord } split('', $lp);
 				push( @x, 0) if scalar(@x) % 1;
-				@x = map { ord($_) } @x;
-				$self-> emit_content("[@x] 0 d");
+				my @lp;
+				for ( my $i = 0; $i < @x; $i += 2 ) {
+					push @lp, ($x[$i] - 1) * $lw / 2;
+					push @lp, ($x[$i+1]) * $lw / 2;
+				}
+				@lp = map { $_ || 0.001 } @lp;
+				$self-> emit_content("[@lp] 0 d");
 			}
 			$self-> {changed}-> {linePattern} = 0;
 		}

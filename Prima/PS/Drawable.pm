@@ -172,10 +172,9 @@ sub update_custom_line
 {
 	my ( $self, $le ) = @_;
 	$le //= $self->SUPER::lineEnd;
-	my $lp = (length($self->linePattern) > 1) ? 1 : 0;
-	$self->{lineEnd_flags} = ref($le) ? 1 : $lp;
+	$self->{lineEnd_flags} = ref($le) ? 1 : 0;
 	if ( $self->{lineEnd_flags} ) {
-		$self->{lineEnd_flags} |= 2 if $lp || defined($le->[2]) || defined($le->[3]);
+		$self->{lineEnd_flags} |= 2 if defined($le->[2]) || defined($le->[3]);
 	} else {
 		$self-> {changed}-> {lineEnd} = 1;
 	}
