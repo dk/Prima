@@ -168,7 +168,6 @@ my @fonts = @{$p-> fonts};
 my $i;
 $|++;
 for my $f ( sort { $a->{name} cmp $b->{name} } @fonts ) {
-use Data::Dumper; print Dumper(	$f);
 	$i++;
 	printf "[%d/%d] %s              \r", $i, scalar(@fonts), $f->{name};
 	$p->font($ff);
