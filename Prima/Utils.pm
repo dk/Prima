@@ -23,6 +23,8 @@ use vars qw(@ISA @EXPORT @EXPORT_OK);
 	read_dir rename rmdir unlink utime
 	seekdir telldir rewinddir
 	getenv setenv stat access getdir sv2local local2sv
+
+	nearest_d nearest_i
 );
 
 sub xcolor {

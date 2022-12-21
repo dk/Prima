@@ -68,6 +68,8 @@ XS(Utils_nearest_i_FROMPERL)
 		}
 	} else {
 		int i;
+		SPAGAIN;
+		SP -= items;
 		EXTEND( sp, items );
 		for ( i = 0; i < items; i++ )
 			PUSHs( newSViv( floor(SvNV(ST(i)) + .5) ));
@@ -107,6 +109,8 @@ XS(Utils_nearest_d_FROMPERL)
 		}
 	} else {
 		int i;
+		SPAGAIN;
+		SP -= items;
 		EXTEND( sp, items );
 		for ( i = 0; i < items; i++ )
 			PUSHs( newSVnv( floor(SvNV(ST(i)) * 1.0e15 + .5) / 1.0e15 ));
