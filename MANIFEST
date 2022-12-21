@@ -428,10 +428,11 @@ t/Widget/Size.t
 t/Widget/SizeLimits.t
 t/Widget/Window.t
 t/Widget/ZOrder.t
+t/misc/cpan.t
 t/misc/fs.t
 t/misc/pod.t
+t/misc/precision.t
 t/misc/syntax.t
-t/misc/cpan.t
 unix/app.c
 unix/clipboard.c
 unix/cocoa.c
