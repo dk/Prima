@@ -275,6 +275,11 @@ sub matrix
 	$self->change_transform;
 }
 
+sub change_transform  { Carp::croak "abstract call" }
+sub apply_canvas_font { Carp::croak "abstract call" }
+sub begin_doc         { Carp::croak "abstract call" }
+sub end_doc           { Carp::croak "abstract call" }
+
 sub region
 {
 	return undef;
@@ -327,8 +332,8 @@ sub graphic_context_push
 	return 0 unless $self->SUPER::graphic_context_push;
 	my $stack = $self->{gc_stack} //= [];
 	push @$stack, {
-		(map { $_,  $self->$_()  } qw(rotate reversed grayscale)),
-		(map { $_, [$self->$_()] } qw(resolution scale clipRect))
+		(map { $_,  $self->$_()  } qw(reversed grayscale)),
+		(map { $_, [$self->$_()] } qw(resolution clipRect))
 	};
 	return 1;
 }
@@ -339,8 +344,8 @@ sub graphic_context_pop
 	return unless $self->SUPER::graphic_context_pop;
 	my $stack = $self->{gc_stack} //= [];
 	my $item = pop @$stack or return 0;
-	@{$self->{$_}} = @{$item->{$_}} for qw(resolution scale clipRect);
-	$self->{$_} = $item->{$_} for qw(rotate reversed grayscale);
+	@{$self->{$_}} = @{$item->{$_}} for qw(resolution clipRect);
+	$self->{$_} = $item->{$_} for qw(reversed grayscale);
 	$self->change_transform;
 	return 1;
 }
