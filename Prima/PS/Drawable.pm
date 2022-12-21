@@ -414,9 +414,11 @@ sub fonts
 		my @fonts;
 		my $fm = $self-> font_mapper;
 		my $num = $fm->count;
+		my %seen;
 		if ( $num > 0 ) {
 			for my $fid ( 1 .. $num ) {
 				my $f = $fm->get($fid) or next;
+				next if $seen{ $f->{name} . "\0" . $f->{family} }++;
 				$f->{encodings} = [$enc];
 				$f->{encoding} = $enc;
 				push @fonts, $f;
