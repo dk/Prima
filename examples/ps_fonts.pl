@@ -1,5 +1,6 @@
 use strict;
 use warnings;
+use Prima;
 use Prima::PS::Printer;
 use Prima::PS::PDF;
 use Prima::PS::PostScript;
@@ -158,12 +159,16 @@ my $p = ($ARGV[0] eq '-ps') ?
 	Prima::PS::File->new( file => 'out.ps') :
 	Prima::PS::PDF::File->new( file => 'out.pdf');
 
+my $filter = $ARGV[1];
+
 $p->begin_doc;
 my $ff = $p->font;
 my @fonts = @{$p-> fonts};
+@fonts = grep { $_->{name} =~ /$filter/ } @fonts if defined $filter;
 my $i;
 $|++;
 for my $f ( sort { $a->{name} cmp $b->{name} } @fonts ) {
+use Data::Dumper; print Dumper(	$f);
 	$i++;
 	printf "[%d/%d] %s              \r", $i, scalar(@fonts), $f->{name};
 	$p->font($ff);
