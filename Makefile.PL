@@ -2689,7 +2689,7 @@ sub install
 		"$2\$(DEST$3)$4".
 		"$5\$(DEST$6)$7$8".
 		"\n\t\$(NOECHO) \$(ABSPERL) $0 --postinstall ".
-			"dest=\$(DEST$3) bin=\$($6) slib=$cygwin_fake_Slib\n\n"
+			"dest=\"\$(DEST$3)\" bin=\"\$($6)\" slib=$cygwin_fake_Slib\n\n"
 	]xgse;
 
 	$END .= <<BAD_MAKEFILE if $n != 3;
