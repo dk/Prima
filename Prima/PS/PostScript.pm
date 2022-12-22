@@ -97,14 +97,6 @@ sub change_transform
 	}
 
 	my $m = $self-> matrix;
-	if ( $self->{reversed}) {
-		my @t = @$m[4,5];
-		@$m[4,5] = (0,0);
-		$m->rotate(90);
-		my ($x) = $self->point2pixel($self->{pageSize}->[0] - $self->{pageMargins}->[0] - $self->{pageMargins}->[2]);
-		$m->translate($x, 0);
-		$m->translate(-$t[0], $t[1]);
-	}
 	my $doMx = !$m->is_identity;
 
 	if ( !$doClip && !$doMx && !$rg) {
