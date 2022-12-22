@@ -26,6 +26,24 @@ sub create_font_entry
 	};
 }
 
+sub int32($)
+{
+	my ( $self, $n ) = @_;
+	$n = Prima::Utils::nearest_i( $n );
+	if (-107 <= $n && $n <= 107) {
+		return chr($n + 139);
+	} elsif (108 <= $n && $n <= 1131) {
+		$n -= 108;
+		return chr(($n >> 8) + 247).chr($n & 0xff);
+	} elsif (-1131 <= $n && $n <= -108) {
+		$n = -$n - 108;
+		return chr(($n >> 8) + 251).chr($n & 0xff);
+	} else {
+		return pack('CN', 255, $n);
+	}
+}
+
+
 my $C1       = 52845;
 my $C2       = 22719;
 my $ENCRYPT1 = 55665;
@@ -127,13 +145,13 @@ systemdict/internaldict get exec dup/startlock known{/startlock get exec}{dup
 /Subrs 5 array
 GLYPHS_HDR
 		my $subrs =
-			"dup 0 " . embed(num(3,0) . callothersubr . xpop . xpop . setcurrentpoint . xreturn ) .
-			"dup 1 " . embed(num(0,1) . callothersubr . xreturn ) .
-			"dup 2 " . embed(num(0,2) . callothersubr . xreturn ) .
+			"dup 0 " . embed($self->num(3,0) . callothersubr . xpop . xpop . setcurrentpoint . xreturn ) .
+			"dup 1 " . embed($self->num(0,1) . callothersubr . xreturn ) .
+			"dup 2 " . embed($self->num(0,2) . callothersubr . xreturn ) .
 			"dup 3 " . embed( xreturn ) .
-			"dup 4 " . embed(num(3,1,3) . callothersubr . xpop . callsubr . xreturn ) .
+			"dup 4 " . embed($self->num(3,1,3) . callothersubr . xpop . callsubr . xreturn ) .
 			"def put dup /CharStrings 257 dict dup begin" .
-			"/.notdef " . embed2( Prima::PS::Glyphs::hsbw(0,0) . endchar )
+			"/.notdef " . embed2( $self->hsbw(0,0) . endchar )
 			;
 		$emit->(encrypt1(\$R, $subrs));
 		return 0 unless $v->{tmpfile}->evacuate(sub { $emit->(encrypt1(\$R, $_[0])) });

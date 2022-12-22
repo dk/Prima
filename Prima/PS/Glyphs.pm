@@ -6,7 +6,6 @@ use Carp;
 use Prima;
 use Prima::Utils;
 use base qw(Exporter);
-our @EXPORT = qw(num int32);
 
 sub new
 {
@@ -31,26 +30,11 @@ sub get_font
 	return $key;
 }
 
-sub int32($)
+sub num
 {
-	my $n = Prima::Utils::nearest_i( $_[0] );
-	if (-107 <= $n && $n <= 107) {
-		return chr($n + 139);
-	} elsif (108 <= $n && $n <= 1131) {
-		$n -= 108;
-		return chr(($n >> 8) + 247).chr($n & 0xff);
-	} elsif (-1131 <= $n && $n <= -108) {
-		$n = -$n - 108;
-		return chr(($n >> 8) + 251).chr($n & 0xff);
-	} elsif (-32768 <= $n && $n < 32767) {
-		return chr(28).chr(($n >> 8) & 0xff).chr($n & 0xff);
-	} else {
-		return chr(29).chr(($n >> 24) & 0xff).chr(($n >> 16) & 0xff).chr(($n >> 8) & 0xff).chr($n & 0xff);
-	}
-
+	my $self = shift;
+	return join '', map { $self->int32($_) } @_;
 }
-
-sub num { join '', map { int32 $_ } @_ }
 
 use constant endchar         => "\x{e}";
 
@@ -67,7 +51,7 @@ sub conic2curve
 
 sub rrcurveto
 {
-	my ($x0, $y0, @rest) = @_;
+	my ($self, $x0, $y0, @rest) = @_;
 	my @out;
 	for ( my $i = 0; $i < @rest; $i += 2 ) {
 		my @p = @rest[$i,$i+1];
@@ -76,13 +60,13 @@ sub rrcurveto
 		push @out, @rest[$i,$i+1];
 		($x0, $y0) = @p;
 	}
-	return num(@out) . "\x{8}";
+	return $self->num(@out) . "\x{8}";
 }
 
-sub hsbw    { num(@_) . "\x{0d}" }
-sub rmoveto { num(@_) . "\x{15}" }
-sub rlineto { num(@_) . "\x{05}" }
-sub hmoveto { num(@_) . "\x{16}" }
+sub hsbw    { shift->num(@_) . "\x{0d}" }
+sub rmoveto { shift->num(@_) . "\x{15}" }
+sub rlineto { shift->num(@_) . "\x{05}" }
+sub hmoveto { shift->num(@_) . "\x{16}" }
 
 sub get_outline
 {
@@ -102,9 +86,9 @@ sub get_outline
 	my $first_move;
 	if ($with_hsbw) {
 		my @hsbw = ($abc[0], $abc[0] + $abc[1] + $abc[2]);
-		$code = hsbw(@hsbw);
+		$code = $self->hsbw(@hsbw);
 		if ( $size && $outline->[0] != ggo::Move ) {
-			$code .= hmoveto($hsbw[0]);
+			$code .= $self->hmoveto($hsbw[0]);
 		} else {
 			$first_move = $hsbw[0];
 		}
@@ -139,16 +123,16 @@ sub get_outline
 				$r[0] -= $first_move;
 				undef $first_move;
 			}
-			$code .= rmoveto(@r);
+			$code .= $self->rmoveto(@r);
 		} elsif ( $cmd == ggo::Line ) {
 			for ( my $j = 0; $j < @pts; $j += 2 ) {
 				my @r = ($pts[$j] - $p[0], $pts[$j + 1] - $p[1]);
 				@p = @pts[$j,$j+1];
-				$code .= rlineto(@r);
+				$code .= $self->rlineto(@r);
 			}
 		} elsif ( $cmd == ggo::Conic ) {
 			if ( @pts == 4 ) {
-				$code .= rrcurveto(conic2curve(@p, @pts));
+				$code .= $self->rrcurveto(conic2curve(@p, @pts));
 			} else {
 				my @xts = (@p, @pts[0,1]);
 				for ( my $j = 0; $j < @pts - 4; $j += 2 ) {
@@ -159,11 +143,11 @@ sub get_outline
 				}
 				push @xts, @pts[-2,-1];
 				for ( my $j = 0; $j < @xts - 4; $j += 4) {
-					$code .= rrcurveto(conic2curve(@xts[$j .. $j + 5]));
+					$code .= $self->rrcurveto(conic2curve(@xts[$j .. $j + 5]));
 				}
 			}
 		} elsif ( $cmd == ggo::Cubic ) {
-			$code .= rrcurveto(@p, @pts);
+			$code .= $self->rrcurveto(@p, @pts);
 		}
 		@p = @pts[-2,-1];
 	}

@@ -41,6 +41,26 @@ use constant italic_angle    => "\x{c}\x{2}";
 use constant paint_type      => "\x{c}\x{5}";
 use constant font_matrix     => "\x{c}\x{7}";
 
+sub int32($)
+{
+	my ( $self, $n ) = @_;
+	$n = Prima::Utils::nearest_i( $n );
+	if (-107 <= $n && $n <= 107) {
+		return chr($n + 139);
+	} elsif (108 <= $n && $n <= 1131) {
+		$n -= 108;
+		return chr(($n >> 8) + 247).chr($n & 0xff);
+	} elsif (-1131 <= $n && $n <= -108) {
+		$n = -$n - 108;
+		return chr(($n >> 8) + 251).chr($n & 0xff);
+	} elsif (-32768 <= $n && $n < 32767) {
+		return pack('Cn', 28, $n);
+	} else {
+		return pack('CN', 29, $n);
+	}
+}
+
+
 sub mk_index
 {
 	my $ret = '';
@@ -122,17 +142,17 @@ sub evacuate_next_subfont
 	# charsets and privates
 	my @bbox        = Prima::Utils::nearest_i( map { $_ // 0 } @{ $v->{bbox} } );
 	my $charset_str = pack('Cn*', 0, @charset); # mode 0, glyph list
-	my $private_str = num( $bbox[1], -$bbox[1] ) . blue_values;
+	my $private_str = $self->num( $bbox[1], -$bbox[1] ) . blue_values;
 
 	# header
 	my $header          = pack("C*", 1, 0, 4, 2) . mk_index($fn);
 	push @strings,      $fn;
-	push @const_data,   int32(391 + $#strings) . full_name;
-	push @const_data,   int32(391 + $#strings) . family_name;
-	push @const_data,   int32($v->{bold} ? 384 : 388) . weight;
-	push @const_data,   int32($v->{fixed})     . is_fixed_pitch;
-	push @const_data,   int32($v->{italic})    . italic_angle;
-	push @const_data,   num( @bbox )           . font_bbox;
+	push @const_data,   $self->int32(391 + $#strings) . full_name;
+	push @const_data,   $self->int32(391 + $#strings) . family_name;
+	push @const_data,   $self->int32($v->{bold} ? 384 : 388) . weight;
+	push @const_data,   $self->int32($v->{fixed})     . is_fixed_pitch;
+	push @const_data,   $self->int32($v->{italic})    . italic_angle;
+	push @const_data,   $self->num( @bbox )           . font_bbox;
 
 	my $strings_str = mk_index(@strings);
 	my $subr_str    = pack('n', 0);
