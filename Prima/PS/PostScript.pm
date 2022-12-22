@@ -127,7 +127,7 @@ sub change_transform
 		my @tm = $self-> pixel2point( @$m[4,5] );
 		my @xm = @$m[0..3];
 		float_inplace(@xm, @tm);
-		$self-> emit("[@xm @tm] SM");
+		$self-> emit("[@xm @tm] CM");
 	}
 
 	$self-> {changed}-> {$_} = 1 for qw(fill linePattern lineWidth lineJoin lineEnd miterLimit font);
@@ -331,7 +331,7 @@ d/T/translate , d/R/rotate , d/Y/glyphshow , d/P/showpage , d/Z/scale , d/I/imag
 d/@/dup , d/G/setgray , d/A/setrgbcolor , d/l/lineto , d/F/fill ,
 d/FF/findfont , d/XF/scalefont , d/SF/setfont ,
 d/O/stroke , d/SD/setdash , d/SL/setlinecap , d/SW/setlinewidth ,
-d/SJ/setlinejoin , d/E/eofill , d/ML/setmiterlimit ,
+d/SJ/setlinejoin , d/E/eofill , d/ML/setmiterlimit , d/CM/concat ,
 d/SS/setcolorspace , d/SC/setcolor , d/SM/setmatrix , d/SPD/setpagedevice ,
 d/SP/setpattern , d/CP/currentpoint , d/MX/matrix , d/MP/makepattern ,
 d/b/begin , d/e/end , d/t/true , d/f/false , d/?/ifelse , d/a/arc ,
