@@ -240,7 +240,7 @@ sub stroke
 					push @lp, ($x[$i] - 1) * $lw / 2;
 					push @lp, ($x[$i+1]) * $lw / 2;
 				}
-				@lp = map { $_ || 0.001 } @lp;
+				@lp = map { $_ || 1 } @lp;
 				$self-> emit_content("[@lp] 0 d");
 			}
 			$self-> {changed}-> {linePattern} = 0;
