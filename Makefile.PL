@@ -2678,6 +2678,7 @@ sub install
 {
 	my $self = shift;
 	my $t = $self->SUPER::install(@_);
+	my $q = $SHQUOTE;
 	my $n = $t =~ s[
 		(pure_\w+_install.*?)                       # 1
 		(INST_ARCHLIB\)"?\s+"?)\$\(DEST(\w+)\)(.*?)     # 2,3,4
@@ -2689,7 +2690,7 @@ sub install
 		"$2\$(DEST$3)$4".
 		"$5\$(DEST$6)$7$8".
 		"\n\t\$(NOECHO) \$(ABSPERL) $0 --postinstall ".
-			"dest=\$(DEST$3) bin=\$($6) slib=$cygwin_fake_Slib\n\n"
+			"${q}dest=\$(DEST$3)$q ${q}bin=\$($6)$q slib=$cygwin_fake_Slib\n\n"
 	]xgse;
 
 	$END .= <<BAD_MAKEFILE if $n != 3;
