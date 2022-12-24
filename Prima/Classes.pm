@@ -1942,6 +1942,20 @@ sub menuHiliteColor      { return shift-> menuColorIndex( ci::HiliteText   , @_)
 sub menuDark3DColor      { return shift-> menuColorIndex( ci::Dark3DColor  , @_);}
 sub menuLight3DColor     { return shift-> menuColorIndex( ci::Light3DColor , @_);}
 
+sub effect
+{
+	if ( $#_ == 1 ) {
+		my ( $self, $effect ) = @_;
+		my $effects = $self->effects;
+		return defined($effects) ? $effects->{$effect} : undef;
+	} else {
+		my ( $self, $effect, $value ) = @_;
+		my $effects = $self->effects // {};
+		$effects->{$effect} = $value;
+		$self->effects($effects);
+	}
+}
+
 
 package Prima::Dialog;
 use vars qw(@ISA);
