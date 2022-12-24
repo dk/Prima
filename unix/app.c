@@ -241,7 +241,8 @@ init_x11( char * error_buf )
 		"XdndActionList",
 	 	"XdndActionDescription",
 		"text/plain",
-		"_NET_WM_ICON"
+		"_NET_WM_ICON",
+		"_NET_FRAME_EXTENTS"
 	};
 	char hostname_buf[256], *hostname = hostname_buf, *env;
 

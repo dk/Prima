@@ -50,9 +50,10 @@ set_net_hint(XWindow window, Bool state, Atom prop1, Atom prop2)
 #define NETWM_SET_ON_TOP(xwindow,flag)      set_net_hint(xwindow,flag,NET_WM_STATE_STAYS_ON_TOP,NET_WM_STATE_ABOVE)
 
 unsigned char *
-prima_get_window_property( XWindow window, Atom property, Atom req_type, Atom * actual_type,
-									int * actual_format, unsigned long * nitems)
-{
+prima_get_window_property(
+	XWindow window, Atom property, Atom req_type, Atom * actual_type,
+	int * actual_format, unsigned long * nitems
+) {
 	Atom a_actual_type;
 	unsigned char * ret, * ptr;
 	unsigned long left, n, a_nitems;
@@ -776,6 +777,25 @@ apc_window_set_caption( Handle self, const char *caption, Bool utf8)
 	return true;
 }
 
+static Bool
+read_net_frame_extents( XWindow window, PRect r)
+{
+	long * prop;
+	unsigned long n;
+
+	if ( guts. icccm_only) return false;
+
+	prop = ( long *) prima_get_window_property( window, NET_FRAME_EXTENTS, XA_CARDINAL, NULL, NULL, &n);
+	if ( !prop || n < 4 ) return false;
+
+	r-> left   += prop[0];
+	r-> right  += prop[1];
+	r-> top    += prop[2];
+	r-> bottom += prop[3];
+
+	return true;
+}
+
 XWindow
 prima_find_frame_window( XWindow w)
 {
@@ -803,6 +823,11 @@ prima_get_frame_info( Handle self, PRect r)
 	unsigned int pw, ph, pb, pd;
 
 	bzero( r, sizeof( Rect));
+	if ( read_net_frame_extents( X_WINDOW, r )) {
+		r-> top += XX-> menuHeight;
+		return true;
+	}
+
 	p = prima_find_frame_window( X_WINDOW);
 	if ( p == NULL_HANDLE) {
 		r-> left = XX-> decorationSize. x;
