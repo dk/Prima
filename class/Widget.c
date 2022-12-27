@@ -221,6 +221,7 @@ Widget_update_sys_handle( Handle self, HV * profile)
 		pexist( syncPaint) ||
 		pexist( clipOwner) ||
 		pexist( layered) ||
+		pexist( parentHandle) ||
 		pexist( transparent)
 	)) return;
 
