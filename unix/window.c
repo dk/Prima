@@ -48,6 +48,7 @@ set_net_hint(XWindow window, Bool state, Atom prop1, Atom prop2)
 #define NETWM_SET_MODAL(xwindow,flag)       set_net_hint(xwindow,flag,NET_WM_STATE_MODAL,0)
 #define NETWM_SET_MAXIMIZED(xwindow,flag)   set_net_hint(xwindow,flag,NET_WM_STATE_MAXIMIZED_VERT,NET_WM_STATE_MAXIMIZED_HORZ)
 #define NETWM_SET_ON_TOP(xwindow,flag)      set_net_hint(xwindow,flag,NET_WM_STATE_STAYS_ON_TOP,NET_WM_STATE_ABOVE)
+#define NETWM_SET_FULLSCREEN(xwindow,flag)  set_net_hint(xwindow,flag,NET_WM_STATE_FULLSCREEN,0)
 
 unsigned char *
 prima_get_window_property(
@@ -122,7 +123,8 @@ prima_wm_net_state_read_maximization( XWindow window, Atom property)
 	if ( guts. icccm_only) return false;
 
 	prop = ( long *) prima_get_window_property( window, property, XA_ATOM, NULL, NULL, &n);
-	if ( !prop) return false;
+	if ( !prop)
+		return false;
 
 	for ( i = 0; i < n; i++) {
 		if ( prop[i] == NET_WM_STATE_MAXIMIZED_VERT) vert = 1;
@@ -160,6 +162,30 @@ net_supports_maximization(void)
 		Mdebug( has_max ? "wm: supports maximization\n" : "win: WM quits supporting maximization\n");
 	}
 	return has_max;
+}
+
+static Bool
+net_supports_fullscreen(void)
+{
+	long *prop;
+	unsigned long n, i;
+	Bool ok = false;
+	if ( guts. icccm_only ) return false;
+
+	prop = ( long *) prima_get_window_property( guts.root, NET_SUPPORTED, XA_ATOM, NULL, NULL, &n);
+	if ( !prop ) return false;
+
+	for ( i = 0; i < n; i++)
+		if ( prop[i] == NET_WM_STATE_FULLSCREEN ) {
+			ok = true;
+			break;
+		}
+	if ( ok != guts. net_wm_fullscreen ) {
+		guts. net_wm_fullscreen = ok;
+		Mdebug( ok ? "wm: supports fullscreen\n" : "wm: quits supporting fullscreen\n");
+	}
+
+	return ok;
 }
 
 static void
@@ -232,102 +258,119 @@ set_motif_hints( XWindow window, int border_style, int border_icons)
 		PropModeReplace, (unsigned char *) &mwmhints, 5);
 }
 
-Bool
-apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
-						int border_style, Bool task_list, int window_state,
-						int on_top, Bool use_origin, Bool use_size, Bool layered)
+static void
+set_wm_basesize_hints( Handle self )
 {
 	DEFXX;
-	Handle real_owner;
 	XSizeHints hints;
-	XSetWindowAttributes attrs;
-	Point p0 = {0,0};
-	Atom atoms[ 2];
-	XWMHints wmhints;
-	XClassHint *class_hint;
-	ConfigureEventPair *cep;
-	unsigned long valuemask;
-	Bool recreate;
-	ViewProfile vprf;
+	bzero( &hints, sizeof( XSizeHints));
+	hints. flags  = PBaseSize;
+	hints. width  = hints. base_width  = XX-> size. x;
+	hints. height = hints. base_height = XX-> size. y;
+	XSetWMNormalHints( DISP, X_WINDOW, &hints);
+}
+
+static void
+gather_old_window_data( Handle self, ViewProfile *vprf)
+{
+	DEFXX;
+	int i, count;
+	Handle * list;
+	XEvent dummy_ev;
 	XWindow old = X_WINDOW;
 
-	if ( border_style != bsSizeable) border_style = bsDialog;
-	border_icons &= biAll;
+	list  = PWidget(self)-> widgets. items;
+	count = PWidget(self)-> widgets. count;
+	CWidget(self)-> end_paint_info( self);
+	CWidget(self)-> end_paint( self);
+	prima_release_gc( XX);
+	for( i = 0; i < count; i++)
+		prima_get_view_ex( list[ i], ( ViewProfile*)( X( list[ i])-> recreateData = malloc( sizeof( ViewProfile))));
 
-	if ( !guts. argb_visual. visual || guts. argb_visual. visualid == guts. visual. visualid)
-		layered = false;
+	if ( XX-> recreateData) {
+		memcpy( vprf, XX-> recreateData, sizeof( ViewProfile));
+		free( XX-> recreateData);
+		XX-> recreateData = NULL;
+	} else
+		prima_get_view_ex( self, vprf);
+	if ( guts. currentMenu && PComponent( guts. currentMenu)-> owner == self) prima_end_menu();
+	apc_window_set_menu( self, NULL_HANDLE);
+	CWidget( self)-> end_paint_info( self);
+	CWidget( self)-> end_paint( self);
+	if ( XX-> flags. paint_pending) {
+		TAILQ_REMOVE( &guts.paintq, XX, paintq_link);
+		XX-> flags. paint_pending = false;
+	}
+	/* flush configure events */
+	XSync( DISP, false);
+	while ( XCheckIfEvent( DISP, &dummy_ev, (XIfEventProcType)prima_flush_events, (XPointer)self));
+	hash_delete( guts.windows, (void*)&old, sizeof(old), false);
+	hash_delete( guts.windows, (void*)&(XX->client), sizeof(XX->client), false);
+}
 
-	recreate = X_WINDOW ? (layered != XX->flags.layered) : false;
-	if ( recreate ) {
-		int i, count;
-		Handle * list;
-		XEvent dummy_ev;
-
-		list  = PWidget(self)-> widgets. items;
-		count = PWidget(self)-> widgets. count;
-		CWidget(self)-> end_paint_info( self);
-		CWidget(self)-> end_paint( self);
-		prima_release_gc( XX);
-		for( i = 0; i < count; i++)
-			prima_get_view_ex( list[ i], ( ViewProfile*)( X( list[ i])-> recreateData = malloc( sizeof( ViewProfile))));
-
-		if ( XX-> recreateData) {
-			memcpy( &vprf, XX-> recreateData, sizeof( vprf));
-			free( XX-> recreateData);
-			XX-> recreateData = NULL;
-		} else
-			prima_get_view_ex( self, &vprf);
-		if ( guts. currentMenu && PComponent( guts. currentMenu)-> owner == self) prima_end_menu();
-		apc_window_set_menu( self, NULL_HANDLE);
-		CWidget( self)-> end_paint_info( self);
-		CWidget( self)-> end_paint( self);
-		if ( XX-> flags. paint_pending) {
-			TAILQ_REMOVE( &guts.paintq, XX, paintq_link);
-			XX-> flags. paint_pending = false;
-		}
-		/* flush configure events */
-		XSync( DISP, false);
-		while ( XCheckIfEvent( DISP, &dummy_ev, (XIfEventProcType)prima_flush_events, (XPointer)self));
-		hash_delete( guts.windows, (void*)&old, sizeof(old), false);
-		hash_delete( guts.windows, (void*)&(XX->client), sizeof(XX->client), false);
-		X_WINDOW = 0;
-		XCHECKPOINT;
+static Bool
+soft_recreate( Handle self, int border_style, int border_icons, int on_top, Bool task_list, int window_state)
+{
+	DEFXX;
+	Bool destructive_motif_hints = 0; /* KDE 3.1: setting motif hints kills net_wm hints */
+	if (
+		!guts.icccm_only && (
+			( border_style != ( XX-> flags. sizeable ? bsSizeable : bsDialog)) ||
+			( border_icons != XX-> borderIcons) ||
+		( on_top >= 0)
+	)) {
+		if (( border_style != ( XX-> flags. sizeable ? bsSizeable : bsDialog)) ||
+			( border_icons != XX-> borderIcons))
+			destructive_motif_hints = 1;
+		if ( destructive_motif_hints && on_top < 0)
+			on_top = apc_window_get_on_top( self);
+		if ( destructive_motif_hints)
+			set_motif_hints( X_WINDOW, border_style, border_icons);
+		XX-> borderIcons = border_icons;
+		XX-> flags. sizeable = ( border_style == bsSizeable) ? 1 : 0;
+		XX-> flags. on_top = on_top != 0;
+		NETWM_SET_ON_TOP( X_WINDOW, on_top != 0);
+		NETWM_SET_FULLSCREEN( X_WINDOW, window_state == wsFullscreen );
+		NETWM_SET_MAXIMIZED( X_WINDOW, window_state == wsMaximized);
 	}
 
-	if ( X_WINDOW) { /* recreate request */
-		Bool destructive_motif_hints = 0; /* KDE 3.1: setting motif hints kills net_wm hints */
-		if (
-			!guts.icccm_only && (
-				( border_style != ( XX-> flags. sizeable ? bsSizeable : bsDialog)) ||
-				( border_icons != XX-> borderIcons) ||
-			( on_top >= 0)
-		)) {
-			if (( border_style != ( XX-> flags. sizeable ? bsSizeable : bsDialog)) ||
-				( border_icons != XX-> borderIcons))
-				destructive_motif_hints = 1;
-			if ( destructive_motif_hints && on_top < 0)
-				on_top = apc_window_get_on_top( self);
-			if ( destructive_motif_hints)
-				set_motif_hints( X_WINDOW, border_style, border_icons);
-			if ( on_top >= 0)
-				NETWM_SET_ON_TOP( X_WINDOW, on_top);
-			XX-> borderIcons = border_icons;
-			XX-> flags. sizeable = ( border_style == bsSizeable) ? 1 : 0;
-		}
-		if (
-			(( task_list ? 1 : 0) != ( XX-> flags. task_listed ? 1 : 0))
-			|| destructive_motif_hints
-		)
-			apc_window_task_listed( self, task_list);
-		return true;
-	}
+	if (
+		(( task_list ? 1 : 0) != ( XX-> flags. task_listed ? 1 : 0))
+		|| destructive_motif_hints
+	)
+		apc_window_task_listed( self, task_list);
 
-	XX-> visual   = layered ? &guts. argb_visual : &guts. visual;
-	XX-> colormap = layered ? guts. argbColormap : guts. defaultColormap;
-	XX-> flags. layered    = !!layered;
+	return true;
+}
 
-	/* create */
-	attrs. event_mask = 0
+static Bool
+recreate_window_data( Handle self, ViewProfile *vprf)
+{
+	DEFXX;
+	int i;
+	int  count = PWidget(self)->widgets. count;
+	Handle * list = PWidget(self)->widgets. items;
+	Point pos;
+
+	pos = PWidget(self)-> pos;
+	apc_window_set_menu( self, PWindow( self)-> menu);
+	set_wm_basesize_hints( self );
+	prima_set_view_ex( self, vprf);
+	XX-> ackOrigin = pos;
+	XX-> ackSize   = XX-> size;
+	XX-> flags. mapped = XX-> flags. want_visible;
+	for ( i = 0; i < count; i++) ((( PComponent) list[ i])-> self)-> recreate( list[ i]);
+	prima_notify_sys_handle( self );
+	return true;
+}
+
+static unsigned long
+fill_attrs( Handle self, Bool for_toplevel, XSetWindowAttributes * attrs)
+{
+	DEFXX;
+	unsigned long valuemask;
+
+	attrs-> event_mask = 0
 		| KeyPressMask              /* Key events unmasked for both windows, since */
 		| KeyReleaseMask            /* focusing is unpredicatble for some WM */
 		/*| ButtonPressMask */
@@ -352,68 +395,22 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
 		| FocusChangeMask
 		| PropertyChangeMask
 		| ColormapChangeMask
-		| OwnerGrabButtonMask;
-	attrs. override_redirect = false;
-	attrs. do_not_propagate_mask = attrs. event_mask;
-	attrs. colormap = XX-> colormap;
-	valuemask =
-			0
-		/* | CWBackPixmap */
-		/* | CWBackPixel */
-		/* | CWBorderPixmap */
-		/* | CWBorderPixel */
-		/* | CWBitGravity */
-		/* | CWWinGravity */
-		/* | CWBackingStore */
-		/* | CWBackingPlanes */
-		/* | CWBackingPixel */
-		| CWOverrideRedirect
-		/* | CWSaveUnder */
-		| CWEventMask
-		/* | CWDontPropagate */
-			| CWColormap
-		/* | CWCursor */
-		;
-	if ( layered ) {
-		valuemask |= CWBackPixel | CWBorderPixel;
-		attrs. background_pixel = 0;
-		attrs. border_pixel = 0;
-	}
-	X_WINDOW = XCreateWindow( DISP, guts. root,
-				0, 0, 1, 1, 0, XX-> visual->depth,
-				InputOutput, XX->visual->visual,
-				valuemask, &attrs);
-	if (!X_WINDOW) return false;
+		| OwnerGrabButtonMask
+	;
 
-	attrs. event_mask = 0
-		| KeyPressMask
-		| KeyReleaseMask
+	if ( !for_toplevel) attrs-> event_mask |= 0
 		| ButtonPressMask
 		| ButtonReleaseMask
 		| EnterWindowMask
 		| LeaveWindowMask
 		| PointerMotionMask
-		/* | PointerMotionHintMask */
-		/* | Button1MotionMask */
-		/* | Button2MotionMask */
-		/* | Button3MotionMask */
-		/* | Button4MotionMask */
-		/* | Button5MotionMask */
 		| ButtonMotionMask
 		| KeymapStateMask
-		| ExposureMask
-		| VisibilityChangeMask
-		| StructureNotifyMask
-		/* | ResizeRedirectMask */
-		/* | SubstructureNotifyMask */
-		/* | SubstructureRedirectMask */
-		| FocusChangeMask
-		| PropertyChangeMask
-		| ColormapChangeMask
-		| OwnerGrabButtonMask;
-	attrs. override_redirect = false;
-	attrs. do_not_propagate_mask = attrs. event_mask;
-	attrs. colormap = XX->colormap;
+	;
+
+	attrs-> override_redirect     = false;
+	attrs-> do_not_propagate_mask = attrs-> event_mask;
+	attrs-> colormap              = XX-> colormap;
 
 	valuemask =
 		0
@@ -430,128 +427,114 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
 		/* | CWSaveUnder */
 		| CWEventMask
 		/* | CWDontPropagate */
-			| CWColormap
+		| CWColormap
 		/* | CWCursor */
 		;
-	if ( layered ) {
+
+	if ( XX->flags.layered ) {
 		valuemask |= CWBackPixel | CWBorderPixel;
-		attrs. background_pixel = 0;
-		attrs. border_pixel = 0;
+		attrs-> background_pixel = 0;
+		attrs-> border_pixel = 0;
 	}
 
-	XX-> client = XCreateWindow( DISP, X_WINDOW,
-		0, 0, 1, 1, 0, XX->visual->depth,
-		InputOutput, XX-> visual-> visual,
-		valuemask, &attrs);
-	if (!XX-> client) return false;
+	return valuemask;
+}
 
-	hash_store( guts.windows, &XX-> client, sizeof(XX-> client), (void*)self);
-	hash_store( guts.windows, &X_WINDOW, sizeof(X_WINDOW), (void*)self);
-	XCHECKPOINT;
-	XMapWindow( DISP, XX-> client);
-
-	XX-> flags. iconic = ( window_state == wsMinimized) ? 1 : 0;
+static void
+set_wm_hints( Handle self, Bool iconic)
+{
+	XWMHints wmhints;
 	wmhints. flags = InputHint | StateHint;
 	wmhints. input = false;
-	wmhints. initial_state = XX-> flags. iconic ? IconicState : NormalState;
+	wmhints. initial_state = iconic ? IconicState : NormalState;
 	XSetWMHints( DISP, X_WINDOW, &wmhints);
 	XCHECKPOINT;
+}
 
+static void
+set_wm_protocols( Handle self )
+{
+	Atom atoms[ 2];
 	atoms[ 0] = WM_DELETE_WINDOW;
 	atoms[ 1] = WM_TAKE_FOCUS;
 	XSetWMProtocols( DISP, X_WINDOW, atoms, 2);
 	XCHECKPOINT;
+}
 
+static void
+set_class_hint( Handle self)
+{
+	XClassHint *class_hint;
 	if (( class_hint = XAllocClassHint()) != NULL) {
 		class_hint-> res_class  = P_APPLICATION-> name;
 		class_hint-> res_name = CObject( self)-> className;
 		XSetClassHint( DISP, X_WINDOW, class_hint);
 		XFree (class_hint);
 	}
+}
 
+static void
+set_misc_wm_hints( Handle self )
+{
 	if ( guts. hostname. value)
 		XSetWMClientMachine(DISP, X_WINDOW, &guts. hostname);
 	XSetCommand(DISP, X_WINDOW, PL_origargv, PL_origargc);
+}
 
-	set_motif_hints( X_WINDOW, border_style, border_icons);
-	XX-> borderIcons = border_icons;
-
-	XX-> type.drawable = true;
-	XX-> type.widget = true;
-	XX-> type.window = true;
-
-	real_owner = prima_guts.application;
-	XX-> parent = guts. root;
-	XX-> real_parent = NULL_HANDLE;
-	XX-> udrawable = XX-> gdrawable = XX-> client;
-
-	XX-> flags. clip_owner = false;
-	XX-> flags. sync_paint = sync_paint;
-	XX-> flags. task_listed = 1;
-	XX-> flags. layered = XX-> flags. layered_requested = layered;
-
-	XX-> above = NULL_HANDLE;
-	XX-> owner = real_owner;
-
-	if ( on_top > 0) NETWM_SET_ON_TOP( X_WINDOW, 1);
-	apc_window_task_listed( self, task_list);
-
-	if (recreate) {
-		int i;
-		int  count = PWidget(self)->widgets. count;
-		Handle * list = PWidget(self)->widgets. items;
-		Point pos;
-
-		pos = PWidget(self)-> pos;
-		apc_window_set_menu( self, PWindow( self)-> menu);
-		bzero( &hints, sizeof( XSizeHints));
-		hints. flags  = PBaseSize;
-		hints. width  = hints. base_width  = XX-> size. x;
-		hints. height = hints. base_height = XX-> size. y;
-		XSetWMNormalHints( DISP, X_WINDOW, &hints);
-		prima_set_view_ex( self, &vprf);
-		XX-> ackOrigin = pos;
-		XX-> ackSize   = XX-> size;
-		XX-> flags. mapped = XX-> flags. want_visible;
-		for ( i = 0; i < count; i++) ((( PComponent) list[ i])-> self)-> recreate( list[ i]);
-		XDestroyWindow( DISP, old);
-		prima_notify_sys_handle( self );
-		return true;
-	}
-
-	apc_component_fullname_changed_notify( self);
-	prima_send_create_event( X_WINDOW);
-	if ( border_style == bsSizeable) XX-> flags. sizeable = 1;
-
-	/* setting initial size */
-	{
-		int nrects;
-		Box * monitors;
-		monitors = apc_application_get_monitor_rects( NULL_HANDLE, &nrects);
-		if ( nrects > 0 ) {
-			int i, min_x = monitors[0].x, min_y = monitors[0].y;
-			XX-> size.x = monitors[0].width;
-			XX-> size.y = monitors[0].height;
-			for ( i = 1; i < nrects; i++) {
-				if ( min_x > monitors[i].x && min_y > monitors[i].y ) {
-					min_x = monitors[i].x;
-					min_y = monitors[i].y;
-					XX-> size.x = monitors[i].width;
-					XX-> size.y = monitors[i].height;
-				}
+static Point
+calculate_current_monitor_size(void)
+{
+	int nrects;
+	Point ret;
+	Box * monitors;
+	monitors = apc_application_get_monitor_rects( NULL_HANDLE, &nrects);
+	if ( nrects > 0 ) {
+		int i, min_x = monitors[0].x, min_y = monitors[0].y;
+		ret.x = monitors[0].width;
+		ret.y = monitors[0].height;
+		for ( i = 1; i < nrects; i++) {
+			if ( min_x > monitors[i].x && min_y > monitors[i].y ) {
+				min_x = monitors[i].x;
+				min_y = monitors[i].y;
+				ret.x = monitors[i].width;
+				ret.y = monitors[i].height;
 			}
-		} else {
-			XX-> size = guts. displaySize;
 		}
-		free( monitors);
-	}
-
-	if ( window_state != wsMaximized) {
-		XX-> zoomRect. right = XX-> size. x;
-		XX-> zoomRect. top   = XX-> size. y;
-		XX-> size. x *= 0.75;
-		XX-> size. y *= 0.75;
 	} else {
+		ret = guts. displaySize;
+	}
+	free( monitors);
+	return ret;
+}
+
+static void
+push_configure_event_pair( Handle self, int w, int h)
+{
+	DEFXX;
+	ConfigureEventPair *cep;
+	if (( cep = malloc( sizeof( ConfigureEventPair))) != NULL) {
+		bzero( cep, sizeof( ConfigureEventPair));
+		cep-> w = w;
+		cep-> h = h;
+		TAILQ_INSERT_TAIL( &XX-> configure_pairs, cep, link);
+	}
+}
+
+static void
+configure_initial_size( Handle self, int window_state )
+{
+	DEFXX;
+	Point p0 = {0,0};
+	XX-> size = calculate_current_monitor_size();
+	switch (window_state) {
+	case wsFullscreen:
+		NETWM_SET_FULLSCREEN( X_WINDOW, 1);
+		if ( !XX-> flags. fullscreen_emulated ) {
+			XX-> zoomRect. right = XX-> size. x;
+			XX-> zoomRect. top   = XX-> size. y;
+		}
+		break;
+	case wsMaximized:
 		XX-> flags. zoomed = 1;
 		NETWM_SET_MAXIMIZED( X_WINDOW, 1);
 		if ( net_supports_maximization()) {
@@ -560,31 +543,154 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
 			XX-> size. x *= 0.75;
 			XX-> size. y *= 0.75;
 		}
+		break;
+	default:
+		XX-> zoomRect. right = XX-> size. x;
+		XX-> zoomRect. top   = XX-> size. y;
+		XX-> size. x *= 0.75;
+		XX-> size. y *= 0.75;
 	}
+
 	XX-> origin. x = XX-> origin. y =
 	XX-> ackOrigin. x = XX-> ackOrigin. y =
 	XX-> ackSize. x = XX-> ackSize. y =
 	XX-> ackFrameSize. x = XX-> ackFrameSize.y = 0;
 
-	bzero( &hints, sizeof( XSizeHints));
-	hints. flags  = PBaseSize;
-	hints. width  = hints. base_width  = XX-> size. x;
-	hints. height = hints. base_height = XX-> size. y;
-	XSetWMNormalHints( DISP, X_WINDOW, &hints);
+	set_wm_basesize_hints( self );
 	XResizeWindow( DISP, XX-> client, XX-> size. x, XX-> size. y);
 	XResizeWindow( DISP, X_WINDOW, XX-> size. x, XX-> size. y);
 
-	TAILQ_INIT( &XX-> configure_pairs);
-	if (( cep = malloc( sizeof( ConfigureEventPair)))) {
-		bzero( cep, sizeof( ConfigureEventPair));
-		cep-> w = XX-> size. x;
-		cep-> h = XX-> size. y;
-		TAILQ_INSERT_TAIL( &XX-> configure_pairs, cep, link);
+	push_configure_event_pair( self, XX->size.x, XX-> size.y);
+	prima_send_cmSize( self, p0);
+}
+
+static XWindow
+create_window( Handle self, XWindow parent, unsigned long valuemask, XSetWindowAttributes * attrs)
+{
+	DEFXX;
+	return XCreateWindow( DISP, parent,
+		0, 0, 1, 1, 0, XX-> visual->depth,
+		InputOutput, XX->visual->visual,
+		valuemask, attrs
+	);
+}
+
+Bool
+apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
+	int border_style, Bool task_list, int window_state,
+	int on_top, Bool use_origin, Bool use_size, Bool layered
+) {
+	DEFXX;
+	XSetWindowAttributes attrs;
+	unsigned long valuemask;
+	Bool recreate;
+	ViewProfile vprf;
+	XWindow old = X_WINDOW;
+
+	if ( border_style != bsSizeable) border_style = bsDialog;
+	border_icons &= biAll;
+
+	if ( !guts. argb_visual. visual || guts. argb_visual. visualid == guts. visual. visualid)
+		layered = false;
+
+	if ( window_state == wsFullscreen )
+		net_supports_fullscreen(); /* update and cache WM status */
+
+	recreate = false;
+	if ( X_WINDOW ) {
+		 if (layered != XX->flags.layered)
+		 	recreate = true;
+		if ( !guts.net_wm_fullscreen) {
+			Bool is_fs = window_state == wsFullscreen;
+			if ( is_fs != XX-> flags.fullscreen)
+				recreate = true;
+		}
+		if ( recreate ) {
+			gather_old_window_data( self, &vprf);
+			X_WINDOW = 0;
+		} else
+			return soft_recreate( self, border_style, border_icons, on_top, task_list, window_state);
 	}
 
-	prima_send_cmSize( self, p0);
+	XX-> visual          = layered ? &guts. argb_visual : &guts. visual;
+	XX-> colormap        = layered ? guts. argbColormap : guts. defaultColormap;
+	XX-> flags.layered   = !!layered;
+
+	/* create toplevel window */
+	valuemask = fill_attrs( self, true, &attrs);
+	XX-> flags. fullscreen = XX-> flags. fullscreen_emulated = 0;
+	if ( window_state == wsFullscreen ) {
+		XX-> flags. fullscreen = 1;
+		if ( !guts. net_wm_fullscreen ) {
+			attrs.override_redirect = true;
+			XX-> flags. fullscreen_emulated = 1;
+		}
+	}
+	if ( !( X_WINDOW = create_window( self, guts. root, valuemask, &attrs)))
+		return false;
+
+	/* create client window */
+	valuemask = fill_attrs( self, false, &attrs);
+	if ( !( XX-> client = create_window( self, X_WINDOW, valuemask, &attrs))) {
+		XDestroyWindow( DISP, X_WINDOW );
+		X_WINDOW = 0;
+		return false;
+	}
+	XMapWindow( DISP, XX-> client);
+	XCHECKPOINT;
+
+	hash_store( guts.windows, &XX-> client, sizeof(XX-> client), (void*)self);
+	hash_store( guts.windows, &X_WINDOW, sizeof(X_WINDOW), (void*)self);
+
+	XX-> type.drawable     = true;
+	XX-> type.widget       = true;
+	XX-> type.window       = true;
+
+	XX-> parent            = guts. root;
+	XX-> real_parent       = NULL_HANDLE;
+	XX-> udrawable         = XX-> gdrawable = XX-> client;
+	XX-> above             = NULL_HANDLE;
+	XX-> owner             = prima_guts.application;
+
+	XX-> flags.iconic      = ( window_state == wsMinimized) ? 1 : 0;
+	XX-> borderIcons       = border_icons;
+	XX-> flags.clip_owner  = false;
+	XX-> flags.sync_paint  = sync_paint;
+	XX-> flags.task_listed = 1;
+	XX-> flags.layered     = XX-> flags. layered_requested = !!layered;
+	XX-> flags. sizeable   = border_style == bsSizeable;
+
+	TAILQ_INIT( &XX-> configure_pairs);
+
+	set_wm_hints(self, XX-> flags. iconic);
+	set_wm_protocols(self);
+	set_class_hint(self);
+	set_misc_wm_hints(self);
+	set_motif_hints( X_WINDOW, border_style, border_icons);
+	if ( on_top > 0) NETWM_SET_ON_TOP( X_WINDOW, 1);
+	apc_window_task_listed( self, task_list);
+
+	if (recreate) {
+		Bool ok = recreate_window_data( self, &vprf);
+		XDestroyWindow( DISP, old);
+		return ok;
+	}
+
+	apc_component_fullname_changed_notify( self);
+	prima_send_create_event( X_WINDOW);
+	configure_initial_size( self, window_state );
 
 	return true;
+}
+
+static Bool
+recreate_window_with_emulated_fullscreen( Handle self, int window_state)
+{
+	DEFXX;
+	return apc_window_create( self,
+	 	PComponent(self)->owner, XX->flags.sync_paint, XX->borderIcons,
+	 	XX->flags.sizeable ? bsSizeable : bsDialog, XX->flags.task_listed, window_state,
+	 	XX->flags.on_top, false, false, XX->flags.layered);
 }
 
 Bool
@@ -731,8 +837,11 @@ apc_window_get_icon( Handle self, Handle icon)
 int
 apc_window_get_window_state( Handle self)
 {
-	return (X(self)-> flags. iconic != 0) ? wsMinimized :
-	((X(self)-> flags. zoomed != 0) ? wsMaximized : wsNormal);
+	DEFXX;
+	if (XX-> flags. iconic) return wsMinimized;
+	if (XX-> flags. zoomed) return wsMaximized;
+	if (XX-> flags. fullscreen) return wsFullscreen;
+	return wsNormal;
 }
 
 Bool
@@ -786,12 +895,18 @@ read_net_frame_extents( XWindow window, PRect r)
 	if ( guts. icccm_only) return false;
 
 	prop = ( long *) prima_get_window_property( window, NET_FRAME_EXTENTS, XA_CARDINAL, NULL, NULL, &n);
-	if ( !prop || n < 4 ) return false;
+	if ( !prop ) return false;
+	if ( n < 4 ) {
+		free(prop);
+		return false;
+	}
 
 	r-> left   += prop[0];
 	r-> right  += prop[1];
 	r-> top    += prop[2];
 	r-> bottom += prop[3];
+
+	free(prop);
 
 	return true;
 }
@@ -886,7 +1001,7 @@ apc_window_set_client_pos( Handle self, int x, int y)
 
 	bzero( &hints, sizeof( XSizeHints));
 
-	if ( XX-> flags. zoomed) {
+	if ( XX-> flags. zoomed || XX->flags. fullscreen) {
 		XX-> zoomRect. left = x;
 		XX-> zoomRect. bottom = y;
 		return true;
@@ -916,7 +1031,6 @@ apc_window_set_rect( Handle self, int x, int y, int szx, int szy)
 	DEFXX;
 	XSizeHints hints;
 	Point psize = XX-> size;
-	ConfigureEventPair *cep;
 
 	bzero( &hints, sizeof( XSizeHints));
 	hints. flags = USPosition | USSize;
@@ -929,15 +1043,10 @@ apc_window_set_rect( Handle self, int x, int y, int szx, int szy)
 	XX-> size. y = szy;
 	XMoveResizeWindow( DISP, XX-> client, 0, XX-> menuHeight, hints. width, hints. height - XX-> menuHeight);
 	XMoveResizeWindow( DISP, X_WINDOW, hints. x, hints. y, hints. width, hints. height);
-	if (( cep = malloc( sizeof( ConfigureEventPair)))) {
-		bzero( cep, sizeof( ConfigureEventPair));
-		cep-> w = hints. width;
-		cep-> h = hints. height;
-		TAILQ_INSERT_TAIL( &XX-> configure_pairs, cep, link);
-	}
-
+	push_configure_event_pair( self, hints.width, hints.height);
 	apc_SetWMNormalHints( self, &hints);
 	prima_send_cmSize( self, psize);
+
 	if ( PObject( self)-> stage == csDead) return;
 	prima_wm_sync( self, ConfigureNotify);
 }
@@ -950,7 +1059,6 @@ window_set_client_size( Handle self, int width, int height)
 	PWidget widg = PWidget( self);
 	Bool implicit_move = false;
 	Point post, psize;
-	ConfigureEventPair *cep;
 
 	widg-> virtualSize. x = width;
 	widg-> virtualSize. y = height;
@@ -969,7 +1077,7 @@ window_set_client_size( Handle self, int width, int height)
 			: widg-> sizeMin. y;
 	if ( height == 0) height = 1;
 
-	if ( XX-> flags. zoomed) {
+	if ( XX-> flags. zoomed || XX->flags. fullscreen) {
 		XX-> zoomRect. right = width;
 		XX-> zoomRect. top   = height;
 		return true;
@@ -1001,12 +1109,7 @@ window_set_client_size( Handle self, int width, int height)
 		XX-> decorationSize. x =   XX-> origin.x - post. x;
 		XX-> decorationSize. y = - XX-> origin.y + post. y;
 	}
-	if (( cep = malloc( sizeof( ConfigureEventPair)))) {
-		bzero( cep, sizeof( ConfigureEventPair));
-		cep-> w = hints. width;
-		cep-> h = hints. height;
-		TAILQ_INSERT_TAIL( &XX-> configure_pairs, cep, link);
-	}
+	push_configure_event_pair(self, hints.width, hints.height);
 	return true;
 }
 
@@ -1033,7 +1136,7 @@ apc_window_set_client_rect( Handle self, int x, int y, int width, int height)
 			: widg-> sizeMin. y;
 	if ( height == 0) height = 1;
 
-	if ( XX-> flags. zoomed) {
+	if ( XX-> flags. zoomed || XX->flags. fullscreen) {
 		XX-> zoomRect. left = x;
 		XX-> zoomRect. bottom = y;
 		XX-> zoomRect. right = width;
@@ -1093,11 +1196,12 @@ Bool
 apc_window_set_visible( Handle self, Bool show)
 {
 	DEFXX;
+	Bool want_sync;
 
 	if ( show) {
-		if ( XX-> flags. mapped) return true;
+		want_sync = XX-> flags. mapped;
 	} else {
-		if ( !XX-> flags. mapped) return true;
+		want_sync = !XX-> flags. mapped;
 	}
 
 	XX-> flags. want_visible = show;
@@ -1110,16 +1214,24 @@ apc_window_set_visible( Handle self, Bool show)
 			XSetWMHints( DISP, X_WINDOW, &wh);
 			XX-> flags. withdrawn = 0;
 		}
+		if ( XX-> flags. zoomed )
+			NETWM_SET_MAXIMIZED( X_WINDOW, true );
+		if ( XX-> flags. fullscreen ) {
+			NETWM_SET_FULLSCREEN( X_WINDOW, true );
+			if ( !net_supports_fullscreen())
+				if ( !recreate_window_with_emulated_fullscreen( self, wsFullscreen))
+					return false;
+		}
 		XMapWindow( DISP, X_WINDOW);
 		XX-> flags. iconic = iconic;
-		prima_wm_sync( self, MapNotify);
+		if ( want_sync ) prima_wm_sync( self, MapNotify);
 	} else {
 		if ( XX-> flags. iconic) {
 			XWithdrawWindow( DISP, X_WINDOW, SCREEN);
 			XX-> flags. withdrawn = 1;
 		} else
 			XUnmapWindow( DISP, X_WINDOW);
-		prima_wm_sync( self, UnmapNotify);
+		if ( want_sync ) prima_wm_sync( self, UnmapNotify);
 	}
 	XCHECKPOINT;
 	return true;
@@ -1285,77 +1397,118 @@ apc_window_set_window_state( Handle self, int state)
 {
 	DEFXX;
 	Event e;
-	int sync = 0, did_net_zoom = 0;
+	int sync = 0, did_net_zoom = 0,
+		old_state = apc_window_get_window_state(self);
 
-	switch ( state) {
+	if (old_state == state)
+		return false;
+
+	switch ( old_state) {
 	case wsMinimized:
-		if ( XX-> flags. iconic) return false;
 		break;
 	case wsMaximized:
-		if ( XX-> flags. zoomed) return false;
+		NETWM_SET_MAXIMIZED( X_WINDOW, 0);
 		break;
 	case wsNormal:
-		if ( !XX-> flags. iconic && !XX-> flags. zoomed) return false;
+		break;
+	case wsFullscreen:
+		NETWM_SET_FULLSCREEN( X_WINDOW, 0);
+		if ( !net_supports_fullscreen())
+			if ( !recreate_window_with_emulated_fullscreen( self, state))
+				return false;
 		break;
 	default:
 		return false;
 	}
 
-	/* operate via NET_WM */
-	if ( state == wsMaximized && !XX-> flags. zoomed && net_supports_maximization()) {
-		Bool visible = XX-> flags. mapped;
-		Rect zoomRect;
-		NETWM_SET_MAXIMIZED( X_WINDOW, 1);
-		zoomRect. left   = XX-> origin.x;
-		zoomRect. bottom = XX-> origin.y;
-		zoomRect. right  = XX-> size.x;
-		zoomRect. top    = XX-> size.y;
-		if ( visible) {
-			prima_wm_sync( self, ConfigureNotify);
-			if ( !prima_wm_net_state_read_maximization( X_WINDOW, NET_WM_STATE)) {
-				/* wm denies maximization request, or we lost in the race ( see above ),
-					do maximization by casual heuristic */
-				goto FALL_THROUGH;
-			}
-		}
-		XX-> zoomRect = zoomRect; /* often reset in ConfigureNotify to already maximized window */
-		XX-> flags. zoomed = 1;
-		did_net_zoom = 1;
-		sync = 0;
-	FALL_THROUGH:;
-	}
-
-	if ( !XX-> flags. withdrawn) {
-		if ( state == wsMinimized) {
+	switch ( state) {
+	case wsMinimized:
+		if ( !XX-> flags. withdrawn ) {
+			XWMHints wmhints;
 			XIconifyWindow( DISP, X_WINDOW, SCREEN);
 			if ( XX-> flags. mapped) sync = UnmapNotify;
-		} else {
-			XMapWindow( DISP, X_WINDOW);
-			if ( !XX-> flags. mapped && !did_net_zoom) sync = MapNotify;
+			wmhints. flags = StateHint;
+			wmhints. initial_state = IconicState;
+			XSetWMHints( DISP, X_WINDOW, &wmhints);
 		}
+		break;
+	case wsMaximized: {
+		Rect zoomRect;
+		zoomRect.left   = XX-> origin.x;
+		zoomRect.bottom = XX-> origin.y;
+		zoomRect.right  = XX-> size.x;
+		zoomRect.top    = XX-> size.y;
+		NETWM_SET_MAXIMIZED( X_WINDOW, 1);
+		if ( net_supports_maximization()) {
+			if ( XX->flags.mapped) {
+				prima_wm_sync( self, ConfigureNotify);
+				if ( !prima_wm_net_state_read_maximization( X_WINDOW, NET_WM_STATE)) {
+					/* wm denies maximization request, or we lost in the race ( see above ),
+						do maximization by casual heuristic */
+					goto FALL_THROUGH;
+				}
+			}
+			did_net_zoom = 1;
+			sync = 0;
+		} else {
+	FALL_THROUGH:
+			int dx = ( XX-> decorationSize. x > 0 ) ? XX-> decorationSize. x : 2;
+			int dy = ( XX-> decorationSize. y > 0 ) ? XX-> decorationSize. y : 20;
+			apc_window_set_rect( self,
+				dx * 2, dy * 2,
+				guts. displaySize.x - dx * 4, guts. displaySize. y - XX-> menuHeight - dy * 4
+			);
+			sync = ConfigureNotify;
+		}
+		if ( old_state != wsFullscreen )
+			XX-> zoomRect = zoomRect; /* often reset in ConfigureNotify to already maximized window */
+		break;
 	}
-	XX-> flags. iconic = ( state == wsMinimized) ? 1 : 0;
+	case wsFullscreen: {
+		Rect zoomRect;
+		zoomRect.left   = XX-> origin.x;
+		zoomRect.bottom = XX-> origin.y;
+		zoomRect.right  = XX-> size.x;
+		zoomRect.top    = XX-> size.y;
+		NETWM_SET_FULLSCREEN( X_WINDOW, 1);
+		if ( net_supports_fullscreen()) {
+			if ( XX->flags.mapped)
+				prima_wm_sync( self, ConfigureNotify);
+			did_net_zoom = 1;
+			sync = 0;
+			XX-> flags.fullscreen_emulated = 0;
+		} else {
+			if ( !net_supports_fullscreen())
+				if ( !recreate_window_with_emulated_fullscreen( self, wsFullscreen))
+					return false;
+			apc_window_set_rect( self, 0,0, guts. displaySize.x, guts. displaySize. y - XX-> menuHeight);
+			sync = ConfigureNotify;
+			XX-> flags.fullscreen_emulated = 1;
+		}
+		if ( old_state != wsMaximized )
+			XX-> zoomRect = zoomRect; /* often reset in ConfigureNotify to already maximized window */
+		break;
+	}
+	case wsNormal:
+		if (
+			!net_supports_maximization() &&
+			( old_state == wsMaximized || old_state == wsFullscreen )
+		) {
+			apc_window_set_rect( self, XX-> zoomRect. left, XX-> zoomRect. bottom,
+				XX-> zoomRect. right, XX-> zoomRect. top);
+			sync = ConfigureNotify;
+		}
+		break;
+	}
 
-	if ( state == wsMaximized && !XX-> flags. zoomed && !did_net_zoom) {
-		int dx = ( XX-> decorationSize. x > 0 ) ? XX-> decorationSize. x : 2;
-		int dy = ( XX-> decorationSize. y > 0 ) ? XX-> decorationSize. y : 20;
-		XX-> zoomRect. left   = XX-> origin.x;
-		XX-> zoomRect. bottom = XX-> origin.y;
-		XX-> zoomRect. right  = XX-> size.x;
-		XX-> zoomRect. top    = XX-> size.y;
-		apc_window_set_rect( self, dx * 2, dy * 2,
-				guts. displaySize.x - dx * 4, guts. displaySize. y - XX-> menuHeight - dy * 4);
-		if ( !XX-> flags. zoomed) sync = ConfigureNotify;
-		XX-> flags. zoomed = 1;
+	if ( !XX-> flags. withdrawn && state != wsMinimized) {
+		XMapWindow( DISP, X_WINDOW);
+		if ( !XX-> flags. mapped && !did_net_zoom) sync = MapNotify;
 	}
 
-	if ( XX-> flags. zoomed && state != wsMaximized) {
-		NETWM_SET_MAXIMIZED( X_WINDOW, 0);
-		apc_window_set_rect( self, XX-> zoomRect. left, XX-> zoomRect. bottom,
-			XX-> zoomRect. right, XX-> zoomRect. top);
-		if ( XX-> flags. zoomed) sync = ConfigureNotify;
-		XX-> flags. zoomed = 0;
-	}
+	XX-> flags.iconic     = ( state == wsMinimized) ? 1 : 0;
+	XX-> flags.zoomed     = ( state == wsMaximized) ? 1 : 0;
+	XX-> flags.fullscreen = ( state == wsFullscreen) ? 1 : 0;
 
 	bzero( &e, sizeof(e));
 	e. gen. source = self;
@@ -1364,6 +1517,8 @@ apc_window_set_window_state( Handle self, int state)
 	apc_message( self, &e, false);
 
 	if ( sync) prima_wm_sync( self, sync);
+
+	XSync( DISP, false);
 
 	return true;
 }
@@ -1490,7 +1645,7 @@ apc_window_get_on_top( Handle self)
 
 	if ( XGetWindowProperty( DISP, X_WINDOW, NET_WM_STATE, 0, 32, false, XA_ATOM,
 			&type, &format, &n, &left, (unsigned char**)&prop) == Success) {
-	if ( prop) {
+		if ( prop) {
 			for ( i = 0; i < n; i++) {
 				if (
 					prop[i] == NET_WM_STATE_STAYS_ON_TOP ||
@@ -1512,3 +1667,4 @@ apc_window_set_effects( Handle self, PHash effects )
 {
 	return false;
 }
+

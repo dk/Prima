@@ -1260,6 +1260,7 @@ See L<Prima::Window/windowState>
 	ws::Normal
 	ws::Minimized
 	ws::Maximized
+	ws::Fullscreen
 
 =head1 AUTHOR
 

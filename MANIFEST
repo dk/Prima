@@ -142,6 +142,7 @@ examples/tiger.pl
 examples/tiger.eps
 examples/transparent.pl
 examples/triangle.pl
+examples/windowstate.pl
 img/bar.c
 img/codec_bmp.c
 img/codec_jpeg.c

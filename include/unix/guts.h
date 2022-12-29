@@ -460,7 +460,8 @@ typedef struct {
 #define AI_PLAINTEXT_MIME                51
 #define AI_NET_WM_ICON                   52
 #define AI_NET_FRAME_EXTENTS             53
-#define AI_count                         54
+#define AI_NET_WM_STATE_FULLSCREEN       54
+#define AI_count                         55
 
 #define FXA_RESOLUTION_X            pguts->atoms[AI_FXA_RESOLUTION_X           ]
 #define FXA_RESOLUTION_Y            pguts->atoms[AI_FXA_RESOLUTION_Y           ]
@@ -519,6 +520,7 @@ typedef struct {
 #define PLAINTEXT_MIME              pguts->atoms[AI_PLAINTEXT_MIME             ]
 #define NET_WM_ICON                 pguts->atoms[AI_NET_WM_ICON                ]
 #define NET_FRAME_EXTENTS           pguts->atoms[AI_NET_FRAME_EXTENTS          ]
+#define NET_WM_STATE_FULLSCREEN     pguts->atoms[AI_NET_WM_STATE_FULLSCREEN    ]
 
 #define DEBUG_FONTS 0x01
 #define DEBUG_CLIP  0x02
@@ -756,6 +758,7 @@ typedef struct _UnixGuts
 	Bool                         icccm_only;
 	Bool                         net_wm_maximization;
 	int                          net_wm_maximize_HORZ_vs_HORIZ;
+	Bool                         net_wm_fullscreen;
 	int                          use_gtk;
 	int                          use_quartz;
 	Bool                         use_harfbuzz;
@@ -884,6 +887,8 @@ typedef struct _drawable_sys_data
 		unsigned falsely_hidden           : 1;
 		unsigned first_click              : 1;
 		unsigned force_flush              : 1;
+		unsigned fullscreen               : 1;
+		unsigned fullscreen_emulated      : 1;
 		unsigned grab                     : 1;
 		unsigned has_icon                 : 1;
 		unsigned layered                  : 1;
@@ -894,6 +899,7 @@ typedef struct _drawable_sys_data
 		unsigned modal                    : 1;
 		unsigned kill_current_region      : 1;
 		unsigned opaque                   : 1;
+		unsigned on_top                   : 1;
 		unsigned paint                    : 1;
 		unsigned paint_pending            : 1;
 		unsigned pointer_obscured         : 1;

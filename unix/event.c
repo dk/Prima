@@ -824,7 +824,7 @@ process_wm_sync_data( Handle self, WMSyncData * wmsd)
 		if ( PObject( self)-> stage == csDead) return false;
 	}
 
-	if ( size_changed && XX-> flags. want_visible && !guts. net_wm_maximization) {
+	if ( size_changed && XX-> flags. want_visible && !guts. net_wm_maximization && !XX-> flags. fullscreen) {
 		int qx = guts. displaySize.x * 4 / 5, qy = guts. displaySize.y * 4 / 5;
 		bzero( &e, sizeof( Event));
 		if ( !XX-> flags. zoomed) {
@@ -951,7 +951,12 @@ wm_event( Handle self, XEvent *xev, PEvent ev)
 		}
 		break;
 	case PropertyNotify:
-		if ( xev-> xproperty. atom == NET_WM_STATE && xev-> xproperty. state == PropertyNewValue) {
+		if (
+			xev-> xproperty. atom == NET_WM_STATE &&
+			xev-> xproperty. state == PropertyNewValue &&
+			!X(self)-> flags. fullscreen &&
+			X(self)-> flags. mapped
+		) {
 			DEFXX;
 			ev-> cmd = cmWindowState;
 			ev-> gen. source = self;
@@ -965,6 +970,9 @@ wm_event( Handle self, XEvent *xev, PEvent ev)
 				if ( XX-> flags. zoomed) {
 					ev-> gen. i = wsNormal;
 					XX-> flags. zoomed = 0;
+				} else if ( XX-> flags. iconic ) {
+					ev-> gen. i = wsNormal;
+					XX-> flags. iconic = 0;
 				} else
 					ev-> cmd = 0;
 			}

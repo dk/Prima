@@ -1840,6 +1840,8 @@ WS(Normal)
 WS(Minimized)
 #define   wsMaximized      2
 WS(Maximized)
+#define   wsFullscreen     3
+WS(Fullscreen)
 END_TABLE(ws,UV)
 #undef WS
 
@@ -2265,8 +2267,8 @@ END_TABLE(scr,UV)
 
 extern int
 apc_widget_scroll( Handle self, int horiz, int vert,
-						Rect *confine, Rect *clip,
-						Bool scrollChildren);
+	Rect *confine, Rect *clip,
+	Bool scrollChildren);
 
 extern Bool
 apc_widget_set_capture( Handle self, Bool capture, Handle confineTo);

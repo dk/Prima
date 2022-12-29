@@ -447,20 +447,21 @@ Default value: 1
 =item windowState STATE
 
 A three-state property, that governs the state of a window.
-STATE can be one of three C<ws::XXX> constants:
+STATE can be one of four C<ws::XXX> constants:
 
    ws::Normal
    ws::Minimized
    ws::Maximized
+   ws::Fullscreen
 
 There can be more or less, or other window states
-provided by the system, but these three were chosen as
+provided by the system, but these four were chosen as
 a 'least common denominator'.  The property can be changed
 either by explicit set-mode call or by the user. In either case,
 a C<WindowState> notification is triggered.
 
 The property has three convenience wrappers: C<maximize()>,
-C<minimize()> and C<restore()>.
+C<minimize()>, C<restore()>, and C<fullscreen()>.
 
 See also: C<WindowState>
 
@@ -526,6 +527,10 @@ C<Execute> notification is triggered.
 
 The function is returned immediately.
 
+=item fullscreen
+
+Sets window in a fullscreen mode. A shortcut for C<windowState(ws::Fullscreen)>.
+
 =item get_client_handle
 
 Returns a system handle for a system window that is inserted in top-level windows and
@@ -579,7 +584,6 @@ the user presses the enter key of a modal window, signaling that
 the default action is to be taken.
 
 See also: C<cancel>, C<modalResult>, C<execute>, C<execute_shared>
-
 
 =item restore
 

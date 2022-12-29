@@ -1929,6 +1929,7 @@ sub profile_check_in
 sub maximize    { $_[0]-> windowState( ws::Maximized)}
 sub minimize    { $_[0]-> windowState( ws::Minimized)}
 sub restore     { $_[0]-> windowState( ws::Normal)}
+sub fullscreen  { $_[0]-> windowState( ws::Fullscreen)}
 
 sub frameWidth           {($#_)?$_[0]-> frameSize($_[1], ($_[0]-> frameSize)[1]):return ($_[0]-> frameSize)[0];  }
 sub frameHeight          {($#_)?$_[0]-> frameSize(($_[0]-> frameSize)[0], $_[1]):return ($_[0]-> frameSize)[1];  }

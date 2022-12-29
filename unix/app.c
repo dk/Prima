@@ -242,7 +242,8 @@ init_x11( char * error_buf )
 	 	"XdndActionDescription",
 		"text/plain",
 		"_NET_WM_ICON",
-		"_NET_FRAME_EXTENTS"
+		"_NET_FRAME_EXTENTS",
+		"_NET_WM_STATE_FULLSCREEN"
 	};
 	char hostname_buf[256], *hostname = hostname_buf, *env;
 
