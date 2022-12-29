@@ -673,12 +673,14 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
 	if (recreate) {
 		Bool ok = recreate_window_data( self, &vprf);
 		XDestroyWindow( DISP, old);
+		XSync( DISP, false);
 		return ok;
 	}
 
 	apc_component_fullname_changed_notify( self);
 	prima_send_create_event( X_WINDOW);
 	configure_initial_size( self, window_state );
+	XSync( DISP, false);
 
 	return true;
 }
@@ -1199,9 +1201,9 @@ apc_window_set_visible( Handle self, Bool show)
 	Bool want_sync;
 
 	if ( show) {
-		want_sync = XX-> flags. mapped;
-	} else {
 		want_sync = !XX-> flags. mapped;
+	} else {
+		want_sync = XX-> flags. mapped;
 	}
 
 	XX-> flags. want_visible = show;
