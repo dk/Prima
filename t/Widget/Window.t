@@ -59,6 +59,10 @@ $xw-> windowState( ws::Minimized);
 is( $xw-> windowState, ws::Minimized, "restore from minimized" );
 
 reset_flag;
+$xw-> windowState( ws::Fullscreen);
+is( $xw-> windowState, ws::Fullscreen, "switch for fullscreen" );
+
+reset_flag;
 $xw-> windowState( ws::Normal);
 is( $xw-> windowState, ws::Normal, "restore max->min->normal" );
 

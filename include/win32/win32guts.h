@@ -270,6 +270,7 @@ typedef struct _WindowData
 	Handle         old_foc;
 	HWND           old_active;
 	PHash          effects;
+	WINDOWPLACEMENT fs_saved_placement;
 } WindowData;
 
 typedef struct _TimerData

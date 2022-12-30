@@ -570,6 +570,7 @@ apc_window_get_window_state( Handle self)
 {
 	WINDOWPLACEMENT s = {sizeof( WINDOWPLACEMENT)};
 	objCheck wsNormal;
+	if ( sys s.window.state == wsFullscreen ) return wsFullscreen;
 	if ( !GetWindowPlacement( HANDLE, &s)) apiErr;
 	if ( s. showCmd == SW_SHOWMAXIMIZED) return wsMaximized;
 	if ( s. showCmd == SW_SHOWMINIMIZED) return wsMinimized;
@@ -792,17 +793,81 @@ apc_window_set_window_state( Handle self, int state)
 {
 	int  fl = -1;
 	objCheck false;
-	switch ( state)
-	{
-		case wsMaximized: fl = SW_SHOWMAXIMIZED; break;
-		case wsMinimized: fl = SW_MINIMIZE; break;
-		case wsNormal   : fl = SW_SHOWNORMAL; break;
+
+	switch (state) {
+		case wsMaximized  : fl = SW_SHOWMAXIMIZED; break;
+		case wsMinimized  : fl = SW_MINIMIZE;      break;
+		case wsNormal     : fl = SW_SHOWNORMAL;    break;
+		case wsFullscreen :
+			break;
+		default:
+			return false;
 	}
+
+	/* Code from https://devblogs.microsoft.com/oldnewthing/20100412-00
+
+	Raymon Chen says:
+	An important flag to pass here is SWP_FRAME_CHANGED, which tells the window
+	manager to recalculate the window decorations (which we need it to do because
+	we just changed them) */
+
+	if ( sys s. window. state == wsFullscreen ) {
+		DWORD style = GetWindowLong(HANDLE, GWL_STYLE);
+		if ( state == wsMinimized ) {
+			/* minimize first, then apply visual changes */
+			ShowWindow( HANDLE, fl);
+			fl = -1;
+		}
+		SetWindowLong(HANDLE, GWL_STYLE, style | WS_OVERLAPPEDWINDOW);
+		SetWindowPlacement(HANDLE, &sys s.window.fs_saved_placement);
+		SetWindowPos(HANDLE,
+			NULL, 0, 0, 0, 0,
+			SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_FRAMECHANGED
+		);
+	}
+
 	if ( fl > 0)
-	{
 		ShowWindow( HANDLE, fl);
-		sys s. window. state = state;
+
+	if ( state == wsFullscreen ) {
+		Event e;
+		MONITORINFO     m = {sizeof(MONITORINFO)};
+		sys s.window.fs_saved_placement.length = sizeof(WINDOWPLACEMENT);
+		if (
+			GetWindowPlacement(HANDLE, &sys s.window.fs_saved_placement) &&
+			GetMonitorInfo(MonitorFromWindow(HANDLE, MONITOR_DEFAULTTOPRIMARY), &m)
+		) {
+			DWORD style = GetWindowLong(HANDLE, GWL_STYLE);
+			SetWindowLong(HANDLE, GWL_STYLE, style & ~WS_OVERLAPPEDWINDOW);
+			SetWindowPos(HANDLE, HWND_TOP,
+				m.rcMonitor.left, m.rcMonitor.top,
+				m.rcMonitor.right  - m.rcMonitor.left,
+				m.rcMonitor.bottom - m.rcMonitor.top,
+				SWP_NOOWNERZORDER | SWP_FRAMECHANGED
+			);
+		} else
+			return false;
+
+		if ( sys s. window. state == wsMinimized ) {
+			/* prevent cmWindowState.wsMaximized */
+			int v = is_apt(aptIgnoreSizeMessages);
+			apt_set(aptIgnoreSizeMessages);
+			ShowWindow( HANDLE, SW_SHOWMAXIMIZED );
+			if ( !v) apt_clear(aptIgnoreSizeMessages);
+		}
+
+		memset( &e, 0, sizeof(e));
+		e.cmd = cmWindowState;
+		e.gen.source = self;
+		e.gen.i      = wsFullscreen;
+		CComponent(self)->message( self, &e);
+		if ( PObject( self)-> stage == csDead) return false;
+
+		sys s.window.state = wsFullscreen;
+		hwnd_repaint_layered( self, false );
 	}
+
+	sys s.window.state = state;
 	return true;
 }
 

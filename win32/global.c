@@ -1414,25 +1414,27 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
 			// else we do not select any widget, but still have a chance to resize frame :)
 		}
 		break;
-	case WM_SIZE: {
-		int state = wsNormal;
-		Bool doWSChange = false;
-		if (( int) mp1 == SIZE_RESTORED) {
-			state = wsNormal;
-			if ( sys s. window. state != state) doWSChange = true;
-		} else if (( int) mp1 == SIZE_MAXIMIZED) {
-			state = wsMaximized;
-			doWSChange = true;
-		} else if (( int) mp1 == SIZE_MINIMIZED) {
-			state = wsMinimized;
-			doWSChange = true;
-		}
-		if ( doWSChange) {
-			ev. gen. i = sys s. window. state = state;
-			ev. cmd = cmWindowState;
+	case WM_SIZE:
+		if ( !is_apt( aptIgnoreSizeMessages)) {
+			int state = wsNormal;
+			Bool doWSChange = false;
+			if (( int) mp1 == SIZE_RESTORED) {
+				state = wsNormal;
+				if ( sys s. window. state != state)
+					doWSChange = true;
+			} else if (( int) mp1 == SIZE_MAXIMIZED) {
+				state = wsMaximized;
+				doWSChange = true;
+			} else if (( int) mp1 == SIZE_MINIMIZED) {
+				state = wsMinimized;
+				doWSChange = true;
+			}
+			if ( doWSChange) {
+				ev.gen.i = sys s.window.state = state;
+				ev.cmd = cmWindowState;
+			}
 		}
 		break;
-	}
 	case WM_SYNCMOVE: {
 		Handle parent = v-> self-> get_parent(( Handle) v);
 		if ( parent) {
