@@ -5,7 +5,7 @@ use Test::More;
 use Prima::sys::Test;
 use Prima::Application;
 
-plan tests => 16;
+plan tests => 17;
 
 my %id;
 my $xw = create_window(
