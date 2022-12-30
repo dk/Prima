@@ -1058,7 +1058,7 @@ sub text_out
 	$self-> emit_content("q");
 	my $wmul = $self-> {font_x_scale};
 	if ( $self-> {font}-> {direction} != 0) {
-		my $r = $self-> {font}-> {direction};
+		my $r = $self-> {font}-> {direction} / $Prima::matrix::RAD;
 		my $sin1 = sin($r);
 		my $cos  = cos($r);
 		my $wcos = cos($r) * $wmul;
