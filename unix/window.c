@@ -1453,9 +1453,11 @@ apc_window_set_window_state( Handle self, int state)
 			did_net_zoom = 1;
 			sync = 0;
 		} else {
+			int dx;
+			int dy;
 	FALL_THROUGH:
-			int dx = ( XX-> decorationSize. x > 0 ) ? XX-> decorationSize. x : 2;
-			int dy = ( XX-> decorationSize. y > 0 ) ? XX-> decorationSize. y : 20;
+			dx = ( XX-> decorationSize. x > 0 ) ? XX-> decorationSize. x : 2;
+			dy = ( XX-> decorationSize. y > 0 ) ? XX-> decorationSize. y : 20;
 			apc_window_set_rect( self,
 				dx * 2, dy * 2,
 				guts. displaySize.x - dx * 4, guts. displaySize. y - XX-> menuHeight - dy * 4
