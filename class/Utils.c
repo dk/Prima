@@ -48,7 +48,7 @@ XS(Utils_nearest_i_FROMPERL)
 		SPAGAIN;
 		SP -= items;
 		if ( !SvROK(x)) {
-			XPUSHs( newSViv( floor( SvNV(x) + .5 )  ) );
+			XPUSHs( sv_2mortal( newSViv( floor( SvNV(x) + .5 )  ) ));
 		}
 		else if ( SvTYPE( x = SvRV(x) ) != SVt_PVAV ) {
 			XPUSHs( NULL_SV );
@@ -64,7 +64,7 @@ XS(Utils_nearest_i_FROMPERL)
 					break;
 				av_push(dav, newSViv( floor(SvNV(*h) + .5) ));
 			}
-			XPUSHs( newRV_noinc((SV*) dav) );
+			XPUSHs( sv_2mortal( newRV_noinc((SV*) dav) ));
 		}
 	} else {
 		int i;
@@ -72,7 +72,7 @@ XS(Utils_nearest_i_FROMPERL)
 		SP -= items;
 		EXTEND( sp, items );
 		for ( i = 0; i < items; i++ )
-			PUSHs( newSViv( floor(SvNV(ST(i)) + .5) ));
+			PUSHs( sv_2mortal( newSViv( floor(SvNV(ST(i)) + .5) )));
 	}
 	PUTBACK;
 	return;
@@ -89,7 +89,7 @@ XS(Utils_nearest_d_FROMPERL)
 		SPAGAIN;
 		SP -= items;
 		if ( !SvROK(x)) {
-			XPUSHs( newSVnv( floor( SvNV(x) * 1.0e15 + .5 ) / 1.0e15 ) );
+			XPUSHs( sv_2mortal( newSVnv( floor( SvNV(x) * 1.0e15 + .5 ) / 1.0e15 ) ));
 		}
 		else if ( SvTYPE( x = SvRV(x) ) != SVt_PVAV ) {
 			XPUSHs( NULL_SV );
@@ -105,7 +105,7 @@ XS(Utils_nearest_d_FROMPERL)
 					break;
 				av_push(dav, newSVnv( floor(SvNV(*h) * 1.0e15 + .5) / 1.0e15 ));
 			}
-			XPUSHs( newRV_noinc((SV*) dav) );
+			XPUSHs( sv_2mortal( newRV_noinc((SV*) dav) ));
 		}
 	} else {
 		int i;
@@ -113,7 +113,7 @@ XS(Utils_nearest_d_FROMPERL)
 		SP -= items;
 		EXTEND( sp, items );
 		for ( i = 0; i < items; i++ )
-			PUSHs( newSVnv( floor(SvNV(ST(i)) * 1.0e15 + .5) / 1.0e15 ));
+			PUSHs( sv_2mortal( newSVnv( floor(SvNV(ST(i)) * 1.0e15 + .5) / 1.0e15 )));
 	}
 	PUTBACK;
 	return;
@@ -447,7 +447,7 @@ XS(Utils_stat_FROMPERL) {
 	gimme = GIMME_V;
 	if ( gimme != G_ARRAY ) {
 		if ( gimme != G_VOID )
-			XPUSHs(newSViv(ok));
+			XPUSHs(sv_2mortal(newSViv(ok)));
 	} else if ( ok) {
 		EXTEND( sp, 11 );
 		PUSHs( sv_2mortal(newSVuv( stats. dev    )));
