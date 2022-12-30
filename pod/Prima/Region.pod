@@ -97,6 +97,11 @@ The resulting region is a difference of the two regions.
 
 Creates a duplicate region object
 
+=item get_boxes
+
+Returns a C<Prima::array> object filled with 4-integer tuples, where each is a 
+box defined as (x,y,width,height).
+
 =item get_handle
 
 Returns a system handle for the region

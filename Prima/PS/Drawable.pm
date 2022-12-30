@@ -936,46 +936,46 @@ sub new
 	}, $class;
 }
 
+sub new_from_region
+{
+	my ( $class, $region, $canvas ) = @_;
+	unless (defined $region) {
+		return undef;
+	} elsif ( $region->is_empty) {
+		return $class->new('');
+	} else {
+		$class =~ s/Region$/Path/;
+		my $path  = $class->new;
+		my @boxes = @{ $region->get_boxes // [] };
+		my $dict  = $path->dict;
+		$path->emit( $dict->{newpath} );
+		@boxes = $canvas-> pixel2point(@boxes) if $canvas;
+		for ( my $i = 0; $i < @boxes; $i += 4 ) {
+			my ($x,$y,$w,$h) = @boxes[$i .. $i+3];
+			$path->emit(
+				$x, $y, $dict->{moveto},
+				$x + $w, $y, $dict->{lineto},
+				$x + $w, $y + $h, $dict->{lineto},
+				$x, $y + $h, $dict->{lineto},
+				$dict->{closepath}
+			);
+		}
+		return $path->region;
+	}
+}
+
 sub get_handle { "$_[0]" }
 sub get_boxes    { [] }
 sub point_inside { 0 }
 sub rect_inside  { 0 }
 sub box          { 0,0,0,0 }
+sub path         { $_[0]->{path} }
 
 sub offset
 {
 	my ( $self, $dx, $dy ) = @_;
 	$self->{offset}->[0] += $dx;
 	$self->{offset}->[1] += $dy;
-}
-
-sub apply_offset
-{
-	my $self = shift;
-	my $path = $self->{path};
-	my @offset = @{ $self->{offset} };
-	return $path if 0 == grep { $_ != 0 } @offset;
-
-	my $n = '';
-	my $ix = 0;
-	while ( 1 ) {
-		$path =~ m/\G(\d+(?:\.\d+)?)/gcs and do {
-			$n .= $1 + $offset[$ix];
-			$ix = $ix ? 0 : 1;
-			redo;
-		};
-		$path =~ m/\G(\s+)/gcs and do {
-			$n .= $1;
-			redo;
-		};
-		$path =~ m/\G(\D+)/gcs and do {
-			$n .= $1;
-			$ix = 0;
-			redo;
-		};
-		$path =~ m/\G$/gcs and last;
-	}
-	$path = $n;
 }
 
 1;

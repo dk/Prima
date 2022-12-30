@@ -108,7 +108,7 @@ sub change_transform
 	$self-> emit(':');
 
 	if ( $rg ) {
-		$self-> emit($rg-> apply_offset);
+		$self-> emit($rg-> apply_clip($self) . ' C');
 	} elsif ( $doClip ) {
 		@cr = $self-> pixel2point( @cr);
 		float_inplace(@cr);
@@ -978,8 +978,12 @@ sub region
 	return $_[0]->{region} unless $#_;
 	my ( $self, $region ) = @_;
 	if ( $region && !UNIVERSAL::isa($region, "Prima::PS::PostScript::Region")) {
-		warn "Region is not a Prima::PS::PostScript::Region";
-		return undef;
+		if ( UNIVERSAL::isa($region, 'Prima::Region')) {
+			$region = Prima::PS::PostScript::Region-> new_from_region( $region, $self );
+		} else {
+			warn "Region is not a Prima::PS::PostScript::Region";
+			return undef;
+		}
 	}
 	$self->{clipRect} = [0,0,0,0];
 	$self->{region} = $region;
@@ -1015,13 +1019,13 @@ sub region
 	my ($self, $mode) = @_;
 	my $path = join "\n", @{$self-> entries};
 	$path .= ' X' unless $path =~ /X$/;
-	$path .= ' C';
 	return Prima::PS::PostScript::Region->new( $path );
 }
 
 package
 	Prima::PS::PostScript::Region;
 use base qw(Prima::PS::Drawable::Region);
+use Prima::PS::Format;
 
 sub other { UNIVERSAL::isa($_[0], "Prima::PS::PostScript::Region") ? $_[0] : () }
 
@@ -1040,6 +1044,24 @@ sub combine
 }
 
 sub is_empty { shift->{path} !~ /[OF]/ }
+
+sub apply_offset
+{
+	my ($self, $canvas) = @_;
+	my $path = $self->{path};
+	my @offset = @{ $self->{offset} };
+	return $path if 0 == grep { $_ != 0 } @offset;
+
+	@offset = $canvas-> pixel2point(@offset) if $canvas;
+	float_inplace(@offset);
+	return "@offset T $path -$offset[0] -$offset[1] T";
+}
+
+sub apply_clip
+{
+	my ($self, $canvas) = @_;
+	return $self->apply_offset($canvas) . ' C';
+}
 
 1;
 

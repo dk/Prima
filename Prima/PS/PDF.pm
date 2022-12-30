@@ -109,7 +109,7 @@ sub change_transform
 	$self-> emit_content("@xm @tm cm");
 
 	if ( $rg ) {
-		$self-> emit_content($rg-> apply_offset . " n");
+		$self-> emit_content($rg-> apply_clip($self));
 	} elsif ( $doClip ) {
 		$self-> emit_content("h @cr re W n");
 	}
@@ -1361,8 +1361,12 @@ sub region
 	return $_[0]->{region} unless $#_;
 	my ( $self, $region ) = @_;
 	if ( $region && !UNIVERSAL::isa($region, "Prima::PS::PDF::Region")) {
-		warn "Region is not a Prima::PS::PDF::Region";
-		return undef;
+		if ( UNIVERSAL::isa($region, 'Prima::Region')) {
+			$region = Prima::PS::PDF::Region-> new_from_region( $region, $self );
+		} else {
+			warn "Region is not a Prima::PS::PDF::Region";
+			return undef;
+		}
 	}
 	$self->{clipRect} = [0,0,0,0];
 	$self->{region} = $region;
@@ -1406,6 +1410,7 @@ sub region
 package
 	Prima::PS::PDF::Region;
 use base qw(Prima::PS::Drawable::Region);
+use Prima::PS::Format;
 
 sub other { UNIVERSAL::isa($_[0], "Prima::PS::PDF::Region") ? $_[0] : () }
 
@@ -1424,6 +1429,27 @@ sub combine
 }
 
 sub is_empty { shift->{path} !~ /[Sf]/ }
+
+sub apply_offset
+{
+	my ($self, $canvas) = @_;
+	my $path = $self->apply_offset;
+	$path =~ s/\bn\b//;
+	return $path;
+}
+
+sub apply_clip
+{
+	my ($self, $canvas) = @_;
+	my $path = $self->{path};
+	my @offset = @{ $self->{offset} };
+	return "$path n" if 0 == grep { $_ != 0 } @offset;
+
+	@offset = $canvas-> pixel2point(@offset) if $canvas;
+	float_inplace(@offset);
+
+	return "1 0 0 1 @offset cm $path n 1 0 0 1 -$offset[0] -$offset[1] cm";
+}
 
 1;
 
