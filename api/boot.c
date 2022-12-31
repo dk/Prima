@@ -154,6 +154,12 @@ XS( prima_cleanup)
 	dXSARGS;
 	(void)items;
 
+	if ( prima_guts.init_ok == 0 ) {
+		ST(0) = &PL_sv_no;
+		XSRETURN(1);
+		return;
+	}
+
 	if ( prima_guts.application) Object_destroy( prima_guts.application);
 	prima_guts.app_is_dead = true;
 	hash_first_that( prima_guts.objects, (void*)kill_objects, NULL, NULL, NULL);
