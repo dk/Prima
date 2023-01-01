@@ -1426,12 +1426,8 @@ apc_window_set_window_state( Handle self, int state)
 	switch ( state) {
 	case wsMinimized:
 		if ( !XX-> flags. withdrawn ) {
-			XWMHints wmhints;
 			XIconifyWindow( DISP, X_WINDOW, SCREEN);
 			if ( XX-> flags. mapped) sync = UnmapNotify;
-			wmhints. flags = StateHint;
-			wmhints. initial_state = IconicState;
-			XSetWMHints( DISP, X_WINDOW, &wmhints);
 		}
 		break;
 	case wsMaximized: {
