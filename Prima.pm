@@ -68,7 +68,23 @@ sub END
 sub run
 {
 	die "Prima was not properly initialized\n" unless $::application;
-	$::application-> go if $::application-> alive;
+	while ( 1 ) {
+		my $stack;
+		my $got_exception;
+		{
+			local $SIG{__DIE__} = sub {
+				$got_exception = 1;
+				$stack //= Carp::longmess();
+				die @_;
+			};
+			eval {
+				$::application-> go if $::application-> alive;
+			};
+		}
+		last unless defined $@ && $got_exception;
+		next if $::application->alive && !$::application->notify('Die', "$@", $stack);
+		die $@;
+	}
 	$::application-> destroy if $::application && $::application-> alive;
 	$::application = undef if $::application and not $::application->alive;
 }

@@ -5,6 +5,7 @@ use Prima;
 use Prima::HelpViewer;
 use Prima::Application name => 'POD viewer';
 use Prima::Image::base64;
+use Prima::sys::GUIException;
 
 package SoleHelpViewer;
 use vars qw(@ISA %profile_default);

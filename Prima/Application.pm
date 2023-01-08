@@ -186,6 +186,18 @@ never used within the toolkit, and its usage is discouraged, primarily because
 its options do not serve the toolkit design, are subject to changes and cannot
 be relied upon.
 
+=item Exceptions
+
+By default Prima doesn't track exceptions caused by C<die>, C<warn>, and signals.
+Currently it is possible to enable a GUI dialog tracking the C<die> exceptions,
+by either operating the boolean C<guiException> property, or using
+
+   use Prima qw(sys::GUIException)
+
+syntax.
+
+See also: L<Die>
+
 =back
 
 =head1 API
@@ -203,6 +215,29 @@ This feature is designed to help with general 'one main window' application
 layouts.
 
 Default value: 0
+
+=item guiException BOOLEAN
+
+If set to 1, when a C<die> exception is thrown, displays a system message dialog.
+allowing the user to choose the course of action -- to stop, to continue, etc.
+
+Is 0 by default.
+
+Note that the exception is only called inside the C<Prima::run> call; if there
+is a call to f ex C<Prima::Dialog::execute> or a manual event loop run with C<yield>,
+the dialog will not be shown. One needs to explicitly call
+C<< $::application->notify(Die => $@) >> and check the notification result to
+decide whether to propagate the exception or not.
+
+Alternative syntax for setting C<guiException> to 1 is a
+
+   use Prima::sys::GUIException;
+
+or
+
+   use Prima qw(sys::GUIException);
+
+statement.
 
 =item icon OBJECT
 
@@ -373,6 +408,12 @@ The notification stores C<$IMAGE> in clipboard.
 =item CopyText $CLIPBOARD, $TEXT
 
 The notification stores C<$TEXT> in clipboard.
+
+=item Die $@, $STACK
+
+Called when an exception occurs inside the event loop C<Prima::run>.  By
+default, consults the C<guiException> property, and if it is set, displays the
+system message dialog allowing the user to decide when to do next.
 
 =item Idle
 

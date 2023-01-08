@@ -2,7 +2,7 @@ use strict;
 use warnings;
 use Prima qw(Notebooks MsgBox ComboBox
 Dialog::FontDialog Dialog::ColorDialog Dialog::FileDialog Dialog::ImageDialog
-IniFile Utils Widget::RubberBand KeySelector Utils);
+IniFile Utils Widget::RubberBand KeySelector Utils sys::GUIException);
 use Prima::VB::VBLoader;
 use Prima::VB::VBControls;
 use Prima::VB::CfgMaint;

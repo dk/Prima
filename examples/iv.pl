@@ -38,7 +38,7 @@ Note the mouse wheel interaction.
 
 use strict;
 use warnings;
-use Prima qw(ImageViewer Dialog::ImageDialog MsgBox);
+use Prima qw(ImageViewer Dialog::ImageDialog MsgBox sys::GUIException);
 use Prima::Application name => "IV";
 
 my $ico = Prima::Icon-> create;

@@ -2228,7 +2228,7 @@ sub AUTOLOAD
 sub DESTROY {}
 
 package Prima::Application;
-use vars qw(@ISA @startupNotifications);
+use vars qw(@ISA @startupNotifications $GUI_EXCEPTION);
 @ISA = qw(Prima::Widget);
 
 {
@@ -2239,6 +2239,7 @@ my %RNT = (
 	Copy         => nt::Action,
 	Paste        => nt::Action,
 	Idle         => nt::Default,
+	Die          => nt::Notification,
 );
 
 sub notification_types { return \%RNT; }
@@ -2254,6 +2255,7 @@ sub profile_default
 		pointerType    => cr::Arrow,
 		pointerVisible => 1,
 		language       => Prima::Application->get_system_info->{guiLanguage},
+		guiException   => $GUI_EXCEPTION,
 		icon           => undef,
 		owner          => undef,
 		scaleChildren  => 0,
@@ -2285,6 +2287,7 @@ sub profile_check_in
 {
 	my ( $self, $p, $default) = @_;
 	$p->{textDirection} //= $self->lang_is_rtl($p->{language} // $default->{language});
+	$GUI_EXCEPTION = delete $p->{guiException} if exists $p->{guiException};
 	$self-> SUPER::profile_check_in( $p, $default);
 	delete $p-> { printerModule};
 	delete $p-> { owner};
@@ -2359,6 +2362,7 @@ sub get_printer
 	return $_[0]-> {Printer};
 }
 
+sub guiException  {$#_ ? $GUI_EXCEPTION = $_[1] : $GUI_EXCEPTION }
 sub hintFont      {($#_)?$_[0]-> set_hint_font        ($_[1])  :return Prima::Font-> new($_[0], "get_hint_font", "set_hint_font")}
 sub helpModule    {($#_)?$_[0]-> {HelpModule} = $_[1] : return $_[0]-> {HelpModule}}
 sub helpClass     {($#_)?$_[0]-> {HelpClass}  = $_[1] : return $_[0]-> {HelpClass}}
@@ -2408,6 +2412,26 @@ sub open_help
 	return unless length $link;
 	return unless $self-> help_init;
 	return $self-> {HelpClass}-> open($link);
+}
+
+sub on_die
+{
+	my ($self, $err, $stack) = @_;
+	return unless $GUI_EXCEPTION;
+
+	require Prima::MsgBox;
+	my $res = Prima::MsgBox::message_box(
+		$self->name . ' fatal error',
+		$err,
+		mb::Abort|mb::Ignore|mb::Error|mb::Retry,
+		{ buttons => {
+			mb::Abort => { text => '~Quit' },
+			mb::Retry => { text => '~Trace' }
+		}},
+	);
+	return if $res == mb::Abort;
+	Prima::MsgBox::message($stack) if $res == mb::Retry;
+	$self->clear_event;
 }
 
 sub on_clipboard

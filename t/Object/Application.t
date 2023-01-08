@@ -4,6 +4,7 @@ use warnings;
 use Test::More;
 use Prima::sys::Test;
 use Prima::Application;
+use Prima::Utils;
 
 my $a = $::application;
 
@@ -133,8 +134,31 @@ ok( $::application->alive, "stop #2 works" );
 
 $SIG{ALRM} = 'DEFAULT';
 alarm(10);
+
+my ($die1, $die2) = ('','');
+my $want_clear_event = 1;
+$::application->onDie( sub {
+	my ($self, $err, $stack) = @_;
+	if ( $want_clear_event ) {
+		$want_clear_event = 0;
+		$die1 = $err;
+		$self->clear_event;
+		Prima::Utils::post( sub { die 43 } );
+	} else {
+		$die2 = $err;
+	}
+} );
+
+Prima::Utils::post( sub { die 42 } );
+eval { run Prima; };
+like( $die1, qr/42/, "die ignored");
+like( $die2, qr/43/, "die not ignored");
+isnt($::application, undef, 'app is still alive');
+
 $::application->close;
 $e = $::application->yield(1);
 ok(!$e, "yield returns 0 on application.close");
+
+
 
 done_testing;

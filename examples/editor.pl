@@ -14,7 +14,8 @@ and, in lesser extent, of standard find/replace dialogs.
 use strict;
 use warnings;
 
-use Prima qw(Edit Application MsgBox Dialog::FileDialog Dialog::FindDialog Dialog::FontDialog);
+use Prima qw(Edit Application MsgBox Dialog::FileDialog Dialog::FindDialog
+Dialog::FontDialog sys::GUIException);
 
 package Indicator;
 use vars qw(@ISA);
