@@ -6,7 +6,7 @@ require Exporter;
 use vars qw(@ISA @EXPORT @EXPORT_OK);
 @ISA = qw(Exporter);
 @EXPORT = qw(message_box message input_box);
-@EXPORT_OK = qw(message_box message input_box);
+@EXPORT_OK = qw(message_box message input_box signal_dialog);
 use Prima qw(Buttons InputLine Label Widget::ScrollWidget StdBitmap Utils);
 
 sub insert_buttons
@@ -250,6 +250,21 @@ sub input_box
 		(( $ret[0] == mb::OK || $ret[0] == mb::Yes) ? $ret[1] : undef);
 }
 
+sub signal_dialog
+{
+	my ( $title, $error, $stack ) = @_;
+	my $flags = mb::Abort|mb::Ignore|mb::Error;
+	$flags |= mb::Retry if defined $stack;
+	my $res = message_box(
+		$title, $error, $flags,
+		{ buttons => {
+			mb::Abort => { text => '~Quit' },
+			mb::Retry => { text => '~Trace' }
+		}},
+	);
+	message($stack) if $res == mb::Retry;
+	return $res;
+}
 
 sub import
 {
@@ -345,6 +360,13 @@ buttons.  See L<Buttons and profiles> for the explanations.
 
 Returns the result of C<Prima::Dialog::execute>, which is either C<mb::Cancel>
 or one of C<mb::XXX> constants of the specified dialog buttons.
+
+=item signal_dialog $TITLE, $ERROR, $STACK_TRACE
+
+Standard minimalistic exception dialog shown by default when
+C<Prima::Application.guiException> is 1 and an exception is thrown.  Could be
+reused for other purposes, by supplying title, error message, and stack trace.
+If the stack trace is not defined, the corresponding button is not shown.
 
 =back
 

@@ -2418,20 +2418,9 @@ sub on_die
 {
 	my ($self, $err, $stack) = @_;
 	return unless $GUI_EXCEPTION;
-
 	require Prima::MsgBox;
-	my $res = Prima::MsgBox::message_box(
-		$self->name . ' fatal error',
-		$err,
-		mb::Abort|mb::Ignore|mb::Error|mb::Retry,
-		{ buttons => {
-			mb::Abort => { text => '~Quit' },
-			mb::Retry => { text => '~Trace' }
-		}},
-	);
-	return if $res == mb::Abort;
-	Prima::MsgBox::message($stack) if $res == mb::Retry;
-	$self->clear_event;
+	$self->clear_event if
+		Prima::MsgBox::signal_dialog($self->name . ' fatal error', $err, $stack) != mb::Abort;
 }
 
 sub on_clipboard

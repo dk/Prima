@@ -186,7 +186,7 @@ never used within the toolkit, and its usage is discouraged, primarily because
 its options do not serve the toolkit design, are subject to changes and cannot
 be relied upon.
 
-=item Exceptions
+=item Exceptions and signals
 
 By default Prima doesn't track exceptions caused by C<die>, C<warn>, and signals.
 Currently it is possible to enable a GUI dialog tracking the C<die> exceptions,
@@ -196,7 +196,30 @@ by either operating the boolean C<guiException> property, or using
 
 syntax.
 
-See also: L<Die>
+If you need to track signals or warnings you may do so just by using standard perl
+practices. It is though not advisable to call Prima interactive methods inside
+signals, but use minimal code in the signal handler instead. F.ex. code that
+would ask whether the user really wants to quit would look like this:
+
+   use Prima qw(Utils MsgBox);
+   $SIG{INT} = sub {
+      Prima::Utils::post( sub {
+          exit if message_box("Got Ctrl+C", "Do you really want to quit?", mb::YesNo) == mb::Yes;
+      });
+   };
+
+and if you want to treat all warnings as potentially fatal, like this:
+
+   use Prima qw(Utils MsgBox);
+   $SIG{__WARN__} = sub {
+      my ($warn, $stack) = ($_[0], Carp::longmess);
+      Prima::Utils::post( sub {
+	  exit if $::application && Prima::MsgBox::signal_dialog("Warning", $warn, $stack) == mb::Abort;
+      });
+   };
+
+
+See also: L<Die>, L<Prima::MsgBox/signal_dialog>
 
 =back
 
@@ -238,6 +261,11 @@ or
    use Prima qw(sys::GUIException);
 
 statement.
+
+If for some reason an exception will be thrown during the dialog, it will not be handled
+by Prima but by the current C< $SIG{__DIE__} > handler.
+
+See also L<Prima::MsgBox/signal_dialog> .
 
 =item icon OBJECT
 
