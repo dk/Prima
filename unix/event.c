@@ -2020,9 +2020,11 @@ send_pending_events( void)
 	if ( !prima_guts.application ) return 0;
 
 	for ( pe = TAILQ_FIRST( &guts.peventq); pe != NULL; ) {
-		next = TAILQ_NEXT( pe, peventq_link);
-		if (( stage = PComponent( pe->recipient)-> stage) != csConstructing) {
+		next  = TAILQ_NEXT( pe, peventq_link);
+		stage = PComponent( pe->recipient)-> stage;
+		if ( stage != csConstructing) { /* or not yet there */
 			TAILQ_REMOVE( &guts.peventq, pe, peventq_link);
+			unprotect_object( pe-> recipient );
 		}
 		if ( stage == csNormal) {
 			apc_message( pe-> recipient, &pe-> event, false);
@@ -2297,6 +2299,7 @@ apc_message( Handle self, PEvent e, Bool is_post)
 		if (!( pe = alloc1(PendingEvent))) return false;
 		memcpy( &pe->event, e, sizeof(pe->event));
 		pe-> recipient = self;
+		protect_object(self);
 		TAILQ_INSERT_TAIL( &guts.peventq, pe, peventq_link);
 	} else {
 		guts. total_events++;
