@@ -147,6 +147,13 @@ load_function(HMODULE module, void ** ptr, const char * name)
 	(*ptr) = (void*) GetProcAddress(module, name);
 }
 
+BOOL WINAPI
+win32_ctrlhandler(DWORD dwCtrlType)
+{
+	PostThreadMessage( guts. main_thread_id, WM_SIGNAL, dwCtrlType, 0);
+	return FALSE;
+}
+
 Bool
 window_subsystem_init( char * error_buf)
 {
@@ -383,6 +390,9 @@ window_subsystem_init( char * error_buf)
 	default:
 		guts.wc2mb_is_fragile = false;
 	}
+
+	if ( !SetConsoleCtrlHandler(win32_ctrlhandler, true))
+		apiErr;
 
 	return true;
 }

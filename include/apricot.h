@@ -1350,6 +1350,9 @@ exception_block( Bool block );
 extern void
 exception_check_raise( void );
 
+extern void
+exception_dispatch_pending_signals( void );
+
 #ifdef PRIMA_PLATFORM_X11
 #define EXCEPTION_CHECK_RAISE exception_check_raise()
 #else

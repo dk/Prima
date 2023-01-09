@@ -525,6 +525,9 @@ process_msg( MSG * msg)
 			}
 		}
 		return true;
+	case WM_SIGNAL:
+		exception_dispatch_pending_signals();
+		return true;
 	}
 	if ( !postpone_msg_translation)
 		TranslateMessage( msg);

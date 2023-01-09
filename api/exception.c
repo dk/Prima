@@ -48,6 +48,14 @@ exception_check_raise(void)
 	croak("%s", buf);
 }
 
+void
+exception_dispatch_pending_signals( void )
+{
+	if (PL_sig_pending)
+		Perl_despatch_signals(aTHX);
+}
+
+
 #ifdef __cplusplus
 }
 #endif
