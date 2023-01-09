@@ -1,5 +1,9 @@
 Revision history for Perl module Prima
 
+1.68 2023-XX-XX
+ - Process signals inside event loop
+ - Add sys::GUIException, onDie, and a standard dialog for user interactions on exceptions
+
 1.67 2022-11-27
  - Links and tooltips extended functionality:
    -- Added interactive links in Label
