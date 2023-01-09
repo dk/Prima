@@ -2275,6 +2275,7 @@ prima_one_loop_round( int wait, Bool careOfApplication)
 	if ( x_events_pending && ( prima_guts.application || !careOfApplication) )
 		x_flush();
 	handle_queued_events(careOfApplication);
+	exception_dispatch_pending_signals();
 
 	return prima_guts.application != NULL_HANDLE;
 }
