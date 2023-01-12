@@ -184,7 +184,7 @@ font_context_next( FontContext * fc )
 	if ( !fc->orig_base )
 		return;
 
-	if ( IS_ZERO(fc->font.direction) && (!fc->matrix || prima_matrix_is_translated_only(fc->matrix)))
+	if ( IS_ZERO(fc->font.direction) && prima_matrix_is_translated_only(fc->matrix))
 		fc-> xft_base_font = fc->xft_font;
 	else {
 		dst.direction = 0;
