@@ -27,13 +27,10 @@
 #include "Region.h"
 #include "img_conv.h"
 
-#include <Types.inc>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "thunks.tinc"
 
 static void
 cv_set_prototype(char * package, char * method, char * prototype)
