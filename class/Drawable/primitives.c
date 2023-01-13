@@ -231,61 +231,47 @@ Drawable_fillpoly(Handle self, SV * points)
 	Bool ret = false;
 	CHECK_GP(false);
 
-	if ( !IS_AA && prima_matrix_is_translated_only(VAR_MATRIX)) {
-		Bool is_identity = prima_matrix_is_identity(VAR_MATRIX);
-		/* fast integer case */
-		if (( p = prima_read_array(
-			points, "fillpoly", 'i',
-			2, 2, -1, &count,
-			is_identity ? &do_free : NULL
-		)) == NULL)
-			return false;
-		if ( !is_identity ) {
-			int i;
-			Point *pt, t;
-			t.x = floor(var->current_state.matrix[4] + .5);
-			t.y = floor(var->current_state.matrix[5] + .5);
-			for ( i = 0, pt = p; i < count; i++, pt++) {
-				pt->x += t.x;
-				pt->y += t.y;
-			}
-		}
-		ret = apc_gp_fill_poly( self, count, (Point*) p);
-		goto EXIT;
-	} else if (
-		var-> alpha == 255 && var->antialias &&
-		prima_matrix_is_identity( VAR_MATRIX)
-	) {
-		/* fast double case */
-		if (( p = prima_read_array(
-			points, "fillpoly", 'd',
-			2, 2, -1, &count,
-			&do_free
-		)) == NULL)
-			return false;
-		ret = apc_gp_aa_fill_poly( self, count, (NPoint*) p);
-		goto EXIT;
-	} else {
-		/* generic case */
-		if (( p = prima_read_array(
-			points, "fillpoly",
-			IS_AA ? 'd' : 'i',
-			2, 2, -1, &count,
-			NULL
-		)) == NULL)
-			return false;
-		prima_matrix_apply2( VAR_MATRIX, p, p, count);
-
-		if ( IS_AA ) {
-			if ( !var->antialias )
-				FLOORN(p, count*2);
+	if ( prima_matrix_is_identity(VAR_MATRIX)) {
+		if ( !IS_AA ) {
+			/* fast integer case */
+			if (( p = prima_read_array(
+				points, "fillpoly", 'i',
+				2, 2, -1, &count,
+				&do_free
+			)) == NULL)
+				return false;
+			ret = apc_gp_fill_poly( self, count, (Point*) p);
+			goto EXIT;
+		} else if ( var->antialias ) {
+			/* fast double case */
+			if (( p = prima_read_array(
+				points, "fillpoly", 'd',
+				2, 2, -1, &count,
+				&do_free
+			)) == NULL)
+				return false;
 			ret = apc_gp_aa_fill_poly( self, count, (NPoint*) p);
-		} else {
-			Point *pp;
-			if ( !( pp = prima_array_convert( count * 2, p, 'd', NULL, 'i')))
-				goto EXIT;
-			ret = apc_gp_fill_poly( self, count, (Point*) pp);
+			goto EXIT;
 		}
+	}
+
+	/* generic case */
+	if (( p = prima_read_array(
+		points, "fillpoly",
+		IS_AA ? 'd' : 'i',
+		2, 2, -1, &count,
+		NULL
+	)) == NULL)
+		return false;
+
+	if ( IS_AA ) {
+		prima_matrix_apply2( VAR_MATRIX, p, p, count);
+		if ( !var->antialias )
+			FLOORN(p, count*2);
+		ret = apc_gp_aa_fill_poly( self, count, (NPoint*) p);
+	} else {
+		prima_matrix_apply2_int_to_int( VAR_MATRIX, p, p, count);
+		ret = apc_gp_fill_poly( self, count, (Point*) p);
 	}
 
 EXIT:
@@ -335,14 +321,7 @@ read_polypoints( Handle self, SV * points, char * procName, int min, Bool (*proc
 		free(p);
 		p = np;
 	} else if ( want_new_array ) {
-		int i;
-		Point t, *pt;
-		t.x = floor( var->current_state.matrix[4] + .5);
-		t.y = floor( var->current_state.matrix[5] + .5);
-		for ( i = 0, pt = (Point*) p; i < count; i++, pt++) {
-			pt->x += t.x;
-			pt->y += t.y;
-		}
+		prima_matrix_apply2_int_to_int( VAR_MATRIX, p, p, count);
 	}
 
 	ret = procPtr( self, count, (Point*) p);
