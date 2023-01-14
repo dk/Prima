@@ -2335,10 +2335,10 @@ in RGB format, no changes are made.
 
 See also: C<colorIndex>
 
-=item mouse_click BUTTON = mb::Left, MOD = 0, X = 0, Y = 0, DBL_CLICK = 0, POST = 0
+=item mouse_click BUTTON = mb::Left, MOD = 0, X = 0, Y = 0, NTH = 0, POST = 0
 
 The method sends or posts ( POST flag ) simulated C<MouseClick> event
-to the system. BUTTON, MOD, X, Y, and DBL_CLICK are the parameters
+to the system. BUTTON, MOD, X, Y, and NTH are the parameters
 to be passed to the notification callbacks.
 
 See also: C<MouseDown>, C<MouseUp>, C<MouseWheel>,
@@ -2964,16 +2964,16 @@ Used for making changes in the menu structures dynamically.
 
 See also: C<popupItems>
 
-=item MouseClick BUTTON, MOD, X, Y, DOUBLE_CLICK
+=item MouseClick BUTTON, MOD, X, Y, NTH
 
 Called when a mouse click ( button is pressed, and then
 released within system-defined interval of time ) is
 happened in the widget area. BUTTON is one of C<mb::XXX>
 constants, MOD is a combination of C<km::XXX> constants,
 reflecting pressed modificator keys during the event,
-X and Y are the mouse pointer coordinates. DOUBLE_CLICK
-is a boolean flag, set to 1 if it was a double click,
-0 if a single.
+X and Y are the mouse pointer coordinates. NTH
+is an integer, set to 0 if it was a single click,
+and to 2 and up if it was a double (triple etc etc) click.
 
 C<mb::XXX> constants are:
 
