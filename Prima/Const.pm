@@ -36,6 +36,14 @@ sub to_gray_rgb    { return from_rgb( (to_gray_byte($_[0])) x 3 ) }
 sub from_gray_byte { return 0x10101 * ($_[0] & 0xff) }
 sub premultiply { from_rgb( map { int($_ * $_[1] / 255) } to_rgb($_[0]) ) }
 
+sub distance
+{
+	my @x = to_rgb($_[0]);
+	my @y = to_rgb($_[1]);
+	$x[$_] -= $y[$_] for 0..2;
+	return sqrt( $x[0]*$x[0] + $x[1]*$x[1] + $x[2]*$x[2]);
+}
+
 package
     ci; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# color indices
 package
