@@ -370,6 +370,30 @@ See L<Prima::gp_problems/Colors>
 	cl::SysFlag  - indirect color constant bit set
 	cl::SysMask  - indirect color constant bit clear mask
 
+=item Color functions
+
+=over
+
+=item from_rgb R8,G8,B8 -> RGB24
+
+=item to_rgb   RGB24 -> R8,G8,B8
+
+=item from_bgr B8,G8,R8 -> RGB24
+
+=item to_bgr   RGB24 -> B8,G8,R8
+
+=item to_gray_byte RGB24 -> GRAY8
+
+=item to_gray_rgb  RGB24 -> GRAY24
+
+=item from_gray_byte GRAY8 -> GRAY24
+
+=item premultiply RGB24,A8 -> RGB24
+
+=item distance RGB24,RGB24 -> distance between colors
+
+=back
+
 =back
 
 =head2 cm::  - commands
@@ -483,13 +507,13 @@ Returns a C<cr::> constant corresponding to the C<ACTION>
 
 =item to_one_action ACTIONS
 
-Selects a best single action from combination of allowes C<ACTIONS>
+Selects a best single action from combination of allowed C<ACTIONS>
 
 =item keymod ACTION
 
-Returns a C<km::> keyboard modifier constant the C<ACTION> will be selected,
-when possible, if the user presses that modifier. Return 0 for C<dnd::Copy>
-that is a standard action to be performed without any modifiers.
+Returns a C<km::> keyboard modifier constant the C<ACTION> will be expected to
+start on if the user presses that modifier during a DND session. Returns 0 for
+C<dnd::Copy> that is the standard action to be performed without any modifiers.
 
 =back
 
@@ -701,6 +725,11 @@ See L<Prima::Drawable/lineEnd>
 	le::RoundRect
 	le::Spearhead
 	le::Tail
+
+Functions:
+
+	le::transform($matrix)
+	le::scale($scalex, [$scaley = $scalex])
 
 =head2 lj::  - line join styles
 
@@ -1088,6 +1117,25 @@ Others
 
         rop::AlphaCopy
 	rop::ConstantColor
+
+=over
+
+ROP functions
+
+=item alpha ROP, SRC_ALPHA = undef, DST_ALPHA = undef
+
+Combines one of the alpha-supporting ROPs ( Porter-Duff snd Photoshop
+operators) with
+source and destination alpha, if defined, and returns new ROP constant. This is useful
+when blending with constant alpha is required with/over images that don't have their own
+alpha channel. Or as an additional alpha channel when using icons.
+
+=item blend ALPHA
+
+Creates a ROP that would effecively execute alpha blending of the source image
+over the destination image with ALPHA value.
+
+=back
 
 =head2 sbmp:: - system bitmaps indices
 
