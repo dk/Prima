@@ -1065,6 +1065,7 @@ AGAIN:
 				guts.last_mouse_click_source = win;
 				guts.last_mouse_click_position = mp2;
 			}
+			guts.last_mouse_click_ts = ts;
 		}
 
 		goto MB_MAINACT;
