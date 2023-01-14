@@ -1118,9 +1118,9 @@ Others
         rop::AlphaCopy
 	rop::ConstantColor
 
-=over
-
 ROP functions
+
+=over
 
 =item alpha ROP, SRC_ALPHA = undef, DST_ALPHA = undef
 
@@ -1183,7 +1183,7 @@ See also L<Prima::StdBitmap>.
 =head2 scr:: - scroll exposure results
 
 C<Widget::scroll> returns one of these.
-	
+
 	scr::Error           - failure
 	scr::NoExpose        - call resulted in no new exposed areas
 	scr::Expose          - call resulted in new exposed areas, expect a repaint
