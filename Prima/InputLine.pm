@@ -717,6 +717,24 @@ sub on_mousedown
 	}
 }
 
+sub on_mouseclick
+{
+	my ( $self, $btn, $mod, $x, $y, $nth) = @_;
+
+	return if $self-> {mouseTransaction};
+	return if $btn != mb::Left;
+	return if $nth < 2 || $nth > 3;
+
+	$self-> clear_event;
+	return $self-> select_all if $nth == 3;
+
+	my $offset = $self-> x2offset( $x);
+	my $caplen = $self-> {n_clusters};
+	my $l      = $self->find_word_offset($offset, 0, $caplen, -1);
+	my $r      = $self->find_word_offset($offset, 1, $caplen, 1);
+	$self-> selection( $offset + $l, $offset + $r );
+}
+
 sub new_offset
 {
 	my ( $self, $ofs) = @_;
