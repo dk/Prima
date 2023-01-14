@@ -1299,9 +1299,10 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 			bev-> button == guts.last_button_event.button &&
 			bev-> button != guts. mouse_wheel_up &&
 			bev-> button != guts. mouse_wheel_down &&
-			bev-> time - guts.last_button_event.time <= guts.click_time_frame) {
-	  		e. cmd = cmMouseClick;
-			e. pos. nth = true;
+			bev-> time - guts.last_button_event.time <= guts.click_time_frame
+		) {
+			e. cmd = cmMouseClick;
+			e. pos. nth = ++guts.last_mouseclick_number;
 		}
 
 		if (
@@ -1328,6 +1329,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 			secondary. pos. mod = e. pos. mod;
 			secondary. pos. button = e. pos. button;
 			memcpy( &guts.last_click, bev, sizeof(guts.last_click));
+			guts. last_mouseclick_number = 1;
 			if ( e. pos. button == mbRight) {
 				Event ev;
 				bzero( &ev, sizeof(ev));
@@ -1338,18 +1340,9 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 				apc_message( self, &ev, true);
 				if ( PObject( self)-> stage == csDead) return;
 			}
-		} else if ( e.cmd == cmMouseUp &&
-			(guts.last_button_event.type == (cmMouseClick | 0x8000)) &&
-			bev-> window == guts.last_button_event.window &&
-			bev-> button == guts.last_button_event.button &&
-			bev-> time - guts.last_button_event.time <= guts.click_time_frame
-		) {
-			e.pos.nth = 2;
 		}
 		memcpy( &guts.last_button_event, bev, sizeof(*bev));
 		guts. last_button_event.type = e.cmd;
-		if (e.pos.nth == 2)
-			guts.last_button_event.type |= 0x8000;
 
 		if ( e. cmd == cmMouseDown) {
 			if ( XX-> flags. first_click) {
