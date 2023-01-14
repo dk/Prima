@@ -1301,7 +1301,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 			bev-> button != guts. mouse_wheel_down &&
 			bev-> time - guts.last_button_event.time <= guts.click_time_frame) {
 	  		e. cmd = cmMouseClick;
-			e. pos. dblclk = true;
+			e. pos. nth = true;
 		}
 
 		if (
@@ -1344,11 +1344,11 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 			bev-> button == guts.last_button_event.button &&
 			bev-> time - guts.last_button_event.time <= guts.click_time_frame
 		) {
-			e.pos.dblclk = 1;
+			e.pos.nth = 2;
 		}
 		memcpy( &guts.last_button_event, bev, sizeof(*bev));
 		guts. last_button_event.type = e.cmd;
-		if (e.pos.dblclk)
+		if (e.pos.nth == 2)
 			guts.last_button_event.type |= 0x8000;
 
 		if ( e. cmd == cmMouseDown) {

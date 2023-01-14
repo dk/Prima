@@ -185,10 +185,7 @@ apc_sys_get_value( int sysValue)
 		RegCloseKey( hKey);
 		return atol( buf);
 	case svDblClickDelay   :
-		RegOpenKeyEx( HKEY_CURRENT_USER, "Control Panel\\Mouse", 0, KEY_READ, &hKey);
-		RegQueryValueEx( hKey, "DoubleClickSpeed", NULL, &valType, ( LPBYTE)buf, &valSize);
-		RegCloseKey( hKey);
-		return atol( buf);
+		return guts.mouse_double_click_delay;
 	case svWheelPresent    : return GetSystemMetrics( SM_MOUSEWHEELPRESENT);
 	case svXIcon           : return guts. icon_size_large. x;
 	case svYIcon           : return guts. icon_size_large. y;

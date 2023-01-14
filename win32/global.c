@@ -394,6 +394,23 @@ window_subsystem_init( char * error_buf)
 	if ( !SetConsoleCtrlHandler(win32_ctrlhandler, true))
 		apiErr;
 
+	{
+		/* Contains a 64-bit value representing the number of 100-nanosecond intervals since January 1, 1601 (UTC). */
+		FILETIME ft;
+		HKEY hKey;
+		DWORD valSize = 256, valType = REG_SZ;
+		char buf[ 256] = "";
+
+		GetSystemTimeAsFileTime(&ft);
+		guts.program_start_ts = ft.dwHighDateTime * 10000 + ft.dwLowDateTime / 10000;
+
+		RegOpenKeyEx( HKEY_CURRENT_USER, "Control Panel\\Mouse", 0, KEY_READ, &hKey);
+		RegQueryValueEx( hKey, "DoubleClickSpeed", NULL, &valType, ( LPBYTE)buf, &valSize);
+		RegCloseKey( hKey);
+		guts.mouse_double_click_delay = atol( buf);
+		if (guts.mouse_double_click_delay < 1 ) guts.mouse_double_click_delay = 50;
+	}
+
 	return true;
 }
 
@@ -639,6 +656,24 @@ static Bool
 id_match( Handle self, PMenuItemReg m, void * params)
 {
 	return m-> id == *(( int*) params);
+}
+
+static unsigned long
+get_current_timestamp()
+{
+	/* Contains a 64-bit value representing the number of 100-nanosecond intervals since January 1, 1601 (UTC). */
+	FILETIME ft;
+	GetSystemTimeAsFileTime(&ft);
+	return ft.dwHighDateTime * 10000 + ft.dwLowDateTime / 10000 - guts.program_start_ts;
+}
+
+static Byte
+get_mouse_fingerprint( WPARAM mp1 )
+{
+	return
+		(( mp1 & MK_CONTROL )         ? kmCtrl   : 0) |
+		(( mp1 & MK_SHIFT   )         ? kmShift  : 0) |
+		(( GetKeyState( VK_MENU) < 0) ? kmAlt    : 0);
 }
 
 LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM mp2)
@@ -1010,14 +1045,33 @@ AGAIN:
 		ev. cmd = cmMouseUp;
 		goto MB_MAINACT;
 	MB_DBLCLK:
-		ev. pos. dblclk = 1;
+		ev. pos. nth = 2;
 	MB_CLICK:
 		ev. cmd = cmMouseClick;
+		/* is this a 3rd etc click? */
+		{
+			unsigned long ts     = get_current_timestamp();
+			Bool is_continuation =
+				(ts - guts.last_mouse_click_ts < guts.mouse_double_click_delay) &&
+				(guts.last_mouse_click_fingerprint == (ev.pos.button | get_mouse_fingerprint( mp1 ) | apc_pointer_get_state(self))) &&
+				(mp2 == guts.last_mouse_click_position) &&
+				(win == guts.last_mouse_click_source)
+				;
+			if ( is_continuation ) {
+				ev. pos. nth = ++guts.last_mouse_click_number;
+			} else {
+				guts.last_mouse_click_number = ( ev. pos. nth == 0 ) ? 1 : 2;
+				guts.last_mouse_click_fingerprint = ev.pos.button | get_mouse_fingerprint( mp1 ) | apc_pointer_get_state(self);
+				guts.last_mouse_click_source = win;
+				guts.last_mouse_click_position = mp2;
+			}
+		}
+
 		goto MB_MAINACT;
 	MB_MAINACT:
 		if ( !is_apt( aptEnabled) || !apc_widget_is_responsive( self))
 		{
-			if ( ev. cmd == cmMouseDown || (ev. cmd == cmMouseClick && ev. pos. dblclk))
+			if ( ev. cmd == cmMouseDown || (ev. cmd == cmMouseClick && ev. pos. nth > 1))
 				MessageBeep( MB_OK);
 			return 0;
 		}
@@ -1037,12 +1091,7 @@ AGAIN:
 		ev. pos. where. x = (short)LOWORD( mp2);
 		ev. pos. where. y = sys last_size. y - (short)HIWORD( mp2) - 1;
 	MB_MAIN_NOPOS:
-		ev. pos. mod      = 0 |
-			(( mp1 & MK_CONTROL )         ? kmCtrl   : 0) |
-			(( mp1 & MK_SHIFT   )         ? kmShift  : 0) |
-			(( GetKeyState( VK_MENU) < 0) ? kmAlt    : 0) |
-			apc_pointer_get_state(self)
-		;
+		ev. pos. mod  = get_mouse_fingerprint( mp1 ) | apc_pointer_get_state(self);
 		break;
 	case WM_MEASUREITEM: {
 		MEASUREITEMSTRUCT *mis = (MEASUREITEMSTRUCT*) mp2;

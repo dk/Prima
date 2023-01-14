@@ -74,6 +74,7 @@ typedef HANDLE SOCKETHANDLE;
 #define WM_DRAG_RESPONSE                  ( WM_USER + 22)
 #define WM_XMOUSECLICK                    ( WM_USER + 23)
 #define WM_SIGNAL                         ( WM_USER + 24)
+#define WM_SYNTHETIC_EVENT                ( WM_USER + 25)
 #define WM_TERMINATE                      ( WM_USER + 99)
 #define WM_FIRST_USER_MESSAGE             ( WM_USER +100)
 #define WM_LAST_USER_MESSAGE              ( WM_USER +900)
@@ -259,6 +260,14 @@ typedef struct _WinGuts
 
 	int            get_pixel_needs_emulation; // 0 - not tried, -1 - no, 1 - yes
 	HDC            get_pixel_dc_src, get_pixel_dc_dst;
+
+	unsigned long  program_start_ts ;            // epoch
+	unsigned int   mouse_double_click_delay;     // ms
+	unsigned long  last_mouse_click_ts;          // (time - epoch) * 1000 + msec
+	HWND           last_mouse_click_source;
+	LPARAM         last_mouse_click_position;
+	unsigned int   last_mouse_click_number;
+	Byte           last_mouse_click_fingerprint; // kmXXX | mbXXX
 } WinGuts, *PWinGuts;
 
 typedef struct _WindowData

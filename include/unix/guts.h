@@ -587,6 +587,7 @@ typedef struct _UnixGuts
 	long                         handled_events;
 	XButtonEvent                 last_button_event;
 	XButtonEvent                 last_click;
+	unsigned int                 last_mouseclick_number;
 	Time                         last_time;
 	int (*                       main_error_handler   )(Display*,XErrorEvent*);
 	int                          max_fd;

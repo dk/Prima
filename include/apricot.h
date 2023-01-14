@@ -452,7 +452,7 @@ typedef struct _PositionalEvent {
 	Point  where;
 	int    button;
 	int    mod;
-	Bool   dblclk;
+	int    nth;
 } PositionalEvent, *PPositionalEvent;
 
 #ifdef DNDEvent

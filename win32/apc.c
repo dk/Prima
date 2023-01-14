@@ -407,6 +407,12 @@ files_rehash( Handle self, void * dummy)
 	return false;
 }
 
+typedef struct {
+	Event  event;
+	Bool   dynamic;
+	Handle source;
+} SyntheticEvent;
+
 Bool
 process_msg( MSG * msg)
 {
@@ -440,6 +446,7 @@ process_msg( MSG * msg)
 		Bool wui = P_APPLICATION-> wantUnicodeInput;
 		P_APPLICATION-> wantUnicodeInput = kp-> mod & kmUnicode;
 		SendMessage( kp-> wnd, kp-> msg, kp-> mp1, kp-> mp2);
+		free(kp);
 		mod_free( mod);
 		P_APPLICATION->wantUnicodeInput = wui;
 		exception_check_raise();
@@ -528,6 +535,17 @@ process_msg( MSG * msg)
 	case WM_SIGNAL:
 		exception_dispatch_pending_signals();
 		return true;
+	case WM_SYNTHETIC_EVENT: {
+		SyntheticEvent* ev = (SyntheticEvent*)(msg->lParam);
+		if ( PComponent(ev->source)->stage == csNormal )
+			CComponent(ev->source)-> message( ev->source, &ev->event);
+		if ( ev-> dynamic ) {
+			unprotect_object(ev->source);
+			free( ev);
+		}
+		return true;
+	}
+
 	}
 	if ( !postpone_msg_translation)
 		TranslateMessage( msg);
@@ -798,15 +816,9 @@ apc_message( Handle self, PEvent ev, Bool post)
 		mp1s = ( SHORT) ev-> pos. button;
 		goto general;
 	case cmMouseClick:
-		if ( ev-> pos. dblclk) {
-			if ( ev-> pos. button & mbMiddle) msg = WM_MBUTTONDBLCLK; else
-			if ( ev-> pos. button & mbRight)  msg = WM_RBUTTONDBLCLK; else
-			if ( ev-> pos. button & mbLeft)   msg = WM_LBUTTONDBLCLK; else
-			{
-				msg = WM_XBUTTONDBLCLK;
-				mp1s = MAKEWPARAM(0, (ev-> pos. button & mb4) ? XBUTTON1 : XBUTTON2);
-			}
-		} else {
+		switch ( ev-> pos. nth ) {
+		case 0:
+		case 1: {
 			Event newEvent = *ev;
 			if ( ev-> pos. button & mbMiddle) msg = WM_MMOUSECLICK; else
 			if ( ev-> pos. button & mbRight)  msg = WM_RMOUSECLICK; else
@@ -820,6 +832,31 @@ apc_message( Handle self, PEvent ev, Bool post)
 			newEvent. cmd = cmMouseUp;
 			apc_message( self, &newEvent, post);
 		}
+		case 2:
+			if ( ev-> pos. button & mbMiddle) msg = WM_MBUTTONDBLCLK; else
+			if ( ev-> pos. button & mbRight)  msg = WM_RBUTTONDBLCLK; else
+			if ( ev-> pos. button & mbLeft)   msg = WM_LBUTTONDBLCLK; else
+			{
+				msg = WM_XBUTTONDBLCLK;
+				mp1s = MAKEWPARAM(0, (ev-> pos. button & mb4) ? XBUTTON1 : XBUTTON2);
+			}
+			break;
+		default:
+			if ( post ) {
+				SyntheticEvent *ev2;
+				ev2 = malloc(sizeof(SyntheticEvent));
+				memcpy(&ev2->event, ev, sizeof(Event));
+				ev2->dynamic = true;
+				ev2->source  = self;
+				protect_object(self);
+				PostMessage( 0, WM_SYNTHETIC_EVENT, 0, ( LPARAM) ev2);
+			} else {
+				SyntheticEvent ev2 = {*ev, false, self};
+				SendMessage( 0, WM_SYNTHETIC_EVENT, 0, ( LPARAM) &ev2);
+			}
+			return true;
+		}
+
 	general: {
 		LPARAM mp2 = MAKELPARAM( ev-> pos. where. x, sys last_size. y - ev-> pos. where. y - 1);
 		WPARAM mp1 = mp1s |

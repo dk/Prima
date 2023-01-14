@@ -147,7 +147,7 @@ object Prima::Widget( Prima::Drawable)
 	method   Handle   last();
 	method   Bool     lock();
 	method   Color    map_color( Color color) => apc_widget_map_color;
-	method   void     mouse_event( int command = cmMouseDown, int button = mbLeft, int mod = 0, int x = 0, int y = 0, Bool dblclk = 0, Bool post = 0);
+	method   void     mouse_event( int command = cmMouseDown, int button = mbLeft, int mod = 0, int x = 0, int y = 0, int nth = 0, Bool post = 0);
 	method   Handle   next();
 	method   Handle   next_tab( Bool forward = true);
 	method   Handle   next_positional( int dx, int dy);
