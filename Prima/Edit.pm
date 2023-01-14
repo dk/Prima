@@ -784,7 +784,6 @@ sub on_mousedown
 		)
 	) {
 		$self-> {drag_transaction} = 1;
-		my $want_triple_click = $self->{doubleclickTimer} ? 1 : 0;
 		my $act = $self-> begin_drag(
 			text       => $self->get_selected_text,
 			actions    => dnd::Copy|( $self->{readOnly} ? 0 : dnd::Move),
@@ -792,7 +791,7 @@ sub on_mousedown
 		);
 		$self-> {drag_transaction} = 0;
 		$self-> delete_block if !$self->{readOnly} && $act == dnd::Move;
-		if ($act < 0 && !$want_triple_click) {
+		if ($act < 0 ) {
 			$self-> cancel_block unless $self->persistentBlock;
 			$self-> cursor( @xy);
 		}
@@ -860,7 +859,7 @@ sub on_mousewheel
 
 sub on_mouseclick
 {
-	my ( $self, $btn, $mod, $x, $y, $dbl) = @_;
+	my ( $self, $btn, $mod, $x, $y, $nth) = @_;
 
 	return if $self-> {mouseTransaction};
 	return if $btn != mb::Left;
@@ -871,14 +870,8 @@ sub on_mouseclick
 	my $sl = $self-> get_chunk_cluster_length( $xy[1]);
 	$self-> clear_event;
 
-	if ( !$dbl) {
-		if ( $self-> {doubleclickTimer}) {
-			$self-> {doubleclickTimer}-> destroy;
-			delete $self-> {doubleclickTimer};
-			$self-> selection( 0, $xy[1], $sl, $xy[1]);
-		}
-		return;
-	}
+	return if $nth < 2 || $nth > 3;
+	return $self-> selection( 0, $xy[1], $sl, $xy[1]) if $nth == 3;
 
 	$self-> cancel_block;
 	$self-> cursor( @xy);
@@ -909,14 +902,6 @@ sub on_mouseclick
 	($l > $r) ? $l++ : $r++;
 
 	$self-> selection( $l, $xy[1], $r, $xy[1] );
-	$self-> {doubleclickTimer} = Prima::Timer-> create( onTick => sub{
-		$self-> {doubleclickTimer}-> destroy;
-		delete $self-> {doubleclickTimer};
-	}) unless $self-> {doubleclickTimer};
-	$self-> {doubleclickTimer}-> timeout(
-		Prima::Application-> get_system_value( sv::DblClickDelay) * 2
-	);
-	$self-> {doubleclickTimer}-> start;
 }
 
 sub on_keydown
