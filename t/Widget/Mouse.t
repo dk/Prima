@@ -28,7 +28,7 @@ if ( $^O =~ /win32/i) {
 	plan skip_all => "XP does random bad things to me" if $info->{release} < 6;
 }
 
-plan tests => 10;
+plan tests => 11;
 
 $c-> mouse_event( cm::MouseDown, mb::Left, 0, 1, 2, 0, 0);
 @keydata = grep { $$_[1] == mb::Left && $$_[2] == 0 && $$_[3] == 1 && $$_[4] == 2} @keydata;
@@ -59,8 +59,14 @@ ok( get_flag && scalar @keydata, "click" );
 reset_flag;
 @keydata = ();
 $c-> mouse_event( cm::MouseClick, mb::Left, 0, 1, 2, 1, 0);
-@keydata = grep { scalar @$_ == 6 && $$_[1] == mb::Left && $$_[2] == 0 && $$_[3] == 1 && $$_[4] == 2 && $$_[5] == 1 } @keydata;
+@keydata = grep { scalar @$_ == 6 && $$_[1] == mb::Left && $$_[2] == 0 && $$_[3] == 1 && $$_[4] == 2 && $$_[5] != 0 } @keydata;
 ok( get_flag && scalar @keydata, "doubleclick" );
+
+reset_flag;
+@keydata = ();
+$c-> mouse_event( cm::MouseClick, mb::Left, 0, 1, 3, 3, 1);
+@keydata = grep { scalar @$_ == 6 && $$_[1] == mb::Left && $$_[2] == 0 && $$_[3] == 1 && $$_[4] == 3 && $$_[5] == 3 } @keydata;
+ok( wait_flag && scalar @keydata, "tripleclick" );
 
 my @ppx = $c-> pointerPos;
 

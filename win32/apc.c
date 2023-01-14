@@ -831,6 +831,7 @@ apc_message( Handle self, PEvent ev, Bool post)
 			apc_message( self, &newEvent, post);
 			newEvent. cmd = cmMouseUp;
 			apc_message( self, &newEvent, post);
+			break;
 		}
 		case 2:
 			if ( ev-> pos. button & mbMiddle) msg = WM_MBUTTONDBLCLK; else
@@ -852,7 +853,8 @@ apc_message( Handle self, PEvent ev, Bool post)
 				PostMessage( 0, WM_SYNTHETIC_EVENT, 0, ( LPARAM) ev2);
 			} else {
 				SyntheticEvent ev2 = {*ev, false, self};
-				SendMessage( 0, WM_SYNTHETIC_EVENT, 0, ( LPARAM) &ev2);
+				MSG msg = { 0, WM_SYNTHETIC_EVENT, 0, (LPARAM) &ev2 };
+				process_msg(&msg); 
 			}
 			return true;
 		}
