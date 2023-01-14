@@ -8,6 +8,8 @@ Perl program using PRIMA looks and behaves identically on X11 and Win32.
 Example
 -------
 
+![Screenshot](/pod/Prima/hello-world.gif)
+
 	use Prima qw(Application Buttons);
 
 	Prima::MainWindow->new(
