@@ -1853,8 +1853,8 @@ sub reset
 	$tx1 = $fh if $tx1 < $fh;
 	$tx1 /= 2;
 	$tx1 += 4 + 10;
-	my $min_viable_rad = $tx1;
-	my $rad = $self-> {radius} = ($tx1 < ($br * 0.5)) ? $tx1 : ($br * 0.5);
+	my $min_viable_rad = $tx1 / 2 * 1.1;
+	my $rad = $self-> {radius} = ($min_viable_rad < $br/2) ? $min_viable_rad : ($br/2);
 
 	# circle center
 	$self-> {br}        = $br;
