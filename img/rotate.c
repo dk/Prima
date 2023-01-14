@@ -1128,7 +1128,7 @@ img_2d_transform( Handle self, Matrix matrix, ColorPixel fill, PImage output)
 
 	dimensions[0].x  = i-> w;
 	dimensions[0].y  = i-> h;
-	for ( step = 0, io = iop.steps; step < iop.n_steps; step++, io++) {
+	for ( step = 0, io = iop.steps; step < iop.n_steps;) {
 		switch ( io-> cmd) {
 		case STEP_SHEAR_X:
 			if ( io->p1 == 0.0 && io-> p2 == 0.0 ) goto SKIP;
@@ -1164,14 +1164,14 @@ img_2d_transform( Handle self, Matrix matrix, ColorPixel fill, PImage output)
 #if DEBUG
 		printf("dim(%d,%s,%g,%g) = %d %d\n", step, pipeline_opnames[io->cmd], io->p1, io->p2, dimensions[step+1].x,dimensions[step+1].y);
 #endif
+		io++;
+		step++;
 		continue;
 
 	SKIP:
 		if ( step < iop.n_steps - 1)
 			memmove( io, io + 1, (iop.n_steps - step - 1) * sizeof(ImgOp) );
 		iop.n_steps--;
-		step--;
-		io--;
 	}
 
 	if ( applied_steps == 0 ) {
