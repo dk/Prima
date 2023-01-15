@@ -3,8 +3,7 @@ use warnings;
 use Prima qw(Application MsgBox);
 
 my %opt = (
-	le  => le::Round,
-	lep => 'le::Round',
+	le  => [le::Round, undef, undef, undef],
 	lj  => lj::Round,
 	ljp => 'lj::Round',
 	lp  => lp::DotDot,
@@ -36,6 +35,27 @@ sub group
 	return @items;
 }
 
+sub legroup
+{
+	my $id = shift;
+	my @items = qw(Flat Square Round Arrow Cusp InvCusp Knob Rect RoundRect Spearhead Tail);
+	@items = map {[
+		"le\:\:$_" => "~$_" => sub {
+			$opt{le}->[$id] = eval $_[1];
+			$_[0]->repaint;
+		}
+	]} @items;
+	unshift @items, [
+		'*' => "~Default" => sub {
+			$opt{le}->[$id] = undef;
+			$_[0]->repaint;
+		}
+	] if $id;
+	$items[0][0]  = "(" . $items[0][0]; 
+	$items[-1][0] = ")" . $items[-1][0]; 
+	return @items;
+}
+
 my $mw;
 
 sub lw
@@ -62,7 +82,12 @@ $mw = Prima::MainWindow->new(
 			[],
 			[ 'E~xit' => sub { $_[0]->destroy } ],
 		]],
-		[ '~End' => [ group le => qw(Flat Square Round Arrow Cusp InvCusp Knob Rect RoundRect Spearhead Tail) ]],
+		[ '~Ends' => [
+			[ '~Line head'  => [ legroup 0 ]],
+			[ 'Line ~tail'  => [ legroup 1 ]],
+			[ 'Arrow ~head' => [ legroup 2 ]],
+			[ '~Arrow tail' => [ legroup 3 ]],
+		]],
 		[ 'End ~scale' => [
 			[ '(' , 0.5  => \&scale ],
 			[ ''  , 0.75 => \&scale ],
@@ -105,7 +130,12 @@ $mw = Prima::MainWindow->new(
 		my ( $self, $canvas ) = @_;
 		my ( $w, $h ) = $self-> size;
 		$canvas->clear();
-		$canvas->lineEnd(le::scale( $opt{le}, $opt{sc} ));
+		$canvas->lineEnd([
+			map {
+				defined ? le::scale( $_, $opt{sc} ) : undef
+			}
+			@{ $opt{le} }
+		]);
 		$canvas->lineJoin($opt{lj});
 		$canvas->miterLimit($opt{ml});
 		my $c = $prelight // $capture // -1;
@@ -211,6 +241,6 @@ $mw = Prima::MainWindow->new(
 	},
 );
 
-$mw->menu->check($opt{$_}) for qw(lep ljp lpp);
+$mw->menu->check($opt{$_}) for qw(ljp lpp);
 
 run Prima;
