@@ -179,7 +179,7 @@ Drawable_read_line_ends(SV *lineEnd, DrawablePaintState *state)
 	/* is it a leCustom for all 4 or 4 separate entries? */
 	holder  = av_fetch(av, 0, 0);
 	four_individual_constants = (holder && *holder && SvOK(*holder)) ?
-		(SvNOK(*holder) || SvROK(*holder)) :
+		(SvNOK(*holder) || SvIOK(*holder) || SvROK(*holder)) :
 		false;
 
 	if ( four_individual_constants ) {
