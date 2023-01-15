@@ -84,9 +84,9 @@ package
     le; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# line ends
 
 use constant Arrow => [
-	conic => [1,0,2.5,0,2.5,-0.5],
+	conic => [1,0,1.5,0,2.5,-0.5],
 	line  => [0,2.5],
-	conic => [-2.5,-0.5,-2.5,0,-1,0]
+	conic => [-2.5,-0.5,-1.5,0,-1,0]
 ];
 
 use constant Cusp => [
