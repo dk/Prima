@@ -139,6 +139,9 @@ sub transform
 sub scale { transform( $_[0], [ $_[1],0,0,$_[2] // $_[1],0,0 ] ) }
 
 package
+    lei; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# line end indexes
+
+package
     lj; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# line joins
 package
     fs; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# font styles
@@ -730,6 +733,17 @@ Functions:
 
 	le::transform($matrix)
 	le::scale($scalex, [$scaley = $scalex])
+
+=head2 lei::  - line end indexes
+
+	lei::LineTail
+	lei::LineHead
+	lei::ArrowTail
+	lei::ArrowHead
+	lei::Max
+	lei::Only
+
+See L<Prima::Drawable/lineEndIndex>
 
 =head2 lj::  - line join styles
 

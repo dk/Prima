@@ -743,10 +743,10 @@ sub translate
 	$_[0]->matrix($m);
 }
 
-sub lineTail  { $#_ ? $_[0]->lineEndIndex(-1, $_[1])  : $_[0]->lineEndIndex(-1) }
-sub lineHead  { $#_ ? $_[0]->lineEndIndex(-2, $_[1])  : $_[0]->lineEndIndex(-2) }
-sub arrowTail { $#_ ? $_[0]->lineEndIndex(-3, $_[1])  : $_[0]->lineEndIndex(-3) }
-sub arrowHead { $#_ ? $_[0]->lineEndIndex(-4, $_[1])  : $_[0]->lineEndIndex(-4) }
+sub lineTail  { $#_ ? $_[0]->lineEndIndex(lei::Only | lei::LineTail , $_[1])  : $_[0]->lineEndIndex(lei::Only | lei::LineTail ) }
+sub lineHead  { $#_ ? $_[0]->lineEndIndex(lei::Only | lei::LineHead , $_[1])  : $_[0]->lineEndIndex(lei::Only | lei::LineHead ) }
+sub arrowTail { $#_ ? $_[0]->lineEndIndex(lei::Only | lei::ArrowTail, $_[1])  : $_[0]->lineEndIndex(lei::Only | lei::ArrowTail) }
+sub arrowHead { $#_ ? $_[0]->lineEndIndex(lei::Only | lei::ArrowHead, $_[1])  : $_[0]->lineEndIndex(lei::Only | lei::ArrowHead) }
 
 package Prima::Image;
 use vars qw( @ISA);

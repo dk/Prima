@@ -241,6 +241,7 @@ register_constants( void)
 	register_kb_constants();
 	register_km_constants();
 	register_le_constants();
+	register_lei_constants();
 	register_lj_constants();
 	register_lp_constants();
 	register_mb_constants();

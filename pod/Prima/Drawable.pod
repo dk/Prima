@@ -1215,21 +1215,21 @@ See also: L<Custom line end styles>.
 
 Same as C<lineEnd> except only addresses a single line ending style.
 
-Allows VALUE to be C<undef> for indexes 1,2,3; depending on the index, the line
+Allows VALUE to be C<undef> for indexes greater than 0; depending on the index, the line
 style will be different ( see more in L</lineTail>, L</arrowHead>, L</arrowTail> ).
 
-Allows special negative INDEX values, that behave differently if the line end
-style is C<undef>: while positive INDEX queries may return C<undef>, or
-possibly affect neighbor indexing (if these are, in turn, C<undef>s), negative
-INDEX never return C<undef> on get-calls, and never affect neighbor styles on
-set-calls.
+Allows special INDEX values or'ed with C<le::Only>, that behave differently if
+the line end style is C<undef>: while normal INDEX queries may return C<undef>,
+or possibly affect neighbor indexing (if these are, in turn, C<undef>s), the
+calls with the C<le::Only> bit set never return C<undef> on get-calls, and never
+affect neighbor styles on set-calls.
 
 The following lookup rules are used if a line end style is undef:
 
-  #0 - can never be undef
-  #1 - if undef, same as #0
-  #2 - if undef, same as #0
-  #3 - if undef, same as #1, and if it also is undef, then same as #0
+  lei::LineTail  - can never be undef
+  lei::LineHead  - if undef, same as lei::LineTail
+  lei::ArrowTail - if undef, same as lei::LineTail
+  lei::ArrowHead - if undef, same as lei::LineHead, and if it also is undef, then same as lei::LineTail
 
 =item lineJoin VALUE
 

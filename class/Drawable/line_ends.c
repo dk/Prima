@@ -162,10 +162,11 @@ Drawable_read_line_ends(SV *lineEnd, DrawablePaintState *state)
 	SV *rv;
 
 	if ( !SvROK(lineEnd)) {
-		int le = SvIV( lineEnd );
+		int i, le = SvIV( lineEnd );
 		if ( le < 0 || le > leMax ) le = 0;
 		state->line_end[0].type = le;
-		state->line_end[1].type = state->line_end[2].type = state->line_end[3].type = leDefault;
+		for ( i = 1; i <= leiMax; i++)
+			state->line_end[i].type = leDefault;
 		return true;
 	}
 
@@ -183,10 +184,10 @@ Drawable_read_line_ends(SV *lineEnd, DrawablePaintState *state)
 		false;
 
 	if ( four_individual_constants ) {
-		if ( av_len(av) > 3 ) warn("lineEnd: only 4 items are understood, the rest is ignored");
+		if ( av_len(av) > leiMax ) warn("lineEnd: only %d items are understood, the rest is ignored", leiMax + 1);
 
 		/* parse SVs */
-		for ( i = 0; i < 4; i++) {
+		for ( i = 0; i <= leiMax; i++) {
 			holder = av_fetch( av, i, 0);
 			if ( !( holder && *holder && SvOK(*holder) ) || SvTYPE(*holder) == SVt_NULL) {
 				if ( i == 0 ) {
@@ -201,15 +202,17 @@ Drawable_read_line_ends(SV *lineEnd, DrawablePaintState *state)
 				goto FAIL;
 		}
 	} else {
+		int i;
 		if ( !read_line_end(lineEnd, state, 0))
 			goto FAIL;
-		state->line_end[1].type = state->line_end[2].type = state->line_end[3].type = leDefault;
+		for ( i = 1; i <= leiMax; i++)
+			state->line_end[i].type = leDefault;
 	}
 
 	return true;
 
 FAIL:
-	for ( i = 0; i < 4; i++) {
+	for ( i = 0; i <= leiMax; i++) {
 		if ( state->line_end[i].type == leCustom ) {
 			state->line_end[i].type = (i == 0) ? leRound : leDefault;
 			free(state->line_end[i].path);
@@ -240,7 +243,7 @@ void
 Drawable_line_end_refcnt( DrawablePaintState *gs, int delta)
 {
 	int i;
-	for ( i = 0; i < 4; i++)
+	for ( i = 0; i <= leiMax; i++)
 		line_end_refcnt( gs, i, delta);
 }
 
@@ -298,14 +301,16 @@ produce_line_end(Handle self, int index)
 static SV*
 produce_line_ends(Handle self)
 {
-	int i, items;
+	int i, items, all_are_default = true;
 	AV *av;
 
-	if (
-		GS.line_end[1].type == leDefault &&
-		GS.line_end[2].type == leDefault &&
-		GS.line_end[3].type == leDefault
-	) {
+	for ( i = 1; i <= leiMax; i++)
+		if ( GS.line_end[i].type != leDefault ) {
+			all_are_default = false;
+			break;
+		}
+
+	if ( all_are_default ) {
 		if ( GS.line_end[0].type != leCustom )
 			return newSViv(GS.line_end[0].type);
 		else
@@ -313,7 +318,7 @@ produce_line_ends(Handle self)
 	}
 
 	av = newAV();
-	items = 4;
+	items = leiMax + 1;
 
 	/* skip undefs in tail */
 	while (items > 0 && GS.line_end[items-1].type == leDefault)
@@ -342,7 +347,11 @@ Drawable_lineEnd( Handle self, Bool set, SV *lineEnd)
 SV*
 Drawable_lineEndIndex( Handle self, Bool set, int index, SV *lineEnd)
 {
-	if ( index > 3 || index < -4 )
+	Bool only;
+
+	only = (index & leiOnly) ? 1 : 0;
+	index &= ~leiOnly;
+	if ( index > leiMax )
 		return NULL_SV;
 	/*
 		leDefault is special, depending on the index:
@@ -352,23 +361,22 @@ Drawable_lineEndIndex( Handle self, Bool set, int index, SV *lineEnd)
 		3 (arrow head) if leDefault, same as 1, which if is also leDefault, then same as 0
 	*/
 	if (!set) {
-		if ( index < 0 ) {
-			index = -index - 1;
-			while ( index > 0 && GS.line_end[index].type == leDefault)
-				index = (index == 3) ? 1 : 0;
+		if ( only ) {
+			while ( index != leiHeadsAndTails && GS.line_end[index].type == leDefault)
+				index = (index == leiArrowHead) ? leiHeads : leiHeadsAndTails;
 		}
 		return produce_line_end(self, index);
-	} else if ( index == -1 ) {
+	} else if ( only && index == leiHeadsAndTails  ) {
 		int i;
-		for ( i = 1; i < 3; i++) {
+		for ( i = 1; i <= leiMax; i++) {
 			if (GS.line_end[i].type == leDefault) {
-				GS.line_end[i] = GS.line_end[0];
+				GS.line_end[i] = GS.line_end[leiHeadsAndTails];
 				line_end_refcnt( &GS, i, +1);
 			}
 		}
-	} else if ( index == -2 && GS.line_end[3].type == leDefault) {
-		GS.line_end[3] = GS.line_end[1];
-		line_end_refcnt( &GS, 3, +1);
+	} else if ( only && index == leiHeads && GS.line_end[leiArrowHead].type == leDefault) {
+		GS.line_end[leiArrowHead] = GS.line_end[leiHeads];
+		line_end_refcnt( &GS, leiArrowHead, +1);
 	}
 
 	line_end_refcnt( &GS, index, -1);

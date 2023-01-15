@@ -2879,6 +2879,26 @@ LE(Round)
 END_TABLE(le,UV)
 #undef LE
 
+/* line end indexes */
+#define LEI(const_name) CONSTANT(lei,const_name)
+START_TABLE(lei,UV)
+#define    leiLineTail      0
+LEI(LineTail)
+#define    leiLineHead      1
+LEI(LineHead)
+#define    leiArrowTail     2
+LEI(ArrowTail)
+#define    leiArrowHead     3
+LEI(ArrowHead)
+#define    leiMax           3
+LEI(Max)
+#define    leiOnly          0x10
+LEI(Only)
+#define    leiHeadsAndTails leiLineTail
+#define    leiHeads         leiLineHead
+END_TABLE(lei,UV)
+#undef LEI
+
 /* line joins */
 #define LJ(const_name) CONSTANT(lj,const_name)
 START_TABLE(lj,UV)
@@ -3571,7 +3591,7 @@ typedef struct {
 
 /* gp functions */
 typedef struct {
-	LineEnd line_end[4];
+	LineEnd line_end[leiMax + 1];
 	int line_join;
 	double line_width;
 	double miter_limit;
