@@ -11,7 +11,7 @@ Revision history for Perl module Prima
    -- Markup recognizes hyperlinks now with new "L<URL|text>" syntax
    -- Generic link opening is handled by new module Prima::Widget::Link
    -- Pod-embedded base64-encoded images are supported in podview and tooltips
- - Some modules were spit and moved to Prima::Widget:: namespace
+ - Some modules were split and moved to Prima::Widget:: namespace
  - Compilation update for the latest MSVC
  - use Prima qw(MsgBox and the like) re-exports symbols to the caller level:
       message() will do now instead of Prima::MsgBox::message()
