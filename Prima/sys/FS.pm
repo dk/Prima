@@ -275,7 +275,7 @@ user-preferred) codepage are not visible in perl, but the functions below
 mitigate that problem.
 
 This module exports the unicode-aware functions from C<Prima::Utils> to override
-the core functions. Read more in L<Prima::Utils/"Unicode-aware filesystem functions">.
+the core functions. Read more in L<Prima::Utils/"Unicode-aware file system functions">.
 
 =head2 SYNOPSIS
 

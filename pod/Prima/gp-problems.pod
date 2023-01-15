@@ -16,7 +16,7 @@ programming.
 
 A compliant display is expected to have minimal set
 of capabilities, that programmer can rely upon.
-Following items are guaranteedly supported by Prima:
+Following items are always supported by Prima:
 
 =over
 
@@ -286,7 +286,7 @@ palette is writable.(X)
 =item Widget::palette
 
 Widget::palette property is used for explicit declaration of extra
-color needs for a widget. The request might be satisfacted in different
+color needs for a widget. The request might be satisfied in different
 ways, or might not at all. It is advisable not to rely onto platform
 behavior for the palette operations.
 

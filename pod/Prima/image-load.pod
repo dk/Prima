@@ -325,7 +325,7 @@ written frames.
 
 All information, that is found in object hash reference 'extras', is
 assumed to be saved as an extra information. It is a codec's own business
-how it reacts on invalid and/or inacceptable information - but typical behavior is
+how it reacts on invalid and/or unacceptable information - but typical behavior is
 that keys that were not recognized by the codec just get ignored, and invalid values
 raise an error.
 
@@ -456,7 +456,7 @@ Set if a codec can save more that one frame
 
 =item canAppend
 
-Set if a codec can append frames to an exising file
+Set if a codec can append frames to an existing file
 
 =item types
 
@@ -567,7 +567,7 @@ Default: false
 =item noIncomplete BOOL
 
 Affects the action when image is incomplete, truncated, etc.
-If set, signals an error. Otherwise no error is signalled and whatever
+If set, signals an error. Otherwise no error is signaled and whatever
 data could be recovered from the image are returned, and C<truncated> flag
 is set.
 
@@ -714,7 +714,7 @@ Array or transparent colors. Cannot be used for saving.
 
 =head2 JPEG codec
 
-=head3 Load parameteres
+=head3 Load parameters
 
 =over
 
@@ -950,7 +950,7 @@ Default: 1
 
 =item Fax BOOL
 
-If set, converts 1-bit grayscale with ratio 2:1 into 2-bit grayscale (alglorithm also known as I<faxpect>).
+If set, converts 1-bit grayscale with ratio 2:1 into 2-bit grayscale (algorithm also known as I<faxpect>).
 
 Default: 0
 

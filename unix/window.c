@@ -372,7 +372,7 @@ fill_attrs( Handle self, Bool for_toplevel, XSetWindowAttributes * attrs)
 
 	attrs-> event_mask = 0
 		| KeyPressMask              /* Key events unmasked for both windows, since */
-		| KeyReleaseMask            /* focusing is unpredicatble for some WM */
+		| KeyReleaseMask            /* focusing is unpredictable for some WM */
 		/*| ButtonPressMask */
 		/*| ButtonReleaseMask */
 		/*| EnterWindowMask */

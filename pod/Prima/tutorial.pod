@@ -390,8 +390,8 @@ This concludes the short tutorial on menus. To read more, see L<Prima::Menu> .
 
 =head1 Adding help to your program
 
-The toolking comes with a POD viewer program C<podview> that can be
-incorporated into an application. This is rather straighforward as you can write
+The toolkit comes with a POD viewer program C<podview> that can be
+incorporated into an application. This is rather straightforward as you can write
 the application manual in POD format.
 
 =over

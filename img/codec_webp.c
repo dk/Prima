@@ -660,7 +660,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 
 	/* Force frames with a small or no duration to 100ms to be consistent
         with web browsers and other transcoding tools. This also avoids
-        incorrect durations between frames when padding frames are
+        incorrect duration between frames when padding frames are
         discarded.*/
 	if ( pexist(delay)) {
 		delay = pget_i(delay);

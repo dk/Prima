@@ -352,14 +352,14 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
 /*
 courtesy from gtk/gdk-pixbuf/io-jpeg.c
 
-Check for exif header and catch endianess
+Check for exif header and catch endianness
 Just skip data until exif header - it should be within 16 bytes from marker start.
 Normal structure relative to APP1 marker -
 	0x0000: APP1 marker entry = 2 bytes
 	0x0002: APP1 length entry = 2 bytes
 	0x0004: Exif Identifier entry = 6 bytes
 	0x000A: Start of exif header (Byte order entry) - 4 bytes
-		- This is what we look for, to determine endianess.
+		- This is what we look for, to determine endianness.
 	0x000E: 0th IFD offset pointer - 4 bytes
 
 	exif_marker->data points to the first data after the APP1 marker

@@ -802,7 +802,7 @@ CM(MouseClick)
 CM(MouseEnter)
 #define cmMouseLeave     0x00000059                /* mouse left window area */
 CM(MouseLeave)
-#define cmTranslateAccel 0x0000005A                /* key event spred to non-focused windows */
+#define cmTranslateAccel 0x0000005A                /* key event spread to non-focused windows */
 CM(TranslateAccel)
 #define cmDelegateKey    0x0000005B                /* reserved for key mapping */
 CM(DelegateKey)
@@ -1769,7 +1769,7 @@ GT(Max)
 END_TABLE(gt,UV)
 #undef GT
 
-/* widget grow constats */
+/* widget grow constants */
 #define GM(const_name) CONSTANT(gm,const_name)
 START_TABLE(gm,UV)
 #define gmGrowLoX             0x001
@@ -2128,7 +2128,7 @@ typedef struct {
 	Handle         in;             /* 'in' option */
 	/* pack */
 	Point          pad;            /* border padding */
-	Point          ipad;           /* size increaze */
+	Point          ipad;           /* size increase */
 	Handle         order;          /* if non-nil, BEFORE or AFTER a widget */
 	/* place */
 	int x, y;
@@ -2141,7 +2141,7 @@ typedef struct {
 	unsigned int   anchory    : 2; /* 0 - bottom, 1 - center, 2 - top */
 	/* pack */
 	unsigned int   after      : 1; /* 0 - order is BEFORE; 1 - order is AFTER */
-	unsigned int   expand     : 1; /* causes the allocation rectange to fill all remaining space */
+	unsigned int   expand     : 1; /* causes the allocation rectangle to fill all remaining space */
 	unsigned int   fillx      : 1; /* fill horizontal extent */
 	unsigned int   filly      : 1; /* fill vertical extent */
 	unsigned int   side       : 2; /* 0 - left, 1 - bottom, 2 - right, 3 - top */
@@ -2554,7 +2554,7 @@ typedef struct _MenuItemReg {   /* Menu item registration record */
 		unsigned int utf8_text     : 1;
 		unsigned int utf8_accel    : 1;
 		unsigned int utf8_perlSub  : 1;
-		unsigned int autotoggle    : 1;  /* true if menu is toggled automatially */
+		unsigned int autotoggle    : 1;  /* true if menu is toggled automatically */
 		unsigned int custom_draw   : 1;  /* true if menu item is drawn through onMenuItemPaint */
 	} flags;
 } MenuItemReg, *PMenuItemReg;
@@ -3034,7 +3034,7 @@ END_TABLE(fv,UV)
 #undef FV
 
 
-/* font weigths */
+/* font weights */
 #define FW(const_name) CONSTANT(fw,const_name)
 START_TABLE(fw,UV)
 #define    fwUltraLight     1

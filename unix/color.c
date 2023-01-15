@@ -155,7 +155,7 @@ my_XFreeColors( Display * disp, Colormap cm, long * ls, int count, long pal, int
 		printf("%ld.", *ls);
 		XFreeColors( disp, cm, ls, 1, 0);
 		XSync( disp, false);
-		if ( !card[*ls]) printf("jopa!\n");
+		if ( !card[*ls]) printf("NO CARD!\n");
 		else card[*ls]--;
 	}
 	printf("done\n");
@@ -186,7 +186,7 @@ alloc_color( XColor * c)
 	Fills Brush structure. If dithering is needed,
 brush.secondary and brush.balance are set. Tries to
 get new colors via XAllocColor, assigns new color cells
-to self if successfull.
+to self if successful.
 	If no brush structure is given, no dithering is
 preformed.
 	Returns closest matching color, always the same as
@@ -267,7 +267,7 @@ DITHER:
 	have enough colors - small cubes give noisy picture
 
       .  .  .  *R"G"   assume here that blue component does not require dithering
-  R |                  R'G' and R"G" are 2 colors blended with proprotion to make
+  R |                  R'G' and R"G" are 2 colors blended with proportion to make
     | '''* A           color A. R'G' is a closest cubic color. If A(G)/A(R) < y,
     |    |             R"G" is G-point, if A(G)/A(R) > 1 + y, it's R-point, otherwise
     *---------- G      it's RG-point. (y=sqrt(2)-1=0.41; y=0.41x and y=1.41x are

@@ -1222,7 +1222,7 @@ fep( ENUMLOGFONTEXW FAR *e, NEWTEXTMETRICEXW FAR *t, DWORD type, LPARAM _es)
 	if ( type & TRUETYPE_FONTTYPE) {
 		copy = 1;
 		es-> vecId = 1;
-		ret = 0; // enough; no further enumeration requred, since Win renders TrueType quite good
+		ret = 0; // enough; no further enumeration required, since Win renders TrueType quite good
 					// to not mix these with raster fonts.
 		goto EXIT;
 	} else if ( !( type & RASTER_FONTTYPE)) {
@@ -1382,7 +1382,7 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
 			)
 		{
 			font-> height   = es. tm. tmHeight;
-			// if synthesized embolding added, we have to reflect that...
+			// if synthesized emboldening added, we have to reflect that...
 			// ( 'cos it increments B-extent of a char cell).
 			if ( font-> style & fsBold) {
 				LOGFONTW lpf = es. lf;

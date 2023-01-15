@@ -381,7 +381,7 @@ Declaration C<func( int a = 1, int b)> is incorrect.
 
 In the generated C code, a C function has to be called
 after the parameters have been parsed. Gencls expects
-a conformant function to be present in C code, with
+a conforming function to be present in C code, with
 fixed name and parameter list. However, if the task of
 such function is a wrapper to an identical function
 published under another name, aliasing can be preformed
@@ -450,7 +450,7 @@ for an object class Object is reflected in C as
 
 function declaration. Contrary to package functions, that gencls
 is unable to publish if it is unable to deal with the
-unsupported on unconvertible parameters, there is a way
+unsupported on nonconvertible parameters, there is a way
 to issue such a declaration with a method. The primary use for that
 is the method name gets reserved in the object's VMT.
 

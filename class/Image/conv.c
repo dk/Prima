@@ -212,7 +212,7 @@ Image_make_empty( Handle self)
 divide the pixels, by whether they match color or not on two
 groups, F and B. Both are converted correspondingly to the settings
 of color/backColor and rop/rop2. Possible variations:
-rop == rop::NoOper,    pixel value remains ths same
+rop == rop::NoOper,    pixel value remains the same
 rop == rop::CopyPut,   use the color value
 rop == rop::Blackness, use black pixel
 rop == rop::Whiteness, use white pixel
@@ -749,7 +749,7 @@ Image_set( Handle self, HV * profile)
 Routine sets image data almost as Image::set_data, but taking into
 account 'lineSize', 'type', and 'reverse' fields. To be called from bunch routines,
 line ::init or ::set. Returns true if relevant fields were found and
-data extracted and set, and false if user data should be set throught ::set_data.
+data extracted and set, and false if user data should be set through ::set_data.
 Image itself may undergo conversion during the routine; in that case 'palette'
 property may be used also. All these fields, if used, or meant to be used but
 erroneously set, will be deleted regardless of routine success.

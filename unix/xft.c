@@ -852,7 +852,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Mat
 	FcPatternDestroy( request);
 
 	/* xft does a rather bad job with synthesizing a monospaced
-	font out of a proportional one ... try to find one ourself,
+	font out of a proportional one ... try to find one myself,
 	or bail out if it is the case
 	*/
 	if ( requested_font.pitch == fpFixed && !force_xft_monospace_emulation) {
@@ -1339,7 +1339,7 @@ xft_text2ucs4( const unsigned char * text, int len, Bool utf8, uint32_t * map8)
 /*
 x11 has problems with text_out strings that are wider than
 64K pixel - it wraps the coordinates and produces mess. This hack is
-although ugly, but is better that X11 default behaviour, and
+although ugly, but is better that X11 default behavior, and
 at least can be excused by the fact that all GP spaces have
 their geometrical limits.
 */
@@ -1555,7 +1555,7 @@ XftDrawGlyph_layered( PDrawableSysData selfxx,
 }
 
 /* When plotting rotated fonts, xft does not account for the accumulated
-	roundoff error, and thus the text line is shown at different angle
+	round-off error, and thus the text line is shown at different angle
 	than requested. We track this and align the reference point when it
 	deviates from the ideal line */
 static void
@@ -2570,7 +2570,7 @@ prima_xft_text_shaper_harfbuzz( Handle self, PTextShapeRec r)
 		uint32_t c = glyph_info[i].cluster;
 		if ( c > r-> len ) {
 			/* something bad happened? */
-			warn("harfbuzz shaping asssertion failed: got cluster=%d for strlen=%d", c, r->len);
+			warn("harfbuzz shaping assertion failed: got cluster=%d for strlen=%d", c, r->len);
 			guts. use_harfbuzz = false;
 			ret = false;
 			break;

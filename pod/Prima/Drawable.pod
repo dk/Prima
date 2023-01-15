@@ -222,7 +222,7 @@ which turns on the following effects:
 
 All primitives except images, C<pixel>, and C<bar_alpha> are plotted with
 antialiased edges (text is always antialiased when possible). Arcs, lines,
-paths, all of them manifest adjacent pixels being renderes with half-tones.
+paths, all of them manifest adjacent pixels being rendered with half-tones.
 
 =item *
 
@@ -237,10 +237,10 @@ between pixels 5 and 6, by using half-tones.
 
 Another note on the rounding off coordinates: historically almost all Prima
 pixel coordinates were integers, and implicit rounding of the passed numbers
-were done usinc the C<int> function, i e int(0.7)=0 and int(-0.7)=0. This then
+were done using the C<int> function, i e int(0.7)=0 and int(-0.7)=0. This then
 changed for C<polyline> and C<fillpoly>, that could accept floating point
 arrays but round them with a more consistent C<round> function, where
-round(0.7)=1 and round(-0.7)=-1. It would be cood idea to change the rounding
+round(0.7)=1 and round(-0.7)=-1. It would be a good idea to change the rounding
 for the primitives too if not for the backward compatibility.
 
 =back
@@ -377,7 +377,7 @@ C<fv::Default> specifies no interest about font type selection,
 C<fv::Bitmap> sets priority for the bitmap fonts, C<fv::Outline> for the vector fonts.
 
 Additionally, font entries returned from C<fonts> method may set C<vector> to
-C<fv::ScalableBitmap>, to distingush a bitmap font face that comes with predefined
+C<fv::ScalableBitmap>, to distinguish a bitmap font face that comes with predefined
 bitmap sets from a scalable font.
 
 
@@ -999,7 +999,7 @@ bar(), fill_chord(), fill_ellipse(), fillpoly(), fill_sector(), floodfill().
 
 Accepts either a C<fp::> constant or a reference to an array of 8 integers, or
 an image reference. In all cases, except where the image is colored, treats 0s
-in the pattern as the curently selected C<backColor>, and 1s as C<color>. When
+in the pattern as the currently selected C<backColor>, and 1s as C<color>. When
 C<rop2> is set to C<rop::NoOper>, treats 0s as fully transparent pixels.
 Additionally, in the render mode respects the C<alpha> property.
 
@@ -1113,7 +1113,7 @@ for substitution in polyfont shaping (see L</text_shape>). The fonts can be
 accessed there either by their font hash (name and style only, currently), or
 the font's corresponding index.
 
-There are two font lists used in the substituion mechanism, I<passive> and
+There are two font lists used in the substitution mechanism, I<passive> and
 I<active>. The passive font list is initiated during the toolkit start and is
 never changed. Each font there is addressed by an index. When the actual search
 for a glyph is initiated, these fonts are queried in the loop and are checked
@@ -1121,7 +1121,7 @@ if they contain the required glyphs. These queries are also cached, so that next
 time lookups run much quicker. That way, an C<active> font list is built, and
 next substitutions use it before trying to look into the passive list. Since
 the ordering of fonts is system based, and is rather random, some fonts may not be a good
-or aesthetic substition. Therefore the mapper  can assist in adding
+or aesthetic substitution. Therefore the mapper  can assist in adding
 or removing particular fonts to the active list, potentially allowing an
 application to store and load user-driven selection of substitution fonts.
 
@@ -1322,7 +1322,7 @@ by the formula:
 
 Default value is 10.0.
 
-Asssuming line join is C<lj::Miter> and line angle is 30 degrees:
+Assuming line join is C<lj::Miter> and line angle is 30 degrees:
 
 =for podview <img src="miterlimit.gif" cut=1>
 
@@ -1711,7 +1711,7 @@ The following options are supported:
 When not set, checks if the first and the last vertices point to the same
 point, and if yes, assumes a closed shape. Note - a closed shape rendering is
 implemented by adding degree minus two points to the set; this is important if
-C<weight> or C<knots> are specificed.
+C<weight> or C<knots> are specified.
 
 =item degree INTEGER = 2
 
@@ -1782,9 +1782,9 @@ an arabic text), see L<Unicode Standard Annex #9 | http://unicode.org/reports/tr
 the library only does minimal RTL alignment.
 
 Glyphs returned are positioned according to RTL directions given in TEXT using
-characters from uncode block "General Punctuation U+2000 .. U+206F".
+characters from unicode block "General Punctuation U+2000 .. U+206F".
 Additionally, character ligation may be performed so that one or more
-characters are respresented by one or more glyphs. Such syntatic units,
+characters are represented by one or more glyphs. Such syntactic units,
 I<clusters>, are adopted in Prima where appropriate, instead of character
 units, for selection, navigation etc in f.ex. C<Prima::InputLine> and
 C<Prima::Edit>. Helper routines that translate clusters, glyphs, and characters
@@ -1804,7 +1804,7 @@ cluster but are represented by two glyphs C<"A"> and C<"`">. The grave glyph
 has its own advance for standalone usage, but in this case it should be
 ignored, and that is achieved by filling advance table where the C<"A"> advance
 is the normal glyph advance, whereas the advance of the C<"`"> is zero.  Also,
-the position table additionaly shifts glyph position by X and Y coordinates,
+the position table additionally shifts glyph position by X and Y coordinates,
 when that is needed (f.ex. it might be positioned differently by the vertical axis on
 C<"a"> and C<"A">).
 
@@ -1830,7 +1830,7 @@ One of the following C<ts::XXX> options:
 =item ts::Bytes
 
 Treats input text as non-unicode locale-specific codepoints, characters higher
-than 255 are treated as chr(255).  Reordering never happens, font substition
+than 255 are treated as chr(255).  Reordering never happens, font substitution
 never happens, kerning and ligation never happens; returns glyph indexes in a
 1:1 mapping for each codepoint.
 
@@ -1849,7 +1849,7 @@ fills them with zeros.
 
 =item ts::Glyphs
 
-Applies the unicode bidi algoritm and maps the result onto font glyphs.  Ligation
+Applies the unicode bidi algorithm and maps the result onto font glyphs.  Ligation
 and kerning doesn't happen here, it's basically same as C<ts::None> but with
 the glyph mapping part. 
 
@@ -1884,7 +1884,7 @@ matching all fonts, otherwise.
 =item polyfont BOOLEAN = true
 
 If set, scans if the currently selected font supports all unicode points, and
-if not, selects a substituions from a pre-populated list, taking into account
+if not, selects a substitutions from a pre-populated list, taking into account
 the font pitch (see C<pitch> above). In cases where the current font has not
 enough glyphs to shape all the requested unicode points, font substitution is
 performed, and the result contains an extra array C<fonts> (see
@@ -2048,7 +2048,7 @@ Context used: font
 
 =item get_font_def FIRST_CHAR = -1, LAST_CHAR = -1, UNICODE = 0
 
-Same as C<get_font_abc>, but for vertical mertics. Is expensive
+Same as C<get_font_abc>, but for vertical metrics. Is expensive
 on bitmap fonts, because to find out the correct values Prima
 has to render glyphs on bitmaps and scan for black and white pixels.
 
@@ -2193,7 +2193,7 @@ See also: C<can_draw_alpha>.
 =item render_glyph INDEX, %OPTIONS
 
 Returns glyph representation as an outline. The outline is an integer array,
-formed as a set of plotting commands. Each commnds is a C<ggo::> constant,
+formed as a set of plotting commands. Each command is a C<ggo::> constant,
 followed by number of points, followed by the 2D point coordinates in 1/64 pixels.
 
 Options recognized:
@@ -2211,7 +2211,7 @@ Is set, hinting is enabled. Default is true.
 
 =item unicode BOOL
 
-If set, INDEX is threated as a utf8 character index, otherwise a locale-specific index.
+If set, INDEX is treated as a utf8 character index, otherwise a locale-specific index.
 Default is false.
 
 =back
@@ -2249,7 +2249,7 @@ to pre-fill the target image's mask with this value, if the image is an icon.
 
 =item margin XY | [ X, Y ]
 
-Set margins in X and Y pixels before applying the transformatiom
+Set margins in X and Y pixels before applying the transformation
 
 =item matrix MATRIX
 
@@ -2458,7 +2458,7 @@ wrapped line, using optional C<$OPTIONS{min_kashida}> value ( see
 L<Prima::Drawable::Glyphs/arabic_justify> ).
 
 If C<$OPTIONS{letter}> or C<$OPTIONS{word}> is set, performs interspace
-justfication on all but the last wrapped line.
+justification on all but the last wrapped line.
 
 =back
 

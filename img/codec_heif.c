@@ -240,7 +240,7 @@ item_list_alloc(ItemList** list, int n)
 
 /*
 this codec throws all found images as frame numbers.
-currently only thumbnails, but if i get my hands on heics with depth images and the like, i'll add these here as well.
+currently only thumbnails, but if i get my hands on heics with depth images and the like, I'll add these here as well.
 if f ex we have a 2-frame heic where each frame has two thumbnails, Prima treats such file as this:
 
 frame 0 -> toplevel #0
@@ -630,7 +630,7 @@ save_defaults( PImgCodec c)
 	}
 
 	pset_i(is_primary, 0);
-	pset_c(quality, "50"); /* x265.quality and aom.quality defauilt values are 50 */
+	pset_c(quality, "50"); /* x265.quality and aom.quality default values are 50 */
 	pset_i(premultiplied_alpha, 0);
 	pset_i(thumbnail_of,    -1);
 	pset_sv(metadata,  newRV_noinc((SV*) newHV()));

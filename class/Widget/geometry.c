@@ -35,7 +35,7 @@ static void Widget_place_leave( Handle self);
 pack Handle fields:
 
 	next       - available only when geometry == gtPack
-	order, in  - available always, but is guaranteedly valid when geometry == gtPack only
+	order, in  - available always, but is always valid when geometry == gtPack only
 
 	in and order cause croaks when submitted via packInfo(), but are silently
 	converted to NULL when geometry changes and the references are not valid anymore

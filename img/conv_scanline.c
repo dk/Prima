@@ -38,7 +38,7 @@ if ( r > 255) { er -= ( r - 255); r = 255; } else { er = 0; }
 #define EDIFF_END_PIXEL(red_err,gre_err,blu_err) \
 		EDIFF_END_PIXEL_EX(r-(red_err),g-(gre_err),b-(blu_err))
 
-/* Bitstroke convertors */
+/* Bitstroke converters */
 /* Mono */
 /* 1-> 16 */
 void

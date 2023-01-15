@@ -481,7 +481,7 @@ sub do_find
 				redo FIND if ($r == mb::No) && ($$p{result} == mb::ChangeAll);
 				last FIND if $r == mb::Cancel;
 			} else {
-				$self-> text( ++$replaced . " occurences replaced");
+				$self-> text( ++$replaced . " occurrences replaced");
 			}
 			$e-> set_line( $n[1], $n[3]);
 			redo FIND if $$p{result} == mb::ChangeAll;

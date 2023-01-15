@@ -106,7 +106,7 @@ read_line_end(SV *lineEnd, DrawablePaintState *state, int index)
 
 	state->line_end[index].type = (tmp_list.count == 0) ? leFlat : leCustom;
 
-	/* compactify into a single-block structure */
+	/* compact into a single-block structure */
 	if ( state->line_end[index].type == leCustom ) {
 		int j, k, sz, n;
 		PPath p;

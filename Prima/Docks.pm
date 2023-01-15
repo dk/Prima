@@ -52,7 +52,7 @@ sub check_session
 		warn("Size #$i is not an valid array"), return 0 if (ref($_) ne 'ARRAY') || ( @$_ != 2);
 	}
 	$$p{sizeable} = [0,0] unless defined $$p{sizeable};
-	warn("No 'sizes' given, and not sizeable"), return 0
+	warn("No 'sizes' given, and not sizable"), return 0
 		if (( 0 == @{$$p{sizes}}) && !$p-> {sizeable}-> [0] &&!$p-> {sizeable}-> [1]);
 	$$p{sizeMin}  = [0,0] unless defined $$p{sizeMin};
 	$$p{position} = [] unless defined $$p{position};
@@ -663,7 +663,7 @@ sub dock
 			next unless scalar @rp;
 			$_-> $prop( $last) for @rp;
 			$last += $ht;
-		#   print "adde $hmap->{$_}->[0]\n";
+		#   print "added $hmap->{$_}->[0]\n";
 		}
 		$tail = ($last > $sz[$xid]) ? ( $last - $sz[$xid]) : 0;
 		@rt = $who-> rect;

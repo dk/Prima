@@ -558,7 +558,7 @@ err_msg_gplus( GpStatus errId, char * buffer)
 	case FontFamilyNotFound        : strcpy(buffer, "GDI+ font family not found");       break;
 	case FontStyleNotFound         : strcpy(buffer, "GDI+ font style not found");        break;
 	case NotTrueTypeFont           : strcpy(buffer, "GDI+ not a TrueType font");         break;
-	case UnsupportedGdiplusVersion : strcpy(buffer, "GDI+ unsipported Gdiplus version"); break;
+	case UnsupportedGdiplusVersion : strcpy(buffer, "GDI+ unsupported Gdiplus version"); break;
 	case GdiplusNotInitialized     : strcpy(buffer, "GDI+ not initialized");             break;
 	case PropertyNotFound          : strcpy(buffer, "GDI+ property not found");          break;
 	case PropertyNotSupported      : strcpy(buffer, "GDI+ property not supported");      break;

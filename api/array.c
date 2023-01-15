@@ -151,7 +151,7 @@ prima_array_convert( int n_points, void * src, char src_type, void * _dst, char 
 	if ( _dst != NULL )
 		dst = _dst;
 	else if ( !( dst = malloc( n_points * sz))) {
-		warn("Not enought memory");
+		warn("Not enough memory");
 		return NULL;
 	}
 

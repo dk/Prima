@@ -51,7 +51,7 @@ an optional fillMode ( see L<Drawable/fillMode> ).
 =item image => IMAGE
 
 Creates a region that mirrors 1-bits in the image. If no pixels are set to 1,
-the region will be effecively empty.
+the region will be effectively empty.
 
 =back
 
@@ -77,7 +77,7 @@ Makes a copy of the REGION
 
 =item rgnop::Intersect
 
-The resulting region is an interesection of the two regions.
+The resulting region is an intersection of the two regions.
 
 =item rgnop::Union
 
@@ -129,7 +129,7 @@ Returns true if the (X,Y) point is inside the region
 
 =item rect_inside X1,Y1,X2,Y2
 
-Checks whether a rectangle given by inclusive-inclusive coordiates is inside, outside,
+Checks whether a rectangle given by inclusive-inclusive coordinates is inside, outside,
 or partially covered by the region. Return values are:
 
    rgn::Inside

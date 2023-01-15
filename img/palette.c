@@ -260,7 +260,7 @@ cm_study_palette( RGBColor * palette, int pal_size)
 
 	/* Scan for all palette entries. If the cell is empty, assign the color index to it;
 		if there is already an index, promote the cell into PAL_REF and realloc the tableset.
-		If there's alreay a PAL_REF, just go down and repeat the procesure on the next level */
+		If there's already a PAL_REF, just go down and repeat the procedure on the next level */
 	for ( i = 0; i < pal_size; i++, palette++) {
 		int table = 0, index =
 			((palette-> r >> 6) << 4) +

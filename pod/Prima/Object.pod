@@ -147,7 +147,7 @@ the error conditions can only occur in two situations. The first is a system
 error, either inside perl or Prima guts, and not much can be done here, since
 that error can very probably lead to an unstable program and almost always
 signals an implementation bug. The second reason is a caller's error, when an
-unexistent parameter key or invalid value is passed; such conditions are not
+nonexistent parameter key or invalid value is passed; such conditions are not
 subject to a runtime error handling as are not the syntax errors.
 
 After new(), the object is subject to the event flow.  As C<onCreate> event
@@ -180,7 +180,7 @@ easier.
 
 =back
 
-The typical conditions that lead to object destructions are
+The typical conditions that lead to object destruction are
 direct destroy() call, garbage collections mechanisms,
 user-initiated window close ( on C<Prima::Window> only ), and
 exception during init() stage. Thus, one must be careful implementing
@@ -409,7 +409,7 @@ where the actual callback sub will be
 Note that the naming style is different - the callback name is constructed from
 object name ( let assume that $obj's name is 'Obj') and the event name. ( This
 is one of the reasons why Component::profile_check_in() performs automatic
-naming of newly created onbjects). Note also that context objects are $self (
+naming of newly created objects). Note also that context objects are $self (
 that equals $owner ) and $obj.
 
 The delegated methods can be used not only for the owner-child relations. Every
@@ -745,12 +745,12 @@ to initiate C<cmCreate> event. Is never called directly.
 
 =over 4
 
-=item add_notification NAME, SUB, REFERER = undef, INDEX = -1
+=item add_notification NAME, SUB, REFERRER = undef, INDEX = -1
 
-Adds SUB to the list of notification of event NAME.  REFERER is the object
+Adds SUB to the list of notification of event NAME.  REFEREE is the object
 reference, which is used to create a context to SUB and is passed as a
-parameter to it when called.  If REFERER is undef ( or not specified ), the
-same object is assumed. REFERER also gets implicitly attached to the object, -
+parameter to it when called.  If REFEREE is undef ( or not specified ), the
+same object is assumed. REFEREE also gets implicitly attached to the object, -
 the implementation frees the link between objects when one of these gets
 destroyed.
 
@@ -864,8 +864,8 @@ interprocess communication scheme.
 =item get_notification NAME, @INDEX_LIST
 
 For each index in INDEX_LIST return three scalars, bound at the index position
-in the NAME event notification list.  These three scalars are REFERER, SUB and
-ID. REFERER and SUB are those passed to C<add_notification>, and ID is its
+in the NAME event notification list.  These three scalars are REFERRER, SUB and
+ID. REFERRER and SUB are those passed to C<add_notification>, and ID is its
 result.
 
 See also: C<remove_notification>, C<add_notification>.
@@ -946,9 +946,9 @@ that are shortcuts for
    $obj-> add_notification( "PostMessage", sub { ... });
 
 
-=item unlink_notifier REFERER
+=item unlink_notifier REFERRER
 
-Removes all notification subs from all event lists bound to REFERER object.
+Removes all notification subs from all event lists bound to REFERRER object.
 
 =back
 
@@ -974,12 +974,12 @@ stack.
 
 See also: L<"Success state">, C<clear_event>, L<"Events">.
 
-=item delegations [ <REFERER>, NAME, <NAME>, < <REFERER>, NAME, ... > ]
+=item delegations [ <REFERRER>, NAME, <NAME>, < <REFERRER>, NAME, ... > ]
 
 Accepts an anonymous array in I<set-> context, which consists of a list of event NAMEs,
-that a REFERER object ( the caller object by default ) is interested in.
+that a REFERRER object ( the caller object by default ) is interested in.
 Registers notification entries for routines if subs with naming scheme
-REFERER_NAME are present on REFERER name space.  The example code
+REFERRER_NAME are present on REFERRER name space.  The example code
 
    $obj-> name("Obj");
    $obj-> delegations([ $owner, 'PostMessage']);

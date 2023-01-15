@@ -99,7 +99,7 @@ sub sdlg_exec
 				if ( $i ne $self-> {current}) {
 					return if Prima::MsgBox::message_box(
 						$self-> {setupDlg}-> text,
-						"Current settings do not belong to printer \'$self->{current}\'. Procced anyway?",
+						"Current settings do not belong to printer \'$self->{current}\'. Proceed anyway?",
 						mb::Warning|mb::OKCancel) != mb::OK;
 				}
 				unless ( exists $self-> {vprinters}-> {$self-> {current}}) {

@@ -454,7 +454,7 @@ sub _save
 sub _restore
 {
 	my $self = shift;
-	$self->{curr} = pop @{ $self->{stack} } or die "stack undeflow";
+	$self->{curr} = pop @{ $self->{stack} } or die "stack underflow";
 }
 
 sub _set

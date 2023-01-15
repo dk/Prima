@@ -529,7 +529,7 @@ apc_window_get_client_size( Handle self)
 	Point p = { 0,0};
 	objCheck p;
 	if ( apc_window_get_window_state( self) == wsMinimized) {
-		// cannot acquire client extension at this time. Using euristic calculations.
+		// cannot acquire client extension at this time. Using heuristic calculations.
 		WINDOWPLACEMENT w = {sizeof(WINDOWPLACEMENT)};
 		Point delta = get_window_borders( sys s. window. border_style);
 		int   menuY  = (( PWindow) self)-> menu ? GetSystemMetrics( SM_CYMENU) : 0;
@@ -660,7 +660,7 @@ apc_window_set_client_size( Handle self, int x, int y)
 			if ( !GetClientRect( h, &c)) apiErr;
 		}
 		else {
-			// cannot acquire client extension at this time. Using euristic calculations.
+			// cannot acquire client extension at this time. Using heuristic calculations.
 			int  menuY = (( PWindow) self)-> menu ? GetSystemMetrics( SM_CYMENU) : 0;
 			int   titleY = ( sys s. window. border_icons & biTitleBar) ?
 								GetSystemMetrics( SM_CYCAPTION) : 0;
@@ -723,7 +723,7 @@ apc_window_set_client_rect( Handle self, int x, int y, int width, int height)
 			if ( !GetClientRect( h, &c)) apiErr;
 		}
 		else {
-			// cannot acquire client extension at this time. Using euristic calculations.
+			// cannot acquire client extension at this time. Using heuristic calculations.
 			int  menuY = (( PWindow) self)-> menu ? GetSystemMetrics( SM_CYMENU) : 0;
 			int   titleY = ( sys s. window. border_icons & biTitleBar) ?
 								GetSystemMetrics( SM_CYCAPTION) : 0;
@@ -929,7 +929,7 @@ apc_window_execute( Handle self, Handle insertBefore)
 				break;
 		}
 	}
-	// !!note - at this point object may be unaccessible (except var area only).
+	// !!note - at this point object may be inaccessible (except var area only).
 	return true;
 }
 

@@ -430,7 +430,7 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flag
 	if ( div <= 0) div = 1;
 	/* Win32 has problems with text_out strings that are wider than
 	32K pixel - it doesn't plot the string at all. This hack is
-	although ugly, but is better that Win32 default behaviour, and
+	although ugly, but is better that Win32 default behavior, and
 	at least can be excused by the fact that all GP spaces have
 	their geometrical limits. */
 	if ( len > div) len = div;
@@ -482,7 +482,7 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flag
 
 /*
 
-It seems that Windows decidecly doesn't shape combining characters, and
+It seems that Windows decidedly doesn't shape combining characters, and
 possibly doesn't kerning/ligatures in general for fixed width fonts. The two
 functions, fix_combiners_pdx and fix_combiners_advances try to fix for this.
 

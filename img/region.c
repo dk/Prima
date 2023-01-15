@@ -1248,7 +1248,7 @@ img_region_polygon(
     pts = Pts;
 
     if (Count < 2) {
-        DEBUG("not enought points");
+        DEBUG("not enough points");
     	return img_region_new(0);
     }
 

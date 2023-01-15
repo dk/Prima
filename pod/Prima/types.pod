@@ -4,7 +4,7 @@ Prima::types - builtin types
 
 =head1 DESCRIPTION
 
-Auxillary second-citizen classes that are not usually created manually but used
+Auxiliary second-citizen classes that are not usually created manually but used
 as results of Prima methods and accepted as inputs. These classes names can be
 distinguished that their name is started by a lower-case letter.
 
@@ -53,7 +53,7 @@ An array of 6 doubles with some helper methods attached.
 
 =item A,B,C,D,X,Y
 
-Named accessor properties for the 6 members.
+Named accessory properties for the 6 members.
 The members can just as well be accessed directly with array syntax.
 
 =item clone
@@ -66,7 +66,7 @@ Resets the matrix to identity
 
 =item inverse_transform @POINTS | $POINTS_ARRAY
 
-Applies inverse matrix tranformation to an array or arrayref of points,
+Applies inverse matrix tranformations to an array or arrayref of points,
 and returns in the same format (i e array for array, ref for ref).
 
 =item new [ @ARRAY ]
@@ -99,7 +99,7 @@ Translates the matrix
 
 =item transform @POINTS | $POINTS_ARRAY
 
-Applies matrix tranformation to an array or arrayref of points,
+Applies matrix tranformations to an array or arrayref of points,
 and returns in the same format (i e array for array, ref for ref).
 
 =back

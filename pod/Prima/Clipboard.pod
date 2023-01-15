@@ -73,7 +73,7 @@ Clipboard is viewed as a shared system resource, and has to be 'opened',
 before a process can grab it, so other processes can access the clipboard data
 only after the clipboard is 'closed' ( note: It is not so under X11, where
 there is no such thing as clipboard locking, -- but the toolkit imposes this model
-for the cosistency sake).
+for the consistency sake).
 
 C<fetch()> and C<store()> implicitly call C<open()> and C<close()>, but these
 functions must be called explicitly for the multi-format data handling. The
@@ -145,7 +145,7 @@ access the data in the same format, registered by its previous incarnation.
 
 Applications can interchange text in both ascii and utf8, leaving the selection
 choice to reader programs. While it is possible to access both at the same
-time, by C<fetch>'ing content of C<Text> and C<UTF8> clipboard slots, the wiget
+time, by C<fetch>'ing content of C<Text> and C<UTF8> clipboard slots, the widget
 proposes its own pasting scheme, where the mechanics are hidden under the
 C<text> property call. The property is advised to be used instead of
 individual C<'Text'> and C<'UTF8'> formats. This method is used in all the
@@ -191,7 +191,7 @@ the clipboard content.
 Prima registers two special I<meta formats>, C<Image> and C<Text>, that
 interoperate with the system clipboard, storing data in the format that matches
 best with system convention when copying and pasting images and text,
-correspondinly. It is recommended to use meta-format calls (has_format, text,
+correspondingly. It is recommended to use meta-format calls (has_format, text,
 image, copy, paste) rather than exact format calls (format_exists, store,
 fetch) when possible.
 

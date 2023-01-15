@@ -123,7 +123,7 @@ Widget_init( Handle self, HV * profile)
 	if ( SvTYPE( sv = pget_sv( accelItems)) != SVt_NULL)
 		my-> set_accelItems( self, sv);
 
-	/* size, position, enabling, visibliity etc. runtime */
+	/* size, position, enabling, visibility etc. runtime */
 	{
 		Point set, set2;
 		AV * av;
@@ -2055,7 +2055,7 @@ Widget_selectedWidget( Handle self, Bool set, Handle widget)
 		}
 		return NULL_HANDLE;
 
-		/* classic solution should be recursive and inheritant call */
+		/* classic solution should be recursive and inherited call */
 		/* of get_selected() here, when Widget would return state of */
 		/* child-group selected state until Widget::selected() called; */
 		/* thus, each of them would call apc_widget_get_focused - that's expensive, */

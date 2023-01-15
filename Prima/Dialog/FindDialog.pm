@@ -254,7 +254,7 @@ Prima::Dialog::ReplaceDialog to find and replace text.
 	if ( $res == mb::Ok) {
 		print $dlg-> findText, " is to be found\n";
 	} elsif ( $res == mb::ChangeAll) {
-		print "all occurences of ", $dlg-> findText,
+		print "all occurrences of ", $dlg-> findText,
 			" is to be replaced by ", $dlg-> replaceText;
 	}
 

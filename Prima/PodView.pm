@@ -1917,7 +1917,7 @@ sub export_blocks
 	$self->{$_} = $save{$_} for qw(blocks contents modelRange);
 
 	if ( $opt{trim_header}) {
-		# prune empty geads
+		# prune empty heads
 		shift @b while @b && $self->_is_block_prunable($b[0]);
 		return unless @b;
 	}

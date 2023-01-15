@@ -526,7 +526,7 @@ image_convert_for_gdi( Handle image )
 	return dup;
 }
 
-/* create a copy with given type, unless it is of this type alredy */
+/* create a copy with given type, unless it is of this type already */
 static Handle
 image_convert_to_type( Handle image, int type, Bool inplace )
 {

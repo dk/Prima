@@ -3225,7 +3225,7 @@ Horizontal offset of text lines in pixels.
 
 =item persistentBlock BOOLEAN
 
-Selects whether the selection is cancelled as soon as the cursor is moved ( 0 )
+Selects whether the selection is canceled as soon as the cursor is moved ( 0 )
 or it persists until the selection is explicitly changed ( 1 ).
 
 Default value: 0
@@ -3601,7 +3601,7 @@ Inserts @TEXT strings at LINE_ID
 =item insert_text TEXT, [ HIGHLIGHT = 0 ]
 
 Inserts TEXT at the cursor position. If HIGHLIGHT is set to 1,
-the selection block is cancelled and the newly inserted text is selected.
+the selection block is canceled and the newly inserted text is selected.
 
 =item lock_change BOOLEAN
 

@@ -748,7 +748,7 @@ fix_ffills( int type, int channels, ColorPixel fill, float * ffill )
 }
 
 
-/* Fast rotation by Paeth algortihm. Accepts grayscale images with bpp >= 8, and 24 bpp RGBs */
+/* Fast rotation by Paeth algorithm. Accepts grayscale images with bpp >= 8, and 24 bpp RGBs */
 Bool
 img_generic_rotate( Handle self, float degrees, PImage output, ColorPixel fill)
 {
@@ -1087,7 +1087,7 @@ add_offsetting( float mx, float my, ImgOpPipeline *iop)
 /* Generic 2D transform applied through LDU decomposition as series of shears and/or scaling.
    Does not fare well with inputs that create interim images that are too large, f.ex.
    rotation to angles near 90,270. So it detects rotations to cover for at least these cases,
-   and addionally checks whether 90/180/270 integral rotation can be applied. */
+   and additionally checks whether 90/180/270 integral rotation can be applied. */
 
 Bool
 img_2d_transform( Handle self, Matrix matrix, ColorPixel fill, PImage output)
@@ -1115,7 +1115,7 @@ img_2d_transform( Handle self, Matrix matrix, ColorPixel fill, PImage output)
 
 	for ( n = 0; n < iop.n_steps; n++ )
 		if ( fabs(iop.steps[n].p1) > 8192.0 || fabs(iop.steps[n].p2) > 8192.0) {
-			warn("Image.tranform: input matrix is not supported");
+			warn("Image.transform: input matrix is not supported");
 			return false;
 		}
 

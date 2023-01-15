@@ -59,7 +59,7 @@ Drawable_font_add( Handle self, Font * source, Font * dest)
 	Bool useVec    = !source-> undef. vector;
 	Bool useEnc    = !source-> undef. encoding;
 
-	/* assignning values */
+	/* assigning values */
 	if ( dest != source) {
 		dest-> undef = source-> undef;
 		if ( useHeight) dest-> height    = source-> height;

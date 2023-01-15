@@ -82,7 +82,7 @@ connected to is C<$ENV{DISPLAY}>, unless started otherwise on command line ( wit
 --display option) or with parameter to the C<XOpenDisplay> function.
 
 This technique may be useful to programs that use Prima imaging functionality
-and may or may not use windowing capabilites.
+and may or may not use windowing capabilities.
 
 =back
 
@@ -161,7 +161,7 @@ or
 syntax. Despite that these calls are different, in a way that one reaches for
 the whole class and another for the name, for the majority of these properties it
 does not matter. To avoid confusion, for all properties their names and class
-are given as C<PropetyClass.propertyname> index.
+are given as C<PropertyClass.propertyname> index.
 
 =head1 Fonts
 
@@ -361,7 +361,7 @@ contain more than one palette, and allow ( or disallow ) modification of
 palette color cells depending on a visual, the palette is attributed to.
 
 A visual is a X server resource, containing representation of color coding
-scheme, color bit depth, and modificability of the palette. X server can ( and
+scheme, color bit depth, and modifiability of the palette. X server can ( and
 usually does ) provide more than one visual, as well as different bit depths.
 There are six classes of visuals in X paradigm. In each, Prima behaves
 differently, also depending on display bit depth available.  In particular,
@@ -404,7 +404,7 @@ server cannot allocate another color.
 On C<PseudoColor> and C<GrayScale> Prima allocates a small set of colors, not
 used in palette modifications. When a bitmap is to be exported via clipboard,
 or displayed in menu, or sent to a window manager as an icon to be displayed,
-it is downgraded to using these colors only, which are though guaranteedly to
+it is downgraded to using these colors only, which are though always to
 stay permanent through life of the application.
 
 =item TrueColor
@@ -458,12 +458,12 @@ when even a non-top level widget may be influenced by a window manager, when
 for example a top-level widget was reparented into another widget, but the
 window manager is not aware or this yet.
 
-The consequences of this, as well as programming guidances are described in
+The consequences of this, as well as programming guidance are described in
 C<Prima::Window>. Here, we describe other aspects of interactions with WMs, as
 WM protocols, hints, and properties.
 
 Prima was tested with alternating success under the following window managers:
-mwm, kwin, wmaker, fvwm, fvwm2, enlightment, sawfish, blackbox, 9wm, olvm, twm,
+mwm, kwin, wmaker, fvwm, fvwm2, enlightenment, sawfish, blackbox, 9wm, olvm, twm,
 and in no-WM environment.
 
 =head2 Protocols
@@ -524,7 +524,7 @@ These, and some other problems are efficiently solved by Xft library, a
 superset of X core font functionality. Xft features Level 1 ( November 2003 )
 unicode display and supports 32-bit text strings as well as UTF8-coded strings.
 Xft does not operate with charset encodings, and these are implemented in Prima
-using iconv charset convertor library.
+using iconv charset converter library.
 
 =head2 Input
 
@@ -701,7 +701,7 @@ C<--sync> command-line argument, and can be used to ease the debugging.
 
 =head2 GTK
 
-Prima can be compiled with GTK, and can use its colos and font scheme, and
+Prima can be compiled with GTK, and can use its colors and font scheme, and
 GTK file dialogs. This can be disabled with C<--no-gtk> command line switch.
 
 On MacOSX, GTK usually comes with Quartz implementation, which means that

@@ -334,7 +334,7 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level, void * _avt)
 					break;
 				case ')':
 					if ( avt-> curr_group == 0 ) {
-						warn("group closing outside parantheses, ignoring");
+						warn("group closing outside parentheses, ignoring");
 					} else {
 						r-> group = avt->curr_group;
 						avt-> curr_group = 0;
@@ -404,7 +404,7 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level, void * _avt)
 					avt-> curr_group = save;
 
 					if ( r-> down == NULL) {
-						/* seems error was occured inside this call */
+						/* seems error was occurred inside this call */
 						my-> dispose_menu( self, m);
 						return NULL;
 					}

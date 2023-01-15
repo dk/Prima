@@ -52,7 +52,7 @@ the dialog execution.
 As noted before, top-level windows are special for the system,
 not only in their 'look', but also in 'feel': the system adds
 specific functions to the windows, aiding the user to navigate through
-the desktop. The system ofter dictates the size and position for
+the desktop. The system often dictates the size and position for
 windows, and some times these rules are hard or even impossible to
 circumvent. This document will be long if it would venture to describe the features
 of different window management systems, and the task would be
@@ -154,11 +154,11 @@ A window in modal state can return to the normal (non-modal) state by calling
 C<end_modal()> method. The window is then hidden and disabled, and the windows
 below are accessible to the user. If the window was in the exclusive modal
 state, the execute() call is finished and returns the exit code, the value of
-C<::modalResult> property. There two shortuct methods that end modal state,
+C<::modalResult> property. There two shortcut methods that end modal state,
 setting C<::modalResult> to the basic 'ok' and 'not ok' code, correspondingly
 C<ok()> and C<cancel()> methods. Behavior of C<cancel()> is identical to when
 the user closes the modal window by clicking the system close button, pressing
-Escape key, or otherwise cancelling the dialog execution. C<ok()> sets
+Escape key, or otherwise canceling the dialog execution. C<ok()> sets
 C<::modalResult> to C<mb::OK>, C<cancel()> to C<mb::Cancel>, correspondingly.
 There are more C<mb::XXX> constants, but these have no special meaning, any
 integer value can be passed. For example, C<Prima::MsgBox::message> method uses

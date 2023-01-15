@@ -1130,7 +1130,7 @@ Component_delegations( Handle self, Bool set, SV * delegations)
 				char * event = SvPV_nolen( *holder);
 
 				if ( referer == NULL_HANDLE)
-					croak("Event delegations for objects without owners must be provided with explicit referer");
+					croak("Event delegations for objects without owners must be provided with explicit referrer");
 				snprintf( buf, 1023, "%s_%s", name, event);
 				sub = query_method( referer, buf, 0);
 				if ( sub == NULL) continue;

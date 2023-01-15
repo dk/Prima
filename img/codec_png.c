@@ -428,7 +428,7 @@ process_header( PImgLoadFileInstance fi, Bool use_subloader )
 				( color_type == PNG_COLOR_TYPE_GRAY_ALPHA) &&
 				(( p.red != p.green) || (p.red != p.blue))
 			) {
-			/* backgrounding of GRAY_ALPHA with non-gray color can't be performed */
+			/* setting background of GRAY_ALPHA with non-gray color can't be performed */
 			/* into gray color space */
 				png_set_gray_to_rgb(png_ptr);
 				png_set_bgr(png_ptr);

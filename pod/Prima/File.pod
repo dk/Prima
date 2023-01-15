@@ -36,13 +36,13 @@ objects makes possible the stream operations coexist with the event loop.
 =head1 USAGE
 
 Prima::File is a descendant of Prima::Component.
-Objects of Prima::File class must be binded to a valid file handle object,
+Objects of Prima::File class must be bounded to a valid file handle object,
 before the associated events can occur:
 
   my $f = Prima::File-> create();
   $f-> file( *STDIN);
 
-When a file handle, binded via the C<::file> property becomes readable,
+When a file handle, blinded via the C<::file> property becomes readable,
 writable or when an exception signaled, one of three correspondent
 events called - C<Read>, C<Write> or C<Exception>. When a handle is
 always readable, or always writable, or, some of these events are
@@ -79,11 +79,11 @@ for the implementation details.
 
 Selects a file handle, that is to be monitored for stream I/O events.
 If HANDLE is C<undef>, object is returned to a passive state, and
-the previously binded file handle is de-selected.
+the previously bonded file handle is de-selected.
 
 =item fd INTEGER
 
-Same as file(), but to be used for file descriptiors. When this property is used,
+Same as file(), but to be used for file descriptors. When this property is used,
 consequent get-calls to file() will return undef.
 
 =item mask EVENT_MASK

@@ -362,7 +362,7 @@ DropSource__GiveFeedback(PDropSource self, DWORD effect)
 	ev.dnd.action = effect & dndMask;
 	ev.dnd.allow  = ev.dnd.action != dndNone;
 	CWidget(self->widget)->message(self->widget, &ev);
-	/* Force our cursor again, otherwise a standart IDC_NO will be slapped on */
+	/* Force our cursor again, otherwise a standard IDC_NO will be slapped on */
 	if ( !guts.dnd_default_cursors && ev.dnd.action == dndNone)
 		PostMessage( DHANDLE(self->widget), WM_DRAG_RESPONSE, 0, 0);
 	return guts.dnd_default_cursors ? DRAGDROP_S_USEDEFAULTCURSORS : S_OK;

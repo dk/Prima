@@ -1064,7 +1064,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 		meaning. Under OS/2 PM, bitmap 1's re fg and 0's are bg, and it is the job of
 		the displayer to pick fg and bg. We will pick fg=black, bg=white in the bitmap
 		file we save. If we do not write black and white, we find that most programs
-		will incorrectly honor these entries giving unpredicatable (and often black on
+		will incorrectly honor these entries giving unpredictable (and often black on
 		a black background!) results.
 		*/
 

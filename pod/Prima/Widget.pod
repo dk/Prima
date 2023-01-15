@@ -283,7 +283,7 @@ C<::top> - same as C<::rect>.
 
 When a widget is moved or resized, correspondingly two notifications
 occur: C<Move> and C<Size>. The parameters to both are old and new
-position and size. The notifications occur irrespectable to whether the
+position and size. The notifications occur irrespective to whether the
 geometry change was issued by the program itself or by the user.
 
 =head2 Implicit size regulations
@@ -463,7 +463,7 @@ Instead of implementing I<parent> property, the C<::clipOwner>
 property was devised. It is 1 by default, and if it is 1, then
 owner of a widget is its parent, at the same time. However, when it is 0, many
 things change. The widget is neither clipped nor moved together
-with its parent. The widget become parentless, or, more strictly
+with its parent. The widget become parent-less, or, more strictly
 speaking, the screen becomes its parent. Moreover,
 the widget's origin offset is calculated then not from the owner's
 coordinates but from the screen, and mouse events in the
@@ -527,7 +527,7 @@ There are other kinds of visibility. A widget might be visible,
 but one of its owners might not. Or, a widget and its owners
 might be visible, but they might be over-shadowed by the other
 windows. These conditions are returned by C<showing()> and C<exposed()>
-functions, correspondinly. These return boolean values corresponding to the
+functions, correspondingly. These return boolean values corresponding to the
 condition described. So, if a widget is 'exposed', it is
 'showing' and 'visible'; C<exposed()> returns always 0 if a widget
 is either not 'showing' or not 'visible'. If a widget is 'showing',
@@ -609,7 +609,7 @@ top-level window is not active. The default value of C<::firstClick> is 1,
 but if set otherwise, the user
 must click twice to a widget to get it focused. The property
 does not influence anything if the top-level window was already active
-when the click event occured.
+when the click event occurred.
 
 Due to different GUI designs, it is hardly possibly to force selection
 of one top-level window when the click was on the another.
@@ -629,7 +629,7 @@ key combinations circulate the focus between the widgets in same
 top-level group ( but not inside the same owner widget group ). The arrow keys,
 if the focused widget is not interested in these keystrokes, move
 the focus in the specified direction, if it is possible. The methods that
-provide the navigations are available and called C<next_tab()> and
+provide the navigation are available and called C<next_tab()> and
 C<next_positional()>, correspondingly ( see API for the details).
 
 When C<next_positional()> operates with the geometry of the widgets,
@@ -758,7 +758,7 @@ that reside under the pointer.
 The second set deals with the pointer movements. When the pointer passes over
 a widget, it receives first C<MouseEnter>, then series of C<MouseMove>,
 and finally C<MouseLeave>. C<MouseMove> and C<MouseEnter> notifications provide
-X,Y-coordinates and modificator keys; C<MouseLeave> passes no parameters.
+X,Y-coordinates and modifier keys; C<MouseLeave> passes no parameters.
 
 =item Polling
 
@@ -797,7 +797,7 @@ The clipboard can be accessed at any time by calling C< $::application->
 get_dnd_clipboard >, however during handling of dropping events it will stay
 read-only.
 
-To successfully exchange data with other applictions, one may investigate
+To successfully exchange data with other applications, one may investigate
 results of C<< $clipboard-> get_formats(1) >> to see what types of data the
 selected application can exchange. With a high probability many programs can
 exchange text and image in a system-dependent format, however it is also common
@@ -806,8 +806,8 @@ description. For example Prima supports image formats like C<image/bmp> out of
 the box, and C<text/plain> on X11, that are selected automatically when
 operating with pseudo-formats C<Text> or C<Image>. Other MIME formats like
 f.ex.  C<text/html> are not known to Prima, but can be exchanged quite easily;
-one needs to register that format first using C<Clipbpard::register_format>,
-once, and then it is ready for exachange.
+one needs to register that format first using C<Clipboard::register_format>,
+once, and then it is ready for exchange.
 
 =item Dragging
 
@@ -821,7 +821,7 @@ in order to decide whether the drag session must continue or stop depending on
 the user input, and reflect that back to the user. Traditionally, mouse cursors
 are changed to show whether an application will receive a drop, and if yes,
 what action (copy, move, or link) it will participate in. Prima will try its best
-to either use system cursors, or synthesise ones that are informative enough;
+to either use system cursors, or synthesize ones that are informative enough;
 if that is not sufficient, one may present own cursor schema (see f.ex 
 how C<begin_drag> is implemented).
 
@@ -853,7 +853,7 @@ is whether the sender or the receiver is responsible to select an action for
 available list of actions, when the user presses modifier keys, like CTRL or
 SHIFT.
 
-On X11, it is the sender that contols that aspect, and tells the receiver what
+On X11, it is the sender that controls that aspect, and tells the receiver what
 action at any given moment the user chose, by responding to a C<DragQuery>
 event. On Win32, it is the receiver that selects an action from the list on
 each C<DragOver> event, depending on modifier keys pressed by the user; Windows
@@ -914,7 +914,7 @@ C<::light3DColor> and C<::dark3DColor> is used for drawing
 3D-looking outlines of a widget. The purpose of all these properties
 is the adequate usage of the color settings, selected by the user using
 system-specific tools, so the program written with the toolkit
-would look not such different, and more or less conformant to the
+would look not such different, and more or less conforming to the
 user's color preferences.
 
 The additional C<cl::> constants, mentioned above, represent these
@@ -1010,7 +1010,7 @@ The mouse pointer is the shared resource, that can change its
 visual representation when it hovers over different kinds of widgets.
 It is usually a good practice for a text field, for example, set the
 pointer icon to a jagged vertical line, or indicate a moving window
-with a cross-arrowed pointer.
+with a cross-arrow pointer.
 
 A widget can select either one of the predefined system pointers,
 mapped by the C<cr::XXX> constant set, or supply its own pointer icon
@@ -1441,7 +1441,7 @@ See also: C<selectable>, C<selected>, C<selectedWidget>, C<KeyDown>
 
 Three properties that select geometry request size. Writing
 and reading to C<::geomWidth> and C<::geomHeight> is equivalent to
-C<::geomSize>. The properies are run-time only, and behave differently
+C<::geomSize>. The properties are run-time only, and behave differently
 under different circumstances:
 
 =over
@@ -1450,7 +1450,7 @@ under different circumstances:
 
 As the properties are run-time only, they can not be set in the profile,
 and their initial value is fetched from C<::size> property. Thus, setting the
-explicit size is aditionally sets the advised size in case the widget is
+explicit size is additionally sets the advised size in case the widget is
 to be used with the Tk geometry managers.
 
 =item *
@@ -2028,7 +2028,7 @@ for the case of a single-parameter call, in which case it is equivalent to C<<
 text => DATA >> when C<DATA> is a scalar, and to C<< image => DATA >> when C<DATA>
 is a reference.
 
-Returns -1 if a session cannot start, C<dnd::None> if it was cancelled by the
+Returns -1 if a session cannot start, C<dnd::None> if it was canceled by the
 user, or any other C<dnd::> constant when the DND receiver has selected and
 successfully performed that action. For example, after a call to C<dnd_start>
 returning C<dnd::Move> (depending on a context), the caller may remove the data
@@ -2088,7 +2088,7 @@ to be called directly from a C<MouseDown> event handler.
 
 If the drag did not happen because the user released the button or otherwise
 marked that this is not a drag, -1 is returned. In that case, the caller should
-continue to handle C<MouseDown> event as if no drag sesssion was ever started.
+continue to handle C<MouseDown> event as if no drag session was ever started.
 
 =back
 
@@ -2137,7 +2137,7 @@ Starts a drag and drop session with a combination of C<ACTIONS> allowed.  It is
 expected that a DND clipboard will be filled with data that are prepared to be
 sent to a DND receiver.
 
-Returns -1 if a session cannot start, C<dnd::None> if it was cancelled by the
+Returns -1 if a session cannot start, C<dnd::None> if it was canceled by the
 user, or any other C<dnd::> constant when the DND receiver has selected and
 successfully performed that action. For example, after a call to C<dnd_start>
 returning C<dnd::Move> (depending on a context), the called may remove the data
@@ -2167,7 +2167,7 @@ See also: C<visible>, C<showing>, C<Show>, C<Hide>
 =item fetch_resource CLASS_NAME, NAME, CLASS_RESOURCE, RESOURCE, OWNER, RESOURCE_TYPE = fr::String
 
 Returns a system-defined scalar of resource, defined by the widget hierarchy,
-its class, name and owner. RESOURCE_TYPE can be one of type qualificators:
+its class, name and owner. RESOURCE_TYPE can be one of type constants:
 
    fr::Color  - color resource
    fr::Font   - font resource
@@ -2475,7 +2475,7 @@ recognized:
 
 =item fill COLOR
 
-If set, the area is filled with COLOR, ortherwise is left intact.
+If set, the area is filled with COLOR, otherwise is left intact.
 
 =item width INTEGER
 
@@ -2677,7 +2677,7 @@ Can be called with class syntax.
 =item get_shift_state
 
 Returns a combination of C<km::XXX> constants, reflecting the currently
-pressed keyboard modificator buttons.
+pressed keyboard modifier buttons.
 
 See also: C<get_shift_state>
 
@@ -2754,7 +2754,7 @@ See also: L</Drag and Drop>, C<DragOver>, C<DragEnd>
 =item DragEnd CLIPBOARD, ACTION, MOD, X, Y, COUNTERPART, ANSWER
 
 Triggered on a received widget when the user either drops or cancels the DND
-session. In case of a cancelled drop, C<CLIPBOARD> is set to C<undef> and
+session. In case of a canceled drop, C<CLIPBOARD> is set to C<undef> and
 C<ACTION> to C<dnd::None>. On a successful drop, input data are same as on
 C<DragBegin>, and output data are to be stored in hashref C<ANSWER>, if any.
 The following answers can be stored:
@@ -2883,7 +2883,7 @@ See also: C<showHint>, C<ownerShowHint>, C<hintVisible>, C<ownerHint>
 
 Sent to the focused widget when the user presses a key.
 CODE contains an eventual character code, KEY is one of C<kb::XXX>
-constants, MOD is a combination of the modificator keys
+constants, MOD is a combination of the modifier keys
 pressed when the event occurred ( C<km::XXX> ). REPEAT
 is how many times the key was pressed; usually it is 1.
 ( see C<::briefKeys> ).
@@ -2902,7 +2902,7 @@ Some codes are aliased, like, C<kb::PgDn> and C<kb::PageDown>.
 
 =over
 
-=item Modificator keys
+=item Modifier keys
 
    kb::ShiftL   kb::ShiftR   kb::CtrlL      kb::CtrlR
    kb::AltL     kb::AltR     kb::MetaL      kb::MetaR
@@ -2941,7 +2941,7 @@ C<tabOrder>, C<tabStop>, C<accelTable>
 
 Sent to the focused widget when the user releases a key.
 CODE contains an eventual character code, KEY is one of C<kb::XXX>
-constants, MOD is a combination of the modificator keys
+constants, MOD is a combination of the modifier keys
 pressed when the event occurred ( C<km::XXX> ).
 
 See also: C<KeyDown>, C<key_up>
@@ -2970,7 +2970,7 @@ Called when a mouse click ( button is pressed, and then
 released within system-defined interval of time ) is
 happened in the widget area. BUTTON is one of C<mb::XXX>
 constants, MOD is a combination of C<km::XXX> constants,
-reflecting pressed modificator keys during the event,
+reflecting pressed modifier keys during the event,
 X and Y are the mouse pointer coordinates. NTH
 is an integer, set to 0 if it was a single click,
 and to 2 and up if it was a double (triple etc etc) click.
@@ -2993,7 +2993,7 @@ C<MouseMove>, C<MouseEnter>, C<MouseLeave>
 
 Occurs when the user presses mouse button on a widget.
 BUTTON is one of C<mb::XXX> constants, MOD is a combination of
-C<km::XXX> constants, reflecting the pressed modificator keys during the event,
+C<km::XXX> constants, reflecting the pressed modifier keys during the event,
 X and Y are the mouse pointer coordinates.
 
 See also: C<MouseUp>, C<MouseClick>, C<MouseWheel>,
@@ -3004,7 +3004,7 @@ C<MouseMove>, C<MouseEnter>, C<MouseLeave>
 Occurs when the mouse pointer is entered the area occupied by a widget
 ( without mouse button pressed ).
 MOD is a combination of  C<km::XXX> constants, reflecting
-the pressed modificator keys during the event,
+the pressed modifier keys during the event,
 X and Y are the mouse pointer coordinates.
 
 See also: C<MouseDown>, C<MouseUp>, C<MouseClick>, C<MouseWheel>,
@@ -3022,7 +3022,7 @@ C<MouseMove>, C<MouseEnter>
 
 Occurs when the mouse pointer is transported over a widget.
 MOD is a combination of  C<km::XXX> constants, reflecting
-the pressed modificator keys during the event,
+the pressed modifier keys during the event,
 X and Y are the mouse pointer coordinates.
 
 See also: C<MouseDown>, C<MouseUp>, C<MouseClick>, C<MouseWheel>,
@@ -3032,7 +3032,7 @@ C<MouseEnter>, C<MouseLeave>
 
 Occurs when the user depresses mouse button on a widget.
 BUTTON is one of C<mb::XXX> constants, MOD is a combination of
-C<km::XXX> constants, reflecting the pressed modificator keys during the event,
+C<km::XXX> constants, reflecting the pressed modifier keys during the event,
 X and Y are the mouse pointer coordinates.
 
 See also: C<MouseDown>, C<MouseClick>, C<MouseWheel>,
@@ -3041,7 +3041,7 @@ C<MouseMove>, C<MouseEnter>, C<MouseLeave>
 =item MouseWheel MOD, X, Y, INCR
 
 Occurs when the user rotates mouse wheel on a widget.  MOD is a combination of
-C<km::XXX> constants, reflecting the pressed modificator keys during the event,
+C<km::XXX> constants, reflecting the pressed modifier keys during the event,
 INCR is the wheel movement, scaled by 120.  +120 is a step upwards, or -120
 downwards.  For wheels which are discrete button clicks INCR is +/-120 but
 other devices may give other amounts.  A widget should scroll by INCR/120 many

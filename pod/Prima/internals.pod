@@ -31,7 +31,7 @@ It is ( arguably ) easier to write cl::White rather than Prima::cl::White.
 As perl constants are functions to be called once ( that means that a constant's
 value is not defined until it used first ), Prima registers these functions
 during boot_Prima stage. As soon as perl code tries to get a constant's value,
-an AUTOLOAD function is called, which is binded inside Prima::Const.
+an AUTOLOAD function is called, which is banded inside Prima::Const.
 Constants are widely used both in C and perl code, and are defined in apricot.h
 in that way so perl constant definition comes along with C one.
 As an example file event constants set is described here.
@@ -61,7 +61,7 @@ fe::Read in perl.
 =head2 Virtual method tables
 
 Prima implementation of classes uses virtual method tables, or VMTs, in order to
-make the classes inheritable and their methods overrideable. The VMTs are
+make the classes inheritable and their methods overridable. The VMTs are
 usual C structs, that contain pointers to functions.
 Set of these functions represents a class. This chapter is not about OO
 programming, you have to find a good book on it if you are not familiar with
@@ -341,7 +341,7 @@ freeing the return value.
 
 =head2 Exceptions
 
-As descriped in L<perlguts> manpage, G_EVAL flag is used
+As described in L<perlguts> manpage, G_EVAL flag is used
 in perl_call_sv() and perl_call_method() to indicate that
 an eventual exception should never be propagated automatically.
 The caller checks if the exception was taken place by
@@ -639,7 +639,7 @@ Returns VMT pointer associated with class by name.
  Handle( SV * perlObject)
 
 Returns a C pointer to an object, if perlObject is a reference to a
-Prima object. returns nilHandle if object's stage is csDead
+Prima object. returns NULL_HANDLE if object's stage is csDead
 
 =item gimme_the_real_mate
 
@@ -793,7 +793,7 @@ Used in notifications mechanism.
  Handle( char * className, HV * profile);
 
 Creates an exemplar of className class with parameters
-in profile. Never returns nilHandle, throws an exception
+in profile. Never returns NULL_HANDLE, throws an exception
 instead.
 
 =item create_object
@@ -955,7 +955,7 @@ its position or -1 on error.
 
  Handle ( PList self, int index);
 
-Returns items that is located at given index or nilHandle
+Returns items that is located at given index or NULL_HANDLE
 if the index is out of range.
 
 =item list_delete

@@ -348,14 +348,14 @@ put a constant alpha value over a rectangle is this, for example:
 If displaying a picture with pre-existing alpha channel, you'll need to call
 L<premultiply_alpha>, because picture renderer assumes that pixel values are premultiplied.
 
-Even though addressing alpha values of pixels when drawing on layered surfaces is not straighforward,
+Even though addressing alpha values of pixels when drawing on layered surfaces is not straightforward,
 the conversion between images and device bitmaps fully supports alpha pixels. This means that:
 
 * When drawing on an icon with 8-bit alpha channel (I<argb> icon), any changes to alpha
 values of pixels will be transferred back to the mask property after C<end_paint>
 
 * Calls to C<icon> function on DeviceBitmap with type C<dbt::Layered> produce identical
-argb icons. Calls to C<bitmap> on argb icos produce identical layered device bitmaps.
+argb icons. Calls to C<bitmap> on argb icons produce identical layered device bitmaps.
 
 * Putting argb icons and layered device bitmap on other drawables yields identical
 results.
@@ -422,7 +422,7 @@ converted to a 1-bit image, the following results occur:
      [ 0 0 0 0 ]
      [ 0 0 0 0 ]
 
-Values of these constants are made from L<Prima::Const/ictp::> and L<Prima::Const/ictd::> constansts.
+Values of these constants are made from L<Prima::Const/ictp::> and L<Prima::Const/ictd::> constants.
 
 =for podview <img src="conversions.gif">
 
@@ -505,10 +505,10 @@ Can be one of C<ist:::XXX> constants:
                    columns will behave same as in ist::Box
   ist::AND       - when row or columns is to be shrunk, leftover pixels
                    will be AND-end together (for black on white)
-		   ( does not work for floating poing pixels )
+		   ( does not work for floating point pixels )
   ist::OR        - when row or columns is to be shrunk, leftover pixels
                    will be OR-end together (for white on black)
-		   ( does not work for floating poing pixels )
+		   ( does not work for floating point pixels )
   ist::Triangle  - bilinear interpolation
   ist::Quadratic - 2rd order (quadratic) B-Spline approximation of Gaussian
   ist::Sinc      - sine function
@@ -701,7 +701,7 @@ is used as a transparency value.
 =item maskIndex INDEX
 
 When C<::autoMasking> set to C<am::MaskIndex>, INDEXth
-color in teh current palette is used as a transparency value.
+color in the current palette is used as a transparency value.
 
 =item maskLineSize INTEGER
 
@@ -738,7 +738,7 @@ bitmaps always have bit depth of 1, layered bitmaps have bit depth of 32.
 
 =item bar X1, Y1, X2, Y2
 
-Outside the paint state uses owen implementation for drawing a rectangular shape.
+Outside the paint state uses own implementation for drawing a rectangular shape.
 The following properties are respected: C<color>, C<backColor>, C<rop>,
 C<rop2>, C<fillPattern>, C<fillPatternOffset>, C<region>. C<rop2> accepts
 either C<rop::CopyPut> or C<rop::NoOper> values, to produce either opaque or
@@ -906,7 +906,7 @@ Returns encoded content on success, or C<undef> on failure; C<$@> is set in the 
 
 =item scanline Y
 
-Returns a scaline from Y in the same raw format as C<data>
+Returns a scanline from Y in the same raw format as C<data>
 
 =item shear X, Y
 
@@ -940,7 +940,7 @@ Tries first to split matrix into series of shear and scale transforms using LDU
 decomposition; if an interim image is calculated to be too large, fails and
 returns C<false>.
 
-The last two members (X and Y translation) only use mantisse and ignore the
+The last two members (X and Y translation) only use mantissa and ignore the
 rest, so setting them f ex to 10.5 will not produce an image 11 pixels larger,
 but only 1.  The translation is thus effectively sub-pixel.
 
@@ -976,7 +976,7 @@ L<Prima::Dialog::ImageDialog/load> for suggested use.
 =item HeaderReady EXTRAS
 
 Called whenever image header is read, and image dimensions and pixel type
-is changed accordingly to accomodate image data.
+is changed accordingly to accommodate image data.
 
 C<EXTRAS> is the hash to be stored later in C<{extras}> key on the object.
 

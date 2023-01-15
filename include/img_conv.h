@@ -293,7 +293,7 @@ extern void rs_Long_Byte( Handle self, Byte * dstData, int dstType, double srcLo
 extern void rs_float_Byte( Handle self, Byte * dstData, int dstType, double srcLo, double srcHi, double dstLo, double dstHi);
 extern void rs_double_Byte( Handle self, Byte * dstData, int dstType, double srcLo, double srcHi, double dstLo, double dstHi);
 
-/* extra convertors */
+/* extra converters */
 extern void bc_irgb_rgb( Byte * source, Byte * dest, int count);
 extern void bc_ibgr_rgb( Byte * source, Byte * dest, int count);
 extern void bc_bgri_rgb( Byte * source, Byte * dest, int count);

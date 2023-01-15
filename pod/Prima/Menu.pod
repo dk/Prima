@@ -81,7 +81,7 @@ require an item name. If not given, or empty, item name is assigned a string in
 a form '#ID' where ID is the unique integer value within the menu object.
 
 IDs are set for each menu item, disregarding whether they have names or not.
-Any menu item can be uniquely identifed by its ID value, by supplying the '#ID'
+Any menu item can be uniquely identified by its ID value, by supplying the '#ID'
 string, in the same fashion as named menu items.  When creating or copying menu
 items, names in format '#ID' are not accepted, and treated as if an empty
 string is passed. When copying menu items to another menu object, all menu
@@ -102,7 +102,7 @@ method.
 
 =item C<@> - item is using auto-toggling
 
-=item C<?> - item is customly drawn
+=item C<?> - item is custom drawn
 
 Expects C<onMeasure> and C<onPaint> callbacks in C<options>
 
@@ -162,7 +162,7 @@ a key value to a string in human-readable format.
 =item Hot key
 
 An integer value, combined from either C<kb::XXX> constant or
-a character index with modificator key values ( C<km::XXX> constant ).
+a character index with modifier key values ( C<km::XXX> constant ).
 This representation format is not that informative as three-integer
 key event format (CODE,KEY,MOD), described in L<Prima::Widget>.
 However, these formats are easily converted to each other:
@@ -173,7 +173,7 @@ method.
 
 The integer value can be given in a some more readable format
 when submitting to C<::items>. Character and F-keys (from F1 to F16)
-can be used literally, without C<kb::> prepending, and the modificator
+can be used literally, without C<kb::> prepending, and the modifier
 keys can be hinted as prefix characters: km::Shift as '#',
 km::Ctrl as '^' and km::Alt as '@'. This way, combination of
 'control' and 'G' keys can be expressed as C<'^G'> literal,
@@ -512,7 +512,7 @@ Default value: 1
 =item autoToggle NAME, SCALAR / Prima::MenuItem::autoToggle SCALAR.
 
 Manages autoToggle flag for a menu item. When set, C<checked> option is flipped
-when user selects the item. Also, un the unchecked state the system displays an
+when user selects the item. Also, in the unchecked state the system displays an
 empty check box icon where normally a check icon would appear, to hint the user
 that an item is a toggle, despite being unchecked.
 
@@ -602,7 +602,7 @@ implicit hot-key lookup when on C<KeyDown> event.
 
 Default value: 1
 
-=item submenu NAME, ARRAY / Prima::MenuItem::submeny ARRAY
+=item submenu NAME, ARRAY / Prima::MenuItem::submenu ARRAY
 
 Manages submenu, if present on the item. On reading, is equivalent
 to C<get_items(NAME, 1)>. On writing, removes all items under NAME
@@ -776,7 +776,7 @@ Sets menu item in unchecked state.
 =item Change ACTION [, NAME [, VALUE ]]
 
 Triggered when structure of the menu tree is changed. ACTION is the method call that triggered that action, and NAME
-is the menu item namem, when applicable. If empty string, means root. VALUE is the new value, if applicable.
+is the menu item name, when applicable. If empty string, means root. VALUE is the new value, if applicable.
 
 =item ItemMeasure ITEMID, REF
 

@@ -26,7 +26,7 @@ Prima was started on OS/2, where Tk didn't really run. We have had two options
 existing tools.  We believe that we've succeeded.
 
 Interestingly enough, Prima still builds for OS/2 (as of July 2012), but its support
-was killed because noone needs it anyway.
+was killed because no one needs it anyway.
 
 =head2 Why Perl?
 
@@ -117,9 +117,9 @@ libraries:
    libwebp,libwebpdemux,libwebpmux  - WebP images
 
 Strawberry perl and Cygwin come with most of them, so on these installations Prima just
-compiles without any throuble. For other perl builds, use one of C<Prima::codecs::>
+compiles without any trouble. For other perl builds, use one of C<Prima::codecs::>
 modules that contains the needed include and lib files. If you're installing Prima
-through CPAN, that gets done authomatically.
+through CPAN, that gets done automatically.
 
 =head2 img/codec_XXX.c compile error
 
@@ -411,15 +411,15 @@ only viable if calculations can be quantized into relatively short time frames.
 The generic solution would be harder to implement and debug, but it scales
 well. The idea is to fork a process, and communicate with it via its stdin
 and/or stdout ( see L<perlipc> how to do that), and use L<Prima::File> to
-asyncronously read data passed through a pipe or a socket.
+asynchronously read data passed through a pipe or a socket.
 
-Note: Win32 runtime library does not support asynchronous pipes, only asyncronous sockets.
-Cygwin does support both asyncronous pipes and sockets.
+Note: Win32 runtime library does not support asynchronous pipes, only asynchronous sockets.
+Cygwin does support both asynchronous pipes and sockets.
 
 =head2 How do I use Prima with AnyEvent or POE ?
 
 L<AnyEvent> kind of knows about Prima, so if Prima is loaded then AnyEvent promises 
-to detect it and load the corresponside backend.
+to detect it and load the corresponding backend.
 
 If that doesn't work, the AnyEvent::Impl::Prima module is there in cpan.
 
@@ -489,7 +489,7 @@ $TabbedNotebook-> Notebook-> MyButton >>.
 Take a look at L<Prima::IPA>, L<Prima::OpenGL>, L<Prima::Image::Magick>, L<PDL::PrimaImage>,
 and L<PDL::Drawing::Prima> . These modules compile against Prima dynamic module,
 start from there. Note - it's important to include PRIMA_VERSION_BOOTCHECK in the "BOOT:"
-section, to avoid binary incompatibilites, if there should be any.
+section, to avoid binary incompatibilities, if there should be any.
 
 =head2 How do I generate Prima executables with PAR?
 
