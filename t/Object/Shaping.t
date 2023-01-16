@@ -11,6 +11,13 @@ my %opt;
 my %glyphs;
 my $high_unicode_char;
 
+@ARGV = map {
+	m/^font=(.*)$/ ? ( do {
+		$opt{font} = $1;
+		()
+	}) : $_
+} @ARGV;
+
 sub xtr($)
 {
 	my $xtr = shift;
@@ -69,7 +76,7 @@ sub comp
 		((ref($got) // '') eq 'ARRAY') &&
 		((ref($exp) // '') eq 'ARRAY') &&
 		@$got == @$exp;
-	
+
 	for ( my $i = 0; $i < @$got; $i++) {
 		goto FAIL if ($got->[$i] // '<undef>') ne ($exp->[$i] // '<undef>');
 	}
@@ -190,6 +197,8 @@ sub find_high_unicode_font
 {
 	my $c = find_high_unicode_char($w->font);
 	return $c if defined $c;
+	return undef if defined $opt{font};
+
 	my @f = @{$::application->fonts};
 	for my $f ( @f ) {
 		next unless $f->{vector};
@@ -205,6 +214,7 @@ sub find_vector_font
 {
 	my $find_char = shift;
 	return 1 if find_char($w->font, $find_char);
+	return 0 if defined $opt{font};
 
 	my $got_rtl;
 	my $found;
@@ -243,6 +253,7 @@ sub find_shaping_font
 {
 	my $glyphs = shift;
 	return 1 if find_glyphs($w->font, $glyphs);
+	return 0 if defined $opt{font};
 
 	my $got_rtl;
 	my $found;
@@ -604,6 +615,7 @@ sub run_test
 	my $unix = shift;
 
 	$w = Prima::DeviceBitmap-> create( type => dbt::Pixmap, width => 32, height => 32);
+	$w->font->name( $opt{font}) if defined $opt{font};
 	my $found = find_vector_font(xtr('A'));
 
 	my $z = $w-> text_shape( "1", polyfont => 0 );
@@ -639,10 +651,12 @@ if ( Prima::Application-> get_system_info->{apc} == apc::Unix ) {
 	} else {
 		my %options = Prima::options();
 		my @opt = grep { m/^no-(fribidi|harfbuzz|xft)$/ } sort keys %options;
+		my @xargv;
+		push @xargv, "font=$opt{font}" if defined $opt{font};
 		for ( my $i = 0; $i < 2 ** @opt; $i++) {
 			my @xopt = map { "--$_" } @opt[ grep { $i & (1 << $_) } 0..$#opt ];
 			my @inc  = map { "-I$_" } @INC;
-			for ( split "\n", `$^X @inc $0 @xopt TEST 2>&1`) {
+			for ( split "\n", `$^X @inc $0 @xopt @xargv TEST 2>&1`) {
 				if (m/^(ok|not ok)\s+\d+(.*)/) {
 					my ( $ok, $info ) = ( $1 eq 'ok', $2);
 					if ( $info =~ /# skip (.*)/) {
