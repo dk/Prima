@@ -32,7 +32,7 @@ ok($db->polyline( $p2));
 
 $p2 = Prima::array->new_double;
 push @$p2, -2.0, -1.9, -1.1, -0.9, -0.5, -0.25, -0.0, 0.0, 0.25, 0.5, 0.9, 1.1, 1.9, 2.0;
-my @ref = map { Prima::Utils::floor($_ + .5) } @$p2;
+my @ref = Prima::Utils::nearest_i(@$p2);
 my $tst = Prima::Drawable->render_polyline($p2, integer => 1);
 is_deeply(\@ref, $tst);
 

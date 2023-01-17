@@ -26,17 +26,6 @@ Utils_get_gui(void)
 	return apc_application_get_gui_info( NULL, 0, NULL, 0);
 }
 
-long Utils_ceil( double x)
-{
-	return ceil( x);
-}
-
-long Utils_floor( double x)
-{
-	return floor( x);
-}
-
-
 XS(Utils_nearest_i_FROMPERL)
 {
 	dXSARGS;
@@ -89,7 +78,7 @@ XS(Utils_nearest_d_FROMPERL)
 		SPAGAIN;
 		SP -= items;
 		if ( !SvROK(x)) {
-			XPUSHs( sv_2mortal( newSVnv( floor( SvNV(x) * 1.0e15 + .5 ) / 1.0e15 ) ));
+			XPUSHs( sv_2mortal( newSVnv( Perl_floor( SvNV(x) * 1.0e15 + .5 ) / 1.0e15 ) ));
 		}
 		else if ( SvTYPE( x = SvRV(x) ) != SVt_PVAV ) {
 			XPUSHs( NULL_SV );
@@ -103,7 +92,7 @@ XS(Utils_nearest_d_FROMPERL)
 				SV **h;
 				if ( !( h = av_fetch(sav, i, 0)) || !SvOK(*h))
 					break;
-				av_push(dav, newSVnv( floor(SvNV(*h) * 1.0e15 + .5) / 1.0e15 ));
+				av_push(dav, newSVnv( Perl_floor(SvNV(*h) * 1.0e15 + .5) / 1.0e15 ));
 			}
 			XPUSHs( sv_2mortal( newRV_noinc((SV*) dav) ));
 		}
@@ -113,7 +102,7 @@ XS(Utils_nearest_d_FROMPERL)
 		SP -= items;
 		EXTEND( sp, items );
 		for ( i = 0; i < items; i++ )
-			PUSHs( sv_2mortal( newSVnv( floor(SvNV(ST(i)) * 1.0e15 + .5) / 1.0e15 )));
+			PUSHs( sv_2mortal( newSVnv( Perl_floor(SvNV(ST(i)) * 1.0e15 + .5) / 1.0e15 )));
 	}
 	PUTBACK;
 	return;
