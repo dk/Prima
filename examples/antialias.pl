@@ -35,7 +35,9 @@ $w = Prima::MainWindow->new(
 	onPaint  => sub {
 		my ( $self, $canvas) = @_;
 		$canvas-> clear;
+		$canvas-> fillPattern(fp::CloseDot);
 		$canvas-> new_path(antialias => 1)-> ellipse(100,100,100)->fill;
+		$canvas-> fillPattern(fp::Solid);
 		$canvas->lineWidth(5);
 		$canvas-> new_aa_surface(alpha => 128)-> polyline([ 0, 0, $canvas->size ]);
 

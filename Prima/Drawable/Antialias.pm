@@ -130,7 +130,6 @@ sub fillpoly
 
 	my $canvas = $self->{canvas};
 	$mode //= $self->{canvas}->fillMode;
-	$mode &= ~fm::Overlay; # very slow otherwise due to manual region patch
 	$poly = Prima::Drawable->render_polyline( $poly,
 		matrix => [$self->{factor},0,0,$self->{factor},0,0],
 		integer => 1
