@@ -142,11 +142,23 @@ sub fillpoly
 
 	my $bitmap = $self->alloc_surface($w, $h) or goto FALLBACK;
 	$bitmap->region( $rgn );
-	$bitmap->set( map { $_ => $canvas->$_() } qw(fillPattern) );
-	my @fp = $canvas->fillPatternOffset;
-	$fp[0] -= $x;
-	$fp[1] -= $y;
-	$bitmap->fillPatternOffset(@fp);
+
+	my $fp = $canvas->fillPattern;
+	if ( !fp::is_solid($fp) && !fp::is_empty($fp) ) {
+		$fp = Prima::Image->new(
+			type     => im::BW,
+			size     => [8,8],
+			data     => join('000', map { chr } @$fp),
+		) if ref($fp) eq 'ARRAY';
+		$fp = $fp->clone( size => [ map { $_ * $self->{factor} } $fp-> size ] );
+		$bitmap->fillPattern($fp);
+
+		my @fp = $canvas->fillPatternOffset;
+		$fp[0] -= $x * $self->{factor};
+		$fp[1] -= $y * $self->{factor};
+		$bitmap->fillPatternOffset(@fp);
+	}
+
 	$bitmap->bar( 0, 0, $bitmap->size);
 	return $self->apply_surface($x, $y, $bitmap);
 
