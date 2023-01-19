@@ -502,8 +502,8 @@ sub fillPattern
 	my $fpid;
 
 	if( (ref($fp) // '') eq 'ARRAY') {
-		$solidBack = ! grep { $_ != 0    } @$fp;
-		$solidFore = ! grep { $_ != 0xff } @$fp;
+		$solidBack = fp::is_empty($fp);
+		$solidFore = fp::is_solid($fp);
 		my @scaleto = $self-> pixel2point( 8, 8);
 		if ( !$solidBack && !$solidFore) {
 			$fpid = join( '', map { sprintf("%02x", $_)} @$fp);

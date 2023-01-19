@@ -80,6 +80,45 @@ package
     lp; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# line pen styles
 package
     fp; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# fill styles & font pitches
+
+sub patterns
+{
+	use bytes;
+	return (
+		"\x{00}\x{00}\x{00}\x{00}\x{00}\x{00}\x{00}\x{00}",
+		"\x{FF}\x{FF}\x{FF}\x{FF}\x{FF}\x{FF}\x{FF}\x{FF}",
+		"\x{00}\x{00}\x{FF}\x{FF}\x{00}\x{00}\x{FF}\x{FF}",
+		"\x{80}\x{40}\x{20}\x{10}\x{08}\x{04}\x{02}\x{01}",
+		"\x{70}\x{38}\x{1C}\x{0E}\x{07}\x{83}\x{C1}\x{E0}",
+		"\x{E1}\x{C3}\x{87}\x{0F}\x{1E}\x{3C}\x{78}\x{F0}",
+		"\x{4B}\x{96}\x{2D}\x{5A}\x{B4}\x{69}\x{D2}\x{A5}",
+		"\x{88}\x{88}\x{88}\x{FF}\x{88}\x{88}\x{88}\x{FF}",
+		"\x{18}\x{24}\x{42}\x{81}\x{18}\x{24}\x{42}\x{81}",
+		"\x{33}\x{CC}\x{33}\x{CC}\x{33}\x{CC}\x{33}\x{CC}",
+		"\x{00}\x{08}\x{00}\x{80}\x{00}\x{08}\x{00}\x{80}",
+		"\x{00}\x{22}\x{00}\x{88}\x{00}\x{22}\x{00}\x{88}",
+		"\x{aa}\x{55}\x{aa}\x{55}\x{aa}\x{55}\x{aa}\x{55}",
+		"\x{aa}\x{ff}\x{aa}\x{ff}\x{aa}\x{ff}\x{aa}\x{ff}",
+		"\x{51}\x{22}\x{15}\x{88}\x{45}\x{22}\x{54}\x{88}",
+		"\x{02}\x{27}\x{05}\x{00}\x{20}\x{72}\x{50}\x{00}",
+	);
+	no bytes;
+}
+
+sub builtin
+{
+	return undef unless ref($_[0]) eq 'ARRAY';
+	my $fp = join('', map { chr } @{ $_[0] });
+	my @pt = patterns;
+	for ( my $i = 0; $i < @pt; $i++) {
+		return $i if $pt[$i] eq $fp;
+	}
+	return undef;
+}
+
+sub is_solid { ref($_[0]) eq 'ARRAY' ? !grep { $_ != 0xff } @{$_[0]} : 0 }
+sub is_empty { ref($_[0]) eq 'ARRAY' ? !grep { $_ != 0x00 } @{$_[0]} : 0 }
+
 package
     le; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# line ends
 
@@ -616,6 +655,30 @@ See L<Prima::Drawable/fillPattern>
 	fp::SimpleDots
 	fp::Borland
 	fp::Parquet
+
+=over
+
+=item builtin $FILL_PATTERN
+
+Given a result from C<Drawable::fillPattern>, a 8x8 array of integers, checks whether the array matches
+one of the builtin C<fp::> constants, and returns one if found. Returns undef otherwise.
+
+=item is_empty $FILL_PATTERN
+
+Given a result from C<Drawable::fillPattern>, a 8x8 array of integers, checks whether the array consists
+strictly of zeros, or not.
+
+=item is_solid $FILL_PATTERN
+
+Given a result from C<Drawable::fillPattern>, a 8x8 array of integers, checks whether the array consists
+strictly of ones, or not.
+
+=item patterns
+
+Returns set of string-encoded fill patterns that correspond to builtin C<fp::> constants.
+These are not suitable for use in C<Drawable::fillPatterns>.
+
+=back
 
 =head2 fp::  - font pitches
 

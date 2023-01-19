@@ -816,8 +816,8 @@ sub fillPattern
 	my ($solidBack, $solidFore) = (0,0);
 	my $xid;
 	if( (ref($fp) // '') eq 'ARRAY') {
-		$solidBack = ! grep { $_ != 0    } @$fp;
-		$solidFore = ! grep { $_ != 0xff } @$fp;
+		$solidBack = fp::is_empty($fp);
+		$solidFore = fp::is_solid($fp);
 		if ( !$solidBack && !$solidFore) {
 			my $fpid = join( '', map { sprintf("%02x", $_)} @$fp);
 			$xid  = $self-> emit_pattern($fpid, $fp);

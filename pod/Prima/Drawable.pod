@@ -1041,7 +1041,11 @@ There are some predefined patterns, that can be referred via C<fp::> constants:
 ( the actual patterns are hardcoded in primguts.c )
 The default pattern is fp::Solid.
 
-On a get-call, does not return the C<fp::> value but the corresponding array (see below).
+On a get-call, does not return the C<fp::> value but the corresponding array
+(see below).  If a constant value is needed to be recovered, use C<fp::builtin>
+function that would return the constant from the array. There is also two
+shortcut functions, C<fp::is_solid> and C<fp::is_empty> that check if the fill
+pattern is all-ones or all-zeros, correspondingly.
 
 =item Array
 
