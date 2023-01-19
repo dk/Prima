@@ -1067,8 +1067,10 @@ An example below shows encoding of fp::Parquet pattern:
 
 =item Monochrome image
 
-Like the I<array> above, wants an image consisting of 0s and 1s where these would represent
-canvas color and backColor, when rendered.
+Like the I<array> above, wants an image consisting of 0s and 1s where these
+would represent canvas' C<backColor> and C<color>, correspondinly, when
+rendered. In the same fashion, when C<rop2> is set to C<rop::NoOper>, zeros
+will be treated as transparent pixels.
 
 =item Color image
 
