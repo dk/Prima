@@ -995,7 +995,7 @@ img_bar_tile( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 	PImage i = (PImage) dest;
 	PImage t = (PImage)ctx->tile;
 	TileCallbackRec tx;
-	Byte colormap[256];
+	Byte colormap[256], bpp;
 	Handle orig_tile = ctx->tile;
 	Bool ok;
 	TileCallbackFunc *tiler;
@@ -1026,7 +1026,8 @@ img_bar_tile( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 		t = (PImage) ctx->tile;
 	}
 
-	switch (i-> type & imBPP ) {
+	bpp = i-> type & imBPP;
+	switch (bpp) {
 	case 1:
 		tiler = put1;
 		break;
@@ -1038,18 +1039,19 @@ img_bar_tile( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 	}
 
 	if (
-		i->palSize != t->palSize ||
-		memcmp( t->palette, i->palette, i->palSize * 3) != 0
+		(bpp <= 8) && (
+			i->palSize != t->palSize ||
+			memcmp( t->palette, i->palette, i->palSize * 3) != 0
+		)
 	) {
 		cm_fill_colorref(
 			t-> palette, t-> palSize,
 			i-> palette, i-> palSize,
 			colormap);
-		if (( PImage( dest)-> type & imBPP) == 4 )
+		if (bpp == 4 )
 			cm_colorref_4to8( colormap, colormap );
 		tx.colormap = colormap;
 	}
-
 	tx.blt = img_find_blt_proc(ctx->rop);
 	ok = tile( x, y, w, h, tiler, &tx);
 
