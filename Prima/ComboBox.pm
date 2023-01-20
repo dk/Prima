@@ -143,10 +143,9 @@ sub init
 		%{$profile{editProfile}},
 	);
 
-	if ( $self->{autoHeight} && $self->{style} != cs::Simple) {
-		$self->check_auto_size;
-		( $w, $h) = ( $self-> size);
-		$eh = $self-> geomHeight;
+	if ( $self->{autoHeight} ) {
+		$eh = $self-> {edit}-> default_geom_height
+			if $self->{edit}->can('default_geom_height');
 		$self->{edit}->set( height => $eh, bottom => $h - $eh );
 	}
 
@@ -551,42 +550,51 @@ sub set_style
 	return if $self-> {style} == $style;
 	my $decr = (( $self-> {style} == cs::Simple) || ( $style == cs::Simple)) ? 1 : 0;
 	$self-> {style} = $style;
+
+	my $eh = $self->editHeight;
+	my $lh = $self->listHeight;
+	if ( $self->{autoHeight} ) {
+		$self->check_auto_size;
+		$eh = $self-> geomHeight;
+		$lh = $eh if $style != cs::Simple;
+	}
+
 	if ( $style == cs::Simple) {
 		$self-> set(
-			height=> $self-> height + $self-> listHeight,
-			bottom=> $self-> bottom - $self-> listHeight,
+			height=> $self-> height + $lh,
+			bottom=> $self-> bottom - $lh,
 		);
 		$self-> {list}-> set(
 			visible    => 1,
 			origin     => [ 0, 0],
 			width      => $self-> width,
-			height     => $self-> height - $self-> editHeight ,
+			height     => $self-> height - $eh,
 			clipOwner  => 1,
 			selectable => 1,
 		);
 	} elsif ( $decr) {
 		$self-> set(
-			height   => $self-> height - $self-> listHeight,
-			bottom   => $self-> bottom + $self-> listHeight,
+			height   => $self-> height - $lh,
+			bottom   => $self-> bottom + $lh,
 		);
 		$self-> { list}-> set(
 			visible    => 0,
-			height     => $self-> {listHeight},
+			height     => $lh,
 			clipOwner  => 0,
 			selectable   => $capture_mode ? 0 : 1,
 		);
 		$self-> listVisible( 0);
 	}
 	$self-> {edit}-> set(
-		bottom => $self-> height - $self-> editHeight ,
+		bottom => $self-> height - $eh,
 		width  => $self-> { edit}-> width + $::application-> uiScaling * DefButtonX * $decr *
 			(( $style == cs::Simple) ? 1 : -1),
-		height => $self-> editHeight ,
+		height => $eh,
 		dndAware => (( $style == cs::DropDown) ? 'Text' : 0 ),
 	);
 	$self-> {button}-> set(
-		bottom => $self-> height - $self-> editHeight ,
-		height => $self-> editHeight ,
+		bottom => $self-> height - $eh,
+		height => $eh,
 		visible=> $style != cs::Simple,
 	);
 	if ( $style == cs::DropDownList) {
