@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Prima qw(Application RubberBand);
+use Prima qw(Application Widget::RubberBand);
 
 sub xordraw
 {
