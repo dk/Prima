@@ -989,7 +989,7 @@ FAIL:
 	return ok;
 }
 
-Bool
+static Bool
 img_bar_tile( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 {
 	PImage i = (PImage) dest;
@@ -1062,7 +1062,7 @@ img_bar_tile( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 	return ok;
 }
 
-Bool
+static Bool
 img_bar_stipple_alpha( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 {
 	Bool ok;
@@ -1320,8 +1320,6 @@ img_bar( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 
 	return true;
 }
-
-
 
 #ifdef __cplusplus
 }
