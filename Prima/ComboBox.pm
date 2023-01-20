@@ -550,19 +550,16 @@ sub set_style
 	return if $self-> {style} == $style;
 	my $decr = (( $self-> {style} == cs::Simple) || ( $style == cs::Simple)) ? 1 : 0;
 	$self-> {style} = $style;
-
 	my $eh = $self->editHeight;
-	my $lh = $self->listHeight;
 	if ( $self->{autoHeight} ) {
 		$self->check_auto_size;
-		$eh = $self-> geomHeight;
-		$lh = $eh if $style != cs::Simple;
+		$eh = $self-> {edit}-> default_geom_height
+			if $self->{edit}->can('default_geom_height');
 	}
-
 	if ( $style == cs::Simple) {
 		$self-> set(
-			height=> $self-> height + $lh,
-			bottom=> $self-> bottom - $lh,
+			height=> $self-> height + $self-> listHeight,
+			bottom=> $self-> bottom - $self-> listHeight,
 		);
 		$self-> {list}-> set(
 			visible    => 1,
@@ -574,12 +571,12 @@ sub set_style
 		);
 	} elsif ( $decr) {
 		$self-> set(
-			height   => $self-> height - $lh,
-			bottom   => $self-> bottom + $lh,
+			height   => $self-> height - $self-> listHeight,
+			bottom   => $self-> bottom + $self-> listHeight,
 		);
 		$self-> { list}-> set(
 			visible    => 0,
-			height     => $lh,
+			height     => $self-> {listHeight},
 			clipOwner  => 0,
 			selectable   => $capture_mode ? 0 : 1,
 		);
