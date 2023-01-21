@@ -55,8 +55,9 @@ $capture_mode = (Prima::Application-> get_system_info-> {apc} == apc::Unix);
 sub profile_default
 {
 	my $f = $_[ 0]-> get_default_font;
+	my $e = Prima::InputLine->profile_default;
 	return {
-		%{Prima::InputLine-> profile_default},
+		%$e,
 		%{Prima::ListBox-> profile_default},
 		%{$_[ 0]-> SUPER::profile_default},
 		style          => cs::Simple,
@@ -66,7 +67,7 @@ sub profile_default
 		autoHScroll    => 0,
 		autoVScroll    => 1,
 		listVisible    => 0,
-		editHeight     => $f-> {height} + 2,
+		editHeight     => $e-> {height},
 		listHeight     => $::application-> uiScaling * 100,
 		ownerBackColor => 1,
 		selectable     => 0,

@@ -25,7 +25,7 @@ sub profile_default
 		cursorSize     => [ Prima::Application-> get_default_cursor_width, $font-> { height}],
 		firstChar      => 0,
 		dndAware       => 'Text',
-		height         => 2 + $font-> { height} + 2,
+		height         => 4 + $font-> { height} + 2,
 		insertMode     => 0,
 		maxLen         => 256,  # length $def{ text},
 		passwordChar   => '*',
