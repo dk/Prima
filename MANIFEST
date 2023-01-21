@@ -85,6 +85,7 @@ examples/buttons2.pl
 examples/calendar.pl
 examples/canvas.pl
 examples/chess_puzzle.pl
+examples/clock.pl
 examples/cv.pl
 examples/detailedoutline.pl
 examples/dock.pl
@@ -364,6 +365,7 @@ Prima/Themes.pm
 Prima/Tie.pm
 Prima/Utils.pm
 Prima/Widget/BidiInput.pm
+Prima/Widget/DateComboBox.pm
 Prima/Widget/EventRectangles.pm
 Prima/Widget/GroupScroller.pm
 Prima/Widget/Header.pm
