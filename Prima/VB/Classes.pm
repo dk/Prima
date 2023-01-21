@@ -1501,29 +1501,7 @@ use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::string);
 
-sub wake
-{
-	if ( defined $_[0]-> {A}-> {monger}) {
-		$_[0]-> {A}-> {monger}-> stop;
-		$_[0]-> {A}-> {monger}-> start;
-		return;
-	}
-
-	my $bc = $_[0]-> {A}-> backColor;
-	my $c = $_[0]-> {A}-> color;
-	$_[0]-> {A}-> backColor(cl::LightRed);
-	$_[0]-> {A}-> color(cl::Yellow);
-	$_[0]-> {A}-> {monger} = $_[0]-> {A}-> insert( Timer =>
-		timeout => 300,
-		onTick  => sub {
-			$_[0]-> owner-> {monger} = undef;
-			$_[0]-> owner-> color($c);
-			$_[0]-> owner-> backColor($bc);
-			$_[0]-> destroy;
-		},
-	);
-	$_[0]-> {A}-> {monger}-> start;
-}
+sub wake { $_[0]->{A}->blink }
 
 sub valid
 {

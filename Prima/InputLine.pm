@@ -7,6 +7,14 @@ use Prima;
 use Prima::Drawable::Glyphs;
 use base qw(Prima::Widget Prima::Widget::MouseScroller Prima::Widget::UndoActions Prima::Widget::BidiInput);
 
+{
+my %RNT = (
+	%{Prima::Dialog-> notification_types()},
+	Validate => nt::Notification,
+);
+
+sub notification_types { return \%RNT; }
+}
 
 sub profile_default
 {
@@ -242,6 +250,7 @@ sub set_text
 	$cap = substr( $cap, 0, $self-> {maxLen})
 		if $self-> {maxLen} >= 0 and length($cap) > $self-> {maxLen};
 
+	$self-> notify(q(Validate), \$cap);
 	$self-> SUPER::set_text($cap);
 
 	$cap = $self-> {passwordChar} x length $cap if $self-> {writeOnly};
@@ -579,8 +588,8 @@ sub paste
 	my $s = $::application-> Clipboard-> text;
 	return if !defined($s) or length( $s) == 0;
 
-	my ($p_start, $p_end) = ($start == $end) ? 
-		(($self->{glyphs}->cursor2offset($self->charOffset, $self->textDirection)) x 2) :
+	my ($p_start, $p_end) = ($start == $end) ?
+		(($self->cursor2text_offset($self->charOffset)) x 2) :
 		$self->selection_strpos;
 	substr( $cap, $p_start, $p_end - $p_start) = $s;
 	$self-> selection(0,0);
@@ -888,6 +897,12 @@ sub fit_clusters_back
 	return $sub-> sub_text_wrap( $self, 0, undef, $w, tw::ReturnFirstLineLength);
 }
 
+sub cursor2text_offset
+{
+	my ( $self, $cursor ) = @_;
+	return $self->{glyphs}->cursor2offset($cursor, $self->textDirection);
+}
+
 sub set_char_offset
 {
 	my ( $self, $offset) = @_;
@@ -896,8 +911,6 @@ sub set_char_offset
 	$offset = $l if $offset > $l;
 	$offset = 0 if $offset < 0;
 	return if $self-> {charOffset} == $offset;
-
-	$self->{glyphs}->cursor2offset($offset, $self->textDirection);
 
 	$self-> push_undo_action( 'charOffset', $offset) unless $self->has_undo_action('charOffset');
 
@@ -1153,6 +1166,30 @@ sub selText    {
 	} : return substr( $_[ 0]-> text, $f, $t - $f);
 }
 
+#sub on_validate
+#{
+#	my ($self, $textref) = @_;
+#}
+
+sub blink
+{
+	my ($self, %opt) = @_;
+	return if $self-> bring('BlinkTimer');
+	my $bc = $self-> backColor;
+	my $c  = $self-> color;
+	$self-> color($opt{color} // cl::White);
+	$self-> backColor($opt{backColor} // 0xff8080);
+	$self-> insert( Timer =>
+		name    => 'BlinkTimer',
+		timeout => 300,
+		onTick  => sub {
+			$_[0]-> destroy;
+			$self-> color($c);
+			$self-> backColor($bc);
+		},
+	)-> start;
+}
+
 1;
 
 =pod
@@ -1188,6 +1225,14 @@ contained in L<text> property.
 
 The notification is called when the L<text> property is changed, either
 interactively or as a result of direct call.
+
+=item Validate TEXT_REF
+
+The notification is called right before the L<text> property is changed, either
+interactively or as a result of direct call. The custom code has a chance to
+validate the text and/or provide some sort of interactive feedback.
+
+See also: L</blink>
 
 =back
 
@@ -1313,6 +1358,12 @@ Default value: 0
 =head2 Methods
 
 =over
+
+=item blink %options
+
+Produces a short blink by setting background to red color.
+Can be used to signal invalid input, f ex from C<on_validate>.
+C<%options> allows C<backColor> and C<color> entries.
 
 =item copy
 
