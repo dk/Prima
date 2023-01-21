@@ -331,7 +331,7 @@ sub handle_input
 	$self-> charOffset(
 		$self->{glyphs}->index2cluster(
 			$new_offset,
-			$opt{action} =~ /^(insert|overtype)$/
+			($opt{action} eq 'insert')
 		)
 	) if defined $new_offset;
 }

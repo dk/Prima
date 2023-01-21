@@ -1292,9 +1292,11 @@ Read-only accessor to the glyph indexes, see L<Structure> above.
 Returns array where each glyph position is set to a number showing how many glyphs the
 cluster occupies at this position
 
-=item index2cluster $INDEX
+=item index2cluster $INDEX, $ADVANCE = 0
 
 Returns the cluster that contains the character offset C<$INDEX>.
+
+C<$ADVANCE> is set to 1 if need to add the RTL-dependent advance to the resulting cluser
 
 =item indexes
 
