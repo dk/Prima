@@ -377,6 +377,7 @@ Prima/Widget/Panel.pm
 Prima/Widget/RubberBand.pm
 Prima/Widget/ScrollWidget.pm
 Prima/Widget/StartupWindow.pm
+Prima/Widget/TimeInputLine.pm
 Prima/Widget/UndoActions.pm
 Prima/VB/prima-cfgmaint.pl
 Prima/VB/CfgMaint.pm
