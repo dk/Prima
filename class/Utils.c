@@ -411,8 +411,8 @@ Utils_setenv(SV * varname, SV * value)
 {
 	return apc_fs_setenv(
 		SvPV_nolen(varname), prima_is_utf8_sv(varname),
-		(SvTYPE(value) != SVt_NULL) ? SvPV_nolen(value) : NULL,
-		(SvTYPE(value) != SVt_NULL) ? prima_is_utf8_sv(value) : false
+		SvOK(value) ? SvPV_nolen(value) : NULL,
+		SvOK(value) ? prima_is_utf8_sv(value) : false
 	);
 }
 

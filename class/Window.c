@@ -38,7 +38,7 @@ Window_init( Handle self, HV * profile)
 	my-> menuColorIndex( self, true, ciDark3DColor,   pget_i( menuDark3DColor)      );
 	SvHV_Font( pget_sv( menuFont), &Font_buffer, "Window::init");
 	my-> set_menu_font  ( self, Font_buffer);
-	if ( SvTYPE( sv = pget_sv( menuItems)) != SVt_NULL)
+	if ( SvOK( sv = pget_sv( menuItems)))
 		my-> set_menuItems( self, sv);
 	my-> set_modalResult( self, pget_i( modalResult));
 	my-> set_modalHorizon( self, pget_B( modalHorizon));
@@ -735,7 +735,7 @@ Window_effects( Handle self, Bool set, SV * effects)
 		if (SvROK( effects) && ( SvTYPE( SvRV( effects)) == SVt_PVHV)) {
 			var-> effects = newSVsv(effects);
 			apc_window_set_effects( self, (HV*) SvRV(var-> effects));
-		} else if (!SvROK(effects) || SvTYPE(SvRV(effects)) == SVt_NULL) {
+		} else if (!SvROK(effects) || SvOK(SvRV(effects))) {
 			var-> effects = NULL;
 			apc_window_set_effects( self, NULL );
 		} else {

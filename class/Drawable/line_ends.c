@@ -22,7 +22,7 @@ read_line_end(SV *lineEnd, DrawablePaintState *state, int index)
 	state->line_end[index].type = (index == 0) ? leRound : leDefault;
 
 	if ( !SvROK(lineEnd)) {
-		if ( SvTYPE(lineEnd) == SVt_NULL) {
+		if ( !SvOK(lineEnd)) {
 			if ( index == 0 ) {
 				warn("cannot set lineEnd[0] to undef");
 				return false;
@@ -189,7 +189,7 @@ Drawable_read_line_ends(SV *lineEnd, DrawablePaintState *state)
 		/* parse SVs */
 		for ( i = 0; i <= leiMax; i++) {
 			holder = av_fetch( av, i, 0);
-			if ( !( holder && *holder && SvOK(*holder) ) || SvTYPE(*holder) == SVt_NULL) {
+			if ( !( holder && *holder && SvOK(*holder) ) ) {
 				if ( i == 0 ) {
 					warn("lineEnd: first item in array cannot be undef");
 					goto FAIL;

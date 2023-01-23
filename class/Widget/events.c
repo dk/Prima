@@ -540,7 +540,7 @@ void Widget_handle_event( Handle self, PEvent event)
 				is_opt( optShowHint) &&
 				(P_APPLICATION-> options. optShowHint) &&
 				var-> hint &&
-				SvTYPE(var->hint) != SVt_NULL &&
+				SvOK(var->hint) &&
 				SvCUR(var-> hint)
 			)
 				C_APPLICATION-> set_hint_action( prima_guts.application, self, true, true);

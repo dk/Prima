@@ -826,7 +826,7 @@ Icon_bitmap( Handle self)
 void
 Icon_premultiply_alpha( Handle self, SV * alpha)
 {
-	if ( !alpha || ( SvTYPE( alpha ) == SVt_NULL)) {
+	if ( !alpha || ( SvOK( alpha ))) {
 		int type = var-> maskType;
 		Image dummy;
 		/* multiply with self */

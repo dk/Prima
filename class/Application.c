@@ -95,9 +95,9 @@ Application_init( Handle self, HV * profile)
 		sv_free(( SV *) profile);
 	}
 
-	if ( SvTYPE( sv = pget_sv( accelItems)) != SVt_NULL)
+	if ( SvOK( sv = pget_sv( accelItems)))
 		my-> set_accelItems( self, sv);
-	if ( SvTYPE( sv = pget_sv( popupItems)) != SVt_NULL)
+	if ( SvOK( sv = pget_sv( popupItems)))
 		my-> set_popupItems( self, sv);
 	pdelete( accelTable);
 	pdelete( accelItems);

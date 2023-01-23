@@ -150,7 +150,7 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level, void * _avt)
 
 	if ( level == 0)
 	{
-		if ( SvTYPE( sv) == SVt_NULL) return NULL; /* null menu */
+		if ( !SvOK( sv)) return NULL; /* null menu */
 	}
 
 	if ( !SvROK( sv) || ( SvTYPE( SvRV( sv)) != SVt_PVAV)) {
@@ -279,7 +279,7 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level, void * _avt)
 	if ( num >= 0 ) {                                                     \
 		holder = av_fetch( item, num, 0);                             \
 		if ( holder) {                                                \
-			if ( SvTYPE(*holder) != SVt_NULL) {                   \
+			if ( SvOK(*holder)) {                                 \
 				l_ = duplicate_string( SvPV_nolen( *holder)); \
 				fl_ = prima_is_utf8_sv(*holder);              \
 			}                                                     \
@@ -1049,7 +1049,7 @@ AbstractMenu_options( Handle self, Bool set, char * varName, SV * options)
 		return newRV_noinc((SV*)profile);
 	}
 
-	if (SvTYPE( SvRV( options)) == SVt_NULL) {
+	if (!SvOK( SvRV( options))) {
 		sv_free( m-> options);
 		m-> options = NULL_SV;
 	} else {
@@ -1174,7 +1174,7 @@ AbstractMenu_set_variable( Handle self, char * varName, SV * newName)
 		newName);
 
 	free( m-> variable);
-	if ( SvTYPE(newName) != SVt_NULL) {
+	if ( SvOK(newName)) {
 		STRLEN len;
 		char * v;
 		v = SvPV( newName, len);
@@ -1345,7 +1345,7 @@ AbstractMenu_insert( Handle self, SV * menuItems, char * rootName, int index)
 
 	if ( var-> stage > csFrozen) return;
 
-	if ( SvTYPE( menuItems) == SVt_NULL) return;
+	if ( !SvOK( menuItems)) return;
 
 	if ( strlen( rootName) == 0)
 	{

@@ -41,7 +41,7 @@ File_init( Handle self, HV * profile)
 		my-> set_fd( self, pget_i( fd));
 
 	file = pget_sv(file);
-	if ( file && ( SvTYPE( file) != SVt_NULL))
+	if ( file && ( SvOK( file)))
 		my-> set_file( self, pget_sv( file));
 
 	CORE_INIT_TRANSIENT(File);
@@ -96,7 +96,7 @@ File_file( Handle self, Bool set, SV * file)
 	}
 	var-> file = NULL;
 	var-> fd = -1;
-	if ( file && ( SvTYPE( file) != SVt_NULL)) {
+	if ( file && SvOK( file)) {
 		FileStream f = IoIFP(sv_2io(file));
 		if (!f) {
 			warn("Not a IO reference passed to File::set_file");

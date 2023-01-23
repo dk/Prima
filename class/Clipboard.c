@@ -487,7 +487,7 @@ binary_server( Handle self, PClipboardFormatReg instance, int function, SV * dat
 		}
 		break;
 	case cefStore:
-		if ( SvTYPE(data) == SVt_NULL ) {
+		if ( !SvOK(data)) {
 			c. data = NULL;
 			c. length = -1;
 		} else {

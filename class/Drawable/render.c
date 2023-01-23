@@ -234,7 +234,7 @@ Drawable_render_spline( SV * obj, SV * points, HV * profile)
 	/* closed curve will need at least one extra point and unclamped default knot set */
 	if ( pexist( closed )) {
 		SV * sv = pget_sv(closed);
-		if ( SvTYPE(sv) == SVt_NULL ) goto DETECT_SHAPE;
+		if ( SvOK(sv) ) goto DETECT_SHAPE;
 		closed = SvTRUE(sv);
 	}
 	else {

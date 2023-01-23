@@ -839,9 +839,9 @@ Widget_packInfo( Handle self, Bool set, SV * packInfo)
 		Bool reset_zorder = false, set_in = false;
 		Handle in = NULL_HANDLE;
 
-		if ( SvTYPE(packInfo) == SVt_NULL) return NULL_SV;
+		if ( !SvOK(packInfo)) return NULL_SV;
 
-		if ( !SvOK(packInfo) || !SvROK(packInfo) || SvTYPE(SvRV(packInfo)) != SVt_PVHV)
+		if ( !SvROK(packInfo) || SvTYPE(SvRV(packInfo)) != SVt_PVHV)
 			croak("Widget::packInfo: parameter is not a hash");
 
 		profile = ( HV*) SvRV( packInfo);
@@ -918,13 +918,13 @@ Widget_packInfo( Handle self, Bool set, SV * packInfo)
 
 		if ( pexist( after)) {
 			SV * sv = pget_sv( after);
-			if ( SvTYPE(sv) != SVt_NULL) {
+			if ( SvOK(sv)) {
 				if ( !( var-> geomInfo. order = gimme_the_mate( sv)))
 					croak("%s: invalid 'after'", "Prima::Widget::pack");
 				var-> geomInfo. after = 1;
 				if ( pexist( before)) {
 					sv = pget_sv( before);
-					if ( SvTYPE(sv) != SVt_NULL)
+					if ( SvOK(sv))
 						croak("%s: 'after' and 'before' cannot be present simultaneously", "Prima::Widget::pack");
 				}
 			} else {
@@ -934,7 +934,7 @@ Widget_packInfo( Handle self, Bool set, SV * packInfo)
 			reset_zorder = true;
 		} else if ( pexist( before)) {
 			SV * sv = pget_sv( before);
-			if ( SvTYPE(sv) != SVt_NULL) {
+			if ( SvOK(sv)) {
 				if ( !( var-> geomInfo. order = gimme_the_mate( sv)))
 					croak("%s: invalid 'before'", "Prima::Widget::pack");
 			} else
@@ -946,7 +946,7 @@ Widget_packInfo( Handle self, Bool set, SV * packInfo)
 		if ( pexist( in)) {
 			SV * sv = pget_sv( in);
 			in = NULL_HANDLE;
-			if ( SvTYPE( sv) != SVt_NULL)
+			if ( SvOK( sv))
 				in = Widget_check_in( self, gimme_the_mate( sv), true);
 			set_in = reset_zorder = true;
 		}
@@ -1214,7 +1214,7 @@ Widget_placeInfo( Handle self, Bool set, SV * placeInfo)
 		Handle in = NULL_HANDLE;
 		Bool set_in = false;
 
-		if ( SvTYPE(placeInfo) == SVt_NULL) return NULL_SV;
+		if ( !SvOK(placeInfo)) return NULL_SV;
 
 		if ( !SvOK(placeInfo) || !SvROK(placeInfo) || SvTYPE(SvRV(placeInfo)) != SVt_PVHV)
 			croak("Widget::placeInfo: parameter is not a hash");
@@ -1256,37 +1256,37 @@ Widget_placeInfo( Handle self, Bool set, SV * placeInfo)
 
 		if ( pexist( x)) {
 			SV * sv = pget_sv( x);
-			if (( var-> geomInfo. use_x = (SvTYPE( sv) != SVt_NULL)))
+			if (( var-> geomInfo. use_x = SvOK( sv)))
 				var-> geomInfo. x = SvIV( sv);
 		}
 		if ( pexist( y)) {
 			SV * sv = pget_sv( y);
-			if (( var-> geomInfo. use_y = (SvTYPE( sv) != SVt_NULL)))
+			if (( var-> geomInfo. use_y = SvOK( sv)))
 				var-> geomInfo. y = SvIV( sv);
 		}
 		if ( pexist( width)) {
 			SV * sv = pget_sv( width);
-			if (( var-> geomInfo. use_w = (SvTYPE( sv) != SVt_NULL)))
+			if (( var-> geomInfo. use_w = SvOK( sv)))
 				var-> geomSize. x = SvIV( sv);
 		}
 		if ( pexist( height)) {
 			SV * sv = pget_sv( height);
-			if (( var-> geomInfo. use_h = (SvTYPE( sv) != SVt_NULL)))
+			if (( var-> geomInfo. use_h = SvOK( sv)))
 				var-> geomSize. y = SvIV( sv);
 		}
 		if ( pexist( relx)) {
 			SV * sv = pget_sv( relx);
-			if (( var-> geomInfo. use_rx = (SvTYPE( sv) != SVt_NULL)))
+			if (( var-> geomInfo. use_rx = SvOK( sv)))
 				var-> geomInfo. relX = SvNV( sv);
 		}
 		if ( pexist( rely)) {
 			SV * sv = pget_sv( rely);
-			if (( var-> geomInfo. use_ry = (SvTYPE( sv) != SVt_NULL)))
+			if (( var-> geomInfo. use_ry = SvOK( sv)))
 				var-> geomInfo. relY = SvNV( sv);
 		}
 		if ( pexist( relwidth)) {
 			SV * sv = pget_sv( relwidth);
-			if (( var-> geomInfo. use_rw = (SvTYPE( sv) != SVt_NULL)))
+			if (( var-> geomInfo. use_rw = SvOK( sv)))
 				var-> geomInfo. relWidth = SvNV( sv);
 		}
 		if ( pexist( relheight)) {
