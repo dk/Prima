@@ -841,7 +841,7 @@ Widget_packInfo( Handle self, Bool set, SV * packInfo)
 
 		if ( !SvOK(packInfo)) return NULL_SV;
 
-		if ( !SvROK(packInfo) || SvTYPE(SvRV(packInfo)) != SVt_PVHV)
+		if ( !SvOK(packInfo) || !SvROK(packInfo) || SvTYPE(SvRV(packInfo)) != SVt_PVHV)
 			croak("Widget::packInfo: parameter is not a hash");
 
 		profile = ( HV*) SvRV( packInfo);
