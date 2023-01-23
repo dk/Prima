@@ -50,7 +50,7 @@ sub hook_proc
 {
 	my $self = shift;
 
-	Prima::Utils::alarm(0.1, sub {
+	Prima::Utils::alarm(50, sub {
 		my $f = $::application->get_focused_widget;
 		return if $f && $self->is_owner($f) != 0;
 		$self-> deinstall_hook;
@@ -319,5 +319,7 @@ sub List_Click
 	$self-> listVisible(0);
 	$self-> notify( q(Change));
 }
+
+sub List_Leave {} # don't mix up with the explicit focus by .on_show
 
 1;
