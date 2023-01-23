@@ -19,22 +19,68 @@ sub on_validate
 
 package Prima::Widget::DateComboBox::List;
 use base qw(Prima::Widget);
+use Prima qw(EventHook Utils);
 
 sub init
 {
 	my $self = shift;
 	my %profile = $self-> SUPER::init(@_);
 	$self->{calendar} = $self-> insert( Calendar =>
-		origin   => [0,0],
-		size     => [ $self->size ],
-		growMode => gm::Client,
-		onChange => sub { $_[0]->owner->owner->date( $_[0]-> date ) },
+		pack     => { fill => 'both', expand => 1 },
+		current  => 1,
 	);
+	$self->{calendar}->Day-> onMouseClick( sub {
+		my ( undef, $btn, $mod, $x, $y, $nth ) = @_;
+		return if $nth != 2;
+		$self-> owner-> date( $self-> date );
+		$self-> owner-> listVisible(0);
+	});
+	$self->packPropagate(1);
 	return %profile;
 }
 
+sub before_show
+{
+	my ( $self, $w ) = @_;
+	my $gsw = $self->calendar->geomWidth;
+	$self-> width(( $w < $gsw ) ? $gsw : $w);
+}
+
+sub hook_proc
+{
+	my $self = shift;
+
+	Prima::Utils::alarm(0.1, sub {
+		my $f = $::application->get_focused_widget;
+		return if $f && $self->is_owner($f) != 0;
+		$self-> deinstall_hook;
+		$self-> owner-> listVisible(0);
+	});
+}
+
+sub deinstall_hook { Prima::EventHook::deinstall(\&hook_proc) }
+
+sub on_show
+{
+	my ( $self ) = @_;
+	Prima::Utils::post( sub { $self->calendar->select } );
+
+	Prima::EventHook::install( \&hook_proc,
+		event    => 'Leave',
+		children => 1,
+		object   => $self,
+		param    => $self,
+	);
+}
+
+sub on_translateaccel
+{
+	my ( $self, $chr, $key, $mod ) = @_;
+	$self-> notify(q(KeyDown), $chr, $key, $mod);
+}
+
 sub calendar { $_[0]->{calendar} }
-sub date     { $#_ ? shift->calendar->date(@_) : shift->calendar }
+sub date     { $#_ ? shift->calendar->date(@_) : shift->calendar->date }
 
 package Prima::Widget::DateComboBox;
 
@@ -61,11 +107,15 @@ sub init
 	$self->{date}   = [1,1,1];
 	$self->{format} = '';
 	$self->{mask}   = [''];
+	$profile{style} = cs::DropDown;
 	@{$profile{listDelegations}} = grep { $_ ne 'SelectItem' } @{$profile{listDelegations}};
+	$profile{listProfile}->{growMode} = 0;
 	%profile = $self-> SUPER::init(%profile);
 	$self-> $_($profile{$_}) for qw(format date);
 	$self->List->selectable(1);
 }
+
+sub style { cs::DropDown }
 
 sub time2date { [ (localtime($_[1]))[3,4,5] ] }
 sub today     { $_[0]-> time2date(time) }
@@ -178,7 +228,11 @@ sub date
 sub set_list_visible
 {
 	my ( $self, $nlv ) = @_;
-	$self-> List-> date( $self-> date ) if $nlv;
+	if ( $nlv ) {
+		my $l = $self-> List;
+		$l-> date( $self-> date );
+		$l-> before_show( $self-> width );
+	}
 	$self-> SUPER::set_list_visible($nlv);
 }
 
@@ -207,6 +261,14 @@ sub InputLine_MouseWheel
 		$edit-> clear_event;
 		$self-> date(@date);
 	}
+}
+
+sub List_Click
+{
+	my ( $self, $list) = @_;
+	$self-> date( $list-> date );
+	$self-> listVisible(0);
+	$self-> notify( q(Change));
 }
 
 1;

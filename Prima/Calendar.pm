@@ -114,8 +114,18 @@ sub init
 		growMode => gm::GrowHiX | gm::GrowLoY,
 	);
 	$self-> $_($profile{$_}) for qw( date useLocale firstDayOfWeek);
+	$self-> reset_geometry;
 }
 
+sub reset_geometry
+{
+	my $self = shift;
+	my $font = $self->font;
+	my ( $fw, $fh ) = ($font->width, $font-> height);
+	$self-> geomSize( $fw * 35, $fh * 20 );
+}
+
+sub on_fontchanged { shift-> reset_geometry }
 
 sub can_use_locale
 {
