@@ -46,6 +46,7 @@ my $mw = Prima::MainWindow->new(
 				[],
 				[ 'YYYY-MM-DD' => \&set_date_format ],
 				[ 'MM/DD/YYYY' => \&set_date_format ],
+				[ 'DD/MM/YY'   => \&set_date_format ],
 				[ 'year:YYYY month:MM day:DD' => \&set_date_format ],
 			]],
 			[],

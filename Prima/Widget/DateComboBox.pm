@@ -106,7 +106,7 @@ sub init
 	my %profile = @_;
 	$self->{date}   = [1,1,1];
 	$self->{format} = '';
-	$self->{mask}   = [''];
+	$self->{mask}   = {};
 	$profile{style} = cs::DropDown;
 	@{$profile{listDelegations}} = grep { $_ ne 'SelectItem' } @{$profile{listDelegations}};
 	$profile{listProfile}->{growMode} = 0;
@@ -126,25 +126,29 @@ sub date2str
 	my @date = ref($_[0]) ? @{ $_[0] } : @_;
 
 	my @p = @date;
-	$p[2] += 1900;
+	if ( $self->{mask}->{lengths}->[2] == 2) {
+		$p[2] %= 100;
+	} else {
+		$p[2] += 1900;
+	}
 	$p[1] ++;
 
-	my $mask  = $self->{mask};
-	my @pp    = map { defined ? $p[$_] : () } @$mask[1..3];
-	return sprintf $mask->[0], @pp;
+	my $print = $self->{mask}->{print};
+	my @pp    = map { defined ? $p[$_] : () } @$print;
+	return sprintf $self->{mask}->{format}, @pp;
 }
 
 sub str2date
 {
 	my ( $self, $str ) = @_;
-	my @offsets = @{ $self->{mask} }[ 4..6 ];
-	my @lengths = (2,2,4);
-	my @add     = (0,1,1900);
+	my $offsets = $self->{mask}->{offsets};
+	my $lengths = $self->{mask}->{lengths};
+	my @add     = (0,1, ($lengths->[2] == 2) ? -100 : 1900);
 	my @ret     = @{ $self-> today };
 	for ( my $i = 0; $i < 3; $i++) {
-		next unless defined $offsets[$i];
-		next if length($str) < $offsets[$i] + $lengths[$i];
-		my $n = substr($str, $offsets[$i], $lengths[$i] );
+		next unless defined $$offsets[$i];
+		next if length($str) < $$offsets[$i] + $$lengths[$i];
+		my $n = substr($str, $$offsets[$i], $$lengths[$i] );
 		next if $n !~ /^\d+$/;
 		$ret[$i] = $n - $add[$i];
 	}
@@ -155,7 +159,8 @@ sub str2date
 sub default_format
 {
 	 my $f = strftime("%x", 0, 0, 0, 22, 10, 99);
-	 $f =~ s/1999/YYYY/;
+	 $f =~ s/(20|19)99/YYYY/;
+	 $f =~ s/99/YY/;
 	 $f =~ s/11/MM/;
 	 $f =~ s/22/DD/;
 	 return $f;
@@ -171,21 +176,26 @@ sub format
 	my $offset = 0;
 	my %print;
 	my @offsets;
+	my @lengths;
+
 	my $fmt    = '';
 	local $_ = $format;
 	while ( 1 ) {
-		if ( !defined $print{y} && m/\G(YYYY)/gcs ) {
-			$fmt     .= "%04d";
+		if ( !defined $print{y} && m/\G(Y{2,4})/gcs ) {
+			$fmt     .= '%0' . length($1) . 'd';
 			$print{y} = $offset++;
-			$offsets[2] = pos($_) - 4;
+			$lengths[2] = length($1);
+			$offsets[2] = pos($_) - $lengths[2];
 		} elsif ( !defined $print{m} && m/\G(MM)/gcs ) {
 			$fmt     .= "%02d";
 			$print{m} = $offset++;
 			$offsets[1] = pos($_) - 2;
+			$lengths[1] = 2;
 		} elsif ( !defined $print{d} && m/\G(DD)/gcs ) {
 			$fmt     .= "%02d";
 			$print{d} = $offset++;
 			$offsets[0] = pos($_) - 2;
+			$lengths[0] = 2;
 		} elsif ( m/\G([YMD]+|[^YMD]+)/gcs ) {
 			my $r    = $1;
 			$r       =~ s/%/%%/g;
@@ -194,7 +204,12 @@ sub format
 			last;
 		}
 	}
-	$self->{mask} = [ $fmt, @print{qw(d m y)}, @offsets ];
+	$self->{mask} = {
+		format  => $fmt,
+		print   => [@print{qw(d m y)}],
+		offsets => \@offsets,
+		lengths => \@lengths
+	};
 	$self-> text( $self-> date2str( $self->date ) );
 }
 
@@ -240,19 +255,23 @@ sub date_plusminus_positional
 	my ($self, $direction) = @_;
 	my $edit    = $self-> InputLine;
 	my $tofs    = $edit->cursor2text_offset($edit->charOffset);
-	my @offsets = @{ $self->{mask} }[ 4..6 ];
-	my @lengths = (2,2,4);
+	my $offsets = $self->{mask}->{offsets};
+	my $lengths = $self->{mask}->{lengths};
 	my $str     = $edit-> text;
 	my @date    = $self-> date;
-	my @add     = (0,1,1900);
+	my @add     = (0,1, ($lengths->[2] == 2) ? -100 : 1900);
 	for ( my $i = 0; $i < 3; $i++) {
-		next unless defined $offsets[$i];
-		next if length($str) < $offsets[$i] + $lengths[$i];
-		next if $tofs < $offsets[$i] or $tofs > $offsets[$i] + $lengths[$i];
-		my $n = substr($str, $offsets[$i], $lengths[$i] );
+		next unless defined $$offsets[$i];
+		next if length($str) < $$offsets[$i] + $$lengths[$i];
+		next if $tofs < $$offsets[$i] or $tofs > $$offsets[$i] + $$lengths[$i];
+		my $n = substr($str, $$offsets[$i], $$lengths[$i] );
 		next if $n !~ /^\d+$/;
 
 		$n += $direction;
+		if ( $lengths->[2] == 2 ) {
+			$n = 0  if $n > 99;
+			$n = 99 if $n < 0;
+		}
 		$date[$i] = $n - $add[$i];
 
 		$date[1] = 0 , $date[2]++ if $date[1] > 11;
