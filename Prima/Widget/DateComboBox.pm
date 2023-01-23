@@ -122,9 +122,10 @@ sub today     { $_[0]-> time2date(time) }
 
 sub date2str
 {
-	my ( $self, $date ) = @_;
+	my $self = shift;
+	my @date = ref($_[0]) ? @{ $_[0] } : @_;
 
-	my @p = @$date;
+	my @p = @date;
 	$p[2] += 1900;
 	$p[1] ++;
 
@@ -165,9 +166,6 @@ sub format
 	return $_[0]->{format} unless $#_;
 
 	my ( $self, $format ) = @_;
-	warn "Need YYYY in DateComboBox::format" if $format =~ /(Y+)/ and length($1) != 4;
-	warn "Need MM in DateComboBox::format" if $format =~ /(M+)/ and length($1) != 2;
-	warn "Need DD in DateComboBox::format" if $format =~ /(D+)/ and length($1) != 2;
 	$self->{format} = $format;
 
 	my $offset = 0;
@@ -197,6 +195,7 @@ sub format
 		}
 	}
 	$self->{mask} = [ $fmt, @print{qw(d m y)}, @offsets ];
+	$self-> text( $self-> date2str( $self->date ) );
 }
 
 sub validate_date
@@ -236,13 +235,10 @@ sub set_list_visible
 	$self-> SUPER::set_list_visible($nlv);
 }
 
-sub InputLine_Change {}
-sub InputLine_Leave  {}
-
-sub InputLine_MouseWheel
+sub date_plusminus_positional
 {
-	my ( $self, $edit, $mod, $x, $y, $z) = @_;
-
+	my ($self, $direction) = @_;
+	my $edit    = $self-> InputLine;
 	my $tofs    = $edit->cursor2text_offset($edit->charOffset);
 	my @offsets = @{ $self->{mask} }[ 4..6 ];
 	my @lengths = (2,2,4);
@@ -255,12 +251,46 @@ sub InputLine_MouseWheel
 		next if $tofs < $offsets[$i] or $tofs > $offsets[$i] + $lengths[$i];
 		my $n = substr($str, $offsets[$i], $lengths[$i] );
 		next if $n !~ /^\d+$/;
-		$n += ( $z > 0 ) ? -1 : 1;
+
+		$n += $direction;
 		$date[$i] = $n - $add[$i];
 
-		$edit-> clear_event;
+		$date[1] = 0 , $date[2]++ if $date[1] > 11;
+		$date[1] = 11, $date[2]-- if $date[1] < 0;
+		my $v = $Prima::Calendar::days_in_months[ $date[1] ] +
+			(((( $date[2] % 4) == 0) && ( $date[1] == 1)) ? 1 : 0);
+		$date[0] = 1,  $date[1]++ if $date[0] > $v;
+		$date[0] = $v, $date[1]-- if $date[0] < 1;
+		$date[1] = 0 , $date[2]++ if $date[1] > 11;
+		$date[1] = 11, $date[2]-- if $date[1] < 0;
+
 		$self-> date(@date);
+		return 1;
 	}
+
+	return 0;
+}
+
+sub InputLine_Change {}
+sub InputLine_Leave  {}
+
+sub InputLine_KeyDown
+{
+	my ( $self, $edit, $code, $key, $mod, $repeat) = @_;
+
+	if (( $mod & km::Ctrl) && ($key == kb::Down || $key == kb::Up)) {
+		$self-> date_plusminus_positional( ($key == kb::Down) ? -1 : 1);
+		$edit->clear_event;
+		return;
+	}
+
+	return $self->SUPER::InputLine_KeyDown( $edit, $code, $key, $mod, $repeat );
+}
+
+sub InputLine_MouseWheel
+{
+	my ( $self, $edit, $mod, $x, $y, $z) = @_;
+	$edit->clear_event if $self-> date_plusminus_positional(( $z > 0 ) ? 1 : -1);
 }
 
 sub List_Click
