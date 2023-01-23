@@ -111,7 +111,7 @@ $mw->insert( 'Widget' =>
 		$canvas->alpha(192);
 		$canvas->color(cl::Cyan);
 		my $p = $canvas-> new_path->
-			rotate(-($hour % 12) / 12 * 360)->
+			rotate(-($hour % 12 + $min / 60 + $sec / 3600) / 12 * 360)->
 			scale( $w, $d/2.5)->
 			translate( 0, 0.75);
 		$p->append( $arrow );
@@ -119,7 +119,7 @@ $mw->insert( 'Widget' =>
 
 		$canvas->color(cl::Green);
 		$p = $canvas-> new_path->
-			rotate(-($min % 60) / 60 * 360)->
+			rotate(-($min + $sec / 60) / 60 * 360)->
 			scale( $w, $d/2)->
 			translate( 0, 0.75);
 		$p->append( $arrow );
@@ -127,7 +127,7 @@ $mw->insert( 'Widget' =>
 
 		$canvas->color(cl::Red);
 		$p = $canvas-> new_path->
-			rotate(-($sec % 60) / 60 * 360)->
+			rotate(-$sec / 60 * 360)->
 			scale( $w/4, $d/2)->
 			translate( 0, 0.75);
 		$p->append( $arrow );
