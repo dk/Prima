@@ -183,6 +183,7 @@ sub init
 		delegations    => $profile{buttonDelegations},
 		%{$profile{buttonProfile}},
 	);
+	$self->check_auto_size;
 
 	$self-> visible( $visible);
 	return %profile;
