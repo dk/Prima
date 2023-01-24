@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 use strict;
 use warnings;
-use Prima qw(Application Widget::DateComboBox Drawable::Path Widget::TimeInputLine);
+use Prima qw(Application Widget::Date Drawable::Path Widget::Time);
 
 sub set_time_format
 {
@@ -60,7 +60,7 @@ my $mw = Prima::MainWindow->new(
 	],
 );
 
-$mw->insert( 'Widget::TimeInputLine' =>
+$mw->insert( 'Widget::Time' =>
 	name => 'Time',
 	pack => { side => 'bottom', fill => 'x', pad => 20 },
 	onChange => sub {
@@ -76,7 +76,7 @@ $mw->insert( 'Widget::TimeInputLine' =>
 	},
 );
 
-$mw->insert( 'Widget::DateComboBox' =>
+$mw->insert( 'Widget::Date' =>
 	name => 'Picker',
 	pack => { side => 'bottom', fill => 'x', pad => 20 },
 );

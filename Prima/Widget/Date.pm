@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-package Prima::Widget::DateComboBox::Input;
+package Prima::Widget::Date::Input;
 use base qw(Prima::InputLine);
 
 sub insertMode { $#_ ? shift->SUPER::insertMode(0) : shift->SUPER::insertMode }
@@ -17,7 +17,7 @@ sub on_validate
 	$self->blink;
 }
 
-package Prima::Widget::DateComboBox::List;
+package Prima::Widget::Date::List;
 use base qw(Prima::Widget);
 use Prima qw(EventHook Utils);
 
@@ -82,7 +82,7 @@ sub on_translateaccel
 sub calendar { $_[0]->{calendar} }
 sub date     { $#_ ? shift->calendar->date(@_) : shift->calendar->date }
 
-package Prima::Widget::DateComboBox;
+package Prima::Widget::Date;
 
 use POSIX qw(strftime);
 use base qw(Prima::ComboBox);
@@ -95,8 +95,8 @@ sub profile_default
 		date      => $_[0]->time2date(time),
 		format    => $_[0]->default_format,
 		style     => cs::DropDown,
-		editClass => 'Prima::Widget::DateComboBox::Input',
-		listClass => 'Prima::Widget::DateComboBox::List',
+		editClass => 'Prima::Widget::Date::Input',
+		listClass => 'Prima::Widget::Date::List',
 	};
 }
 

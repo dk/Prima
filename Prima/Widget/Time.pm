@@ -1,4 +1,4 @@
-package Prima::Widget::TimeInputLine;
+package Prima::Widget::Time;
 
 use strict;
 use warnings;
