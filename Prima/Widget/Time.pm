@@ -164,6 +164,27 @@ sub time
 	$self-> text( $self-> time2str( $self->{time} ) );
 }
 
+sub second
+{
+	return $_[0]-> {time}-> [0] unless $#_;
+	return if $_[0]-> {time}-> [0] == $_[1];
+	$_[0]-> time( $_[1], $_[0]-> {time}-> [1],$_[0]-> {time}-> [2]);
+}
+
+sub minute
+{
+	return $_[0]-> {time}-> [1] unless $#_;
+	return if $_[0]-> {time}-> [1] == $_[1];
+	$_[0]-> time( $_[0]-> {time}-> [0],$_[1],$_[0]-> {time}-> [2]);
+}
+
+sub hour
+{
+	return $_[0]-> {time}-> [2] unless $#_;
+	return if $_[0]-> {time}-> [2] == $_[1];
+	$_[0]-> time( $_[0]-> {time}-> [0],$_[0]-> {time}-> [1],$_[1]);
+}
+
 sub time_plusminus_positional
 {
 	my ($self, $direction) = @_;
@@ -248,3 +269,101 @@ sub on_change  { @{ $_[0]->{time} } = @{ $_[0]->str2time( $_[0]->text ) } }
 sub insertMode { $#_ ? shift->SUPER::insertMode(0) : shift->SUPER::insertMode }
 
 1;
+
+=pod
+
+=head1 NAME
+
+Prima::Widget::Time - time inputline
+
+=head1 SYNOPSIS
+
+	use Prima qw(Application Widget::Time);
+
+	my $mw = Prima::MainWindow->new;
+	$mw->insert( 'Widget::Time' =>
+		pack => { fill => 'x', pad => 20 },
+	);
+
+	run Prima;
+
+=for podview <img src="time.gif">
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/Widget/time.gif">
+
+=head1 DESCRIPTION
+
+Standard time inputline
+
+=head1 API
+
+=head2 Methods
+
+=over
+
+=item time2str TIME
+
+Converts TIME to string representation according to the current C<format> string
+
+=item default_format
+
+Returns a string to be used in C<format>, where the string is constructed in such a way
+to reflect regional time formatting preferences.
+
+See also: C<man 3 strftime, %X> .
+
+=item str2time STRING
+
+Tries to extract time from STRING assuming it is constructed according to the current C<format> string.
+Doesn't fail but values that could not be extracted are assigned to current second/minute/hour instead.
+
+=item validate_time S, M, H
+
+Checks whether S, M, H values are valid and within understood range; adjusts the values if not.
+Returns the final values.
+
+=back
+
+=head2 Properties
+
+=over
+
+=item format STRING
+
+The format string is used when converting time to its visual interpretation,
+also with regional preferences, like hh:mm:ss or hh:mm:AA . The syntax of the
+format is exctly this, it recognizes fixed patterns hh, mm, ss, aa, and AA,
+replacing them with the time values.
+
+(C<aa> is for <am / pm>, C<AA> is for <AM / PM>).
+
+=item hour
+
+Selects the hour.
+
+=item minute
+
+Selects the minute.
+
+=item second INTEGER
+
+Selects the second
+
+=item time SEC, MIN, HOUR | [ SEC, MIN, HOUR ]
+
+Accepts three integers / arrayref with three integers in format of C<localtime>.
+SEC and MIN can be from 0 to 59, HOUR from 0 to 23.
+
+Default value: today's time.
+
+=back
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<Prima::InputLine>
+
+=cut

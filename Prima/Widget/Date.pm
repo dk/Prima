@@ -239,6 +239,27 @@ sub date
 	$self-> text( $self-> date2str( $self->{date} ) );
 }
 
+sub day
+{
+	return $_[0]-> {date}-> [0] unless $#_;
+	return if $_[0]-> {date}-> [0] == $_[1];
+	$_[0]-> date( $_[1], $_[0]-> {date}-> [1],$_[0]-> {date}-> [2]);
+}
+
+sub month
+{
+	return $_[0]-> {date}-> [1] unless $#_;
+	return if $_[0]-> {date}-> [1] == $_[1];
+	$_[0]-> date( $_[0]-> {date}-> [0],$_[1],$_[0]-> {date}-> [2]);
+}
+
+sub year
+{
+	return $_[0]-> {date}-> [2] unless $#_;
+	return if $_[0]-> {date}-> [2] == $_[1];
+	$_[0]-> date( $_[0]-> {date}-> [0],$_[0]-> {date}-> [1],$_[1]);
+}
+
 sub set_list_visible
 {
 	my ( $self, $nlv ) = @_;
@@ -323,3 +344,103 @@ sub List_Click
 sub List_Leave {} # don't mix up with the explicit focus by .on_show
 
 1;
+
+=pod
+
+=head1 NAME
+
+Prima::Widget::Date - date picker widget
+
+=head1 SYNOPSIS
+
+	use Prima qw(Application Widget::Date);
+
+	my $mw = Prima::MainWindow->new;
+	$mw->insert( 'Widget::Date' =>
+		pack => { fill => 'x', pad => 20 },
+	);
+
+	run Prima;
+
+=for podview <img src="date.gif">
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/Widget/date.gif">
+
+=head1 DESCRIPTION
+
+Standard date picker
+
+=head1 API
+
+=head2 Methods
+
+=over
+
+=item date2str DATE
+
+Converts DATE to string representation according to the current C<format> string
+
+=item default_format
+
+Returns a string to be used in C<format>, where the string is constructed in such a way
+to reflect regional date formatting preferences.
+
+See also: C<man 3 strftime, %x> .
+
+=item str2date STRING
+
+Tries to extract date from STRING assuming it is constructed according to the current C<format> string.
+Doesn't fail but values that could not be extracted are assigned to today's day/month/year instead.
+
+=item today
+
+Returns today's date in widgets [D,M,Y] format
+
+=item validate_date D, M, Y
+
+Checks whether D, M, Y values are valid and within understood range; adjusts the values if not.
+Returns the final values.
+
+=back
+
+=head2 Properties
+
+=over
+
+=item date DAY, MONTH, YEAR | [ DAY, MONTH, YEAR ]
+
+Accepts three integers / arrayref with three integers in format of C<localtime>.
+DAY can be from 1 to 31, MONTH from 0 to 11, YEAR from 0 to 199.
+
+Default value: today's date.
+
+=item day INTEGER
+
+Selects the day in month.
+
+=item format STRING
+
+The format string is used when converting date to its visual interpretation,
+also with regional preferences, like YYYY-MM-DD or DD/MM/YY. The syntax of the
+format is exctly this, it recognizes fixed patterns YYYY, YY, MM, and DD,
+replacing them with the date values.
+
+=item month
+
+Selects the month.
+
+=item year
+
+Selects the year.
+
+=back
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<Prima::ComboBox>, L<Prima::Calendar>
+
+=cut

@@ -407,6 +407,10 @@ L<Prima::Spinner> - spinner animation
 
 L<Prima::TextView> - rich text browser widget
 
+L<Prima::Widget::Date> - standard date picker widget
+
+L<Prima::Widget::Time> - standard time input widget
+
 =item Standard dialogs
 
 L<Prima::Dialog::ColorDialog> - color selection facilities
