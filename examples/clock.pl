@@ -81,8 +81,18 @@ $mw->insert( 'Widget::Date' =>
 	pack => { side => 'bottom', fill => 'x', pad => 20 },
 );
 
-my $arrow = Prima::Drawable::Path->new;
-$arrow-> line(1, -1, 0, 1, -1, -1);
+
+sub draw_hand
+{
+	my ( $canvas, $color, $rotate, $x, $y ) = @_;
+	$canvas->color($color);
+	$canvas-> new_path->
+		rotate(-$rotate * 360)->
+		scale( $x, $y)->
+		translate( 0, 0.75)->
+		line(1, -1, 0, 1, -1, -1)->
+		fill;
+}
 
 $mw->insert( 'Widget' =>
 	pack      => { side => 'bottom', fill => 'both', pad => 20, expand => 1 },
@@ -110,29 +120,9 @@ $mw->insert( 'Widget' =>
 		}
 
 		$canvas->alpha(192);
-		$canvas->color(cl::Cyan);
-		my $p = $canvas-> new_path->
-			rotate(-($hour % 12 + $min / 60 + $sec / 3600) / 12 * 360)->
-			scale( $w, $d/2.5)->
-			translate( 0, 0.75);
-		$p->append( $arrow );
-		$p->fill;
-
-		$canvas->color(cl::Green);
-		$p = $canvas-> new_path->
-			rotate(-($min + $sec / 60) / 60 * 360)->
-			scale( $w, $d/2)->
-			translate( 0, 0.75);
-		$p->append( $arrow );
-		$p->fill;
-
-		$canvas->color(cl::Red);
-		$p = $canvas-> new_path->
-			rotate(-$sec / 60 * 360)->
-			scale( $w/4, $d/2)->
-			translate( 0, 0.75);
-		$p->append( $arrow );
-		$p->fill;
+		draw_hand($canvas, cl::Cyan, ($hour % 12 + $min / 60 + $sec / 3600) / 12, $w, $d/2.5);
+		draw_hand($canvas, cl::Green, ($min + $sec / 60) / 60, $w, $d/2);
+		draw_hand($canvas, cl::Red,   $sec / 60, $w/4, $d/2);
 
 		$canvas->color(cl::White);
 		$canvas->fill_ellipse(0,0,$w,$w);
