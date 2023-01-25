@@ -930,7 +930,7 @@ img_bar_tile_alpha( Handle dest, int x, int y, int w, int h, PImgPaintContext ct
 	if ( src_is_icon ) {
 		mls = t-> maskLine;
 		if ( t-> maskType != imbpp8)
-			croak("panic: assert failed for img_put_alpha: %s", "src mask type");
+			croak("panic: assert failed for img_bar_tile_alpha: %s", "src mask type");
 	} else {
 		mls = 0;
 		use_src_alpha = true;
