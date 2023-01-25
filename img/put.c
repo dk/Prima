@@ -125,7 +125,7 @@ img_put(
 		ImgPaintContext ctx;
 		if ( s-> type != imByte ) {
 			Handle dup = CImage(src)->dup(src);
-			CImage(dup)->set_type(src, imByte);
+			CImage(dup)->set_type(dup, imByte);
 			ok = img_put( dest, dup, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, rop, region, color);
 			Object_destroy(dup);
 			return ok;
