@@ -237,11 +237,10 @@ between pixels 5 and 6, by using half-tones.
 
 Another note on the rounding off coordinates: historically almost all Prima
 pixel coordinates were integers, and implicit rounding of the passed numbers
-were done using the C<int> function, i e int(0.7)=0 and int(-0.7)=0. This then
-changed for C<polyline> and C<fillpoly>, that could accept floating point
-arrays but round them with a more consistent C<round> function, where
-round(0.7)=1 and round(-0.7)=-1. It would be a good idea to change the rounding
-for the primitives too if not for the backward compatibility.
+were done using the C<int> function, i e int(0.7)=0 and int(-0.7)=0. This was
+later changed, breaking some backward compatibility, and now the rounding
+function is a more robust C<R = floor(x + 0.5)>, where C<R(0.7) = 1> and
+C<R(-0.7) = -1>.
 
 =back
 
