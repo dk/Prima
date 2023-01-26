@@ -140,6 +140,8 @@ Prima - a perl graphic toolkit
 
 	run Prima;
 
+See more screenshots at L<http://prima.eu.org/big-picture> .
+
 =head1 DESCRIPTION
 
 The toolkit is combined from two basic set of classes - core and external. The
