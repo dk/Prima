@@ -23,6 +23,8 @@ Example
 
 	run Prima;
 
+More screenshots at http://prima.eu.org/big-picture/
+
 Prerequisites
 =============
 
