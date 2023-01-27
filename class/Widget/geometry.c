@@ -1256,49 +1256,49 @@ Widget_placeInfo( Handle self, Bool set, SV * placeInfo)
 
 		if ( pexist( x)) {
 			SV * sv = pget_sv( x);
-			if (( var-> geomInfo. use_x = SvOK( sv)))
+			if (( var-> geomInfo. use_x = ( SvOK(sv) ? 1 : 0 )))
 				var-> geomInfo. x = SvIV( sv);
 		}
 		if ( pexist( y)) {
 			SV * sv = pget_sv( y);
-			if (( var-> geomInfo. use_y = SvOK( sv)))
+			if (( var-> geomInfo. use_y = ( SvOK(sv) ? 1 : 0 )))
 				var-> geomInfo. y = SvIV( sv);
 		}
 		if ( pexist( width)) {
 			SV * sv = pget_sv( width);
-			if (( var-> geomInfo. use_w = SvOK( sv)))
+			if (( var-> geomInfo. use_w = ( SvOK(sv) ? 1 : 0 )))
 				var-> geomSize. x = SvIV( sv);
 		}
 		if ( pexist( height)) {
 			SV * sv = pget_sv( height);
-			if (( var-> geomInfo. use_h = SvOK( sv)))
+			if (( var-> geomInfo. use_h = ( SvOK(sv) ? 1 : 0 )))
 				var-> geomSize. y = SvIV( sv);
 		}
 		if ( pexist( relx)) {
 			SV * sv = pget_sv( relx);
-			if (( var-> geomInfo. use_rx = SvOK( sv)))
+			if (( var-> geomInfo. use_rx = ( SvOK(sv) ? 1 : 0 )))
 				var-> geomInfo. relX = SvNV( sv);
 		}
 		if ( pexist( rely)) {
 			SV * sv = pget_sv( rely);
-			if (( var-> geomInfo. use_ry = SvOK( sv)))
+			if (( var-> geomInfo. use_ry = ( SvOK(sv) ? 1 : 0 )))
 				var-> geomInfo. relY = SvNV( sv);
 		}
 		if ( pexist( relwidth)) {
 			SV * sv = pget_sv( relwidth);
-			if (( var-> geomInfo. use_rw = SvOK( sv)))
+			if (( var-> geomInfo. use_rw = ( SvOK(sv) ? 1 : 0 )))
 				var-> geomInfo. relWidth = SvNV( sv);
 		}
 		if ( pexist( relheight)) {
 			SV * sv = pget_sv( relheight);
-			if (( var-> geomInfo. use_rh = (SvTYPE( sv) != SVt_NULL)))
+			if (( var-> geomInfo. use_rh = ( SvOK(sv) ? 1 : 0 )))
 				var-> geomInfo. relHeight = SvNV( sv);
 		}
 
 		if ( pexist( in)) {
 			SV * sv = pget_sv( in);
 			in = NULL_HANDLE;
-			if ( SvTYPE( sv) != SVt_NULL)
+			if ( SvOK(sv))
 				in = Widget_check_in( self, gimme_the_mate( sv), true);
 			set_in = true;
 		}
