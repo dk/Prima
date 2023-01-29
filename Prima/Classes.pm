@@ -517,12 +517,6 @@ sub profile_default
 	return $def;
 }
 
-sub profile_check_in
-{
-	my ( $self, $p, $default) = @_;
-	$p->{fd} = fileno($p->{file}) if exists $p->{file} && ! exists $p->{fd};
-}
-
 package Prima::Clipboard;
 use vars qw(@ISA);
 @ISA = qw(Prima::Component);

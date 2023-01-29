@@ -485,8 +485,10 @@ process_msg( MSG * msg)
 		SOCKETHANDLE socket = ( SOCKETHANDLE) msg-> lParam;
 		for ( i = 0; i < guts. sockets. count; i++) {
 			Handle self = guts. sockets. items[ i];
-			if (( sys s. file. object == socket) &&
-				( PFile( self)-> eventMask & msg-> wParam)) {
+			if (
+				( sys s. file. object == socket) &&
+				( PFile( self)-> eventMask & msg-> wParam)
+			) {
 				Event ev;
 				ev. cmd = ( msg-> wParam == feRead) ? cmFileRead :
 					(( msg-> wParam == feWrite) ? cmFileWrite : cmFileException);
@@ -500,6 +502,28 @@ process_msg( MSG * msg)
 	case WM_SOCKET_REHASH:
 		socket_rehash();
 		guts. socket_post_sync = 0; // clear semaphore
+		return true;
+	case WM_SYSHANDLE: {
+		int i;
+		WINHANDLE syshandle = ( WINHANDLE) msg-> lParam;
+		for ( i = 0; i < guts. syshandles. count; i++) {
+			Handle self = guts. syshandles. items[ i];
+			if (
+				( sys s. file. object == syshandle) &&
+				( PFile( self)-> eventMask & msg-> wParam)
+			) {
+				Event ev;
+				ev. cmd = (msg-> wParam == feRead) ? cmFileRead : cmFileWrite;
+				CComponent( self)-> message( self, &ev);
+				break;
+			}
+		}
+		guts. syshandle_post_sync = 0; // clear semaphore
+		return true;
+	}
+	case WM_SYSHANDLE_REHASH:
+		syshandle_rehash();
+		guts. syshandle_post_sync = 0; // clear semaphore
 		return true;
 	case WM_FILE:
 		if ( msg-> wParam == 0) {

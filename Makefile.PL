@@ -139,7 +139,6 @@ options:
     WITH_OPENMP       - compile with/without openmp (default 1)
     WITH_COCOA        - compile with/without Cocoa (default 1), MacOSX only
     WITH_LIBTHAI      - compile with/without libthai (default 1)
-    CYGWIN_WINAPI     - Winapi build in cygwin environment
     DEBUG             - build with debug information
     VERBOSE           - don't redirect commands to makefile.log
     EXTRA_LDFLAGS     - add extra ld line (i.e. -lgcc )
@@ -197,7 +196,6 @@ sub setup_argv
 		WITH_OPENMP   => $ENV{PRIMA_WITH_OPENMP}   // 1,
 		WITH_COCOA    => $ENV{PRIMA_WITH_COCOA}    // ($^O eq 'darwin'),
 		WITH_LIBTHAI  => $ENV{PRIMA_WITH_LIBTHAI}  // 1,
-		CYGWIN_WINAPI => $ENV{PRIMA_CYGWIN_WINAPI} // 0,
 		DEBUG         => $ENV{PRIMA_DEBUG}         // 0,
 		EXTRA_CCFLAGS => $ENV{PRIMA_EXTRA_CCFLAGS} // '',
 		EXTRA_LDFLAGS => $ENV{PRIMA_EXTRA_LDFLAGS} // '',
@@ -235,13 +233,8 @@ sub setup_variables
 		$Win32 = 1;
 		$platform = 'win32';
 	} elsif ( $^O =~ /cygwin/i) {
-		if ( $cmd_options{CYGWIN_WINAPI}) {
-			$Win32 = 1;
-			$platform = 'win32';
-		} else {
-			$unix = 1;
-			$platform = 'unix';
-		}
+		$unix = 1;
+		$platform = 'unix';
 		$cygwin = 1;
 	} else {
 		$platform = 'unix';
@@ -451,7 +444,7 @@ sub setup_environment
 		$flavor .= ( $Config{ptrsize} == 8 ) ? '64' : '32';
 	} elsif ( $cygwin ) {
 		$flavor .= ( $Config{ptrsize} == 8 ) ? '64' : '32';
-		$flavor .= '.' . ( $cmd_options{CYGWIN_WINAPI} ? 'win32' : 'x11' );
+		$flavor .= '.x11';
 	} else {
 		my $arch = `uname -m`;
 		chomp $arch;

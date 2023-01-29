@@ -44,11 +44,6 @@ apc_query_drives_map( const char *firstDrive, char *map, int len)
 	DWORD driveMap;
 	int i;
 
-#ifdef __CYGWIN__
-	if ( !map || len <= 0) return true;
-	*map = 0;
-	return true;
-#endif
 	if ( !map) return false;
 
 	beg = toupper( *firstDrive);
@@ -89,9 +84,6 @@ int
 apc_query_drive_type( const char *drive)
 {
 	char buf[ 256];                        //  Win95 fix
-#ifdef __CYGWIN__
-	return false;
-#endif
 	strlcpy( buf, drive, 255);             //     sometimes D: isn't enough for 95,
 	if ( buf[1] == ':' && buf[2] == 0) {   //     but ok for D:\.
 		buf[2] = '\\';                      //

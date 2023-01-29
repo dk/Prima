@@ -1,18 +1,6 @@
-#ifdef __CYGWIN__
-
-#define SOCKET int
-#define _get_osfhandle(a) a
-
-#include <pthread.h>
-
-#else
-
 #include <winsock.h>
 
 void my_fd_zero( fd_set* f)           { FD_ZERO( f); }
-
-#endif
-
 typedef fd_set type_fd_set;
 void std_fd_set( int fd, fd_set * f) { FD_SET(fd, f); }
 
@@ -34,8 +22,6 @@ void my_fd_set( HANDLE fd, type_fd_set * f) { std_fd_set( PTR2UV(fd), f); }
 extern "C" {
 #endif
 
-#ifndef __CYGWIN__
-
 #undef  select
 #undef  fd_set
 #undef  FD_ZERO
@@ -43,113 +29,86 @@ extern "C" {
 #undef  FD_SET
 #define FD_SET my_fd_set
 
-#endif
+static struct timeval  thread_timeout        = {1, 0};
+static char            thread_err_buf[256];
 
 static Bool            socket_thread_started = false;
 static Bool            socket_set_changed    = false;
-static struct timeval  socket_timeout        = {0, 200000};
-static char            socket_err_buf[256];
+static fd_set          socket_set1[3];
+static fd_set          socket_set2[3];
+static int             socket_commands[3] = { feRead, feWrite, feException};
 
-static fd_set socket_set1[3];
-static fd_set socket_set2[3];
-static int    socket_commands[3] = { feRead, feWrite, feException};
+#define MAX_SYSHANDLES 32
+static Bool            syshandle_thread_started = false;
+static Bool            syshandle_set_changed    = false;
+static int             syshandle_set_count;
+static HANDLE          syshandle_set1_handles[MAX_SYSHANDLES];
+static HANDLE          syshandle_set2_handles[MAX_SYSHANDLES];
+static Byte            syshandle_set1_types[MAX_SYSHANDLES];
+static Byte            syshandle_set2_types[MAX_SYSHANDLES];
 
 void
-#ifdef __CYGWIN__
-*
-#endif
 socket_select( void *dummy)
 {
-	int count;
+	int count, i, j, result;
 	while ( !prima_guts.app_is_dead) {
 		if ( socket_set_changed) {
-			// updating  handles
+			/* update handles */
 			int i;
-			if ( WaitForSingleObject( guts. socket_mutex, INFINITE) != WAIT_OBJECT_0) {
-				strcpy( socket_err_buf, "Failed to obtain socket mutex ownership for thread #2");
-				PostThreadMessage( guts. main_thread_id, WM_CROAK, 1, ( LPARAM) &socket_err_buf);
+			if ( WaitForSingleObject( guts. thread_mutex, INFINITE) != WAIT_OBJECT_0) {
+				strcpy( thread_err_buf, "Failed to obtain socket mutex ownership for thread #2");
+				PostThreadMessage( guts. main_thread_id, WM_CROAK, 1, ( LPARAM) &thread_err_buf);
 				break;
 			}
 			for ( i = 0; i < 3; i++)
 				memcpy( socket_set1+i, socket_set2+i, sizeof( fd_set));
 			socket_set_changed = false;
-			ReleaseMutex( guts. socket_mutex);
+			ReleaseMutex( guts. thread_mutex);
 		}
 
-		// calling select()
-#ifndef __CYGWIN__
 		count = socket_set1[0]. fd_count + socket_set1[1]. fd_count + socket_set1[2]. fd_count;
-#else
-		count = 0;
-		{
-			int i,j;
-			for ( i = 0; i < FD_SETSIZE; i++)
-				for ( j = 0; j < 3; i++)
-					if ( FD_ISSET( i, socket_set1+j)) {
-						count++;
-						goto END;
-					}
-END:;
-		}
-#endif
-		if ( count > 0) {
-			int i, j, result = select( FD_SETSIZE-1, &socket_set1[0], &socket_set1[1], &socket_set1[2], &socket_timeout);
-			socket_set_changed = true;
-			if ( result == 0) continue;
-			if ( result < 0) {
-				int err;
-#ifndef __CYGWIN__
-				if (( err = WSAGetLastError()) == WSAENOTSOCK)
-#else
-				if (( err = errno) == EBADF)
-#endif
-				{
-					// possibly some socket was closed
-					guts. socket_post_sync = 1;
-					PostThreadMessage( guts. main_thread_id, WM_SOCKET_REHASH, 0, 0);
-					while( guts. socket_post_sync) Sleep(1);
-				} else {
-					// some error
-					char * msg;
-#ifndef __CYGWIN__
-					msg = err_msg( err, socket_err_buf);
-#else
-					strlcpy( msg = socket_err_buf, strerror(err), 255);
-#endif
-					PostThreadMessage( guts. main_thread_id, WM_CROAK, 0, (LPARAM) msg);
-				}
-				continue;
+		/* stop the thread */
+		if ( count == 0 ) 
+			break;
+
+		/* calling select() */
+		result = select( FD_SETSIZE-1, &socket_set1[0], &socket_set1[1], &socket_set1[2], &thread_timeout);
+
+		socket_set_changed = true;
+		if ( result == 0) continue;
+		if ( result < 0) {
+			int err;
+			if (( err = WSAGetLastError()) == WSAENOTSOCK)
+			{
+				/* possibly some socket was closed? */
+				guts. socket_post_sync = 1;
+				PostThreadMessage( guts. main_thread_id, WM_SOCKET_REHASH, 0, 0);
+				while( guts. socket_post_sync) Sleep(1);
+			} else {
+				/* some error */
+				char * msg;
+				msg = err_msg( err, thread_err_buf);
+				PostThreadMessage( guts. main_thread_id, WM_CROAK, 0, (LPARAM) msg);
 			}
-			// posting select() results
-			for ( j = 0; j < 3; j++)
-#ifndef __CYGWIN__
-				for ( i = 0; i < socket_set1[j]. fd_count; i++) {
-#else
-				for ( i = 0; i < FD_SETSIZE; i++) {
-					if ( !FD_ISSET( i, socket_set1 + j)) continue;
-#endif
-					guts. socket_post_sync = 1;
-					PostThreadMessage( guts. main_thread_id, WM_SOCKET, socket_commands[j],
-#ifndef __CYGWIN__
-						( LPARAM) socket_set1[j]. fd_array[i]
-#else
-						( LPARAM) i
-#endif
-					);
-					while( guts. socket_post_sync) Sleep(1);
-				}
-		} else
-			// nothing to 'select', sleeping
-			Sleep( socket_timeout. tv_sec * 1000 + socket_timeout. tv_usec / 1000);
+			continue;
+		}
+
+		/* posting select() results */
+		for ( j = 0; j < 3; j++) {
+			for ( i = 0; i < socket_set1[j]. fd_count; i++)
+			{
+				guts. socket_post_sync = 1;
+				PostThreadMessage( guts. main_thread_id, WM_SOCKET, socket_commands[j],
+					( LPARAM) socket_set1[j]. fd_array[i]
+				);
+				while( guts. socket_post_sync) Sleep(1);
+			}
+		}
 	}
 
 	// if somehow failed, making restart possible
 	socket_thread_started = false;
-#ifdef __CYGWIN__
-	return NULL;
-#endif
 }
-
 
 static void
 reset_sockets( void)
@@ -158,8 +117,8 @@ reset_sockets( void)
 
 	// enter section
 	if ( socket_thread_started) {
-		if ( WaitForSingleObject( guts. socket_mutex, INFINITE) != WAIT_OBJECT_0)
-			croak("Failed to obtain socket mutex ownership for thread #1");
+		if ( WaitForSingleObject( guts. thread_mutex, INFINITE) != WAIT_OBJECT_0)
+			croak("Failed to obtain mutex ownership for thread #1");
 	}
 
 	// copying handles
@@ -180,18 +139,14 @@ reset_sockets( void)
 
 	// leave section and start the thread, if needed
 	if ( !socket_thread_started) {
-		if ( !( guts. socket_mutex = CreateMutex( NULL, FALSE, NULL))) {
+		if ( !( guts. thread_mutex = CreateMutex( NULL, FALSE, NULL))) {
 			apiErr;
-			croak("Failed to create socket mutex object");
+			croak("Failed to create mutex object");
 		}
-#ifndef __CYGWIN__
 		guts. socket_thread = ( HANDLE) _beginthread( socket_select, 40960, NULL);
-#else
-		pthread_create(( pthread_t*) &guts. socket_thread, 0, socket_select, NULL);
-#endif
 		socket_thread_started = true;
 	} else
-		ReleaseMutex( guts. socket_mutex);
+		ReleaseMutex( guts. thread_mutex);
 }
 
 void
@@ -204,6 +159,106 @@ socket_rehash( void)
 	}
 }
 
+void
+syshandle_select( void *dummy)
+{
+	int count = 0;
+	DWORD n;
+
+	while ( !prima_guts.app_is_dead) {
+		if ( syshandle_set_changed) {
+			// updating handles
+			if ( WaitForSingleObject( guts. thread_mutex, INFINITE) != WAIT_OBJECT_0) {
+				strcpy( thread_err_buf, "Failed to obtain mutex ownership for thread #3");
+				PostThreadMessage( guts. main_thread_id, WM_CROAK, 1, ( LPARAM) &thread_err_buf);
+				break;
+			}
+			count = syshandle_set_count;
+			memcpy( syshandle_set1_handles, syshandle_set2_handles, sizeof(HANDLE) * syshandle_set_count);
+			memcpy( syshandle_set1_types,   syshandle_set2_types,   syshandle_set_count);
+			syshandle_set_changed = false;
+			ReleaseMutex( guts. thread_mutex);
+			if ( count == 0 ) {
+				syshandle_thread_started = false;
+				return; // stop the thread
+			}
+		}
+
+		// wait now
+		n = WaitForMultipleObjects(
+			count, syshandle_set1_handles,
+			false, thread_timeout. tv_sec * 1000 + thread_timeout. tv_usec / 1000
+		);
+		if ( n == WAIT_TIMEOUT )
+			continue;
+
+		guts. syshandle_post_sync = 1;
+		if ( n >= WAIT_OBJECT_0 && n <= WAIT_OBJECT_0 + count - 1 )
+			PostThreadMessage( guts. main_thread_id, WM_SYSHANDLE,
+				(WPARAM) syshandle_set1_types[n - WAIT_OBJECT_0],
+				(LPARAM) syshandle_set1_handles[n - WAIT_OBJECT_0]
+			);
+		else
+			PostThreadMessage( guts. main_thread_id, WM_SYSHANDLE_REHASH,
+				0, 0
+			); // some bad handle?
+		while ( guts. syshandle_post_sync) Sleep(1);
+	}
+
+	// if somehow failed, making restart possible
+	syshandle_thread_started = false;
+}
+
+static void
+reset_syshandles( void)
+{
+	int i;
+
+	// enter section
+	if ( syshandle_thread_started) {
+		if ( WaitForSingleObject( guts. thread_mutex, INFINITE) != WAIT_OBJECT_0)
+			croak("Failed to obtain mutex ownership for thread #1");
+	}
+
+	syshandle_set_count = 0;
+	for ( i = 0; i < guts. syshandles. count; i++) {
+		Handle self = guts. syshandles. items[i];
+		switch ( sys s. file. type ) {
+		case FHT_STDIN:
+			if ( var eventMask & feRead) {
+				syshandle_set2_handles[ syshandle_set_count ] = sys s. file. object;
+				syshandle_set2_types  [ syshandle_set_count ] = feRead;
+				syshandle_set_count++;
+				if ( syshandle_set_count == MAX_SYSHANDLES ) goto ENOUGH;
+			}
+			break;
+		}
+	}
+
+ENOUGH:
+	syshandle_set_changed = true;
+
+	// leave section and start the thread, if needed
+	if ( !syshandle_thread_started) {
+		if ( !( guts. thread_mutex = CreateMutex( NULL, FALSE, NULL))) {
+			apiErr;
+			croak("Failed to create mutex object");
+		}
+		guts. syshandle_thread = ( HANDLE) _beginthread( syshandle_select, 40960, NULL);
+		syshandle_thread_started = true;
+	} else
+		ReleaseMutex( guts. thread_mutex);
+}
+
+void
+syshandle_rehash( void)
+{
+	int i;
+	for ( i = 0; i < guts. syshandles. count; i++) {
+		Handle self = guts. syshandles. items[i];
+		CFile( self)-> is_active( self, true);
+	}
+}
 
 Bool
 apc_file_attach( Handle self)
@@ -217,10 +272,6 @@ apc_file_attach( Handle self)
 		int  _data, _sz = sizeof( int);
 		(void)_data;
 		(void)_sz;
-#ifdef __CYGWIN__
-		_sz = htons(80);
-		guts. socket_version = 2;
-#else
 #ifdef PERL_OBJECT     // init perl socket library, if any
 		PL_piSock-> Htons( 80);
 #else
@@ -229,36 +280,20 @@ apc_file_attach( Handle self)
 		if ( getsockopt(( SOCKET) INVALID_SOCKET, SOL_SOCKET, SO_OPENTYPE, (char*)&_data, &_sz) != 0)
 			guts. socket_version = -1; // no sockets available
 		else
-#if PERL_PATCHLEVEL < 8
-			guts. socket_version = ( _data == SO_SYNCHRONOUS_NONALERT) ? 1 : 2;
-#else
 			guts. socket_version = 1;
-#endif
-
-#endif
 	}
 
-	if ( SOCKETS_NONE)
+	if (guts. socket_version == -1)
 		return false;
 
-	sys s. file. object = SOCKETS_AS_HANDLES ?
-		(( SOCKETHANDLE) _get_osfhandle( var fd)) :
-		((INT2PTR(SOCKETHANDLE, var fd)));
+	sys s. file. object = (( SOCKETHANDLE) _get_osfhandle( var fd));
 
-	{
-		int  _data, _sz = sizeof( int);
-		int result =
-#ifndef __CYGWIN__
-			SOCKETS_AS_HANDLES ?
-			WSAAsyncSelect((SOCKET) sys s. file. object, (HWND) NULL, 0, 0) :
-#endif
-			getsockopt(( SOCKET) sys s. file. object, SOL_SOCKET, SO_TYPE, (char*)&_data, &_sz);
+	if ( GetStdHandle( STD_INPUT_HANDLE ) == sys s. file. object ) {
+		fhtype = FHT_STDIN;
+	} else {
+		int result = WSAAsyncSelect((SOCKET) sys s. file. object, (HWND) NULL, 0, 0);
 		if ( result != 0)
-#ifndef __CYGWIN__
 			fhtype = ( WSAGetLastError() == WSAENOTSOCK) ? FHT_OTHER : FHT_SOCKET;
-#else
-			fhtype = ( errno == EBADF) ? FHT_OTHER : FHT_SOCKET;
-#endif
 		else
 			fhtype = FHT_SOCKET;
 	}
@@ -269,6 +304,10 @@ apc_file_attach( Handle self)
 	case FHT_SOCKET:
 		list_add( &guts. sockets, self);
 		reset_sockets();
+		break;
+	case FHT_STDIN:
+		list_add( &guts. syshandles, self);
+		reset_syshandles();
 		break;
 	default:
 		if ( guts. files. count == 0)
@@ -288,6 +327,10 @@ apc_file_detach( Handle self)
 		list_delete( &guts. sockets, self);
 		reset_sockets();
 		break;
+	case FHT_STDIN:
+		list_delete( &guts. syshandles, self);
+		reset_syshandles();
+		break;
 	default:
 		list_delete( &guts. files, self);
 	}
@@ -301,6 +344,9 @@ apc_file_change_mask( Handle self)
 	case FHT_SOCKET:
 		reset_sockets();
 		break;
+	case FHT_STDIN:
+		reset_syshandles();
+		break;
 	default:;
 	}
 	return true;
@@ -309,43 +355,6 @@ apc_file_change_mask( Handle self)
 PList
 apc_getdir( const char *dirname, Bool is_utf8)
 {
-#ifdef __CYGWIN__
-	DIR *dh;
-	struct dirent *de;
-	PList dirlist = NULL;
-	char *type, *dname;
-	char path[ 2048];
-	struct stat s;
-
-	if ( *dirname == '/' && dirname[1] == '/') dirname++;
-	if ( strcmp( dirname, "/") == 0)
-		dname = "";
-	else
-		dname = ( char*) dirname;
-
-	if (( dh = opendir( dirname)) && (dirlist = plist_create( 50, 50))) {
-		while (( de = readdir( dh))) {
-			list_add( dirlist, (Handle)duplicate_string( de-> d_name));
-			snprintf( path, 2047, "%s/%s", dname, de-> d_name);
-			type = NULL;
-			if ( stat( path, &s) == 0) {
-				switch ( s. st_mode & S_IFMT) {
-				case S_IFIFO:        type = "fifo";  break;
-				case S_IFCHR:        type = "chr";   break;
-				case S_IFDIR:        type = "dir";   break;
-				case S_IFBLK:        type = "blk";   break;
-				case S_IFREG:        type = "reg";   break;
-				case S_IFLNK:        type = "lnk";   break;
-				case S_IFSOCK:       type = "sock";  break;
-				}
-			}
-			if ( !type) type = "reg";
-			list_add( dirlist, (Handle)duplicate_string( type));
-		}
-		closedir( dh);
-	}
-	return dirlist;
-#else
 	long		 len;
 	WCHAR		 scanname[(MAX_PATH+3)*2];
 	WIN32_FIND_DATAW FindData;
@@ -429,7 +438,6 @@ apc_getdir( const char *dirname, Bool is_utf8)
 #undef FILE
 #undef DIR
 	return ret;
-#endif
 }
 
 static WCHAR*

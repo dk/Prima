@@ -140,6 +140,13 @@ data for a pseudo terminal or an out-of-band data arrives.
 
 =back
 
+=head1 Win32 implementation
+
+On windows (but not on cygwin), file handles do not report I/O events, only
+sockets and consoles do. All other handles are assumed to be inherently
+readable and writable, and if one is subscribed to these events, they are fired
+non-stop, so event  warning with event flooding here.
+
 =head1 AUTHOR
 
 Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.

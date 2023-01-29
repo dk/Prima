@@ -25,13 +25,7 @@ extern "C" {
 
 #define SEVERE_DEBUG
 typedef HANDLE WINHANDLE;
-
-#ifdef __CYGWIN__
-typedef int SOCKETHANDLE;
-#else
 typedef HANDLE SOCKETHANDLE;
-#endif
-
 #undef  HWND_DESKTOP
 #define HWND_DESKTOP         guts. desktop_window
 
@@ -75,6 +69,8 @@ typedef HANDLE SOCKETHANDLE;
 #define WM_XMOUSECLICK                    ( WM_USER + 23)
 #define WM_SIGNAL                         ( WM_USER + 24)
 #define WM_SYNTHETIC_EVENT                ( WM_USER + 25)
+#define WM_SYSHANDLE                      ( WM_USER + 26)
+#define WM_SYSHANDLE_REHASH               ( WM_USER + 27)
 #define WM_TERMINATE                      ( WM_USER + 99)
 #define WM_FIRST_USER_MESSAGE             ( WM_USER +100)
 #define WM_LAST_USER_MESSAGE              ( WM_USER +900)
@@ -97,12 +93,11 @@ typedef HANDLE SOCKETHANDLE;
 #define stbGPBrush      0x10
 
 #define SOCKETS_NONE         ( guts. socket_version == -1)
-#define SOCKETS_AS_HANDLES   ( guts. socket_version == 1)
-#define SOCKETS_NATIVE       ( guts. socket_version == 2)
 
 #define FHT_SOCKET  1
 #define FHT_PIPE    2
 #define FHT_OTHER   3
+#define FHT_STDIN   4
 
 #define apcWarn \
 	if (debug) \
@@ -229,16 +224,20 @@ typedef struct _WinGuts
 	DWORD          version;              // GetVersion() cached result
 	Point          cmDOUBLECLK;          // cached SM_CxDOUBLECLK values
 	int            socket_version;       // socket behavior type
-	List           files;                // List of active File objects
 	int            mouse_timer;          // is mouse timer started
 	Bool           popup_active;         // flag to avoid double popup activation
 	Bool           pointer_invisible;
 	HWND           console;              // win32-bound console window
-// socket variables
+
+	HANDLE         thread_mutex;         // semaphore to exchange data between socket/etc threads
+	List           files;                // List of active File files
+	List           syshandles;           // List of active File other HANDLE objects
+	HANDLE         syshandle_thread;     //   and its thread id
+	Bool           syshandle_post_sync;  //   and semaphore
 	List           sockets;              // List of watchable sockets
-	HANDLE         socket_mutex;         // thread semaphore
-	HANDLE         socket_thread;        // thread id
-	Bool           socket_post_sync;     // semaphore
+	HANDLE         socket_thread;        //   and its thread id
+	Bool           socket_post_sync;     //   and its semaphore
+
 	Bool           dont_xlate_message;   // one-time stopper to TranslateMessage() call
 	int            utf8_prepend_0x202D;  // newer windows do automatic bidi conversion, this is to cancel it
 	WCHAR *      (*alloc_utf8_to_wchar_visual)(const char*,int,int*);
@@ -770,6 +769,7 @@ extern void         register_mapper_fonts(void);
 extern long         remap_color( long clr, Bool toSystem);
 extern void         reset_system_fonts(void);
 extern void         socket_rehash( void);
+extern void         syshandle_rehash( void);
 extern Bool         select_pen(Handle self);
 extern Bool         select_brush(Handle self);
 extern Bool         select_gp_brush(Handle self);

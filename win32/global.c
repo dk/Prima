@@ -334,6 +334,7 @@ window_subsystem_init( char * error_buf)
 	list_create( &guts. transp, 8, 8);
 	list_create( &guts. files, 8, 8);
 	list_create( &guts. sockets, 8, 8);
+	list_create( &guts. syshandles, 8, 8);
 
 	// selecting locale layout, more or less latin-like
 
@@ -457,11 +458,12 @@ window_subsystem_done()
 	free( time_defs);
 	time_defs = NULL;
 	list_destroy( &guts. files);
+	list_destroy( &guts. syshandles);
 
-	if ( guts. socket_mutex) {
+	if ( guts. thread_mutex) {
 		// prima_guts.app_is_dead must be TRUE for this moment!
 		prima_guts.app_is_dead = true;
-		CloseHandle( guts. socket_mutex);
+		CloseHandle( guts. thread_mutex);
 	}
 
 	list_destroy( &guts. sockets);
