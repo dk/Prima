@@ -233,7 +233,8 @@ typedef struct _WinGuts
 	List           files;                // List of active File files
 	List           syshandles;           // List of active File other HANDLE objects
 	HANDLE         syshandle_thread;     //   and its thread id
-	Bool           syshandle_post_sync;  //   and semaphore
+	Bool           syshandle_post_sync;  //   semaphore from thread to main
+	HANDLE         syshandle_mutex;      //   semaphore from main to thread
 	List           sockets;              // List of watchable sockets
 	HANDLE         socket_thread;        //   and its thread id
 	Bool           socket_post_sync;     //   and its semaphore

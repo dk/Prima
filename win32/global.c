@@ -465,6 +465,9 @@ window_subsystem_done()
 		prima_guts.app_is_dead = true;
 		CloseHandle( guts. thread_mutex);
 	}
+	if ( guts. syshandle_mutex )
+		CloseHandle( guts. syshandle_mutex);
+
 
 	list_destroy( &guts. sockets);
 	list_destroy( &guts. transp);

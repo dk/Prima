@@ -29,7 +29,7 @@ extern "C" {
 #undef  FD_SET
 #define FD_SET my_fd_set
 
-static struct timeval  thread_timeout        = {1, 0};
+static struct timeval  thread_timeout        = {0, 200000};
 static char            thread_err_buf[256];
 
 static Bool            socket_thread_started = false;
@@ -46,6 +46,8 @@ static HANDLE          syshandle_set1_handles[MAX_SYSHANDLES];
 static HANDLE          syshandle_set2_handles[MAX_SYSHANDLES];
 static Byte            syshandle_set1_types[MAX_SYSHANDLES];
 static Byte            syshandle_set2_types[MAX_SYSHANDLES];
+
+#define MUTEX_SIGNATURE 0xff
 
 void
 socket_select( void *dummy)
@@ -68,7 +70,7 @@ socket_select( void *dummy)
 
 		count = socket_set1[0]. fd_count + socket_set1[1]. fd_count + socket_set1[2]. fd_count;
 		/* stop the thread */
-		if ( count == 0 ) 
+		if ( count == 0 )
 			break;
 
 		/* calling select() */
@@ -106,8 +108,29 @@ socket_select( void *dummy)
 		}
 	}
 
-	// if somehow failed, making restart possible
+	/* if somehow failed, making restart possible */
 	socket_thread_started = false;
+}
+
+static HANDLE
+create_mutex()
+{
+	HANDLE mutex;
+	if ( !( mutex = CreateMutex( NULL, FALSE, NULL))) {
+		apiErr;
+		warn("Failed to create mutex object");
+		return (HANDLE) 0;
+	}
+	return mutex;
+}
+
+static Bool
+take_mutex( HANDLE mutex )
+{
+	if ( WaitForSingleObject( mutex, INFINITE) == WAIT_OBJECT_0)
+		return true;
+	warn("Failed to obtain mutex ownership");
+	return false;
 }
 
 static void
@@ -115,13 +138,11 @@ reset_sockets( void)
 {
 	int i;
 
-	// enter section
-	if ( socket_thread_started) {
-		if ( WaitForSingleObject( guts. thread_mutex, INFINITE) != WAIT_OBJECT_0)
-			croak("Failed to obtain mutex ownership for thread #1");
-	}
+	/* enter section */
+	if ( socket_thread_started && !take_mutex( guts. thread_mutex))
+		return;
 
-	// copying handles
+	/* copying handles */
 	for ( i = 0; i < 3; i++)
 		FD_ZERO( &socket_set2[i]);
 
@@ -137,12 +158,10 @@ reset_sockets( void)
 
 	socket_set_changed = true;
 
-	// leave section and start the thread, if needed
+	/* leave section and start the thread, if needed */
 	if ( !socket_thread_started) {
-		if ( !( guts. thread_mutex = CreateMutex( NULL, FALSE, NULL))) {
-			apiErr;
-			croak("Failed to create mutex object");
-		}
+		if ( !( guts. thread_mutex = create_mutex()))
+			return;
 		guts. socket_thread = ( HANDLE) _beginthread( socket_select, 40960, NULL);
 		socket_thread_started = true;
 	} else
@@ -167,7 +186,7 @@ syshandle_select( void *dummy)
 
 	while ( !prima_guts.app_is_dead) {
 		if ( syshandle_set_changed) {
-			// updating handles
+			/* updating handles */
 			if ( WaitForSingleObject( guts. thread_mutex, INFINITE) != WAIT_OBJECT_0) {
 				strcpy( thread_err_buf, "Failed to obtain mutex ownership for thread #3");
 				PostThreadMessage( guts. main_thread_id, WM_CROAK, 1, ( LPARAM) &thread_err_buf);
@@ -180,32 +199,39 @@ syshandle_select( void *dummy)
 			ReleaseMutex( guts. thread_mutex);
 			if ( count == 0 ) {
 				syshandle_thread_started = false;
-				return; // stop the thread
+				return; /* stop the thread */
 			}
 		}
 
-		// wait now
+		/* wait now, wake up by mutex if anything */
 		n = WaitForMultipleObjects(
 			count, syshandle_set1_handles,
-			false, thread_timeout. tv_sec * 1000 + thread_timeout. tv_usec / 1000
+			false, INFINITE
 		);
 		if ( n == WAIT_TIMEOUT )
 			continue;
 
 		guts. syshandle_post_sync = 1;
-		if ( n >= WAIT_OBJECT_0 && n <= WAIT_OBJECT_0 + count - 1 )
+		if ( n >= WAIT_OBJECT_0 && n <= WAIT_OBJECT_0 + count - 1 ) {
+
+			n -= WAIT_OBJECT_0;
+			if (syshandle_set1_types[n] == MUTEX_SIGNATURE ) {
+				ReleaseMutex( syshandle_set1_handles[n] );
+				continue;
+			}
+
 			PostThreadMessage( guts. main_thread_id, WM_SYSHANDLE,
-				(WPARAM) syshandle_set1_types[n - WAIT_OBJECT_0],
-				(LPARAM) syshandle_set1_handles[n - WAIT_OBJECT_0]
+				(WPARAM) syshandle_set1_types[n],
+				(LPARAM) syshandle_set1_handles[n]
 			);
-		else
+		} else
 			PostThreadMessage( guts. main_thread_id, WM_SYSHANDLE_REHASH,
 				0, 0
-			); // some bad handle?
+			); /* some bad handle? */
 		while ( guts. syshandle_post_sync) Sleep(1);
 	}
 
-	// if somehow failed, making restart possible
+	/* if somehow failed, making restart possible */
 	syshandle_thread_started = false;
 }
 
@@ -214,10 +240,13 @@ reset_syshandles( void)
 {
 	int i;
 
-	// enter section
-	if ( syshandle_thread_started) {
-		if ( WaitForSingleObject( guts. thread_mutex, INFINITE) != WAIT_OBJECT_0)
-			croak("Failed to obtain mutex ownership for thread #1");
+	/* enter section */
+	if ( syshandle_thread_started && !take_mutex( guts. thread_mutex))
+		return;
+
+	if ( !guts. syshandle_mutex ) {
+		if ( !( guts. syshandle_mutex = create_mutex()))
+			return;
 	}
 
 	syshandle_set_count = 0;
@@ -229,25 +258,35 @@ reset_syshandles( void)
 				syshandle_set2_handles[ syshandle_set_count ] = sys s. file. object;
 				syshandle_set2_types  [ syshandle_set_count ] = feRead;
 				syshandle_set_count++;
-				if ( syshandle_set_count == MAX_SYSHANDLES ) goto ENOUGH;
+				if ( syshandle_set_count == MAX_SYSHANDLES - 1) goto ENOUGH;
 			}
 			break;
 		}
 	}
 
+	if ( syshandle_set_count > 0 ) {
+		/* add controlling mutex */
+		syshandle_set2_handles[ syshandle_set_count ] = guts. syshandle_mutex;
+		syshandle_set2_types  [ syshandle_set_count ] = MUTEX_SIGNATURE;
+		syshandle_set_count++;
+	}
+
 ENOUGH:
 	syshandle_set_changed = true;
 
-	// leave section and start the thread, if needed
+	/* leave section and start the thread, if needed */
 	if ( !syshandle_thread_started) {
-		if ( !( guts. thread_mutex = CreateMutex( NULL, FALSE, NULL))) {
-			apiErr;
-			croak("Failed to create mutex object");
-		}
+		if ( !( guts. thread_mutex = create_mutex()))
+			return;
 		guts. syshandle_thread = ( HANDLE) _beginthread( syshandle_select, 40960, NULL);
 		syshandle_thread_started = true;
 	} else
 		ReleaseMutex( guts. thread_mutex);
+
+	/* finally sync-wait for the thread to read the changed data */
+	if ( syshandle_set_count > 0 )
+		if ( !take_mutex( guts. syshandle_mutex ))
+			return;
 }
 
 void
@@ -272,13 +311,13 @@ apc_file_attach( Handle self)
 		int  _data, _sz = sizeof( int);
 		(void)_data;
 		(void)_sz;
-#ifdef PERL_OBJECT     // init perl socket library, if any
+#ifdef PERL_OBJECT     /* init perl socket library, if any */
 		PL_piSock-> Htons( 80);
 #else
 		win32_htons(80);
 #endif
 		if ( getsockopt(( SOCKET) INVALID_SOCKET, SOL_SOCKET, SO_OPENTYPE, (char*)&_data, &_sz) != 0)
-			guts. socket_version = -1; // no sockets available
+			guts. socket_version = -1; /* no sockets available */
 		else
 			guts. socket_version = 1;
 	}
