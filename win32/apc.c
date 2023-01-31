@@ -1351,14 +1351,16 @@ apc_system_action( const char * params)
 		} else if ( strncmp( params, "win32.ReadConsoleInputEx", 24) == 0) {
 			INPUT_RECORD ir;
 			DWORD n;
-			int flags;
-			int i = sscanf( params + 24, "%u", &flags);
-			if ( i != 1 ) {
+			int flags, fd;
+			int i = sscanf( params + 24, "%u %u", &fd, &flags);
+			WINHANDLE h;
+			if ( i != 2 ) {
 				warn("Bad wFlags\n");
 				return 0;
 			}
+			h = (fd == 0) ? GetStdHandle(STD_INPUT_HANDLE) : (WINHANDLE) _get_osfhandle(fd);
 			if (
-				ReadConsoleInputExW( GetStdHandle( STD_INPUT_HANDLE ), &ir, 1, &n, flags) == 0 ||
+				ReadConsoleInputExW( h, &ir, 1, &n, flags) == 0 ||
 				n == 0
 			)
 				return NULL;
