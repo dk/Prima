@@ -412,6 +412,14 @@ window_subsystem_init( char * error_buf)
 		if (guts.mouse_double_click_delay < 1 ) guts.mouse_double_click_delay = 50;
 	}
 
+
+	if ( !( guts.thread_mutex = mutex_create()))
+		return false;
+	if ( !( guts.syshandle_mutex_in = mutex_create()))
+		return false;
+	if ( !( guts.syshandle_mutex_out = mutex_create()))
+		return false;
+
 	return true;
 }
 
@@ -460,14 +468,11 @@ window_subsystem_done()
 	list_destroy( &guts. files);
 	list_destroy( &guts. syshandles);
 
-	if ( guts. thread_mutex) {
-		// prima_guts.app_is_dead must be TRUE for this moment!
-		prima_guts.app_is_dead = true;
-		CloseHandle( guts. thread_mutex);
-	}
-	if ( guts. syshandle_mutex )
-		CloseHandle( guts. syshandle_mutex);
-
+	/* prima_guts.app_is_dead must be TRUE for this moment! */
+	prima_guts.app_is_dead = true;
+	CloseHandle( guts. thread_mutex);
+	CloseHandle( guts. syshandle_mutex_in);
+	CloseHandle( guts. syshandle_mutex_out);
 
 	list_destroy( &guts. sockets);
 	list_destroy( &guts. transp);

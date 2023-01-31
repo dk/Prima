@@ -71,6 +71,7 @@ typedef HANDLE SOCKETHANDLE;
 #define WM_SYNTHETIC_EVENT                ( WM_USER + 25)
 #define WM_SYSHANDLE                      ( WM_USER + 26)
 #define WM_SYSHANDLE_REHASH               ( WM_USER + 27)
+#define WM_NOOP                           ( WM_USER + 28)
 #define WM_TERMINATE                      ( WM_USER + 99)
 #define WM_FIRST_USER_MESSAGE             ( WM_USER +100)
 #define WM_LAST_USER_MESSAGE              ( WM_USER +900)
@@ -234,7 +235,10 @@ typedef struct _WinGuts
 	List           syshandles;           // List of active File other HANDLE objects
 	HANDLE         syshandle_thread;     //   and its thread id
 	Bool           syshandle_post_sync;  //   semaphore from thread to main
-	HANDLE         syshandle_mutex;      //   semaphore from main to thread
+	HANDLE         syshandle_mutex_in;   //   semaphore from main to thread
+	HANDLE         syshandle_mutex_out;  //   semaphore from main to thread
+	HANDLE         syshandle_response_handle; // syshandle that just responded
+	Byte           syshandle_response_type;   // and its type
 	List           sockets;              // List of watchable sockets
 	HANDLE         socket_thread;        //   and its thread id
 	Bool           socket_post_sync;     //   and its semaphore
@@ -758,6 +762,8 @@ extern void         image_query_bits( Handle self, Bool forceNewImage);
 extern Bool         is_dwm_enabled(void);
 extern void         mod_free( BYTE * modState);
 extern BYTE *       mod_select( int mod);
+extern HANDLE       mutex_create(void);
+extern Bool         mutex_take( HANDLE mutex, char * file, int line );
 extern Bool         palette_change( Handle self);
 extern long         palette_match( Handle self, long color);
 extern int          palette_match_color( XLOGPALETTE * lp, long clr, int * diff_factor);
@@ -784,6 +790,8 @@ extern GpPen*       stylus_gp_get_pen(int line_width, uint32_t color);
 extern HPEN         stylus_get_pen( DWORD style, DWORD line_width, COLORREF color );
 extern HBRUSH       stylus_get_solid_brush( COLORREF color );
 extern void         wchar2char( char * dest, WCHAR * src, int lim);
+
+#define MUTEX_TAKE(m) mutex_take(m,__FILE__,__LINE__)
 
 /* compatibility to MSVC 6 */
 #ifndef GWLP_USERDATA

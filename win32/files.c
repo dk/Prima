@@ -49,16 +49,51 @@ static Byte            syshandle_set2_types[MAX_SYSHANDLES];
 
 #define MUTEX_SIGNATURE 0xff
 
-void
-socket_select( void *dummy)
+int
+thr_warn( const char *format, ...)
+{
+	int rc;
+	va_list args;
+	char buf[256];
+	va_start( args, format);
+	rc = vsnprintf( buf, 255, format, args);
+	buf[rc++] = '\n';
+	buf[rc] = 0;
+	va_end( args);
+	write( 2, buf, rc );
+	return rc;
+}
+
+HANDLE
+mutex_create()
+{
+	HANDLE mutex;
+	if ( !( mutex = CreateMutex( NULL, FALSE, NULL))) {
+		apiErr;
+		thr_warn("Failed to create mutex object");
+		return (HANDLE) 0;
+	}
+	return mutex;
+}
+
+Bool
+mutex_take( HANDLE mutex, char * file, int line )
+{
+	if ( WaitForSingleObject( mutex, INFINITE) == WAIT_OBJECT_0)
+		return true;
+	thr_warn("Failed to obtain mutex ownership at %s line %d", file, line);
+	return false;
+}
+
+DWORD WINAPI
+socket_select( LPVOID dummy)
 {
 	int count, i, j, result;
 	while ( !prima_guts.app_is_dead) {
 		if ( socket_set_changed) {
 			/* update handles */
 			int i;
-			if ( WaitForSingleObject( guts. thread_mutex, INFINITE) != WAIT_OBJECT_0) {
-				strcpy( thread_err_buf, "Failed to obtain socket mutex ownership for thread #2");
+			if ( !MUTEX_TAKE( guts.thread_mutex)) {
 				PostThreadMessage( guts. main_thread_id, WM_CROAK, 1, ( LPARAM) &thread_err_buf);
 				break;
 			}
@@ -84,13 +119,15 @@ socket_select( void *dummy)
 			{
 				/* possibly some socket was closed? */
 				guts. socket_post_sync = 1;
-				PostThreadMessage( guts. main_thread_id, WM_SOCKET_REHASH, 0, 0);
+				while (!PostThreadMessage( guts. main_thread_id, WM_SOCKET_REHASH, 0, 0))
+					Sleep(1);
 				while( guts. socket_post_sync) Sleep(1);
 			} else {
 				/* some error */
 				char * msg;
 				msg = err_msg( err, thread_err_buf);
-				PostThreadMessage( guts. main_thread_id, WM_CROAK, 0, (LPARAM) msg);
+				while ( !PostThreadMessage( guts. main_thread_id, WM_CROAK, 0, (LPARAM) msg))
+					Sleep(1);
 			}
 			continue;
 		}
@@ -100,9 +137,13 @@ socket_select( void *dummy)
 			for ( i = 0; i < socket_set1[j]. fd_count; i++)
 			{
 				guts. socket_post_sync = 1;
-				PostThreadMessage( guts. main_thread_id, WM_SOCKET, socket_commands[j],
-					( LPARAM) socket_set1[j]. fd_array[i]
-				);
+				while (
+					!PostThreadMessage(
+						guts. main_thread_id, WM_SOCKET, socket_commands[j],
+						( LPARAM) socket_set1[j]. fd_array[i]
+					)
+				)
+					Sleep(1);
 				while( guts. socket_post_sync) Sleep(1);
 			}
 		}
@@ -110,27 +151,8 @@ socket_select( void *dummy)
 
 	/* if somehow failed, making restart possible */
 	socket_thread_started = false;
-}
 
-static HANDLE
-create_mutex()
-{
-	HANDLE mutex;
-	if ( !( mutex = CreateMutex( NULL, FALSE, NULL))) {
-		apiErr;
-		warn("Failed to create mutex object");
-		return (HANDLE) 0;
-	}
-	return mutex;
-}
-
-static Bool
-take_mutex( HANDLE mutex )
-{
-	if ( WaitForSingleObject( mutex, INFINITE) == WAIT_OBJECT_0)
-		return true;
-	warn("Failed to obtain mutex ownership");
-	return false;
+	return 0;
 }
 
 static void
@@ -139,7 +161,7 @@ reset_sockets( void)
 	int i;
 
 	/* enter section */
-	if ( socket_thread_started && !take_mutex( guts. thread_mutex))
+	if ( socket_thread_started && !MUTEX_TAKE( guts. thread_mutex))
 		return;
 
 	/* copying handles */
@@ -160,9 +182,7 @@ reset_sockets( void)
 
 	/* leave section and start the thread, if needed */
 	if ( !socket_thread_started) {
-		if ( !( guts. thread_mutex = create_mutex()))
-			return;
-		guts. socket_thread = ( HANDLE) _beginthread( socket_select, 40960, NULL);
+		guts. socket_thread = CreateThread( NULL, 0, socket_select, NULL, 0, NULL );
 		socket_thread_started = true;
 	} else
 		ReleaseMutex( guts. thread_mutex);
@@ -178,17 +198,17 @@ socket_rehash( void)
 	}
 }
 
-void
-syshandle_select( void *dummy)
+DWORD WINAPI
+syshandle_select( LPVOID dummy)
 {
 	int count = 0;
 	DWORD n;
+	Bool ok;
 
 	while ( !prima_guts.app_is_dead) {
 		if ( syshandle_set_changed) {
 			/* updating handles */
-			if ( WaitForSingleObject( guts. thread_mutex, INFINITE) != WAIT_OBJECT_0) {
-				strcpy( thread_err_buf, "Failed to obtain mutex ownership for thread #3");
+			if ( !MUTEX_TAKE( guts.thread_mutex)) {
 				PostThreadMessage( guts. main_thread_id, WM_CROAK, 1, ( LPARAM) &thread_err_buf);
 				break;
 			}
@@ -197,10 +217,8 @@ syshandle_select( void *dummy)
 			memcpy( syshandle_set1_types,   syshandle_set2_types,   syshandle_set_count);
 			syshandle_set_changed = false;
 			ReleaseMutex( guts. thread_mutex);
-			if ( count == 0 ) {
-				syshandle_thread_started = false;
-				return; /* stop the thread */
-			}
+			if ( count == 0 ) /* stop the thread */
+				break;
 		}
 
 		/* wait now, wake up by mutex if anything */
@@ -211,28 +229,34 @@ syshandle_select( void *dummy)
 		if ( n == WAIT_TIMEOUT )
 			continue;
 
-		guts. syshandle_post_sync = 1;
 		if ( n >= WAIT_OBJECT_0 && n <= WAIT_OBJECT_0 + count - 1 ) {
-
 			n -= WAIT_OBJECT_0;
+
 			if (syshandle_set1_types[n] == MUTEX_SIGNATURE ) {
 				ReleaseMutex( syshandle_set1_handles[n] );
 				continue;
 			}
 
-			PostThreadMessage( guts. main_thread_id, WM_SYSHANDLE,
-				(WPARAM) syshandle_set1_types[n],
-				(LPARAM) syshandle_set1_handles[n]
-			);
-		} else
-			PostThreadMessage( guts. main_thread_id, WM_SYSHANDLE_REHASH,
-				0, 0
-			); /* some bad handle? */
-		while ( guts. syshandle_post_sync) Sleep(1);
+			guts.syshandle_response_type   = syshandle_set1_types[n];
+			guts.syshandle_response_handle = syshandle_set1_handles[n];
+		} else {
+			/* some bad handle? rehash */
+			guts.syshandle_response_type   = 0;
+			guts.syshandle_response_handle = 0;
+		}
+
+		guts.syshandle_post_sync = 1; /* and wake up main thread */
+		while ( !PostThreadMessage( guts.main_thread_id, WM_NOOP, 0, 0))
+			Sleep(1);
+		ok = MUTEX_TAKE( guts.syshandle_mutex_out);
+		guts.syshandle_post_sync = 0;
+		ReleaseMutex(guts.syshandle_mutex_out);
+		if ( !ok ) break;
 	}
 
 	/* if somehow failed, making restart possible */
 	syshandle_thread_started = false;
+	return 0;
 }
 
 static void
@@ -241,13 +265,8 @@ reset_syshandles( void)
 	int i;
 
 	/* enter section */
-	if ( syshandle_thread_started && !take_mutex( guts. thread_mutex))
+	if ( syshandle_thread_started && !MUTEX_TAKE( guts. thread_mutex))
 		return;
-
-	if ( !guts. syshandle_mutex ) {
-		if ( !( guts. syshandle_mutex = create_mutex()))
-			return;
-	}
 
 	syshandle_set_count = 0;
 	for ( i = 0; i < guts. syshandles. count; i++) {
@@ -266,7 +285,7 @@ reset_syshandles( void)
 
 	if ( syshandle_set_count > 0 ) {
 		/* add controlling mutex */
-		syshandle_set2_handles[ syshandle_set_count ] = guts. syshandle_mutex;
+		syshandle_set2_handles[ syshandle_set_count ] = guts. syshandle_mutex_in;
 		syshandle_set2_types  [ syshandle_set_count ] = MUTEX_SIGNATURE;
 		syshandle_set_count++;
 	}
@@ -276,17 +295,15 @@ ENOUGH:
 
 	/* leave section and start the thread, if needed */
 	if ( !syshandle_thread_started) {
-		if ( !( guts. thread_mutex = create_mutex()))
-			return;
-		guts. syshandle_thread = ( HANDLE) _beginthread( syshandle_select, 40960, NULL);
+		MUTEX_TAKE(guts.syshandle_mutex_out);
+		guts. syshandle_thread = CreateThread( NULL, 0, syshandle_select, NULL, 0, NULL );
 		syshandle_thread_started = true;
 	} else
-		ReleaseMutex( guts. thread_mutex);
+		ReleaseMutex( guts.thread_mutex);
 
 	/* finally sync-wait for the thread to read the changed data */
 	if ( syshandle_set_count > 0 )
-		if ( !take_mutex( guts. syshandle_mutex ))
-			return;
+		MUTEX_TAKE( guts. syshandle_mutex_in );
 }
 
 void

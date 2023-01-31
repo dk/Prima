@@ -417,6 +417,24 @@ Bool
 process_msg( MSG * msg)
 {
 	Bool postpone_msg_translation = false;
+
+	if ( guts.syshandle_post_sync) {
+		MSG m;
+		m.message = guts.syshandle_response_handle ? WM_SYSHANDLE : WM_SYSHANDLE_REHASH;
+		m.wParam  = (WPARAM) guts.syshandle_response_type;
+		m.lParam  = (LPARAM) guts.syshandle_response_handle;
+		guts.syshandle_post_sync = 0;
+		process_msg(&m);
+		guts.syshandle_post_sync = 1;
+
+		/* this thread keeps mutex_out, but needs to release it to signal back
+		to the caller thread that the message handling is finished and it can
+		continue. This code below is to retake the mutex back */
+		ReleaseMutex(guts.syshandle_mutex_out);
+		while (!guts.syshandle_post_sync) Sleep(1);
+		MUTEX_TAKE(guts.syshandle_mutex_out);
+	}
+
 	switch ( msg-> message)
 	{
 	case WM_TERMINATE:
@@ -518,12 +536,10 @@ process_msg( MSG * msg)
 				break;
 			}
 		}
-		guts. syshandle_post_sync = 0; // clear semaphore
 		return true;
 	}
 	case WM_SYSHANDLE_REHASH:
 		syshandle_rehash();
-		guts. syshandle_post_sync = 0; // clear semaphore
 		return true;
 	case WM_FILE:
 		if ( msg-> wParam == 0) {
