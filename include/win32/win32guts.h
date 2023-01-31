@@ -823,6 +823,23 @@ my_GetUserPreferredUILanguages(
 	PZZWSTR pwszLanguagesBuffer, PULONG pcchLanguagesBuffer
 );
 
+#ifndef CONSOLE_READ_NOREMOVE
+#define CONSOLE_READ_NOREMOVE   0x0001
+#endif
+
+#ifndef CONSOLE_READ_NOWAIT
+#define CONSOLE_READ_NOWAIT     0x0002
+#endif
+
+BOOL
+WINAPI
+ReadConsoleInputExW(
+    _In_ HANDLE hConsoleInput,
+    _Out_writes_(nLength) PINPUT_RECORD lpBuffer,
+    _In_ DWORD nLength,
+    _Out_ LPDWORD lpNumberOfEventsRead,
+    _In_ USHORT wFlags);
+
 
 #ifdef __cplusplus
 }

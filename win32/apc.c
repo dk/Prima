@@ -1215,6 +1215,50 @@ find_console( HWND w, LPARAM ptr)
 	return FALSE;
 }
 
+static char *
+translate_console_input( INPUT_RECORD *ir)
+{
+	char buf[256];
+	switch (ir-> EventType) {
+	case FOCUS_EVENT:
+		snprintf(buf, 256, "type=focus set=%d", ir-> Event.FocusEvent.bSetFocus);
+		break;
+	case KEY_EVENT:
+		snprintf(buf, 256, "type=key down=%d repeat=%d key=%d scan=%d unicode=%d ascii=%d state=%ld",
+			ir->Event.KeyEvent.bKeyDown,
+			ir->Event.KeyEvent.wRepeatCount,
+			ir->Event.KeyEvent.wVirtualKeyCode,
+			ir->Event.KeyEvent.wVirtualScanCode,
+			ir->Event.KeyEvent.uChar.UnicodeChar,
+			ir->Event.KeyEvent.uChar.AsciiChar,
+			ir->Event.KeyEvent.dwControlKeyState
+		);
+		break;
+	case MENU_EVENT:
+		snprintf(buf, 256, "type=menu cmd=%d", ir-> Event.MenuEvent.dwCommandId);
+		break;
+	case MOUSE_EVENT:
+		snprintf(buf, 256, "type=mouse x=%d y=%d state=%ld ctrl=%ld event=%ld",
+			ir->Event.MouseEvent.dwMousePosition.X,
+			ir->Event.MouseEvent.dwMousePosition.Y,
+			ir->Event.MouseEvent.dwButtonState,
+			ir->Event.MouseEvent.dwControlKeyState,
+			ir->Event.MouseEvent.dwEventFlags
+		);
+		break;
+	case WINDOW_BUFFER_SIZE_EVENT:
+		snprintf(buf, 256, "type=buffer x=%d y=%d",
+			ir->Event.WindowBufferSizeEvent.dwSize.X,
+			ir->Event.WindowBufferSizeEvent.dwSize.Y
+		);
+		break;
+	default:
+		return NULL;
+	}
+
+	return duplicate_string(buf);
+}
+
 char *
 apc_system_action( const char * params)
 {
@@ -1304,6 +1348,21 @@ apc_system_action( const char * params)
 		} else if ( strncmp( params, "win32.OpenFile.", 15) == 0) {
 			params += 15;
 			return win32_openfile( params);
+		} else if ( strncmp( params, "win32.ReadConsoleInputEx", 24) == 0) {
+			INPUT_RECORD ir;
+			DWORD n;
+			int flags;
+			int i = sscanf( params + 24, "%u", &flags);
+			if ( i != 1 ) {
+				warn("Bad wFlags\n");
+				return 0;
+			}
+			if (
+				ReadConsoleInputExW( GetStdHandle( STD_INPUT_HANDLE ), &ir, 1, &n, flags) == 0 ||
+				n == 0
+			)
+				return NULL;
+			return translate_console_input(&ir);
 		} else
 			goto DEFAULT;
 		break;
