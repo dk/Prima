@@ -3695,7 +3695,7 @@ END_TABLE(to,UV)
 typedef struct {
 	char     *language;
 	uint32_t *text;
-	int len, flags;
+	unsigned int len, flags;
 	Byte     *analysis;
 	uint16_t *v2l;
 
@@ -3709,7 +3709,7 @@ typedef Bool TextShapeFunc( Handle self, PTextShapeRec rec);
 typedef TextShapeFunc *PTextShapeFunc;
 
 typedef struct {
-	int len, flags, text_len;
+	unsigned int len, flags, text_len;
 	uint16_t *glyphs, *indexes, *advances;
 	int16_t  *positions;
 	uint16_t *fonts;

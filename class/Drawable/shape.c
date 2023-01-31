@@ -24,7 +24,7 @@ warn_malloc(ssize_t size)
 }
 
 static uint32_t*
-sv2uint32( SV * text, int * size, int * flags)
+sv2uint32( SV * text, unsigned int * size, unsigned int * flags)
 {
 	STRLEN dlen;
 	register char * src;
@@ -71,8 +71,7 @@ which might ligate.
 */
 
 typedef struct {
-	int i, vis_len;
-	uint16_t index;
+	unsigned int i, vis_len;
 } BidiRunRec, *PBidiRunRec;
 
 static void
@@ -115,9 +114,9 @@ run_next(PTextShapeRec t, PBidiRunRec r)
 }
 
 static void
-run_alloc( PTextShapeRec t, int visual_start, int visual_len, Bool invert_rtl, PTextShapeRec run)
+run_alloc( PTextShapeRec t, unsigned int visual_start, unsigned int visual_len, Bool invert_rtl, PTextShapeRec run)
 {
-	int i, flags = 0;
+	unsigned int i, flags = 0;
 	bzero(run, sizeof(TextShapeRec));
 
 	run-> text         = t->text + visual_start;
@@ -159,7 +158,7 @@ run_alloc( PTextShapeRec t, int visual_start, int visual_len, Bool invert_rtl, P
 static Bool
 fallback_reorder(PTextShapeRec t)
 {
-	int i;
+	unsigned int i;
 	register uint32_t* text = t->text;
 	register Byte *analysis = t->analysis;
 	register uint16_t* v2l  = t->v2l;
@@ -225,7 +224,7 @@ static Bool
 bidi_reorder(PTextShapeRec t, Bool arabic_shaping)
 {
 	Byte *buf, *ptr;
-	int i, sz, mlen;
+	unsigned int i, sz, mlen;
 	FriBidiFlags flags = FRIBIDI_FLAGS_DEFAULT;
   	FriBidiParType   base_dir;
 	FriBidiCharType* types;
@@ -296,7 +295,7 @@ FAIL:
 static void
 analyze_fonts( Handle self, PTextShapeRec t, uint16_t * fonts)
 {
-	int i;
+	unsigned int i;
 	uint32_t *text = t-> text;
 	int pitch      = (t->flags >> toPitch) & fpMask;
 	char * key     = Drawable_font_key(var->font.name, var->font.style);
@@ -312,7 +311,7 @@ analyze_fonts( Handle self, PTextShapeRec t, uint16_t * fonts)
 	/* make sure that all combiners are same font as base glyph */
 	text = t->text;
 	for ( i = 0; i < t->len; ) {
-		int j, base, non_base_font = 0, need_align = 0;
+		unsigned int j, base, non_base_font = 0, need_align = 0;
 		if ( text[i] >= 0x300 && text[i] <= 0x36f ) {
 			i++;
 			continue;
@@ -344,9 +343,11 @@ shape_unicode(Handle self, PTextShapeRec t, PTextShapeFunc shaper,
 	Bool glyph_mapper_only, Bool fribidi_arabic_shaping, Bool reorder
 ) {
 	Bool ok, reorder_swaps_rtl, font_changed = false;
-	Byte analysis[MAX_CHARACTERS], *save_analysis;
-	uint16_t fonts[MAX_CHARACTERS], *save_fonts;
-	uint16_t i, l2v[MAX_CHARACTERS], run_offs, run_len;
+	Byte analysis_buf[MAX_CHARACTERS], *save_analysis, *analysis;
+	uint16_t fonts_buf[MAX_CHARACTERS], *save_fonts, *fonts;
+	uint16_t l2v_buf[MAX_CHARACTERS], *l2v;
+	unsigned int i, run_offs, run_len;
+	semistatic_t p_analysis, p_fonts, p_l2v;
 	BidiRunRec brr;
 
 #ifdef _DEBUG
@@ -379,7 +380,26 @@ shape_unicode(Handle self, PTextShapeRec t, PTextShapeFunc shaper,
 	printf("\n");
 #endif
 
-	bzero(&l2v, MAX_CHARACTERS);
+	semistatic_init( &p_analysis, &analysis_buf, sizeof(Byte),     MAX_CHARACTERS);
+	semistatic_init( &p_fonts,    &fonts_buf,    sizeof(uint16_t), MAX_CHARACTERS);
+	semistatic_init( &p_l2v,      &l2v_buf,      sizeof(uint16_t), MAX_CHARACTERS);
+
+	if ( !semistatic_expand( &p_analysis, t->len ))
+		return false;
+	if ( !semistatic_expand( &p_l2v, t->len )) {
+		semistatic_done( &p_analysis);
+		return false;
+	}
+	if ( t->fonts && !semistatic_expand( &p_fonts, t->len )) {
+		semistatic_done( &p_l2v);
+		semistatic_done( &p_analysis);
+		return false;
+	}
+
+	analysis = (Byte*)     p_analysis.heap;
+	fonts    = (uint16_t*) p_fonts.heap;
+	l2v      = (uint16_t*) p_l2v.heap;
+
 	for ( i = 0; i < t->len; i++)
 		l2v[t->v2l[i]] = i;
 	for ( i = 0; i < t->len; i++)
@@ -473,6 +493,10 @@ shape_unicode(Handle self, PTextShapeRec t, PTextShapeFunc shaper,
 	}
 	t-> analysis = save_analysis;
 	t-> fonts = save_fonts;
+
+	semistatic_done( &p_analysis);
+	semistatic_done( &p_fonts);
+	semistatic_done( &p_l2v);
 
 	if ( font_changed )
 		apc_gp_set_font( self, &var->font);
@@ -616,11 +640,6 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 	if ( t.len == 0 ) {
 		return_zero = true;
 		goto EXIT;
-	}
-
-	if ( t.len > MAX_CHARACTERS ) {
-		warn("Drawable.text_shape: text too long, %dK max", MAX_CHARACTERS / 1024);
-		t.len = MAX_CHARACTERS;
 	}
 
 	if ( level != tsBytes ) {
