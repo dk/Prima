@@ -400,13 +400,6 @@ apcUpdateWindow( HWND win )
 	return ret;
 }
 
-static Bool
-files_rehash( Handle self, void * dummy)
-{
-	CFile( self)-> is_active( self, true);
-	return false;
-}
-
 typedef struct {
 	Event  event;
 	Bool   dynamic;
@@ -418,19 +411,13 @@ process_msg( MSG * msg)
 {
 	Bool postpone_msg_translation = false;
 
-	file_process_events();
+	file_process_events(0,0,0);
 
 	switch ( msg-> message)
 	{
 	case WM_TERMINATE:
 	case WM_QUIT:
 		return false;
-	case WM_CROAK:
-		if ( msg-> wParam)
-			croak("%s", ( char *) msg-> lParam);
-		else
-			warn("%s", ( char *) msg-> lParam);
-		return true;
 	case WM_SYSKEYDOWN:
 		/*
 			If Prima handles an Alt-Key combination that is also handled by a menu
@@ -483,56 +470,10 @@ process_msg( MSG * msg)
 	case WM_RBUTTONDBLCLK:
 		mouse_click. pending = 0;
 		break;
-	case WM_SYSHANDLE: {
-		int i;
-		intptr_t syshandle = ( intptr_t) msg-> lParam;
-		for ( i = 0; i < guts. syshandles. count; i++) {
-			Handle self = guts. syshandles. items[ i];
-			if (
-				( sys s. file. object == syshandle) &&
-				( PFile( self)-> eventMask & msg-> wParam)
-			) {
-				Event ev;
-				ev. cmd = (msg-> wParam == feRead) ? cmFileRead : cmFileWrite;
-				CComponent( self)-> message( self, &ev);
-				break;
-			}
-		}
-		return true;
-	}
-	case WM_SYSHANDLE_REHASH:
-		syshandle_rehash();
-		return true;
 	case WM_FILE:
-		if ( msg-> wParam == 0) {
-			int i;
-
-			if ( guts. files. count == 0) return true;
-
-			list_first_that( &guts. files, files_rehash, NULL);
-			for ( i = 0; i < guts. files. count; i++) {
-				Handle self = guts. files. items[i];
-				if ( PFile( self)-> eventMask & feRead)
-					PostMessage( NULL, WM_FILE, feRead, ( LPARAM) self);
-				if ( PFile( self)-> eventMask & feWrite)
-					PostMessage( NULL, WM_FILE, feWrite, ( LPARAM) self);
-			}
-			PostMessage( NULL, WM_FILE, 0, 0);
-		} else {
-			int i;
-			Handle self = NULL_HANDLE;
-			for ( i = 0; i < guts. files. count; i++)
-				if (( guts. files. items[i] == ( Handle) msg-> lParam) &&
-					( PFile(guts. files. items[i])-> eventMask & msg-> wParam)) {
-					self = ( Handle) msg-> lParam;
-					break;
-				}
-			if ( self) {
-				Event ev;
-				ev. cmd = ( msg-> wParam == feRead) ? cmFileRead : cmFileWrite;
-				CComponent( self)-> message( self, &ev);
-			}
-		}
+	case WM_FILE_REHASH:
+	case WM_NOOP:
+		file_process_events(msg->message, msg->wParam, msg->lParam);
 		return true;
 	case WM_SIGNAL:
 		exception_dispatch_pending_signals();

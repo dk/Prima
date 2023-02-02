@@ -63,7 +63,7 @@ typedef HANDLE SOCKETHANDLE;
 #define WM_EXTERNAL                       ( WM_USER + 17)
 #define WM_HASMATE                        ( WM_USER + 18)
 #define WM_FILE                           ( WM_USER + 19)
-#define WM_CROAK                          ( WM_USER + 20)
+#define WM_FILE_REHASH                    ( WM_USER + 20)
 #define WM_REPAINT_LAYERED                ( WM_USER + 21)
 #define WM_DRAG_RESPONSE                  ( WM_USER + 22)
 #define WM_XMOUSECLICK                    ( WM_USER + 23)
@@ -226,17 +226,6 @@ typedef struct _WinGuts
 	Bool           popup_active;         // flag to avoid double popup activation
 	Bool           pointer_invisible;
 	HWND           console;              // win32-bound console window
-
-	HANDLE         thread_mutex;         // semaphore to exchange data between socket/etc threads
-	List           files;                // List of active File files
-	List           syshandles;           // List of active File other HANDLE objects
-	HANDLE         syshandle_thread;     //   and its thread id
-	Bool           syshandle_post_sync;  //   semaphore from thread to main
-	HANDLE         syshandle_mutex_in;   //   semaphore from main to thread
-	HANDLE         syshandle_mutex_out;  //   semaphore from main to thread
-	HANDLE         syshandle_response_handle; // syshandle that just responded
-	Byte           syshandle_response_type;   // and its type
-
 	Bool           dont_xlate_message;   // one-time stopper to TranslateMessage() call
 	int            utf8_prepend_0x202D;  // newer windows do automatic bidi conversion, this is to cancel it
 	WCHAR *      (*alloc_utf8_to_wchar_visual)(const char*,int,int*);
@@ -718,7 +707,7 @@ extern PList        dnd_clipboard_get_formats();
 extern void         dpi_change(void);
 extern char *       err_msg( DWORD errId, char * buffer);
 extern char *       err_msg_gplus( GpStatus errId, char * buffer);
-extern Bool         file_process_events( void);
+extern Bool         file_process_events(int cmd, WPARAM param1, LPARAM param2);
 extern void         file_subsystem_done( void);
 extern Bool         file_subsystem_init( void);
 extern PDCFont      font_alloc( Font * data);
