@@ -57,14 +57,14 @@ typedef struct {
 
 static volatile Bool   thread_noop_flag = 0;
 
-static ThreadStorage ts;
+static ThreadStorage   ts;
 static int             socket_version = 0;
 static fd_set          socket_set2[3];
 static SOCKET          socket_control_channel[2] = {0,0};
 
 #define MAX_SYSHANDLES 32
 #define MUTEX_SIGNATURE 0xff
-static ThreadStorage th;
+static ThreadStorage   th;
 static int             syshandle_set_count;
 static HANDLE          syshandle_set2_handles[MAX_SYSHANDLES];
 static Byte            syshandle_set2_types[MAX_SYSHANDLES];
@@ -150,7 +150,11 @@ will push the main thread to process it with PostThreadMessage if the event
 loop is waiting for input. And then it wait for response_mutex.
 
 Once the main thread wakes up, it handles the response and re-acquires the
-response_mutex, see how in thread_release_response
+response_mutex, see how in thread_release_response.
+
+XXX: WM_NOOP that supposed to wake
+up the main thread is not delivered once in a while for reasons unknown.
+Main thread queue full?
 
 */
 static Bool
@@ -469,7 +473,6 @@ syshandle_select( LPVOID dummy)
 			if (syshandle_set1_types[n] == MUTEX_SIGNATURE ) {
 				LOG("syshandle thread: control mutex caught");
 				ReleaseMutex( syshandle_set1_handles[n] );
-				continue;
 			}
 
 			LOG("syshandle thread: sending WM_SYSHANDLE");
@@ -486,8 +489,8 @@ syshandle_select( LPVOID dummy)
 FAIL:
 	/* if somehow failed, making restart possible */
 	LOG("syshandle thread:ended");
-	ts.thread_id = 0;
-	ts.response_is_ready = 0;
+	th.thread_id = 0;
+	th.response_is_ready = 0;
 	return 0;
 }
 
@@ -498,6 +501,7 @@ reset_syshandles( void)
 
 	if ( !thread_enter_control( &ts))
 		return;
+	LOG("main: change syshandle");
 
 	syshandle_set_count = 0;
 	for ( i = 0; i < th.objects.count; i++) {
@@ -508,6 +512,7 @@ reset_syshandles( void)
 				syshandle_set2_handles[ syshandle_set_count ] = (HANDLE) sys s.file.object;
 				syshandle_set2_types  [ syshandle_set_count ] = feRead;
 				syshandle_set_count++;
+				LOG("main: %s wants to read", var name);
 				if ( syshandle_set_count == MAX_SYSHANDLES - 1) goto ENOUGH;
 			}
 			break;
@@ -519,12 +524,13 @@ reset_syshandles( void)
 		syshandle_set2_handles[ syshandle_set_count ] = syshandle_control_mutex;
 		syshandle_set2_types  [ syshandle_set_count ] = MUTEX_SIGNATURE;
 		syshandle_set_count++;
+		LOG("main: add syshandle_control_mutex");
 	}
 
 ENOUGH:
-	MUTEX_TAKE( syshandle_control_mutex );
 	if ( !thread_leave_control( &th, syshandle_select))
 		return;
+	ReleaseMutex( syshandle_control_mutex );
 }
 
 static void
@@ -611,8 +617,13 @@ file_process_events(int cmd, WPARAM param1, LPARAM param2)
 
 		switch ( th.cmd ) {
 		case WM_SYSHANDLE:
-			LOG("main: WM_SYSHANDLE");
-			dispatch_file_event(&th);
+			if ( th.param1 == MUTEX_SIGNATURE ) {
+				LOG("main: retake syshandle control mutex");
+				MUTEX_TAKE(syshandle_control_mutex);
+			} else {
+				LOG("main: WM_SYSHANDLE");
+				dispatch_file_event(&th);
+			}
 			break;
 		case WM_SYSHANDLE_REHASH:
 			LOG("main: WM_SYSHANDLE_REHASH");
