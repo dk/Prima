@@ -98,12 +98,17 @@ my $il = $w-> insert( InputLine =>
 	$remote_file = '/' unless length $remote_file;
 	$watcher-> {remote_host} = $remote;
 	$watcher-> {remote_file} = $remote_file;
+	$watcher-> mask( 0);
 
 	my $port = 80;
 	my $proto = getprotobyname('tcp');
 	my $iaddr;
 	my $tx = $w-> text;
 	$w-> text( "Resolving $remote...");
+	if ( $remote =~ m/^(.*):(\d+)$/) {
+		$port = $2;
+		$remote = $1;
+	}
 	unless ( $iaddr = inet_aton($remote)) {
 		$w-> text( $tx);
 		$e-> text( "Cannot resolve $remote");
@@ -124,7 +129,7 @@ my $il = $w-> insert( InputLine =>
 	$w-> text( $tx);
 	$e-> text( $data = '');
 	$watcher-> file( *SOCK);
-	$watcher-> mask( fe::Read | fe::Write);
+	$watcher-> mask( fe::Write);
 }
 );
 

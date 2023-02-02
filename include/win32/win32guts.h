@@ -93,8 +93,6 @@ typedef HANDLE SOCKETHANDLE;
 #define stbGDIMask      0x0F
 #define stbGPBrush      0x10
 
-#define SOCKETS_NONE         ( guts. socket_version == -1)
-
 #define FHT_SOCKET  1
 #define FHT_PIPE    2
 #define FHT_OTHER   3
@@ -224,7 +222,6 @@ typedef struct _WinGuts
 	UINT           error_mode;           // SetErrorMode() result
 	DWORD          version;              // GetVersion() cached result
 	Point          cmDOUBLECLK;          // cached SM_CxDOUBLECLK values
-	int            socket_version;       // socket behavior type
 	int            mouse_timer;          // is mouse timer started
 	Bool           popup_active;         // flag to avoid double popup activation
 	Bool           pointer_invisible;
@@ -239,9 +236,6 @@ typedef struct _WinGuts
 	HANDLE         syshandle_mutex_out;  //   semaphore from main to thread
 	HANDLE         syshandle_response_handle; // syshandle that just responded
 	Byte           syshandle_response_type;   // and its type
-	List           sockets;              // List of watchable sockets
-	HANDLE         socket_thread;        //   and its thread id
-	Bool           socket_post_sync;     //   and its semaphore
 
 	Bool           dont_xlate_message;   // one-time stopper to TranslateMessage() call
 	int            utf8_prepend_0x202D;  // newer windows do automatic bidi conversion, this is to cancel it
@@ -299,7 +293,7 @@ typedef struct _MenuItemData
 
 typedef struct _FileData
 {
-	SOCKETHANDLE   object;
+	intptr_t       object;
 	int            type;
 } FileData;
 
@@ -724,6 +718,9 @@ extern PList        dnd_clipboard_get_formats();
 extern void         dpi_change(void);
 extern char *       err_msg( DWORD errId, char * buffer);
 extern char *       err_msg_gplus( GpStatus errId, char * buffer);
+extern Bool         file_process_events( void);
+extern void         file_subsystem_done( void);
+extern Bool         file_subsystem_init( void);
 extern PDCFont      font_alloc( Font * data);
 extern void         font_change( Handle self, Font * font);
 extern void         font_clean( void);
@@ -762,8 +759,6 @@ extern void         image_query_bits( Handle self, Bool forceNewImage);
 extern Bool         is_dwm_enabled(void);
 extern void         mod_free( BYTE * modState);
 extern BYTE *       mod_select( int mod);
-extern HANDLE       mutex_create(void);
-extern Bool         mutex_take( HANDLE mutex, char * file, int line );
 extern Bool         palette_change( Handle self);
 extern long         palette_match( Handle self, long color);
 extern int          palette_match_color( XLOGPALETTE * lp, long clr, int * diff_factor);
@@ -775,7 +770,6 @@ extern HRGN         region_create( Handle mask);
 extern void         register_mapper_fonts(void);
 extern long         remap_color( long clr, Bool toSystem);
 extern void         reset_system_fonts(void);
-extern void         socket_rehash( void);
 extern void         syshandle_rehash( void);
 extern Bool         select_pen(Handle self);
 extern Bool         select_brush(Handle self);

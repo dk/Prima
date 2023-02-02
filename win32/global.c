@@ -332,9 +332,6 @@ window_subsystem_init( char * error_buf)
 	guts. pointer_size. x    = GetSystemMetrics( SM_CXCURSOR);
 	guts. pointer_size. y    = GetSystemMetrics( SM_CYCURSOR);
 	list_create( &guts. transp, 8, 8);
-	list_create( &guts. files, 8, 8);
-	list_create( &guts. sockets, 8, 8);
-	list_create( &guts. syshandles, 8, 8);
 
 	// selecting locale layout, more or less latin-like
 
@@ -412,12 +409,7 @@ window_subsystem_init( char * error_buf)
 		if (guts.mouse_double_click_delay < 1 ) guts.mouse_double_click_delay = 50;
 	}
 
-
-	if ( !( guts.thread_mutex = mutex_create()))
-		return false;
-	if ( !( guts.syshandle_mutex_in = mutex_create()))
-		return false;
-	if ( !( guts.syshandle_mutex_out = mutex_create()))
+	if ( !file_subsystem_init())
 		return false;
 
 	return true;
@@ -465,16 +457,9 @@ window_subsystem_done()
 		OleUninitialize();
 	free( time_defs);
 	time_defs = NULL;
-	list_destroy( &guts. files);
-	list_destroy( &guts. syshandles);
 
-	/* prima_guts.app_is_dead must be TRUE for this moment! */
-	prima_guts.app_is_dead = true;
-	CloseHandle( guts. thread_mutex);
-	CloseHandle( guts. syshandle_mutex_in);
-	CloseHandle( guts. syshandle_mutex_out);
+	file_subsystem_done();
 
-	list_destroy( &guts. sockets);
 	list_destroy( &guts. transp);
 	destroy_font_hash();
 
