@@ -893,6 +893,7 @@ Icon_bar_alpha( Handle self, int alpha, int x1, int y1, int x2, int y2)
 			}
 			rgn = Region_update_change(rgn1, true);
 			Object_destroy(rgn1);
+			free_rgn = true;
 		}
 	}
 
