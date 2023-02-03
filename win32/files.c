@@ -45,12 +45,15 @@ extern "C" {
 #define FD_SET my_fd_set
 
 typedef struct {
-	int      cmd;
-	int      param1;
-	intptr_t param2;
-	volatile Bool change_is_ready, response_is_ready;
-	HANDLE   change_mutex, response_mutex;
-	HANDLE   thread_id;
+	volatile int      cmd;
+	volatile int      param1;
+	volatile intptr_t param2;
+	volatile Bool     change_is_ready, response_is_ready;
+	volatile HANDLE   change_mutex, response_mutex;
+	volatile int      change_refcnt;
+
+	HANDLE   thread_handle;
+	DWORD    thread_id;
 	List     objects;
 	int      rehashing;
 } ThreadStorage;
@@ -88,6 +91,7 @@ thr_warn( const char *format, ...)
 }
 
 #define LOG if (debug) thr_warn
+#define THR_ID(t) ((t->thread_id == GetCurrentThreadId()) ? ((t == &ts) ? "socket" : "syshandle") : "main")
 #define socketErr(s) if (debug) thr_warn( "%s failed at %s.%d: %s\n", s, __FILE__, __LINE__, err_msg(WSAGetLastError(), NULL))
 
 HANDLE
@@ -111,6 +115,13 @@ mutex_take( HANDLE mutex, char * file, int line )
 	return false;
 }
 
+/* win32 mutexes are apparently refcounted */
+void
+mutex_release( HANDLE mutex )
+{
+	while ( ReleaseMutex( mutex)) {} ;
+}
+
 /* Main thread signals another thread that change is ready for consumption
 byt setting change_is_ready flag, and then the thread #2 grabs change_mutex
 that generally stays free. After copying the changed data the mutex is released
@@ -119,21 +130,29 @@ to be used for next change by the main thread */
 static Bool
 thread_begin_change( ThreadStorage *t)
 {
-	return MUTEX_TAKE(t->change_mutex);
+	LOG("%s: thread_begin_change refcnt=%d waiting for change_mutex..", THR_ID(t), t->change_refcnt);
+	if ( !MUTEX_TAKE(t->change_mutex)) return false;
+	LOG("%s: thread_begin_change OK refcnt=%d..", THR_ID(t), t->change_refcnt);
+	t-> change_refcnt++;
+	return true;
 }
 
 static void
 thread_end_change( ThreadStorage *t)
 {
-	ReleaseMutex( t->change_mutex);
+	LOG("%s: thread_end_change refcnt=%d..", THR_ID(t), t->change_refcnt - 1);
+	if ( --t-> change_refcnt > 0 ) return;
+	t-> change_refcnt = 0;
+	LOG("%s: release change_mutex", THR_ID(t));
+	mutex_release(t->change_mutex);
 }
 
 static void
 thread_release_response( ThreadStorage *t)
 {
 	LOG("main: release response_mutex");
-	ReleaseMutex(t-> response_mutex);
-	thread_end_change(t);
+	mutex_release(t-> response_mutex);
+	Sleep(1);
 	LOG("main: waiting to retake response_mutex");
 	MUTEX_TAKE(t-> response_mutex);
 	LOG("main: retaken response_mutex");
@@ -166,20 +185,21 @@ thread_respond( ThreadStorage *t, int cmd, int param1, intptr_t param2)
 
 	/* don't let main thread to handle response until response_is_ready is 1
 	and eventual Sleep() is over */
-	LOG("thread.respond: acquiring permission to change");
+	LOG("%s: thread_respond: acquiring permissions to change", THR_ID(t));
 	if ( !thread_begin_change(t))
 		return false;
 	{
 		t-> response_is_ready = 1;
 		if ( thread_noop_flag == 0) { /* don't trash the main queue with my messages */
 			thread_noop_flag = 1;
-			LOG("thread.respond: sending WM_NOOP");
+			LOG("%s: thread_respond: sending WM_NOOP", THR_ID(t));
 			while ( !PostThreadMessage( guts.main_thread_id, WM_NOOP, 0, 0))
 				Sleep(1);
 		}
 	}
 	thread_end_change(t);
-	LOG("thread.respond: wait for main thread to relinquish response_mutex");
+
+	LOG("%s: thread_respond: wait for main thread to relinquish response_mutex", THR_ID(t));
 
 	/* new wait for the main thread to handle the event */
 	if ( !MUTEX_TAKE(t-> response_mutex))
@@ -189,11 +209,11 @@ thread_respond( ThreadStorage *t, int cmd, int param1, intptr_t param2)
 	the event is handled here
 
 	*/
-	ReleaseMutex(t-> response_mutex);
+	mutex_release(t-> response_mutex);
 	/* now don't run off until the main thread says so */
-	LOG("thread.respond: waiting for flag..");
+	LOG("%s: thread_respond: waiting for flag..", THR_ID(t));
 	while (t-> response_is_ready) Sleep(1);
-	LOG("thread.respond: end sync");
+	LOG("%s: thread_respond: end sync", THR_ID(t));
 	return true;
 }
 
@@ -216,7 +236,7 @@ thread_leave_control( ThreadStorage *t, void * proc)
 {
 	if ( !t->thread_id) {
 		t->change_is_ready = false;
-		if ( !( t->thread_id = CreateThread( NULL, 0, proc, NULL, 0, NULL ))) {
+		if ( !( t->thread_handle = CreateThread( NULL, 0, proc, NULL, 0, &t->thread_id ))) {
 			apiErr;
 			return false;
 		}
@@ -234,11 +254,11 @@ socket_select( LPVOID dummy)
 	fd_set socket_set1[3];
 	static int socket_commands[3] = { feRead, feWrite, feException};
 
-	LOG("socket thread: started");
+	LOG("socket: started");
 	while ( !prima_guts.app_is_dead) {
 		if ( ts.change_is_ready) {
 			int i, count;
-			LOG("socket thread: change is ready");
+			LOG("socket: change is ready");
 			if ( !thread_begin_change(&ts))
 				break;
 			/* read incoming changes */
@@ -247,23 +267,23 @@ socket_select( LPVOID dummy)
 			ts.change_is_ready = false;
 			thread_end_change(&ts);
 			count = socket_set1[0]. fd_count + socket_set1[1]. fd_count + socket_set1[2]. fd_count;
-			LOG("socket thread: fd count=%d", count);
+			LOG("socket: fd count=%d", count);
 			/* stop the thread */
 			if ( count == 0 )
 				break;
 		}
 
 		/* wait for either control socket or data signal */
-		LOG("socket thread: entering select...");
+		LOG("socket: entering select...");
 		result = select( FD_SETSIZE-1, &socket_set1[0], &socket_set1[1], &socket_set1[2], NULL);
-		LOG("socket thread: select result=%d", result);
+		LOG("socket: select result=%d", result);
 
 		if ( result == 0) continue;
 		if ( result < 0) {
 			socketErr("select");
 			/* possibly some socket was closed? */
 			ts.cmd = WM_SOCKET_REHASH;
-			LOG("socket thread: WM_SOCKET_REHASH sent");
+			LOG("socket: WM_SOCKET_REHASH sent");
 			if ( !thread_respond(&ts, WM_SOCKET_REHASH, 0, 0))
 				goto FAIL;
 			continue;
@@ -276,7 +296,7 @@ socket_select( LPVOID dummy)
 				if ( s == socket_control_channel[1] ) {
 					if ( j == 0 ) {
 						char r;
-						LOG("socket thread: flushing control channel %ld", s);
+						LOG("socket: flushing control channel %ld", s);
 						if ( recv( s, &r, 1, 0) != 1 ) {
 							socketErr("recv");
 							goto FAIL;
@@ -284,16 +304,16 @@ socket_select( LPVOID dummy)
 					}
 					continue;
 				}
-				LOG("socket thread: WM_SOCKET %d %ld sent", socket_commands[i], s);
+				LOG("socket: WM_SOCKET %d %ld sent", socket_commands[i], s);
 				if ( !thread_respond( &ts, WM_SOCKET, socket_commands[j], s))
 					goto FAIL;
 			}
 		}
 		ts.change_is_ready = true;
 	}
-	LOG("socket thread: failed");
+	LOG("socket: failed");
 FAIL:
-	LOG("socket thread: ended");
+	LOG("socket: ended");
 
 	/* if somehow failed, making restart possible */
 	ts.thread_id         = 0;
@@ -420,7 +440,12 @@ reset_sockets( void)
 	}
 	FD_SET( socket_control_channel[1], &socket_set2[0]);
 
-	wakeup = ts.thread_id != 0;
+	/* don't bombard the control channel because the worker can be stuck waiting for
+	the change mutex, and we won't release it in thread_leave_control below if this call
+	is already deep in message handler change brackets. If that is indeed the case, waking
+	is not needed because the worker is not in select(), but in mutex_take(), too */
+	wakeup = ts.thread_id != 0 && ts.change_refcnt <= 1;
+
 	if ( !thread_leave_control( &ts, socket_select))
 		return;
 
@@ -441,7 +466,7 @@ syshandle_select( LPVOID dummy)
 	HANDLE  syshandle_set1_handles[MAX_SYSHANDLES];
 	Byte    syshandle_set1_types[MAX_SYSHANDLES];
 
-	LOG("syshandle thread: started");
+	LOG("syshandle: started");
 	while ( !prima_guts.app_is_dead) {
 		if ( th.change_is_ready) {
 			if ( !thread_begin_change(&th))
@@ -452,18 +477,18 @@ syshandle_select( LPVOID dummy)
 			memcpy( syshandle_set1_types,   syshandle_set2_types,   syshandle_set_count);
 			th.change_is_ready = false;
 			thread_end_change(&th);
-			LOG("syshandle thread: got %d handles", count);
+			LOG("syshandle: got %d handles", count);
 			if ( count == 0 ) /* stop the thread */
 				break;
 		}
 
 		/* wait now, wake up by mutex if anything */
-		LOG("syshandle thread: wait for %d objects", count);
+		LOG("syshandle: wait for %d objects", count);
 		n = WaitForMultipleObjects(
 			count, syshandle_set1_handles,
 			false, INFINITE
 		);
-		LOG("syshandle thread: got %d", n);
+		LOG("syshandle: got %d", n);
 		if ( n == WAIT_TIMEOUT )
 			continue;
 
@@ -471,16 +496,16 @@ syshandle_select( LPVOID dummy)
 			n -= WAIT_OBJECT_0;
 
 			if (syshandle_set1_types[n] == MUTEX_SIGNATURE ) {
-				LOG("syshandle thread: control mutex caught");
-				ReleaseMutex( syshandle_set1_handles[n] );
+				LOG("syshandle: control mutex caught");
+				mutex_release( syshandle_set1_handles[n] );
 			}
 
-			LOG("syshandle thread: sending WM_SYSHANDLE");
+			LOG("syshandle: sending WM_SYSHANDLE");
 			if ( !thread_respond(&th, WM_SYSHANDLE, syshandle_set1_types[n], (intptr_t) syshandle_set1_handles[n]))
 				goto FAIL;
 		} else {
 			/* some bad handle? rehash */
-			LOG("syshandle thread: sending WM_SYSHANDLE_REHASH");
+			LOG("syshandle: sending WM_SYSHANDLE_REHASH");
 			if ( !thread_respond(&th, WM_SYSHANDLE_REHASH, 0, 0))
 				goto FAIL;
 		}
@@ -488,7 +513,7 @@ syshandle_select( LPVOID dummy)
 
 FAIL:
 	/* if somehow failed, making restart possible */
-	LOG("syshandle thread:ended");
+	LOG("syshandle: ended");
 	th.thread_id = 0;
 	th.response_is_ready = 0;
 	return 0;
@@ -530,7 +555,7 @@ reset_syshandles( void)
 ENOUGH:
 	if ( !thread_leave_control( &th, syshandle_select))
 		return;
-	ReleaseMutex( syshandle_control_mutex );
+	mutex_release( syshandle_control_mutex );
 }
 
 static void
@@ -611,46 +636,49 @@ file_process_events(int cmd, WPARAM param1, LPARAM param2)
 	}
 
 	if ( th.response_is_ready) {
-		MUTEX_TAKE(th.change_mutex);
-		events_handled = true;
 		thread_noop_flag = 0;
+		if ( thread_begin_change(&th)) {
+			events_handled = true;
 
-		switch ( th.cmd ) {
-		case WM_SYSHANDLE:
-			if ( th.param1 == MUTEX_SIGNATURE ) {
-				LOG("main: retake syshandle control mutex");
-				MUTEX_TAKE(syshandle_control_mutex);
-			} else {
-				LOG("main: WM_SYSHANDLE");
-				dispatch_file_event(&th);
+			switch ( th.cmd ) {
+			case WM_SYSHANDLE:
+				if ( th.param1 == MUTEX_SIGNATURE ) {
+					LOG("main: retake syshandle control mutex");
+					MUTEX_TAKE(syshandle_control_mutex);
+				} else {
+					LOG("main: WM_SYSHANDLE");
+					dispatch_file_event(&th);
+				}
+				break;
+			case WM_SYSHANDLE_REHASH:
+				LOG("main: WM_SYSHANDLE_REHASH");
+				rehash_files(&th);
+				break;
 			}
-			break;
-		case WM_SYSHANDLE_REHASH:
-			LOG("main: WM_SYSHANDLE_REHASH");
-			rehash_files(&th);
-			break;
-		}
 
-		thread_release_response(&th);
+			thread_end_change( &th);
+			thread_release_response(&th);
+		}
 	}
 
 	if ( ts.response_is_ready) {
-		events_handled = true;
 		thread_noop_flag = 0;
-		MUTEX_TAKE(ts.change_mutex);
+		if ( thread_begin_change(&ts)) {
+			events_handled = true;
+			switch ( ts.cmd ) {
+			case WM_SOCKET:
+				LOG("main: WM_SOCKET");
+				dispatch_file_event(&ts);
+				break;
+			case WM_SOCKET_REHASH:
+				LOG("main: WM_SOCKET_REHASH");
+				rehash_files(&ts);
+				break;
+			}
 
-		switch ( ts.cmd ) {
-		case WM_SOCKET:
-			LOG("main: WM_SOCKET");
-			dispatch_file_event(&ts);
-			break;
-		case WM_SOCKET_REHASH:
-			LOG("main: WM_SOCKET_REHASH");
-			rehash_files(&ts);
-			break;
+			thread_end_change( &ts);
+			thread_release_response(&ts);
 		}
-
-		thread_release_response(&ts);
 	}
 
 	return events_handled;
@@ -673,8 +701,8 @@ static void
 delete_thread_storage( ThreadStorage* t)
 {
 	if ( t->thread_id ) {
-		LOG("main: terminate thread %d", t->thread_id);
-		TerminateThread(t->thread_id, 0);
+		LOG("main: terminate %s thread", (t == &ts) ? "socket" : "syshandle");
+		TerminateThread(t->thread_handle, 0);
 	}
 	if ( t-> change_mutex )
 		CloseHandle( t-> change_mutex );
