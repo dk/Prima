@@ -133,7 +133,8 @@ thread_begin_change( ThreadStorage *t)
 	LOG("%s: thread_begin_change refcnt=%d waiting for change_mutex..", THR_ID(t), t->change_refcnt);
 	if ( !MUTEX_TAKE(t->change_mutex)) return false;
 	LOG("%s: thread_begin_change OK refcnt=%d..", THR_ID(t), t->change_refcnt);
-	t-> change_refcnt++;
+	if ( t-> change_refcnt++ > 1 )
+		ReleaseMutex(t->change_mutex); /* do not overflow internal refcounting */
 	return true;
 }
 
