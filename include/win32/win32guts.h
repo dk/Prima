@@ -679,7 +679,6 @@ extern WCHAR *      alloc_utf8_to_wchar_visual( const char * utf8, int length, i
 extern WCHAR *      alloc_ascii_to_wchar( const char * text, int *length);
 extern char *       alloc_wchar_to_utf8( WCHAR * src, int * len );
 extern int          apcUpdateWindow( HWND wnd );
-extern int          arc_completion( double * angleStart, double * angleEnd, int * needFigure);
 extern Bool         add_font_to_hash( const PFont key, const PFont font, Bool addSizeEntry);
 extern char *       cf2name( UINT cf );
 extern void         char2wchar( WCHAR * dest, char * src, int lim);

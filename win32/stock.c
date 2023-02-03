@@ -2388,45 +2388,6 @@ palette_match( Handle self, long clr)
 	return PALETTERGB( color.r, color.g, color.b);
 }
 
-int
-arc_completion( double * angleStart, double * angleEnd, int * needFigure)
-{
-	int max;
-	long diff = ((long)( fabs( *angleEnd - *angleStart) * 1000 + 0.5));
-
-	if ( diff == 0) {
-		*needFigure = false;
-		return 0;
-	}
-	diff /= 1000;
-
-	while ( *angleStart > *angleEnd)
-		*angleEnd += 360;
-
-	while ( *angleStart < 0) {
-		*angleStart += 360;
-		*angleEnd   += 360;
-	}
-
-	while ( *angleStart >= 360) {
-		*angleStart -= 360;
-		*angleEnd   -= 360;
-	}
-
-	while ( *angleEnd >= *angleStart + 360)
-		*angleEnd -= 360;
-
-	if ( diff < 360) {
-		*needFigure = true;
-		return 0;
-	}
-
-	max = (int)(diff / 360);
-	*needFigure = ( max * 360) != diff;
-	return ( max % 2) ? 1 : 2;
-}
-
-
 #ifdef __cplusplus
 }
 #endif
