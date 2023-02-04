@@ -692,7 +692,6 @@ sub slider_moved
 			$slider-> rect(@rect);
 			@rect = $frame2-> rect;
 			$rect[0] += $delta;
-			$frame2-> rect(@rect);
 		} else {
 			$frame1-> height($nw1);
 			@rect = $slider-> rect;
@@ -701,8 +700,10 @@ sub slider_moved
 			$slider-> rect(@rect);
 			@rect = $frame2-> rect;
 			$rect[1] += $delta;
-			$frame2-> rect(@rect);
 		}
+		$frame2-> rect(@rect);
+		$frame1-> update_view;
+		$frame2-> update_view;
 
 		$me-> {virtual_sizes}-> [$si]     = $me-> {sizes}-> [$si]     = $nw1;
 		$me-> {virtual_sizes}-> [$si + 1] = $me-> {sizes}-> [$si + 1] = $nw2;
