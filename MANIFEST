@@ -446,6 +446,7 @@ unix/app.c
 unix/clipboard.c
 unix/cocoa.c
 unix/color.c
+unix/cursor.c
 unix/dnd.c
 unix/event.c
 unix/file.c
@@ -458,6 +459,7 @@ unix/misc.c
 unix/pointer.c
 unix/region.c
 unix/render.c
+unix/resource.c
 unix/text.c
 unix/timer.c
 unix/widget.c
