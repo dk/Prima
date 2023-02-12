@@ -717,7 +717,7 @@ sub on_keydown
 
 	$ok = 1 if $skip && $level > 0;
 
-	$self->clear_event if $ok;
+	$self->clear_event if $ok && $self->alive;
 }
 
 sub on_fontchanged
