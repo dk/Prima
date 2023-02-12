@@ -1585,6 +1585,9 @@ prima_xim_focus_out(void);
 extern void
 prima_xim_update_cursor( Handle self);
 
+extern U32
+prima_keysym_to_keycode( KeySym keysym );
+
 #ifdef WITH_GTK
 extern Display*
 prima_gtk_init( void);

@@ -141,16 +141,14 @@ prima_xim_handle_key_press( Handle self, XKeyEvent *ev, Event *e, KeySym *sym)
 		Mdebug("Xutf8LookupString: char(%d)=%x\n", n, uv);
 		n++;
 		if ( uv > 0x10FFFF ) continue;
-		if ( uv < 32 ) {
-			ok = false;
-			break; /* kbBackspace is 8, f ex */
-		}
 
 		ev.cmd        = cmKeyDown;
-		ev.key.key    = kbNoKey;
 		ev.key.code   = uv;
 		ev.key.mod    = kmUnicode;
 		ev.key.repeat = 1;
+		ev.key.key    = ( n == 1 && status == XLookupBoth ) ?
+			prima_keysym_to_keycode(*sym) :
+			kbNoKey;
 		CComponent(self)-> message(self,&ev);
 		if (PWidget(self)-> stage != csNormal)
 			break;
