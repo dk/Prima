@@ -1,3 +1,12 @@
+/*******************************************************************************/
+/*                                                                             */
+/*  XIM support                                                                */
+/*                                                                             */
+/*  Code courtesy Yin Maofan                                                   */
+/*  https://tedyin.com/posts/a-brief-intro-to-linux-input-method-framework/    */
+/*                                                                             */
+/*******************************************************************************/
+
 #include "unix/guts.h"
 #include "Application.h"
 
