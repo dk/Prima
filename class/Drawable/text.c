@@ -8,8 +8,8 @@ extern "C" {
 #endif
 
 static void*
-read_subarray( AV * av, int index, 
-	int length_expected, int * plen, char * letter_expected,
+read_subarray( AV * av, int index,
+	int length_expected, unsigned int * plen, char * letter_expected,
 	const char * caller, const char * subarray
 ) {
 	SV ** holder;
