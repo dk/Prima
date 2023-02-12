@@ -560,7 +560,12 @@ handle_key_event( Handle self, XKeyEvent *ev, Event *e, KeySym * sym, Bool relea
 	U32 keycode;
 	int str_len;
 
-	if ( !release && guts.use_xim && P_APPLICATION-> wantUnicodeInput) {
+	if (
+		!release &&
+		guts.use_xim &&
+		P_APPLICATION-> wantUnicodeInput &&
+		(ev->state & (ShiftMask|ControlMask|Mod1Mask)) == 0
+	) {
 		if ( prima_xim_handle_key_press(self, ev, e, sym))
 			return;
 	}
