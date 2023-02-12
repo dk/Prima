@@ -88,7 +88,7 @@ prima_xim_handle_key_press( Handle self, XKeyEvent *ev, Event *e, KeySym *sym)
 {
 #ifdef X_HAVE_UTF8_STRING
 	Status status;
-	int c;
+	int c, n;
 	Bool ok = true;
 	semistatic_t local_buf_ptr;
 	char local_buf[256], *buf;
@@ -128,6 +128,7 @@ prima_xim_handle_key_press( Handle self, XKeyEvent *ev, Event *e, KeySym *sym)
 
 	/* send events */
 	protect_object(self);
+	n = 0;
 	while ( *buf ) {
 		UV uv;
 		STRLEN charlen;
@@ -137,6 +138,8 @@ prima_xim_handle_key_press( Handle self, XKeyEvent *ev, Event *e, KeySym *sym)
 		buf  += charlen;
 		c    -= charlen;
 		if ( charlen == 0 ) break;
+		Mdebug("Xutf8LookupString: char(%d)=%x\n", n, uv);
+		n++;
 		if ( uv > 0x10FFFF ) continue;
 		if ( uv < 32 ) {
 			ok = false;
