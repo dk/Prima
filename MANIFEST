@@ -463,6 +463,7 @@ unix/timer.c
 unix/widget.c
 unix/window.c
 unix/xft.c
+unix/xim.c
 utils/prima-fmview.pl
 utils/prima-gencls.pl
 utils/makedoc/intro.tex

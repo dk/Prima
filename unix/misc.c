@@ -533,6 +533,7 @@ apc_cursor_set_pos( Handle self, int x, int y)
 	XX-> cursor_pos. x = x;
 	XX-> cursor_pos. y = y;
 	prima_update_cursor( self);
+	if ( guts.use_xim ) prima_xim_update_cursor(self);
 	return true;
 }
 
@@ -548,6 +549,7 @@ apc_cursor_set_size( Handle self, int x, int y)
 	XX-> cursor_size. x = x;
 	XX-> cursor_size. y = y;
 	prima_update_cursor( self);
+	if ( guts.use_xim ) prima_xim_update_cursor(self);
 	return true;
 }
 

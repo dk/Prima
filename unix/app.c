@@ -168,6 +168,7 @@ static Bool  do_no_shmem   = false;
 static Bool  do_no_gtk     = false;
 static Bool  do_no_quartz  = false;
 static Bool  do_no_xrender = false;
+static Bool  do_no_xim     = false;
 
 static Bool
 init_x11( char * error_buf )
@@ -459,6 +460,9 @@ init_x11( char * error_buf )
 		Mdebug("XWayland detected\n");
 	}
 
+	if ( !do_no_xim )
+		prima_xim_init();
+
 	if ( do_sync) XSynchronize( DISP, true);
 	return true;
 }
@@ -514,6 +518,9 @@ window_subsystem_get_options( int * argc, char *** argv)
 				" A(all together)",
 #ifdef USE_MITSHM
 	"no-shmem",       "do not use shared memory for images",
+#endif
+#ifdef X_HAVE_UTF8_STRING
+	"no-xim",         "do not use XIM",
 #endif
 	"no-core-fonts", "do not use core fonts",
 #ifdef USE_XFT
@@ -594,6 +601,12 @@ window_subsystem_set_option( char * option, char * value)
 		if ( value) warn("`--no-xrender' option has no parameters");
 		do_no_xrender = true;
 		return true;
+#ifdef X_HAVE_UTF8_STRING
+	} else if ( strcmp( option, "no-xim") == 0) {
+		if ( value) warn("`--no-xim' option has no parameters");
+		do_no_xim = true;
+		return true;
+#endif
 	} else if ( strcmp( option, "debug") == 0) {
 		if ( !value) {
 			warn("`--debug' must be given parameters. `--debug=A` assumed\n");
@@ -667,6 +680,9 @@ window_subsystem_done( void)
 {
 	int i;
 	if ( !DISP) return;
+
+	if ( guts.use_xim )
+		prima_xim_done();
 
 	for ( i = 0; i < sizeof(guts.xdnd_pointers) / sizeof(CustomPointer); i++) {
 		CustomPointer *cp = guts.xdnd_pointers + i;

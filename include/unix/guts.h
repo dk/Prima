@@ -788,6 +788,12 @@ typedef struct _UnixGuts
 	char                         unicode_hex_input_buffer[MAX_UNICODE_HEX_LENGTH + 1];
 
 	Bool                         application_stop_signal;
+
+	Bool                         use_xim;
+	XIM                          xim;
+	XIC                          xic;
+	char *                       xic_buffer;
+	unsigned int                 xic_bufsize;
 } UnixGuts;
 
 extern UnixGuts  guts;
@@ -1561,6 +1567,24 @@ prima_xft_mapper_query_ranges(PFont font, int * count, unsigned int * flags);
 
 #endif
 
+extern void
+prima_xim_init(void);
+
+extern void
+prima_xim_done(void);
+
+extern Bool
+prima_xim_handle_key_press( Handle self, XKeyEvent *ev, Event *e, KeySym *sym);
+
+extern void
+prima_xim_focus_in(Handle self);
+
+extern void
+prima_xim_focus_out(void);
+
+extern void
+prima_xim_update_cursor( Handle self);
+
 #ifdef WITH_GTK
 extern Display*
 prima_gtk_init( void);
@@ -1619,6 +1643,9 @@ prima_region_create( Handle mask);
 
 extern Handle
 prima_find_toplevel_window(Handle self);
+
+extern Handle
+prima_find_root_parent(Handle self);
 
 extern Byte*
 prima_mirror_bits( void);

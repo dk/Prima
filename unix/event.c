@@ -432,6 +432,11 @@ handle_key_event( Handle self, XKeyEvent *ev, Event *e, KeySym * sym, Bool relea
 	U32 keycode;
 	int str_len;
 
+	if ( !release && guts.use_xim && P_APPLICATION-> wantUnicodeInput) {
+		if ( prima_xim_handle_key_press(self, ev, e, sym))
+			return;
+	}
+
 	str_len = XLookupString( ev, str_buf, 256, &keysym, NULL);
 	*sym = keysym;
 	Edebug( "event: keysym: %08lx/%08lx 0: %08lx, 1: %08lx, 2: %08lx, 3: %08lx\n", keysym,
@@ -1345,19 +1350,14 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 		guts. last_button_event.type = e.cmd;
 
 		if ( e. cmd == cmMouseDown) {
+			Handle x = prima_find_root_parent(self);
+			Handle f = prima_find_root_parent(guts. focused ? guts. focused : prima_guts.application);
 			if ( XX-> flags. first_click) {
 				if ( ! is_opt( optSelectable)) {
-					Handle x = self, f = guts. focused ? guts. focused : prima_guts.application;
-					while ( f && !X(f)-> type. window && ( f != prima_guts.application)) f = (( PWidget) f)-> owner;
-					while ( !X(x)-> type. window && X(x)-> flags. clip_owner &&
-						x != prima_guts.application) x = (( PWidget) x)-> owner;
 					if ( x && x != f && X(x)-> type. window)
 						XSetInputFocus( DISP, PWidget(x)-> handle, RevertToParent, bev-> time);
 				}
 			} else {
-				Handle x = self, f = guts. focused ? guts. focused : prima_guts.application;
-				while ( !X(x)-> type. window && ( x != prima_guts.application)) x = (( PWidget) x)-> owner;
-				while ( !X(f)-> type. window && ( f != prima_guts.application)) f = (( PWidget) f)-> owner;
 				if ( x != f) {
 					e. cmd = 0;
 					if (P_APPLICATION-> hintUnder == self)
@@ -1478,7 +1478,8 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 		guts. focused = self;
 		prima_update_cursor( guts. focused);
 		e. cmd = cmReceiveFocus;
-
+		if ( guts.use_xim )
+			prima_xim_focus_in(self);
 		break;
 	}
 	case FocusOut: {
@@ -1503,6 +1504,8 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 		if ( guts. focused) prima_no_cursor( guts. focused);
 		if ( self == guts. focused) guts. focused = NULL_HANDLE;
 		e. cmd = cmReleaseFocus;
+		if ( guts.use_xim )
+			prima_xim_focus_out();
 		break;
 	}
 	case KeymapNotify: {
@@ -2047,7 +2050,10 @@ send_queued_x_events(int careOfApplication)
 
 	XNextEvent( DISP, &ev);
 	XCHECKPOINT;
+	if ( guts.use_xim && XFilterEvent(&ev, None))
+		ev.type = 0;
 	queued_events--;
+
 	while ( queued_events > 0) {
 		if (!prima_guts.application && careOfApplication) return false;
 		if ( events % 100 ) {
@@ -2057,7 +2063,8 @@ send_queued_x_events(int careOfApplication)
 		}
 		XNextEvent( DISP, &next_event);
 		XCHECKPOINT;
-		prima_handle_event( &ev, &next_event);
+		if ( !guts.use_xim || !XFilterEvent(&next_event, None))
+			prima_handle_event( &ev, &next_event);
 		events++;
 		queued_events = XEventsQueued( DISP, QueuedAlready);
 		memcpy( &ev, &next_event, sizeof( XEvent));

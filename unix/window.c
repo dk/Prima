@@ -1574,6 +1574,20 @@ prima_find_toplevel_window(Handle self)
 	return toplevel;
 }
 
+Handle
+prima_find_root_parent(Handle self)
+{
+	while (
+		self &&
+		!X(self)-> type. window &&
+		X(self)-> flags. clip_owner &&
+		self != prima_guts.application
+	)
+		self = (( PWidget) self)-> owner;
+
+	return self;
+}
+
 Bool
 apc_window_execute( Handle self, Handle insert_before)
 {
