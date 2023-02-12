@@ -691,6 +691,7 @@ sub on_keydown
 		$ok = 1;
 	}
 
+	# shortcuts
 	my $m = $self->menu;
 	if ( defined( my $itemid = $m->find_item_by_key(
 		$m->translate_key($code, $key, $mod)
@@ -701,7 +702,18 @@ sub on_keydown
 		}
 	}
 
-	# XXX immediate ~ hotkeys
+	# immediate ~ hotkeys
+	if ( !$ok && chr($code) =~ /^[0-9a-z]$/i) {
+		for my $c ( @{ $submenu->{cache} }) {
+			my $text = $m->text($c->[ITEMID]);
+			next unless defined $text;
+			next unless $text =~ m/(?<!~)~([a-z0-9])/i;
+			next unless lc(chr($code)) eq lc($1);
+			$self-> execute_item($c->[ITEMID]);
+			$ok = 1;
+			last;
+ 		}
+	}
 
 	$ok = 1 if $skip && $level > 0;
 
