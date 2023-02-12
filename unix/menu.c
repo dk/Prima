@@ -1884,7 +1884,7 @@ prima_handle_menu_shortcuts( Handle self, XEvent * ev, KeySym keysym)
 		}
 	}
 
-	if ( !guts. currentMenu && mod == kmAlt) {   /* handle menu bar keys */
+	if ( mod == kmAlt) {   /* handle menu bar keys */
 		KeySym keysym;
 		char str_buf[ 256];
 		Handle ps = self;
