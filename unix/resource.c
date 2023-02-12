@@ -76,7 +76,7 @@ prima_update_quarks_cache( Handle self)
 }
 
 int
-unix_rm_get_int( Handle self, XrmQuark class_detail, XrmQuark name_detail, int default_value)
+prima_rm_get_int( Handle self, XrmQuark class_detail, XrmQuark name_detail, int default_value)
 {
 	DEFXX;
 	XrmRepresentation type;

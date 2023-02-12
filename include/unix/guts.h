@@ -1327,7 +1327,7 @@ prima_free_rotated_entry( PCachedFont f);
 #define frUnix_int 1000
 
 extern int
-unix_rm_get_int( Handle self, XrmQuark class_detail, XrmQuark name_detail, int default_value);
+prima_rm_get_int( Handle self, XrmQuark class_detail, XrmQuark name_detail, int default_value);
 
 extern void
 prima_rect_union( XRectangle *t, const XRectangle *s);

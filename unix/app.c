@@ -819,15 +819,15 @@ apc_application_create( Handle self)
 	XX-> flags. sync_paint = 0;
 
 	apc_component_fullname_changed_notify( self);
-	guts. mouse_wheel_down = unix_rm_get_int( self, guts.qWheeldown, guts.qwheeldown, 5);
-	guts. mouse_wheel_up = unix_rm_get_int( self, guts.qWheelup, guts.qwheelup, 4);
-	guts. click_time_frame = unix_rm_get_int( self, guts.qClicktimeframe, guts.qclicktimeframe, guts. click_time_frame);
-	guts. double_click_time_frame = unix_rm_get_int( self, guts.qDoubleclicktimeframe, guts.qdoubleclicktimeframe, guts. double_click_time_frame);
-	guts. visible_timeout = unix_rm_get_int( self, guts.qBlinkvisibletime, guts.qblinkvisibletime, guts. visible_timeout);
-	guts. invisible_timeout = unix_rm_get_int( self, guts.qBlinkinvisibletime, guts.qblinkinvisibletime, guts. invisible_timeout);
-	guts. menu_timeout = unix_rm_get_int( self, guts.qSubmenudelay, guts.qsubmenudelay, guts. menu_timeout);
-	guts. scroll_first = unix_rm_get_int( self, guts.qScrollfirst, guts.qscrollfirst, guts. scroll_first);
-	guts. scroll_next = unix_rm_get_int( self, guts.qScrollnext, guts.qscrollnext, guts. scroll_next);
+	guts. mouse_wheel_down = prima_rm_get_int( self, guts.qWheeldown, guts.qwheeldown, 5);
+	guts. mouse_wheel_up = prima_rm_get_int( self, guts.qWheelup, guts.qwheelup, 4);
+	guts. click_time_frame = prima_rm_get_int( self, guts.qClicktimeframe, guts.qclicktimeframe, guts. click_time_frame);
+	guts. double_click_time_frame = prima_rm_get_int( self, guts.qDoubleclicktimeframe, guts.qdoubleclicktimeframe, guts. double_click_time_frame);
+	guts. visible_timeout = prima_rm_get_int( self, guts.qBlinkvisibletime, guts.qblinkvisibletime, guts. visible_timeout);
+	guts. invisible_timeout = prima_rm_get_int( self, guts.qBlinkinvisibletime, guts.qblinkinvisibletime, guts. invisible_timeout);
+	guts. menu_timeout = prima_rm_get_int( self, guts.qSubmenudelay, guts.qsubmenudelay, guts. menu_timeout);
+	guts. scroll_first = prima_rm_get_int( self, guts.qScrollfirst, guts.qscrollfirst, guts. scroll_first);
+	guts. scroll_next = prima_rm_get_int( self, guts.qScrollnext, guts.qscrollnext, guts. scroll_next);
 
 	prima_send_create_event( X_WINDOW);
 	return true;
