@@ -643,7 +643,9 @@ sub on_keydown
 
 	my $submenu = $self;
 	my $level = 0;
+	my @hierarchy;
 	while ($submenu->{submenu}) {
+		push @hierarchy, $submenu;
 		$submenu = $submenu->{submenu};
 		$level++;
 	}
@@ -706,15 +708,25 @@ sub on_keydown
 
 	# immediate ~ hotkeys
 	if ( !$ok && chr($code) =~ /^[0-9a-z]$/i) {
-		for my $c ( @{ $submenu->{cache} }) {
-			my $text = $m->text($c->[ITEMID]);
-			next unless defined $text;
-			next unless $text =~ m/(?<!~)~([a-z0-9])/i;
-			next unless lc(chr($code)) eq lc($1);
-			$self-> execute_item($c->[ITEMID]);
-			$ok = 1;
-			last;
- 		}
+		MENU: for my $upper ( $submenu, reverse @hierarchy ) {
+			my $idx = -1;
+			for my $c ( @{ $upper->{cache} }) {
+				$idx++;
+				next unless defined $c->[ITEMID];
+				my $text = $m->text($c->[ITEMID]);
+				next unless defined $text;
+				next unless $text =~ m/(?<!~)~([a-z0-9])/i;
+				next unless lc(chr($code)) eq lc($1);
+				if ($self-> menu-> is_submenu($c->[ITEMID])) {
+					$upper->selectedItem($idx);
+					$upper->enter_submenu;
+				} else {
+					$self-> execute_item($c->[ITEMID]);
+				}
+				$ok = 1;
+				last MENU;
+ 			}
+		}
 	}
 
 	$ok = 1 if $skip && $level > 0;
