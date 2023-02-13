@@ -105,7 +105,7 @@ sub profile_check_in
 		my $fh = exists $p-> {font}-> {height} ?
 			$p-> {font}-> {height} :
 			$default-> {font}-> {height};
-		$p-> { editHeight } = $fh + 2
+		$p-> { editHeight } = $fh + 6
 			unless exists $p-> {editHeight };
 	}
 	$p-> {autoHScroll} = 0 if exists $p-> {hScroll};

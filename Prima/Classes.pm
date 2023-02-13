@@ -1328,12 +1328,8 @@ sub profile_check_in
 				@default_font_box = ( $f-> { width}, $f-> { height});
 			}
 			my @a = @default_font_box;
-			$p-> {left}    *= $a[0] / $d[0] if exists $p-> {left};
-			$p-> {right}   *= $a[0] / $d[0] if exists $p-> {right};
-			$p-> {top}     *= $a[1] / $d[1] if exists $p-> {top};
-			$p-> {bottom}  *= $a[1] / $d[1] if exists $p-> {bottom};
-			$p-> {width}   *= $a[0] / $d[0] if exists $p-> {width};
-			$p-> {height}  *= $a[1] / $d[1] if exists $p-> {height};
+			$p->{$_} = int($p->{$_} * $a[0] / $d[0] + .5) for grep { exists $p->{$_} } qw(left right width);
+			$p->{$_} = int($p->{$_} * $a[1] / $d[1] + .5) for grep { exists $p->{$_} } qw(top bottom height);
 		}
 	} else {
 		$p-> {designScale} = [0,0];

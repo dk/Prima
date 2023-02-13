@@ -623,7 +623,7 @@ $x-> redraw_items( $x-> focusedItem);
 ','VText', 'onChange'),
 			origin => [ 9, 15],
 			owner => 'ValueBook',
-			size => [ 240, 20],
+			size => [ 240, 21],
 			text => '',
 	}},
 	'VCombo' => {
@@ -741,7 +741,7 @@ $self-> enabled( 0) if
 ','LParams', 'onCreate'),
 			origin => [ 96, 122],
 			owner => 'Spool',
-			size => [ 182, 20],
+			size => [ 182, 21],
 			text => '',
 	}},
 	'AddBtn' => {
@@ -833,7 +833,7 @@ $self-> enabled( 0) if
 			name => 'CmdLine',
 			origin => [ 37, 18],
 			owner => 'Spool',
-			size => [ 241, 20],
+			size => [ 241, 21],
 			text => '',
 	}},
 	'OK' => {

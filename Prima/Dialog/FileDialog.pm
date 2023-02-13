@@ -819,7 +819,7 @@ sub init
 	$self-> insert( InputLine =>
 		name      => 'Name',
 		origin    => [ 14, 343],
-		size      => [ 245, 25],
+		size      => [ 245, 26],
 		text      => $profile{fileName},
 		maxLen    => 32768,
 		delegations => [qw(KeyDown)],

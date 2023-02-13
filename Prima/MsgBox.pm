@@ -236,7 +236,7 @@ sub input_box
 	);
 
 	my $input = $dlg-> insert( InputLine =>
-		size          => [ 415, 20],
+		size          => [ 415, 21],
 		origin        => [ 10, 56],
 		text          => $string,
 		current       => 1,
