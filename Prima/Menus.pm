@@ -578,6 +578,7 @@ sub enter_submenu
 	}
 
 	$self->notify(qw(Submenu), $i);
+	return unless $self->alive;
 
 	$self->{submenu_index} = $i;
 
@@ -689,6 +690,7 @@ sub on_keydown
 	} elsif ( $key == kb::Enter ) {
 		$submenu-> execute_selected;
 		$ok = 1;
+		return unless $self->alive;
 	}
 
 	# shortcuts
