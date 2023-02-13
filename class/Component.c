@@ -658,13 +658,14 @@ XS( Component_notify_FROMPERL)
 	HV     * hv;
 	char   * name, * s;
 	int      nameLen, rnt, i, ret = -1, evPtr;
-	SV    ** argsv;
-	int      argsc = items - 1;
+	SV    ** argsv, (*argsv_buf)[32];
+	int      argsc;
 	char     buf[ 1024];
 	SV     * privMethod;
-	Handle * sequence;
+	Handle * sequence, sequence_buf[32];
 	int      seqCount = 0, stage = csNormal;
 	PList    list = NULL;
+	semistatic_t p_argsv, p_sequence;
 
 	if ( items < 2) {
 		exception_remember("Invalid usage of Component.notify");
@@ -678,6 +679,25 @@ XS( Component_notify_FROMPERL)
 		return;
 	}
 
+	/* safe-copy all arguments except ST(1), i.e. event name */
+	semistatic_init( &p_argsv, &argsv_buf, sizeof(SV*), sizeof(argsv_buf) / sizeof(SV*));
+	argsc = items - 1;
+	if ( !semistatic_expand( &p_argsv, argsc )) {
+		exception_remember( "Not enough memory");
+		return;
+	}
+	argsv = (SV**) p_argsv.heap;
+	argsv[0] = newSVsv(ST(0));
+	for ( i = 2; i < items; i++) {
+		argsv[i-1] = newSVsv(ST(i));
+	}
+#define FREE_ARGSV {                           \
+	int i;                                 \
+	for ( i = 0; i < argsc; i++)    \
+		sv_free( argsv[i] );           \
+	semistatic_done(&p_argsv);             \
+}
+
 	if ( prima_guts.event_hook) {
 		dSP;
 		dG_EVAL_ARGS;
@@ -687,15 +707,19 @@ XS( Component_notify_FROMPERL)
 		SAVETMPS;
 		PUSHMARK( sp);
 		EXTEND( sp, items);
-		for ( i = 0; i < items; i++) PUSHs( ST( i));
 		PUTBACK;
 		OPEN_G_EVAL;
+		PUSHs( argsv[0] );
+		PUSHs( ST(1));
+		for ( i = 1; i < argsc; i++)
+			PUSHs( argsv[i] );
 		perl_call_sv( prima_guts.event_hook, G_SCALAR | G_EVAL);
 		SPAGAIN;
 		if ( SvTRUE( GvSV( PL_errgv))) {
 			(void)POPs;
 			CLOSE_G_EVAL;
 			exception_remember(SvPV_nolen( GvSV( PL_errgv)));
+			FREE_ARGSV;
 			return;
 		}
 		CLOSE_G_EVAL;
@@ -704,20 +728,26 @@ XS( Component_notify_FROMPERL)
 		FREETMPS;
 		LEAVE;
 		SPAGAIN;
-		if ( !flag) XSRETURN_IV(0);
+		if ( !flag) {
+			FREE_ARGSV;
+			XSRETURN_IV(0);
+		}
 	}
 
 	if ( var-> stage != csNormal) {
-		if ( !is_opt( optcmDestroy)) XSRETURN_IV(1);
+		if ( !is_opt( optcmDestroy)) {
+			FREE_ARGSV;
+			XSRETURN_IV(1);
+		}
 		opt_clear( optcmDestroy);
 		stage = var-> stage;
 	}
 
+	/* fetching the notification type */
 	res = my-> notification_types( self);
 	hv = ( HV *) SvRV( res);
 	SPAGAIN;
 
-	/* fetching notification type */
 	nameLen = strlen( name);
 	if ( hv_exists( hv, name, nameLen)) {
 		SV ** holder = hv_fetch( hv, name, nameLen, 0);
@@ -725,6 +755,7 @@ XS( Component_notify_FROMPERL)
 			char buf[1024];
 			snprintf(buf, 1024, "Inconsistent storage in %s::notification_types for %s during Component.notify", var-> self-> className, name);
 			exception_remember(buf);
+			FREE_ARGSV;
 			return;
 		}
 		rnt = SvIV( *holder);
@@ -755,11 +786,19 @@ XS( Component_notify_FROMPERL)
 		}
 	}
 
-	if ( seqCount == 0) XSRETURN_IV(1);
+	if ( seqCount == 0) {
+		FREE_ARGSV;
+		XSRETURN_IV(1);
+	}
 
 	/* filling calling sequence */
-	sequence = ( Handle *) malloc( seqCount * 2 * sizeof( void *));
-	if ( !sequence) XSRETURN_IV(1);
+	semistatic_init( &p_sequence, &sequence_buf, sizeof(Handle), sizeof(sequence_buf) / sizeof(Handle));
+	if ( !semistatic_expand( &p_sequence, seqCount * 2 )) {
+		exception_remember( "Not enough memory");
+		FREE_ARGSV;
+		XSRETURN_IV(1);
+	}
+	sequence = ( Handle *) p_sequence.heap;
 
 	i = 0;
 	if ( privMethod && (( rnt & ntCustomFirst) == 0)) {
@@ -781,16 +820,6 @@ XS( Component_notify_FROMPERL)
 		sequence[ i++] = ( Handle) privMethod;
 	}
 
-	/* copying arguments passed from perl */
-	argsv = ( SV **) malloc( argsc * sizeof( SV *));
-	if ( !argsv) {
-		free( sequence);
-		XSRETURN_IV(1);
-	}
-
-	for ( i = 0; i < argsc; i++) argsv[ i] = ST( i + 1);
-	argsv[ 0] = ST( 0);
-
 	/* entering event */
 	my-> push_event( self);
 	SPAGAIN;
@@ -802,13 +831,16 @@ XS( Component_notify_FROMPERL)
 		dSP;
 		dG_EVAL_ARGS;
 		int j;
+		SV *st0_copy = NULL;
 
 		ENTER;
 		SAVETMPS;
 		PUSHMARK( sp);
 		EXTEND( sp, argsc + (( sequence[ i] == self) ? 0 : 1));
-		if ( sequence[ i] != self)
-			PUSHs((( PAnyObject)( sequence[i]))-> mate);
+		if ( sequence[ i] != self) {
+			st0_copy = newSVsv((( PAnyObject)( sequence[i]))-> mate);
+			PUSHs(st0_copy);
+		}
 		for ( j = 0; j < argsc; j++) PUSHs( argsv[ j]);
 		PUTBACK;
 		OPEN_G_EVAL;
@@ -816,15 +848,17 @@ XS( Component_notify_FROMPERL)
 		if ( SvTRUE( GvSV( PL_errgv))) {
 			CLOSE_G_EVAL;
 			if ( privMethod) sv_free( privMethod);
-			free( argsv);
-			free( sequence);
 			exception_remember(SvPV_nolen( GvSV( PL_errgv)));
+			if ( st0_copy ) sv_free( st0_copy );
+			FREE_ARGSV;
+			semistatic_done(&p_sequence);
 			return;
 		}
 		CLOSE_G_EVAL;
 		SPAGAIN;
 		FREETMPS;
 		LEAVE;
+		if ( st0_copy ) sv_free( st0_copy );
 		if (( var-> stage != stage) ||
 			( var-> evPtr != evPtr) ||
 			( rnt == ntSingle) ||
@@ -839,8 +873,8 @@ XS( Component_notify_FROMPERL)
 	SPAGAIN;
 	SP -= items;
 	XPUSHs( sv_2mortal( newSViv( ret)));
-	free( argsv);
-	free( sequence);
+	FREE_ARGSV;
+	semistatic_done(&p_sequence);
 	PUTBACK;
 }
 
