@@ -707,12 +707,12 @@ XS( Component_notify_FROMPERL)
 		SAVETMPS;
 		PUSHMARK( sp);
 		EXTEND( sp, items);
-		PUTBACK;
-		OPEN_G_EVAL;
 		PUSHs( argsv[0] );
 		PUSHs( ST(1));
 		for ( i = 1; i < argsc; i++)
 			PUSHs( argsv[i] );
+		PUTBACK;
+		OPEN_G_EVAL;
 		perl_call_sv( prima_guts.event_hook, G_SCALAR | G_EVAL);
 		SPAGAIN;
 		if ( SvTRUE( GvSV( PL_errgv))) {
