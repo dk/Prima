@@ -1755,24 +1755,15 @@ handle_menu_key( XEvent *ev, XWindow win, Handle self)
 	return;
 NEXT_STAGE:
 
-	if ( str_len == 1) {
+	if ( str_len != 1)
+		return;
+
+	while ( w ) {
 		int i;
 		char c = tolower( str_buf[0]);
 		for ( i = 0; i <= w-> last; i++) {
 			if ( m-> text) {
-				int j = 0;
-				char * t = m-> text, z = 0;
-				while ( t[j]) {
-					if ( t[j] == '~' && t[j+1]) {
-						if ( t[j+1] == '~')
-							j += 2;
-						else {
-							z = tolower(t[j+1]);
-							break;
-						}
-					}
-					j++;
-				}
+				int z = CAbstractMenu(self)->translate_accel(NULL_HANDLE, m->text);
 				if ( z == c) {
 					if ( menu_enter_item( XX, w, i, 1) && w-> next)
 						menu_select_item( XX, w, i);
@@ -1781,9 +1772,11 @@ NEXT_STAGE:
 			}
 			m = m-> next;
 		}
+		w = w->prev;
+		m = w->m;
 	}
 }
-	
+
 static void
 handle_menu_timer( XEvent *ev, XWindow win, Handle self)
 {
@@ -1896,40 +1889,32 @@ prima_handle_menu_shortcuts( Handle self, XEvent * ev, KeySym keysym)
 		}
 		self = ps;
 
-		if ( XT_IS_WINDOW(X(self)) && PWindow(self)-> menu &&
-				1 == XLookupString( &ev-> xkey, str_buf, 256, &keysym, NULL)) {
+		if (
+			XT_IS_WINDOW(X(self)) &&
+			PWindow(self)-> menu &&
+			1 == XLookupString( &ev-> xkey, str_buf, 256, &keysym, NULL)
+		) {
 			int i;
-			PMenuSysData selfxx = M(PWindow(self)-> menu);
+			Handle menu = PWindow(self)->menu;
+			PMenuSysData selfxx = M(menu);
 			char c = tolower( str_buf[0]);
 			PMenuWindow w = XX-> w;
 			PMenuItemReg m = w-> m;
 
 			for ( i = 0; i <= w-> last; i++) {
-				if ( m-> text) {
-					int j = 0;
-					char * t = m-> text, z = 0;
-					while ( t[j]) {
-						if ( t[j] == '~' && t[j+1]) {
-							if ( t[j+1] == '~')
-								j += 2;
-							else {
-								z = tolower(t[j+1]);
-								break;
-							}
-						}
-						j++;
-					}
-					if ( z == c) {
-						XEvent ev;
-						bzero( &ev, sizeof( ev));
-						ev. type = ButtonPress;
-						ev. xbutton. button = Button1;
-						ev. xbutton. send_event = true;
-						prima_handle_menu_event( &ev, w-> w, PWindow(self)-> menu);
-						if ( menu_enter_item( XX, w, i, 1) && w-> next)
-							menu_select_item( XX, w, i);
-						return 1;
-					}
+				if (
+					m-> text &&
+					c == CAbstractMenu(menu)->translate_accel(NULL_HANDLE, m->text)
+				) {
+					XEvent ev;
+					bzero( &ev, sizeof( ev));
+					ev. type = ButtonPress;
+					ev. xbutton. button = Button1;
+					ev. xbutton. send_event = true;
+					prima_handle_menu_event( &ev, w-> w, PWindow(self)-> menu);
+					if ( menu_enter_item( XX, w, i, 1) && w-> next)
+						menu_select_item( XX, w, i);
+					return 1;
 				}
 				m = m-> next;
 			}

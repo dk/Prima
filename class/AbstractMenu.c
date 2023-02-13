@@ -1291,7 +1291,7 @@ AbstractMenu_translate_accel( Handle self, char * accel)
 			case 0:
 				return 0;
 			default:
-				return isalnum((int)*accel) ? *accel : tolower((int)*accel);
+				return tolower((int)*accel);
 			}
 		}
 	}
