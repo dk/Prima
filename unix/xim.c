@@ -138,7 +138,6 @@ prima_xim_handle_key_press( Handle self, XKeyEvent *ev, Event *e, KeySym *sym)
 		buf  += charlen;
 		c    -= charlen;
 		if ( charlen == 0 ) break;
-		Mdebug("Xutf8LookupString: char(%d)=%x\n", n, uv);
 		n++;
 		if ( uv > 0x10FFFF ) continue;
 
@@ -146,9 +145,12 @@ prima_xim_handle_key_press( Handle self, XKeyEvent *ev, Event *e, KeySym *sym)
 		ev.key.code   = uv;
 		ev.key.mod    = kmUnicode;
 		ev.key.repeat = 1;
-		ev.key.key    = ( n == 1 && status == XLookupBoth ) ?
-			prima_keysym_to_keycode(*sym) :
-			kbNoKey;
+		ev.key.key    = kbNoKey;
+		if ( n == 1 && status == XLookupBoth ) {
+			U32 key = prima_keysym_to_keycode(*sym) & kbCodeMask;
+			if ( key != 0 ) ev.key.key = key;
+		}
+		Mdebug("Xutf8LookupString: char(%d)=%x key=%x\n", n, uv, ev.key.key);
 		CComponent(self)-> message(self,&ev);
 		if (PWidget(self)-> stage != csNormal)
 			break;
