@@ -84,7 +84,7 @@ prima_xim_focus_out(void)
 }
 
 Bool
-prima_xim_handle_key_press( Handle self, XKeyEvent *ev, Event *e, KeySym *sym)
+prima_xim_handle_key_press( Handle self, XKeyEvent *xev, Event *e, KeySym *sym)
 {
 #ifdef X_HAVE_UTF8_STRING
 	Status status;
@@ -96,7 +96,7 @@ prima_xim_handle_key_press( Handle self, XKeyEvent *ev, Event *e, KeySym *sym)
 	while ( 1 ) {
 		char *b;
 
-		c = Xutf8LookupString(guts.xic, ev, guts.xic_buffer, guts.xic_bufsize - 1, sym, &status);
+		c = Xutf8LookupString(guts.xic, xev, guts.xic_buffer, guts.xic_bufsize - 1, sym, &status);
 		Mdebug("Xutf8LookupString: nc=%d status=%d\n", c, status);
 		switch ( status ) {
 		case XLookupNone:
@@ -147,7 +147,7 @@ prima_xim_handle_key_press( Handle self, XKeyEvent *ev, Event *e, KeySym *sym)
 		ev.key.repeat = 1;
 		ev.key.key    = kbNoKey;
 		if ( n == 1 && status == XLookupBoth ) {
-			U32 key = prima_keysym_to_keycode(*sym) & kbCodeMask;
+			U32 key = prima_keysym_to_keycode(*sym, xev, 0) & kbCodeMask;
 			if ( key != 0 ) ev.key.key = key;
 		}
 		Mdebug("Xutf8LookupString: char(%d)=%x key=%x\n", n, uv, ev.key.key);

@@ -1586,7 +1586,7 @@ extern void
 prima_xim_update_cursor( Handle self);
 
 extern U32
-prima_keysym_to_keycode( KeySym keysym );
+prima_keysym_to_keycode( KeySym keysym, XKeyEvent *ev, U8 character );
 
 #ifdef WITH_GTK
 extern Display*

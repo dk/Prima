@@ -710,8 +710,11 @@ send_cmMenu( Handle self, PMenuItemReg m)
 	ev. gen. H = self;
 	ev. gen. i = m ? m-> id : 0;
 	CComponent(owner)-> message( owner, &ev);
-	if ( PComponent( owner)-> stage == csDead ||
-			PComponent( self)->  stage == csDead) return false;
+	if (
+		PComponent( owner)-> stage == csDead ||
+		PComponent( self)->  stage == csDead
+	)
+		return false;
 	if ( self != guts. currentMenu) return false;
 	return true;
 }
@@ -1645,6 +1648,7 @@ handle_menu_key( XEvent *ev, XWindow win, Handle self)
 	int str_len, d = 0, piles = 0;
 	PMenuWindow w;
 	PMenuItemReg m;
+	int keycode, code, mod, key;
 
 	str_len = XLookupString( &ev-> xkey, str_buf, 256, &keysym, NULL);
 	if ( prima_handle_menu_shortcuts( PComponent(self)-> owner, ev, keysym) != 0)
@@ -1758,6 +1762,23 @@ NEXT_STAGE:
 	if ( str_len != 1)
 		return;
 
+	/* check accels for this menu */
+	keycode = prima_keysym_to_keycode( keysym, &ev->xkey, (str_len == 1) ? str_buf[0] : 0);
+	mod = 0;
+	if ( ev-> xkey.state & ShiftMask)    mod |= kmShift;
+	if ( ev-> xkey.state & ControlMask)  mod |= kmCtrl;
+	if ( ev-> xkey.state & Mod1Mask)     mod |= kmAlt;
+	code = keycode & kbCharMask;
+	key  = keycode & kbCodeMask;
+	if ( !key) key = kbNoKey;
+	keycode = CAbstractMenu(self)->translate_key(self, code, key, mod);
+	if ( CAbstractMenu(self)->find_item_by_key(self, keycode) != NULL_SV) {
+		prima_end_menu();
+		CAbstractMenu( self)-> sub_call_key( self, keycode);
+		return;
+	}
+
+	/* check local shortcuts */
 	while ( w ) {
 		int i;
 		char c = tolower( str_buf[0]);
@@ -1837,9 +1858,9 @@ prima_handle_menu_shortcuts( Handle self, XEvent * ev, KeySym keysym)
 {
 	int ret = 0;
 	int mod =
-		(( ev-> xkey. state & ShiftMask)	? kmShift : 0) |
-		(( ev-> xkey. state & ControlMask)? kmCtrl  : 0) |
-		(( ev-> xkey. state & Mod1Mask)	? kmAlt   : 0);
+		(( ev-> xkey. state & ShiftMask)   ? kmShift : 0) |
+		(( ev-> xkey. state & ControlMask) ? kmCtrl  : 0) |
+		(( ev-> xkey. state & Mod1Mask)	   ? kmAlt   : 0);
 
 	if ( mod == kmShift && keysym == XK_F9) {
 		Event e;
