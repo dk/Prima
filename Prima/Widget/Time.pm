@@ -48,9 +48,9 @@ sub time2str
 			$time[2] -= 12;
 		}
 		$time[3] = lc $time[3] unless $mask->[9];
-		@pp = map { defined ? $time[$_] : () } @$mask[1..4];
+		@pp = map { defined($_) ? $time[$_] : () } @$mask[1..4];
 	} else {
-		@pp = map { defined ? $time[$_] : () } @$mask[1..3];
+		@pp = map { defined($_) ? $time[$_] : () } @$mask[1..3];
 	}
 	return sprintf $mask->[0], @pp;
 }

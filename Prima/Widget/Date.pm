@@ -134,7 +134,7 @@ sub date2str
 	$p[1] ++;
 
 	my $print = $self->{mask}->{print};
-	my @pp    = map { defined ? $p[$_] : () } @$print;
+	my @pp    = map { defined($_) ? $p[$_] : () } @$print;
 	return sprintf $self->{mask}->{format}, @pp;
 }
 
