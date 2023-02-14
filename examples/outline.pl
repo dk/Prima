@@ -47,7 +47,13 @@ my $o = $w-> insert(
 		['Toogle multi select' => sub {
 			$_[0]-> multiSelect( !$_[0]-> multiSelect);
 		}],
+		[],
+		[Style => [
+			[ '(plusminus' => 'Plus-minus' => sub { $_[0]->style('plusminus') } ],
+			[ '*triangle)' => 'Triangle' => sub { $_[0]->style('triangle') } ],
+		]],
 	],
+	style => 'triangle',
 	multiSelect => 0,
 	extendedSelect => 1,
 	path => '.',

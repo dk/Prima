@@ -54,11 +54,9 @@ sub init_image_triangle
 	my $iw = int( $uis * 11 + .5);
 	$iw++ unless $iw % 2;
 	my @imageSize = ($iw, $iw);
-	my $xd = int(2 * $uis + .5);
 	my $lw = int( $uis + .5);
 	$lw-- if $lw > 1 && $lw % 2;
 	my @c2 = map { int ( $_ / 2 ) } @imageSize;
-	my @c3 = map { int ( $_ / 3 ) } @imageSize;
 
 	my @images;
 	for my $i (0,1) {
@@ -71,11 +69,11 @@ sub init_image_triangle
 		$images[$i]->lineWidth($lw);
 		$images[$i]->polyline( [
 			$i ? (
-				$xd, $c3[1]*2, $imageSize[0]-$xd-1, $c3[1]*2,
-				$c2[0], $c3[1], $xd, $c3[1]*2
+				0, $c2[1], $imageSize[0]-1, $c2[1],
+				$c2[0], 0, 0, $c2[1]
 			) : (
-				$c3[0], $xd, $c3[0], $imageSize[1]-$xd-1,
-				$c3[0]*2, $c2[1], $c3[0], $xd
+				$c2[0], 0, $c2[0], $imageSize[1]-1,
+				$imageSize[0]-1, $c2[1], $c2[0], 0
 			)
 		]);
 	}
