@@ -1761,6 +1761,7 @@ NEXT_STAGE:
 	while ( w ) {
 		int i;
 		char c = tolower( str_buf[0]);
+		m = w->m;
 		for ( i = 0; i <= w-> last; i++) {
 			if ( m-> text) {
 				int z = CAbstractMenu(self)->translate_accel(NULL_HANDLE, m->text);
@@ -1773,7 +1774,6 @@ NEXT_STAGE:
 			m = m-> next;
 		}
 		w = w->prev;
-		m = w->m;
 	}
 }
 
