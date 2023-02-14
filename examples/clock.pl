@@ -1,4 +1,3 @@
-#!/usr/bin/env perl
 use strict;
 use warnings;
 use Prima qw(Application Widget::Date Drawable::Path Widget::Time);
