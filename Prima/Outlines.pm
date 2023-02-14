@@ -4,14 +4,103 @@
 #   Outline
 #   DirectoryOutline
 package Prima::Outlines;
-
+our %images;
+our $default_style = 'plusminus';
 use strict;
 use warnings;
 use Cwd;
 use Prima qw(StdBitmap);
 
+sub init_image_plusminus
+{
+	return if $images{plusminus};
+
+	my $i = 0;
+	my $uis = $::application->uiScaling;
+	my $iw = int( $uis * 11 + .5);
+	$iw++ unless $iw % 2;
+	my @imageSize = ($iw, $iw);
+	my $xd = int(2 * $uis + .5);
+	my $lw = int( $uis + .5);
+	$lw-- if $lw > 1 && $lw % 2;
+	my @c = map { int ( $_ / 2 ) } @imageSize;
+
+	my @images;
+	for my $i (0,1) {
+		$images[$i] = Prima::DeviceBitmap->new(
+			size      => \@imageSize,
+			backColor => cl::White,
+			color     => cl::Gray,
+		);
+		$images[$i]->clear;
+		$images[$i]->lineWidth($lw);
+		$images[$i]->lineEnd(le::Square);
+		$images[$i]->rectangle(0,0,$imageSize[0]-1,$imageSize[1]-1);
+		$images[$i]->color(cl::Black);
+		$images[$i]->line( $xd, $c[1], $imageSize[0]-$xd-1, $c[1] );
+	}
+	$images[1]->line( $c[0], $xd, $c[0], $imageSize[1]-$xd-1);
+
+	$images{plusminus}->{expanded}  = $images[0];
+	$images{plusminus}->{collapsed} = $images[1];
+}
+
+sub init_image_triangle
+{
+	return if $images{plusminus};
+
+	my $i = 0;
+	my $uis = $::application->uiScaling;
+	my $iw = int( $uis * 11 + .5);
+	$iw++ unless $iw % 2;
+	my @imageSize = ($iw, $iw);
+	my $xd = int(2 * $uis + .5);
+	my $lw = int( $uis + .5);
+	$lw-- if $lw > 1 && $lw % 2;
+	my @c2 = map { int ( $_ / 2 ) } @imageSize;
+	my @c3 = map { int ( $_ / 3 ) } @imageSize;
+
+	my @images;
+	for my $i (0,1) {
+		$images[$i] = Prima::DeviceBitmap->new(
+			size      => \@imageSize,
+			backColor => cl::White,
+			color     => cl::Black,
+		);
+		$images[$i]->clear;
+		$images[$i]->lineWidth($lw);
+		$images[$i]->polyline( [
+			$i ? (
+				$xd, $c3[1]*2, $imageSize[0]-$xd-1, $c3[1]*2,
+				$c2[0], $c3[1], $xd, $c3[1]*2
+			) : (
+				$c3[0], $xd, $c3[0], $imageSize[1]-$xd-1,
+				$c3[0]*2, $c2[1], $c3[0], $xd
+			)
+		]);
+	}
+
+	$images{triangle}->{collapsed} = $images[0];
+	$images{triangle}->{expanded}  = $images[1];
+}
+
+sub icon
+{
+	shift if @_ % 2;
+	my ( %opt ) = @_;
+
+	my $type  = $opt{type} // 'collapsed';
+	my $style = $opt{style} // 'default';
+
+	$style = $default_style if $style eq 'default';
+	my $meth = 'init_image_' . $style;
+	$meth = 'init_image_plusminus' unless __PACKAGE__->can($meth);
+	__PACKAGE__->$meth();
+
+	return $images{$style}->{$type};
+}
+
 package Prima::OutlineViewer;
-use vars qw(@images @imageSize);
 use base qw(Prima::Widget Prima::Widget::MouseScroller Prima::Widget::GroupScroller Prima::Widget::ListBoxUtils);
 
 use constant DATA     => 0;
@@ -54,9 +143,11 @@ sub profile_default
 		borderWidth    => 2,
 		extendedSelect => 0,
 		dragable       => 1,
-		drawLines      => 1,
+		drawLines      => undef,
 		hScroll        => 0,
 		focusedItem    => -1,
+		iconCollapsed  => undef,
+		iconExpanded   => undef,
 		indent         => int( 12 * $::application->uiScaling + .5),
 		itemHeight     => $def-> {font}-> {height},
 		items          => [],
@@ -69,6 +160,7 @@ sub profile_default
 		vScrollBarProfile=>{},
 		selectable     => 1,
 		showItemHint   => 1,
+		style          => 'default',
 		vScroll        => 1,
 		widgetClass    => wc::ListBox,
 	);
@@ -76,35 +168,6 @@ sub profile_default
 	return $def;
 }
 
-sub init_images
-{
-	return if @images;
-
-	my $i = 0;
-	my $uis = $::application->uiScaling;
-	my $iw = int( $uis * 11 + .5);
-	$iw++ unless $iw % 2;
-	@imageSize = ($iw, $iw);
-	my $xd = int(2 * $uis + .5);
-	my $lw = int( $uis + .5);
-	$lw-- if $lw > 1 && $lw % 2;
-	my @c = map { int ( $_ / 2 ) } @imageSize;
-
-	for my $i (0,1) {
-		$images[$i] = Prima::DeviceBitmap->new(
-			size      => \@imageSize,
-			backColor => cl::White,
-			color     => cl::Gray,
-		);
-		$images[$i]->clear;
-		$images[$i]->lineWidth($lw);
-		$images[$i]->lineEnd(le::Square);
-		$images[$i]->rectangle(0,0,$imageSize[0]-1,$imageSize[1]-1);
-		$images[$i]->color(cl::Black);
-		$images[$i]->line( $xd, $c[1], $imageSize[0]-$xd-1, $c[1] );
-	}
-	$images[1]->line( $c[0], $xd, $c[0], $imageSize[1]-$xd-1);
-}
 
 sub profile_check_in
 {
@@ -126,21 +189,23 @@ use constant STACK_FRAME => 64;
 sub init
 {
 	my $self = shift;
-	init_images;
 	for ( qw( topItem focusedItem))
 		{ $self-> {$_} = -1; }
 	for ( qw( autoHScroll autoVScroll scrollTransaction dx dy hScroll vScroll
 		offset count autoHeight borderWidth multiSelect extendedSelect
 		rows maxWidth hintActive showItemHint dragable))
 		{ $self-> {$_} = 0; }
-	for ( qw( itemHeight indent drawLines))
+	for ( qw( itemHeight indent))
 		{ $self-> {$_} = 1; }
 	$self-> {items}      = [];
+	$self-> {style}      = 'default';
 	my %profile = $self-> SUPER::init(@_);
 	$self-> setup_indents;
-	$self->{$_} = $profile{$_} for qw(drawLines scrollBarClass hScrollBarProfile vScrollBarProfile);
+	$self->{$_} = $profile{$_} for qw(scrollBarClass hScrollBarProfile vScrollBarProfile);
 	for ( qw( autoHScroll autoVScroll hScroll vScroll offset itemHeight autoHeight borderWidth
-		indent items focusedItem topItem showItemHint dragable multiSelect extendedSelect))
+		indent items focusedItem topItem showItemHint dragable multiSelect extendedSelect
+		style iconCollapsed iconExpanded drawLines
+	))
 		{ $self-> $_( $profile{ $_}); }
 	$self-> reset;
 	$self-> reset_scrolls;
@@ -272,6 +337,7 @@ sub on_paint
 	my ( $ih, $iw, $lines, $indent, $foc, @a) = (
 		$self-> { itemHeight}, $self-> { maxWidth}, $self->{drawLines},
 		$self-> {indent}, $self-> {focusedItem}, $self-> get_active_area( 1, @size));
+	my @images = @{ $self }{qw(iconExpanded iconCollapsed) };
 	my $i;
 	my $j;
 	my $locWidth = $a[2] - $a[0] + 1;
@@ -302,8 +368,8 @@ sub on_paint
 	$lastItem     = $self-> {count} - 1 if $lastItem > $self-> {count} - 1;
 	my $firstY    = $a[3] + 1 + $ih * $topItem;
 	my $lineY     = $a[3] + 1 - $ih * ( 1 + $timin - $topItem);
-	my $dyim      = int(( $ih - $imageSize[1]) / 2) + 1;
-	my $dxim      = int( $imageSize[0] / 2);
+	my $dyim      = int(( $ih - $self->{imageSize}->[1]) / 2) + 1;
+	my $dxim      = int( $self->{imageSize}->[0] / 2);
 
 # drawing lines
 	my @lines;
@@ -479,8 +545,8 @@ sub on_mousedown
 
 	if (
 		$rec &&
-		( $x >= ( 1 + $lev) * $i + $a[0] - $o - $imageSize[0] / 2) &&
-		( $x <  ( 1 + $lev) * $i + $a[0] - $o + $imageSize[0] / 2)
+		( $x >= ( 1 + $lev) * $i + $a[0] - $o - $self->{imageSize}->[0] / 2) &&
+		( $x <  ( 1 + $lev) * $i + $a[0] - $o + $self->{imageSize}->[0] / 2)
 	) {
 		$self-> adjust( $item, $rec-> [2] ? 0 : 1) if $rec-> [1];
 		return;
@@ -526,8 +592,8 @@ sub on_mouseclick
 	my ( $rec, $lev) = $self-> get_item( $item);
 	if (
 		$rec &&
-		( $x >= ( 1 + $lev) * $i + $self-> {indents}-> [0] - $o - $imageSize[0] / 2) &&
-		( $x <  ( 1 + $lev) * $i + $self-> {indents}-> [0] - $o + $imageSize[0] / 2)
+		( $x >= ( 1 + $lev) * $i + $self-> {indents}-> [0] - $o - $self->{imageSize}->[0] / 2) &&
+		( $x <  ( 1 + $lev) * $i + $self-> {indents}-> [0] - $o + $self->{imageSize}->[0] / 2)
 	) {
 		$self-> adjust( $item, $rec-> [EXPANDED] ? 0 : 1) if $rec-> [DOWN];
 		return;
@@ -1342,8 +1408,35 @@ sub dragable
 sub drawLines
 {
 	return $_[0]-> {drawLines} unless $#_;
+	return unless defined $_[1];
 	$_[0]-> {drawLines} = $_[1];
 	$_[0]-> repaint;
+}
+
+sub iconCollapsed
+{
+	return $_[0]-> {iconCollapsed} unless $#_;
+	return unless $_[1];
+	$_[0]-> {iconCollapsed} = $_[1];
+	$_[0]-> {imageSize} = [$_[1]->size];
+	$_[0]-> repaint;
+}
+
+sub iconExpanded
+{
+	return $_[0]-> {iconExpanded} unless $#_;
+	return unless $_[1];
+	$_[0]-> {iconExpanded} = $_[1];
+	$_[0]-> repaint;
+}
+
+sub style
+{
+	return $_[0]-> {style} unless $#_;
+	my ( $self, $style ) = @_;
+	$self->iconCollapsed( Prima::Outlines->icon( type => 'collapsed', style => $style) );
+	$self->iconExpanded(  Prima::Outlines->icon( type => 'expanded' , style => $style) );
+	$self->drawLines( $style ne 'triangle' );
 }
 
 sub get_index
@@ -2216,6 +2309,14 @@ It is mostly a run-time property, however, it can be set
 during the widget creation stage given that the item list is
 accessible on this stage as well.
 
+=item iconCollapsed ICON
+
+Sets the image that is to be displayed when a tree branch is collapsed
+
+=item iconExpanded ICON
+
+Sets the image that is to be displayed when a tree branch is expanded
+
 =item indent INTEGER
 
 Width in pixels of the indent between item levels.
@@ -2270,6 +2371,12 @@ the hint is never shown.
 See also: L<makehint>.
 
 Default value: 1
+
+=item style STYLE
+
+Sets visual style, one of: C<default>, C<plusminus>, C<triangle>.
+
+The default style is set in C<$Prima::Outlines::default_style> and is currently 'plusminus'
 
 =item topItem INTEGER
 
