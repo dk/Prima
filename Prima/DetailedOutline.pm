@@ -356,6 +356,15 @@ header widget.
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/detailedoutline.gif">
 
+  my $l = Prima::DetailedOutline->new(
+     style => 'triangle',
+     ...
+  );
+
+=for podview <img src="detailedoutline2.gif">
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/detailedoutline2.gif">
+
 =head1 DESCRIPTION
 
 Prima::DetailedOutline combines the functionality of Prima::OutlineViewer

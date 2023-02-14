@@ -2206,6 +2206,15 @@ Prima::Outlines - tree view widgets
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/outline.gif">
 
+	my $outline = Prima::StringOutline-> create(
+		style => 'triangle',
+		...
+	);
+
+=for podview <img src="outline2.gif">
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/outline2.gif">
+
 =head1 DESCRIPTION
 
 The module provides a set of widget classes, designed to display a tree-like
