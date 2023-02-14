@@ -476,13 +476,13 @@ sub reset_syntaxer
 				\$line =~ /\\G(.)/gc && do { \$l++; redo; };
 			}
 			$rest
-			\$_[2] = \\\@a;
+			\@{\$_[2]} = \@a;
 		};
 SYNTAXER
 		$self-> {syntaxer} = eval $self->{syntaxer};
 		if ( $@) {
 			warn "Error compiling highlighting regexes: $@\n";
-			$self-> {syntaxer} = sub { $_[2] = [ length($_[1]), cl::Fore ] };
+			$self-> {syntaxer} = sub { @{$_[2]} = ( length($_[1]), cl::Fore ) };
 		}
 	}
 }
@@ -521,6 +521,7 @@ sub draw_colorchunk
 	my $sd = $self-> {syntax}-> [$i];
 	unless ( defined $sd) {
 		my $text = $self->get_chunk($i);
+		$sd = [];
 		$self-> notify(q(ParseSyntax), $text, $sd);
 		$sd = $self-> {syntax}-> [$i] = $self->_syntax_entry($i, $text, $sd);
 	}
