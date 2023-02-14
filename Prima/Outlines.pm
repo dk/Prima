@@ -54,6 +54,7 @@ sub profile_default
 		borderWidth    => 2,
 		extendedSelect => 0,
 		dragable       => 1,
+		drawLines      => 1,
 		hScroll        => 0,
 		focusedItem    => -1,
 		indent         => int( 12 * $::application->uiScaling + .5),
@@ -132,12 +133,12 @@ sub init
 		offset count autoHeight borderWidth multiSelect extendedSelect
 		rows maxWidth hintActive showItemHint dragable))
 		{ $self-> {$_} = 0; }
-	for ( qw( itemHeight indent))
+	for ( qw( itemHeight indent drawLines))
 		{ $self-> {$_} = 1; }
 	$self-> {items}      = [];
 	my %profile = $self-> SUPER::init(@_);
 	$self-> setup_indents;
-	$self->{$_} = $profile{$_} for qw(scrollBarClass hScrollBarProfile vScrollBarProfile);
+	$self->{$_} = $profile{$_} for qw(drawLines scrollBarClass hScrollBarProfile vScrollBarProfile);
 	for ( qw( autoHScroll autoVScroll hScroll vScroll offset itemHeight autoHeight borderWidth
 		indent items focusedItem topItem showItemHint dragable multiSelect extendedSelect))
 		{ $self-> $_( $profile{ $_}); }
@@ -268,8 +269,8 @@ sub on_paint
 	my @clr    = $self-> enabled ?
 	( $self-> color, $self-> backColor) :
 	( $self-> disabledColor, $self-> disabledBackColor);
-	my ( $ih, $iw, $indent, $foc, @a) = (
-		$self-> { itemHeight}, $self-> { maxWidth},
+	my ( $ih, $iw, $lines, $indent, $foc, @a) = (
+		$self-> { itemHeight}, $self-> { maxWidth}, $self->{drawLines},
 		$self-> {indent}, $self-> {focusedItem}, $self-> get_active_area( 1, @size));
 	my $i;
 	my $j;
@@ -315,8 +316,7 @@ sub on_paint
 		color       => cl::White,
 		backColor   => cl::Black,
 		rop2        => rop::CopyPut,
-	);
-
+	) if $lines;
 
 	my ($array, $idx, $lim, $level) = ([['root'],$self-> {items}], 0, scalar @{$self-> {items}}, 0);
 	my @stack;
@@ -361,20 +361,22 @@ sub on_paint
 			if ( defined $lines[ $level]) {
 				$canvas-> bar(
 					$l, $firstY - $ih * $lines[ $level],
-					$l, $firstY - $ih * ( $position + 0.5))
-				if $position >= $timin;
+					$l, $firstY - $ih * ( $position + 0.5)
+				) if $lines and $position >= $timin;
 				$lines[ $level] = undef;
 			} elsif ( $position > 0) {
 				# first and last
 				$canvas-> bar(
 					$l, $firstY - $ih * ( $position - 0.5),
-					$l, $firstY - $ih * ( $position + 0.5))
+					$l, $firstY - $ih * ( $position + 0.5)
+				) if $lines;
 			}
 		} elsif ( !defined $lines[$level]) {
 			$lines[$level] = $position ? $position - 0.5 : 0.5;
 		}
 		if ( $position >= $timin) {
-			$canvas-> bar( $l + 1, $lineY + $ih/2, $l + $indent - 1, $lineY + $ih/2);
+			$canvas-> bar( $l + 1, $lineY + $ih/2, $l + $indent - 1, $lineY + $ih/2)
+				if $lines;
 			if ( defined $node-> [DOWN]) {
 				my $i = $images[($node-> [EXPANDED] == 0) ? 1 : 0];
 				push( @marks, [$l - $dxim, $lineY + $dyim, $i]) if $i;
@@ -409,19 +411,21 @@ sub on_paint
 	}}
 
 # drawing line ends
-	$i = 0;
-	for ( @lines) {
-		$i++;
-		next unless defined $_;
-		my $l = ( $i - 0.5) * $indent + $deltax;;
-		$canvas-> bar( $l, $firstY - $ih * $_, $l, 0);
+	if ( $lines ) {
+		$i = 0;
+		for ( @lines) {
+			$i++;
+			next unless defined $_;
+			my $l = ( $i - 0.5) * $indent + $deltax;;
+			$canvas-> bar( $l, $firstY - $ih * $_, $l, 0);
+		}
+		$canvas-> set(
+			fillPattern => fp::Solid,
+			color       => $clr[0],
+			backColor   => $clr[1],
+			rop2        => rop::NoOper,
+		);
 	}
-	$canvas-> set(
-		fillPattern => fp::Solid,
-		color       => $clr[0],
-		backColor   => $clr[1],
-		rop2        => rop::NoOper,
-	);
 
 #
 	$canvas-> put_image( @$_) for @marks;
@@ -1335,6 +1339,12 @@ sub dragable
 	$_[0]-> {dragable} = $_[1];
 }
 
+sub drawLines
+{
+	return $_[0]-> {drawLines} unless $#_;
+	$_[0]-> {drawLines} = $_[1];
+	$_[0]-> repaint;
+}
 
 sub get_index
 {
@@ -2180,6 +2190,12 @@ Default value: 1
 
 If 1, allows the items to be dragged interactively by pressing control key
 together with left mouse button. If 0, item dragging is disabled.
+
+Default value: 1
+
+=item drawLines BOOLEAN
+
+If 1, draws dotted tree lines left to the items.
 
 Default value: 1
 
