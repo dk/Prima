@@ -2420,8 +2420,6 @@ convert_equal_paletted( XImage *i, PImage img)
 	for ( y = 0; y < guts. palSize; y++) xc[y]. pixel = y;
 	XQueryColors( DISP, guts. defaultColormap, xc, guts. palSize);
 
-/* XXX if ( guts. bit_order != MSBFirst) prima_mirror_bytes( img-> data, img-> dataSize); */
-
 	img-> palSize = 0;
 	for ( y = 0; y < 256; y++)
 		if ( guts. mappingPlace[y] == 0) {

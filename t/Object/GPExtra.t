@@ -74,6 +74,31 @@ $bl = $x-> image;
 $bl->type(im::Byte);
 $bl2 = $bl->data;
 is( $bl1, $bl2, 'fillPatternOffset same');
+
+$x-> clear;
+$x-> fillPattern(fp::LtSlash);
+$x-> fillPatternOffset(0,0);
+$x-> bar( 0, 0, 7, 7);
+$bl = $x->image;
+$bl->type(im::Byte);
+is( $bl->pixel(0,0), 0, 'endiness pat.#1');
+is( $bl->pixel(1,1), 0, 'endiness pat.#2');
+is( $bl->pixel(2,3), 255, 'endiness pat.#3');
+is( $bl->pixel(3,2), 255, 'endiness pat.#4');
+is( $bl->pixel(6,6), 0, 'endiness pat.#5');
+is( $bl->pixel(7,7), 0, 'endiness pat.#6');
+
+$x->clear;
+$x->fillPattern($bl);
+$x-> bar( 0, 0, 7, 7);
+$bl = $x->image;
+$bl->type(im::Byte);
+is( $bl->pixel(0,0), 0, 'endiness tile.#1');
+is( $bl->pixel(1,1), 0, 'endiness tile.#2');
+is( $bl->pixel(2,3), 255, 'endiness tile.#3');
+is( $bl->pixel(3,2), 255, 'endiness tile.#4');
+is( $bl->pixel(6,6), 0, 'endiness tile.#5');
+is( $bl->pixel(7,7), 0, 'endiness tile.#6');
 }
 
 $x-> fillPattern( fp::Solid);
@@ -175,5 +200,14 @@ if ( $can_argb  ) {
 
 }
 
+my $ii = Prima::Image->new( type => im::BW, size => [8,8]);
+$ii->clear;
+$ii->rop2(rop::CopyPut);
+$ii->fillPattern(fp::LtSlash);
+$ii->bar(0,0,7,7);
+my $jj = $ii->data;
+$ii->begin_paint;
+$ii->end_paint;
+is($ii->data, $jj, "begin/end paint preserves data");
 
 done_testing;
