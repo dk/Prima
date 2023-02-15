@@ -1603,6 +1603,11 @@ sub rect_bevel
 		push @c3d, $c3d[1], 0x404040;
 	}
 
+	if ( $opt{focused}) {
+		my $hilite = $self->map_color(cl::Hilite);
+		$_ = cl::blend( $self->map_color($_), $hilite, 0.5) for @c3d;
+	}
+
 	$fill = $fill->clone( widgetClass => $self->widgetClass ) if $fill && ref($fill);
 
 	my $hw = int( $width / 2);
