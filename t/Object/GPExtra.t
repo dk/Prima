@@ -76,29 +76,33 @@ $bl2 = $bl->data;
 is( $bl1, $bl2, 'fillPatternOffset same');
 
 $x-> clear;
-$x-> fillPattern(fp::LtSlash);
+$x-> fillPattern([ 0x00, 0x80, 0x40, 0x20, 0x10, 0x8, 0x04, 0x02]);
 $x-> fillPatternOffset(0,0);
 $x-> bar( 0, 0, 7, 7);
 $bl = $x->image;
 $bl->type(im::Byte);
-is( $bl->pixel(0,0), 0, 'endiness pat.#1');
-is( $bl->pixel(1,1), 0, 'endiness pat.#2');
-is( $bl->pixel(2,3), 255, 'endiness pat.#3');
-is( $bl->pixel(3,2), 255, 'endiness pat.#4');
-is( $bl->pixel(6,6), 0, 'endiness pat.#5');
-is( $bl->pixel(7,7), 0, 'endiness pat.#6');
+is( $bl->pixel(0,0), 255, 'endiness pat.#1');
+is( $bl->pixel(0,1), 0, 'endiness pat.#2');
+is( $bl->pixel(1,2), 0, 'endiness pat.#3');
+is( $bl->pixel(3,3), 255, 'endiness pat.#4');
+is( $bl->pixel(4,4), 255, 'endiness pat.#5');
+is( $bl->pixel(5,6), 0, 'endiness pat.#6');
+is( $bl->pixel(6,7), 0, 'endiness pat.#7');
+is( $bl->pixel(7,7), 255, 'endiness pat.#8');
 
 $x->clear;
 $x->fillPattern($bl);
 $x-> bar( 0, 0, 7, 7);
 $bl = $x->image;
 $bl->type(im::Byte);
-is( $bl->pixel(0,0), 0, 'endiness tile.#1');
-is( $bl->pixel(1,1), 0, 'endiness tile.#2');
-is( $bl->pixel(2,3), 255, 'endiness tile.#3');
-is( $bl->pixel(3,2), 255, 'endiness tile.#4');
-is( $bl->pixel(6,6), 0, 'endiness tile.#5');
-is( $bl->pixel(7,7), 0, 'endiness tile.#6');
+is( $bl->pixel(0,0), 255, 'endiness tile.#1');
+is( $bl->pixel(0,1), 0, 'endiness tile.#2');
+is( $bl->pixel(1,2), 0, 'endiness tile.#3');
+is( $bl->pixel(3,3), 255, 'endiness tile.#4');
+is( $bl->pixel(4,4), 255, 'endiness tile.#5');
+is( $bl->pixel(5,6), 0, 'endiness tile.#6');
+is( $bl->pixel(6,7), 0, 'endiness tile.#7');
+is( $bl->pixel(7,7), 255, 'endiness tile.#8');
 }
 
 $x-> fillPattern( fp::Solid);
