@@ -505,6 +505,24 @@ prima_gtk_init(void)
 			memcpy( stdcolors[i], template, sizeof(template1));
 		}
 
+		/* if backcolor is too close to ciLight3DColor that is 0xffffff, the latter is not visible much */
+		colors[0] = stdcolors[wcInputLine >> 16][ciBack];
+		colors[1] = stdcolors[wcInputLine >> 16][ciLight3DColor];
+		colors[2] = stdcolors[wcInputLine >> 16][ciDark3DColor];
+		if (
+			(abs( COLOR_R(colors[0]) - COLOR_R(colors[1])) < 16) &&
+			(abs( COLOR_G(colors[0]) - COLOR_G(colors[1])) < 16) &&
+			(abs( COLOR_B(colors[0]) - COLOR_B(colors[1])) < 16)
+		) {
+			int r = ( COLOR_R(colors[0]) * 0.75 + COLOR_R(colors[2]) * 0.25);
+			int g = ( COLOR_G(colors[0]) * 0.75 + COLOR_G(colors[2]) * 0.25);
+			int b = ( COLOR_B(colors[0]) * 0.75 + COLOR_B(colors[2]) * 0.25);
+			colors[3] = (r << 16) | (g << 8) | b;
+			for ( i = 1; i < n_classes; i++) {
+				stdcolors[i][ciLight3DColor] = colors[3];
+			}
+		}
+
 		g_object_unref(ctx);
 	}
 #endif

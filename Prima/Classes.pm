@@ -1598,7 +1598,10 @@ sub rect_bevel
 	if ( $opt{concave}) {
 		push @c3d, 0x404040, $c3d[0];
 	} elsif ( $opt{panel}) {
-		@c3d = ( 0x404040, $self-> disabledBackColor, $c3d[0], $c3d[1]);
+		@c3d = (
+			0x404040, cl::blend( $self->map_color($self->backColor), $self->map_color($c3d[1]), 0.5),
+			$c3d[0], $c3d[1]
+		);
 	} else {
 		push @c3d, $c3d[1], 0x404040;
 	}
