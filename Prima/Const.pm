@@ -44,6 +44,20 @@ sub distance
 	return sqrt( $x[0]*$x[0] + $x[1]*$x[1] + $x[2]*$x[2]);
 }
 
+sub blend
+{
+	my ( $color1, $color2, $zero_to_one_percentage) = @_;
+	my @x = to_rgb($color1);
+	my @y = to_rgb($color2);
+	my @z = map { $x[$_] * ( 1 - $zero_to_one_percentage ) + $y[$_] * $zero_to_one_percentage } 0..2;
+	for my $z ( @z ) {
+		$z = int( $z + .5);
+		$z = 0 if $z < 0;
+		$z = 255 if $z > 255;
+	}
+	return from_rgb(@z);
+}
+
 package
     ci; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# color indices
 package
@@ -433,6 +447,8 @@ See L<Prima::gp_problems/Colors>
 =item premultiply RGB24,A8 -> RGB24
 
 =item distance RGB24,RGB24 -> distance between colors
+
+=item blend RGB24,RGB24,AMOUNT_FROM_0_TO_1 - RGB24
 
 =back
 
