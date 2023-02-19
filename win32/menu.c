@@ -154,7 +154,7 @@ get_unchecked_bitmap(void)
 
 	std_unchecked_bitmap = (HBITMAP) -1;
 
-	cx = GetSystemMetrics( SM_CXMENUCHECK ) - 1;
+	cx = GetSystemMetrics( SM_CXMENUCHECK );
 	dc = GetDC(NULL);
 	if ( !( std_unchecked_bitmap = image_create_argb_dib_section( dc, cx, cx, &ptr))) {
 		ReleaseDC(NULL, dc);
@@ -480,6 +480,7 @@ update_check_icons( Handle self, PMenuItemReg m)
 		mii. hbmpUnchecked = get_unchecked_bitmap();
 	}
 
+	SetMenuItemInfo(( HMENU ) var handle, m-> id + MENU_ID_AUTOSTART, false, &mii);
 
 	return ret;
 }
