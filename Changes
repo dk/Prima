@@ -9,6 +9,7 @@ Revision history for Perl module Prima
  - Remove native Win32 support from cygwin builds
  - File.onRead supports native Win32 console stdin event
  - Support XIM input
+ - Win32: fix local non-latin months/days of week names in Calendar
 
 1.67 2022-11-27
  - Links and tooltips extended functionality:
