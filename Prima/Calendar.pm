@@ -145,6 +145,10 @@ sub month2str
 sub make_months
 {
 	return \@non_locale_months unless $_[0]-> {useLocale};
+	if ( $^O =~ /win32/i ) {
+		my $str = Prima::Application->sys_action('win32.locale.months');
+		return [ split /:/, $str ] if defined($str) && length($str);
+	}
 	unless ( defined $OB_format) {
 		# %OB is a BSD extension for locale-specific date string
 		# for use without date

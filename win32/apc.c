@@ -1178,6 +1178,37 @@ translate_console_input( INPUT_RECORD *ir)
 	return duplicate_string(buf);
 }
 
+static char*
+locale_months(void)
+{
+	int i, nsz;
+	wchar_t wbuf[256];
+	char buf[256*12] = "";
+	nsz = 0;
+	for ( i = 0; i < 12; i++) {
+		int len;
+		char * utf;
+
+		wbuf[0] = 0;
+		len = GetLocaleInfoW( LOCALE_USER_DEFAULT, LOCALE_SMONTHNAME1 + i, wbuf, 256);
+		if ( len == 0 ) return 0;
+
+		wbuf[255] = 0;
+		if ( !( utf = alloc_wchar_to_utf8( wbuf, &len ))) return 0;
+		if ( nsz + len + 1 >= sizeof(buf)) {
+			free(utf);
+			return 0;
+		}
+
+		strcat(buf + nsz, utf);
+		free(utf);
+		if ( i != 11 ) strcat(buf + nsz, ":");
+		nsz += len;
+	}
+	return duplicate_string(buf);
+}
+
+
 char *
 apc_system_action( const char * params)
 {
@@ -1284,6 +1315,8 @@ apc_system_action( const char * params)
 			)
 				return NULL;
 			return translate_console_input(&ir);
+		} else if ( strncmp( params, "win32.locale.months", strlen("win32.locale.months")) == 0) {
+			return locale_months();
 		} else
 			goto DEFAULT;
 		break;
