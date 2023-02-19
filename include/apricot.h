@@ -1379,16 +1379,7 @@ perl_error(void);
 extern void*
 create_object( const char *objClass, const char *types, ...);
 
-#ifdef __GNUC__
-#define SvBOOL(sv) ({ SV *svsv = sv; SvTRUE(svsv);})
-#else
-__INLINE__ Bool
-SvBOOL( SV *sv)
-{
-	return SvTRUE(sv);
-}
-#endif
-
+#define SvBOOL SvTRUE
 #define pexist( key) hv_exists( profile, # key, (I32) strlen( #key))
 #define pdelete( key) (void) hv_delete( profile, # key, (I32) strlen( #key), G_DISCARD)
 #define dPROFILE  SV ** temporary_prf_Sv
