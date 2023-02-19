@@ -135,7 +135,6 @@ sub can_use_locale
 sub locale_str($$$)
 {
 	my ( $format, $day, $month ) = @_;
-	POSIX::setlocale(POSIX::LC_TIME(), "chinese");
 	Prima::Utils::local2sv(POSIX::strftime ( $format, 0, 0, 0, $day, $month, 0 ));
 }
 
