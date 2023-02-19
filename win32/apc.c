@@ -1179,18 +1179,18 @@ translate_console_input( INPUT_RECORD *ir)
 }
 
 static char*
-locale_months(void)
+locale_strings_set(int start, int num)
 {
 	int i, nsz;
 	wchar_t wbuf[256];
 	char buf[256*12] = "";
 	nsz = 0;
-	for ( i = 0; i < 12; i++) {
+	for ( i = 0; i < num; i++) {
 		int len;
 		char * utf;
 
 		wbuf[0] = 0;
-		len = GetLocaleInfoW( LOCALE_USER_DEFAULT, LOCALE_SMONTHNAME1 + i, wbuf, 256);
+		len = GetLocaleInfoW( LOCALE_USER_DEFAULT, start + i, wbuf, 256);
 		if ( len == 0 ) return 0;
 
 		wbuf[255] = 0;
@@ -1202,12 +1202,11 @@ locale_months(void)
 
 		strcat(buf + nsz, utf);
 		free(utf);
-		if ( i != 11 ) strcat(buf + nsz, ":");
+		if ( i != num - 1 ) strcat(buf + nsz, ":");
 		nsz += len;
 	}
 	return duplicate_string(buf);
 }
-
 
 char *
 apc_system_action( const char * params)
@@ -1315,8 +1314,13 @@ apc_system_action( const char * params)
 			)
 				return NULL;
 			return translate_console_input(&ir);
-		} else if ( strncmp( params, "win32.locale.months", strlen("win32.locale.months")) == 0) {
-			return locale_months();
+		} else if ( strncmp( params, "win32.locale.", 13) == 0) {
+			if ( strcmp( params + 13, "days") == 0)
+				return locale_strings_set(LOCALE_SDAYNAME1, 7);
+			else if (strcmp( params + 13, "months") == 0)
+				return locale_strings_set(LOCALE_SMONTHNAME1, 12);
+			else
+				goto DEFAULT;
 		} else
 			goto DEFAULT;
 		break;
