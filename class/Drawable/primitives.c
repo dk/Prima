@@ -67,7 +67,7 @@ Drawable_bar( Handle self, double x1, double y1, double x2, double y2)
 
 	if ( prima_matrix_is_square_rectangular( VAR_MATRIX, &nrect, npoly)) {
 		Rect r;
-		if ( !var->antialias ) FLOOR4(x1,y1,x2,y2);
+		if ( !var->antialias ) FLOOR4(nrect.left,nrect.top,nrect.right,nrect.bottom);
 		if (IS_AA)
 			return apc_gp_aa_bars( self, 1, &nrect);
 		prima_array_convert( 4, &nrect, 'd', &r, 'i');

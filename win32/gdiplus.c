@@ -169,10 +169,10 @@ apc_gp_aa_bars( Handle self, int nr, NRect *rr)
 		NRect *rrn;
 		if ( !( rects = malloc(sizeof(RectF) * nr)))
 			return false;
-		for ( i = 0, rrn = rr, rri = rects; i < nr; i++) {
+		for ( i = 0, rrn = rr, rri = rects; i < nr; i++, rrn++, rri++) {
 			rri->X      = rrn->left - t.x;
 			rri->Y      = dy - rrn->top - t.y - 1.0;
-			rri->Width  = rrn->left - rrn-> right  + 1.0;
+			rri->Width  = rrn->right - rrn->left  + 1.0;
 			rri->Height = rrn->top  - rrn-> bottom + 1.0;
 		}
 
