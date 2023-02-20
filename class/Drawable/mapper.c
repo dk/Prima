@@ -41,12 +41,27 @@ void
 prima_init_font_mapper(void)
 {
 	int i;
+	Font f;
 	list_create(&font_passive_entries, 256, 256);
 	list_create(&font_active_entries,  16,  16);
 	for ( i = 0; i < N_STYLES; i++) font_mapper_default_id[i] = -1;
 	font_substitutions = prima_hash_create();
 
 	prima_font_mapper_save_font(NULL, 0); /* occupy zero index */
+
+	/* system fonts are first in the substitution priority */
+	apc_font_default( &f);
+	if ( f.name[0]) prima_font_mapper_save_font(f.name, f.style);
+	apc_widget_default_font( &f);
+	if ( f.name[0]) prima_font_mapper_save_font(f.name, f.style);
+	apc_sys_get_msg_font( &f);
+	if ( f.name[0]) prima_font_mapper_save_font(f.name, f.style);
+	apc_menu_default_font( &f);
+	if ( f.name[0]) prima_font_mapper_save_font(f.name, f.style);
+	apc_popup_default_font( &f);
+	if ( f.name[0]) prima_font_mapper_save_font(f.name, f.style);
+	apc_sys_get_caption_font( &f);
+	if ( f.name[0]) prima_font_mapper_save_font(f.name, f.style);
 }
 
 static Bool
