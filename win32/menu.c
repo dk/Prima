@@ -148,7 +148,6 @@ get_unchecked_bitmap(void)
 	HPEN stock_pen;
 	HPEN stock_brush;
 	HBITMAP stock_bm;
-	DWORD version;
 
 	if ( std_unchecked_bitmap == (HBITMAP)(-1)) return NULL;
 	if ( std_unchecked_bitmap != NULL) return std_unchecked_bitmap;
@@ -167,11 +166,10 @@ get_unchecked_bitmap(void)
 	stock_bm = SelectObject( dc, std_unchecked_bitmap);
 
 	sz = cx * cx;
-	version = GetVersion();
 	if (
-		(LOBYTE(LOWORD(version)) < 6) || (
-			(LOBYTE(LOWORD(version)) == 6) &&
-			(HIBYTE(LOWORD(version)) <  2)
+		(LOBYTE(LOWORD(guts.version)) < 6) || (
+			(LOBYTE(LOWORD(guts.version)) == 6) &&
+			(HIBYTE(LOWORD(guts.version)) <  2)
 		)
 	) {
 		DWORD color = GetSysColor( COLOR_MENU ) | 0xff000000;
