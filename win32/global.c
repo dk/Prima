@@ -781,6 +781,7 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
 			ev. key. mod  = kmUnicode;
 			ev. key. key  = kbNoKey;
 			ev. key. code = mp1;
+			ev. key. repeat = 1;
 		}
 		break;
 	case WM_SYSKEYDOWN:
@@ -801,6 +802,7 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
 			ev. key. key    = ctx_remap_def( mp1, ctx_kb2VK, false, kbNoKey);
 			ev. key. code   = mp1;
 			ev. key. repeat = mp2 & 0x000000FF;
+			if (ev. key. repeat == 0) ev. key. repeat = 1;
 
 			// VK validations
 			if ( extended) {
