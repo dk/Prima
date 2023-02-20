@@ -2609,6 +2609,15 @@ prima_xft_init_font_substitution(void)
 	PHash core_fonts = hash_create();
 	PFontInfo info;
 
+#define REG(x) if ( guts.default_##x##_font.name[0]) \
+	prima_font_mapper_save_font(guts.x##_font.name, guts.x##_font.style)
+	REG(default);
+	REG(default_widget);
+	REG(default_msg);
+	REG(default_caption);
+	REG(default_menu);
+#undef REG
+
 	for ( i = 0, info = guts. font_info; i < guts. n_fonts; i++, info++) {
 		PList list;
 		int len = strlen(info->font.name);

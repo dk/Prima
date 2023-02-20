@@ -1013,6 +1013,14 @@ register_mapper_fonts(void)
 	/* MS Shell Dlg is a virtual font, not reported by enum */
 	prima_font_mapper_save_font(guts.window_font.name, 0);
 
+	/* system fonts are first in the substitution priority */
+#define REG(x) if ( guts.x##_font.name[0]) prima_font_mapper_save_font(guts.x##_font.name, guts.x##_font.style)
+	REG(window);
+	REG(menu);
+	REG(msg);
+	REG(cap);
+#undef REG
+
 	if ( !( dc = dc_alloc()))
 		return;
 	memset( &elf, 0, sizeof( elf));
