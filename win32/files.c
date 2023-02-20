@@ -969,9 +969,11 @@ win32_set_errno(void)
 	case ERROR_DISK_FULL:
 		errno = ENOSPC;
 		break;
+#ifdef EDQUOT
 	case ERROR_NOT_ENOUGH_QUOTA:
 		errno = EDQUOT;
 		break;
+#endif
 	default: /* ERROR_INVALID_FUNCTION - eg. on a FAT volume */
 		errno = EINVAL;
 		break;
