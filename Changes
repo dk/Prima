@@ -10,6 +10,7 @@ Revision history for Perl module Prima
  - File.onRead supports native Win32 console stdin event
  - Support XIM input
  - Win32: fix local non-latin months/days of week names in Calendar
+ - Win32: fix IME input
 
 1.67 2022-11-27
  - Links and tooltips extended functionality:
