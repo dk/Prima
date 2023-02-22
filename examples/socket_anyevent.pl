@@ -2,7 +2,7 @@
 
 =head1 NAME
 
-examples/socket_anyevent.pl - AnyEvent version of examples/socket.pl with automatic selection of Event library
+examples/socket_anyevent.pl - AnyEvent version of examples/socket.pl with the Prima loop
 
 =head1 AUTHOR
 
