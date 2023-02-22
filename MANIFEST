@@ -351,6 +351,7 @@ Prima/Sliders.pm
 Prima/Spinner.pm
 Prima/StdBitmap.pm
 Prima/Stress.pm
+Prima/sys/AnyEvent.pm
 Prima/sys/FS.pm
 Prima/sys/Gencls.pm
 Prima/sys/GUIException.pm

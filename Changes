@@ -11,6 +11,7 @@ Revision history for Perl module Prima
  - Support XIM input
  - Win32: fix local non-latin months/days of week names in Calendar
  - Win32: fix IME input
+ - Add Prima::sys::AnyEvent - same as AnyEvent::Impl::Prima bridge but now in the core
 
 1.67 2022-11-27
  - Links and tooltips extended functionality:

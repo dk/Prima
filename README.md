@@ -292,4 +292,6 @@ Credits
  - Timothy Witham
  - Mohammad S Anwar
  - Jean-Damien Durand
+ - Zsban Ambrus
+ - Max Maischein
 
