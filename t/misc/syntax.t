@@ -5,6 +5,8 @@ use Prima::sys::Test qw(noX11);
 use FindBin qw($Bin);
 use File::Find qw(find);
 
+$INC{'AnyEvent.pm'} = 1;
+
 my @packages;
 
 find ( sub {
