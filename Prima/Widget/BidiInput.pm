@@ -9,6 +9,7 @@ sub handle_bidi_input
 
 	my @ret;
 	if ( $opt{action} eq 'backspace') {
+		return unless length $opt{text};
 		if ( $opt{at} == ($opt{rtl} ? 0 : $opt{n_clusters})) {
 			chop $opt{text};
 			@ret = ( $opt{text}, length($opt{text}));

@@ -2579,6 +2579,8 @@ sub delete_char
 				$self->get_shaped_chunk($cs[1])->index2cluster($new_offset),
 				$cs[1]
 			);
+		} elsif ( $cs[1] < $self->{maxLine} ) {
+			$self-> delete_text( length($self->get_line($cs[1])), $cs[1], 1 );
 		}
 	}
 	$self-> end_undo_group;
