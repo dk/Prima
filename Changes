@@ -1,6 +1,6 @@
 Revision history for Perl module Prima
 
-1.68 2023-XX-XX
+1.68 2023-02-25
  - Process signals inside event loop
  - Add sys::GUIException, onDie, and a standard dialog for user interactions on exceptions
  - Widget.onMouseClick.dblclick::bool is .nth::int now, can report triple, quadruple etc clicks
