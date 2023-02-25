@@ -13,7 +13,7 @@ sub io
 		mask        => (("w" eq $r{poll}) ? fe::Write : fe::Read),
 		onRead	    => $r{cb},
 		onWrite     => $r{cb},
-		onException => $r{cb}
+		onException => $r{cb},
 	);
 
 	if (ref $r{fh}) {

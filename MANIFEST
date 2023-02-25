@@ -136,7 +136,8 @@ examples/scrollbar2.pl
 examples/scrollgroup.pl
 examples/sheet.pl
 examples/socket.pl
-examples/socket_anyevent.pl
+examples/socket_anyevent1.pl
+examples/socket_anyevent2.pl
 examples/spinner.pl
 examples/spline.pl
 examples/theme.pl
