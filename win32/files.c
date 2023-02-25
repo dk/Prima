@@ -55,7 +55,6 @@ typedef struct {
 	HANDLE   thread_handle;
 	DWORD    thread_id;
 	List     objects;
-	int      rehashing;
 } ThreadStorage;
 
 static volatile Bool   thread_noop_flag = 0;
@@ -221,11 +220,6 @@ thread_respond( ThreadStorage *t, int cmd, int param1, intptr_t param2)
 static Bool
 thread_enter_control( ThreadStorage *t)
 {
-	if ( t-> rehashing ) {
-		th.rehashing = 1;
-		return false;
-	}
-
 	if ( t->thread_id && !thread_begin_change( t))
 		return false;
 
@@ -255,6 +249,9 @@ socket_select( LPVOID dummy)
 	fd_set socket_set1[3];
 	static int socket_commands[3] = { feRead, feWrite, feException};
 
+	/* select in thread #2 can block socket operations in thread #1 - max this to 0.2 sec as the last resort */
+	struct timeval tm = { 0, 200000 };
+
 	LOG("socket: started");
 	while ( !prima_guts.app_is_dead) {
 		if ( ts.change_is_ready) {
@@ -276,7 +273,7 @@ socket_select( LPVOID dummy)
 
 		/* wait for either control socket or data signal */
 		LOG("socket: entering select...");
-		result = select( FD_SETSIZE-1, &socket_set1[0], &socket_set1[1], &socket_set1[2], NULL);
+		result = select( FD_SETSIZE-1, &socket_set1[0], &socket_set1[1], &socket_set1[2], &tm);
 		LOG("socket: select result=%d", result);
 
 		if ( result == 0) continue;
@@ -563,20 +560,15 @@ static void
 rehash_files( ThreadStorage *t)
 {
 	int i;
-	t-> rehashing = 2;
 	for ( i = 0; i < t->objects.count; i++) {
 		Handle self = t->objects.items[i];
 		CFile( self)-> is_active( self, true);
 	}
 
-	if ( t-> rehashing == 1 ) {
-		if ( t == &ts )
-			reset_sockets();
-		else if ( t == &th )
-			reset_syshandles();
-		t-> rehashing = 0;
-	} else
-		t-> rehashing = 0;
+	if ( t == &ts )
+		reset_sockets();
+	else if ( t == &th )
+		reset_syshandles();
 }
 
 static void
