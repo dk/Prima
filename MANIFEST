@@ -495,4 +495,3 @@ win32/stock.c
 win32/text.c
 win32/timers.c
 win32/widgets.c
-.
