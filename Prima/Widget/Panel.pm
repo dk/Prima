@@ -1,4 +1,4 @@
-package Prima::Widgets::Panel;
+package Prima::Widget::Panel;
 
 use strict;
 use warnings;
@@ -153,7 +153,7 @@ sub raise        {($#_)?$_[0]-> set_raise($_[1]):return $_[0]-> {raise}}
 
 =head1 NAME
 
-Prima::Widgets::Panel - simple panel widget
+Prima::Widget::Panel - simple panel widget
 
 Provides a simple panel widget, capable of displaying a single line
 of centered text on a custom background. Probably this functionality
