@@ -1379,7 +1379,10 @@ perl_error(void);
 extern void*
 create_object( const char *objClass, const char *types, ...);
 
-#define SvBOOL SvTRUE
+extern Bool
+prima_sv_bool(SV *sv);
+
+#define SvBOOL(sv) prima_sv_bool(sv)
 #define pexist( key) hv_exists( profile, # key, (I32) strlen( #key))
 #define pdelete( key) (void) hv_delete( profile, # key, (I32) strlen( #key), G_DISCARD)
 #define dPROFILE  SV ** temporary_prf_Sv
