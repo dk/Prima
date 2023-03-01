@@ -1309,7 +1309,7 @@ apc_system_action( const char * params)
 			}
 			h = (fd == 0) ? GetStdHandle(STD_INPUT_HANDLE) : (WINHANDLE) _get_osfhandle(fd);
 			if (
-				ReadConsoleInputExW( h, &ir, 1, &n, flags) == 0 ||
+				read_console_input( h, &ir, 1, &n, flags) == 0 ||
 				n == 0
 			)
 				return NULL;
