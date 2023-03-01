@@ -2551,7 +2551,7 @@ SHOWMORE
 		my $ancestors = join(' ', map { "include/generic/$_.h class/$_.cls" } gencls( $clsfile, depend => 1, incpath => ['class']));
 	  	$t .= <<H;
 
-include/generic/$base.h: \$(FIRST_MAKEFILE) $showlog class/$base.cls $ancestors
+include/generic/$base.h include/generic/$base.inc include/generic/$base.tml: \$(FIRST_MAKEFILE) $showlog class/$base.cls $ancestors
 \t$^X -I. utils/prima-gencls.pl --inc --h -Iclass --tml $clsfile include/generic
 
 H
