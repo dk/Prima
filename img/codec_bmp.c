@@ -210,8 +210,8 @@ static Bool
 destroy_ahead(AHEAD *ahead)
 {
 	Bool error = ahead-> error;
-	free(ahead);
 	if (error & ahead-> fi-> wasTruncated) error = false;
+	free(ahead);
 	return error;
 }
 
