@@ -301,28 +301,38 @@ prima_mallocz( size_t sz);
 typedef I32 Bool;
 #if PTRSIZE==LONGSIZE
 typedef unsigned long Handle;
-#define PR_HANDLE "lu"
+#define PR_HANDLE "lx"
 #elif PTRSIZE==INTSIZE
 typedef unsigned int Handle;
-#define PR_HANDLE "u"
+#define PR_HANDLE "x"
 #elif PTRSIZE==SHORTSIZE
 typedef unsigned short Handle;
-#define PR_HANDLE "hu"
+#define PR_HANDLE "hx"
 #elif defined(HAS_LONG_LONG) && PTRSIZE==LONGLONGSIZE
 typedef unsigned long long Handle;
-#define PR_HANDLE "llu"
+#define PR_HANDLE "llx"
 #elif defined(HAS_QUAD) && PTRSIZE==8
 typedef Uquad_t Handle;
-#define PR_HANDLE "U64d"
+#if defined(_MSC_VER)
+#	define PR_HANDLE "I64x"
+#else
+#	define PR_HANDLE "U64x"
+#endif
 #else
 #error "Cannot find adequate integer type"
 #endif
 typedef Handle ApiHandle;
 
 
-#define __xstr1(x) #x
-#define __xstr2(x) __xstr1(x)
-#define PR_HANDLE_FMT "0x%0" __xstr2(PTRSIZE) PR_HANDLE
+#if PTRSIZE == 4
+#define PR_HANDLE_FMT "0x%08" PR_HANDLE
+#elif PTRSIZE == 8
+#define PR_HANDLE_FMT "0x%016" PR_HANDLE
+#elif PTRSIZE == 16
+#define PR_HANDLE_FMT "0x%032" PR_HANDLE
+#else
+#error "Cannot find adequate pointer type"
+#endif
 
 #include "Types.h"
 
