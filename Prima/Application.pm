@@ -849,7 +849,7 @@ program, for example, inside a long calculation cycle.
 yield(1) though is adapted exactly for external implementation of event loops;
 it does exactly the same as yeild(0), but if there are no events, it sleeps
 until there comes at least one, processes it, and then returns. The return
-value is 0 if the application doesn't need more event processins, because of
+value is 0 if the application doesn't need more event processings, because of
 shutting down.  The corresponding code will be
 
 	while ( yield(1)) {

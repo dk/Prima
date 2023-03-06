@@ -666,6 +666,10 @@ extern HBITMAP         std_unchecked_bitmap;
 extern int             time_defs_count;
 extern PItemRegRec     time_defs;
 
+#define MAX_SELECT_HANDLES (MAXIMUM_WAIT_OBJECTS-1)
+extern WINHANDLE       select_handles[MAX_SELECT_HANDLES];
+extern unsigned int    select_n_handles;
+
 LRESULT CALLBACK    generic_app_handler      ( HWND win, UINT  msg, WPARAM mp1, LPARAM mp2);
 LRESULT CALLBACK    generic_frame_handler    ( HWND win, UINT  msg, WPARAM mp1, LPARAM mp2);
 LRESULT CALLBACK    layered_frame_handler    ( HWND win, UINT  msg, WPARAM mp1, LPARAM mp2);
@@ -752,6 +756,7 @@ extern long         palette_match( Handle self, long color);
 extern int          palette_match_color( XLOGPALETTE * lp, long clr, int * diff_factor);
 extern PLinePattern patres_fetch( unsigned char * pattern, int len);
 extern UINT         patres_user( unsigned char * pattern, int len);
+extern Bool         process_file_msg( WINHANDLE src);
 extern Bool         process_msg( MSG * msg);
 extern void         process_transparents( Handle self);
 extern HRGN         region_create( Handle mask);
@@ -772,6 +777,7 @@ extern GpPen*       stylus_gp_get_pen(int line_width, uint32_t color);
 extern HPEN         stylus_get_pen( DWORD style, DWORD line_width, COLORREF color );
 extern HBRUSH       stylus_get_solid_brush( COLORREF color );
 extern void         wchar2char( char * dest, WCHAR * src, int lim);
+extern Bool         yield( Bool wait_for_event );
 
 #define MUTEX_TAKE(m) mutex_take(m,__FILE__,__LINE__)
 

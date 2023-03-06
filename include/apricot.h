@@ -1502,10 +1502,10 @@ extern void
 list_delete_all( PList self, Bool kill);
 
 extern int
-list_first_that( PList self, void * action, void * params);
+list_first_that( PList self, PListProc action, void * params);
 
 extern int
-list_grep( PList self, void * action, void * params);
+list_grep( PList self, PListProc action, void * params);
 
 extern int
 list_index_of( PList self, Handle item);

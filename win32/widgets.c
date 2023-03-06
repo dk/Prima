@@ -272,7 +272,7 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
 		}
 		if ( !DestroyWindow( old))
 			apiErr;
-		if ( var postList) list_first_that( var postList, repost_msgs, ( void*)self);
+		if ( var postList) list_first_that( var postList, (PListProc) repost_msgs, ( void*)self);
 	}
 	PostMessage( ret, WM_PRIMA_CREATE, 0, 0);
 
@@ -916,20 +916,11 @@ apc_window_execute( Handle self, Handle insertBefore)
 	objCheck false;
 	if ( !window_start_modal( self, false, insertBefore))
 		return false;
-	// message loop
-	{
-		MSG msg;
-		while ( GetMessage( &msg, NULL, 0, 0)) {
-			if ( !process_msg( &msg)) {
-				if ( !prima_guts.app_is_dead)
-					PostThreadMessage( guts. main_thread_id, WM_TERMINATE, 0, 0);
-				break;
-			}
-			if ( self && !(( PWindow) self)-> modal)
-				break;
-		}
-	}
-	// !!note - at this point object may be inaccessible (except var area only).
+	while (
+		!guts. application_stop_signal &&
+		(( PWindow) self)-> modal &&
+		yield(true)
+	);
 	return true;
 }
 

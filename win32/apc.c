@@ -505,18 +505,6 @@ process_msg( MSG * msg)
 }
 
 Bool
-apc_application_go( Handle self)
-{
-	MSG msg;
-	objCheck false;
-
-	guts. application_stop_signal = false;
-	while ( !guts. application_stop_signal && GetMessage( &msg, NULL, 0, 0) && process_msg( &msg));
-	guts. application_stop_signal = false;
-	return true;
-}
-
-Bool
 hwnd_lock( Bool lock)
 {
 	if ( lock) {
@@ -554,11 +542,12 @@ apc_application_sync( void)
 }
 
 Bool
-apc_application_yield(Bool wait_for_event)
+yield(Bool wait_for_event)
 {
 	MSG msg;
 	Bool got_events = false;
 	guts. application_stop_signal = false;
+
 	while ( !guts. application_stop_signal && PeekMessage( &msg, NULL, 0, 0, PM_REMOVE)) {
 		got_events = true;
 		if ( !process_msg( &msg)) {
@@ -566,15 +555,55 @@ apc_application_yield(Bool wait_for_event)
 			return false;
 		}
 	}
+
 	if ( prima_guts.application && wait_for_event && !got_events && !guts. application_stop_signal) {
 		Event ev;
 		ev. cmd = cmIdle;
 		C_APPLICATION-> message( prima_guts.application, &ev);
 		if ( prima_guts.application ) {
-			GetMessage( &msg, NULL, 0, 0);
-			process_msg( &msg);
+			DWORD ret;
+			ret = MsgWaitForMultipleObjectsEx(
+				select_n_handles, select_handles,
+				INFINITE,
+				QS_ALLINPUT, MWMO_INPUTAVAILABLE
+			);
+
+
+			if (
+				( ret >= WAIT_OBJECT_0    && ret < WAIT_OBJECT_0    + select_n_handles ) ||
+				( ret >= WAIT_ABANDONED_0 && ret < WAIT_ABANDONED_0 + select_n_handles )
+			) {
+				ret -= ( ret >= WAIT_ABANDONED_0 ) ? WAIT_ABANDONED_0 : WAIT_OBJECT_0;
+				process_file_msg( select_handles[ret] );
+			} else if ( ret == WAIT_OBJECT_0 + select_n_handles ) {
+				GetMessage( &msg, NULL, 0, 0);
+				process_msg( &msg);
+			} else if ( ret == WAIT_TIMEOUT ) {
+				return true;
+			} else {
+				apiErrRet;
+			}
 		}
 	}
+	return true;
+}
+
+Bool
+apc_application_go( Handle self)
+{
+	objCheck false;
+	guts. application_stop_signal = false;
+	while ( !guts. application_stop_signal && yield(true));
+	guts. application_stop_signal = false;
+	return true;
+}
+
+
+Bool
+apc_application_yield(Bool wait_for_event)
+{
+	if ( !yield(wait_for_event))
+		return false;
 	guts. application_stop_signal = false;
 	return prima_guts.application != NULL_HANDLE;
 }

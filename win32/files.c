@@ -64,14 +64,7 @@ static int             socket_version = 0;
 static fd_set          socket_set2[3];
 static SOCKET          socket_control_channel[2] = {0,0};
 
-#define MAX_SYSHANDLES 32
-#define MUTEX_SIGNATURE 0xff
 static ThreadStorage   th;
-static int             syshandle_set_count;
-static HANDLE          syshandle_set2_handles[MAX_SYSHANDLES];
-static Byte            syshandle_set2_types[MAX_SYSHANDLES];
-static HANDLE          syshandle_control_mutex;
-
 static ThreadStorage   tf;
 
 int
@@ -90,7 +83,7 @@ thr_warn( const char *format, ...)
 }
 
 #define LOG if (debug) thr_warn
-#define THR_ID(t) ((t->thread_id == GetCurrentThreadId()) ? ((t == &ts) ? "socket" : "syshandle") : "main")
+#define THR_ID(t) ((t->thread_id == GetCurrentThreadId()) ? "socket" : "main")
 #define socketErr(s) if (debug) thr_warn( "%s failed at %s.%d: %s\n", s, __FILE__, __LINE__, err_msg(WSAGetLastError(), NULL))
 
 HANDLE
@@ -456,104 +449,24 @@ reset_sockets( void)
 	}
 }
 
-DWORD WINAPI
-syshandle_select( LPVOID dummy)
-{
-	int count = 0;
-	DWORD n;
-	HANDLE  syshandle_set1_handles[MAX_SYSHANDLES];
-	Byte    syshandle_set1_types[MAX_SYSHANDLES];
-
-	LOG("syshandle: started");
-	while ( !prima_guts.app_is_dead) {
-		if ( th.change_is_ready) {
-			if ( !thread_begin_change(&th))
-				break;
-			/* read incoming changes */
-			count = syshandle_set_count;
-			memcpy( syshandle_set1_handles, syshandle_set2_handles, sizeof(HANDLE) * syshandle_set_count);
-			memcpy( syshandle_set1_types,   syshandle_set2_types,   syshandle_set_count);
-			th.change_is_ready = false;
-			thread_end_change(&th);
-			LOG("syshandle: got %d handles", count);
-			if ( count == 0 ) /* stop the thread */
-				break;
-		}
-
-		/* wait now, wake up by mutex if anything */
-		LOG("syshandle: wait for %d objects", count);
-		n = WaitForMultipleObjects(
-			count, syshandle_set1_handles,
-			false, INFINITE
-		);
-		LOG("syshandle: got %d", n);
-		if ( n == WAIT_TIMEOUT )
-			continue;
-
-		if ( n >= WAIT_OBJECT_0 && n <= WAIT_OBJECT_0 + count - 1 ) {
-			n -= WAIT_OBJECT_0;
-
-			if (syshandle_set1_types[n] == MUTEX_SIGNATURE ) {
-				LOG("syshandle: control mutex caught");
-				mutex_release( syshandle_set1_handles[n] );
-			}
-
-			LOG("syshandle: sending WM_SYSHANDLE");
-			if ( !thread_respond(&th, WM_SYSHANDLE, syshandle_set1_types[n], (intptr_t) syshandle_set1_handles[n]))
-				goto FAIL;
-		} else {
-			/* some bad handle? rehash */
-			LOG("syshandle: sending WM_SYSHANDLE_REHASH");
-			if ( !thread_respond(&th, WM_SYSHANDLE_REHASH, 0, 0))
-				goto FAIL;
-		}
-	}
-
-FAIL:
-	/* if somehow failed, making restart possible */
-	LOG("syshandle: ended");
-	th.thread_id = 0;
-	th.response_is_ready = 0;
-	return 0;
-}
-
 static void
-reset_syshandles( void)
+reset_all_handles(void)
 {
 	int i;
 
-	if ( !thread_enter_control( &ts))
-		return;
-	LOG("main: change syshandle");
+	select_n_handles = 0;
 
-	syshandle_set_count = 0;
 	for ( i = 0; i < th.objects.count; i++) {
 		Handle self = th.objects.items[i];
 		switch ( sys s.file.type ) {
 		case FHT_STDIN:
 			if ( var eventMask & feRead) {
-				syshandle_set2_handles[ syshandle_set_count ] = (HANDLE) sys s.file.object;
-				syshandle_set2_types  [ syshandle_set_count ] = feRead;
-				syshandle_set_count++;
-				LOG("main: %s wants to read", var name);
-				if ( syshandle_set_count == MAX_SYSHANDLES - 1) goto ENOUGH;
+				/* apc_file_attach is responsible for select_handles[] not overflowing */
+				select_handles[ select_n_handles++ ] = (HANDLE) sys s.file.object;
+				return;
 			}
-			break;
 		}
 	}
-
-	if ( syshandle_set_count > 0 ) {
-		/* add controlling mutex */
-		syshandle_set2_handles[ syshandle_set_count ] = syshandle_control_mutex;
-		syshandle_set2_types  [ syshandle_set_count ] = MUTEX_SIGNATURE;
-		syshandle_set_count++;
-		LOG("main: add syshandle_control_mutex");
-	}
-
-ENOUGH:
-	if ( !thread_leave_control( &th, syshandle_select))
-		return;
-	mutex_release( syshandle_control_mutex );
 }
 
 static void
@@ -568,15 +481,13 @@ rehash_files( ThreadStorage *t)
 	if ( t == &ts )
 		reset_sockets();
 	else if ( t == &th )
-		reset_syshandles();
+		reset_all_handles();
 }
 
 static void
-dispatch_file_event( ThreadStorage *t)
+dispatch_file_msg( ThreadStorage *t, int mask, intptr_t src)
 {
 	int i;
-	int mask     = t->param1;
-	intptr_t src = t->param2;
 	for ( i = 0; i < t->objects.count; i++) {
 		Handle self = t->objects.items[ i];
 		if (
@@ -622,36 +533,8 @@ file_process_events(int cmd, WPARAM param1, LPARAM param2)
 		}
 		break;
 	case WM_FILE:
-		tf.param1 = param1;
-		tf.param2 = param2;
-		dispatch_file_event(&tf);
+		dispatch_file_msg(&tf, param1, param2);
 		break;
-	}
-
-	if ( th.response_is_ready) {
-		thread_noop_flag = 0;
-		if ( thread_begin_change(&th)) {
-			events_handled = true;
-
-			switch ( th.cmd ) {
-			case WM_SYSHANDLE:
-				if ( th.param1 == MUTEX_SIGNATURE ) {
-					LOG("main: retake syshandle control mutex");
-					MUTEX_TAKE(syshandle_control_mutex);
-				} else {
-					LOG("main: WM_SYSHANDLE");
-					dispatch_file_event(&th);
-				}
-				break;
-			case WM_SYSHANDLE_REHASH:
-				LOG("main: WM_SYSHANDLE_REHASH");
-				rehash_files(&th);
-				break;
-			}
-
-			thread_end_change( &th);
-			thread_release_response(&th);
-		}
 	}
 
 	if ( ts.response_is_ready) {
@@ -661,7 +544,7 @@ file_process_events(int cmd, WPARAM param1, LPARAM param2)
 			switch ( ts.cmd ) {
 			case WM_SOCKET:
 				LOG("main: WM_SOCKET");
-				dispatch_file_event(&ts);
+				dispatch_file_msg(&ts, ts.param1, ts.param2);
 				break;
 			case WM_SOCKET_REHASH:
 				LOG("main: WM_SOCKET_REHASH");
@@ -675,6 +558,13 @@ file_process_events(int cmd, WPARAM param1, LPARAM param2)
 	}
 
 	return events_handled;
+}
+
+Bool
+process_file_msg( WINHANDLE src)
+{
+	dispatch_file_msg( &th, feRead, (intptr_t) src );
+	return true;
 }
 
 static Bool
@@ -694,7 +584,7 @@ static void
 delete_thread_storage( ThreadStorage* t)
 {
 	if ( t->thread_id ) {
-		LOG("main: terminate %s thread", (t == &ts) ? "socket" : "syshandle");
+		LOG("main: terminate socket thread");
 		TerminateThread(t->thread_handle, 0);
 	}
 	if ( t-> change_mutex )
@@ -707,13 +597,25 @@ delete_thread_storage( ThreadStorage* t)
 Bool
 file_subsystem_init( void)
 {
-	if ( !( syshandle_control_mutex = mutex_create()))
-		return false;
+	int  _data, _sz = sizeof(int);
+	(void)_data;
+	(void)_sz;
+#ifdef PERL_OBJECT     /* init perl socket library, if any */
+	PL_piSock-> Htons( 80);
+#else
+	win32_htons(80);
+#endif
+	if ( getsockopt(( SOCKET) INVALID_SOCKET, SOL_SOCKET, SO_OPENTYPE, (char*)&_data, &_sz) != 0)
+		socket_version = -1; /* no sockets available */
+	else
+		socket_version = 1;
+
 	if ( !create_thread_storage(&ts))
 		return false;
 	if ( !create_thread_storage(&th))
 		return false;
 	list_create(&tf.objects, 8, 8);
+
 	return true;
 }
 
@@ -723,7 +625,6 @@ file_subsystem_done( void)
 	list_destroy(&tf.objects);
 
 	delete_thread_storage(&th);
-	CloseHandle( syshandle_control_mutex );
 
 	delete_thread_storage(&ts);
 	if (socket_control_channel[0]) {
@@ -737,23 +638,6 @@ apc_file_attach( Handle self)
 {
 	int fhtype;
 	objCheck false;
-
-	if ( PFile(self)->fd > FD_SETSIZE ) return false;
-
-	if ( socket_version == 0) {
-		int  _data, _sz = sizeof( int);
-		(void)_data;
-		(void)_sz;
-#ifdef PERL_OBJECT     /* init perl socket library, if any */
-		PL_piSock-> Htons( 80);
-#else
-		win32_htons(80);
-#endif
-		if ( getsockopt(( SOCKET) INVALID_SOCKET, SOL_SOCKET, SO_OPENTYPE, (char*)&_data, &_sz) != 0)
-			socket_version = -1; /* no sockets available */
-		else
-			socket_version = 1;
-	}
 
 	if (socket_version == -1)
 		return false;
@@ -778,8 +662,10 @@ apc_file_attach( Handle self)
 		reset_sockets();
 		break;
 	case FHT_STDIN:
+		if ( th.objects.count == 0 && select_n_handles >= MAX_SELECT_HANDLES )
+			return false;
 		list_add( &th.objects, self);
-		reset_syshandles();
+		reset_all_handles();
 		break;
 	default:
 		if ( tf.objects.count == 0)
@@ -801,7 +687,7 @@ apc_file_detach( Handle self)
 		break;
 	case FHT_STDIN:
 		list_delete( &th.objects, self);
-		reset_syshandles();
+		reset_all_handles();
 		break;
 	default:
 		list_delete( &tf.objects, self);
@@ -817,7 +703,7 @@ apc_file_change_mask( Handle self)
 		reset_sockets();
 		break;
 	case FHT_STDIN:
-		reset_syshandles();
+		reset_all_handles();
 		break;
 	default:;
 	}
