@@ -411,8 +411,6 @@ process_msg( MSG * msg)
 {
 	Bool postpone_msg_translation = false;
 
-	file_process_events(0,0,0);
-
 	switch ( msg-> message)
 	{
 	case WM_TERMINATE:
@@ -472,7 +470,6 @@ process_msg( MSG * msg)
 		break;
 	case WM_FILE:
 	case WM_FILE_REHASH:
-	case WM_NOOP:
 		file_process_events(msg->message, msg->wParam, msg->lParam);
 		return true;
 	case WM_SIGNAL:
@@ -565,9 +562,8 @@ yield(Bool wait_for_event)
 			ret = MsgWaitForMultipleObjectsEx(
 				select_n_handles, select_handles,
 				INFINITE,
-				QS_ALLINPUT, MWMO_INPUTAVAILABLE
+				QS_ALLINPUT | QS_ALLPOSTMESSAGE, MWMO_INPUTAVAILABLE
 			);
-
 
 			if (
 				( ret >= WAIT_OBJECT_0    && ret < WAIT_OBJECT_0    + select_n_handles ) ||
