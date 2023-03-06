@@ -69,9 +69,6 @@ typedef HANDLE SOCKETHANDLE;
 #define WM_XMOUSECLICK                    ( WM_USER + 23)
 #define WM_SIGNAL                         ( WM_USER + 24)
 #define WM_SYNTHETIC_EVENT                ( WM_USER + 25)
-#define WM_SYSHANDLE                      ( WM_USER + 26)
-#define WM_SYSHANDLE_REHASH               ( WM_USER + 27)
-#define WM_NOOP                           ( WM_USER + 28)
 #define WM_TERMINATE                      ( WM_USER + 99)
 #define WM_FIRST_USER_MESSAGE             ( WM_USER +100)
 #define WM_LAST_USER_MESSAGE              ( WM_USER +900)
@@ -284,6 +281,7 @@ typedef struct _FileData
 {
 	intptr_t       object;
 	int            type;
+	WINHANDLE      event;
 } FileData;
 
 typedef struct
@@ -778,8 +776,6 @@ extern HPEN         stylus_get_pen( DWORD style, DWORD line_width, COLORREF colo
 extern HBRUSH       stylus_get_solid_brush( COLORREF color );
 extern void         wchar2char( char * dest, WCHAR * src, int lim);
 extern Bool         yield( Bool wait_for_event );
-
-#define MUTEX_TAKE(m) mutex_take(m,__FILE__,__LINE__)
 
 /* compatibility to MSVC 6 */
 #ifndef GWLP_USERDATA

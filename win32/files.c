@@ -5,18 +5,12 @@
 #define SO_OPENTYPE 0x7008
 #endif
 
-void my_fd_zero( fd_set* f)           { FD_ZERO( f); }
-typedef fd_set type_fd_set;
-void std_fd_set( intptr_t fd, fd_set * f) { FD_SET(fd, f); }
-
 #include "win32\win32guts.h"
 #ifndef _APRICOT_H_
 #include "apricot.h"
 #endif
 #include "guts.h"
 #include "File.h"
-
-void my_fd_set( intptr_t fd, type_fd_set * f) { std_fd_set( fd, f); }
 
 #define var (( PFile) self)->
 #define  sys (( PDrawableData)(( PFile) self)-> sysData)->
@@ -26,46 +20,12 @@ void my_fd_set( intptr_t fd, type_fd_set * f) { std_fd_set( fd, f); }
 extern "C" {
 #endif
 
-#undef  socket
-#undef  listen
-#undef  bind
-#undef  accept
-#undef  select
-#undef  connect
-#undef  getsockname
 #undef  getsockopt
-#undef  setsockopt
-#undef  send
-#undef  recv
-#undef  write
-#undef  fd_set
-#undef  FD_ZERO
-#define FD_ZERO my_fd_zero
-#undef  FD_SET
-#define FD_SET my_fd_set
 
-typedef struct {
-	volatile int      cmd;
-	volatile int      param1;
-	volatile intptr_t param2;
-	volatile Bool     change_is_ready, response_is_ready;
-	volatile HANDLE   change_mutex, response_mutex;
-	volatile int      change_refcnt;
-
-	HANDLE   thread_handle;
-	DWORD    thread_id;
-	List     objects;
-} ThreadStorage;
-
-static volatile Bool   thread_noop_flag = 0;
-
-static ThreadStorage   ts;
-static int             socket_version = 0;
-static fd_set          socket_set2[3];
-static SOCKET          socket_control_channel[2] = {0,0};
-
-static ThreadStorage   th;
-static ThreadStorage   tf;
+static int   socket_version = 0;
+static List  ts;
+static List  th;
+static List  tf;
 
 int
 thr_warn( const char *format, ...)
@@ -82,382 +42,27 @@ thr_warn( const char *format, ...)
 	return rc;
 }
 
-#define LOG if (debug) thr_warn
-#define THR_ID(t) ((t->thread_id == GetCurrentThreadId()) ? "socket" : "main")
-#define socketErr(s) if (debug) thr_warn( "%s failed at %s.%d: %s\n", s, __FILE__, __LINE__, err_msg(WSAGetLastError(), NULL))
-
-HANDLE
-mutex_create()
-{
-	HANDLE mutex;
-	if ( !( mutex = CreateMutex( NULL, FALSE, NULL))) {
-		apiErr;
-		thr_warn("Failed to create mutex object");
-		return (HANDLE) 0;
-	}
-	return mutex;
-}
-
-Bool
-mutex_take( HANDLE mutex, char * file, int line )
-{
-	if ( WaitForSingleObject( mutex, INFINITE) == WAIT_OBJECT_0)
-		return true;
-	thr_warn("Failed to obtain mutex ownership at %s line %d", file, line);
-	return false;
-}
-
-/* win32 mutexes are apparently refcounted */
-void
-mutex_release( HANDLE mutex )
-{
-	while ( ReleaseMutex( mutex)) {} ;
-}
-
-/* Main thread signals another thread that change is ready for consumption
-byt setting change_is_ready flag, and then the thread #2 grabs change_mutex
-that generally stays free. After copying the changed data the mutex is released
-to be used for next change by the main thread */
-
-static Bool
-thread_begin_change( ThreadStorage *t)
-{
-	LOG("%s: thread_begin_change refcnt=%d waiting for change_mutex..", THR_ID(t), t->change_refcnt);
-	if ( !MUTEX_TAKE(t->change_mutex)) return false;
-	LOG("%s: thread_begin_change OK refcnt=%d..", THR_ID(t), t->change_refcnt);
-	if ( t-> change_refcnt++ > 1 )
-		ReleaseMutex(t->change_mutex); /* do not overflow internal refcounting */
-	return true;
-}
-
-static void
-thread_end_change( ThreadStorage *t)
-{
-	LOG("%s: thread_end_change refcnt=%d..", THR_ID(t), t->change_refcnt - 1);
-	if ( --t-> change_refcnt > 0 ) return;
-	t-> change_refcnt = 0;
-	LOG("%s: release change_mutex", THR_ID(t));
-	mutex_release(t->change_mutex);
-}
-
-static void
-thread_release_response( ThreadStorage *t)
-{
-	LOG("main: release response_mutex");
-	mutex_release(t-> response_mutex);
-	Sleep(1);
-	LOG("main: waiting to retake response_mutex");
-	MUTEX_TAKE(t-> response_mutex);
-	LOG("main: retaken response_mutex");
-	t-> response_is_ready = 0;
-}
-
-/*
-
-Main thread holds response_mutex, which is used for thread #2 to wait to avoid
-starvation if f ex the main thread is not serving event loop or just generally
-slow. When the thread #2 wants to report a result, it sets the flag
-response_is_ready which will be checked inside the main thread event loop, and
-will push the main thread to process it with PostThreadMessage if the event
-loop is waiting for input. And then it wait for response_mutex.
-
-Once the main thread wakes up, it handles the response and re-acquires the
-response_mutex, see how in thread_release_response.
-
-XXX: WM_NOOP that supposed to wake
-up the main thread is not delivered once in a while for reasons unknown.
-Main thread queue full?
-
-*/
-static Bool
-thread_respond( ThreadStorage *t, int cmd, int param1, intptr_t param2)
-{
-	t-> cmd    = cmd;
-	t-> param1 = param1;
-	t-> param2 = param2;
-
-	/* don't let main thread to handle response until response_is_ready is 1
-	and eventual Sleep() is over */
-	LOG("%s: thread_respond: acquiring permissions to change", THR_ID(t));
-	if ( !thread_begin_change(t))
-		return false;
-	{
-		t-> response_is_ready = 1;
-		if ( thread_noop_flag == 0) { /* don't trash the main queue with my messages */
-			thread_noop_flag = 1;
-			LOG("%s: thread_respond: sending WM_NOOP", THR_ID(t));
-			while ( !PostThreadMessage( guts.main_thread_id, WM_NOOP, 0, 0))
-				Sleep(1);
-		}
-	}
-	thread_end_change(t);
-
-	LOG("%s: thread_respond: wait for main thread to relinquish response_mutex", THR_ID(t));
-
-	/* new wait for the main thread to handle the event */
-	if ( !MUTEX_TAKE(t-> response_mutex))
-		return false;
-	/*
-
-	the event is handled here
-
-	*/
-	mutex_release(t-> response_mutex);
-	/* now don't run off until the main thread says so */
-	LOG("%s: thread_respond: waiting for flag..", THR_ID(t));
-	while (t-> response_is_ready) Sleep(1);
-	LOG("%s: thread_respond: end sync", THR_ID(t));
-	return true;
-}
-
-static Bool
-thread_enter_control( ThreadStorage *t)
-{
-	if ( t->thread_id && !thread_begin_change( t))
-		return false;
-
-	return true;
-}
-
-static Bool
-thread_leave_control( ThreadStorage *t, void * proc)
-{
-	if ( !t->thread_id) {
-		t->change_is_ready = false;
-		if ( !( t->thread_handle = CreateThread( NULL, 0, proc, NULL, 0, &t->thread_id ))) {
-			apiErr;
-			return false;
-		}
-		LOG("main: create thread %d", t->thread_id);
-	} else
-		thread_end_change( t);
-	t-> change_is_ready = true;
-	return true;
-}
-
-DWORD WINAPI
-socket_select( LPVOID dummy)
-{
-	int j, result;
-	fd_set socket_set1[3];
-	static int socket_commands[3] = { feRead, feWrite, feException};
-
-	/* select in thread #2 can block socket operations in thread #1 - max this to 0.2 sec as the last resort */
-	struct timeval tm = { 0, 200000 };
-
-	LOG("socket: started");
-	while ( !prima_guts.app_is_dead) {
-		if ( ts.change_is_ready) {
-			int i, count;
-			LOG("socket: change is ready");
-			if ( !thread_begin_change(&ts))
-				break;
-			/* read incoming changes */
-			for ( i = 0; i < 3; i++)
-				memcpy( socket_set1+i, socket_set2+i, sizeof( fd_set));
-			ts.change_is_ready = false;
-			thread_end_change(&ts);
-			count = socket_set1[0]. fd_count + socket_set1[1]. fd_count + socket_set1[2]. fd_count;
-			LOG("socket: fd count=%d", count);
-			/* stop the thread */
-			if ( count == 0 )
-				break;
-		}
-
-		/* wait for either control socket or data signal */
-		LOG("socket: entering select...");
-		result = select( FD_SETSIZE-1, &socket_set1[0], &socket_set1[1], &socket_set1[2], &tm);
-		LOG("socket: select result=%d", result);
-
-		if ( result == 0) continue;
-		if ( result < 0) {
-			socketErr("select");
-			/* possibly some socket was closed? */
-			ts.cmd = WM_SOCKET_REHASH;
-			LOG("socket: WM_SOCKET_REHASH sent");
-			if ( !thread_respond(&ts, WM_SOCKET_REHASH, 0, 0))
-				goto FAIL;
-			continue;
-		}
-
-		for ( j = 0; j < 3; j++) {
-			int i;
-			for ( i = 0; i < socket_set1[j]. fd_count; i++) {
-				SOCKET s = socket_set1[j].fd_array[i];
-				if ( s == socket_control_channel[1] ) {
-					if ( j == 0 ) {
-						char r;
-						LOG("socket: flushing control channel %ld", s);
-						if ( recv( s, &r, 1, 0) != 1 ) {
-							socketErr("recv");
-							goto FAIL;
-						}
-					}
-					continue;
-				}
-				LOG("socket: WM_SOCKET %d %ld sent", socket_commands[i], s);
-				if ( !thread_respond( &ts, WM_SOCKET, socket_commands[j], s))
-					goto FAIL;
-			}
-		}
-		ts.change_is_ready = true;
-	}
-	LOG("socket: failed");
-FAIL:
-	LOG("socket: ended");
-
-	/* if somehow failed, making restart possible */
-	ts.thread_id         = 0;
-	ts.response_is_ready = false;
-
-	return 0;
-}
-
-/* socketpair.c
- * Copyright 2007, 2010 by Nathan C. Myers <ncm@cantrip.org>
- * This code is Free Software.  It may be copied freely, in original or
- * modified form, subject only to the restrictions that (1) the author is
- * relieved from all responsibilities for any use for any purpose, and (2)
- * this copyright notice must be retained, unchanged, in its entirety.  If
- * for any reason the author might be held responsible for any consequences
- * of copying or use, license is withheld.
- */
-static Bool
-prima_socketpair(SOCKET socks[2])
-{
-	union {
-		struct sockaddr_in inaddr;
-		struct sockaddr addr;
-	} a;
-
-	SOCKET listener;
-	socklen_t addrlen = sizeof(a.inaddr);
-	int reuse = 1;
-
-	if (( listener = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == INVALID_SOCKET) {
-		socketErr("socket");
-		return false;
-	}
-
-	memset(&a, 0, sizeof(a));
-	a.inaddr.sin_family = AF_INET;
-	a.inaddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-	a.inaddr.sin_port = 0;
-
-	socks[0] = socks[1] = INVALID_SOCKET;
-
-	do {
-		if (setsockopt(listener, SOL_SOCKET, SO_REUSEADDR,
-			       (char *) &reuse, (socklen_t) sizeof(reuse)) == -1) {
-			socketErr("setsockopt(SOL_SOCKET,SO_REUSEADDR)");
-			break;
-		}
-		if (bind(listener, &a.addr, sizeof(a.inaddr)) == SOCKET_ERROR) {
-			socketErr("bind");
-			break;
-		}
-		memset(&a, 0, sizeof(a));
-		if (getsockname(listener, &a.addr, &addrlen) == SOCKET_ERROR) {
-			socketErr("getsockname");
-			break;
-		}
-
-		// win32 getsockname may only set the port number, p=0.0005.
-		// ( http://msdn.microsoft.com/library/ms738543.aspx ):
-		a.inaddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-		a.inaddr.sin_family = AF_INET;
-
-		if (listen(listener, 1) == SOCKET_ERROR) {
-			socketErr("listen");
-			break;
-		}
-		if ((socks[0] = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, 0)) == INVALID_SOCKET) {
-			socketErr("WSASocket(AF_INET,SOCK_STREAM)");
-			break;
-		}
-		if (connect(socks[0], &a.addr, sizeof(a.inaddr)) == SOCKET_ERROR) {
-			socketErr("connect");
-			break;
-		}
-		if (( socks[1] = accept(listener, NULL, NULL)) == INVALID_SOCKET) {
-			socketErr("accept");
-			break;
-		}
-		closesocket(listener);
-		return true;
-	} while (0);
-
-	closesocket(listener);
-	closesocket(socks[0]);
-	closesocket(socks[1]);
-	return false;
-}
-
 static void
 reset_sockets( void)
 {
 	int i;
-	Bool wakeup = ts.thread_id != 0;
 
-	if ( !thread_enter_control( &ts))
-		return;
-
-	LOG("main: reset %d sockets", ts.objects.count);
-	/* copying handles */
-	for ( i = 0; i < 3; i++)
-		FD_ZERO( &socket_set2[i]);
-
-	for ( i = 0; i < ts.objects.count; i++) {
-		Handle self = ts.objects.items[i];
-		if ( var eventMask & feRead) {
-			LOG("main: %s wants to read to %ld", var name, sys s.file.object);
-			FD_SET( sys s.file.object,  &socket_set2[0]);
+	for ( i = 0; i < ts.count; i++) {
+		Handle self = ts.items[i];
+		if ( var eventMask & ( feRead|feWrite|feException)) {
+			/* apc_file_attach is responsible for select_handles[] not overflowing */
+			select_handles[ select_n_handles++ ] = sys s.file.event;
 		}
-		if ( var eventMask & feWrite) {
-			LOG("main: %s wants to write to %ld", var name, sys s.file.object);
-			FD_SET( sys s. file.object, &socket_set2[1]);
-		}
-		if ( var eventMask & feException) {
-			LOG("main: %s wants to oob to %ld", var name, sys s.file.object);
-			FD_SET( sys s.file.object,  &socket_set2[2]);
-		}
-	}
-
-	/* set up the control channel to wake up the thread on change */
-	if ( socket_control_channel[0] == 0 ) {
-		if ( !prima_socketpair(socket_control_channel))
-			return;
-		LOG("main: socketpair: %ld %ld", socket_control_channel[0], socket_control_channel[1]);
-	}
-	FD_SET( socket_control_channel[1], &socket_set2[0]);
-
-	/* don't bombard the control channel because the worker can be stuck waiting for
-	the change mutex, and we won't release it in thread_leave_control below if this call
-	is already deep in message handler change brackets. If that is indeed the case, waking
-	is not needed because the worker is not in select(), but in mutex_take(), too */
-	wakeup = ts.thread_id != 0 && ts.change_refcnt <= 1;
-
-	if ( !thread_leave_control( &ts, socket_select))
-		return;
-
-	/* signal the thread */
-	if ( wakeup ) {
-		char s;
-		LOG("main: sending wakeup call via control channel %ld", socket_control_channel[1]);
-		if ( send( socket_control_channel[0], &s, 1, 0) != 1 )
-			socketErr("send");
 	}
 }
 
 static void
-reset_all_handles(void)
+reset_syshandles(void)
 {
 	int i;
 
-	select_n_handles = 0;
-
-	for ( i = 0; i < th.objects.count; i++) {
-		Handle self = th.objects.items[i];
+	for ( i = 0; i < th.count; i++) {
+		Handle self = th.items[i];
 		switch ( sys s.file.type ) {
 		case FHT_STDIN:
 			if ( var eventMask & feRead) {
@@ -470,39 +75,42 @@ reset_all_handles(void)
 }
 
 static void
-rehash_files( ThreadStorage *t)
+reset_all_handles(void)
 {
-	int i;
-	for ( i = 0; i < t->objects.count; i++) {
-		Handle self = t->objects.items[i];
-		CFile( self)-> is_active( self, true);
-	}
-
-	if ( t == &ts )
-		reset_sockets();
-	else if ( t == &th )
-		reset_all_handles();
+	select_n_handles = 0;
+	reset_syshandles();
+	reset_sockets();
 }
 
 static void
-dispatch_file_msg( ThreadStorage *t, int mask, intptr_t src)
+dispatch_file_event( Handle self, int cmd)
+{
+	Event ev;
+	if (debug) warn("main: dealing cmd=%s to %s.%p" ,
+		( cmd == feRead) ? "cmFileRead" :
+			(( cmd == feWrite) ? "cmFileWrite" : "cmFileException"),
+		var name,
+		(void*)self
+	);
+	ev. cmd = cmd;
+	if ( var stage == csNormal )
+		CComponent(self)-> message( self, &ev);
+}
+
+static void
+dispatch_file_msg( PList t, int mask, WINHANDLE src)
 {
 	int i;
-	for ( i = 0; i < t->objects.count; i++) {
-		Handle self = t->objects.items[ i];
+	for ( i = 0; i < t->count; i++) {
+		Handle self = t->items[ i];
 		if (
-			( sys s.file.object == src) &&
+			( sys s.file.event == src) &&
 			( var eventMask & mask )
 		) {
-			Event ev;
-			LOG("main: dealing cmd=%s to %s",
-				( mask == feRead) ? "cmFileRead" :
-					(( mask == feWrite) ? "cmFileWrite" : "cmFileException"),
-				var name
+			dispatch_file_event(self,
+				( mask == feRead)   ? cmFileRead :
+				(( mask == feWrite) ? cmFileWrite : cmFileException)
 			);
-			ev. cmd = ( mask == feRead) ? cmFileRead :
-				(( mask == feWrite) ? cmFileWrite : cmFileException);
-			CComponent(self)-> message( self, &ev);
 			break;
 		}
 	}
@@ -514,16 +122,15 @@ file_process_events(int cmd, WPARAM param1, LPARAM param2)
 	Bool events_handled = false;
 
 	switch (cmd) {
-	case WM_NOOP:
-		thread_noop_flag = 0;
-		LOG("main: WM_NOOP");
-		break;
 	case WM_FILE_REHASH:
 		{
 			int i;
-			rehash_files(&tf);
-			for ( i = 0; i < tf.objects.count; i++) {
-				Handle self = tf.objects.items[i];
+			for ( i = 0; i < tf.count; i++) {
+				Handle self = tf.items[i];
+				CFile( self)-> is_active( self, true);
+			}
+			for ( i = 0; i < tf.count; i++) {
+				Handle self = tf.items[i];
 				if ( var eventMask & feRead)
 					PostMessage( NULL, WM_FILE, feRead, ( LPARAM) self);
 				if ( var eventMask & feWrite)
@@ -533,28 +140,8 @@ file_process_events(int cmd, WPARAM param1, LPARAM param2)
 		}
 		break;
 	case WM_FILE:
-		dispatch_file_msg(&tf, param1, param2);
+		dispatch_file_msg(&tf, param1, (WINHANDLE) param2);
 		break;
-	}
-
-	if ( ts.response_is_ready) {
-		thread_noop_flag = 0;
-		if ( thread_begin_change(&ts)) {
-			events_handled = true;
-			switch ( ts.cmd ) {
-			case WM_SOCKET:
-				LOG("main: WM_SOCKET");
-				dispatch_file_msg(&ts, ts.param1, ts.param2);
-				break;
-			case WM_SOCKET_REHASH:
-				LOG("main: WM_SOCKET_REHASH");
-				rehash_files(&ts);
-				break;
-			}
-
-			thread_end_change( &ts);
-			thread_release_response(&ts);
-		}
 	}
 
 	return events_handled;
@@ -563,35 +150,37 @@ file_process_events(int cmd, WPARAM param1, LPARAM param2)
 Bool
 process_file_msg( WINHANDLE src)
 {
-	dispatch_file_msg( &th, feRead, (intptr_t) src );
-	return true;
-}
+	int i;
+	WSANETWORKEVENTS ev;
+	dispatch_file_msg( &th, feRead, src );
 
-static Bool
-create_thread_storage( ThreadStorage *t)
-{
-	memset((void*) t, 0, sizeof(ThreadStorage));
-	if ( !( t->change_mutex = mutex_create()))
-		return false;
-	if ( !( t->response_mutex = mutex_create()))
-		return false;
-	MUTEX_TAKE(t-> response_mutex);
-	list_create(&t->objects, 8, 8);
-	return true;
-}
+	for ( i = 0; i < ts.count; i++) {
+		Handle self = ts.items[ i];
+		if ( sys s.file.event != src)
+			continue;
+		if ( WSAEnumNetworkEvents((SOCKET) sys s.file.object, (WSAEVENT) sys s.file.event, &ev) != 0 )
+			continue;
 
-static void
-delete_thread_storage( ThreadStorage* t)
-{
-	if ( t->thread_id ) {
-		LOG("main: terminate socket thread");
-		TerminateThread(t->thread_handle, 0);
+		protect_object(self);
+		if (
+			(var eventMask & feRead) &&
+			(ev.lNetworkEvents & (FD_ACCEPT | FD_READ | FD_CLOSE))
+		)
+			dispatch_file_event( self, cmFileRead );
+		if (
+			(var eventMask & feWrite) &&
+			( ev.lNetworkEvents & (FD_CONNECT | FD_WRITE))
+		)
+			dispatch_file_event( self, cmFileWrite );
+		if (
+			(var eventMask & feException) &&
+			( ev.lNetworkEvents & FD_OOB)
+		)
+			dispatch_file_event( self, cmFileException );
+		unprotect_object(self);
 	}
-	if ( t-> change_mutex )
-		CloseHandle( t-> change_mutex );
-	if ( t-> response_mutex )
-		CloseHandle( t-> response_mutex );
-	list_destroy( &t->objects);
+
+	return true;
 }
 
 Bool
@@ -610,11 +199,9 @@ file_subsystem_init( void)
 	else
 		socket_version = 1;
 
-	if ( !create_thread_storage(&ts))
-		return false;
-	if ( !create_thread_storage(&th))
-		return false;
-	list_create(&tf.objects, 8, 8);
+	list_create(&th, 8, 8);
+	list_create(&ts, 8, 8);
+	list_create(&tf, 8, 8);
 
 	return true;
 }
@@ -622,15 +209,22 @@ file_subsystem_init( void)
 void
 file_subsystem_done( void)
 {
-	list_destroy(&tf.objects);
+	list_destroy(&tf);
+	list_destroy(&ts);
+	list_destroy(&th);
+}
 
-	delete_thread_storage(&th);
-
-	delete_thread_storage(&ts);
-	if (socket_control_channel[0]) {
-		closesocket( socket_control_channel[0] );
-		closesocket( socket_control_channel[1] );
-	}
+static int
+mask2wsa(int src)
+{
+	long dst = 0;
+	if ( src & feRead )
+		dst |= FD_ACCEPT | FD_READ | FD_CLOSE;
+	if ( src & feWrite )
+		dst |= FD_CONNECT | FD_WRITE;
+	if ( src & feException )
+		dst |= FD_OOB;
+	return dst;
 }
 
 Bool
@@ -658,19 +252,27 @@ apc_file_attach( Handle self)
 
 	switch ( fhtype) {
 	case FHT_SOCKET:
-		list_add( &ts.objects, self);
-		reset_sockets();
+		if ( select_n_handles >= MAX_SELECT_HANDLES )
+			return false;
+		list_add( &ts, self);
+		sys s.file.event = (WINHANDLE) WSACreateEvent();
+		if ( WSAEventSelect((SOCKET ) sys s.file.object, (WSAEVENT) sys s.file.event, mask2wsa(var eventMask)) != 0 ) {
+			rc = WSAGetLastError();
+			apcWarn;
+		}
+		reset_all_handles();
 		break;
 	case FHT_STDIN:
-		if ( th.objects.count == 0 && select_n_handles >= MAX_SELECT_HANDLES )
+		if ( th.count == 0 && select_n_handles >= MAX_SELECT_HANDLES )
 			return false;
-		list_add( &th.objects, self);
+		sys s.file.event = (WINHANDLE) sys s.file.object;
+		list_add( &th, self);
 		reset_all_handles();
 		break;
 	default:
-		if ( tf.objects.count == 0)
+		if ( tf.count == 0)
 			PostMessage( NULL, WM_FILE_REHASH, 0, 0);
-		list_add( &tf.objects, self);
+		list_add( &tf, self);
 		break;
 	}
 
@@ -682,15 +284,16 @@ apc_file_detach( Handle self)
 {
 	switch ( sys s. file. type) {
 	case FHT_SOCKET:
-		list_delete( &ts.objects, self);
-		reset_sockets();
+		WSACloseEvent(( WSAEVENT ) sys s.file.event);
+		list_delete( &ts, self);
+		reset_all_handles();
 		break;
 	case FHT_STDIN:
-		list_delete( &th.objects, self);
+		list_delete( &th, self);
 		reset_all_handles();
 		break;
 	default:
-		list_delete( &tf.objects, self);
+		list_delete( &tf, self);
 	}
 	return true;
 }
@@ -700,7 +303,11 @@ apc_file_change_mask( Handle self)
 {
 	switch ( sys s. file. type) {
 	case FHT_SOCKET:
-		reset_sockets();
+		if ( WSAEventSelect((SOCKET ) sys s.file.object, (WSAEVENT) sys s.file.event, mask2wsa(var eventMask)) != 0 ) {
+			rc = WSAGetLastError();
+			apcWarn;
+		}
+		reset_all_handles();
 		break;
 	case FHT_STDIN:
 		reset_all_handles();
