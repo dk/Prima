@@ -124,7 +124,7 @@ list_at( PList slf, int index)
 }
 
 int
-list_grep( PList slf, void * action, void * params)
+list_grep( PList slf, PListProc action, void * params)
 {
 	int i, cnt;
 	Handle * list;
@@ -135,7 +135,7 @@ list_grep( PList slf, void * action, void * params)
 	cnt = slf->count;
 	slf->count = 0;
 	for ( i = 0; i < cnt; i++)
-		if ((( PListProc) action)( list[ i], params)) {
+		if (action( list[ i], params)) {
 			if ( list_add(slf, list[i]) < 0)
 				break;
 		}
@@ -144,7 +144,7 @@ list_grep( PList slf, void * action, void * params)
 }
 
 int
-list_first_that( PList slf, void * action, void * params)
+list_first_that( PList slf, PListProc action, void * params)
 {
 	int toRet = -1, i, cnt;
 	Handle * list;
@@ -154,7 +154,7 @@ list_first_that( PList slf, void * action, void * params)
 	memcpy( list, slf-> items, slf-> count * sizeof( Handle));
 	cnt = slf->count;
 	for ( i = 0; i < cnt; i++)
-		if ((( PListProc) action)( list[ i], params)) {
+		if (action( list[ i], params)) {
 			toRet = i;
 			break;
 		}

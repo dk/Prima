@@ -2302,7 +2302,7 @@ palette_change( Handle self)
 	}
 
 	l. p = p;
-	list_first_that( &l.l, pal_collect, &l);
+	list_first_that( &l.l, (PListProc) pal_collect, &l);
 	cm_squeeze_palette( p, xlp. palNumEntries, d, nColors);
 	xlp. palNumEntries = nColors;
 

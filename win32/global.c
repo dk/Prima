@@ -37,6 +37,8 @@ PHash         mgr_myfonts      = NULL; // hash of calls to apc_font_load
 PHash         mgr_menu_bitmaps = NULL; // HBITMAP manager for SetMenuItemBitmaps 
 PHash         mgr_scripts      = NULL; // SCRIPT_CACHE entries per font/script
 DWORD         rc;
+WINHANDLE     select_handles[MAX_SELECT_HANDLES];
+unsigned int  select_n_handles = 0;
 HCURSOR       std_arrow_cursor;
 HBRUSH        std_hollow_brush;
 LinePattern   std_hollow_line_pattern;
