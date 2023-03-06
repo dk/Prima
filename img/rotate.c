@@ -768,7 +768,7 @@ img_generic_rotate( Handle self, float degrees, PImage output, ColorPixel fill)
 		apply_180 = true;
 	}
 
-	degrees /= RAD;
+	degrees /= (float) RAD;
 	sin1 = sin(degrees);
 	tan2 = -tan(degrees/2);
 
