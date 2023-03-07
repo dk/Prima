@@ -1,5 +1,8 @@
 Revision history for Perl module Prima
 
+1.69 202X-XX-XX
+ - Fully rewrite win32 socket engine, now is single-threaded
+
 1.68 2023-02-25
  - Process signals inside event loop
  - Add sys::GUIException, onDie, and a standard dialog for user interactions on exceptions
