@@ -54,7 +54,7 @@ $handle_file = Prima::File->new(
 	},
 );
 
-my ($client_sock, $client_file);
+my ($client_sock, $client_file1, $client_file2);
 post( sub {
 	$client_sock = IO::Socket::INET->new(
 		Proto     => 'tcp',
@@ -63,9 +63,9 @@ post( sub {
 	);
 	$client_sock->autoflush(1);
 	ok( $client_sock, "Connected to $serv_port" . ( $client_sock ? "" : $!));
-	$client_file = Prima::File->new(
+	$client_file1 = Prima::File->new(
 		file      => $client_sock,
-		mask      => fe::Write,
+		mask      => 0,
 		onRead    => sub {
 			my $self = shift;
 			$self->mask(0);
@@ -74,9 +74,14 @@ post( sub {
 			is( $data, reverse('hello'), "Read back from server");
 			post( sub { $::application->close } );
 		},
+	);
+	$client_file2 = Prima::File->new(
+		file      => $client_sock,
+		mask      => fe::Write,
 		onWrite    => sub {
 			my $self = shift;
-			$self->mask(fe::Read);
+			$self->mask(0);
+			$client_file1->mask(fe::Read);
 			my $ok = print $client_sock "hello\n";
 			ok( $ok, "Write to server" . ( $ok ? "" : $!));
 		},

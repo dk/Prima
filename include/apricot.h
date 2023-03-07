@@ -538,7 +538,7 @@ prima_hash_store( PHash self, const void *key, int keyLen, void *val);
 #define prima_hash_count(hash) (HvKEYS(( HV*) hash))
 
 extern void*
-prima_hash_first_that( PHash self, void *action, void *params, int *pKeyLen, void **pKey);
+prima_hash_first_that( PHash self, PHashProc action, void *params, int *pKeyLen, void **pKey);
 
 extern char *
 prima_normalize_resource_string( char *name, Bool isClass);
