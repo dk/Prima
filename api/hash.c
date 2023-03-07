@@ -77,7 +77,7 @@ hash_store( PHash h, const void *key, int keyLen, void *val)
 }
 
 void *
-hash_first_that( PHash h, void * action, void * params, int * pKeyLen, void ** pKey)
+hash_first_that( PHash h, PHashProc action, void * params, int * pKeyLen, void ** pKey)
 {
 	HE *he;
 
@@ -92,7 +92,7 @@ hash_first_that( PHash h, void * action, void * params, int * pKeyLen, void ** p
 		value  = HeVAL( he);
 		key    = HeKEY( he);
 		keyLen = HeKLEN( he);
-		if ((( PHashProc) action)( value, keyLen, key, params)) {
+		if (action( value, keyLen, key, params)) {
 			if ( pKeyLen) *pKeyLen = keyLen;
 			if ( pKey) *pKey = key;
 			return value;

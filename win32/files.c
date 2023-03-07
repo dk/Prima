@@ -22,39 +22,17 @@ extern "C" {
 
 #undef  getsockopt
 
-static int   socket_version = 0;
+static int  socket_version = 0;
 static List  ts;
 static List  th;
 static List  tf;
+static PHash socket_events = NULL;
 
-int
-thr_warn( const char *format, ...)
-{
-	int rc;
-	va_list args;
-	char buf[256];
-	va_start( args, format);
-	rc = vsnprintf( buf, 255, format, args);
-	buf[rc++] = '\n';
-	buf[rc] = 0;
-	va_end( args);
-	write( 2, buf, rc );
-	return rc;
-}
-
-static void
-reset_sockets( void)
-{
-	int i;
-
-	for ( i = 0; i < ts.count; i++) {
-		Handle self = ts.items[i];
-		if ( var eventMask & ( feRead|feWrite|feException)) {
-			/* apc_file_attach is responsible for select_handles[] not overflowing */
-			select_handles[ select_n_handles++ ] = sys s.file.event;
-		}
-	}
-}
+typedef struct {
+	WINHANDLE event;
+	int       refcnt;
+	int       effective_mask;
+} SocketEventRec, *PSocketEventRec;
 
 static void
 reset_syshandles(void)
@@ -74,12 +52,30 @@ reset_syshandles(void)
 	}
 }
 
+static Bool
+fill_socket_vector( void * item, int keyLen, void * key, void * params)
+{
+	PSocketEventRec ev = (PSocketEventRec ) item;
+	/* apc_file_attach is responsible for select_handles[] not overflowing */
+	if ( ev-> effective_mask != 0 ) {
+		select_handles[ select_n_handles++ ] = ev-> event;
+		if ( debug ) {
+			char buf[64];
+			snprintf( buf, 64, "%p ", (void*) ev->event);
+			strcat(( char*) params, buf);
+		}
+	}
+	return false;
+}
+
 static void
 reset_all_handles(void)
 {
+	char debug_buf[MAX_SELECT_HANDLES * ( 4 + sizeof(void*) * 2 )] = "";
 	select_n_handles = 0;
 	reset_syshandles();
-	reset_sockets();
+	hash_first_that( socket_events, fill_socket_vector, debug_buf, NULL, NULL );
+	if ( debug ) warn("reset socket events: %s\n", debug_buf);
 }
 
 static void
@@ -87,8 +83,8 @@ dispatch_file_event( Handle self, int cmd)
 {
 	Event ev;
 	if (debug) warn("main: dealing cmd=%s to %s.%p" ,
-		( cmd == feRead) ? "cmFileRead" :
-			(( cmd == feWrite) ? "cmFileWrite" : "cmFileException"),
+		( cmd == cmFileRead) ? "cmFileRead" :
+			(( cmd == cmFileWrite) ? "cmFileWrite" : "cmFileException"),
 		var name,
 		(void*)self
 	);
@@ -150,7 +146,7 @@ file_process_events(int cmd, WPARAM param1, LPARAM param2)
 Bool
 process_file_msg( WINHANDLE src)
 {
-	int i;
+	int i, available_events = 0;
 	WSANETWORKEVENTS ev;
 	dispatch_file_msg( &th, feRead, src );
 
@@ -158,29 +154,90 @@ process_file_msg( WINHANDLE src)
 		Handle self = ts.items[ i];
 		if ( sys s.file.event != src)
 			continue;
-		if ( WSAEnumNetworkEvents((SOCKET) sys s.file.object, (WSAEVENT) sys s.file.event, &ev) != 0 )
+		if ( debug ) warn(
+			"message to file(%p) in socket(%p), event(%p)\n", 
+			(void*)self, (void*)sys s.file.object, (void*)sys s.file.event
+		);
+
+		if ( WSAEnumNetworkEvents((SOCKET) sys s.file.object, (WSAEVENT) sys s.file.event, &ev) != 0 ) {
+			rc = WSAGetLastError();
+			apcWarn;
+			return false;
+		}
+
+		/* WSAEnumNetworkEvents returns usable value only once */
+		available_events = 0;
+		if (ev.lNetworkEvents & (FD_ACCEPT | FD_READ | FD_CLOSE))
+			available_events |= feRead;
+		if (ev.lNetworkEvents & (FD_CONNECT | FD_WRITE))
+			available_events |= feWrite;
+		if (ev.lNetworkEvents & FD_OOB)
+			available_events |= feException;
+		if ( debug ) warn( "available events: %x\n", available_events);
+		break;
+	}
+
+	if ( available_events == 0 ) return true;
+
+	for ( i = 0; i < ts.count; i++) {
+		Handle self = ts.items[ i];
+		if ( sys s.file.event != src)
 			continue;
 
 		protect_object(self);
-		if (
-			(var eventMask & feRead) &&
-			(ev.lNetworkEvents & (FD_ACCEPT | FD_READ | FD_CLOSE))
-		)
+		if ( available_events & feRead)
 			dispatch_file_event( self, cmFileRead );
-		if (
-			(var eventMask & feWrite) &&
-			( ev.lNetworkEvents & (FD_CONNECT | FD_WRITE))
-		)
+		if ( available_events & feWrite)
 			dispatch_file_event( self, cmFileWrite );
-		if (
-			(var eventMask & feException) &&
-			( ev.lNetworkEvents & FD_OOB)
-		)
+		if ( available_events & feException)
 			dispatch_file_event( self, cmFileException );
 		unprotect_object(self);
 	}
 
 	return true;
+}
+
+static int
+mask2wsa(int src)
+{
+	long dst = 0;
+	if ( src & feRead )
+		dst |= FD_ACCEPT | FD_READ | FD_CLOSE;
+	if ( src & feWrite )
+		dst |= FD_CONNECT | FD_WRITE;
+	if ( src & feException )
+		dst |= FD_OOB;
+	return dst;
+}
+
+
+/* more than one socket must refer to same event, with a combined mask,
+because WSAEventSelect(s,e1) then WSAEventSelect(s,e2) doesn't work */
+static void
+socket_event_update_mask( Handle self)
+{
+	int i, mask;
+	PSocketEventRec ev;
+	if ( ( ev = (PSocketEventRec) hash_fetch( socket_events, &sys s.file.object, sizeof( sys s.file.object))) == NULL)
+		return;
+
+	for ( i = 0, mask = 0; i < ts.count; i++) {
+		PFile f = (PFile) ts.items[i];
+		if ( dsys(f)s.file.object == sys s.file.object)
+			mask |= f->eventMask;
+	}
+
+	if ( mask != ev-> effective_mask ) {
+		if ( debug ) warn(
+			"socket(%p),event(%p) changed mask from %x to %x\n",
+			(void*)sys s.file.object, (void*)ev->event, ev->effective_mask, mask
+		);
+		ev-> effective_mask = mask;
+		if ( WSAEventSelect((SOCKET ) sys s.file.object, (WSAEVENT) ev->event, mask2wsa(ev-> effective_mask)) != 0 ) {
+			rc = WSAGetLastError();
+			apcWarn;
+		}
+	}
 }
 
 Bool
@@ -202,6 +259,7 @@ file_subsystem_init( void)
 	list_create(&th, 8, 8);
 	list_create(&ts, 8, 8);
 	list_create(&tf, 8, 8);
+	socket_events = prima_hash_create();
 
 	return true;
 }
@@ -209,28 +267,17 @@ file_subsystem_init( void)
 void
 file_subsystem_done( void)
 {
+	prima_hash_destroy( socket_events, true );
 	list_destroy(&tf);
 	list_destroy(&ts);
 	list_destroy(&th);
-}
-
-static int
-mask2wsa(int src)
-{
-	long dst = 0;
-	if ( src & feRead )
-		dst |= FD_ACCEPT | FD_READ | FD_CLOSE;
-	if ( src & feWrite )
-		dst |= FD_CONNECT | FD_WRITE;
-	if ( src & feException )
-		dst |= FD_OOB;
-	return dst;
 }
 
 Bool
 apc_file_attach( Handle self)
 {
 	int fhtype;
+	PSocketEventRec ev;
 	objCheck false;
 
 	if (socket_version == -1)
@@ -255,11 +302,20 @@ apc_file_attach( Handle self)
 		if ( select_n_handles >= MAX_SELECT_HANDLES )
 			return false;
 		list_add( &ts, self);
-		sys s.file.event = (WINHANDLE) WSACreateEvent();
-		if ( WSAEventSelect((SOCKET ) sys s.file.object, (WSAEVENT) sys s.file.event, mask2wsa(var eventMask)) != 0 ) {
-			rc = WSAGetLastError();
-			apcWarn;
+		if ( !( ev = (PSocketEventRec) hash_fetch( socket_events, &sys s.file.object, sizeof( sys s.file.object)))) {
+			ev = malloc( sizeof(SocketEventRec));
+			memset( ev, 0, sizeof(SocketEventRec));
+			ev-> event = (WINHANDLE) WSACreateEvent();
+			hash_store( socket_events, &sys s.file.object, sizeof( sys s.file.object ), ev);
 		}
+
+		if ( debug ) warn(
+			"file(%p) is socket(%p) and event(%p)\n", 
+			(void*)self, (void*)sys s.file.object, (void*)ev->event
+		);
+		sys s.file.event = ev-> event;
+		ev-> refcnt++;
+		socket_event_update_mask(self);
 		reset_all_handles();
 		break;
 	case FHT_STDIN:
@@ -282,9 +338,15 @@ apc_file_attach( Handle self)
 Bool
 apc_file_detach( Handle self)
 {
+	PSocketEventRec ev;
 	switch ( sys s. file. type) {
 	case FHT_SOCKET:
-		WSACloseEvent(( WSAEVENT ) sys s.file.event);
+		if ( ( ev = (PSocketEventRec) hash_fetch( socket_events, &sys s.file.object, sizeof( sys s.file.object)))) {
+			if ( 0 == --ev-> refcnt ) {
+				WSACloseEvent(( WSAEVENT ) ev-> event );
+				hash_delete( socket_events, &sys s.file.object, sizeof( sys s.file.object), true);
+			}
+		}
 		list_delete( &ts, self);
 		reset_all_handles();
 		break;
@@ -303,10 +365,7 @@ apc_file_change_mask( Handle self)
 {
 	switch ( sys s. file. type) {
 	case FHT_SOCKET:
-		if ( WSAEventSelect((SOCKET ) sys s.file.object, (WSAEVENT) sys s.file.event, mask2wsa(var eventMask)) != 0 ) {
-			rc = WSAGetLastError();
-			apcWarn;
-		}
+		socket_event_update_mask(self);
 		reset_all_handles();
 		break;
 	case FHT_STDIN:
