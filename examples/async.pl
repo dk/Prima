@@ -6,20 +6,39 @@ examples/async.pl - example of using asynchonous communication with a process
 
 =cut
 
-BEGIN {
-	die "Win32 doesn't support non-blocking pipe IO, aborting\n" if $^O =~ /win32/i;
-};
-
 use strict;
 use warnings;
-use Fcntl qw(O_NONBLOCK F_GETFL F_SETFL);
+use Socket;
+use IO::Handle;
 use Prima qw(Application Label);
 
-open F, "$^X -e '\$|++;for(1..10){sleep(1);print qq(\$_\\n)}' |";
+my $q   =  ($^O =~ /win32/i) ? '"' : "'";
+my $cmd = "$^X -e $q \$|++; for(1..10){sleep(1);print qq(\$_\\n)} $q";
 
-my $fc = 0;
-fcntl( F, F_GETFL, $fc) or die "can't fcntl(F_GETFL):$!\n";
-fcntl( F, F_SETFL, O_NONBLOCK|$fc) or die "can't fcntl(F_SETFL):$!\n";
+if ( $^O =~ /win32/i) {
+	# use socketpair, works everywhere
+	my $r = IO::Handle-> new;
+	my $w = IO::Handle-> new;
+	socketpair( $r, $w, AF_UNIX, SOCK_STREAM, PF_UNSPEC);
+
+	if (fork) {
+		close($w);
+		$r-> blocking(0);
+		open F, ">&", $r or die $!;
+	} else {
+		close($r);
+		open STDOUT, ">&", $w or die $!;
+		exec $cmd;
+		exit;
+	}
+} else {
+	# use pipes, works only on unix
+	require Fcntl;
+	open F, "-|", $cmd or die $!;
+	my $fc = 0;
+	fcntl( F, Fcntl::F_GETFL(), $fc) or die "can't fcntl(F_GETFL):$!\n";
+	fcntl( F, Fcntl::F_SETFL(), Fcntl::O_NONBLOCK() | $fc) or die "can't fcntl(F_SETFL):$!\n";
+}
 
 my ( $file, $label, $window);
 
