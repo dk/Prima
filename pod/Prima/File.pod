@@ -42,7 +42,7 @@ before the associated events can occur:
   my $f = Prima::File-> create();
   $f-> file( *STDIN);
 
-When a file handle, blinded via the C<::file> property becomes readable,
+When a file handle, bound via the C<::file> property becomes readable,
 writable or when an exception signaled, one of three correspondent
 events called - C<Read>, C<Write> or C<Exception>. When a handle is
 always readable, or always writable, or, some of these events are
@@ -50,11 +50,6 @@ desired to be blocked, the file event mask can be set via the C<::mask>
 property:
 
   $f-> mask( fe::Read | fe::Exception);
-
-NB. Due to different system implementations, the only handles,
-currently supported on all systems, are socket handle and disk file
-handles. Pipes only work on unix platforms. The example file I<socket.pl>
-elucidates the use of sockets together with Prima::File.
 
 When a file handle is not needed anymore, it is expected to
 be detached from an object explicitly:
@@ -77,14 +72,22 @@ for the implementation details.
 
 =item file HANDLE
 
-Selects a file handle, that is to be monitored for stream I/O events.
-If HANDLE is C<undef>, object is returned to a passive state, and
-the previously bonded file handle is de-selected.
+Selects a file handle, that is to be monitored for stream I/O events.  If
+HANDLE is C<undef>, object is returned to a passive state, and the previously
+bonded file handle is de-selected.
+
+If the OS reports an error when attaching the file, f ex because there are
+too many objects to monitor, the file handle is reverted to C<undef>. Use that
+to check for an error.
 
 =item fd INTEGER
 
 Same as file(), but to be used for file descriptors. When this property is used,
 consequent get-calls to file() will return undef.
+
+If the OS reports an error when attaching the file, f ex because there are
+too many objects to monitor, the file handle is reverted to C<undef>. Use that
+to check for an error.
 
 =item mask EVENT_MASK
 
@@ -140,12 +143,46 @@ data for a pseudo terminal or an out-of-band data arrives.
 
 =back
 
-=head1 Win32 implementation
+=head1 OS considerations
 
-On windows (but not on cygwin), file handles do not report I/O events, only
-sockets and consoles do. All other handles are assumed to be inherently
-readable and writable, and if one is subscribed to these events, they are fired
-non-stop, so event  warning with event flooding here.
+=head2 Unix
+
+Prima can monitor max FD_SETSIZE file handles (not Prima::File objects, these can
+refer to same file handles just fine). See also C<man 2 select>.
+
+=head2 Win32
+
+=over
+
+=item Files
+
+If Prima detects that a handle is neither a socket nor a console, it assumes that
+it is a "regular" file. Prima doesn't use any win32 api for checking on regular
+file handle availability for reading and writing, and therefore sends synthetic
+events without actual correlation whether the file handle is actually readable
+or writable.
+
+=item Pipes
+
+Pipe handles are not implemented and won't work.
+
+=item Sockets
+
+Sockets work natively, however there's a single catch: according to the MSDN,
+WSAEventSelect() sets sockets in a non-blocking mode, however I couldn't
+confirm that when I was experimenting. If you want to be 100% covered, remember
+and restore the blocking flag in your event handlers.
+
+There can be normally max 63 sockets (not Prima::File objects, these can refer to same
+sockets just fine). Or max 62 sockets if STDIN is monitored too. See also 
+L<https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-msgwaitformultipleobjectsex> .
+
+=item STDIN
+
+STDIN works fine when it is a console. Use C<Prima::sys::win32::ReadConsoleInput>
+for detailed input parsing. See also L<https://learn.microsoft.com/en-us/windows/console/readconsoleinputex>.
+
+=back
 
 =head1 AUTHOR
 
