@@ -400,9 +400,8 @@ by hands: instead of entering the main loop with
 
 one can write
 
-   while ( 1) {
+   while ( $::application-> yield) {
       ... do some calculations ..
-      $::application->yield;
    }
 
 That'll give Prima a chance to handle accumulated events, but that technique is
@@ -413,15 +412,36 @@ well. The idea is to fork a process, and communicate with it via its stdin
 and/or stdout ( see L<perlipc> how to do that), and use L<Prima::File> to
 asynchronously read data passed through a pipe or a socket.
 
-Note: Win32 runtime library does not support asynchronous pipes, only asynchronous sockets.
-Cygwin does support both asynchronous pipes and sockets.
+Note: Win32 runtime library does not support asynchronous pipes, only
+asynchronous sockets.  Cygwin does support both asynchronous pipes and sockets.
 
 =head2 How do I use Prima with AnyEvent or POE ?
 
-L<AnyEvent> kind of knows about Prima, so if Prima is loaded then AnyEvent promises 
-to detect it and load the corresponding backend.
+=over
 
-If that doesn't work, the AnyEvent::Impl::Prima module is there in cpan.
+=item *
+
+L<Prima::sys::AnyEvent> can be used to organize event loops driven by Prima
+with AnyEvent support:
+
+   use Prima qw(sys::AnyEvent);
+   use AnyEvent;
+
+   my $ev = AnyEvent->timer(after => 1, cb => sub { print "waited 1 second!\n" });
+   run Prima;
+
+this is the preferred, but not the only solution.
+
+=item *
+
+If you need AnyEvent to drive the event loop, you can fire up the Prima yield() call
+once in a while:
+
+   my $timer = AnyEvent->timer(after => 0, interval => 1/20, cb => sub {
+       $::application->yield;
+   });
+
+=item *
 
 If you want to use Prima's internal event loop system you have to install
 L<POE::Loop::Prima> and include it in your code before Prima is loaded like
@@ -437,16 +457,16 @@ the event loop implementation you expect such as C<'AnyEvent::Impl::EV'>;
 If you use L<POE::Loop::Prima> then you can continue to call C<run Prima> and
 should not call L<AnyEvent>'s condition variable C<recv> function.
 
+=item *
+
 If you want to use another event library implementation of L<AnyEvent>, you have
 to not call C<run Prima> but instead call L<AnyEvent>'s condition variable
 C<recv> function.
 
-You have to use C<$::application-E<gt>yield> in an C<AnyEvent-E<gt>timer> object to
-allow for the Prima UI to update periodically, if you're not using
-L<POE::Loop::Prima>.
-
-See full example in F<examples/socket_anyevent.pl> and
+See full examples in F<examples/socket_anyevent1.pl>, F<examples/socket_anyevent2.pl>, and
 F<examples/socket_anyevent_poe.pl>.
+
+=back
 
 =head2 How do I post an asynchronous message?
 
