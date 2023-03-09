@@ -28,7 +28,7 @@ Component_init( Handle self, HV * profile)
 	if ( !my-> validate_owner( self, &var-> owner, profile)) {
 		var-> stage = csDeadInInit;
 		croak( "Illegal 'owner' reference passed to %s::%s%s", my-> className, "init",
-				prima_guts.application ? "" : ". Probably you forgot to include 'use Prima::Application' in your code. Error");
+	   		prima_guts.application ? "" : ". Probably you forgot to include 'use Prima::Application' in your code. Error");
 	}
 	if ( var-> owner)
 		((( PComponent) var-> owner)-> self)-> attach( var-> owner, self);
@@ -57,6 +57,7 @@ Component_setup( Handle self)
 	Event ev = {cmCreate};
 	ev. gen. source = self;
 	my-> message( self, &ev);
+	if ( var-> stage != csNormal ) return;
 
 	if ( var-> owner) {
 		ev. cmd = cmChildEnter;
@@ -428,18 +429,26 @@ Component_handle_event( Handle self, PEvent event)
 		}
 		break;
 	case cmDestroy:
-		opt_set( optcmDestroy);
-		my-> notify( self, "<s", "Destroy");
-		opt_clear( optcmDestroy);
+		{
+			Bool flag = exception_block(true);
+			opt_set( optcmDestroy);
+			my-> notify( self, "<s", "Destroy");
+			opt_clear( optcmDestroy);
+			exception_block(flag);
+			EXCEPTION_CHECK_RAISE;
+		}
 		break;
 	case cmPost:
 		{
 			PPostMsg p = ( PPostMsg) event-> gen. p;
+			Bool flag = exception_block(true);
 			list_delete( var-> postList, ( Handle) p);
 			my-> notify( self, "<sSS", "PostMessage", p-> info1, p-> info2);
+			exception_block(flag);
 			if ( p-> info1) sv_free( p-> info1);
 			if ( p-> info2) sv_free( p-> info2);
 			free( p);
+			EXCEPTION_CHECK_RAISE;
 		}
 		break;
 	case cmChangeOwner:

@@ -440,10 +440,11 @@ void Widget_handle_event( Handle self, PEvent event)
 						Bool flag = exception_block(true);
 						my-> notify( self, "<sH", "Paint", self);
 						exception_block(flag);
-						if ( var-> stage == csNormal ) apc_widget_end_paint( self);
+						if ( var-> stage == csNormal ) {
+							apc_widget_end_paint( self);
+							inherited-> end_paint( self);
+						}
 						EXCEPTION_CHECK_RAISE;
-						objCheck;
-						inherited-> end_paint( self);
 					} else
 						inherited-> end_paint( self);
 				}

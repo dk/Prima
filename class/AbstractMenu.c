@@ -1441,9 +1441,12 @@ AbstractMenu_handle_event( Handle self, PEvent event)
 	if ( event-> cmd == cmMenuItemMeasure || event-> cmd == cmMenuItemPaint) {
 		char buffer[16], *context;
 		PMenuItemReg m;
+		Bool flag;
+
 		m = ( PMenuItemReg) my-> first_that( self, (void*)id_match, &event->gen.i, false);
 		if ( m == NULL ) return;
 
+		flag = exception_block(true);
 		context = AbstractMenu_make_var_context( self, m, buffer);
 		if ( event-> cmd == cmMenuItemMeasure ) {
 			AV * pt = newAV();
@@ -1477,6 +1480,8 @@ AbstractMenu_handle_event( Handle self, PEvent event)
 			unprotect_object(drawable);
 			Object_destroy(event->gen.H);
 		}
+		exception_block(flag);
+		EXCEPTION_CHECK_RAISE;
 	}
 }
 
