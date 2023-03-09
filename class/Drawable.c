@@ -526,38 +526,40 @@ Drawable_lineWidth( Handle self, Bool set, double lineWidth)
 }
 
 SV *
-Drawable_matrix( Handle self, Bool set, SV * svmatrix)
+Drawable_get_matrix( Handle self)
 {
 	int i;
-	if ( !set) {
-		AV * av;
-		Matrix *matrix = &VAR_MATRIX;
+	AV * av;
+	Matrix *matrix = &VAR_MATRIX;
+	SV *svmatrix;
 
-		av = newAV();
-		for ( i = 0; i < 6; i++) av_push( av, newSVnv((*matrix)[i]));
-		svmatrix = newRV_noinc(( SV *) av);
-		return sv_bless(svmatrix, gv_stashpv("Prima::matrix", GV_ADD));
-	} else {
-		if ( SvROK(svmatrix) && ( SvTYPE( SvRV(svmatrix)) == SVt_PVAV)) {
-			Matrix matrix;
-			AV * av = ( AV *) SvRV(svmatrix);
-			if ( av_len( av) != 5) goto FAIL;
-			for ( i = 0; i < 6; i++) {
-				SV ** holder = av_fetch( av, i, 0);
-				if ( !holder) goto FAIL;
-				matrix[i] = SvNV( *holder);
-			}
-			if ( memcmp(matrix, VAR_MATRIX, sizeof(matrix)) != 0) {
-				COPY_MATRIX(matrix, VAR_MATRIX);
-				apc_gp_set_text_matrix( self, matrix);
-			}
-		} else {
-		FAIL:
-			warn("Drawable::matrix: must be array of 6 numerics");
-			return NULL_SV;
+	av = newAV();
+	for ( i = 0; i < 6; i++) av_push( av, newSVnv((*matrix)[i]));
+	svmatrix = newRV_noinc(( SV *) av);
+	return sv_bless(svmatrix, gv_stashpv("Prima::matrix", GV_ADD));
+}
+
+void
+Drawable_set_matrix( Handle self, SV * svmatrix)
+{
+	if ( SvROK(svmatrix) && ( SvTYPE( SvRV(svmatrix)) == SVt_PVAV)) {
+		int i;
+		Matrix matrix;
+		AV * av = ( AV *) SvRV(svmatrix);
+		if ( av_len( av) != 5) goto FAIL;
+		for ( i = 0; i < 6; i++) {
+			SV ** holder = av_fetch( av, i, 0);
+			if ( !holder) goto FAIL;
+			matrix[i] = SvNV( *holder);
 		}
+		if ( memcmp(matrix, VAR_MATRIX, sizeof(matrix)) != 0) {
+			COPY_MATRIX(matrix, VAR_MATRIX);
+			apc_gp_set_text_matrix( self, matrix);
+		}
+	} else {
+	FAIL:
+		warn("Drawable::matrix: must be array of 6 numerics");
 	}
-	return NULL_SV;
 }
 
 double

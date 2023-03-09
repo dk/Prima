@@ -395,6 +395,48 @@ sub _debug
 	print STDERR "\n";
 }
 
+package Prima::Matrix;
+
+sub new
+{
+	my $class = shift;
+	my $self = { canvas => shift };
+	bless( $self, $class);
+	return $self;
+}
+
+sub get          { shift->{canvas}->get_matrix(@_) }
+sub set          { shift->{canvas}->set_matrix(@_) }
+sub is_identity  { shift->{canvas}->get_matrix->is_identity }
+sub reset        { shift->{canvas}->set_matrix( $Prima::matrix::identity ) }
+sub canvas       { $#_ ? $_[0]->{canvas} : $_[0]->{canvas} = $_[1] }
+
+sub save         { push @{ $_[0]->{stack} }, $_[0]->{canvas}->get_matrix }
+sub restore      { @{ $_[0]->{stack} } ? $_[0]->{canvas}->set_matrix( pop @{ $_[0]->{stack} } ) : croak("stack underflow") }
+
+eval <<PROP for qw( A B C D X Y );
+	sub $_
+	{
+		return shift->{canvas}->get_matrix->$_() unless \$#_;
+		my \$self = shift;
+		my \$m    = \$self->{canvas}->get_matrix();
+		\$m->$_(\@_);
+		\$self->{canvas}->set_matrix(\$m);
+		return \$self;
+	}
+PROP
+
+eval <<METH for qw( identity translate scale shear rotate transform inverse_transform);
+	sub $_
+	{
+		my \$self = shift;
+		my \$m    = \$self->{canvas}->get_matrix();
+		\$m->$_(\@_);
+		\$self->{canvas}->set_matrix(\$m);
+		return \$self;
+	}
+METH
+
 package Prima::Component;
 use vars qw(@ISA);
 @ISA = qw(Prima::Object);
@@ -679,6 +721,15 @@ sub font
 		)
 }
 
+sub matrix
+{
+	return Prima::Matrix->new($_[0]) unless $#_;
+	$_[0]-> set_matrix( $#_ > 1 ?
+		[@_[1 .. $#_]] :
+		((ref($_[1]) eq 'Prima::Matrix') ? $_[1]->get : $_[1])
+	);
+}
+
 sub put_image
 {
 	$_[0]-> put_image_indirect(
@@ -731,10 +782,10 @@ sub graphic_context
 
 sub translate
 {
-	return @{$_[0]->matrix}[4,5] unless $#_;
-	my $m = $_[0]->matrix;
+	return @{$_[0]->get_matrix}[4,5] unless $#_;
+	my $m = $_[0]->get_matrix;
 	@{$m}[4,5] = ref($_[1]) ? @{$_[1]} : @_[1,2];
-	$_[0]->matrix($m);
+	$_[0]->set_matrix($m);
 }
 
 sub lineTail  { $#_ ? $_[0]->lineEndIndex(lei::Only | lei::LineTail , $_[1])  : $_[0]->lineEndIndex(lei::Only | lei::LineTail ) }

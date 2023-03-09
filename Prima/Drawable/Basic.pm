@@ -240,7 +240,7 @@ sub stroke_img_primitive
 	return 1 if $self->linePattern eq lp::Null && $self->rop2 == rop::NoOper;
 
 	my $path = $self->new_path;
-	my $matrix = $self-> matrix;
+	my $matrix = $self-> get_matrix;
 	$path->matrix( $matrix );
 	$path->$request(@_);
 	my $ok = 1;
@@ -248,7 +248,7 @@ sub stroke_img_primitive
 	return $self->graphic_context( sub {
 		# paths produce floating point coordinates and line end arcs,
 		# here we need internal pixel-wise plotting
-		$self-> matrix( $Prima::matrix::identity );
+		$self-> set_matrix( $Prima::matrix::identity );
 		$self-> lineWidth(0);
 		return $path->stroke;
 	}) if $self->lineWidth < 1.5;
@@ -270,7 +270,7 @@ sub stroke_img_primitive
 
 	return unless $self->graphic_context_push;
 	$self->fillPattern(fp::Solid);
-	$self->matrix( $Prima::matrix::identity );
+	$self->set_matrix( $Prima::matrix::identity );
 	if ( $self-> rop2 == rop::CopyPut && $self->linePattern ne lp::Solid && $self->linePattern ne lp::Null ) {
 		$self->color($self->backColor);
 		my $path3 = $path->widen( linePattern => lp::Solid );
@@ -294,7 +294,7 @@ sub fill_img_primitive
 
 	return unless $self->graphic_context_push;
 	my $path = $self->new_path;
-	$path->matrix( $self->matrix);
+	$path->matrix( $self->get_matrix);
 	$path->$request(@p);
 
 	my $region1 = $path->region( $self-> fillMode);
@@ -304,7 +304,7 @@ sub fill_img_primitive
 	$box[$_+2] += $box[$_] for 0,1;
 	$self->region($region1);
 
-	$self->matrix($Prima::matrix::identity);
+	$self->set_matrix($Prima::matrix::identity);
 	my $ok = $self->bar(@box);
 
 	$self->graphic_context_pop;
@@ -323,7 +323,7 @@ sub stroke_imgaa_primitive
 	return 0 unless $aa->can_aa;
 
 	my $path = $self->new_path;
-	$path->matrix( $self-> matrix );
+	$path->set_matrix( $self-> matrix );
 	$path->$request(@_);
 	$path = $path->widen(
 		linePattern => ( $lp eq lp::Null) ? lp::Solid : $lp
@@ -332,7 +332,7 @@ sub stroke_imgaa_primitive
 	return unless $self->graphic_context_push;
 	$self->fillPattern(fp::Solid);
 	$self->fillMode(fm::Winding | fm::Overlay);
-	$self->matrix($Prima::matrix::identity);
+	$self->set_matrix($Prima::matrix::identity);
 	$self->color($self->backColor) if $lp eq lp::Null;
 	my $ok = 1;
 	for ($path->points(fill => 1)) {
@@ -352,7 +352,7 @@ sub fill_imgaa_primitive
 
 	my $ok = 1;
 	my $path = $self->new_path;
-	my $m = $self->matrix;
+	my $m = $self->get_matrix;
 	$path->matrix($m);
 	$path->$request(@_);
 	$self->matrix($Prima::matrix::identity);
@@ -361,7 +361,7 @@ sub fill_imgaa_primitive
 		$ok = 0;
 		last;
 	}
-	$self->matrix($Prima::matrix::identity);
+	$self->set_matrix($Prima::matrix::identity);
 	return $ok;
 }
 

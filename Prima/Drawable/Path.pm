@@ -103,7 +103,12 @@ sub matrix
 {
 	my ( $self, @m ) = @_;
 	if ( (1 == @m) && ref($m[0]) ) {
-		$self->cmd( matrix => @{$m[0]} );
+		my $matrix = $m[0];
+		if ( UNIVERSAL::isa($matrix, 'Prima::Matrix')) {
+			$self->cmd( matrix => @{$matrix->get} );
+		} else {
+			$self->cmd( matrix => @$matrix );
+		}
 	} elsif ( @m == 6 ) {
 		$self->cmd( matrix => @m );
 	} else {

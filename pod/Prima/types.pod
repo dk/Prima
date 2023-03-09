@@ -104,6 +104,40 @@ and returns in the same format (i e array for array, ref for ref).
 
 =back
 
+See also: L<Prima::Matrix>
+
+=head1 Prima::Matrix
+
+Same as C<Prima::matrix> but explicitly binds to a drawable objects, so that
+all changes to the matrix are immediately reflected in the drawable.
+
+Features all the methods available to C<Prima::matrix> (except C<apply>), plus
+the ones described below.
+
+=over
+
+=item new CANVAS
+
+Creates new instance
+
+=item canvas DRAWABLE
+
+Accesses the associated drawable object
+
+=item get
+
+Returns the current matrix
+
+=item reset
+
+Sets matrix to C<Prima::matrix::identity>, or (1,0,0,1,0,0)
+
+=item save, restore
+
+Saves and restores the matrix content in the internal stack
+
+=back
+
 =head1 Prima::rect
 
 Represents rectangular object either as I<rectangle> ( X1,Y1,X2,Y2 ) or I<box> ( X,Y,WIDTH,HEIGHT ).

@@ -96,7 +96,7 @@ sub change_transform
 		$doClip  = grep { $_ != 0 } @cr;
 	}
 
-	my $m = $self-> matrix;
+	my $m = $self-> get_matrix;
 	my $doMx = !$m->is_identity;
 
 	if ( !$doClip && !$doMx && !$rg) {

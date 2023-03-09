@@ -97,7 +97,7 @@ sub change_transform
 
 	$self-> emit_content("h @pm re W n");
 
-	my $m  = $self-> matrix;
+	my $m = $self-> get_matrix;
 	if ( $self->{reversed}) {
 		$$m[5] -= ($self->point2pixel($pm[2]))[0];
 		$m->rotate(90);

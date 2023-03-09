@@ -24,7 +24,7 @@ my $w = Prima::MainWindow->new(
 	onPaint => sub {
 		my ( $self, $canvas) = @_;
 		$canvas-> clear;
-		$canvas->matrix->translate(100, 100)->rotate(10)->apply($canvas);
+		$canvas->matrix->translate(100, 100)->rotate(10);#->apply($canvas);
 		$canvas->stretch_image(100, 100, 300, 300, $p);
 		$canvas-> text_shape_out( $self-> text, 0, 0);
 	},

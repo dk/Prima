@@ -266,11 +266,10 @@ sub clipRect
 	$_[0]-> change_transform;
 }
 
-sub matrix
+sub set_matrix
 {
-	return $_[0]->SUPER::matrix unless $#_;
 	my ( $self, @m ) = @_;
-	$self->SUPER::matrix(@m);
+	$self->SUPER::set_matrix(@m);
 	$self->change_transform;
 }
 
@@ -284,13 +283,8 @@ sub region
 	return undef;
 }
 
-sub scale
-{
-	my ( $self, @scale ) = @_;
-	my $m = $self-> matrix;
-	$m->scale(@scale);
-	$self->matrix($m);
-}
+sub scale  { shift-> matrix->scale(@_) }
+sub rotate { shift-> matrix->rotate(@_) }
 
 sub reversed
 {
@@ -298,15 +292,6 @@ sub reversed
 	my $self = $_[0];
 	$self-> {reversed} = $_[1] unless $self-> get_paint_state;
 	$self-> calc_page;
-}
-
-sub rotate
-{
-	my ( $self, $angle ) = @_;
-	return if $angle == 0.0;
-	my $m = $self-> matrix;
-	$m->rotate($angle);
-	$self->matrix($m);
 }
 
 sub resolution

@@ -10,7 +10,8 @@ sub is_pict
 	my ( $i, $name, $pict ) = @_;
 	my $ok = 1;
 	my $m = $i-> matrix;
-	$i->matrix($Prima::matrix::identity);
+	$m->save;
+	$m->reset;
 	ALL: for ( my $y = 0; $y < $i->height; $y++) {
 		for ( my $x = 0; $x < $i->width; $x++) {
 			my $actual   = ( $i->pixel($x,$y) > 0) ? 1 : 0;
@@ -22,7 +23,7 @@ sub is_pict
 	}
 	ok( $ok, $name );
 	if ($ok) {
-		$i->matrix($m);
+		$m->restore;
 		return 1;
 	}
 	warn "# Actual vs expected:\n";
@@ -31,7 +32,7 @@ sub is_pict
 		my $expected = substr($pict, $y * $i->width, $i->width);
 		warn "$actual  | $expected\n";
 	}
-	$i->matrix($m);
+	$m->restore;
 	return 0;
 }
 

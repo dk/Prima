@@ -781,14 +781,55 @@ For example,
 
 plots a bar that covers 4 pixels: (0,0), (0,1), (1,0) and (1,1).
 
-The coordinate origin can be shifted using C<::translate> property,
+The coordinate origin can be shifted using C<::matrix> property,
 that translates the (0,0) point to the given offset. Calls to
-C<::translate>, C<::clipRect> and C<::region> always use the 'physical'
+C<::matrix>, C<::clipRect> and C<::region> always use the 'physical'
 (0,0) point, whereas the plotting methods use the transformation result,
 the 'logical' (0,0) point.
 
 As noted before, these three properties cannot be used in when an object
 is in the disabled state.
+
+=head3 Matrix
+
+At the very bottom C<Prima::Drawable> accepts matrix scalars in form of
+6-item arrays, that constitute the following 2-D transformation matrix
+
+   A B DX
+   C D DY
+   0 0 1
+
+where the coordinate transformation follows this formula:
+
+   x' = A x + B x + DX
+   y' = C y + D y + DY
+
+. There are two accessors, C<get_matrix> and C<set_matrix> that return a copy,
+or copy a new matrix, correspondintly, from and to the drawable object.
+
+The 6-item array that C<get_matrix> returns is also a blessed object or type
+C<Prima::matrix> ( see L<Prima::types/Prima::matrix> ) that is a separate copy
+of the object matrix. C<Prima::matrix> objects feature a set of oprations such
+as C<rotate> and C<translate> that transform the matrix further. In order to
+apply this matrix, one calls C<< $drawable->set_matrix($matrix) >> or C<<
+$matrix->apply($drawable) >>.
+
+There is also a property C<matrix>, that is not really orthogonal to the C<get_matrix>/
+C<set_matrix> method pair, as C<matrix> returns a C<Prima::Matrix> object, that, contrary
+to a C<Prima::matrix> object return by C<get_matrix>, is a direct accessor to the drawable's
+matrix:
+
+	my $m = $self->get_matrix;
+	$m->translate(1,2);
+	$self->set_matrix($m); # or $self->matrix($m);
+
+is the same as
+
+	$self->matrix->translate(1,2);
+
+and does not need an explicit call to C<set_matrix> or C<apply>.
+
+This class has all the methods the C<Prima::matrix> has. See more in L<Prima::types/Prima::Matrix>.
 
 =head2 Custom line end styles
 
@@ -1308,6 +1349,15 @@ There is a subtle difference between VALUE 0 and 1 in a way
 the lines are joined.
 
 Default value is 0.
+
+=item matrix [A,B,C,D,X,Y] | Prima::Matrix
+
+Sets current matrix transformation that is used in all plotting operations
+except C<clipRect> and C<region>. Returns a L<Prima/Matrix> object.
+
+Default value is (1,0,0,1,0,0) or C<Prima::matrix::identity>.
+
+See also: L<Prima::types/Prima::matrix> and C<Prima::types/Prima::Matrix>.
 
 =item miterLimit VALUE
 
