@@ -923,6 +923,7 @@ typedef struct _drawable_sys_data
 		unsigned withdrawn                : 1;
 		unsigned zoomed                   : 1;
 		unsigned xft_clip                 : 1;
+		unsigned xrender_sync             : 1;
 	} flags;
 	ImageCache image_cache;
 	Handle preexec_focus;
@@ -951,6 +952,8 @@ typedef struct _drawable_sys_data
 #define XF_IN_PAINT(x)  ((x)->flags.paint)
 #define XF_LAYERED(x)  ((x)->flags.layered)
 #define XFLUSH          if (XX->flags.force_flush) XFlush(DISP)
+#define XRENDER_SYNC    if (XX->flags.xrender_sync) XSync(DISP, XX->flags.xrender_sync = false)
+#define XRENDER_SYNC_NEEDED XSync(DISP, false)
 
 typedef struct _PaintState
 {

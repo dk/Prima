@@ -1483,7 +1483,48 @@ typedef struct {
 	int dst_y;
 	int rop;
 	int old_rop;
+
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+	int dst_w;
+	int dst_h;
+	int ofs_x;
+	int ofs_y;
+	XTransform *transform;
+#endif
 } PutImageRequest;
+
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+static XTransform render_identity_transform = { matrix: {
+	{XDoubleToFixed(1.0), XDoubleToFixed(0.0), XDoubleToFixed(0.0)},
+	{XDoubleToFixed(0.0), XDoubleToFixed(1.0), XDoubleToFixed(0.0)},
+	{XDoubleToFixed(0.0), XDoubleToFixed(0.0), XDoubleToFixed(1.0)}
+}};
+#endif
+
+/* 1-bit images with palettes need their colors mapped to the target drawable */
+void
+query_1bit_colors(Handle self, Handle image, unsigned long *fore, unsigned long *back)
+{
+	PImage img = (PImage) image;
+
+	if ( XT_IS_WIDGET(X(self))) {
+		if ( guts. palSize > 0) {
+			*fore = prima_color_find( self,
+				RGB_COMPOSITE( img-> palette[1].r, img-> palette[1].g, img-> palette[1].b),
+				-1, NULL, RANK_NORMAL);
+			*back = prima_color_find( self,
+				RGB_COMPOSITE( img-> palette[0].r, img-> palette[0].g, img-> palette[0].b),
+				-1, NULL, RANK_NORMAL);
+		} else {
+			*fore = PALETTE2DEV_RGB( &guts.screen_bits, img->palette[1]);
+			*back = PALETTE2DEV_RGB( &guts.screen_bits, img->palette[0]);
+		}
+	} else {
+		RGBColor * p = img->palette;
+		*fore = prima_allocate_color( self, ARGB(p[1].r, p[1].g, p[1].b), NULL);
+		*back = prima_allocate_color( self, ARGB(p[0].r, p[0].g, p[0].b), NULL);
+	}
+}
 
 static void
 rop_apply_colors(Handle self, PutImageRequest * req)
@@ -1807,15 +1848,11 @@ img_put_image_on_pixmap( Handle self, Handle image, PutImageRequest * req)
 		return false;
 
 	if (( img->type & imBPP ) == 1) {
-		RGBColor * p = img->palette;
-		if ( !XX->flags. brush_fore) {
-			XSetBackground( DISP, XX-> gc, prima_allocate_color( self, ARGB(p[0].r, p[0].g, p[0].b), NULL));
-			XX->flags.brush_fore = 0;
-		}
-		if ( !XX->flags. brush_back) {
-			XSetForeground( DISP, XX-> gc, prima_allocate_color( self, ARGB(p[1].r, p[1].g, p[1].b), NULL));
-			XX->flags.brush_back = 0;
-		}
+		unsigned long fore, back;
+		query_1bit_colors(self, image, &fore, &back);
+		XSetForeground( DISP, XX-> gc, fore);
+		XSetBackground( DISP, XX-> gc, back);
+		XX->flags.brush_fore = XX->flags.brush_back = 0;
 	}
 
 	return img_put_ximage( self, cache->image, req);
@@ -1829,11 +1866,12 @@ img_put_layered_on_pixmap( Handle self, Handle image, PutImageRequest * req)
 	PDrawableSysData YY = X(image);
 
 	XRenderComposite(
-		DISP, (req-> rop == ropSrcCopy) ? PictOpSrc : PictOpOver, YY-> argb_picture, 0, XX-> argb_picture,
+		DISP, (req-> rop == ropSrcCopy) ? PictOpSrc : PictOpOver,
+		YY->argb_picture, 0, XX-> argb_picture,
 		req->src_x, req->src_y, 0, 0,
 		req->dst_x, req->dst_y, req->w, req->h
 	);
-	XSync(DISP, false);
+	XRENDER_SYNC_NEEDED;
 	return true;
 #else
 	return false;
@@ -1855,19 +1893,8 @@ img_put_image_on_widget( Handle self, Handle image, PutImageRequest * req)
 		return false;
 
 	if (( img->type & imBPP ) == 1) {
-		unsigned int fore, back;
-
-		if ( guts. palSize > 0) {
-			fore = prima_color_find( self,
-				RGB_COMPOSITE( img-> palette[1].r, img-> palette[1].g, img-> palette[1].b),
-				-1, NULL, RANK_NORMAL);
-			back = prima_color_find( self,
-				RGB_COMPOSITE( img-> palette[0].r, img-> palette[0].g, img-> palette[0].b),
-				-1, NULL, RANK_NORMAL);
-		} else {
-			fore = PALETTE2DEV_RGB( &guts.screen_bits, img->palette[1]);
-			back = PALETTE2DEV_RGB( &guts.screen_bits, img->palette[0]);
-		}
+		unsigned long fore, back;
+		query_1bit_colors(self, image, &fore, &back);
 		XSetBackground( DISP, XX-> gc, back);
 		XSetForeground( DISP, XX-> gc, fore);
 		XX->flags.brush_back = XX->flags.brush_fore = 0;
@@ -1917,7 +1944,7 @@ img_put_pixmap_on_layered( Handle self, Handle image, PutImageRequest * req)
 			req->src_x, req->src_y, 0, 0,
 			req->dst_x, req->dst_y, req->w, req->h
 		);
-		XSync(DISP, false);
+		XRENDER_SYNC_NEEDED;
 		return true;
 	} else {
 		/* expensive bit-transfer and blit with rop */
@@ -1936,7 +1963,7 @@ img_put_pixmap_on_layered( Handle self, Handle image, PutImageRequest * req)
 }
 
 static Bool
-img_put_argb_on_pixmap_or_widget( Handle self, Handle image, PutImageRequest * req, PutImageFunc fallback)
+img_render_argb_on_pixmap_or_widget( Handle self, Handle image, PutImageRequest * req)
 {
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
 	DEFXX;
@@ -1946,9 +1973,6 @@ img_put_argb_on_pixmap_or_widget( Handle self, Handle image, PutImageRequest * r
 	XGCValues gcv;
 	Bool ret = false;
 	Picture picture;
-
-	if ( !guts. argb_visual. visual)
-		return fallback( self, image, req);
 
 	if (!(cache = prima_image_cache((PImage) image, CACHE_LAYERED_ALPHA, 255)))
 		return false;
@@ -1965,13 +1989,15 @@ img_put_argb_on_pixmap_or_widget( Handle self, Handle image, PutImageRequest * r
 	))) goto FAIL;
 
 	picture = XRenderCreatePicture( DISP, pixmap, guts. xrender_argb32_format, 0, NULL);
+	if ( req-> transform ) XRenderSetPictureTransform( DISP, picture, req->transform);
 	XRenderComposite(
-		DISP, (req-> rop == ropSrcCopy) ? PictOpSrc : PictOpOver, picture, 0, XX->argb_picture,
-		0, 0, 0, 0,
-		req->dst_x, req->dst_y, req->w, req->h
+		DISP, (req-> rop == ropSrcCopy) ? PictOpSrc : PictOpOver,
+		picture, 0, XX-> argb_picture,
+		req->ofs_x, req->ofs_y, 0, 0,
+		req->dst_x, req->dst_y, req->dst_w, req->dst_h
 	);
 	XRenderFreePicture( DISP, picture);
-	XSync(DISP, false);
+	XRENDER_SYNC_NEEDED;
 	ret = true;
 
 FAIL:
@@ -1980,37 +2006,6 @@ FAIL:
 	return ret;
 #else
 	return fallback( self, image, req);
-#endif
-}
-
-static Bool
-img_put_argb_on_pixmap( Handle self, Handle image, PutImageRequest * req)
-{
-	return img_put_argb_on_pixmap_or_widget( self, image, req, img_put_image_on_pixmap);
-}
-
-static Bool
-img_put_argb_on_widget( Handle self, Handle image, PutImageRequest * req)
-{
-	return img_put_argb_on_pixmap_or_widget( self, image, req, img_put_image_on_widget);
-}
-
-static Bool
-img_put_composite( Handle self, Handle image, PutImageRequest * req)
-{
-#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
-	DEFXX;
-	PDrawableSysData YY = X(image);
-	XRenderComposite(
-		DISP, (req-> rop == ropSrcCopy) ? PictOpSrc : PictOpOver,
-		YY->argb_picture, 0, XX->argb_picture,
-		0, 0, 0, 0,
-		req->dst_x, req->dst_y, req->w, req->h
-	);
-	XSync(DISP, false);
-	return true;
-#else
-	return false;
 #endif
 }
 
@@ -2058,13 +2053,15 @@ img_put_argb_on_layered( Handle self, Handle image, PutImageRequest * req)
 	picture = XRenderCreatePicture( DISP, pixmap, guts. xrender_argb32_format, 0, NULL);
 	if ( XX-> clip_mask_extent. x != 0 && XX-> clip_mask_extent. y != 0)
 		XRenderSetPictureClipRegion(DISP, picture, XX->current_region);
+	if ( req-> transform ) XRenderSetPictureTransform( DISP, picture, req->transform);
 	XRenderComposite(
-		DISP, (req-> rop == ropSrcCopy) ? PictOpSrc : PictOpOver, picture, 0, XX-> argb_picture,
-		0, 0, 0, 0,
-		req->dst_x, req->dst_y, req->w, req->h
+		DISP, (req-> rop == ropSrcCopy) ? PictOpSrc : PictOpOver,
+		picture, 0, XX-> argb_picture,
+		req->ofs_x, req->ofs_y, 0, 0,
+		req->dst_x, req->dst_y, req->dst_w, req->dst_h
 	);
 	XRenderFreePicture( DISP, picture);
-	XSync(DISP, false);
+	XRENDER_SYNC_NEEDED;
 	ret = true;
 
 FAIL:
@@ -2099,7 +2096,7 @@ PutImageFunc (*img_put_on_pixmap[SRC_NUM]) = {
 	img_put_copy_area,
 	img_put_image_on_pixmap,
 	img_put_image_on_pixmap,
-	img_put_argb_on_pixmap,
+	img_put_image_on_pixmap,
 	img_put_layered_on_pixmap
 };
 
@@ -2108,7 +2105,7 @@ PutImageFunc (*img_put_on_widget[SRC_NUM]) = {
 	img_put_copy_area,
 	img_put_image_on_widget,
 	img_put_image_on_widget,
-	img_put_argb_on_widget,
+	img_put_image_on_widget, 
 	img_put_layered_on_pixmap
 };
 
@@ -2118,7 +2115,188 @@ PutImageFunc (*img_put_on_layered[SRC_NUM]) = {
 	img_put_image_on_layered,
 	img_put_a8_on_layered,
 	img_put_argb_on_layered,
-	img_put_composite
+	img_put_layered_on_pixmap
+};
+
+static Bool
+img_render_image_on_picture( Handle self, Handle image, PutImageRequest * req, Bool on_layered)
+{
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+	DEFXX;
+	PImage img = (PImage) image;
+	ImageCache *cache;
+	Pixmap pixmap;
+	GC gc;
+	XGCValues gcv;
+	Bool ret = false;
+	Picture picture;
+	PDrawableSysData YY = X(image);
+
+	if ( XT_IS_ICON(YY)) {
+		if ( XF_LAYERED(XX))
+			return img_put_image_on_layered(self, image, req);
+		else if ( XT_IS_PIXMAP(XX) || XT_IS_APPLICATION(XX))
+			return img_put_image_on_pixmap(self, image, req);
+		else if ( XT_IS_WIDGET(XX))
+			return img_put_image_on_widget(self, image, req);
+		else
+			return false;
+	}
+
+	if (!(cache = prima_image_cache((PImage) image,
+		on_layered ? CACHE_LAYERED : CACHE_PIXMAP,
+		255)))
+		return false;
+
+	pixmap = XCreatePixmap( DISP, guts.root, req->w, req->h,
+		on_layered ? guts.argb_visual.depth : guts.visual.depth
+	);
+	gcv. graphics_exposures = false;
+	gc = XCreateGC( DISP, pixmap, GCGraphicsExposures, &gcv);
+	if (( img->type & imBPP ) == 1) {
+		unsigned long fore, back;
+		query_1bit_colors(self, image, &fore, &back);
+		XSetForeground( DISP, gc, fore);
+		XSetBackground( DISP, gc, back);
+	}
+
+	SET_ROP(GXcopy);
+	if ( !( prima_put_ximage(
+		pixmap, gc, cache->image,
+		req->src_x, req->src_y, 0, 0,
+		req->w, req->h
+	))) goto FAIL;
+
+	picture = XRenderCreatePicture( DISP, pixmap,
+		on_layered ? guts.xrender_argb32_format : guts. xrender_display_format,
+		0, NULL
+	);
+	if ( req-> transform ) XRenderSetPictureTransform( DISP, picture, req->transform);
+	XRenderComposite(
+		DISP, PictOpSrc,
+		picture, 0, XX-> argb_picture,
+		req->ofs_x, req->ofs_y, 0, 0,
+		req->dst_x, req->dst_y, req->dst_w, req->dst_h
+	);
+	XRenderFreePicture( DISP, picture);
+	XRENDER_SYNC_NEEDED;
+	ret = true;
+
+FAIL:
+	XFreeGC( DISP, gc);
+	XFreePixmap( DISP, pixmap );
+	return ret;
+#else
+	return false;
+#endif
+}
+
+static Bool
+img_render_image_on_pixmap_or_widget( Handle self, Handle image, PutImageRequest * req)
+{
+	return img_render_image_on_picture( self, image, req, false);
+}
+
+static Bool
+img_render_image_on_layered( Handle self, Handle image, PutImageRequest * req)
+{
+	return img_render_image_on_picture( self, image, req, true);
+}
+
+static Bool
+img_render_layered_on_pixmap( Handle self, Handle image, PutImageRequest * req)
+{
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+	DEFXX;
+ 	PDrawableSysData YY = X(image);
+	PImage img          = (PImage) image;
+	Pixmap pixmap       = (Pixmap) 0;
+	GC gc               = (GC) 0;
+	XGCValues gcv;
+	Picture picture;
+
+	if ( req->w != img->w || req->h != img->h) {
+		pixmap = XCreatePixmap( DISP, guts.root, req->w, req->h, guts.argb_visual.depth);
+		gcv. graphics_exposures = false;
+		gc = XCreateGC( DISP, pixmap, GCGraphicsExposures, &gcv);
+		XCopyArea( DISP, YY->gdrawable, pixmap, gc, 
+			req-> src_x, req-> src_y,
+			req-> w, req-> h, 
+			0, 0
+		);
+
+		picture = XRenderCreatePicture( DISP, pixmap, guts. xrender_argb32_format, 0, NULL);
+		if ( XX-> clip_mask_extent. x != 0 && XX-> clip_mask_extent. y != 0)
+			XRenderSetPictureClipRegion(DISP, picture, XX->current_region);
+	} else
+		picture = YY->argb_picture;
+
+	if ( req-> transform )
+		XRenderSetPictureTransform( DISP, picture, req->transform);
+	XRenderComposite(
+		DISP, (req-> rop == ropSrcCopy) ? PictOpSrc : PictOpOver,
+		picture, 0, XX-> argb_picture,
+		req->ofs_x, req->ofs_y, 0, 0,
+		req->dst_x, req->dst_y, req->dst_w, req->dst_h
+	);
+
+	if ( req->w != img->w || req->h != img->h) {
+		XRenderFreePicture( DISP, picture);
+		XFreeGC( DISP, gc);
+		XFreePixmap( DISP, pixmap );
+	} else if ( req-> transform )
+		XRenderSetPictureTransform( DISP, picture, &render_identity_transform);
+
+	XSync(DISP, false);
+	return true;
+#else
+	return false;
+#endif
+}
+
+PutImageFunc (*img_render_nullset[SRC_NUM]) = {
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
+PutImageFunc (*img_render_on_bitmap[SRC_NUM]) = {
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
+PutImageFunc (*img_render_on_pixmap[SRC_NUM]) = {
+	NULL,
+	NULL,
+	img_render_image_on_pixmap_or_widget,
+	img_render_image_on_pixmap_or_widget,
+	img_render_argb_on_pixmap_or_widget,
+	img_render_layered_on_pixmap
+};
+
+PutImageFunc (*img_render_on_widget[SRC_NUM]) = {
+	NULL,
+	NULL,
+	img_render_image_on_pixmap_or_widget,
+	img_render_image_on_pixmap_or_widget,
+	img_render_argb_on_pixmap_or_widget,
+	img_render_layered_on_pixmap
+};
+
+PutImageFunc (*img_render_on_layered[SRC_NUM]) = {
+	NULL,
+	NULL,
+	img_render_image_on_layered,
+	NULL,
+	img_put_argb_on_layered,
+	img_render_layered_on_pixmap
 };
 
 static int
@@ -2157,6 +2335,30 @@ get_image_src_format( Handle self, Handle image, int * rop )
 	return src;
 }
 
+static PutImageFunc**
+get_image_dst_format( Handle self, int rop, int src_type, Bool use_xrender )
+{
+	DEFXX;
+
+	if ( !guts.render_extension )
+		return img_render_nullset;
+
+	/* xrender cannot rops */
+	if ( src_type != SRC_LAYERED && src_type != SRC_ARGB && rop != ropCopyPut )
+		return img_render_nullset;
+
+	if (XT_IS_BITMAP(XX) || (( XT_IS_PIXMAP(XX) || XT_IS_APPLICATION(XX)) && guts.depth==1))
+		return use_xrender ? img_render_on_bitmap : img_put_on_bitmap;
+	else if ( XF_LAYERED(XX))
+		return use_xrender ? img_render_on_layered : img_put_on_layered;
+	else if ( XT_IS_PIXMAP(XX) || XT_IS_APPLICATION(XX))
+		return use_xrender ? img_render_on_pixmap :  img_put_on_pixmap;
+	else if ( XT_IS_WIDGET(XX))
+		return use_xrender ? img_render_on_widget :  img_put_on_widget;
+
+	return NULL;
+}
+
 Bool
 apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom, int xLen, int yLen, int rop)
 {
@@ -2178,38 +2380,33 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
 
 	SHIFT( x, y);
 	bzero( &req, sizeof(req));
-	req. src_x = xFrom;
-	req. src_y = img->h - yFrom - yLen;
-	req. dst_x = x;
-	req. dst_y = XX->size. y - y - yLen;
-	req. w     = xLen;
-	req. h     = yLen;
+	req.src_x = xFrom;
+	req.src_y = img->h - yFrom - yLen;
+	req.dst_x = x;
+	req.dst_y = XX->size. y - y - yLen;
+	req.w     = req.dst_w = xLen;
+	req.h     = req.dst_h = yLen;
 
-	if (XT_IS_BITMAP(XX) || (( XT_IS_PIXMAP(XX) || XT_IS_APPLICATION(XX)) && guts.depth==1))
-		dst = img_put_on_bitmap;
-	else if ( XF_LAYERED(XX))
-		dst =  img_put_on_layered;
-	else if ( XT_IS_PIXMAP(XX) || XT_IS_APPLICATION(XX))
-		dst =  img_put_on_pixmap;
-	else if ( XT_IS_WIDGET(XX))
-		dst =  img_put_on_widget;
-	if (!dst) {
-		warn("cannot guess surface type");
-		return false;
-	}
 	src = get_image_src_format(self, image, &rop);
 	if ( rop > ropNoOper ) return false;
 	if ( src < 0 ) {
 		warn("cannot guess image type");
 		return false;
 	}
-	/* printf("dst: %x(%d), b %x, p %x, l %x, w %x\n", dst, src, img_put_on_bitmap, img_put_on_pixmap, img_put_on_widget, img_put_on_layered); */
+	if (!(dst = get_image_dst_format(self, rop, src, true))) {
+		warn("cannot guess surface type");
+		return false;
+	}
+	if ( !dst[src] ) {
+		dst = get_image_dst_format(self, rop, src, false);
+		XRENDER_SYNC;
+	}
 
 	if ( !XGetGCValues(DISP, XX->gc, GCFunction, &gcv))
 		warn("cannot query XGCValues");
 
-	req. old_rop = gcv.function;
-	req. rop     = (src == SRC_LAYERED || src == SRC_ARGB) ? rop : prima_rop_map( rop);
+	req.old_rop = gcv.function;
+	req.rop     = (src == SRC_LAYERED || src == SRC_ARGB) ? rop : prima_rop_map( rop);
 
 	ok = (*dst[src])(self, image, &req);
 
@@ -2257,10 +2454,10 @@ apc_image_begin_paint( Handle self)
 		PutImageRequest req;
 		PutImageFunc ** dst = layered ? img_put_on_layered : ( bitmap ? img_put_on_bitmap : img_put_on_pixmap );
 		bzero(&req, sizeof(req));
-		req. w   = img-> w;
-		req. h   = img-> h;
-		req. rop = layered ? ropSrcCopy : GXcopy;
-		req. old_rop = XX-> gcv. function;
+		req.w   = req.dst_w = img-> w;
+		req.h   = req.dst_h = img-> h;
+		req.rop = layered ? ropSrcCopy : GXcopy;
+		req.old_rop = XX-> gcv. function;
 		(*dst[layered ? SRC_ARGB : SRC_IMAGE])(self, self, &req);
 		/*                                     ^^^^^ ^^^^    :-)))  */
 		if ( req. old_rop != XX-> gcv. function)
@@ -2649,18 +2846,7 @@ prima_std_pixmap( Handle self, int type)
 
 	gcv. graphics_exposures = false;
 	gc = XCreateGC( DISP, guts. root, GCGraphicsExposures, &gcv);
-	if ( guts. palSize > 0) {
-		fore = prima_color_find( self,
-			RGB_COMPOSITE( img-> palette[1].r, img-> palette[1].g, img-> palette[1].b),
-			-1, NULL, RANK_NORMAL);
-		back = prima_color_find( self,
-			RGB_COMPOSITE( img-> palette[0].r, img-> palette[0].g, img-> palette[0].b),
-			-1, NULL, RANK_NORMAL);
-	} else {
-		fore = PALETTE2DEV_RGB( &guts.screen_bits, img->palette[1]);
-		back = PALETTE2DEV_RGB( &guts.screen_bits, img->palette[0]);
-	}
-
+	query_1bit_colors(self, self, &fore, &back);
 	XSetForeground( DISP, gc, fore);
 	XSetBackground( DISP, gc, back);
 	prima_put_ximage( px, gc, xi->image, 0, 0, 0, 0, img-> w, img-> h);
@@ -2686,22 +2872,54 @@ apc_image_end_paint( Handle self)
 	return true;
 }
 
+static NRect
+pt4_extents( NPoint *pt)
+{
+	int i;
+	double x1, x2, y1, y2;
+	NRect r;
+	x1 = x2 = pt[0].x;
+	y1 = y2 = pt[0].y;
+	for ( i = 1; i < 4; i++) {
+		if ( x1 > pt[i].x ) x1 = pt[i].x;
+		if ( y1 > pt[i].y ) y1 = pt[i].y;
+		if ( x2 < pt[i].x ) x2 = pt[i].x;
+		if ( y2 < pt[i].y ) y2 = pt[i].y;
+	}
+	r.left   = x1;
+	r.bottom = y1;
+	r.right  = x2;
+	r.top    = y2;
+	return r;
+}
 
 Bool
 put_transformed(Handle self, Handle image, int x, int y, int rop, Matrix matrix)
 {
 	ColorPixel fill;
-	PImage i = (PImage) image;
+	PImage img = (PImage) image;
 	PDrawableSysData YY = X(image);
+	NRect r;
+	NPoint pt[4];
 
 	memset(&fill, 0x0, sizeof(fill));
+	r.left   = 0.0;
+	r.bottom = 0.0;
+	r.right  = (double) img->w;
+	r.top    = (double) img->h;
+
+	prima_matrix_is_square_rectangular( matrix, &r, pt);
+	r = pt4_extents(pt);
+	x += floor(r.left);
+	y += floor(r.bottom);
+
 	if ( XT_IS_ICON(YY)) {
-		i->self->set_preserveType(image, 0);
-		i->self->matrix_transform(image, matrix, fill);
-		return apc_gp_put_image( self, image, x, y, 0, 0, i->w, i-> h, rop);
+		img->self->set_preserveType(image, 0);
+		img->self->matrix_transform(image, matrix, fill);
+		return apc_gp_put_image( self, image, x, y, 0, 0, img->w, img-> h, rop);
 	} else {
 		Handle ok;
-		Handle icon = i->self->convert_to_icon(image, imbpp8, NULL);
+		Handle icon = img->self->convert_to_icon(image, imbpp8, NULL);
 		CIcon(icon)->matrix_transform(icon, matrix, fill);
 		ok = apc_gp_put_image( self, icon, x, y, 0, 0, PIcon(icon)->w, PIcon(icon)->h, ropXorPut);
 		Object_destroy(icon);
@@ -2709,8 +2927,8 @@ put_transformed(Handle self, Handle image, int x, int y, int rop, Matrix matrix)
 	}
 }
 
-Bool
-apc_gp_stretch_image( Handle self, Handle image,
+static Bool
+apc_gp_stretch_image_x11( Handle self, Handle image,
 	int dst_x, int dst_y, int src_x, int src_y,
 	int dst_w, int dst_h, int src_w, int src_h,
 	int rop, Bool use_matrix)
@@ -2724,39 +2942,6 @@ apc_gp_stretch_image( Handle self, Handle image,
 
 	if ( PObject( self)-> options. optInDrawInfo) return false;
 	if ( !XF_IN_PAINT(XX)) return false;
-
-	if ( src_h < 0) {
-		src_h = -src_h;
-		dst_h = -dst_h;
-	}
-	if ( src_w < 0) {
-		src_w = -src_w;
-		dst_w = -dst_w;
-	}
-	if ( abs(src_x) >= img-> w) return false;
-	if ( abs(src_y) >= img-> h) return false;
-	if ( src_w == 0 || src_h == 0) return false;
-	if ( src_x < 0) {
-		dst_x -= src_x * dst_w / src_w;
-		dst_w += src_x * dst_w / src_w;
-		src_w += src_x;
-		src_x = 0;
-	}
-	if ( src_y < 0) {
-		dst_y -= src_y * dst_h / src_h;
-		dst_h += src_y * dst_h / src_h;
-		src_h += src_y;
-		src_y = 0;
-	}
-	if ( src_x + src_w > img-> w) {
-		dst_w = (img-> w - src_x) * dst_w / src_w;
-		src_w = img-> w - src_x;
-	}
-	if ( src_y + src_h > img-> h) {
-		dst_h = (img-> h - src_y) * dst_h / src_h;
-		src_h = img-> h - src_y;
-	}
-	if ( src_w <= 0 || src_h <= 0) return false;
 
 	src = get_image_src_format(self, image, &rop);
 	if ( rop > ropNoOper ) return false;
@@ -2822,7 +3007,7 @@ apc_gp_stretch_image( Handle self, Handle image,
 			return false;
 		}
 		ok = apc_gp_stretch_image( self, obj, dst_x, dst_y, 0, 0, dst_w, dst_h, src_w, src_h, rop, use_matrix);
-	} else if ( img->w != dst_w || img->h != dst_h || src_x != 0 || src_y != 0) {
+	} else if ( use_matrix || img->w != dst_w || img->h != dst_h || src_x != 0 || src_y != 0) {
 		/* extract local bits */
 		obj = CImage(image)->extract( image, src_x, src_y, src_w, src_h );
 		if ( !obj ) return false;
@@ -2845,6 +3030,154 @@ apc_gp_stretch_image( Handle self, Handle image,
 
 	Object_destroy( obj );
 	return ok;
+}
+
+static Bool
+apc_gp_stretch_image_xrender( Handle self, Handle image, PutImageFunc* func,
+	int dst_x, int dst_y, int src_x, int src_y,
+	int dst_w, int dst_h, int src_w, int src_h,
+	int rop, Bool use_matrix)
+{
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+	DEFXX;
+	int dx, dy;
+	Matrix m1;
+	XTransform xt;
+	NRect r;
+	NPoint pt[4];
+	PImage img = (PImage) image;
+
+	PutImageRequest req = {
+		src_x   : src_x,
+		src_y   : img->h - src_y - src_h,
+		w       : src_w,
+		h       : src_h,
+		rop     : rop,
+	};
+
+	if ( src_w == 0 || src_h == 0 || dst_w == 0 || dst_h == 0 ) return false;
+	prima_matrix_set_identity(m1);
+	m1[0] = (double) dst_w / src_w;
+	m1[3] = (double) dst_h / src_h;
+	if ( use_matrix ) {
+		Matrix m2, m3;
+		COPY_MATRIX_WITHOUT_TRANSLATION( PDrawable(self)->current_state.matrix, m2);
+		prima_matrix_multiply(m1, m2, m3);
+		COPY_MATRIX(m3, m1);
+	}
+
+	bzero( &xt, sizeof(xt) );
+	double det = m1[0] * m1[3] - m1[1] * m1[2];
+	if ( det == 0.0 ) return false;
+	xt.matrix[0][0] = XDoubleToFixed( m1[3] / det );
+	xt.matrix[0][1] = XDoubleToFixed( m1[2] / det );
+	xt.matrix[1][0] = XDoubleToFixed( m1[1] / det );
+	xt.matrix[1][1] = XDoubleToFixed( m1[0] / det);
+	xt.matrix[2][2] = XDoubleToFixed( 1.0 );
+
+	req.transform = &xt;
+	r.left   = 0.0;
+	r.bottom = 0.0;
+	r.right  = (double) src_w;
+	r.top    = (double) src_h;
+	prima_matrix_is_square_rectangular( m1, &r, pt);
+	r = pt4_extents(pt);
+	dx = floor(pt[3].x + .5);
+	req.dst_x = (dx < 0) ? dx : 0.0;
+	req.ofs_x = (dx < 0) ? 0.0 : -dx;
+	dy = floor(pt[1].y + .5);
+	req.dst_y = (dy < 0) ? dy : 0.0;
+	req.ofs_y = (dy < 0) ? 0.0 : -dy;
+	req.dst_w = ceil(r.right) - req.dst_x;
+	req.dst_h = ceil(r.top) - req.dst_y;
+	req.dst_x += dst_x;
+	req.dst_y += dst_y;
+	req.dst_y = XX->size.y - req.dst_y - req.dst_h;
+	return func(self, image, &req);
+#else
+	return false;
+#endif
+}
+
+Bool
+apc_gp_stretch_image( Handle self, Handle image,
+	int dst_x, int dst_y, int src_x, int src_y,
+	int dst_w, int dst_h, int src_w, int src_h,
+	int rop, Bool use_matrix)
+{
+	int src;
+	PutImageFunc **dst;
+	PImage img = (PImage) image;
+
+	if ( src_h < 0) {
+		src_h = -src_h;
+		dst_h = -dst_h;
+	}
+	if ( src_w < 0) {
+		src_w = -src_w;
+		dst_w = -dst_w;
+	}
+	if ( abs(src_x) >= img-> w) return false;
+	if ( abs(src_y) >= img-> h) return false;
+	if ( src_w == 0 || src_h == 0) return false;
+	if ( src_x < 0) {
+		dst_x -= src_x * dst_w / src_w;
+		dst_w += src_x * dst_w / src_w;
+		src_w += src_x;
+		src_x = 0;
+	}
+	if ( src_y < 0) {
+		dst_y -= src_y * dst_h / src_h;
+		dst_h += src_y * dst_h / src_h;
+		src_h += src_y;
+		src_y = 0;
+	}
+	if ( src_x + src_w > img-> w) {
+		dst_w = (img-> w - src_x) * dst_w / src_w;
+		src_w = img-> w - src_x;
+	}
+	if ( src_y + src_h > img-> h) {
+		dst_h = (img-> h - src_y) * dst_h / src_h;
+		src_h = img-> h - src_y;
+	}
+	if ( src_w <= 0 || src_h <= 0) return false;
+
+	if ( !guts.render_extension)
+		goto FALLBACK;
+
+	src = get_image_src_format(self, image, &rop);
+	if ( rop > ropNoOper ) return false;
+	if ( src < 0 ) return false;
+
+	if (!(dst = get_image_dst_format(self, rop, src, true))) {
+		warn("cannot guess surface type");
+		return false;
+	}
+	if ( !dst[src] )
+		goto FALLBACK;
+
+	switch ( rop ) {
+		case ropNoOper:
+			return true;
+		case ropCopyPut:
+			break;
+		case ropSrcCopy:
+			if ( X(image)->flags.layered)
+				break;
+		default:
+			goto FALLBACK;
+	}
+
+	return apc_gp_stretch_image_xrender(self, image, dst[src],
+		dst_x, dst_y, src_x, src_y,
+		dst_w, dst_h, src_w, src_h,
+		rop, use_matrix);
+
+FALLBACK:
+	return apc_gp_stretch_image_x11(self,image,
+		dst_x, dst_y, src_x, src_y,
+		dst_w, dst_h, src_w, src_h,
+		rop, use_matrix);
 }
 
 Bool
