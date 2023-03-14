@@ -1490,6 +1490,7 @@ typedef struct {
 	int ofs_x;
 	int ofs_y;
 	XTransform *transform;
+	Bool scaling_only;
 #endif
 } PutImageRequest;
 
@@ -2212,10 +2213,26 @@ img_render_picture_on_pixmap( Handle self, Handle image, PutImageRequest * req, 
 	PImage img          = (PImage) image;
 	Pixmap pixmap       = (Pixmap) 0;
 	GC gc               = (GC) 0;
+	Bool quick          = false;
 	XGCValues gcv;
 	Picture picture;
 
 	if ( req->w != img->w || req->h != img->h) {
+		/* When a matrix is skewed, it is not possible to
+		render a strict parallelogram because the compositor will peek
+		into neighboring pixels, and will plot them where the dst
+		pixels should be left intact. That's why we need to extract a
+		rectangular sub-pixmap for these cases - but rectangular cases
+		are just fine.
+		The QUICK case should be valid for all 90-based rotations and mirrorings as well,
+		but for now it is only scaled matrices
+		*/
+		if ( req-> scaling_only ) {
+			req-> ofs_x = req-> src_x / XFixedToDouble(req-> transform-> matrix[0][0]);
+			req-> ofs_y = req-> src_y / XFixedToDouble(req-> transform-> matrix[1][1]);
+			goto QUICK;
+		}
+
 		pixmap = XCreatePixmap( DISP, guts.root, req->w, req->h,
 			from_layered ? guts.argb_visual.depth : guts.visual.depth
 		);
@@ -2233,8 +2250,11 @@ img_render_picture_on_pixmap( Handle self, Handle image, PutImageRequest * req, 
 		);
 		if ( XX-> clip_mask_extent. x != 0 && XX-> clip_mask_extent. y != 0)
 			XRenderSetPictureClipRegion(DISP, picture, XX->current_region);
-	} else
+	} else {
+	QUICK:
 		picture = YY->argb_picture;
+		quick   = true;
+	}
 
 	if ( req-> transform )
 		XRenderSetPictureTransform( DISP, picture, req->transform);
@@ -2245,7 +2265,7 @@ img_render_picture_on_pixmap( Handle self, Handle image, PutImageRequest * req, 
 		req->dst_x, req->dst_y, req->dst_w, req->dst_h
 	);
 
-	if ( req->w != img->w || req->h != img->h) {
+	if ( !quick ) {
 		XRenderFreePicture( DISP, picture);
 		XFreeGC( DISP, gc);
 		XFreePixmap( DISP, pixmap );
@@ -3100,6 +3120,7 @@ apc_gp_stretch_image_xrender( Handle self, Handle image, PutImageFunc* func,
 	xt.matrix[1][1] = XDoubleToFixed( m1[0] / det);
 	xt.matrix[2][2] = XDoubleToFixed( 1.0 );
 
+	req.scaling_only = m1[1] == 0.0 && m1[2] == 0.0;
 	req.transform = &xt;
 	r.left   = 0.0;
 	r.bottom = 0.0;
