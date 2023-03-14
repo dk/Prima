@@ -2344,7 +2344,7 @@ get_image_dst_format( Handle self, int rop, int src_type, Bool use_xrender )
 		return img_render_nullset;
 
 	/* xrender cannot rops */
-	if ( src_type != SRC_LAYERED && src_type != SRC_ARGB && rop != ropCopyPut )
+	if ( use_xrender && src_type != SRC_LAYERED && src_type != SRC_ARGB && rop != ropCopyPut )
 		return img_render_nullset;
 
 	if (XT_IS_BITMAP(XX) || (( XT_IS_PIXMAP(XX) || XT_IS_APPLICATION(XX)) && guts.depth==1))
@@ -2398,8 +2398,10 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
 		return false;
 	}
 	if ( !dst[src] ) {
-		dst = get_image_dst_format(self, rop, src, false);
-		XRENDER_SYNC;
+		if (!( dst = get_image_dst_format(self, rop, src, false))) {
+			warn("cannot guess image type");
+			return false;
+		}
 	}
 
 	if ( !XGetGCValues(DISP, XX->gc, GCFunction, &gcv))
