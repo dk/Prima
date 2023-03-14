@@ -2204,7 +2204,7 @@ img_render_image_on_layered( Handle self, Handle image, PutImageRequest * req)
 }
 
 static Bool
-img_render_layered_on_pixmap( Handle self, Handle image, PutImageRequest * req)
+img_render_picture_on_pixmap( Handle self, Handle image, PutImageRequest * req, Bool from_layered)
 {
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
 	DEFXX;
@@ -2216,16 +2216,21 @@ img_render_layered_on_pixmap( Handle self, Handle image, PutImageRequest * req)
 	Picture picture;
 
 	if ( req->w != img->w || req->h != img->h) {
-		pixmap = XCreatePixmap( DISP, guts.root, req->w, req->h, guts.argb_visual.depth);
+		pixmap = XCreatePixmap( DISP, guts.root, req->w, req->h,
+			from_layered ? guts.argb_visual.depth : guts.visual.depth
+		);
 		gcv. graphics_exposures = false;
 		gc = XCreateGC( DISP, pixmap, GCGraphicsExposures, &gcv);
-		XCopyArea( DISP, YY->gdrawable, pixmap, gc, 
+		XCopyArea( DISP, YY->gdrawable, pixmap, gc,
 			req-> src_x, req-> src_y,
-			req-> w, req-> h, 
+			req-> w, req-> h,
 			0, 0
 		);
 
-		picture = XRenderCreatePicture( DISP, pixmap, guts. xrender_argb32_format, 0, NULL);
+		picture = XRenderCreatePicture( DISP, pixmap,
+			from_layered ? guts. xrender_argb32_format : guts. xrender_display_format,
+			0, NULL
+		);
 		if ( XX-> clip_mask_extent. x != 0 && XX-> clip_mask_extent. y != 0)
 			XRenderSetPictureClipRegion(DISP, picture, XX->current_region);
 	} else
@@ -2254,6 +2259,19 @@ img_render_layered_on_pixmap( Handle self, Handle image, PutImageRequest * req)
 #endif
 }
 
+static Bool
+img_render_layered_on_pixmap( Handle self, Handle image, PutImageRequest * req)
+{
+	return img_render_picture_on_pixmap(self, image, req, true);
+}
+
+static Bool
+img_render_pixmap_or_widget_on_pixmap_or_widget( Handle self, Handle image, PutImageRequest * req)
+{
+	req-> rop = ropCopyPut;
+	return img_render_picture_on_pixmap(self, image, req, false);
+}
+
 PutImageFunc (*img_render_nullset[SRC_NUM]) = {
 	NULL,
 	NULL,
@@ -2274,7 +2292,7 @@ PutImageFunc (*img_render_on_bitmap[SRC_NUM]) = {
 
 PutImageFunc (*img_render_on_pixmap[SRC_NUM]) = {
 	NULL,
-	NULL,
+	img_render_pixmap_or_widget_on_pixmap_or_widget,
 	img_render_image_on_pixmap_or_widget,
 	img_render_image_on_pixmap_or_widget,
 	img_render_argb_on_pixmap_or_widget,
@@ -2283,7 +2301,7 @@ PutImageFunc (*img_render_on_pixmap[SRC_NUM]) = {
 
 PutImageFunc (*img_render_on_widget[SRC_NUM]) = {
 	NULL,
-	NULL,
+	img_render_pixmap_or_widget_on_pixmap_or_widget,
 	img_render_image_on_pixmap_or_widget,
 	img_render_image_on_pixmap_or_widget,
 	img_render_argb_on_pixmap_or_widget,
@@ -2292,7 +2310,7 @@ PutImageFunc (*img_render_on_widget[SRC_NUM]) = {
 
 PutImageFunc (*img_render_on_layered[SRC_NUM]) = {
 	NULL,
-	NULL,
+	img_render_pixmap_or_widget_on_pixmap_or_widget,
 	img_render_image_on_layered,
 	NULL,
 	img_put_argb_on_layered,
