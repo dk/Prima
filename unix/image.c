@@ -2193,15 +2193,92 @@ FAIL:
 }
 
 static Bool
-img_render_image_on_pixmap_or_widget( Handle self, Handle image, PutImageRequest * req)
+img_render_image_on_pixmap( Handle self, Handle image, PutImageRequest * req)
 {
+	if ( XT_IS_ICON(X(image)))
+		return img_put_image_on_pixmap(self, image, req);
+	return img_render_image_on_picture( self, image, req, false);
+}
+
+static Bool
+img_render_image_on_widget( Handle self, Handle image, PutImageRequest * req)
+{
+	if ( XT_IS_ICON(X(image)))
+		return img_put_image_on_widget(self, image, req);
 	return img_render_image_on_picture( self, image, req, false);
 }
 
 static Bool
 img_render_image_on_layered( Handle self, Handle image, PutImageRequest * req)
 {
+	if ( XT_IS_ICON(X(image)))
+		return img_put_image_on_layered(self, image, req);
 	return img_render_image_on_picture( self, image, req, true);
+}
+
+static Bool
+img_render_bitmap_on_picture( Handle self, Handle image, PutImageRequest * req)
+{
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+	DEFXX;
+	PDrawableSysData YY = X(image);
+	Pixmap pixmap       = (Pixmap) 0;
+	GC gc               = (GC) 0;
+	Bool use_layered_surface;
+	XGCValues gcv;
+	Picture picture;
+
+	/* only needed to match dst color format */
+	use_layered_surface = XT_IS_DBM(YY) ? XF_LAYERED(XX) : 0;
+
+	pixmap = XCreatePixmap( DISP, guts.root, req->w, req->h,
+		use_layered_surface ? guts.argb_visual.depth : guts.visual.depth
+	);
+
+	gcv. graphics_exposures = false;
+	gc = XCreateGC( DISP, pixmap, GCGraphicsExposures, &gcv);
+	if ( XT_IS_DBM(YY)) {
+		XSetBackground( DISP, gc, XX-> fore.primary);
+		XSetForeground( DISP, gc, XX-> back.primary);
+	} else {
+		/* imBW in paint - no palettes, no colors, just plain black & white */
+		if ( XF_LAYERED(XX)) {
+			XSetForeground( DISP, gc, 0xFFFFFF);
+			XSetBackground( DISP, gc, 0x000000);
+		} else {
+			XSetForeground( DISP, gc, guts.monochromeMap[1]);
+			XSetBackground( DISP, gc, guts.monochromeMap[0]);
+		}
+	}
+	XCopyPlane( DISP, YY->gdrawable, pixmap, gc,
+		req-> src_x, req-> src_y,
+		req-> w, req-> h,
+		0, 0, 1
+	);
+
+	picture = XRenderCreatePicture( DISP, pixmap,
+		use_layered_surface ? guts.xrender_argb32_format : guts.xrender_display_format,
+		0, NULL
+	);
+	if ( XX-> clip_mask_extent. x != 0 && XX-> clip_mask_extent. y != 0)
+		XRenderSetPictureClipRegion(DISP, picture, XX->current_region);
+	if ( req-> transform )
+		XRenderSetPictureTransform( DISP, picture, req->transform);
+	XRenderComposite(
+		DISP, PictOpSrc,
+		picture, 0, XX-> argb_picture,
+		req->ofs_x, req->ofs_y, 0, 0,
+		req->dst_x, req->dst_y, req->dst_w, req->dst_h
+	);
+
+	XRenderFreePicture( DISP, picture);
+	XFreeGC( DISP, gc);
+	XFreePixmap( DISP, pixmap );
+	XRENDER_SYNC_NEEDED;
+	return true;
+#else
+	return false;
+#endif
 }
 
 static Bool
@@ -2272,7 +2349,7 @@ img_render_picture_on_pixmap( Handle self, Handle image, PutImageRequest * req, 
 	} else if ( req-> transform )
 		XRenderSetPictureTransform( DISP, picture, &render_identity_transform);
 
-	XSync(DISP, false);
+	XRENDER_SYNC_NEEDED;
 	return true;
 #else
 	return false;
@@ -2311,25 +2388,25 @@ PutImageFunc (*img_render_on_bitmap[SRC_NUM]) = {
 };
 
 PutImageFunc (*img_render_on_pixmap[SRC_NUM]) = {
-	NULL,
+	img_render_bitmap_on_picture,
 	img_render_pixmap_or_widget_on_pixmap_or_widget,
-	img_render_image_on_pixmap_or_widget,
-	img_render_image_on_pixmap_or_widget,
+	img_render_image_on_pixmap,
+	img_render_image_on_widget,
 	img_render_argb_on_pixmap_or_widget,
 	img_render_layered_on_pixmap
 };
 
 PutImageFunc (*img_render_on_widget[SRC_NUM]) = {
-	NULL,
+	img_render_bitmap_on_picture,
 	img_render_pixmap_or_widget_on_pixmap_or_widget,
-	img_render_image_on_pixmap_or_widget,
-	img_render_image_on_pixmap_or_widget,
+	img_render_image_on_pixmap,
+	img_render_image_on_widget,
 	img_render_argb_on_pixmap_or_widget,
 	img_render_layered_on_pixmap
 };
 
 PutImageFunc (*img_render_on_layered[SRC_NUM]) = {
-	NULL,
+	img_render_bitmap_on_picture,
 	img_render_pixmap_or_widget_on_pixmap_or_widget,
 	img_render_image_on_layered,
 	NULL,
@@ -3090,8 +3167,8 @@ apc_gp_stretch_image_xrender( Handle self, Handle image, PutImageFunc* func,
 	XTransform xt;
 	NRect r;
 	NPoint pt[4];
+	double det;
 	PImage img = (PImage) image;
-
 	PutImageRequest req = {
 		src_x   : src_x,
 		src_y   : img->h - src_y - src_h,
@@ -3101,6 +3178,7 @@ apc_gp_stretch_image_xrender( Handle self, Handle image, PutImageFunc* func,
 	};
 
 	if ( src_w == 0 || src_h == 0 || dst_w == 0 || dst_h == 0 ) return false;
+	SHIFT( dst_x, dst_y);
 	prima_matrix_set_identity(m1);
 	m1[0] = (double) dst_w / src_w;
 	m1[3] = (double) dst_h / src_h;
@@ -3112,7 +3190,7 @@ apc_gp_stretch_image_xrender( Handle self, Handle image, PutImageFunc* func,
 	}
 
 	bzero( &xt, sizeof(xt) );
-	double det = m1[0] * m1[3] - m1[1] * m1[2];
+	det = m1[0] * m1[3] - m1[1] * m1[2];
 	if ( det == 0.0 ) return false;
 	xt.matrix[0][0] = XDoubleToFixed( m1[3] / det );
 	xt.matrix[0][1] = XDoubleToFixed( m1[2] / det );
@@ -3122,23 +3200,23 @@ apc_gp_stretch_image_xrender( Handle self, Handle image, PutImageFunc* func,
 
 	req.scaling_only = m1[1] == 0.0 && m1[2] == 0.0;
 	req.transform = &xt;
-	r.left   = 0.0;
-	r.bottom = 0.0;
-	r.right  = (double) src_w;
-	r.top    = (double) src_h;
+	r.left     = 0.0;
+	r.bottom   = 0.0;
+	r.right    = (double) src_w;
+	r.top      = (double) src_h;
 	prima_matrix_is_square_rectangular( m1, &r, pt);
-	r = pt4_extents(pt);
-	dx = floor(pt[3].x + .5);
-	req.dst_x = (dx < 0) ? dx : 0.0;
-	req.ofs_x = (dx < 0) ? 0.0 : -dx;
-	dy = floor(pt[1].y + .5);
-	req.dst_y = (dy < 0) ? dy : 0.0;
-	req.ofs_y = (dy < 0) ? 0.0 : -dy;
-	req.dst_w = ceil(r.right) - req.dst_x;
-	req.dst_h = ceil(r.top) - req.dst_y;
+	r          = pt4_extents(pt);
+	dx         = floor(pt[3].x + .5);
+	req.dst_x  = (dx < 0) ? dx : 0.0;
+	req.ofs_x  = (dx < 0) ? 0.0 : -dx;
+	dy         = floor(pt[1].y + .5);
+	req.dst_y  = (dy < 0) ? dy : 0.0;
+	req.ofs_y  = (dy < 0) ? 0.0 : -dy;
+	req.dst_w  = ceil(r.right) - req.dst_x;
+	req.dst_h  = ceil(r.top) - req.dst_y;
 	req.dst_x += dst_x;
 	req.dst_y += dst_y;
-	req.dst_y = XX->size.y - req.dst_y - req.dst_h;
+	req.dst_y  = XX->size.y - req.dst_y - req.dst_h;
 	return func(self, image, &req);
 #else
 	return false;
