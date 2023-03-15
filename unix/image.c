@@ -1859,19 +1859,36 @@ img_put_image_on_pixmap( Handle self, Handle image, PutImageRequest * req)
 	return img_put_ximage( self, cache->image, req);
 }
 
+
+#define RENDER_APPLY_CLIP(picture) \
+	if ( XX-> clip_mask_extent. x != 0 && XX-> clip_mask_extent. y != 0) \
+		XRenderSetPictureClipRegion(DISP, picture, XX->current_region)
+
+#define RENDER_APPLY_TRANSFORM(picture) \
+	if ( req-> transform ) \
+		XRenderSetPictureTransform( DISP, picture, req->transform)
+
+#define RENDER_RESTORE_TRANSFORM(picture) \
+	if ( req-> transform ) \
+		XRenderSetPictureTransform( DISP, picture, &render_identity_transform)
+
+#define ROP_SRC_OR_COPY  (req-> rop == ropSrcCopy) ? PictOpSrc : PictOpOver
+#define RENDER_COMPOSITE( ofs, rop, picture )                    \
+	XRenderComposite(                                        \
+		DISP, rop,                                       \
+		picture, 0, XX-> argb_picture,                   \
+		req->ofs##_x, req->ofs##_y, 0, 0,                \
+		req->dst_x, req->dst_y, req->dst_w, req->dst_h   \
+	)
+
+#define RENDER_FREE(picture) XRenderFreePicture( DISP, picture)
+
 static Bool
 img_put_layered_on_pixmap( Handle self, Handle image, PutImageRequest * req)
 {
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
 	DEFXX;
-	PDrawableSysData YY = X(image);
-
-	XRenderComposite(
-		DISP, (req-> rop == ropSrcCopy) ? PictOpSrc : PictOpOver,
-		YY->argb_picture, 0, XX-> argb_picture,
-		req->src_x, req->src_y, 0, 0,
-		req->dst_x, req->dst_y, req->w, req->h
-	);
+	RENDER_COMPOSITE( src, ROP_SRC_OR_COPY, X(image)->argb_picture);
 	XRENDER_SYNC_NEEDED;
 	return true;
 #else
@@ -1929,7 +1946,6 @@ img_put_pixmap_on_layered( Handle self, Handle image, PutImageRequest * req)
 {
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
 	DEFXX;
-	PDrawableSysData YY = X(image);
 	int render_rop = PictOpMinimum - 1;
 
 	switch ( req-> rop ) {
@@ -1940,11 +1956,7 @@ img_put_pixmap_on_layered( Handle self, Handle image, PutImageRequest * req)
 
 	if ( render_rop >= PictOpMinimum ) {
 		/* cheap on-server blit */
-		XRenderComposite(
-			DISP, render_rop, YY->argb_picture, 0, XX-> argb_picture,
-			req->src_x, req->src_y, 0, 0,
-			req->dst_x, req->dst_y, req->w, req->h
-		);
+		RENDER_COMPOSITE( src, render_rop, X(image)->argb_picture);
 		XRENDER_SYNC_NEEDED;
 		return true;
 	} else {
@@ -1989,15 +2001,11 @@ img_render_argb_on_pixmap_or_widget( Handle self, Handle image, PutImageRequest 
 		req->w, req->h
 	))) goto FAIL;
 
-	picture = XRenderCreatePicture( DISP, pixmap, guts. xrender_argb32_format, 0, NULL);
-	if ( req-> transform ) XRenderSetPictureTransform( DISP, picture, req->transform);
-	XRenderComposite(
-		DISP, (req-> rop == ropSrcCopy) ? PictOpSrc : PictOpOver,
-		picture, 0, XX-> argb_picture,
-		req->ofs_x, req->ofs_y, 0, 0,
-		req->dst_x, req->dst_y, req->dst_w, req->dst_h
-	);
-	XRenderFreePicture( DISP, picture);
+	picture = prima_render_create_picture(pixmap, 32);
+	RENDER_APPLY_CLIP(picture);
+	RENDER_APPLY_TRANSFORM(picture);
+	RENDER_COMPOSITE( ofs, ROP_SRC_OR_COPY, picture);
+	RENDER_FREE(picture);
 	XRENDER_SYNC_NEEDED;
 	ret = true;
 
@@ -2051,17 +2059,11 @@ img_put_argb_on_layered( Handle self, Handle image, PutImageRequest * req)
 		req->w, req->h
 	))) goto FAIL;
 
-	picture = XRenderCreatePicture( DISP, pixmap, guts. xrender_argb32_format, 0, NULL);
-	if ( XX-> clip_mask_extent. x != 0 && XX-> clip_mask_extent. y != 0)
-		XRenderSetPictureClipRegion(DISP, picture, XX->current_region);
-	if ( req-> transform ) XRenderSetPictureTransform( DISP, picture, req->transform);
-	XRenderComposite(
-		DISP, (req-> rop == ropSrcCopy) ? PictOpSrc : PictOpOver,
-		picture, 0, XX-> argb_picture,
-		req->ofs_x, req->ofs_y, 0, 0,
-		req->dst_x, req->dst_y, req->dst_w, req->dst_h
-	);
-	XRenderFreePicture( DISP, picture);
+	picture = prima_render_create_picture(pixmap, 32);
+	RENDER_APPLY_CLIP(picture);
+	RENDER_APPLY_TRANSFORM(picture);
+	RENDER_COMPOSITE( ofs, ROP_SRC_OR_COPY, picture);
+	RENDER_FREE(picture);
 	XRENDER_SYNC_NEEDED;
 	ret = true;
 
@@ -2131,18 +2133,6 @@ img_render_image_on_picture( Handle self, Handle image, PutImageRequest * req, B
 	XGCValues gcv;
 	Bool ret = false;
 	Picture picture;
-	PDrawableSysData YY = X(image);
-
-	if ( XT_IS_ICON(YY)) {
-		if ( XF_LAYERED(XX))
-			return img_put_image_on_layered(self, image, req);
-		else if ( XT_IS_PIXMAP(XX) || XT_IS_APPLICATION(XX))
-			return img_put_image_on_pixmap(self, image, req);
-		else if ( XT_IS_WIDGET(XX))
-			return img_put_image_on_widget(self, image, req);
-		else
-			return false;
-	}
 
 	if (!(cache = prima_image_cache((PImage) image,
 		on_layered ? CACHE_LAYERED : CACHE_PIXMAP,
@@ -2168,18 +2158,11 @@ img_render_image_on_picture( Handle self, Handle image, PutImageRequest * req, B
 		req->w, req->h
 	))) goto FAIL;
 
-	picture = XRenderCreatePicture( DISP, pixmap,
-		on_layered ? guts.xrender_argb32_format : guts. xrender_display_format,
-		0, NULL
-	);
-	if ( req-> transform ) XRenderSetPictureTransform( DISP, picture, req->transform);
-	XRenderComposite(
-		DISP, PictOpSrc,
-		picture, 0, XX-> argb_picture,
-		req->ofs_x, req->ofs_y, 0, 0,
-		req->dst_x, req->dst_y, req->dst_w, req->dst_h
-	);
-	XRenderFreePicture( DISP, picture);
+	picture = prima_render_create_picture(pixmap, on_layered ? 32 : 0);
+	RENDER_APPLY_CLIP(picture);
+	RENDER_APPLY_TRANSFORM(picture);
+	RENDER_COMPOSITE( ofs, ROP_SRC_OR_COPY, picture);
+	RENDER_FREE(picture);
 	XRENDER_SYNC_NEEDED;
 	ret = true;
 
@@ -2256,22 +2239,11 @@ img_render_bitmap_on_picture( Handle self, Handle image, PutImageRequest * req)
 		0, 0, 1
 	);
 
-	picture = XRenderCreatePicture( DISP, pixmap,
-		use_layered_surface ? guts.xrender_argb32_format : guts.xrender_display_format,
-		0, NULL
-	);
-	if ( XX-> clip_mask_extent. x != 0 && XX-> clip_mask_extent. y != 0)
-		XRenderSetPictureClipRegion(DISP, picture, XX->current_region);
-	if ( req-> transform )
-		XRenderSetPictureTransform( DISP, picture, req->transform);
-	XRenderComposite(
-		DISP, PictOpSrc,
-		picture, 0, XX-> argb_picture,
-		req->ofs_x, req->ofs_y, 0, 0,
-		req->dst_x, req->dst_y, req->dst_w, req->dst_h
-	);
-
-	XRenderFreePicture( DISP, picture);
+	picture = prima_render_create_picture(pixmap, use_layered_surface ? 32 : 0);
+	RENDER_APPLY_CLIP(picture);
+	RENDER_APPLY_TRANSFORM(picture);
+	RENDER_COMPOSITE( ofs, PictOpSrc, picture);
+	RENDER_FREE(picture);
 	XFreeGC( DISP, gc);
 	XFreePixmap( DISP, pixmap );
 	XRENDER_SYNC_NEEDED;
@@ -2321,33 +2293,23 @@ img_render_picture_on_pixmap( Handle self, Handle image, PutImageRequest * req, 
 			0, 0
 		);
 
-		picture = XRenderCreatePicture( DISP, pixmap,
-			from_layered ? guts. xrender_argb32_format : guts. xrender_display_format,
-			0, NULL
-		);
-		if ( XX-> clip_mask_extent. x != 0 && XX-> clip_mask_extent. y != 0)
-			XRenderSetPictureClipRegion(DISP, picture, XX->current_region);
+		picture = prima_render_create_picture(pixmap, from_layered ? 32 : 0);
+		RENDER_APPLY_CLIP(picture);
 	} else {
 	QUICK:
 		picture = YY->argb_picture;
 		quick   = true;
 	}
 
-	if ( req-> transform )
-		XRenderSetPictureTransform( DISP, picture, req->transform);
-	XRenderComposite(
-		DISP, (req-> rop == ropSrcCopy) ? PictOpSrc : PictOpOver,
-		picture, 0, XX-> argb_picture,
-		req->ofs_x, req->ofs_y, 0, 0,
-		req->dst_x, req->dst_y, req->dst_w, req->dst_h
-	);
+	RENDER_APPLY_TRANSFORM(picture);
+	RENDER_COMPOSITE( ofs, ROP_SRC_OR_COPY, picture);
 
 	if ( !quick ) {
-		XRenderFreePicture( DISP, picture);
+		RENDER_FREE(picture);
 		XFreeGC( DISP, gc);
 		XFreePixmap( DISP, pixmap );
-	} else if ( req-> transform )
-		XRenderSetPictureTransform( DISP, picture, &render_identity_transform);
+	} else
+		RENDER_RESTORE_TRANSFORM(picture);
 
 	XRENDER_SYNC_NEEDED;
 	return true;
