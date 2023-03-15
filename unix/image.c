@@ -3031,6 +3031,8 @@ apc_gp_stretch_image_x11( Handle self, Handle image,
 	if ( rop > ropNoOper ) return false;
 	if ( src < 0 ) return false;
 
+	XRENDER_SYNC;
+
 	/* query xserver bits */
 	if ( src == SRC_BITMAP || src == SRC_PIXMAP ) {
 		XImage *i;

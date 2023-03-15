@@ -447,6 +447,7 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flag
 
 	if ( PObject( self)-> options. optInDrawInfo) return false;
 	if ( !XF_IN_PAINT(XX)) return false;
+	XRENDER_SYNC;
 
 	if ( len == 0) return true;
 	if ( len > 65535 ) len = 65535;
@@ -493,6 +494,7 @@ apc_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 
 	if ( PObject( self)-> options. optInDrawInfo) return false;
 	if ( !XF_IN_PAINT(XX)) return false;
+	XRENDER_SYNC;
 
 	if ( t->len == 0) return true;
 	if ( t->len > 65535 ) t->len = 65535;

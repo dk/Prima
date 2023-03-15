@@ -402,7 +402,7 @@ apc_gp_aa_bars( Handle self, int nr, NRect *rr)
 		if ( !ok) break;
 	}
 
-	XSync(DISP, false);
+	XRENDER_SYNC_NEEDED;
 	XCHECKPOINT;
 	return ok;
 }
@@ -446,7 +446,7 @@ apc_gp_aa_fill_poly( Handle self, int numPts, NPoint * points)
 	);
 	free( p);
 
-	XSync(DISP, false);
+	XRENDER_SYNC_NEEDED;
 	XCHECKPOINT;
 	return ok;
 }

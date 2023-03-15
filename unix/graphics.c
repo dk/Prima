@@ -669,6 +669,7 @@ apc_gp_bars( Handle self, int nr, Rect *rr)
 
 	if ( PObject( self)-> options. optInDrawInfo) return false;
 	if ( !XF_IN_PAINT(XX)) return false;
+	XRENDER_SYNC;
 
 	if ( nr > 1 ) {
 		if ((r = malloc( sizeof( XRectangle)*nr)) == NULL) return false;
@@ -705,6 +706,7 @@ apc_gp_alpha( Handle self, int alpha, int x1, int y1, int x2, int y2)
 	if ( !XF_IN_PAINT(XX)) return false;
 	if ( !XF_LAYERED(XX)) return false;
 	if ( XT_IS_WIDGET(XX) && !XX->flags. layered_requested) return false;
+	XRENDER_SYNC;
 
 	if ( x1 < 0 && y1 < 0 && x2 < 0 && y2 < 0) {
 		x1 = 0; y1 = 0;
@@ -748,6 +750,7 @@ apc_gp_clear( Handle self, int x1, int y1, int x2, int y2)
 
 	if ( PObject( self)-> options. optInDrawInfo) return false;
 	if ( !XF_IN_PAINT(XX)) return false;
+	XRENDER_SYNC;
 
 	if ( x1 < 0 && y1 < 0 && x2 < 0 && y2 < 0) {
 		x1 = 0; y1 = 0;
@@ -796,6 +799,7 @@ apc_gp_draw_poly( Handle self, int n, Point *pp)
 
 	if ( PObject( self)-> options. optInDrawInfo) return false;
 	if ( !XF_IN_PAINT(XX)) return false;
+	XRENDER_SYNC;
 
 	if ((p = malloc( sizeof( XPoint)*n)) == NULL)
 		return false;
@@ -826,6 +830,7 @@ apc_gp_draw_poly2( Handle self, int np, Point *pp)
 
 	if ( PObject( self)-> options. optInDrawInfo) return false;
 	if ( !XF_IN_PAINT(XX)) return false;
+	XRENDER_SYNC;
 
 	if ((s = malloc( sizeof( XSegment)*n)) == NULL) return false;
 
@@ -855,6 +860,7 @@ apc_gp_fill_poly( Handle self, int numPts, Point *points)
 
 	if ( PObject( self)-> options. optInDrawInfo) return false;
 	if ( !XF_IN_PAINT(XX)) return false;
+	XRENDER_SYNC;
 
 	if ( !( p = malloc(( numPts + 1) * sizeof( XPoint)))) return false;
 
@@ -1083,6 +1089,7 @@ apc_gp_flood_fill( Handle self, int x, int y, Color color, Bool singleBorder)
 	int mix = 0, hint;
 
 	if ( !opt_InPaint) return false;
+	XRENDER_SYNC;
 
 	s. singleBorder = singleBorder;
 	s. drawable     = XX-> gdrawable;
@@ -1146,6 +1153,7 @@ apc_gp_get_pixel( Handle self, int x, int y)
 
 	if ( !opt_InPaint) return clInvalid;
 	SHIFT( x, y);
+	XRENDER_SYNC;
 
 	if ( x < 0 || x >= XX-> size.x || y < 0 || y >= XX-> size.y)
 		return clInvalid;
@@ -1280,6 +1288,7 @@ apc_gp_line( Handle self, int x1, int y1, int x2, int y2)
 
 	if ( PObject( self)-> options. optInDrawInfo) return false;
 	if ( !XF_IN_PAINT(XX)) return false;
+	XRENDER_SYNC;
 
 	SHIFT( x1, y1); SHIFT( x2, y2);
 	RANGE4(x1, y1, x2, y2); /* not really correct */
@@ -1296,6 +1305,7 @@ apc_gp_rectangle( Handle self, int x1, int y1, int x2, int y2)
 
 	if ( PObject( self)-> options. optInDrawInfo) return false;
 	if ( !XF_IN_PAINT(XX)) return false;
+	XRENDER_SYNC;
 
 	SHIFT( x1, y1); SHIFT( x2, y2);
 	SORT( x1, x2); SORT( y1, y2);
@@ -1321,6 +1331,7 @@ apc_gp_set_pixel( Handle self, int x, int y, Color color)
 
 	if ( PObject( self)-> options. optInDrawInfo) return false;
 	if ( !XF_IN_PAINT(XX)) return false;
+	XRENDER_SYNC;
 
 	SHIFT(x, y);
 	XSetForeground( DISP, XX-> gc, prima_allocate_color( self, color, NULL));
