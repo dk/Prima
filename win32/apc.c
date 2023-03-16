@@ -572,8 +572,8 @@ yield(Bool wait_for_event)
 				ret -= ( ret >= WAIT_ABANDONED_0 ) ? WAIT_ABANDONED_0 : WAIT_OBJECT_0;
 				process_file_msg( select_handles[ret] );
 			} else if ( ret == WAIT_OBJECT_0 + select_n_handles ) {
-				GetMessage( &msg, NULL, 0, 0);
-				process_msg( &msg);
+				/* GetMessage may block, wait till the next yield() call */
+				return true;
 			} else if ( ret == WAIT_TIMEOUT ) {
 				return true;
 			} else {
