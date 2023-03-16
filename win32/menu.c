@@ -302,17 +302,17 @@ apc_menu_create( Handle self, Handle owner)
 }
 
 static Bool
-clear_menus( PMenuWndData item, int keyLen, void * key, void * params)
+clear_menus( void* item, int keyLen, void * key, void * params)
 {
-	if ( item-> menu == ( Handle) params)
+	if ( ((PMenuWndData)item)-> menu == ( Handle) params)
 		hash_delete( mgr_menu, key, keyLen, true);
 	return false;
 }
 
 static Bool
-clear_bitmaps(void * bm, int keyLen, BitmapKey * key, void * menu)
+clear_bitmaps(void * bm, int keyLen, void * key, void * menu)
 {
-	if ( key-> menu == ( HMENU) menu)
+	if ( ((BitmapKey*)key)-> menu == ( HMENU) menu)
 		hash_delete( mgr_menu_bitmaps, key, keyLen, true);
 	return false;
 }

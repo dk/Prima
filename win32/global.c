@@ -1723,12 +1723,13 @@ LRESULT CALLBACK layered_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
 	return generic_frame_handler( win, msg, mp1, mp2 );
 }
 
-static Bool kill_img_cache( Handle self, int keyLen, void * key, void * killDBM)
+static Bool
+kill_img_cache( void* self, int keyLen, void * key, void * killDBM)
 {
 	if ( is_apt( aptDeviceBitmap)) {
-		if ( killDBM) dbm_recreate( self);
+		if ( killDBM) dbm_recreate((Handle) self);
 	} else
-		image_destroy_cache( self);
+		image_destroy_cache((Handle) self);
 	return false;
 }
 

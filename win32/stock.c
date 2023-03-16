@@ -209,9 +209,9 @@ stylus_release( Handle self )
 }
 
 static Bool
-stylus_cleaner( PDCObject s, int keyLen, void * key, void * dummy)
+stylus_cleaner( void* s, int keyLen, void * key, void * dummy)
 {
-	if ( s-> refcnt <= 0) stylus_free( s, true);
+	if ( ((PDCObject)s)-> refcnt <= 0) stylus_free((PDCObject) s, true);
 	return false;
 }
 
@@ -754,8 +754,9 @@ destroy_font_hash( void)
 }
 
 
-static Bool _ft_cleaner( PDCFont f, int keyLen, void * key, void * dummy) {
-	if ( f-> refcnt <= 0) font_free( f, true);
+static Bool
+ft_cleaner( void* f, int keyLen, void * key, void * dummy) {
+	if ( ((PDCFont)f)-> refcnt <= 0) font_free( (PDCFont)f, true);
 	return false;
 }
 
@@ -857,7 +858,7 @@ font_change( Handle self, Font * font)
 void
 font_clean()
 {
-	hash_first_that( mgr_fonts, _ft_cleaner, NULL, NULL, NULL);
+	hash_first_that( mgr_fonts, ft_cleaner, NULL, NULL, NULL);
 }
 
 static char* encodings[] = {
