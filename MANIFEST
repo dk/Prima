@@ -365,6 +365,7 @@ Prima/sys/XQuartz.pm
 Prima/sysimage.gif
 Prima/TextView.pm
 Prima/themes/color.pm
+Prima/themes/flat.pm
 Prima/themes/round3d.pm
 Prima/themes/sysimage.pm
 Prima/themes/tabset.pm
