@@ -1091,6 +1091,7 @@ Bool   Application_hintVisible( Handle self, Bool set, Bool visible)   { return 
 Handle Application_owner( Handle self, Bool set, Handle owner)         { return NULL_HANDLE; }
 Bool   Application_ownerColor( Handle self, Bool set, Bool ownerColor) { return false; }
 Bool   Application_ownerBackColor( Handle self, Bool set, Bool ownerBackColor) { return false; }
+Bool   Application_ownerDesignStyle( Handle self, Bool set, Bool ownerFont)   { return false; }
 Bool   Application_ownerFont( Handle self, Bool set, Bool ownerFont)   { return false; }
 Bool   Application_ownerShowHint( Handle self, Bool set, Bool ownerShowHint) { return false; }
 Bool   Application_ownerPalette( Handle self, Bool set, Bool ownerPalette) { return false; }

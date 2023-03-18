@@ -29,6 +29,7 @@ object Prima::Application( Prima::Widget)
 	property  Handle owner;
 	property  Bool   ownerBackColor;
 	property  Bool   ownerColor;
+	property  Bool   ownerDesignStyle;
 	property  Bool   ownerFont;
 	property  Bool   ownerShowHint;
 	property  Bool   ownerPalette;

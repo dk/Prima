@@ -64,6 +64,7 @@ Widget_init( Handle self, HV * profile)
 	my-> set_font               ( self, Font_buffer);
 	opt_assign( optOwnerBackColor, pget_B( ownerBackColor));
 	opt_assign( optOwnerColor    , pget_B( ownerColor));
+	opt_assign( optOwnerDesignStyle,pget_B( ownerDesignStyle));
 	opt_assign( optOwnerFont     , pget_B( ownerFont));
 	opt_assign( optOwnerHint     , pget_B( ownerHint));
 	opt_assign( optOwnerShowHint , pget_B( ownerShowHint));
@@ -82,6 +83,7 @@ Widget_init( Handle self, HV * profile)
 	my-> set_buffered           ( self, pget_B( buffered));
 	my-> set_clipChildren       ( self, pget_B( clipChildren));
 	my-> set_cursorVisible      ( self, pget_B( cursorVisible));
+	my-> set_designStyle        ( self, pget_sv( designStyle));
 	my-> set_dndAware           ( self, pget_sv( dndAware));
 	my-> set_growMode           ( self, pget_i( growMode));
 	my-> set_helpContext        ( self, pget_sv( helpContext));
@@ -259,6 +261,8 @@ Widget_done( Handle self)
 	apc_widget_destroy( self);
 	if ( var-> hint ) sv_free( var->hint);
 	var-> hint = NULL;
+	if ( var-> designStyle ) sv_free( var->designStyle);
+	var-> designStyle = NULL;
 	free( var-> helpContext);
 	var-> helpContext = NULL;
 
@@ -734,6 +738,8 @@ Widget_set( Handle self, HV * profile)
 				my-> set_font ( self, CWidget( postOwner)-> get_font( postOwner));
 				opt_set( optOwnerFont);
 			}
+			if ( is_opt( optOwnerDesignStyle))
+				my-> set_designStyle( self, NULL_SV);
 		}
 		if ( var-> geometry != gtDefault) {
 			geometry = var-> geometry;
@@ -1555,6 +1561,48 @@ Widget_cursorVisible( Handle self, Bool set, Bool cursorVisible)
 	if ( !set)
 		return apc_cursor_get_visible( self);
 	return apc_cursor_set_visible( self, cursorVisible);
+}
+
+static Bool
+propagate_design_style( Handle owner, Handle self, void * dummy)
+{
+	enter_method;
+	my-> set_designStyle( self, var-> designStyle);
+	return false;
+}
+
+SV *
+Widget_designStyle( Handle self, Bool set, SV *designStyle)
+{
+	if ( !set) {
+		return
+			is_opt( optOwnerDesignStyle) ? (
+				var-> owner ?
+					CWidget(var->owner)->get_designStyle(var->owner) :
+					NULL_SV
+			) : (
+				(var->designStyle == NULL) ?
+					NULL_SV :
+					newSVsv(var->designStyle)
+			);
+	} else if ( var-> stage <= csFrozen) {
+		enter_method;
+		if ( var-> designStyle == designStyle) {
+			my-> first_that( self, (void*)propagate_design_style, NULL);
+			return NULL_SV;
+		}
+		if ( var-> designStyle )
+			sv_free( var-> designStyle );
+		if ( SvOK( designStyle )) {
+			var-> designStyle = newSVsv(designStyle);
+			opt_clear( optOwnerDesignStyle);
+		} else if ( !is_opt( optOwnerDesignStyle)) {
+			var-> designStyle = NULL;
+			opt_set( optOwnerDesignStyle);
+		}
+		my-> first_that( self, (void*)propagate_design_style, NULL);
+	}
+	return NULL_SV;
 }
 
 SV *

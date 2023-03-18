@@ -1180,6 +1180,7 @@ sub notification_types { return \%RNT; }
 	currentWidget     => undef,
 	cursorVisible     => 0,
 	dark3DColor       => cl::Dark3DColor,
+	designStyle       => undef,
 	disabledBackColor => cl::Disabled,
 	disabledColor     => cl::DisabledText,
 	dndAware          => 0,
@@ -1199,6 +1200,7 @@ sub notification_types { return \%RNT; }
 	left              => 100,
 	ownerColor        => 0,
 	ownerBackColor    => 0,
+	ownerDesignStyle  => 1,
 	ownerFont         => 1,
 	ownerHint         => 1,
 	ownerShowHint     => 1,
@@ -2301,6 +2303,7 @@ sub profile_default
 	my $def  = $_[ 0]-> SUPER::profile_default;
 	my %prf = (
 		autoClose      => 0,
+		designStyle    => 'default',
 		pointerType    => cr::Arrow,
 		pointerVisible => 1,
 		language       => Prima::Application->get_system_info->{guiLanguage},
@@ -2310,6 +2313,7 @@ sub profile_default
 		scaleChildren  => 0,
 		ownerColor     => 0,
 		ownerBackColor => 0,
+		ownerDesignStyle=>0,
 		ownerFont      => 0,
 		ownerShowHint  => 0,
 		ownerPalette   => 0,

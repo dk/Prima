@@ -89,6 +89,13 @@ sub init
 	return %profile;
 }
 
+sub designStyle
+{
+	return $_[0]->SUPER::designStyle unless $#_;
+	$_[0]->SUPER::designStyle($_[1]);
+	$_[0]->repaint;
+}
+
 sub cancel_transaction
 {
 	my $self = $_[0];
@@ -424,20 +431,12 @@ sub init
 	return %profile;
 }
 
-sub on_paint
+sub paint_default
 {
-	my ($self,$canvas)  = @_;
-	my @clr  = ( $self-> color, $self-> backColor);
-	@clr = ( $self-> hiliteColor, $self-> hiliteBackColor)
-		if $self-> { default};
-	$clr[1] = $self-> prelight_color($clr[1]) if $self->{hilite} && $self-> enabled;
-	@clr = ( $self-> disabledColor, $self-> disabledBackColor)
-		if !$self-> enabled;
-	my @size = $canvas-> size;
-
+	my ( $self, $canvas, $w, $h, @clr) = @_;
 	my @fbar = $self-> {default} ?
-		( 1, 1, $size[0] - 2, $size[1] - 2):
-		( 0, 0, $size[0] - 1, $size[1] - 1);
+		( 1, 1, $w - 2, $h - 2):
+		( 0, 0, $w - 1, $h - 1);
 	if ( !$self-> {flat} || $self-> {hilite}) {
 		$self-> rect_bevel( $canvas, @fbar,
 			fill => $self->transparent ? undef : $self-> new_gradient(
@@ -454,11 +453,49 @@ sub on_paint
 	}
 	if ( $self-> {default}) {
 		$canvas-> color( cl::Black);
-		$canvas-> rectangle( 0, 0, $size[0]-1, $size[1]-1);
+		$canvas-> rectangle( 0, 0, $w-1, $h-1);
 	}
+}
+
+sub paint_flat
+{
+	my ( $self, $canvas, $w, $h, @clr) = @_;
+	$canvas-> graphic_context( sub {
+		$canvas-> color( $self-> owner-> backColor );
+		$canvas-> bar( 0, 0, $w, $h);
+		$canvas-> backColor( $clr[1]);
+		$canvas-> color( $clr[0]);
+		my $lw = 1;
+		$lw++ if $self->{hilite} && $self->enabled;
+		$lw++ if $self->{default};
+		$canvas-> antialias(1);
+		$canvas-> lineWidth( $lw );
+		$canvas-> new_path-> round_rect(
+			0 + $lw/2, 0 + $lw/2, $w - $lw/2 - 1, $h - $lw/2 - 1, 
+			$self-> font-> height
+		)-> fill_stroke;
+	}) unless $self-> transparent;
+}
+
+sub on_paint
+{
+	my ($self,$canvas)  = @_;
+	my @clr  = ( $self-> color, $self-> backColor);
+	@clr = ( $self-> hiliteColor, $self-> hiliteBackColor)
+		if $self-> { default};
+	$clr[1] = $self-> prelight_color($clr[1]) if $self->{hilite} && $self-> enabled;
+	@clr = ( $self-> disabledColor, $self-> disabledBackColor)
+		if !$self-> enabled;
+	my @size = $canvas-> size;
 
 	my $shift  = $self-> {checked} ? 1 : 0;
-	$shift += $self-> {pressed} ? 2 : 0;
+	if ( $self->designStyle eq 'flat') {
+		$self->paint_flat($canvas, @size, @clr);
+	} else {
+		$self->paint_default($canvas, @size, @clr);
+		$shift += $self-> {pressed} ? 2 : 0;
+	}
+
 	my $capOk = length($self-> text) > 0;
 	my ( $fw, $fh) = $capOk ? $self-> caption_box($canvas) : ( 0, 0);
 	my ( $textAtX, $textAtY);

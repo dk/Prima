@@ -15,6 +15,7 @@ object Prima::Widget( Prima::Drawable)
 	Handle    currentWidget;	    # current widget pointer
 	int       cursorLock;               # cursor lock count
 	NPoint    designScale;              # font width and height for view design
+	SV *      designStyle;              # generic visual style
 	char   *  dndAware;                 # NULL for no, "1" for all formats, other for selected
 	char   *  helpContext;              # help context string
 	SV     *  hint;                     # hint tag text
@@ -64,6 +65,7 @@ object Prima::Widget( Prima::Drawable)
 	property  Point  cursorSize;
 	property  Bool   cursorVisible;
 	property  NPoint designScale;
+	property  SV*    designStyle;
 	property  SV*    dndAware;
 	property  Bool   enabled;
 	property  int    geometry;

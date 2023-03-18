@@ -92,12 +92,24 @@ sub clone
 
 package main;
 
+sub set_style
+{
+	$_[0]->designStyle($_[1]);
+	$_[0]->repaint;
+}
+
 my $w = Prima::MainWindow-> create(
 	text   => "Button example",
 	centered  => 1,
 	height    => 300,
 	width     => 400,
 	designScale => [7, 16],
+	menuItems => [
+		['~Design' => [
+			[ '(*default' => 'Default' => \&set_style ],
+			[ ')flat'     => 'Flat'    => \&set_style ],
+		]],
+	],
 );
 $w->insert( "Button",
 	origin => [  50,180], 
