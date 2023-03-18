@@ -445,9 +445,9 @@ typedef struct _KeyEvent {
 	int    cmd;
 	int    subcmd;
 	Handle source;
-	int    code;
-	int    key;
-	int    mod;
+	uint32_t code;
+	uint32_t key;
+	uint32_t mod;
 	int    repeat;
 } KeyEvent, *PKeyEvent;
 
@@ -461,7 +461,7 @@ typedef struct _PositionalEvent {
 	Handle source;
 	Point  where;
 	int    button;
-	int    mod;
+	uint32_t mod;
 	int    nth;
 } PositionalEvent, *PPositionalEvent;
 

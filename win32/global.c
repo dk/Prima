@@ -671,7 +671,7 @@ get_current_timestamp()
 	return ft.dwHighDateTime * 10000 + ft.dwLowDateTime / 10000 - guts.program_start_ts;
 }
 
-static Byte
+static uint32_t
 get_mouse_fingerprint( WPARAM mp1 )
 {
 	return

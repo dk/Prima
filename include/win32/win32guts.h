@@ -251,7 +251,7 @@ typedef struct _WinGuts
 	HWND           last_mouse_click_source;
 	LPARAM         last_mouse_click_position;
 	unsigned int   last_mouse_click_number;
-	Byte           last_mouse_click_fingerprint; // kmXXX | mbXXX
+	uint32_t       last_mouse_click_fingerprint; // kmXXX | mbXXX
 } WinGuts, *PWinGuts;
 
 typedef struct _WindowData
