@@ -14,7 +14,6 @@ use Prima;
 use base qw(Prima::Widget Prima::Widget::MouseScroller);
 
 @stdMetrics = Prima::Application-> get_default_scrollbar_metrics;
-my $win32 = (Prima::Application-> get_system_info-> {apc} == apc::Win32);
 
 sub profile_default
 {
@@ -31,7 +30,6 @@ sub profile_default
 		partial       => 10,
 		selectable    => 0,
 		step          => 1,
-		style         => ( $win32 ? 'xp' : 'os2' ),
 		tabStop       => 0,
 		value         => 0,
 		vertical      => 0,
@@ -68,9 +66,9 @@ sub init
 	my %profile = $self-> SUPER::init(@_);
 	for ( qw( b1 b2 tab left right)) { $self-> { $_}-> { pressed} = 0; }
 	for ( qw( b1 b2 tab)) { $self-> { $_}-> { enabled} = 0; }
-	for ( qw( autoTrack minThumbSize vertical min max step pageStep whole partial value style))
+	for ( qw( autoTrack minThumbSize vertical min max step pageStep whole partial value ))
 		{ $self-> {$_} = 1; }
-	for ( qw( autoTrack minThumbSize vertical min max step pageStep whole partial value style))
+	for ( qw( autoTrack minThumbSize vertical min max step pageStep whole partial value ))
 		{ $self-> $_( $profile{ $_}); }
 	$self-> {suppressNotify} = undef;
 	$self-> reset;
@@ -110,28 +108,45 @@ sub on_size
 
 sub draw_pad
 {
-	my ( $self, $canvas, $part, $base_color, $cache) = @_;
+	my ( $self, $canvas, $part, $base_color, $designStyle) = @_;
 
-	if ( defined $self->{prelight} && $self->{prelight} eq $part && $self->enabled ) {
-		$base_color = $self-> prelight_color($base_color, 1.25);
+	if ( $designStyle eq 'flat') {
+		my $hbc = $self-> hiliteBackColor;
+		my $clr;
+		if ( $self->{$part}->{pressed}) {
+			$clr = $hbc;
+		} elsif ( $self->enabled) {
+			my $pct = (( $self->{prelight} // '') eq $part) ? 0.33 : 0.66;
+			$clr = cl::blend(
+				$self->map_color( $hbc ),
+				$self->map_color( $base_color ),
+				$pct
+			);
+		} else {
+			$clr = $base_color;
+		}
+		$canvas-> color( $clr );
+		$canvas-> bar( @{$self-> {$part}-> {rect}} );
+	} else {
+		if ( defined $self->{prelight} && $self->{prelight} eq $part && $self->enabled ) {
+			$base_color = $self-> prelight_color($base_color, 1.25);
+		}
+		my @palette = ( $base_color, $self->dark3DColor );
+		my @spline  = ( 1, 0 );
+		unless ($self-> { vertical } ) {
+			@palette = reverse @palette;
+			@spline  = reverse @spline;
+		}
+		$self-> rect_bevel( $canvas, @{$self-> {$part}-> {rect}},
+			width   => 2,
+			concave => $self->{$part}->{pressed},
+			fill    => $canvas->new_gradient(
+				palette   => \@palette,
+				spline    => \@spline,
+				vertical  => $self->{vertical},
+			),
+		);
 	}
-
-	my @palette = ( $base_color, $self->dark3DColor );
-	my @spline  = ( 1, 0 );
-	unless ($self-> { vertical } ) {
-		@palette = reverse @palette;
-		@spline  = reverse @spline;
-	}
-
-	$self-> rect_bevel( $canvas, @{$self-> {$part}-> {rect}},
-		width   => 2,
-		concave => $self->{$part}->{pressed},
-		fill    => $canvas->new_gradient(
-			palette   => \@palette,
-			spline    => \@spline,
-			vertical  => $self->{vertical},
-		),
-	);
 }
 
 sub fix_triangle
@@ -156,10 +171,12 @@ sub fix_triangle
 sub on_paint
 {
 	my ($self,$canvas) = @_;
+	my $designStyle = $self->designStyle;
 	my @clr;
 	my @c3d = ( $self-> light3DColor, $self-> dark3DColor);
 	if ( $self-> enabled) {
 		@clr = ($self-> color, $self-> backColor);
+		$clr[0] = $self->hiliteColor if $designStyle eq 'flat';
 	} else {
 		@clr = ($self-> disabledColor, $self-> disabledBackColor);
 	}
@@ -167,17 +184,20 @@ sub on_paint
 	my $btx  = $self-> { btx};
 	my $v    = $self-> { vertical};
 	my ( $maxx, $maxy) = ( $size[0]-1, $size[1]-1);
-	$canvas-> color( $c3d[0]);
-	$canvas-> line( 0, 0, $maxx - 1, 0);
-	$canvas-> line( $maxx, 0, $maxx, $maxy - 1);
-	$canvas-> color( $c3d[1]);
-	$canvas-> line( 0, $maxy, $maxx, $maxy);
-	$canvas-> line( 0, 0, 0, $maxy);
+
+	if ( $designStyle ne 'flat') {
+		$canvas-> color( $c3d[0]);
+		$canvas-> line( 0, 0, $maxx - 1, 0);
+		$canvas-> line( $maxx, 0, $maxx, $maxy - 1);
+		$canvas-> color( $c3d[1]);
+		$canvas-> line( 0, $maxy, $maxx, $maxy);
+		$canvas-> line( 0, 0, 0, $maxy);
+	}
 
 	my $collapsed = ($v ? $maxy : $maxx) < $self->{minThumbSize};
 
 	unless ( $collapsed ) {
-		$self-> draw_pad( $canvas, b1 => $clr[1]);
+		$self-> draw_pad( $canvas, b1 => $clr[1], $designStyle);
 		$canvas-> color( $self-> {b1}-> { enabled} ? $clr[ 0] : $self-> disabledColor);
 		my $a = $self-> { b1}-> { pressed} ? 1 : 0;
 		my @spot = map { int($_ + .5) } $v ? (
@@ -195,7 +215,7 @@ sub on_paint
 	}
 
 	unless ( $collapsed ) {
-		$self-> draw_pad( $canvas, b2 => $clr[1]);
+		$self-> draw_pad( $canvas, b2 => $clr[1], $designStyle);
 		$canvas-> color( $self-> {b2}-> { enabled} ? $clr[ 0] : $self-> disabledColor);
 		my $a = $self-> { b2}-> { pressed} ? 1 : 0;
 		my @spot = map { int($_ + .5) } $v ? (
@@ -223,11 +243,13 @@ sub on_paint
 			if ( defined $self-> { $_}-> {rect})
 			{
 				my @r = @{$self-> {$_}-> {rect}};
-				$canvas-> color( $c3d[1]);
-				$v ? ( $canvas-> line( $r[0]-1, $r[1], $r[0]-1, $r[3])):
-					( $canvas-> line( $r[0], $r[3]+1, $r[2], $r[3]+1));
+				if ( $designStyle ne 'flat') {
+					$canvas-> color( $c3d[1]);
+					$v ? ( $canvas-> line( $r[0]-1, $r[1], $r[0]-1, $r[3])):
+						( $canvas-> line( $r[0], $r[3]+1, $r[2], $r[3]+1));
+				}
 				$canvas-> color( $self-> {$_}-> {pressed} ? $clr[0] : $clr[1]);
-				if ( $self->{style} eq 'xp') {
+				if ( $designStyle eq 'xp') {
 					$canvas-> backColor( $c3d[0]);
 					$canvas-> rop2(rop::CopyPut);
 					$canvas-> fillPattern([(0xAA,0x55) x 4]);
@@ -240,13 +262,12 @@ sub on_paint
 			}
 		}
 
-		$self-> draw_pad( $canvas, tab => $clr[1]);
+		$self-> draw_pad( $canvas, tab => $clr[1], $designStyle);
 		if (
 			$self-> {minThumbSize} > 8 &&
-			$self->{style} ne 'xp' &&
+			$designStyle eq 'classic' &&
 			(( $v ? $maxx : $maxy) > 10)
-		)
-		{
+		) {
 			$canvas-> color( $clr[ 0]);
 			$canvas-> backColor( $c3d[ 0]);
 			if ( $v)
@@ -282,13 +303,15 @@ sub on_paint
 		my @r = $collapsed ? 
 			( 0, 0, $maxx, $maxy ) :
 			@{$self-> {groove}-> {rect}};
-		$canvas-> color( $c3d[1]);
-		$v ?
-			( $canvas-> line( $r[0]-1, $r[1], $r[0]-1, $r[3])):
-			( $canvas-> line( $r[0], $r[3]+1, $r[2], $r[3]+1));
+		if ( $designStyle ne 'flat') {
+			$canvas-> color( $c3d[1]);
+			$v ?
+				( $canvas-> line( $r[0]-1, $r[1], $r[0]-1, $r[3])):
+				( $canvas-> line( $r[0], $r[3]+1, $r[2], $r[3]+1));
+		}
 		$canvas-> color( $clr[1]);
 
-		if ( $self->{style} eq 'xp') {
+		if ( $designStyle eq 'xp') {
 			$canvas-> backColor( $c3d[1]);
 			$canvas-> fillPattern([(0xAA,0x55) x 4]);
 			$canvas-> rop2(rop::CopyPut);
@@ -296,6 +319,8 @@ sub on_paint
 			$canvas-> fillPattern(fp::Solid);
 		} else {
 			$canvas-> bar( @r);
+			$canvas-> color(0);
+			$canvas-> rectangle(@r);
 		}
 	}
 }
@@ -642,6 +667,33 @@ sub reset
 			$self-> { right}-> {rect} = ( $r2[ 0] < $r2[ 2]) ? [ @r2] : undef;
 		}
 	}
+
+	if ($self->designStyle eq 'flat') {
+		for my $part ( qw(b1 b2 tab left right groove)) {
+			my $r = $self->{$part}->{rect} or next;
+			if ( $v ) {
+				$r->[0]--;
+				$r->[2]++;
+			} else {
+				$r->[1]--;
+				$r->[3]++;
+			}
+		}
+		for my $part ( qw(left right groove)) {
+			my $r = $self->{$part}->{rect} or next;
+			$v ? $r->[0]-- : $r->[3]++;
+		}
+		if ( $v ) {
+			$self->{b1}->{rect}->[3]++;
+			$self->{b2}->{rect}->[1]--;
+			$self->{left}->{rect}->[1]++ if $self->{left}->{rect};
+		} else {
+			$self->{b1}->{rect}->[0]--;
+			$self->{b2}->{rect}->[2]++;
+			$self->{right}->{rect}->[0]++ if $self->{right}->{rect};
+		}
+	}
+
 	$self-> cursorVisible( $self-> { tab}-> { enabled});
 }
 
@@ -746,17 +798,26 @@ sub get_default_size
 	return @stdMetrics;
 }
 
-sub value        {($#_)?$_[0]-> set_value       ($_[1])                 : return $_[0]-> {value}       }
+sub designStyle
+{
+	return $_[0]->SUPER::designStyle unless $#_;
+	my $self = shift;
+	$self->SUPER::designStyle($_[1]);
+	$self->reset if defined $self->{value};
+	$self->repaint;
+}
+
 sub autoTrack    {($#_)?$_[0]-> {autoTrack} =    $_[1]                  : return $_[0]-> {autoTrack}   }
+sub designStyles {(shift->SUPER::designStyles, 'xp')}
+sub max          {($#_)?$_[0]-> set_bounds($_[0]-> {'min'}, $_[1])      : return $_[0]-> {max};}
 sub min          {($#_)?$_[0]-> set_bounds($_[1], $_[0]-> {'max'})      : return $_[0]-> {min};}
 sub minThumbSize {($#_)?$_[0]-> set_min_thumb_size($_[1])               : return $_[0]-> {minThumbSize};}
-sub max          {($#_)?$_[0]-> set_bounds($_[0]-> {'min'}, $_[1])      : return $_[0]-> {max};}
-sub step         {($#_)?$_[0]-> set_steps ($_[1], $_[0]-> {'pageStep'}) : return $_[0]-> {step};}
-sub style        { $#_ ? ($_[0]->{style} = $_[1], $_[0]->repaint) : $_[0]->{style} }
 sub pageStep     {($#_)?$_[0]-> set_steps ($_[0]-> {'step'}, $_[1])     : return $_[0]-> {pageStep};}
 sub partial      {($#_)?$_[0]-> set_proportion ($_[1], $_[0]-> {'whole'}): return $_[0]-> {partial};}
-sub whole        {($#_)?$_[0]-> set_proportion($_[0]-> {'partial'},$_[1]): return $_[0]-> {whole};}
+sub step         {($#_)?$_[0]-> set_steps ($_[1], $_[0]-> {'pageStep'}) : return $_[0]-> {step};}
+sub value        {($#_)?$_[0]-> set_value       ($_[1])                 : return $_[0]-> {value}       }
 sub vertical     {($#_)?$_[0]-> set_vertical  ($_[1])                   : return $_[0]-> {vertical}    }
+sub whole        {($#_)?$_[0]-> set_proportion($_[0]-> {'partial'},$_[1]): return $_[0]-> {whole};}
 
 1;
 
@@ -883,11 +944,6 @@ This determines the minimal increment/decrement to C<value> during
 mouse/keyboard interaction.
 
 Default value is 1.
-
-=item style STRING = [ 'xp' | 'os2 ]
-
-Defines the scrollbar drawing style, that was historically different on windows
-and the other platforms. It is possible to define own styles.
 
 =item value INTEGER
 
