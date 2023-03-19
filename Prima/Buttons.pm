@@ -93,6 +93,7 @@ sub designStyle
 {
 	return $_[0]->SUPER::designStyle unless $#_;
 	$_[0]->SUPER::designStyle($_[1]);
+	$_[0]->buffered(1) if $_[0]->SUPER::designStyle eq 'flat';
 	$_[0]->repaint;
 }
 
@@ -481,20 +482,29 @@ sub on_paint
 {
 	my ($self,$canvas)  = @_;
 	my @clr  = ( $self-> color, $self-> backColor);
-	@clr = ( $self-> hiliteColor, $self-> hiliteBackColor)
-		if $self-> { default};
+	my $design = $self->designStyle;
+
+	my $boldify;
+	if ($self-> { default}) {
+		if ( $design eq 'flat') {
+			@clr = ( $self-> hiliteBackColor, $self-> hiliteColor);
+			$boldify++;
+		} else {
+			@clr = ( $self-> hiliteColor, $self-> hiliteBackColor);
+		}
+	}
 	$clr[1] = $self-> prelight_color($clr[1]) if $self->{hilite} && $self-> enabled;
 	@clr = ( $self-> disabledColor, $self-> disabledBackColor)
 		if !$self-> enabled;
 	my @size = $canvas-> size;
 
 	my $shift  = $self-> {checked} ? 1 : 0;
-	if ( $self->designStyle eq 'flat') {
+	if ( $design eq 'flat') {
 		$self->paint_flat($canvas, @size, @clr);
 	} else {
 		$self->paint_default($canvas, @size, @clr);
-		$shift += $self-> {pressed} ? 2 : 0;
 	}
+	$shift += $self-> {pressed} ? 2 : 0;
 
 	my $capOk = length($self-> text) > 0;
 	my ( $fw, $fh) = $capOk ? $self-> caption_box($canvas) : ( 0, 0);
@@ -612,7 +622,11 @@ CAPTION:
 		$textAtY = ( $size[1] - $fh) / 2 - $shift;
 	}
 	$canvas-> color( $clr[0]);
-	$self-> draw_caption( $canvas, $textAtX, $textAtY) if $capOk;
+	if ($capOk) {
+		$canvas-> font-> style( $canvas-> font-> style  | fs::Bold )
+			if $boldify;
+		$self-> draw_caption( $canvas, $textAtX, $textAtY);
+	}
 	$canvas-> rect_focus( 4, 4, $size[0] - 5, $size[1] - 5 ) if !$capOk && $self-> focused;
 }
 
@@ -956,6 +970,83 @@ sub profile_default
 	}
 }
 
+sub paint_default
+{
+	my ( $self, $canvas, $w, $h, @clr) = @_;
+
+	my ( $image, $imNo);
+	if ( $self-> { checked}) {
+		$imNo = $self-> { pressed} ? 3 : 2;
+	} else {
+		$imNo = $self-> { pressed} ? 1 : 0;
+	};
+	my $xStart;
+	$image = $images[ $imNo];
+	my @c3d  = ( $self-> light3DColor, $self-> dark3DColor);
+
+	if ( $image) {
+		$canvas-> put_image( 0, ( $h - $image-> height) / 2, $image);
+		$xStart = $image-> width;
+	} else {
+		my $s = $::application->uiScaling;
+		$xStart = $s * 16;
+		push ( @c3d, shift @c3d)
+			if $self-> { pressed};
+		$canvas-> rect3d( 1, ( $h - $s*14) / 2, $s*15, ( $h + $s*14) / 2, 1,
+			@c3d, $clr[ 1]);
+		if ( $self-> { checked}) {
+			my $at = $self-> { pressed} ? 1 : 0;
+			$canvas-> color( cl::Black);
+			$canvas-> lineWidth( 2);
+			my $yStart = ( $h - $s*14) / 2;
+			$canvas-> line(
+				$at + $s*4, $yStart - $at +  $s*8,
+				$at + $s*5 , $yStart - $at + $s*3
+			);
+			$canvas-> line(
+				$at + $s*5 , $yStart - $at + $s*3,
+				$at + $s*12, $yStart - $at + $s*12
+			);
+			$canvas-> lineWidth( 0);
+		}
+	}
+	return $xStart;
+}
+
+sub paint_flat
+{
+	my ( $self, $canvas, $w, $h, @clr) = @_;
+
+	my $s = $::application->uiScaling;
+	my $xStart = $s * 16;
+
+	$canvas-> graphic_context( sub {
+		$canvas-> antialias(1);
+		$canvas-> lineWidth( 1 );
+		$canvas-> color($clr[0]);
+		$canvas-> new_path-> round_rect(
+			1, ( $h - $s*14) / 2, $s*15, ( $h + $s*14) / 2,
+			$s * 7,
+		)-> stroke;
+
+		if ( $self-> { checked} || $self->{ pressed } ) {
+			my $at = $self-> { pressed} ? 1 : 0;
+			$canvas-> color( cl::Black);
+			$canvas-> lineWidth( 2);
+			my $yStart = ( $h - $s*14) / 2;
+			$canvas-> line(
+				$at + $s*4, $yStart - $at +  $s*8,
+				$at + $s*5 , $yStart - $at + $s*3
+			);
+			$canvas-> line(
+				$at + $s*5 , $yStart - $at + $s*3,
+				$at + $s*12, $yStart - $at + $s*12
+			);
+		}
+	});
+	return $xStart;
+}
+
 sub on_paint
 {
 	my ($self,$canvas) = @_;
@@ -977,41 +1068,11 @@ sub on_paint
 		$canvas-> bar( 0, 0, @size);
 	}
 
-	my ( $image, $imNo);
-	if ( $self-> { checked}) {
-		$imNo = $self-> { pressed} ? 3 : 2;
-	} else {
-		$imNo = $self-> { pressed} ? 1 : 0;
-	};
 	my $xStart;
-	$image = $images[ $imNo];
-	my @c3d  = ( $self-> light3DColor, $self-> dark3DColor);
-
-	if ( $image) {
-		$canvas-> put_image( 0, ( $size[1] - $image-> height) / 2, $image);
-		$xStart = $image-> width;
+	if ( $self->designStyle eq 'flat') {
+		$xStart = $self->paint_flat( $canvas, @size, @clr);
 	} else {
-		my $s = $::application->uiScaling;
-		$xStart = $s * 16;
-		push ( @c3d, shift @c3d)
-			if $self-> { pressed};
-		$canvas-> rect3d( 1, ( $size[1] - $s*14) / 2, $s*15, ( $size[1] + $s*14) / 2, 1,
-			@c3d, $clr[ 1]);
-		if ( $self-> { checked}) {
-			my $at = $self-> { pressed} ? 1 : 0;
-			$canvas-> color( cl::Black);
-			$canvas-> lineWidth( 2);
-			my $yStart = ( $size[1] - $s*14) / 2;
-			$canvas-> line(
-				$at + $s*4, $yStart - $at +  $s*8,
-				$at + $s*5 , $yStart - $at + $s*3
-			);
-			$canvas-> line(
-				$at + $s*5 , $yStart - $at + $s*3,
-				$at + $s*12, $yStart - $at + $s*12
-			);
-			$canvas-> lineWidth( 0);
-		}
+		$xStart = $self->paint_default( $canvas, @size, @clr);
 	}
 
 	$canvas-> color( $clr[ 0]);
@@ -1031,27 +1092,9 @@ sub profile_default
 	return $def;
 }
 
-sub on_paint
+sub paint_default
 {
-	my ($self,$canvas) = @_;
-	my @clr;
-	if ( $self-> enabled) {
-		if ( $self-> focused) {
-			@clr = ($self-> hiliteColor, $self-> hiliteBackColor);
-		} else {
-			@clr = ($self-> color, $self-> backColor);
-		}
-		$clr[1] = $self-> prelight_color($clr[1]) if $self->{hilite} && $self-> enabled;
-	} else {
-		@clr = ($self-> disabledColor, $self-> disabledBackColor);
-	}
-
-	my @size = $canvas-> size;
-	unless ( $self-> transparent) {
-		$canvas-> color( $clr[ 1]);
-		$canvas-> bar( 0, 0, @size);
-	}
-
+	my ( $self, $canvas, $w, $h, @clr) = @_;
 	my ( $image, $imNo);
 	if ( $self-> { checked}) {
 		$imNo = $self-> { pressed} ? 7 : 6;
@@ -1062,12 +1105,12 @@ sub on_paint
 	my $xStart;
 	$image = $images[ $imNo];
 	if ( $image) {
-		$canvas-> put_image( 0, ( $size[1] - $image-> height) / 2, $image);
+		$canvas-> put_image( 0, ( $h - $image-> height) / 2, $image);
 		$xStart = $image-> width;
 	} else {
 		my $s = $::application->uiScaling;
 		$xStart = $s * 16;
-		my $y = ( $size[1] - $s * 16) / 2;
+		my $y = ( $h - $s * 16) / 2;
 		my @xs = map { $s * $_ } ( 0, 8, 16, 8);
 		my @ys = map { $s * $_ } ( 8, 16, 8, 0);
 		for ( @ys) {$_+=$y};
@@ -1104,6 +1147,60 @@ sub on_paint
 			$canvas-> fillpoly( [ $s*6, $y+$s*8, $s*8, $y+$s*10, $s*10, $y+$s*8, $s*8, $y+$s*6]);
 		}
 	}
+}
+
+sub paint_flat
+{
+	my ( $self, $canvas, $w, $h, @clr) = @_;
+
+	my $s = $::application->uiScaling;
+	my $xStart = $s * 16;
+
+	$canvas-> graphic_context( sub {
+		$canvas-> antialias(1);
+		$canvas-> lineWidth( 1 );
+		$canvas-> color($clr[0]);
+
+		my $center = $h / 2;
+		my $x = 1 + $s * 7.5;
+		$canvas-> ellipse( $x, $center, $s * 15, $s * 15);
+
+		if ( $self-> { checked} || $self->{ pressed } ) {
+			my $at = $self-> {pressed} ? 1 : 0;
+			$canvas-> fill_ellipse( $x + $at, $center - $at, $s * 8, $s * 8);
+		}
+	});
+	return $xStart;
+}
+
+sub on_paint
+{
+	my ($self,$canvas) = @_;
+	my @clr;
+	if ( $self-> enabled) {
+		if ( $self-> focused) {
+			@clr = ($self-> hiliteColor, $self-> hiliteBackColor);
+		} else {
+			@clr = ($self-> color, $self-> backColor);
+		}
+		$clr[1] = $self-> prelight_color($clr[1]) if $self->{hilite} && $self-> enabled;
+	} else {
+		@clr = ($self-> disabledColor, $self-> disabledBackColor);
+	}
+
+	my @size = $canvas-> size;
+	unless ( $self-> transparent) {
+		$canvas-> color( $clr[ 1]);
+		$canvas-> bar( 0, 0, @size);
+	}
+
+	my $xStart;
+	if ( $self->designStyle eq 'flat') {
+		$xStart = $self->paint_flat( $canvas, @size, @clr);
+	} else {
+		$xStart = $self->paint_default( $canvas, @size, @clr);
+	}
+
 	$canvas-> color( $clr[ 0]);
 	my ( $fw, $fh) = $self-> caption_box( $canvas);
 	$self-> draw_caption( $canvas, $xStart * 1.5, ( $size[1] - $fh) / 2 );
@@ -1201,10 +1298,15 @@ sub on_paint
 		$canvas-> bar( 0, 0, @size);
 	}
 	my $fh = $canvas-> font-> height;
-	$canvas-> color( $self-> light3DColor);
-	$canvas-> rectangle( 1, 0, $size[0] - 1, $size[1] - $fh / 2 - 2);
-	$canvas-> color( $self-> dark3DColor);
-	$canvas-> rectangle( 0, 1, $size[0] - 2, $size[1] - $fh / 2 - 1);
+	if ( $self->designStyle eq 'flat') {
+		$canvas-> color( $clr[0]);
+		$canvas-> rectangle( 0, 0, $size[0] - 1, $size[1] - $fh / 2 - 1);
+	} else {
+		$canvas-> color( $self-> light3DColor);
+		$canvas-> rectangle( 1, 0, $size[0] - 1, $size[1] - $fh / 2 - 2);
+		$canvas-> color( $self-> dark3DColor);
+		$canvas-> rectangle( 0, 1, $size[0] - 2, $size[1] - $fh / 2 - 1);
+	}
 	my $c = $self->text;
 	if ( length( $c) > 0) {
 		$c = $self-> text_shape($c, skip_if_simple => 1) || $c;
