@@ -547,6 +547,31 @@ Application_get_hint_widget( Handle self)
 }
 
 static Bool
+propagate_design_style( Handle owner, Handle self, void * dummy)
+{
+	my-> set_designStyle( self, var-> designStyle);
+	return false;
+}
+
+SV *
+Application_designStyle( Handle self, Bool set, SV *designStyle)
+{
+	if ( !set) {
+		return newSVsv(var->designStyle);
+	} else if ( var-> stage <= csFrozen) {
+		if ( var-> designStyle == designStyle) {
+			my-> first_that( self, (void*)propagate_design_style, NULL);
+			return NULL_SV;
+		}
+		if ( var-> designStyle )
+			sv_free( var-> designStyle );
+		var-> designStyle = SvOK( designStyle ) ? newSVsv(designStyle) : newSVpv("default", 0);
+		my-> first_that( self, (void*)propagate_design_style, NULL);
+	}
+	return NULL_SV;
+}
+
+static Bool
 icon_notify ( Handle self, Handle child, Handle icon)
 {
 	if ( kind_of( child, CWindow) && (( PWidget) child)-> options. optOwnerIcon) {

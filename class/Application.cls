@@ -13,6 +13,7 @@ object Prima::Application( Prima::Widget)
 	property  Bool   clipChildren;
 	property  Bool   clipOwner;
 	property  Color  colorIndex( int index);
+	property  SV*    designStyle;
 	property  Bool   enabled;
 	property  Bool   focused;
 	property  Handle icon;
