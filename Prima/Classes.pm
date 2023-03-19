@@ -1462,6 +1462,7 @@ sub profile_check_in
 sub capture               {($#_)?shift-> set_capture     (@_)   :return $_[0]-> get_capture;     }
 sub centered              {($#_)?$_[0]-> set_centered(1,1)      :$_[0]-> raise_wo("centered");   }
 sub dark3DColor           {return shift-> colorIndex( ci::Dark3DColor , @_)};
+sub designStyles          {qw(classic flat)}
 sub disabledBackColor     {return shift-> colorIndex( ci::Disabled    , @_)};
 sub disabledColor         {return shift-> colorIndex( ci::DisabledText, @_)};
 sub hiliteBackColor       {return shift-> colorIndex( ci::Hilite      , @_)};
