@@ -92,9 +92,10 @@ sub init
 sub designStyle
 {
 	return $_[0]->SUPER::designStyle unless $#_;
-	$_[0]->SUPER::designStyle($_[1]);
-	$_[0]->buffered(1) if $_[0]->SUPER::designStyle eq 'flat';
-	$_[0]->repaint;
+	my $self = shift;
+	$self->SUPER::designStyle($_[1]);
+	$self->buffered(1) if $self->SUPER::designStyle eq 'flat';
+	$self->repaint;
 }
 
 sub cancel_transaction
@@ -432,7 +433,7 @@ sub init
 	return %profile;
 }
 
-sub paint_default
+sub paint_classic
 {
 	my ( $self, $canvas, $w, $h, @clr) = @_;
 	my @fbar = $self-> {default} ?
@@ -502,7 +503,7 @@ sub on_paint
 	if ( $design eq 'flat') {
 		$self->paint_flat($canvas, @size, @clr);
 	} else {
-		$self->paint_default($canvas, @size, @clr);
+		$self->paint_classic($canvas, @size, @clr);
 	}
 	$shift += $self-> {pressed} ? 2 : 0;
 
@@ -970,7 +971,7 @@ sub profile_default
 	}
 }
 
-sub paint_default
+sub paint_classic
 {
 	my ( $self, $canvas, $w, $h, @clr) = @_;
 
@@ -1072,7 +1073,7 @@ sub on_paint
 	if ( $self->designStyle eq 'flat') {
 		$xStart = $self->paint_flat( $canvas, @size, @clr);
 	} else {
-		$xStart = $self->paint_default( $canvas, @size, @clr);
+		$xStart = $self->paint_classic( $canvas, @size, @clr);
 	}
 
 	$canvas-> color( $clr[ 0]);
@@ -1092,7 +1093,7 @@ sub profile_default
 	return $def;
 }
 
-sub paint_default
+sub paint_classic
 {
 	my ( $self, $canvas, $w, $h, @clr) = @_;
 	my ( $image, $imNo);
@@ -1198,7 +1199,7 @@ sub on_paint
 	if ( $self->designStyle eq 'flat') {
 		$xStart = $self->paint_flat( $canvas, @size, @clr);
 	} else {
-		$xStart = $self->paint_default( $canvas, @size, @clr);
+		$xStart = $self->paint_classic( $canvas, @size, @clr);
 	}
 
 	$canvas-> color( $clr[ 0]);
