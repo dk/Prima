@@ -15,7 +15,6 @@ object Prima::Widget( Prima::Drawable)
 	Handle    currentWidget;	    # current widget pointer
 	int       cursorLock;               # cursor lock count
 	NPoint    designScale;              # font width and height for view design
-	SV *      designStyle;              # generic visual style
 	char   *  dndAware;                 # NULL for no, "1" for all formats, other for selected
 	char   *  helpContext;              # help context string
 	SV     *  hint;                     # hint tag text
@@ -28,6 +27,7 @@ object Prima::Widget( Prima::Drawable)
 	int       selectingButtons;         # which mouse buttons can select a view
 	Point     sizeMin;                  # default min size
 	Point     sizeMax;                  # default max size
+	SV *      skin;                     # generic visual style
 	int       tabOrder;                 # tab ordering number
 	SV     *  text;                     # caption text
 	int       widgetClass;              # predefined system class
@@ -65,7 +65,6 @@ object Prima::Widget( Prima::Drawable)
 	property  Point  cursorSize;
 	property  Bool   cursorVisible;
 	property  NPoint designScale;
-	property  SV*    designStyle;
 	property  SV*    dndAware;
 	property  Bool   enabled;
 	property  int    geometry;
@@ -86,6 +85,7 @@ object Prima::Widget( Prima::Drawable)
 	property  Bool   ownerFont;
 	property  Bool   ownerHint;
 	property  Bool   ownerShowHint;
+	property  Bool   ownerSkin;
 	property  Bool   ownerPalette;
 	property  Point  origin;
 	property  SV  *  packInfo;
@@ -109,6 +109,7 @@ object Prima::Widget( Prima::Drawable)
 	property  Point  size;
 	property  Point  sizeMax;
 	property  Point  sizeMin;
+	property  SV*    skin;
 	property  Bool   syncPaint;
 	property  int    tabOrder;
 	property  Bool   tabStop;

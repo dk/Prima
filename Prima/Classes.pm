@@ -1180,7 +1180,6 @@ sub notification_types { return \%RNT; }
 	currentWidget     => undef,
 	cursorVisible     => 0,
 	dark3DColor       => cl::Dark3DColor,
-	designStyle       => undef,
 	disabledBackColor => cl::Disabled,
 	disabledColor     => cl::DisabledText,
 	dndAware          => 0,
@@ -1200,10 +1199,10 @@ sub notification_types { return \%RNT; }
 	left              => 100,
 	ownerColor        => 0,
 	ownerBackColor    => 0,
-	ownerDesignStyle  => 1,
 	ownerFont         => 1,
 	ownerHint         => 1,
 	ownerShowHint     => 1,
+	ownerSkin         => 1,
 	ownerPalette      => 1,
 	packInfo          => undef,
 	packPropagate     => 1,
@@ -1229,6 +1228,7 @@ sub notification_types { return \%RNT; }
 	selectingButtons  => mb::Left,
 	shape             => undef,
 	showHint          => 1,
+	skin              => undef,
 	syncPaint         => 0,
 	tabOrder          => -1,
 	tabStop           => 1,
@@ -1462,7 +1462,6 @@ sub profile_check_in
 sub capture               {($#_)?shift-> set_capture     (@_)   :return $_[0]-> get_capture;     }
 sub centered              {($#_)?$_[0]-> set_centered(1,1)      :$_[0]-> raise_wo("centered");   }
 sub dark3DColor           {return shift-> colorIndex( ci::Dark3DColor , @_)};
-sub designStyles          {qw(classic flat)}
 sub disabledBackColor     {return shift-> colorIndex( ci::Disabled    , @_)};
 sub disabledColor         {return shift-> colorIndex( ci::DisabledText, @_)};
 sub hiliteBackColor       {return shift-> colorIndex( ci::Hilite      , @_)};
@@ -1477,6 +1476,7 @@ sub popupDisabledColor    { return shift-> popupColorIndex( ci::DisabledText, @_
 sub popupHiliteColor      { return shift-> popupColorIndex( ci::HiliteText  , @_)};
 sub popupDark3DColor      { return shift-> popupColorIndex( ci::Dark3DColor , @_)};
 sub popupLight3DColor     { return shift-> popupColorIndex( ci::Light3DColor, @_)};
+sub skins                 {qw(classic flat)}
 
 sub x_centered       {($#_)?$_[0]-> set_centered(1,0)      :$_[0]-> raise_wo("x_centered"); }
 sub y_centered       {($#_)?$_[0]-> set_centered(0,1)      :$_[0]-> raise_wo("y_centered"); }
@@ -2304,7 +2304,6 @@ sub profile_default
 	my $def  = $_[ 0]-> SUPER::profile_default;
 	my %prf = (
 		autoClose      => 0,
-		designStyle    => 'default',
 		pointerType    => cr::Arrow,
 		pointerVisible => 1,
 		language       => Prima::Application->get_system_info->{guiLanguage},
@@ -2314,11 +2313,12 @@ sub profile_default
 		scaleChildren  => 0,
 		ownerColor     => 0,
 		ownerBackColor => 0,
-		ownerDesignStyle=>0,
 		ownerFont      => 0,
 		ownerShowHint  => 0,
+		ownerSkin      => 0,
 		ownerPalette   => 0,
 		showHint       => 1,
+		skin           => 'default',
 		hintClass      => 'Prima::HintWidget',
 		hintColor      => cl::Black,
 		hintBackColor  => 0xffff80,

@@ -94,7 +94,7 @@ package main;
 
 sub set_style
 {
-	$_[0]->designStyle($_[1]);
+	$_[0]->skin($_[1]);
 	$_[0]->repaint;
 }
 
@@ -105,7 +105,7 @@ my $w = Prima::MainWindow-> create(
 	width     => 400,
 	designScale => [7, 16],
 	menuItems => [
-		['~Design' => [
+		['~Skin' => [
 			[ '(*default' => 'Default' => \&set_style ],
 			[ ')flat'     => 'Flat'    => \&set_style ],
 		]],

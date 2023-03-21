@@ -108,9 +108,9 @@ sub on_size
 
 sub draw_pad
 {
-	my ( $self, $canvas, $part, $base_color, $designStyle) = @_;
+	my ( $self, $canvas, $part, $base_color, $skin) = @_;
 
-	if ( $designStyle eq 'flat') {
+	if ( $skin eq 'flat') {
 		my $hbc = $self-> hiliteBackColor;
 		my $clr;
 		if ( $self->{$part}->{pressed}) {
@@ -171,12 +171,12 @@ sub fix_triangle
 sub on_paint
 {
 	my ($self,$canvas) = @_;
-	my $designStyle = $self->designStyle;
+	my $skin = $self->skin;
 	my @clr;
 	my @c3d = ( $self-> light3DColor, $self-> dark3DColor);
 	if ( $self-> enabled) {
 		@clr = ($self-> color, $self-> backColor);
-		$clr[0] = $self->hiliteColor if $designStyle eq 'flat';
+		$clr[0] = $self->hiliteColor if $skin eq 'flat';
 	} else {
 		@clr = ($self-> disabledColor, $self-> disabledBackColor);
 	}
@@ -185,7 +185,7 @@ sub on_paint
 	my $v    = $self-> { vertical};
 	my ( $maxx, $maxy) = ( $size[0]-1, $size[1]-1);
 
-	if ( $designStyle ne 'flat') {
+	if ( $skin ne 'flat') {
 		$canvas-> color( $c3d[0]);
 		$canvas-> line( 0, 0, $maxx - 1, 0);
 		$canvas-> line( $maxx, 0, $maxx, $maxy - 1);
@@ -197,7 +197,7 @@ sub on_paint
 	my $collapsed = ($v ? $maxy : $maxx) < $self->{minThumbSize};
 
 	unless ( $collapsed ) {
-		$self-> draw_pad( $canvas, b1 => $clr[1], $designStyle);
+		$self-> draw_pad( $canvas, b1 => $clr[1], $skin);
 		$canvas-> color( $self-> {b1}-> { enabled} ? $clr[ 0] : $self-> disabledColor);
 		my $a = $self-> { b1}-> { pressed} ? 1 : 0;
 		my @spot = map { int($_ + .5) } $v ? (
@@ -215,7 +215,7 @@ sub on_paint
 	}
 
 	unless ( $collapsed ) {
-		$self-> draw_pad( $canvas, b2 => $clr[1], $designStyle);
+		$self-> draw_pad( $canvas, b2 => $clr[1], $skin);
 		$canvas-> color( $self-> {b2}-> { enabled} ? $clr[ 0] : $self-> disabledColor);
 		my $a = $self-> { b2}-> { pressed} ? 1 : 0;
 		my @spot = map { int($_ + .5) } $v ? (
@@ -243,13 +243,13 @@ sub on_paint
 			if ( defined $self-> { $_}-> {rect})
 			{
 				my @r = @{$self-> {$_}-> {rect}};
-				if ( $designStyle ne 'flat') {
+				if ( $skin ne 'flat') {
 					$canvas-> color( $c3d[1]);
 					$v ? ( $canvas-> line( $r[0]-1, $r[1], $r[0]-1, $r[3])):
 						( $canvas-> line( $r[0], $r[3]+1, $r[2], $r[3]+1));
 				}
 				$canvas-> color( $self-> {$_}-> {pressed} ? $clr[0] : $clr[1]);
-				if ( $designStyle eq 'xp') {
+				if ( $skin eq 'xp') {
 					$canvas-> backColor( $c3d[0]);
 					$canvas-> rop2(rop::CopyPut);
 					$canvas-> fillPattern([(0xAA,0x55) x 4]);
@@ -262,10 +262,10 @@ sub on_paint
 			}
 		}
 
-		$self-> draw_pad( $canvas, tab => $clr[1], $designStyle);
+		$self-> draw_pad( $canvas, tab => $clr[1], $skin);
 		if (
 			$self-> {minThumbSize} > 8 &&
-			$designStyle eq 'classic' &&
+			$skin eq 'classic' &&
 			(( $v ? $maxx : $maxy) > 10)
 		) {
 			$canvas-> color( $clr[ 0]);
@@ -303,7 +303,7 @@ sub on_paint
 		my @r = $collapsed ? 
 			( 0, 0, $maxx, $maxy ) :
 			@{$self-> {groove}-> {rect}};
-		if ( $designStyle ne 'flat') {
+		if ( $skin ne 'flat') {
 			$canvas-> color( $c3d[1]);
 			$v ?
 				( $canvas-> line( $r[0]-1, $r[1], $r[0]-1, $r[3])):
@@ -311,7 +311,7 @@ sub on_paint
 		}
 		$canvas-> color( $clr[1]);
 
-		if ( $designStyle eq 'xp') {
+		if ( $skin eq 'xp') {
 			$canvas-> backColor( $c3d[1]);
 			$canvas-> fillPattern([(0xAA,0x55) x 4]);
 			$canvas-> rop2(rop::CopyPut);
@@ -668,7 +668,7 @@ sub reset
 		}
 	}
 
-	if ($self->designStyle eq 'flat') {
+	if ($self->skin eq 'flat') {
 		for my $part ( qw(b1 b2 tab left right groove)) {
 			my $r = $self->{$part}->{rect} or next;
 			if ( $v ) {
@@ -798,22 +798,22 @@ sub get_default_size
 	return @stdMetrics;
 }
 
-sub designStyle
+sub skin
 {
-	return $_[0]->SUPER::designStyle unless $#_;
+	return $_[0]->SUPER::skin unless $#_;
 	my $self = shift;
-	$self->SUPER::designStyle($_[1]);
+	$self->SUPER::skin($_[1]);
 	$self->reset if defined $self->{value};
 	$self->repaint;
 }
 
 sub autoTrack    {($#_)?$_[0]-> {autoTrack} =    $_[1]                  : return $_[0]-> {autoTrack}   }
-sub designStyles {(shift->SUPER::designStyles, 'xp')}
 sub max          {($#_)?$_[0]-> set_bounds($_[0]-> {'min'}, $_[1])      : return $_[0]-> {max};}
 sub min          {($#_)?$_[0]-> set_bounds($_[1], $_[0]-> {'max'})      : return $_[0]-> {min};}
 sub minThumbSize {($#_)?$_[0]-> set_min_thumb_size($_[1])               : return $_[0]-> {minThumbSize};}
 sub pageStep     {($#_)?$_[0]-> set_steps ($_[0]-> {'step'}, $_[1])     : return $_[0]-> {pageStep};}
 sub partial      {($#_)?$_[0]-> set_proportion ($_[1], $_[0]-> {'whole'}): return $_[0]-> {partial};}
+sub skins        {(shift->SUPER::skins, 'xp')}
 sub step         {($#_)?$_[0]-> set_steps ($_[1], $_[0]-> {'pageStep'}) : return $_[0]-> {step};}
 sub value        {($#_)?$_[0]-> set_value       ($_[1])                 : return $_[0]-> {value}       }
 sub vertical     {($#_)?$_[0]-> set_vertical  ($_[1])                   : return $_[0]-> {vertical}    }

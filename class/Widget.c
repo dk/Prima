@@ -64,10 +64,10 @@ Widget_init( Handle self, HV * profile)
 	my-> set_font               ( self, Font_buffer);
 	opt_assign( optOwnerBackColor, pget_B( ownerBackColor));
 	opt_assign( optOwnerColor    , pget_B( ownerColor));
-	opt_assign( optOwnerDesignStyle,pget_B( ownerDesignStyle));
 	opt_assign( optOwnerFont     , pget_B( ownerFont));
 	opt_assign( optOwnerHint     , pget_B( ownerHint));
 	opt_assign( optOwnerShowHint , pget_B( ownerShowHint));
+	opt_assign( optOwnerSkin     , pget_B( ownerSkin));
 	opt_assign( optOwnerPalette  , pget_B( ownerPalette));
 	my-> colorIndex( self, true,  ciHiliteText,   pget_i( hiliteColor)      );
 	my-> colorIndex( self, true,  ciHilite,       pget_i( hiliteBackColor)  );
@@ -83,7 +83,6 @@ Widget_init( Handle self, HV * profile)
 	my-> set_buffered           ( self, pget_B( buffered));
 	my-> set_clipChildren       ( self, pget_B( clipChildren));
 	my-> set_cursorVisible      ( self, pget_B( cursorVisible));
-	my-> set_designStyle        ( self, pget_sv( designStyle));
 	my-> set_dndAware           ( self, pget_sv( dndAware));
 	my-> set_growMode           ( self, pget_i( growMode));
 	my-> set_helpContext        ( self, pget_sv( helpContext));
@@ -102,6 +101,7 @@ Widget_init( Handle self, HV * profile)
 	my-> set_pointerType        ( self, pget_i( pointerType));
 	my-> set_selectingButtons   ( self, pget_i( selectingButtons));
 	my-> set_selectable         ( self, pget_B( selectable));
+	my-> set_skin               ( self, pget_sv( skin));
 	my-> set_showHint           ( self, pget_B( showHint));
 	my-> set_tabOrder           ( self, pget_i( tabOrder));
 	my-> set_tabStop            ( self, pget_B( tabStop));
@@ -261,8 +261,8 @@ Widget_done( Handle self)
 	apc_widget_destroy( self);
 	if ( var-> hint ) sv_free( var->hint);
 	var-> hint = NULL;
-	if ( var-> designStyle ) sv_free( var->designStyle);
-	var-> designStyle = NULL;
+	if ( var-> skin ) sv_free( var->skin);
+	var-> skin = NULL;
 	free( var-> helpContext);
 	var-> helpContext = NULL;
 
@@ -738,8 +738,8 @@ Widget_set( Handle self, HV * profile)
 				my-> set_font ( self, CWidget( postOwner)-> get_font( postOwner));
 				opt_set( optOwnerFont);
 			}
-			if ( is_opt( optOwnerDesignStyle))
-				my-> set_designStyle( self, NULL_SV);
+			if ( is_opt( optOwnerSkin))
+				my-> set_skin( self, NULL_SV);
 		}
 		if ( var-> geometry != gtDefault) {
 			geometry = var-> geometry;
@@ -1564,43 +1564,43 @@ Widget_cursorVisible( Handle self, Bool set, Bool cursorVisible)
 }
 
 static Bool
-propagate_design_style( Handle owner, Handle self, void * dummy)
+propagate_skin( Handle owner, Handle self, void * dummy)
 {
 	enter_method;
-	my-> set_designStyle( self, var-> designStyle);
+	my-> set_skin( self, var-> skin);
 	return false;
 }
 
 SV *
-Widget_designStyle( Handle self, Bool set, SV *designStyle)
+Widget_skin( Handle self, Bool set, SV *skin)
 {
 	if ( !set) {
 		return
-			is_opt( optOwnerDesignStyle) ? (
+			is_opt( optOwnerSkin) ? (
 				var-> owner ?
-					CWidget(var->owner)->get_designStyle(var->owner) :
+					CWidget(var->owner)->get_skin(var->owner) :
 					NULL_SV
 			) : (
-				(var->designStyle == NULL) ?
+				(var->skin == NULL) ?
 					NULL_SV :
-					newSVsv(var->designStyle)
+					newSVsv(var->skin)
 			);
 	} else if ( var-> stage <= csFrozen) {
 		enter_method;
-		if ( var-> designStyle == designStyle) {
-			my-> first_that( self, (void*)propagate_design_style, NULL);
+		if ( var-> skin == skin) {
+			my-> first_that( self, (void*)propagate_skin, NULL);
 			return NULL_SV;
 		}
-		if ( var-> designStyle )
-			sv_free( var-> designStyle );
-		if ( SvOK( designStyle )) {
-			var-> designStyle = newSVsv(designStyle);
-			opt_clear( optOwnerDesignStyle);
-		} else if ( !is_opt( optOwnerDesignStyle)) {
-			var-> designStyle = NULL;
-			opt_set( optOwnerDesignStyle);
+		if ( var-> skin )
+			sv_free( var-> skin );
+		if ( SvOK( skin )) {
+			var-> skin = newSVsv(skin);
+			opt_clear( optOwnerSkin);
+		} else if ( !is_opt( optOwnerSkin)) {
+			var-> skin = NULL;
+			opt_set( optOwnerSkin);
 		}
-		my-> first_that( self, (void*)propagate_design_style, NULL);
+		my-> first_that( self, (void*)propagate_skin, NULL);
 	}
 	return NULL_SV;
 }
@@ -1837,6 +1837,30 @@ Widget_ownerShowHint( Handle self, Bool set, Bool ownerShowHint )
 		my-> set_showHint( self, CWidget( var-> owner)-> get_showHint ( var-> owner));
 		opt_set( optOwnerShowHint);
 	}
+	return false;
+}
+
+Bool
+Widget_ownerSkin( Handle self, Bool set, Bool ownerSkin )
+{
+	Bool before;
+	enter_method;
+	if ( !set)
+		return is_opt( optOwnerSkin);
+
+	before = is_opt( optOwnerSkin );
+	ownerSkin = ownerSkin ? 1 : 0;
+	if ( ownerSkin == before ) return false;
+
+	if ( ownerSkin )
+		my-> set_skin( self, NULL_SV);
+	else if ( var-> owner) {
+		PWidget o = (PWidget) var-> owner;
+		while ( o-> owner != NULL_HANDLE && o->options.optOwnerSkin)
+			o = (PWidget) o->owner;
+		my-> set_skin( self, o-> skin );
+	}
+
 	return false;
 }
 

@@ -13,7 +13,6 @@ object Prima::Application( Prima::Widget)
 	property  Bool   clipChildren;
 	property  Bool   clipOwner;
 	property  Color  colorIndex( int index);
-	property  SV*    designStyle;
 	property  Bool   enabled;
 	property  Bool   focused;
 	property  Handle icon;
@@ -30,14 +29,15 @@ object Prima::Application( Prima::Widget)
 	property  Handle owner;
 	property  Bool   ownerBackColor;
 	property  Bool   ownerColor;
-	property  Bool   ownerDesignStyle;
 	property  Bool   ownerFont;
 	property  Bool   ownerShowHint;
+	property  Bool   ownerSkin;
 	property  Bool   ownerPalette;
 	property  Bool   selectable;
 	property  Handle shape;
-	property  Point  size;
 	property  Bool   showHint;
+	property  Point  size;
+	property  SV*    skin;
 	property  Bool   syncPaint;
 	property  int    tabOrder;
 	property  Bool   tabStop;

@@ -89,12 +89,12 @@ sub init
 	return %profile;
 }
 
-sub designStyle
+sub skin
 {
-	return $_[0]->SUPER::designStyle unless $#_;
+	return $_[0]->SUPER::skin unless $#_;
 	my $self = shift;
-	$self->SUPER::designStyle($_[1]);
-	$self->buffered(1) if $self->SUPER::designStyle eq 'flat';
+	$self->SUPER::skin($_[1]);
+	$self->buffered(1) if $self->SUPER::skin eq 'flat';
 	$self->repaint;
 }
 
@@ -483,11 +483,11 @@ sub on_paint
 {
 	my ($self,$canvas)  = @_;
 	my @clr  = ( $self-> color, $self-> backColor);
-	my $design = $self->designStyle;
+	my $skin = $self->skin;
 
 	my $boldify;
 	if ($self-> { default}) {
-		if ( $design eq 'flat') {
+		if ( $skin eq 'flat') {
 			@clr = ( $self-> hiliteBackColor, $self-> hiliteColor);
 			$boldify++;
 		} else {
@@ -500,7 +500,7 @@ sub on_paint
 	my @size = $canvas-> size;
 
 	my $shift  = $self-> {checked} ? 1 : 0;
-	if ( $design eq 'flat') {
+	if ( $skin eq 'flat') {
 		$self->paint_flat($canvas, @size, @clr);
 	} else {
 		$self->paint_classic($canvas, @size, @clr);
@@ -1070,7 +1070,7 @@ sub on_paint
 	}
 
 	my $xStart;
-	if ( $self->designStyle eq 'flat') {
+	if ( $self->skin eq 'flat') {
 		$xStart = $self->paint_flat( $canvas, @size, @clr);
 	} else {
 		$xStart = $self->paint_classic( $canvas, @size, @clr);
@@ -1196,7 +1196,7 @@ sub on_paint
 	}
 
 	my $xStart;
-	if ( $self->designStyle eq 'flat') {
+	if ( $self->skin eq 'flat') {
 		$xStart = $self->paint_flat( $canvas, @size, @clr);
 	} else {
 		$xStart = $self->paint_classic( $canvas, @size, @clr);
@@ -1299,7 +1299,7 @@ sub on_paint
 		$canvas-> bar( 0, 0, @size);
 	}
 	my $fh = $canvas-> font-> height;
-	if ( $self->designStyle eq 'flat') {
+	if ( $self->skin eq 'flat') {
 		$canvas-> color( $clr[0]);
 		$canvas-> rectangle( 0, 0, $size[0] - 1, $size[1] - $fh / 2 - 1);
 	} else {

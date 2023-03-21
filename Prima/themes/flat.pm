@@ -7,10 +7,10 @@ sub install
 {
 	my ( $theme, $install) = @_;
 	if ( $install) {
-		$::application-> designStyle('flat');
+		$::application-> skin('flat');
 		return 1;
 	} else {
-		$::application-> designStyle('default');
+		$::application-> skin('default');
 	}
 }
 

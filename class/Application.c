@@ -547,26 +547,26 @@ Application_get_hint_widget( Handle self)
 }
 
 static Bool
-propagate_design_style( Handle owner, Handle self, void * dummy)
+propagate_skin( Handle owner, Handle self, void * dummy)
 {
-	my-> set_designStyle( self, var-> designStyle);
+	my-> set_skin( self, var-> skin);
 	return false;
 }
 
 SV *
-Application_designStyle( Handle self, Bool set, SV *designStyle)
+Application_skin( Handle self, Bool set, SV *skin)
 {
 	if ( !set) {
-		return newSVsv(var->designStyle);
+		return newSVsv(var->skin);
 	} else if ( var-> stage <= csFrozen) {
-		if ( var-> designStyle == designStyle) {
-			my-> first_that( self, (void*)propagate_design_style, NULL);
+		if ( var-> skin == skin) {
+			my-> first_that( self, (void*)propagate_skin, NULL);
 			return NULL_SV;
 		}
-		if ( var-> designStyle )
-			sv_free( var-> designStyle );
-		var-> designStyle = SvOK( designStyle ) ? newSVsv(designStyle) : newSVpv("default", 0);
-		my-> first_that( self, (void*)propagate_design_style, NULL);
+		if ( var-> skin )
+			sv_free( var-> skin );
+		var-> skin = SvOK( skin ) ? newSVsv(skin) : newSVpv("default", 0);
+		my-> first_that( self, (void*)propagate_skin, NULL);
 	}
 	return NULL_SV;
 }
@@ -1116,9 +1116,9 @@ Bool   Application_hintVisible( Handle self, Bool set, Bool visible)   { return 
 Handle Application_owner( Handle self, Bool set, Handle owner)         { return NULL_HANDLE; }
 Bool   Application_ownerColor( Handle self, Bool set, Bool ownerColor) { return false; }
 Bool   Application_ownerBackColor( Handle self, Bool set, Bool ownerBackColor) { return false; }
-Bool   Application_ownerDesignStyle( Handle self, Bool set, Bool ownerFont)   { return false; }
 Bool   Application_ownerFont( Handle self, Bool set, Bool ownerFont)   { return false; }
 Bool   Application_ownerShowHint( Handle self, Bool set, Bool ownerShowHint) { return false; }
+Bool   Application_ownerSkin( Handle self, Bool set, Bool ownerSkin)   { return false; }
 Bool   Application_ownerPalette( Handle self, Bool set, Bool ownerPalette) { return false; }
 Bool   Application_clipChildren( Handle self, Bool set, Bool clip)   { return true; }
 Bool   Application_clipOwner( Handle self, Bool set, Bool clip_by_children)   { return false; }
