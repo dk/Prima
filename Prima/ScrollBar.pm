@@ -319,8 +319,6 @@ sub on_paint
 			$canvas-> fillPattern(fp::Solid);
 		} else {
 			$canvas-> bar( @r);
-			$canvas-> color(0);
-			$canvas-> rectangle(@r);
 		}
 	}
 }

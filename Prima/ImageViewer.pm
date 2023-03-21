@@ -64,12 +64,7 @@ sub on_paint
 {
 	my ( $self, $canvas) = @_;
 	my @size   = $self-> size;
-
-	$self-> rect_bevel( $canvas, Prima::rect->new(@size)->inclusive,
-		width  => $self-> {borderWidth},
-		panel  => 1,
-		fill   => $self-> {image} ? undef : $self->backColor,
-	);
+	$self-> draw_border( $canvas, $self-> {image} ? undef : $self->backColor, @size);
 	return 1 unless $self->{image};
 
 	my @r = $self-> get_active_area( 0, @size);

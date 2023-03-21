@@ -463,14 +463,23 @@ sub init
 	$self->{selectedItem} = -1;
 	for ( qw( borderSize ))
 		{ $self-> {$_} = 1; }
+	$self->{lock_reset} = 1;
 	my %profile = $self-> SUPER::init(@_);
 
-	$self->{lock_reset} = 1;
 	for ( qw( borderSize parent parentIndex ))
 		{ $self-> $_( $profile{ $_}); }
 	delete $self->{lock_reset};
 
 	return %profile;
+}
+
+sub skin
+{
+	return $_[0]->SUPER::skin unless $#_;
+	my $self = shift;
+	$self->SUPER::skin($_[1]);
+	$self->borderSize(1) if $self->SUPER::skin eq 'flat';
+	$self->repaint;
 }
 
 sub borderSize
@@ -760,10 +769,19 @@ sub on_paint
 	my @sz = $self->size;
 	my $caches = $self->{cache};
 	if ( $self->{vertical} ) {
-		$self->rect_bevel( $canvas, 0, 0, $sz[0]-1, $sz[1]-1,
-			width => $self->{borderSize}, 
-			fill => $c[ci::Normal],
-		);
+		if ( $self-> skin eq 'flat') {
+			$canvas-> graphic_context( sub {
+				$canvas-> color( $self-> dark3DColor ); 
+				$canvas-> rectangle(0, 0, $sz[0]-1, $sz[1]-1);
+				$canvas-> color( $c[ci::Normal] );
+				$canvas-> bar( 1, 1, $sz[0]-2, $sz[1]-2);
+			});
+		} else {
+			$self->rect_bevel( $canvas, 0, 0, $sz[0]-1, $sz[1]-1,
+				width => $self->{borderSize}, 
+				fill => $c[ci::Normal],
+			);
+		}
 	} else {
 		$self->clear;
 	}

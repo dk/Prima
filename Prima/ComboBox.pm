@@ -346,25 +346,42 @@ sub Button_Paint
 	my @clr    = $ena ?
 		( $self-> color, $self-> backColor) :
 		( $self-> disabledColor, $self-> disabledBackColor);
-	$clr[1] = $self->prelight_color($clr[1]) if $self->{prelight};
+	my $rc;
 	my $lv = $owner-> listVisible;
-	my ( $rc, $lc) = ( $self-> light3DColor, $self-> dark3DColor);
-	( $rc, $lc) = ( $lc, $rc) if $lv;
-	$self-> rect_bevel(
-		$canvas, 0, 0, $w-1, $h-1,
-		fill => $self-> new_gradient(
-			palette  => [ $self-> dark3DColor, $clr[1], $self-> light3DColor ],
-			spline   => [0,0.5,1,0.5],
-			vertical => 0,
-		),
-		width => 2
-	);
 	my @triangle = fix_triangle( 4, $h * 0.6, $w/2, $h * 0.4, $w - 4, $h * 0.6 );
-	if ( $ena) {
-		$canvas-> color( $rc);
-		$canvas-> translate(1,-1);
-		$canvas-> fillpoly(\@triangle);
-		$canvas-> translate(0,0);
+	if ( $self-> skin eq 'flat') {
+		my $hbc = $self-> hiliteBackColor;
+		$canvas-> graphic_context( sub {
+			$canvas-> color( $self-> dark3DColor ); 
+			$canvas-> rectangle(0, 0, $w-1, $h-1);
+			my $c = cl::blend(
+				$self->map_color( $hbc ),
+				$self->map_color( $clr[1] ),
+				$self->{prelight} ? 0.33 : 0.66
+			);
+			$canvas-> color( $c );
+			$canvas-> bar( 1, 1, $w-2, $h-2);
+		});
+		$clr[0] = $self->hiliteColor;
+		$canvas-> translate(1,-1) if $lv;
+	} else {
+		$clr[1] = $self->prelight_color($clr[1]) if $self->{prelight};
+		$self-> rect_bevel(
+			$canvas, 0, 0, $w-1, $h-1,
+			fill => $self-> new_gradient(
+				palette  => [ $self-> dark3DColor, $clr[1], $self-> light3DColor ],
+				spline   => [0,0.5,1,0.5],
+				vertical => 0,
+			),
+			width => 2
+		);
+		$rc = $lv ? $self-> dark3DColor : $self-> light3DColor;
+		if ( $ena) {
+			$canvas-> color( $rc);
+			$canvas-> translate(1,-1);
+			$canvas-> fillpoly(\@triangle);
+			$canvas-> translate(0,0);
+		}
 	}
 	$canvas-> color( $clr[0]);
 	$canvas-> fillpoly(\@triangle);

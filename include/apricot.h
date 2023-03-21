@@ -1686,10 +1686,10 @@ typedef struct _ObjectOptions_ {
 	unsigned optModalHorizon        : 1;
 	unsigned optOwnerBackColor      : 1;
 	unsigned optOwnerColor          : 1;
-	unsigned optOwnerDesignStyle    : 1;
 	unsigned optOwnerFont           : 1;
 	unsigned optOwnerHint           : 1;
 	unsigned optOwnerShowHint       : 1;
+	unsigned optOwnerSkin           : 1;
 	unsigned optOwnerPalette        : 1;
 	unsigned optPackPropagate       : 1;
 	unsigned optSetupComplete       : 1;

@@ -114,6 +114,15 @@ sub init
 	return %profile;
 }
 
+sub skin
+{
+	return $_[0]->SUPER::skin unless $#_;
+	my $self = shift;
+	$self->SUPER::skin($_[1]);
+	$self->borderWidth(1) if $self->SUPER::skin eq 'flat';
+	$self->repaint;
+}
+
 sub on_paint
 {
 	my ($self,$canvas) = @_;
@@ -130,11 +139,21 @@ sub on_paint
 	@selClr = ($self-> hiliteColor, $self-> hiliteBackColor);
 
 	my $border = $self-> {borderWidth};
-	$self-> rect_bevel( $canvas, Prima::rect->new(@size)->inclusive,
-		width  => $self-> {borderWidth},
-		panel  => 1,
-		fill   => $clr[1],
-	);
+	if ( $self-> skin eq 'flat') {
+		$canvas-> graphic_context( sub {
+			$canvas-> lineWidth(1);
+			$canvas-> color( $self-> dark3DColor );
+			$canvas-> rectangle(0,0,$size[0]-1,$size[1]-1);
+			$canvas-> color( $clr[1]);
+			$canvas-> bar( 1, 1, $size[0]-2, $size[1]-2);
+		});
+	} else {
+		$self-> rect_bevel( $canvas, Prima::rect->new(@size)->inclusive,
+			width => $border,
+			panel => 1,
+			fill  => $clr[1],
+		);
+	}
 
 	return if $size[0] <= $border * 2 + 2;
 	my $cap = $self-> {glyphs} or return;

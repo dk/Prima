@@ -207,19 +207,38 @@ sub borderWidth     {($#_)?($_[0]-> set_border_width( $_[1])):return $_[0]-> {bo
 sub hScroll         {($#_)?$_[0]-> set_h_scroll       ($_[1]):return $_[0]-> {hScroll}}
 sub vScroll         {($#_)?$_[0]-> set_v_scroll       ($_[1]):return $_[0]-> {vScroll}}
 
+sub skin
+{
+	return $_[0]->SUPER::skin unless $#_;
+	my $self = shift;
+	$self->SUPER::skin($_[1]);
+	$self->borderWidth(1) if $self->SUPER::skin eq 'flat';
+	$self->repaint;
+}
+
 sub draw_border
 {
 	my ( $self, $canvas, $backColor, @size) = @_;
 
 	@size = $self-> size unless @size;
-	$self-> rect_bevel(
-		$canvas,
-		0, 0,
-		$size[0]-1, $size[1]-1,
-		width => $self-> {borderWidth},
-		panel => 1,
-		fill  => $backColor,
-	);
+	if ( $self-> skin eq 'flat') {
+		$canvas-> graphic_context( sub {
+			$canvas-> lineWidth(1);
+			$canvas-> color( $self-> dark3DColor ); 
+			$canvas-> rectangle(0, 0, $size[0]-1, $size[1]-1);
+			$canvas-> color( $backColor // $self-> backColor );
+			$canvas-> bar( 1, 1, $size[0]-2, $size[1]-2);
+		});
+	} else {
+		$self-> rect_bevel(
+			$canvas,
+			0, 0,
+			$size[0]-1, $size[1]-1,
+			width => $self-> {borderWidth},
+			panel => 1,
+			fill  => $backColor,
+		);
+	}
 }
 
 1;
