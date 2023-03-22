@@ -41,7 +41,7 @@ for (@INC) {
 	closedir D;
 }
 
-my @list = Prima::Themes::list;
+my @list = sort {$a cmp $b} Prima::Themes::list;
 my $checklist = $w-> insert( CheckList =>
 	pack => { side => 'left', fill => 'y', padx => 5, pady => 5},
 	items => \@list,
