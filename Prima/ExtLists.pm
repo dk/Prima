@@ -4,7 +4,7 @@
 package Prima::ExtLists;
 use strict;
 use warnings;
-use Prima qw(Lists StdBitmap);
+use Prima qw(Buttons Lists StdBitmap);
 
 package Prima::CheckList;
 use vars qw(@ISA);
@@ -43,6 +43,15 @@ sub init
 	return %profile;
 }
 
+sub skin
+{
+	return $_[0]->SUPER::skin unless $#_;
+	my $self = shift;
+	$self->SUPER::skin($_[1]);
+	$self->buffered(1) if $self->SUPER::skin eq 'flat';
+	$self->repaint;
+}
+
 sub on_measureitem
 {
 	my ( $self, $index, $sref) = @_;
@@ -66,7 +75,6 @@ sub on_fontchanged
 	$self-> SUPER::on_fontchanged(@_);
 }
 
-
 sub draw_items
 {
 	shift-> std_draw_text_items( @_);
@@ -76,15 +84,54 @@ sub draw_text_items
 {
 	my ( $self, $canvas, $first, $last, $step, $x, $y, $textShift, $clipRect) = @_;
 	my ( $i, $j);
+	my $flat = $self->skin eq 'flat';
+	my ($rr, @img, @chk);
+	my $dx;
+	if ( $flat ) {
+		push @chk, $canvas->new_path, $canvas->new_path;
+		$_->scale(0.8) for @chk;
+		$dx = Prima::CheckBox->paint_flat_background($chk[0], $self->{itemHeight}) + 2;
+		Prima::CheckBox->paint_flat_checkmark($chk[1], $self->{itemHeight});
+	} else {
+		$dx = $imgSize[0];
+	}
+
 	for ( $i = $first, $j = 1; $i <= $last; $i += $step, $j++) {
 		next if $self-> {widths}-> [$i] + $self-> {offset} + $x + 1 < $clipRect-> [0];
-		$canvas-> text_shape_out( $self-> {items}-> [$i], $x + 2 + $imgSize[0],
+		$canvas-> text_shape_out( $self-> {items}-> [$i], $x + 2 + $dx,
 			$y + $textShift - $j * $self-> {itemHeight} + 1);
-		$canvas-> put_image( $x + 1,
-			$y + int(( $self-> {itemHeight} - $imgSize[1]) / 2) -
-				$j * $self-> {itemHeight} + 1,
-			$images[ vec($self-> {vector}, $i, 1)],
-		);
+		push @img, $i, $j * $self-> {itemHeight};
+	}
+
+	if ( $flat ) {
+		return unless $canvas-> graphic_context_push;
+		$canvas-> antialias(1);
+		$canvas-> lineWidth(1);
+		$canvas-> color( cl::Black);
+	}
+
+	for ( my $i = 0; $i < @img; $i+=2) {
+		my ( $I, $Y ) = @img[$i,$i+1];
+		if ( $flat ) {
+			$canvas-> translate($x + 1, $y - $Y + 1 + $dx * 0.1); # (1-0.8)/2
+			$chk[0]-> stroke;
+		} else {
+			$canvas-> put_image( $x + 1,
+				$y + int(( $self-> {itemHeight} - $imgSize[1]) / 2) - $Y + 1,
+				$images[ vec($self-> {vector}, $I, 1)],
+			);
+		}
+	}
+
+	if ($flat) {
+		$canvas-> lineWidth(2);
+		for ( my $i = 0; $i < @img; $i+=2) {
+			my ( $I, $Y ) = @img[$i,$i+1];
+			next unless vec($self-> {vector}, $I, 1);
+			$canvas-> translate($x + 1, $y - $Y + 1 + $dx * 0.1);
+			$chk[1]-> stroke;
+		}
+		$canvas-> graphic_context_pop;
 	}
 }
 

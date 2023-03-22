@@ -1014,6 +1014,31 @@ sub paint_classic
 	return $xStart;
 }
 
+sub paint_flat_background
+{
+	my ( undef, $path, $height ) = @_;
+	my $s = $::application->uiScaling;
+	$path-> round_rect(
+		1,       ( $height - $s*14) / 2,
+		$s * 15, ( $height + $s*14) / 2,
+		$s * 7
+	);
+	return $s * 15;
+}
+
+sub paint_flat_checkmark
+{
+	my ( undef, $path, $height ) = @_;
+	my $s = $::application->uiScaling;
+	my $yStart = ( $height - $s*14) / 2;
+	$path-> line(
+		$s*4,  $yStart + $s*8,
+		$s*5 , $yStart + $s*3,
+		$s*5 , $yStart + $s*3,
+		$s*12, $yStart + $s*12
+	);
+}
+
 sub paint_flat
 {
 	my ( $self, $canvas, $w, $h, @clr) = @_;
@@ -1025,24 +1050,18 @@ sub paint_flat
 		$canvas-> antialias(1);
 		$canvas-> lineWidth( 1 );
 		$canvas-> color($clr[0]);
-		$canvas-> new_path-> round_rect(
-			1, ( $h - $s*14) / 2, $s*15, ( $h + $s*14) / 2,
-			$s * 7,
-		)-> stroke;
+		my $path1 = $canvas->new_path;
+		$self-> paint_flat_background( $path1, $h);
+		$path1->stroke;
 
 		if ( $self-> { checked} || $self->{ pressed } ) {
 			my $at = $self-> { pressed} ? 1 : 0;
 			$canvas-> color( cl::Black);
 			$canvas-> lineWidth( 2);
-			my $yStart = ( $h - $s*14) / 2;
-			$canvas-> line(
-				$at + $s*4, $yStart - $at +  $s*8,
-				$at + $s*5 , $yStart - $at + $s*3
-			);
-			$canvas-> line(
-				$at + $s*5 , $yStart - $at + $s*3,
-				$at + $s*12, $yStart - $at + $s*12
-			);
+			$canvas-> translate( $at, -$at);
+			my $path2 = $canvas->new_path;
+			$self-> paint_flat_checkmark( $path2, $h);
+			$path2->stroke;
 		}
 	});
 	return $xStart;
