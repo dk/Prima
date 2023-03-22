@@ -2525,7 +2525,12 @@ apc_image_begin_paint( Handle self)
 	PObject( self)-> options. optInDraw = 0;
 	XX->flags. paint = 0;
 
-	if (!is_opt(optReadonlyPaint)) {
+	if (is_opt(optReadonlyPaint)) {
+		XX-> flags. brush_fore = 0;
+		guts.xrender_pen_dirty = true;
+		XSetForeground( DISP, XX->gc, 0);
+		XFillRectangle( DISP, XX->gdrawable, XX->gc, 0, 0, img-> w, img-> h);
+	} else {
 		PutImageRequest req;
 		PutImageFunc ** dst = layered ? img_put_on_layered : ( bitmap ? img_put_on_bitmap : img_put_on_pixmap );
 		bzero(&req, sizeof(req));
