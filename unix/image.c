@@ -1860,10 +1860,6 @@ img_put_image_on_pixmap( Handle self, Handle image, PutImageRequest * req)
 }
 
 
-#define RENDER_APPLY_CLIP(picture) \
-	if ( XX-> clip_mask_extent. x != 0 && XX-> clip_mask_extent. y != 0) \
-		XRenderSetPictureClipRegion(DISP, picture, XX->current_region)
-
 #define RENDER_APPLY_TRANSFORM(picture) \
 	if ( req-> transform ) \
 		XRenderSetPictureTransform( DISP, picture, req->transform)
@@ -2002,7 +1998,6 @@ img_render_argb_on_pixmap_or_widget( Handle self, Handle image, PutImageRequest 
 	))) goto FAIL;
 
 	picture = prima_render_create_picture(pixmap, 32);
-	RENDER_APPLY_CLIP(picture);
 	RENDER_APPLY_TRANSFORM(picture);
 	RENDER_COMPOSITE( ofs, ROP_SRC_OR_COPY, picture);
 	RENDER_FREE(picture);
@@ -2060,7 +2055,6 @@ img_put_argb_on_layered( Handle self, Handle image, PutImageRequest * req)
 	))) goto FAIL;
 
 	picture = prima_render_create_picture(pixmap, 32);
-	RENDER_APPLY_CLIP(picture);
 	RENDER_APPLY_TRANSFORM(picture);
 	RENDER_COMPOSITE( ofs, ROP_SRC_OR_COPY, picture);
 	RENDER_FREE(picture);
@@ -2159,7 +2153,6 @@ img_render_image_on_picture( Handle self, Handle image, PutImageRequest * req, B
 	))) goto FAIL;
 
 	picture = prima_render_create_picture(pixmap, on_layered ? 32 : 0);
-	RENDER_APPLY_CLIP(picture);
 	RENDER_APPLY_TRANSFORM(picture);
 	RENDER_COMPOSITE( ofs, ROP_SRC_OR_COPY, picture);
 	RENDER_FREE(picture);
@@ -2240,7 +2233,6 @@ img_render_bitmap_on_picture( Handle self, Handle image, PutImageRequest * req)
 	);
 
 	picture = prima_render_create_picture(pixmap, use_layered_surface ? 32 : 0);
-	RENDER_APPLY_CLIP(picture);
 	RENDER_APPLY_TRANSFORM(picture);
 	RENDER_COMPOSITE( ofs, PictOpSrc, picture);
 	RENDER_FREE(picture);
@@ -2294,7 +2286,6 @@ img_render_picture_on_pixmap( Handle self, Handle image, PutImageRequest * req, 
 		);
 
 		picture = prima_render_create_picture(pixmap, from_layered ? 32 : 0);
-		RENDER_APPLY_CLIP(picture);
 	} else {
 	QUICK:
 		picture = YY->argb_picture;
