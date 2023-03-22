@@ -1245,6 +1245,7 @@ apc_gp_push(Handle self, GCStorageFunction * destructor, void * user_data, unsig
 		state->paint.wt_want   = is_apt(aptWantWorldTransform);
 		state->paint.wt_used   = is_apt(aptUsedWorldTransform);
 		state->paint.wt_cached = is_apt(aptCachedWorldTransform);
+		SetViewportOrgEx( sys ps, 0, 0, NULL );
 	} else {
 		state->common.line_pattern_len = sys line_pattern_len;
 		if ( state->common.line_pattern_len > sizeof(sys line_pattern)) {
