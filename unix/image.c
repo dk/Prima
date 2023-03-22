@@ -2353,7 +2353,7 @@ PutImageFunc (*img_render_on_pixmap[SRC_NUM]) = {
 	img_render_bitmap_on_picture,
 	img_render_pixmap_or_widget_on_pixmap_or_widget,
 	img_render_image_on_pixmap,
-	img_render_image_on_widget,
+	NULL,
 	img_render_argb_on_pixmap_or_widget,
 	img_render_layered_on_pixmap
 };
@@ -2361,8 +2361,8 @@ PutImageFunc (*img_render_on_pixmap[SRC_NUM]) = {
 PutImageFunc (*img_render_on_widget[SRC_NUM]) = {
 	img_render_bitmap_on_picture,
 	img_render_pixmap_or_widget_on_pixmap_or_widget,
-	img_render_image_on_pixmap,
 	img_render_image_on_widget,
+	NULL,
 	img_render_argb_on_pixmap_or_widget,
 	img_render_layered_on_pixmap
 };
