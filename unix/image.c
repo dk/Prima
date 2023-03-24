@@ -1495,7 +1495,7 @@ typedef struct {
 } PutImageRequest;
 
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
-static XTransform render_identity_transform = { matrix: {
+static XTransform render_identity_transform = { .matrix = {
 	{XDoubleToFixed(1.0), XDoubleToFixed(0.0), XDoubleToFixed(0.0)},
 	{XDoubleToFixed(0.0), XDoubleToFixed(1.0), XDoubleToFixed(0.0)},
 	{XDoubleToFixed(0.0), XDoubleToFixed(0.0), XDoubleToFixed(1.0)}
@@ -3130,11 +3130,11 @@ apc_gp_stretch_image_xrender( Handle self, Handle image, PutImageFunc* func,
 	double det;
 	PImage img = (PImage) image;
 	PutImageRequest req = {
-		src_x   : src_x,
-		src_y   : img->h - src_y - src_h,
-		w       : src_w,
-		h       : src_h,
-		rop     : rop,
+		.src_x   = src_x,
+		.src_y   = img->h - src_y - src_h,
+		.w       = src_w,
+		.h       = src_h,
+		.rop     = rop,
 	};
 
 	if ( src_w == 0 || src_h == 0 || dst_w == 0 || dst_h == 0 ) return false;
