@@ -51,6 +51,7 @@ sub rect_focus
 	return unless $canvas-> graphic_context_push;
 	$canvas-> set(
 		fillPattern => fp::SimpleDots,
+		rop2        => rop::CopyPut,
 		color       => cl::White,
 		backColor   => cl::Black,
 		antialias   => 0,
