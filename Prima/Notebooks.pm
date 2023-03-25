@@ -265,6 +265,14 @@ sub on_keydown
 	}
 }
 
+sub skin
+{
+	return $_[0]->SUPER::skin unless $#_;
+	my $self = shift;
+	$self->SUPER::skin($_[1]);
+	$self->repaint;
+}
+
 sub on_paint
 {
 	my ($self,$canvas) = @_;
@@ -306,10 +314,10 @@ sub on_paint
 		$atX -= $$ww[$i] + $s * DefGapX;
 		$atXti = $atX, next if $i == $ti;
 		my @poly = (
-			$atX, $s * DefGapY,
-			$atX + $s * DefGapX, $size[1] - $s * DefGapY - 1,
-			$atX + $s * DefGapX + $$ww[$i], $size[1] - $s * DefGapY - 1,
-			$atX + $s * DefGapX * 2 + $$ww[$i], $s * DefGapY
+			$atX, $s * DefGapY + .5,
+			$atX + $s * DefGapX,                $size[1] - $s * DefGapY - 0.5,
+			$atX + $s * DefGapX + $$ww[$i],     $size[1] - $s * DefGapY - 0.5,
+			$atX + $s * DefGapX * 2 + $$ww[$i], $s * DefGapY + .5
 		);
 		@poly[1,3,5,7] = @poly[3,1,7,5] unless $tm;
 		$notifier-> ( @notifyParms, $canvas, $i, \@colorSet, \@poly);
@@ -323,10 +331,10 @@ PaintEarsThen:
 	if ( $ar & 1) {
 		my $x = $s * DefLeftX;
 		my @poly = (
-			$x, $s * DefGapY,
-			$x + $s * DefGapX, $size[1] - $s * DefGapY - 1,
-			$x + $s * DefGapX + $s * DefArrowX, $size[1] - $s * DefGapY - 1,
-			$x + $s * DefGapX * 2 + $s * DefArrowX, $s * DefGapY
+			$x,  $s * DefGapY + .5,
+			$x + $s * DefGapX,                      $size[1] - $s * DefGapY - 0.5,
+			$x + $s * DefGapX + $s * DefArrowX,     $size[1] - $s * DefGapY - 0.5,
+			$x + $s * DefGapX * 2 + $s * DefArrowX, $s * DefGapY + .5
 		);
 		@poly[1,3,5,7] = @poly[3,1,7,5] unless $tm;
 		$notifier-> ( @notifyParms, $canvas, -1, \@colorSet, \@poly);
@@ -334,17 +342,17 @@ PaintEarsThen:
 	if ( $ar & 2) {
 		my $x = $size[0] - $s * (DefLeftX + DefArrowX + DefGapX * 2);
 		my @poly = (
-			$x, $s * DefGapY,
-			$x + $s * DefGapX, $size[1] - $s * DefGapY - 1,
-			$x + $s * (DefGapX + DefArrowX), $size[1] - $s * DefGapY - 1,
-			$x + $s * (DefGapX * 2 + DefArrowX), $s * DefGapY
+			$x,  $s * DefGapY + .5,
+			$x + $s * DefGapX,                   $size[1] - $s * DefGapY - 0.5,
+			$x + $s * (DefGapX + DefArrowX),     $size[1] - $s * DefGapY - 0.5,
+			$x + $s * (DefGapX * 2 + DefArrowX), $s * DefGapY + .5
 		);
 		@poly[1,3,5,7] = @poly[3,1,7,5] unless $tm;
 		$notifier-> ( @notifyParms, $canvas, -2, \@colorSet, \@poly);
 	}
 
 	$canvas-> color( $c3d[0]);
-	my @ld = $tm ? ( 0, $s * DefGapY) : ( $size[1] - 0, $size[1] - $s * DefGapY - 1);
+	my @ld = $tm ? ( 0, $s * DefGapY - 0.5) : ( $size[1] - 0, $size[1] - $s * DefGapY - 0.5);
 	$canvas-> line( $size[0] - 1, $ld[0], $size[0] - 1, $ld[1]);
 
 	if ($tm) {
@@ -364,21 +372,21 @@ PaintEarsThen:
 PaintSelTabBefore:
 	if ( defined $atXti) {
 		my @poly = (
-			$atXti, $s * DefGapY,
-			$atXti + $s * DefGapX, $size[1] - $s * DefGapY - 1,
-			$atXti + $s * DefGapX + $$ww[$ti], $size[1] - $s * DefGapY - 1,
-			$atXti + $s * DefGapX * 2 + $$ww[$ti], $s * DefGapY
+			$atXti, $s * DefGapY - .5,
+			$atXti + $s * DefGapX,                 $size[1] - $s * DefGapY - 0.5,
+			$atXti + $s * DefGapX + $$ww[$ti],     $size[1] - $s * DefGapY - 0.5,
+			$atXti + $s * DefGapX * 2 + $$ww[$ti], $s * DefGapY - .5
 		);
 		@poly[1,3,5,7] = @poly[3,1,7,5] unless $tm;
 
 		my @poly2 = $tm ? (
-			$atXti, $s * DefGapY,
-			$atXti + $s * DefGapX * 2 + $$ww[$ti], $s * DefGapY,
-			$atXti + $s * DefGapX * 2 + $$ww[$ti] - 4, 0,
-			$atXti + 4, 0
+			$atXti, $s * DefGapY + .5,
+			$atXti + $s * DefGapX * 2 + $$ww[$ti], $s * DefGapY + .5,
+			$atXti + $s * DefGapX * 2 + $$ww[$ti] - 4, 0.5,
+			$atXti + 4, 0.5
 		) : (
-			$atXti, $size[1] - 1 - $s * DefGapY,
-			$atXti + $s * DefGapX * 2 + $$ww[$ti], $size[1] - 1 - $s * DefGapY,
+			$atXti, $size[1] - 1.5 - $s * DefGapY,
+			$atXti + $s * DefGapX * 2 + $$ww[$ti], $size[1] - 1.5 - $s * DefGapY,
 			$atXti + DefGapX * 2 + $$ww[$ti] - 4, $size[1]-1,
 			$atXti + 4, $size[1]-1
 		);
@@ -445,9 +453,9 @@ sub on_drawtab
 	$canvas-> polyline( [@{$poly}[0..($self-> {topMost}?5:3)]]);
 	if ( !$flat ) {
 		$canvas-> color( $$clr[2]);
-		$canvas-> polyline( [@{$poly}[($self-> {topMost}?4:2)..7]]);
+		$canvas-> line( $$poly[4]+1, $$poly[5], $$poly[6]+1, $$poly[7]);
 	}
-	$canvas-> line( $$poly[4]+1, $$poly[5], $$poly[6]+1, $$poly[7]);
+	$canvas-> polyline( [@{$poly}[($self-> {topMost}?4:2)..7]]);
 	$canvas-> color( $$clr[0]);
 	my $s = $::application-> uiScaling;
 
@@ -1246,7 +1254,12 @@ sub on_paint
 		}
 	} else {
 		# tns::Simple
-		$canvas-> rect3d(0, 0, $size[0]-1, $size[1]-1, 1, reverse @c3d);
+		if ( $flat ) {
+			$canvas-> color($c3d[0]);
+			$canvas-> rectangle(0, 0, $size[0]-1, $size[1]-1);
+		} else {
+			$canvas-> rect3d(0, 0, $size[0]-1, $size[1]-1, 1, reverse @c3d);
+		}
 	}
 }
 

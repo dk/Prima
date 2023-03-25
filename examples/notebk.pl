@@ -60,6 +60,15 @@ sub init
 		growMode => gm::XCenter,
 		onClick => sub { $n-> style($n-> style ? 0 : 1) },
 	);
+
+	$n-> insert_transparent('Button',
+		name   => 'StyleButton',
+		text   => 'Toggle Skin',
+		origin => [0,55],
+		size   => [200,20],
+		growMode => gm::XCenter,
+		onClick => sub { $n-> skin(($n-> skin eq 'flat') ? 'classic' : 'flat') },
+	);
 	$n-> use_current_size;
 	return %profile;
 }
