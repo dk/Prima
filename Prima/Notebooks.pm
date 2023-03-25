@@ -66,7 +66,6 @@ sub init
 	return %profile;
 }
 
-
 sub reset
 {
 	my $self = $_[0];
@@ -277,6 +276,7 @@ sub on_paint
 	}
 	my @c3d  = ( $self-> dark3DColor, $self-> light3DColor);
 	my @size = $canvas-> size;
+	my $flat = $self-> skin eq 'flat';
 
 	$canvas-> color( $clr[1]);
 	$canvas-> bar( 0, 0, @size);
@@ -348,12 +348,12 @@ PaintEarsThen:
 	$canvas-> line( $size[0] - 1, $ld[0], $size[0] - 1, $ld[1]);
 
 	if ($tm) {
-		$canvas-> color( $c3d[1]);
+		$canvas-> color( $c3d[1]) unless $flat;
 		$canvas-> line( 0, $ld[1], $size[0] - 1, $ld[1]);
 		$canvas-> line( 0, $ld[0], 0, $ld[1]);
 	} else {
 		$canvas-> line( 0, $ld[1], $size[0] - 1, $ld[1]);
-		$canvas-> color( $c3d[1]);
+		$canvas-> color( $c3d[1]) unless $flat;
 		$canvas-> line( 0, $ld[0], 0, $ld[1]);
 	}
 
@@ -434,16 +434,19 @@ sub on_drawtab
 {
 	my ( $self, $canvas, $i, $clr, $poly, $poly2) = @_;
 
-	my $color = ( $self-> {colored} && ( $i >= 0)) ?
+	my $flat = $self->skin eq 'flat';
+	my $color = ( $self-> {colored} && !$flat && ( $i >= 0)) ?
 		( $warpColors[ $i % scalar @warpColors]) : $$clr[1];
 	$color = $self-> prelight_color($color) if ($self->{prelight} // '') eq ($i // '');
 	$canvas-> color($color);
 	$canvas-> fillpoly( $poly);
 	$canvas-> fillpoly( $poly2) if $poly2;
-	$canvas-> color( $$clr[3]);
+	$canvas-> color( $flat ? cl::Black : $$clr[3]);
 	$canvas-> polyline( [@{$poly}[0..($self-> {topMost}?5:3)]]);
-	$canvas-> color( $$clr[2]);
-	$canvas-> polyline( [@{$poly}[($self-> {topMost}?4:2)..7]]);
+	if ( !$flat ) {
+		$canvas-> color( $$clr[2]);
+		$canvas-> polyline( [@{$poly}[($self-> {topMost}?4:2)..7]]);
+	}
 	$canvas-> line( $$poly[4]+1, $$poly[5], $$poly[6]+1, $$poly[7]);
 	$canvas-> color( $$clr[0]);
 	my $s = $::application-> uiScaling;
@@ -454,9 +457,12 @@ sub on_drawtab
 			$$poly[1] + ( $$poly[3] - $$poly[1] - $canvas-> font-> height) / 2
 		);
 		$canvas-> text_shape_out( $self-> {tabs}-> [$i], @tx);
-		$canvas-> rect_focus( $tx[0] - 1, $tx[1] - 1,
-			$tx[0] + $self-> {widths}-> [$i] - $s * DefGapX * 4 + 1, $tx[1] + $canvas-> font-> height + 1)
-				if ( $i == $self-> {focusedTab}) && $self-> focused;
+		$canvas-> rect_focus(
+			$tx[0] - 1,
+			$tx[1] - 1,
+			$tx[0] + $self-> {widths}-> [$i] - $s * DefGapX * 4 + 1,
+			$tx[1] + $canvas-> font-> height + 1
+		) if ( $i == $self-> {focusedTab}) && $self-> focused;
 	} elsif ( $i == -1) {
 		$canvas-> fillpoly([
 			$$poly[0] + ( $$poly[6] - $$poly[0]) * 0.6,
@@ -1105,6 +1111,7 @@ sub on_paint
 	my $on_top = ($self-> {orientation} == tno::Top);
 	$canvas-> color( $clr[1]);
 	$canvas-> bar( 0, 0, @size);
+	my $flat = $self->skin eq 'flat';
 
 	my $s = $::application-> uiScaling;
 	if ($self-> {style} == tns::Standard) {
@@ -1114,17 +1121,24 @@ sub on_paint
 			$size[1] -= 5;
 		}
 
-		$canvas-> rect3d(
-			0, 0, $size[0] - 1, $size[1] - 1 + $s * Prima::TabSet::DefGapY,
-			1, reverse @c3d
-		);
-		$canvas-> rect3d(
-			$s * DefBorderX, $on_top ?
-				$s * DefBorderX : $self-> {notebook}-> bottom - 1,
-			$size[0] - 1 - $s * DefBorderX,
-			$size[1] - $s * DefBorderX + $s * Prima::TabSet::DefGapY,
-			1, @c3d
-		);
+		if ( $flat ) {
+			$canvas-> color( $c3d[0] );
+			$canvas-> rectangle(
+				0, 0, $size[0] - 1, $size[1] - 1 + $s * Prima::TabSet::DefGapY,
+			);
+		} else {
+			$canvas-> rect3d(
+				0, 0, $size[0] - 1, $size[1] - 1 + $s * Prima::TabSet::DefGapY,
+				1, reverse @c3d
+			);
+			$canvas-> rect3d(
+				$s * DefBorderX, $on_top ?
+					$s * DefBorderX : $self-> {notebook}-> bottom - 1,
+				$size[0] - 1 - $s * DefBorderX,
+				$size[1] - $s * DefBorderX + $s * Prima::TabSet::DefGapY,
+				1, @c3d
+			);
+		}
 
 		my $y = $size[1] - $s * DefBorderX + $s * Prima::TabSet::DefGapY;
 		my $x = $size[0] - $s * DefBorderX - $s * DefBookmarkX;
@@ -1199,7 +1213,11 @@ sub on_paint
 			}
 			$canvas-> color( $c3d[1]);
 			$canvas-> line( $x - 1, $y - 7, $x + $s * DefBookmarkX - 9, $y - $s * DefBookmarkX + 1);
-			$canvas-> line( $s * DefBorderX + 4, $y - $fh * 1.6 - 1, $x - $s * 6, $y - $fh * 1.6 - 1);
+			if ( $flat ) {
+				$canvas-> color( $c3d[0]);
+			} else {
+				$canvas-> line( $s * DefBorderX + 4, $y - $fh * 1.6 - 1, $x - $s * 6, $y - $fh * 1.6 - 1);
+			}
 			$canvas-> polyline([ $x + $s * 4, $y1 - $s * 9, $x + $s * 4, $y1 - $s * 8, $x + $s * 10, $y1 - $s * 8]) if $ar & 1;
 			if ( $ar & 2 ) {
 				$canvas-> line( $x1 + $S * 3, $y1 + $S * 2, $x1 + $S * 3, $y1 + $S * 3);
