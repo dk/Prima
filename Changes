@@ -4,6 +4,7 @@ Revision history for Perl module Prima
  - Fully rewrite win32 socket engine, now is single-threaded
  - Drawable.matrix returns Prima::Matrix objects
  - Speedup x11 matrix image rendering with XRender
+ - Introduce Widget.skin and an optional flat skin for toolkit widgets
 
 1.68 2023-02-25
  - Process signals inside event loop
