@@ -16,7 +16,7 @@ use strict;
 use warnings;
 
 use Prima qw( Buttons ScrollBar);
-use Prima::Application name => 'rtc';
+use Prima::Application name => 'rtc', skin => 'flat';
 
 package UserInit;
 

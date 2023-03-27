@@ -375,6 +375,14 @@ property in Prima::Widget, Prima::Application::showHint is another layer of
 hint visibility control - if it is 0, all hint actions are disabled,
 disregarding C<::showHint> value in widgets.
 
+=item skin SCALAR
+
+Exactly same as L< Prima::Widget/skin >, but is mentioned here because
+it is possible to change the whole application skin by changing this property,
+f ex like this:
+
+   use Prima::Application skin => 'flat';
+
 =item textDirection BOOLEAN
 
 Contains preferred text direction, initially calculated from the preferred

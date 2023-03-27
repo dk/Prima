@@ -1587,6 +1587,13 @@ Automatically set to 0 if C<::palette> property is explicitly set.
 
 See also: C<palette>
 
+=item ownerSkin BOOLEAN
+
+If 1, the C<skin> property is set to undef and thus will be synchronized with the owner's.
+Automatically set to 0 if the C<skin> property is explicitly set.
+
+See also: C<skin>
+
 =item origin X Y
 
 Maintains the left and bottom boundaries of a widget relative
@@ -1884,6 +1891,19 @@ Specifies the minimal size for a widget that it is allowed to accept.
 See also: C<width>, C<height>, C<size>
 C<growMode>, C<Move>, C<Size>, C<get_virtual_size>,
 C<sizeMax>
+
+=item skin SCALAR
+
+A generic scalar not used in C<Prima::Widget> but designated to select the
+visual style of a widget, where the interpretation of the property value will
+be up to the widget class itself. Many of the toolkit widgets implement two
+skins, C<classic> and C<flat>. Also, does not repaint the widget on change, but
+again, many of the toolkit widgets do that.
+
+If C<ownerSkin> is 1, returns the skin of the owner.  When set to undef, sets
+the C<ownerSkin> property to 1, otherwise to 0.  Note: this is therefore not an
+symetric property, as a C<< $self->skin($self->skin) >> is not an idempotent
+call.
 
 =item syncPaint BOOLEAN
 
