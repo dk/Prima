@@ -1319,7 +1319,7 @@ sub on_paint
 	}
 	my $fh = $canvas-> font-> height;
 	if ( $self->skin eq 'flat') {
-		$canvas-> color( $clr[0]);
+		$canvas-> color( $self-> dark3DColor);
 		$canvas-> rectangle( 0, 0, $size[0] - 1, $size[1] - $fh / 2 - 1);
 	} else {
 		$canvas-> color( $self-> light3DColor);

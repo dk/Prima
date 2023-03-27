@@ -130,8 +130,18 @@ sub on_paint
 	my ($me, $canvas) = @_;
 	my @sz = $canvas-> size;
 	unless ($me-> enabled) {
-		$me-> color( $me-> disabledBackColor);
-		$me-> bar( 0, 0, $me-> size);
+		$me-> backColor( $me-> disabledBackColor);
+		$me-> clear( 0, 0, $me-> size);
+	} elsif ( $me-> skin eq 'flat') {
+		$me-> backColor( $me-> {prelight} ?
+			$me->hiliteBackColor :
+			cl::blend(
+				$me->map_color($me->hiliteBackColor),
+				$me->map_color($me->backColor),
+				0.5
+			)
+		);
+		$me-> clear;
 	} else {
 		$me-> rect3d(
 			0,
@@ -146,7 +156,7 @@ sub on_paint
 				$me-> light3DColor,
 				$me-> dark3DColor,
 			),
-			$me-> backColor
+			$me-> {prelight} ? $me->prelight_color($me-> backColor) : $me->backColor
 		);
 	}
 }
@@ -183,6 +193,20 @@ sub on_mouseup
 		$me-> owner-> slider_moved( $me, $me-> get_delta($x, $y));
 		$me-> repaint;
 	}
+}
+
+sub on_mouseenter
+{
+	my $self = shift;
+	$self->{prelight} = 1;
+	$self->repaint;
+}
+
+sub on_mouseleave
+{
+	my $self = shift;
+	$self->{prelight} = 0;
+	$self->repaint;
 }
 
 sub on_mousemove

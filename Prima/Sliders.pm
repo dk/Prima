@@ -337,6 +337,7 @@ sub on_paint
 	@clr = ( $self-> hiliteColor, $self-> hiliteBackColor)     if $self-> { default};
 	@clr = ( $self-> disabledColor, $self-> disabledBackColor) if !$self-> enabled;
 	my ($prelightPart, $prelightColor) = (0);
+	my $flat = $self->skin eq 'flat';
 	if ($self->{prelight}) {
 		$prelightColor = $self-> prelight_color($clr[1], 1.5);
 		$prelightPart  = $self->{prelight};
@@ -355,10 +356,13 @@ sub on_paint
 			$size[0] - 3, $size[1] - 3,
 		]);
 	}
-	$canvas-> color( $p == 1 ? 0x404040 : $c3d[1]);
-	$canvas-> polyline( [0, 0, 0, $size[1] - 1, $size[0] - 2, $size[1] - 1]);
-	$canvas-> color( $p == 1 ? $c3d[1]  : $c3d[0]);
-	$canvas-> polyline( [1, 1, 1, $size[1] - 2, $size[0] - 3, $size[1] - 2]);
+
+	unless ( $flat ) {
+		$canvas-> color( $p == 1 ? 0x404040 : $c3d[1]);
+		$canvas-> polyline( [0, 0, 0, $size[1] - 1, $size[0] - 2, $size[1] - 1]);
+		$canvas-> color( $p == 1 ? $c3d[1]  : $c3d[0]);
+		$canvas-> polyline( [1, 1, 1, $size[1] - 2, $size[0] - 3, $size[1] - 2]);
+	}
 
 	if ( $prelightPart == 2 && $size[1] > 4 && $size[0] > 4 ) {
 		$canvas->color( $prelightColor );
@@ -368,17 +372,19 @@ sub on_paint
 			$size[0] - 3, 2,
 		]);
 	}
-	$canvas-> color( $p == 2 ? $c3d[0] : $c3d[1]);
-	$canvas-> polyline([2, 1, $size[0] - 2, 1, $size[0] - 2, $size[1] - 2]);
-	$canvas-> color( $p == 2 ? $c3d[1] : 0x404040);
-	$canvas-> polyline([1, 0, $size[0] - 1, 0, $size[0] - 1, $size[1] - 1]);
+	unless ( $flat ) {
+		$canvas-> color( $p == 2 ? $c3d[0] : $c3d[1]);
+		$canvas-> polyline([2, 1, $size[0] - 2, 1, $size[0] - 2, $size[1] - 2]);
+		$canvas-> color( $p == 2 ? $c3d[1] : 0x404040);
+		$canvas-> polyline([1, 0, $size[0] - 1, 0, $size[0] - 1, $size[1] - 1]);
 
-	$canvas-> color( $p == 1 ? $c3d[ 0] : $c3d[ 1]);
-	$canvas-> line( -1, 0, $size[0] - 2, $size[1] - 1);
-	$canvas-> color( 0x404040);
-	$canvas-> line( 0, 0, $size[0] - 1, $size[1] - 1);
-	$canvas-> color( $p == 2 ? $c3d[ 1] : $c3d[ 0]);
-	$canvas-> line( 1, 0, $size[0], $size[1] - 1);
+		$canvas-> color( $p == 1 ? $c3d[ 0] : $c3d[ 1]);
+		$canvas-> line( -1, 0, $size[0] - 2, $size[1] - 1);
+		$canvas-> color( 0x404040);
+		$canvas-> line( 0, 0, $size[0] - 1, $size[1] - 1);
+		$canvas-> color( $p == 2 ? $c3d[ 1] : $c3d[ 0]);
+		$canvas-> line( 1, 0, $size[0], $size[1] - 1);
+	}
 
 	$canvas-> color( $clr[0]);
 	my $p1 = ( $p == 1) ? 1 : 0;
@@ -1189,6 +1195,7 @@ sub on_paint
 	my @cht  = ( $self-> hiliteColor, $self-> hiliteBackColor);
 	my @glyph_deltas = ([$clr[0], 0, 0]);
 	unshift @glyph_deltas, [cl::White, 1, -1] unless $enabled;
+	my $flat = $self-> skin eq 'flat';
 
 	my @size = $canvas-> size;
 	my (
@@ -1337,19 +1344,26 @@ sub on_paint
 			my $rgn = Prima::Region->new( polygon => \@jp);
 			$rgn->offset( $canvas->translate );
 			$canvas-> region( $rgn );
-			$canvas-> new_gradient(
-				palette  => [ $c3d[0], ($self->{prelight} ? $prelight : $clr[1]) ],
-				poly     => [0,0,0.3,0.7,1,1],
-				vertical => 0,
-			)-> bar( $jp[0]+2,$jp[1]+2,$jp[6]-2,$jp[3]-2);
-			$canvas-> color( 0x404040);
-			$canvas-> polyline([@jp[6..9,0,1]]);
-			$canvas-> color( $c3d[1]);
-			$canvas-> polyline([$jp[0]+1,$jp[1]+1,$jp[2]+1,$jp[3]-1,$jp[4],$jp[5]-1,$jp[6]-1,$jp[7]]);
-			$canvas-> line($jp[0]+2, $jp[7]-1, $jp[6]-2, $jp[7]-1);
-			$canvas-> color( $c3d[0]);
-			$canvas-> polyline([$jp[6]-1,@jp[7,8],$jp[9]+1,$jp[0],$jp[1]+1,@jp[2..7]]);
-			$canvas-> line($jp[0]+2, $jp[7]+1, $jp[6]-1, $jp[7]+1);
+			if ( $flat ) {
+				$canvas-> color( $self->{prelight} ? $prelight : $clr[1]);
+				$canvas-> fillpoly([@jp[0..9,0,1]]);
+				$canvas-> color( 0x404040 );
+				$canvas-> polyline([@jp[0..9,0,1]]);
+			} else {
+				$canvas-> new_gradient(
+					palette  => [ $c3d[0], ($self->{prelight} ? $prelight : $clr[1]) ],
+					poly     => [0,0,0.3,0.7,1,1],
+					vertical => 0,
+				)-> bar( $jp[0]+2,$jp[1]+2,$jp[6]-2,$jp[3]-2);
+				$canvas-> color( 0x404040);
+				$canvas-> polyline([@jp[6..9,0,1]]);
+				$canvas-> color( $c3d[1]);
+				$canvas-> polyline([$jp[0]+1,$jp[1]+1,$jp[2]+1,$jp[3]-1,$jp[4],$jp[5]-1,$jp[6]-1,$jp[7]]);
+				$canvas-> line($jp[0]+2, $jp[7]-1, $jp[6]-2, $jp[7]-1);
+				$canvas-> color( $c3d[0]);
+				$canvas-> polyline([$jp[6]-1,@jp[7,8],$jp[9]+1,$jp[0],$jp[1]+1,@jp[2..7]]);
+				$canvas-> line($jp[0]+2, $jp[7]+1, $jp[6]-1, $jp[7]+1);
+			}
 		}
 	} else {
 		my $bh  = ( $size[1] - $sb) / 2;
@@ -1455,22 +1469,29 @@ sub on_paint
 			my $rgn = Prima::Region->new( polygon => \@jp);
 			$rgn->offset( $canvas->translate );
 			$canvas-> region( $rgn );
-			$canvas-> new_gradient(
-				palette  => [ ($self->{prelight} ? $prelight : $clr[1]), $c3d[0] ],
-				poly     => [0,0,0.7,0.3,1,1],
-				vertical => 1,
-			)-> bar( $jp[0]+2,$jp[9],$jp[4]-2,$jp[3]);
-			$canvas-> color( 0x404040 );
-			$canvas-> polyline([@jp[4..9]]);
-			$canvas-> color( $c3d[0]);
-			$canvas-> polyline([
-				@jp[8,9,0..3],$jp[4]-1,$jp[5],
-				$jp[6]-1,$jp[7],$jp[8],$jp[9]+1
-			]);
-			$canvas-> line($jp[8]-1,$jp[3]-2,$jp[8]-1,$jp[9]) if $kb > 10;
-			$canvas-> color( $c3d[1]);
-			$canvas-> polyline([$jp[8],$jp[9]+1,$jp[0]+1,$jp[1],$jp[2]+1,$jp[3]-1,$jp[4]-2,$jp[5]-1]);
-			$canvas-> line($jp[8]+1,$jp[3]-2,$jp[8]+1,$jp[9]) if $kb > 10;
+			if ( $flat) {
+				$canvas-> color( $self->{prelight} ? $prelight : $clr[1]);
+				$canvas-> fillpoly([ @jp[8,9,0..9] ]);
+				$canvas-> color( 0x404040 );
+				$canvas-> polyline([ @jp[8,9,0..9] ]);
+			} else {
+				$canvas-> new_gradient(
+					palette  => [ ($self->{prelight} ? $prelight : $clr[1]), $c3d[0] ],
+					poly     => [0,0,0.7,0.3,1,1],
+					vertical => 1,
+				)-> bar( $jp[0]+2,$jp[9],$jp[4]-2,$jp[3]);
+				$canvas-> color( 0x404040 );
+				$canvas-> polyline([@jp[4..9]]);
+				$canvas-> color( $c3d[0]);
+				$canvas-> polyline([
+					@jp[8,9,0..3],$jp[4]-1,$jp[5],
+					$jp[6]-1,$jp[7],$jp[8],$jp[9]+1
+				]);
+				$canvas-> line($jp[8]-1,$jp[3]-2,$jp[8]-1,$jp[9]) if $kb > 10;
+				$canvas-> color( $c3d[1]);
+				$canvas-> polyline([$jp[8],$jp[9]+1,$jp[0]+1,$jp[1],$jp[2]+1,$jp[3]-1,$jp[4]-2,$jp[5]-1]);
+				$canvas-> line($jp[8]+1,$jp[3]-2,$jp[8]+1,$jp[9]) if $kb > 10;
+			} 
 		}
 	}
 }
@@ -2059,6 +2080,7 @@ sub on_paint
 	my $br  = $self-> {br};
 	my $rad = $self-> {radius};
 	my @cpt = ( $self-> {circX}, $self-> {circY}, $rad*2+1, $rad*2+1);
+	my $flat = $self->skin eq 'flat';
 
 	goto AFTER_DIAL unless $self->{show_dial};
 	if ( defined $self-> {singlePaint}) {
@@ -2083,6 +2105,7 @@ sub on_paint
 		my $dp   = 2;
 		$canvas-> lineWidth(2);
 		for my $lw (2..4) {
+			next if $flat;
 			$canvas-> color( $c3d[1]);
 			$canvas-> arc( @cpt[0..1], $cpt[2]-$dp, $cpt[3]-$dp, 65 + $da, 235 - $da);
 			$canvas-> color( $c3d[0]);
@@ -2114,15 +2137,19 @@ sub on_paint
 		$knob += $rad / 50;
 		my @cxt = ( $self-> offset2pt( @cpt[0,1], $self-> {value}, $rad - $knob * 1.5), 4, 4);
 		$canvas->antialias(1);
-		$canvas-> lineWidth(($rad > 50) ? 2 : 1);
 		$canvas-> color( $c3d[0]);
-		$canvas-> arc( @cxt[0..1], $knob, $knob, 65, 235);
-		$canvas-> color((
-			cl::distance( $canvas->map_color($c3d[1]), $canvas->map_color($clr[1])) > 
-			cl::distance( $canvas->map_color($c3d[1]), 0)) ?
-				$c3d[1] : 0);
-		$canvas-> arc( @cxt[0..1], $knob, $knob, 255, 405);
-		$canvas-> lineWidth(0);
+		if ( $flat ) {
+			$canvas-> fill_ellipse( @cxt[0..1], $knob+1, $knob+1);
+		} else {
+			$canvas-> lineWidth(($rad > 50) ? 2 : 1);
+			$canvas-> arc( @cxt[0..1], $knob, $knob, 65, 235);
+			$canvas-> color((
+				cl::distance( $canvas->map_color($c3d[1]), $canvas->map_color($clr[1])) > 
+				cl::distance( $canvas->map_color($c3d[1]), 0)) ?
+					$c3d[1] : 0);
+			$canvas-> arc( @cxt[0..1], $knob, $knob, 255, 405);
+			$canvas-> lineWidth(0);
+		}
 		$canvas->antialias(0);
 	}
 AFTER_DIAL:

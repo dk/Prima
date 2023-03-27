@@ -211,8 +211,12 @@ sub Day_Paint
 	my @sz = $self-> size;
 	$canvas-> set( color => $self-> disabledColor, backColor => $self-> disabledBackColor)
 		unless $self-> enabled;
-	$canvas-> rect3d( Prima::rect->new(@sz)->inclusive, 2,
-		$self-> dark3DColor, $self-> light3DColor, $self-> backColor);
+	if ( $owner-> skin eq 'flat') {
+		$canvas-> clear( Prima::rect->new(@sz)->inclusive );
+	} else {
+		$canvas-> rect3d( Prima::rect->new(@sz)->inclusive, 2,
+			$self-> dark3DColor, $self-> light3DColor, $self-> backColor);
+	}
 
 	my @zs = ( $self-> {X}, $self-> {Y}, $self-> {CX1}, $self-> {CY});
 	my $i;
