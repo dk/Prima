@@ -448,6 +448,9 @@ apc_widget_begin_paint( Handle self, Bool inside_on_paint)
 		Point sz = apc_widget_get_size( self);
 		Point so = CWidget(owner)-> get_size( owner);
 		XDrawable dc;
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+		Picture argb_dc;
+#endif
 		Region region;
 		XRectangle xr = {0,0,0,0};
 		xr. width = sz.x;
@@ -456,6 +459,10 @@ apc_widget_begin_paint( Handle self, Bool inside_on_paint)
 		CWidget(owner)-> begin_paint( owner);
 		dc = X(owner)-> gdrawable;
 		X(owner)-> gdrawable = XX-> gdrawable;
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+		argb_dc = X(owner)-> argb_picture;
+		X(owner)-> argb_picture = XX-> argb_picture;
+#endif
 		X(owner)-> btransform. x = -po. x;
 		X(owner)-> btransform. y = so. y - sz. y - po. y;
 		if ( X(owner)-> paint_region) {
@@ -474,6 +481,9 @@ apc_widget_begin_paint( Handle self, Bool inside_on_paint)
 		X(owner)-> flags. kill_current_region = 1;
 		CWidget( owner)-> notify( owner, "sH", "Paint", owner);
 		X(owner)-> gdrawable = dc;
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+		X(owner)-> argb_picture = argb_dc;
+#endif
 		CWidget( owner)-> end_paint( owner);
 	}
 
