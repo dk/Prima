@@ -377,7 +377,7 @@ disregarding C<::showHint> value in widgets.
 
 =item skin SCALAR
 
-Exactly same as L< Prima::Widget/skin >, but is mentioned here because
+Exactly same as L<Prima::Widget/skin>, but is mentioned here because
 it is possible to change the whole application skin by changing this property,
 f ex like this:
 
