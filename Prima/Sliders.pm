@@ -192,12 +192,22 @@ sub on_paint
 	my @size = $canvas-> size;
 	my $p = $self-> {pressState};
 
-	$canvas-> rect3d( 0, 0, $size[0] - 1, $size[1] * 0.4 - 1, 2,
-		(($p != 2) ? @c3d : reverse @c3d), ($prelightPart eq 'upper') ? $prelightColor : $clr[1]);
-	$canvas-> rect3d( 0, $size[1] * 0.4, $size[0] - 1, $size[1] * 0.6 - 1, 2,
-		(($p != 3) ? @c3d : reverse @c3d), ($prelightPart eq 'middle') ? $prelightColor : $clr[1]);
-	$canvas-> rect3d( 0, $size[1] * 0.6, $size[0] - 1, $size[1] - 1, 2,
-		(($p != 1) ? @c3d : reverse @c3d), ($prelightPart eq 'lower') ? $prelightColor : $clr[1]);
+	my @parts = (
+		lower  => [0, $size[1] * 0.6, $size[0] - 1, $size[1] - 1],
+		upper  => [0, 0, $size[0] - 1, $size[1] * 0.4 - 1],
+		middle => [0, $size[1] * 0.4, $size[0] - 1, $size[1] * 0.6 - 1],
+	);
+	my $flat = $self-> skin eq 'flat';
+	for ( my ($i, $pressed) = (0, 1); $i < @parts; $i+=2, $pressed++) {
+		my $clr  = ($prelightPart eq $parts[$i]) ? $prelightColor : $clr[1];
+		my $rect = $parts[$i+1];
+		if ( $flat ) {
+			$self-> color($clr);
+			$self-> bar( @$rect );
+		} else {
+			$canvas-> rect3d( @$rect, 2, (($p != $pressed) ? @c3d : reverse @c3d), $clr);
+		}
+	}
 
 	$canvas-> color( $clr[0]);
 	my $p1 = ( $p == 1) ? 1 : 0;
@@ -731,7 +741,7 @@ sub on_paint
 	my ( $l3, $d3) = ( $self-> light3DColor, $self-> dark3DColor);
 	$canvas-> color( $clComplete);
 
-	# INDETERMINATE STYLE HACK
+ 	# INDETERMINATE STYLE HACK
 	my $left_bound =
 		$self->indeterminate ?
 			$complete - ($self->{sliderLength} * ($v ? $y : $x) / $range + 0.5) :
