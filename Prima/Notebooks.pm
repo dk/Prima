@@ -35,6 +35,7 @@ sub profile_default
 	my %prf = (
 		antialias        => 1,
 		colored          => 1,
+		colorset         => \@warpColors,
 		firstTab         => 0,
 		focusedTab       => 0,
 		height           => $font-> { height} > 14 ? $font-> { height} * 2 : 28,
@@ -59,8 +60,9 @@ sub init
 	for ( qw( colored firstTab focusedTab topMost lastTab arrows)) { $self-> {$_} = 0; }
 	$self-> {tabs}     = [];
 	$self-> {widths}   = [];
+	$self-> {colorset} = [cl::Back];
 	my %profile = $self-> SUPER::init(@_);
-	for ( qw( colored topMost tabs focusedTab firstTab tabIndex)) { $self-> $_( $profile{ $_}); }
+	for ( qw( colorset colored topMost tabs focusedTab firstTab tabIndex)) { $self-> $_( $profile{ $_}); }
 	$self-> recalc_widths;
 	$self-> reset;
 	return %profile;
@@ -350,10 +352,9 @@ PaintEarsThen:
 		@poly[1,3,5,7] = @poly[3,1,7,5] unless $tm;
 		$notifier-> ( @notifyParms, $canvas, -2, \@colorSet, \@poly);
 	}
-
 	$canvas-> color( $c3d[0]);
-	my @ld = $tm ? ( 0, $s * DefGapY - 0.5) : ( $size[1] - 0, $size[1] - $s * DefGapY - 0.5);
-	$canvas-> line( $size[0] - 1, $ld[0], $size[0] - 1, $ld[1]);
+	my @ld = $tm ? ( -0.5, $s * DefGapY - 0.5) : ( $size[1] - 0, $size[1] - $s * DefGapY - 0.5);
+	$canvas-> line( $size[0] - 0.5, $ld[0], $size[0] - 0.5, $ld[1]);
 
 	if ($tm) {
 		$canvas-> color( $c3d[1]) unless $flat;
@@ -443,8 +444,9 @@ sub on_drawtab
 	my ( $self, $canvas, $i, $clr, $poly, $poly2) = @_;
 
 	my $flat = $self->skin eq 'flat';
+	my $colorset = $self->{colorset};
 	my $color = ( $self-> {colored} && !$flat && ( $i >= 0)) ?
-		( $warpColors[ $i % scalar @warpColors]) : $$clr[1];
+		( $colorset->[ $i % scalar @$colorset]) : $$clr[1];
 	$color = $self-> prelight_color($color) if ($self->{prelight} // '') eq ($i // '');
 	$canvas-> color($color);
 	$canvas-> fillpoly( $poly);
@@ -675,7 +677,8 @@ sub set_top_most
 	$self-> repaint;
 }
 
-sub colored      {($#_)?($_[0]-> {colored}=$_[1],$_[0]-> repaint)         :return $_[0]-> {colored}}
+sub colored      {($#_)?($_[0]-> {colored}=$_[1],$_[0]-> repaint)        :return $_[0]-> {colored}}
+sub colorset     {($#_)?($_[0]-> {colorset}=$_[1],$_[0]-> repaint)       :return $_[0]-> {colorset}}
 sub focusedTab   {($#_)?($_[0]-> set_focused_tab(    $_[1]))             :return $_[0]-> {focusedTab}}
 sub firstTab     {($#_)?($_[0]-> set_first_tab(    $_[1]))               :return $_[0]-> {firstTab}}
 sub tabIndex     {($#_)?($_[0]-> set_tab_index(    $_[1]))               :return $_[0]-> {tabIndex}}
@@ -1015,7 +1018,7 @@ use constant Top    => 0;
 use constant Bottom => 1;
 
 package Prima::TabbedNotebook;
-use vars qw(@ISA %notebookProps);
+use vars qw(@ISA %notebookProps %tabsetProps);
 @ISA = qw(Prima::Widget);
 
 use constant DefBorderX   => 11;
@@ -1034,10 +1037,19 @@ for ( keys %notebookProps) {
 GENPROC
 }
 
+%tabsetProps = map { $_, 1 } qw(colored colorset);
+for ( keys %tabsetProps) {
+	eval <<GENPROC;
+   sub $_ { return shift-> {tabSet}-> $_(\@_); }
+GENPROC
+}
+
 sub profile_default
 {
+	my $tabset = Prima::TabSet->profile_default;
 	return {
 		%{Prima::Notebook-> profile_default},
+		(map { $_, $tabset->{$_} } keys %tabsetProps),
 		%{$_[ 0]-> SUPER::profile_default},
 		ownerBackColor      => 1,
 		tabs                => [],
@@ -1078,6 +1090,7 @@ sub init
 		top           => $size[1] - 1,
 		growMode      => gm::Ceiling,
 		height        => $maxh > 28 ? $maxh : 28,
+		(map { $_     => $profile{$_}} keys %tabsetProps),
 		buffered      => 1,
 		designScale   => undef,
 		delegations   => $profile{tabsetDelegations},
@@ -1904,6 +1917,12 @@ A boolean property, selects whether each tab uses unique color
 
 Default value: 1
 
+=item colorset ARRAY
+
+Allows to specify custom colors for the tabs.
+
+Used only when C<colored> is set to 1.
+
 =item firstTab INTEGER
 
 Selects the first ( leftmost ) visible tab.
@@ -2015,6 +2034,9 @@ pages, which can be switched using native C<Prima::TabbedNotebook> controls.
 First-level tab is often referred as I<tab>, and second-level as I<page>.
 
 =head2 Properties
+
+The class forwards the following properties of C<Prima::TabSet>, which are
+described in L<Prima::TabSet>: C<colored>, C<colorset>
 
 =over
 

@@ -69,6 +69,15 @@ sub init
 		growMode => gm::XCenter,
 		onClick => sub { $n-> skin(($n-> skin eq 'flat') ? 'classic' : 'flat') },
 	);
+
+	$n-> insert_transparent('Button',
+		name   => 'StyleButton',
+		text   => 'Random Colors',
+		origin => [0,80],
+		size   => [200,20],
+		growMode => gm::XCenter,
+		onClick => sub { $n->colorset([ map { rand cl::White } 0 .. (1 + rand 20) ]) },
+	);
 	$n-> use_current_size;
 	return %profile;
 }
