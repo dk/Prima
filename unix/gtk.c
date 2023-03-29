@@ -510,9 +510,9 @@ prima_gtk_init(void)
 		colors[1] = stdcolors[wcInputLine >> 16][ciLight3DColor];
 		colors[2] = stdcolors[wcInputLine >> 16][ciDark3DColor];
 		if (
-			(abs( COLOR_R(colors[0]) - COLOR_R(colors[1])) < 16) &&
-			(abs( COLOR_G(colors[0]) - COLOR_G(colors[1])) < 16) &&
-			(abs( COLOR_B(colors[0]) - COLOR_B(colors[1])) < 16)
+			(abs( COLOR_R((int)colors[0]) - COLOR_R((int)colors[1])) < 16) &&
+			(abs( COLOR_G((int)colors[0]) - COLOR_G((int)colors[1])) < 16) &&
+			(abs( COLOR_B((int)colors[0]) - COLOR_B((int)colors[1])) < 16)
 		) {
 			int r = ( COLOR_R(colors[0]) * 0.75 + COLOR_R(colors[2]) * 0.25);
 			int g = ( COLOR_G(colors[0]) * 0.75 + COLOR_G(colors[2]) * 0.25);
