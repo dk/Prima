@@ -14,6 +14,7 @@ use strict;
 use warnings;
 use Prima qw(InputLine Edit Application sys::AnyEvent);
 use AnyEvent::Socket;
+use Socket qw(inet_aton inet_ntoa);
 
 my $w = Prima::MainWindow-> create(
 	size      => [ $::application-> width * 0.6, $::application-> height * 0.6],
@@ -42,14 +43,20 @@ my $il = $w-> insert( InputLine =>
 		$uri = '/' unless length $uri;
 
 		$e-> text("");
+		my $iaddr;
+		# observed some errors in resolving with AnyEvent::DNS, use inet_aton instead
+		unless ( $iaddr = inet_aton($remote)) {
+			$e-> text( "Cannot resolve $remote");
+			return;
+		}
 
-		tcp_connect $remote, $port, sub {
+		tcp_connect inet_ntoa($iaddr), $port, sub {
 			my ($fh, $host, $port) = @_;
 
 			return $e-> text("error:$!") unless $fh;
 
 			# make a GET request on the socket
-			syswrite $fh, "GET $uri HTTP/1.1 \r\n\r\n";
+			syswrite $fh, "GET $uri HTTP/1.1\r\nHost: $remote\r\nConnection: close\r\n\r\n";
 			shutdown $fh, 1;
 
 			# create an event watcher on the socket $fh for reading
