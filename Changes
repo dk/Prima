@@ -5,6 +5,7 @@ Revision history for Perl module Prima
  - Drawable.matrix returns Prima::Matrix objects
  - Speedup x11 matrix image rendering with XRender
  - Introduce Widget.skin and an optional flat skin for toolkit widgets
+ - Add 3D demo
 
 1.68 2023-02-25
  - Process signals inside event loop

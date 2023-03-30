@@ -75,6 +75,7 @@ class/Widget/geometry.c
 class/Widget/taborder.c
 class/Window.c
 class/Window.cls
+examples/3d.pl
 examples/animate.pl
 examples/antialias.pl
 examples/async.pl
