@@ -147,7 +147,6 @@ sub draw_column
 	$hit     += RAYSIZE while $hit < @$rays && ( $rays->[$hit] < 0 || $grid[$rays->[$hit]] == 0 );
 	$hit      = ($hit - HEIGHT)/RAYSIZE;
 
-	my @alphas;
 	for ( my $s = @$rays - RAYSIZE; $s >= 0; $s -= RAYSIZE) {
 		my $step         = $s / RAYSIZE;
 		my $cos_distance = $cos_angle * $rays->[$s + DISTANCE] || 1;
@@ -165,20 +164,17 @@ sub draw_column
 			next unless $can_alpha;
 			my $alpha = ($rays->[$s + DISTANCE] + $rays->[$s + SHADING]) / 5;
 			$alpha = 0 if $alpha < 0;
-			push @alphas, $alpha, $bottom, $wproj_height;
+			$canvas->alpha($alpha * 255);
+			$canvas->bar( $left, $bottom, $left + $width - 1, $bottom + $wproj_height - 1);
 		}
 	}
 
-	$canvas->color(cl::Black);
-	for ( my $i = 0; $i < @alphas; $i += 3) {
-		$canvas->alpha($alphas[$i] * 255);
-		$canvas->bar( $left, $alphas[$i+1], $left + $width - 1, $alphas[$i+1] + $alphas[$i+2] - 1);
-	}
 }
 
 sub draw_columns
 {
 	my $canvas = shift;
+	$canvas->color(cl::Black);
 	for ( my $column = 0; $column < $resolution; $column++) {
 		my $angle = $fov * ( $column / $resolution - 0.5 );
 		my $ray   = $cast_cache->[$column] //= cast($x, $y, $direction + $angle, $range, $size);
