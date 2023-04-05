@@ -146,6 +146,7 @@ sub profile_default
 		focusedItem    => -1,
 		iconCollapsed  => undef,
 		iconExpanded   => undef,
+		iconStyle      => 'default',
 		indent         => int( 12 * $::application->uiScaling + .5),
 		itemHeight     => $def-> {font}-> {height},
 		items          => [],
@@ -158,7 +159,6 @@ sub profile_default
 		vScrollBarProfile=>{},
 		selectable     => 1,
 		showItemHint   => 1,
-		style          => 'default',
 		vScroll        => 1,
 		widgetClass    => wc::ListBox,
 	);
@@ -196,13 +196,13 @@ sub init
 	for ( qw( itemHeight indent))
 		{ $self-> {$_} = 1; }
 	$self-> {items}      = [];
-	$self-> {style}      = 'default';
+	$self-> {iconStyle}  = 'default';
 	my %profile = $self-> SUPER::init(@_);
 	$self-> setup_indents;
 	$self->{$_} = $profile{$_} for qw(scrollBarClass hScrollBarProfile vScrollBarProfile);
 	for ( qw( autoHScroll autoVScroll hScroll vScroll offset itemHeight autoHeight borderWidth
 		indent items focusedItem topItem showItemHint dragable multiSelect extendedSelect
-		style iconCollapsed iconExpanded drawLines
+		iconStyle skin iconCollapsed iconExpanded drawLines
 	))
 		{ $self-> $_( $profile{ $_}); }
 	$self-> reset;
@@ -1428,13 +1428,27 @@ sub iconExpanded
 	$_[0]-> repaint;
 }
 
-sub style
+sub iconStyle
 {
-	return $_[0]-> {style} unless $#_;
+	return $_[0]-> {iconStyle} unless $#_;
 	my ( $self, $style ) = @_;
 	$self->iconCollapsed( Prima::Outlines->icon( type => 'collapsed', style => $style) );
 	$self->iconExpanded(  Prima::Outlines->icon( type => 'expanded' , style => $style) );
 	$self->drawLines( $style ne 'triangle' );
+}
+
+sub skin
+{
+	return $_[0]->SUPER::skin unless $#_;
+	my $self = shift;
+	$self->SUPER::skin($_[1]);
+	my $skin = $self->SUPER::skin;
+	if ($skin eq 'flat') {
+		$self->iconStyle('triangle');
+	} elsif ( $skin eq 'classic') {
+		$self->iconStyle('plusminus');
+	}
+	$self->repaint;
 }
 
 sub get_index
@@ -2207,7 +2221,7 @@ Prima::Outlines - tree view widgets
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/outline.gif">
 
 	my $outline = Prima::StringOutline-> create(
-		style => 'triangle',
+		iconStyle => 'triangle',
 		...
 	);
 
@@ -2324,6 +2338,12 @@ Sets the image that is to be displayed when a tree branch is collapsed
 
 Sets the image that is to be displayed when a tree branch is expanded
 
+=item iconStyle STYLE
+
+Sets visual style, one of: C<default>, C<plusminus>, C<triangle>.
+
+The default style is set in C<$Prima::Outlines::default_style> and is currently 'plusminus'
+
 =item indent INTEGER
 
 Width in pixels of the indent between item levels.
@@ -2378,12 +2398,6 @@ the hint is never shown.
 See also: L<makehint>.
 
 Default value: 1
-
-=item style STYLE
-
-Sets visual style, one of: C<default>, C<plusminus>, C<triangle>.
-
-The default style is set in C<$Prima::Outlines::default_style> and is currently 'plusminus'
 
 =item topItem INTEGER
 
