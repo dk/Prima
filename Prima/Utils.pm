@@ -17,7 +17,8 @@ use vars qw(@ISA @EXPORT @EXPORT_OK);
 	username
 	xcolor
 	find_image path
-	alarm post last_error
+	sleep alarm post wait
+	last_error
 
 	chdir chmod closedir getcwd link mkdir open_file open_dir
 	read_dir rename rmdir unlink utime
@@ -84,7 +85,7 @@ sub path
 sub alarm
 {
 	my ( $timeout, $sub, @params) = @_;
-	return 0 unless $::application;
+	return undef unless $::application;
 	my $timer = Prima::Timer-> create(
 		name    => $sub,
 		timeout => $timeout,
@@ -95,9 +96,38 @@ sub alarm
 		}
 	);
 	$timer-> start;
-	return 1 if $timer-> get_active;
+	return $timer if $timer-> get_active;
 	$timer-> destroy;
-	return 0;
+	return undef;
+}
+
+sub sleep
+{
+	my $stop;
+	Prima::Utils::alarm( 1000 * shift, sub { $stop++ } );
+	$::application->yield(1) while !$stop;
+}
+
+sub wait
+{
+	my ( $cond, $timeout ) = @_;
+	Carp::carp("bad condition"), return undef unless ref $cond;
+	return undef unless $::application;
+
+	my $sub = (ref($cond) eq 'CODE') ? $cond : sub { !!$$cond };
+	return 1 if $sub->();
+
+	unless ( defined $timeout ) {
+		$::application->yield(1) while !$sub->();
+		return 1;
+	}
+
+	my $alarm;
+	my $timer = Prima::Utils::alarm( $timeout, sub { $alarm = 1 }) or return undef;
+	$::application->yield(1) while !$alarm && !$sub->();
+	return 0 if $alarm;
+	$timer->destroy if $timer->alive;
+	return 1;
 }
 
 sub post
@@ -137,6 +167,8 @@ The module contains miscellaneous helper routines.
 =item alarm $TIMEOUT, $SUB, @PARAMS
 
 Calls SUB with PARAMS after TIMEOUT milliseconds.
+Return 0 on failure, and the active timer on success.
+The timer can be stopped to disarm the alarm.
 
 =item beep [ FLAGS = mb::Error ]
 
@@ -227,6 +259,12 @@ the system supports no drive letters ( unix ), C<dt::None> is returned.
 	dt::CDROM
 	dt::Memory
 
+=item sleep SECONDS
+
+Same as perl's native C<sleep> (i.e. C<CORE::sleep>) but with the event loop
+running.  Note that the argument it takes is seconds, for the sake of
+compatibility, while the rest of the toolkit operates in milliseconds.
+
 =item sound [ FREQUENCY = 2000, DURATION = 100 ]
 
 Issues a tone of FREQUENCY in Hz with DURATION in milliseconds.
@@ -245,6 +283,15 @@ Accepts COLOR string on one of the three formats:
 	#rrrgggbbb
 
 and returns 24-bit RGB integer value.
+
+=item wait CONDITION [, TIMEOUT ]
+
+Waits for a condition for max TIMEOUT milliseconds, or forever if TIMEOUT is undefined.
+
+Returns undef on failure, 0 on TIMEOUT, 1 on successful CONDITION.
+
+CONDITION is either a scalar reference, or a sub to be polled, where their values
+are treated as 0 as a signal to continue the wait, and 1 as a stop signal.
 
 =back
 
