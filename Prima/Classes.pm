@@ -1861,6 +1861,7 @@ sub begin_drag
 				last unless $flyback;
 				$paint_flag = 0;
 				Prima::Utils::sleep(0.02);
+				last unless $flyback;
 				$flyback->origin(@npp);
 				$flyback->bring_to_front;
 			}
