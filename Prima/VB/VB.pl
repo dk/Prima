@@ -939,9 +939,7 @@ sub fm_reclass
 	my $self = $VB::form;
 	return unless $self;
 	my @wijs = $VB::form-> marked_widgets;
-	return unless scalar @wijs;
-	my $cx = $wijs[0];
-	$self = $cx if $cx;
+	$self = $wijs[0] if @wijs;
 	my $lab_text = 'Class name';
 	$lab_text =  "Temporary class for ".$self-> {realClass} if defined $self-> {realClass};
 	my $dlg = Prima::Dialog-> create(
