@@ -423,7 +423,9 @@ sub InputLine_KeyDown
 		( $key != kb::Space) &&
 		( $key != kb::Backspace)
 	) {
-		return if $key == kb::Tab || $key == kb::BackTab || $key == kb::NoKey;
+		return if $key == kb::Tab || $key == kb::BackTab || $key == kb::NoKey ||
+			(($key & kb::ShiftL & kb::ShiftR) != 0);
+		return unless $code;
 		$edit-> {incline} = '';
 		$self-> listVisible(1), $edit-> clear_event
 			if $key == kb::Down && $_[0]-> {style} != cs::Simple;
