@@ -194,22 +194,25 @@ sub on_drawitem
 
 	my ( $iconWidth, $iconHeight) = $icon ?
 		( $icon-> width/$glyphs, $icon-> height) : ( 0, 0);
-	if ( $type == ROOT || $type == NODE) {
-		$x = $left + 2 + $indent + $iconWidth / 2;
-		$x = int( $x);
-		$y = ($top + $bottom) / 2;
-		$canvas-> line( $x, $bottom, $x, $y);
-	}
 
-	if ( $type != ROOT && $type != ROOT_ONLY) {
-		$x = $left + 2 + $prevIndent + $iconWidth / 2;
-		$x = int( $x);
-		$x2 = $left + 2 + $indent + $iconWidth / 2;
-		$x2 = int( $x2);
-		$y = ($top + $bottom) / 2;
-		$canvas-> line( $x, $y, $x2, $y);
-		$canvas-> line( $x, $y, $x, $top);
-		$canvas-> line( $x, $y, $x, $bottom) if $type == LEAF;
+	if ( $self->skin ne 'flat') {
+		if ( $type == ROOT || $type == NODE) {
+			$x = $left + 2 + $indent + $iconWidth / 2;
+			$x = int( $x);
+			$y = ($top + $bottom) / 2;
+			$canvas-> line( $x, $bottom, $x, $y);
+		}
+
+		if ( $type != ROOT && $type != ROOT_ONLY) {
+			$x = $left + 2 + $prevIndent + $iconWidth / 2;
+			$x = int( $x);
+			$x2 = $left + 2 + $indent + $iconWidth / 2;
+			$x2 = int( $x2);
+			$y = ($top + $bottom) / 2;
+			$canvas-> line( $x, $y, $x2, $y);
+			$canvas-> line( $x, $y, $x, $top);
+			$canvas-> line( $x, $y, $x, $bottom) if $type == LEAF;
+		}
 	}
 
 	$canvas-> put_image_indirect ( $icon,
