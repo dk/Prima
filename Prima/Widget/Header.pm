@@ -77,8 +77,14 @@ sub on_paint
 		$prelightColor = $self-> prelight_color($c[1]);
 		$prelightPart = $self->{prelight};
 	}
+	my $flat = $self->skin eq 'flat';
 
-	$self-> rect3d( 0, 0, $size[0]-1, $size[1]-1, 1, @c3d, $c[1]);
+	if ( $flat ) {
+		$canvas-> backColor($c[1]);
+		$canvas-> clear;
+	} else {
+		$canvas-> rect3d( 0, 0, $size[0]-1, $size[1]-1, 1, @c3d, $c[1]);
+	}
 	my $v = $self-> {vertical};
 	my ( $x, $y) = ( - $self-> {offset}, ( $size[1] - $self-> {fontHeight}) / 2);
 	my $i;
@@ -97,39 +103,49 @@ sub on_paint
 		}
 		my $mx = ( $d + $$wx[$i] + 1 > $lim - 2) ? ($lim - 2) : ($d + $$wx[$i] + 1);
 		$v ?
-			$self-> clipRect( 1, $d < 1 ? 1 : $d, $size[0] - 2, $mx) :
-			$self-> clipRect( $d < 1 ? 1 : $d, 1, $mx, $size[1] - 2);
-		if ( $i == $prelightPart) {
-			$self-> color($prelightColor);
-			$self-> bar(0,0,@size);
+			$canvas-> clipRect( 1, $d < 1 ? 1 : $d, $size[0] - 2, $mx) :
+			$canvas-> clipRect( $d < 1 ? 1 : $d, 1, $mx, $size[1] - 2);
+		if ( $i == $pressed && $flat ) {
+			$canvas-> color($self->hiliteBackColor);
+			$canvas-> bar(0,0,@size);
+			$canvas-> color($self->hiliteColor);
+		} elsif ( $i == $prelightPart) {
+			$canvas-> color($prelightColor);
+			$canvas-> bar(0,0,@size);
+			$canvas-> color( $c[0]);
+		} else {
+			$canvas-> color( $c[0]);
 		}
-		$self-> color( $c[0]);
+
 		$v ?
 			$notifier-> ( @notifyParms, $canvas, $i, 1, $d + 1, $size[0] - 2, $mx - 1, $d + 4) :
 			$notifier-> ( @notifyParms, $canvas, $i, $d + 1, 1, $mx - 1, $size[1] - 2, $y);
+		goto NO_LINES if $flat;
 		if ( $i == $pressed) {
-			$self-> color( $c3d[1]);
+			$canvas-> color( $c3d[1]);
 			$v ?
-				$self-> line( $size[0] - 2, $d, $size[0] - 2, $d + $$wx[$i]) :
-				$self-> line( $d, $size[1] - 2, $d + $$wx[$i], $size[1] - 2);
+				$canvas-> line( $size[0] - 2, $d, $size[0] - 2, $d + $$wx[$i]) :
+				$canvas-> line( $d, $size[1] - 2, $d + $$wx[$i], $size[1] - 2);
 		} else {
-			$self-> color( $c3d[0]);
+			$canvas-> color( $c3d[0]);
 		}
 		$v ?
-			$self-> line( 1, $d, $size[0] - 2, $d) :
-			$self-> line( $d, 1, $d, $size[1] - 2);
+			$canvas-> line( 1, $d, $size[0] - 2, $d) :
+			$canvas-> line( $d, 1, $d, $size[1] - 2);
 		if ( $i == $pressed) {
-			$self-> color( $c3d[0]);
+			$canvas-> color( $c3d[0]);
 			$v ?
-				$self-> line( 1, $d, 1, $d + $$wx[$i]) :
-				$self-> line( $d, 1, $d + $$wx[$i], 1);
+				$canvas-> line( 1, $d, 1, $d + $$wx[$i]) :
+				$canvas-> line( $d, 1, $d + $$wx[$i], 1);
 		} else {
-			$self-> color( $c3d[1]);
+			$canvas-> color( $c3d[1]);
 		}
+	NO_LINES:
 		$d += $$wx[$i] + 1;
 		$v ?
-			$self-> line( 1, $d, $size[0] - 2, $d) :
-			$self-> line( $d, 1, $d, $size[1] - 2);
+			$canvas-> line( 1, $d, $size[0] - 2, $d) :
+			$canvas-> line( $d, 1, $d, $size[1] - 2)
+			unless $flat;
 		last if $d > $lim - 3;
 		$d++;
 	}
