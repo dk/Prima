@@ -1291,9 +1291,25 @@ sub profile_default
 {
 	return {
 		%{$_[ 0]-> SUPER::profile_default},
+		border             => 1,
 		ownerBackColor     => 1,
 		autoEnableChildren => 1,
 	}
+}
+
+sub init
+{
+	my $self = shift;
+	my %profile = $self-> SUPER::init(@_);
+	$self-> {border}  = $profile{border};
+	return %profile;
+}
+
+sub border
+{
+	return $_[0]->{border} unless $#_;
+	$_[0]->{border} = $_[1];
+	$_[0]->repaint;
 }
 
 sub on_radioclick
@@ -1318,14 +1334,16 @@ sub on_paint
 		$canvas-> bar( 0, 0, @size);
 	}
 	my $fh = $canvas-> font-> height;
-	if ( $self->skin eq 'flat') {
-		$canvas-> color( $self-> dark3DColor);
-		$canvas-> rectangle( 0, 0, $size[0] - 1, $size[1] - $fh / 2 - 1);
-	} else {
-		$canvas-> color( $self-> light3DColor);
-		$canvas-> rectangle( 1, 0, $size[0] - 1, $size[1] - $fh / 2 - 2);
-		$canvas-> color( $self-> dark3DColor);
-		$canvas-> rectangle( 0, 1, $size[0] - 2, $size[1] - $fh / 2 - 1);
+	if ( $self->{border}) {
+		if ( $self->skin eq 'flat') {
+			$canvas-> color( $self-> dark3DColor);
+			$canvas-> rectangle( 0, 0, $size[0] - 1, $size[1] - $fh / 2 - 1);
+		} else {
+			$canvas-> color( $self-> light3DColor);
+			$canvas-> rectangle( 1, 0, $size[0] - 1, $size[1] - $fh / 2 - 2);
+			$canvas-> color( $self-> dark3DColor);
+			$canvas-> rectangle( 0, 1, $size[0] - 2, $size[1] - $fh / 2 - 1);
+		}
 	}
 	my $c = $self->text;
 	if ( length( $c) > 0) {
@@ -1849,6 +1867,10 @@ to disable this functionality.
 =head2 Properties
 
 =over
+
+=item border BOOLEAN
+
+If set (default), draws a border along the widget boundaries
 
 =item index INTEGER
 
