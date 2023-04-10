@@ -2319,7 +2319,7 @@ sub profile_default
 		ownerSkin      => 0,
 		ownerPalette   => 0,
 		showHint       => 1,
-		skin           => 'default',
+		skin           => 'flat',
 		hintClass      => 'Prima::HintWidget',
 		hintColor      => cl::Black,
 		hintBackColor  => 0xffff80,
