@@ -41,21 +41,21 @@ Drawable_arc( Handle self, double x, double y, double dX, double dY, double star
 {
 	CHECK_GP(false);
 	while ( startAngle > endAngle ) endAngle += 360.0;
-	return primitive( self, 0, "snnnnnn", "arc", x, y, dX-1, dY-1, startAngle, endAngle);
+	return primitive( self, 0, "snnnnnn", "arc", x, y, dX, dY, startAngle, endAngle);
 }
 
 Bool
 Drawable_chord( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
 {
 	CHECK_GP(false);
-	return primitive( self, 0, "snnnnnn", "chord", x, y, dX-1, dY-1, startAngle, endAngle);
+	return primitive( self, 0, "snnnnnn", "chord", x, y, dX, dY, startAngle, endAngle);
 }
 
 Bool
 Drawable_ellipse( Handle self, double x, double y,  double dX, double dY)
 {
 	CHECK_GP(false);
-	return primitive( self, 0, "snnnn", "ellipse", x, y, dX-1, dY-1);
+	return primitive( self, 0, "snnnn", "ellipse", x, y, dX, dY);
 }
 
 Bool
@@ -205,21 +205,21 @@ Bool
 Drawable_fill_chord( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
 {
 	CHECK_GP(false);
-	return primitive( self, 1, "snnnnnn", "chord", x, y, dX-1, dY-1, startAngle, endAngle);
+	return primitive( self, 1, "snnnnnn", "chord", x, y, dX, dY, startAngle, endAngle);
 }
 
 Bool
 Drawable_fill_ellipse( Handle self, double x, double y,  double dX, double dY)
 {
 	CHECK_GP(false);
-	return primitive( self, 1, "snnnn", "ellipse", x, y, dX-1, dY-1);
+	return primitive( self, 1, "snnnn", "ellipse", x, y, dX, dY);
 }
 
 Bool
 Drawable_fill_sector( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
 {
 	CHECK_GP(false);
-	return primitive( self, 1, "snnnnnn", "sector", x, y, dX-1, dY-1, startAngle, endAngle);
+	return primitive( self, 1, "snnnnnn", "sector", x, y, dX, dY, startAngle, endAngle);
 }
 
 Bool
@@ -378,7 +378,7 @@ Bool
 Drawable_sector( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
 {
 	CHECK_GP(false);
-	return primitive( self, 0, "snnnnnn", "sector", x, y, dX-1, dY-1, startAngle, endAngle);
+	return primitive( self, 0, "snnnnnn", "sector", x, y, dX, dY, startAngle, endAngle);
 }
 
 #ifdef __cplusplus

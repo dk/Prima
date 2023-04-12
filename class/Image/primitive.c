@@ -353,7 +353,7 @@ Image_arc( Handle self, double x, double y, double dX, double dY, double startAn
 {
 	if ( opt_InPaint) return inherited arc(self, x, y, dX, dY, startAngle, endAngle);
 	while ( startAngle > endAngle ) endAngle += 360.0;
-	return primitive( self, 0, "snnnnnn", "arc", x, y, dX-1, dY-1, startAngle, endAngle);
+	return primitive( self, 0, "snnnnnn", "arc", x, y, dX, dY, startAngle, endAngle);
 }
 
 Bool
@@ -485,7 +485,7 @@ Bool
 Image_chord( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
 {
 	if ( opt_InPaint) return inherited chord(self, x, y, dX, dY, startAngle, endAngle);
-	return primitive( self, 0, "snnnnnn", "chord", x, y, dX-1, dY-1, startAngle, endAngle);
+	return primitive( self, 0, "snnnnnn", "chord", x, y, dX, dY, startAngle, endAngle);
 }
 
 Bool
@@ -568,21 +568,21 @@ Bool
 Image_ellipse( Handle self, double x, double y,  double dX, double dY)
 {
 	if ( opt_InPaint) return inherited ellipse(self, x, y, dX, dY);
-	return primitive( self, 0, "snnnn", "ellipse", x, y, dX-1, dY-1);
+	return primitive( self, 0, "snnnn", "ellipse", x, y, dX, dY);
 }
 
 Bool
 Image_fill_chord( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
 {
 	if ( opt_InPaint) return inherited fill_chord(self, x, y, dX, dY, startAngle, endAngle);
-	return primitive( self, 1, "snnnnnn", "chord", x, y, dX-1, dY-1, startAngle, endAngle);
+	return primitive( self, 1, "snnnnnn", "chord", x, y, dX, dY, startAngle, endAngle);
 }
 
 Bool
 Image_fill_ellipse( Handle self, double x, double y,  double dX, double dY)
 {
 	if ( opt_InPaint) return inherited fill_ellipse(self, x, y, dX, dY);
-	return primitive( self, 1, "snnnn", "ellipse", x, y, dX-1, dY-1);
+	return primitive( self, 1, "snnnn", "ellipse", x, y, dX, dY);
 }
 
 Bool
@@ -596,7 +596,7 @@ Bool
 Image_fill_sector( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
 {
 	if ( opt_InPaint) return inherited fill_sector(self, x, y, dX, dY, startAngle, endAngle);
-	return primitive( self, 1, "snnnnnn", "sector", x, y, dX-1, dY-1, startAngle, endAngle);
+	return primitive( self, 1, "snnnnnn", "sector", x, y, dX, dY, startAngle, endAngle);
 }
 
 Bool
@@ -718,7 +718,7 @@ Bool
 Image_sector( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
 {
 	if ( opt_InPaint) return inherited sector(self, x, y, dX, dY, startAngle, endAngle);
-	return primitive( self, 0, "snnnnnn", "sector", x, y, dX-1, dY-1, startAngle, endAngle);
+	return primitive( self, 0, "snnnnnn", "sector", x, y, dX, dY, startAngle, endAngle);
 }
 
 
