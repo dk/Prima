@@ -256,7 +256,7 @@ apc_gp_aa_fill_poly( Handle self, int numPts, NPoint * points)
 
 	for ( i = 0; i < numPts; i++)  {
 		p[i].X = points[i].x - t.x;
-		p[i].Y = dy - points[i].y - t.y - 1.0;
+		p[i].Y = dy - points[i].y - t.y;
 	}
 
 	STYLUS_USE_GP_BRUSH;
