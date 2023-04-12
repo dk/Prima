@@ -431,11 +431,11 @@ apc_gp_aa_fill_poly( Handle self, int numPts, NPoint * points)
 
 	for ( i = 0; i < numPts; i++) {
 		p[i].x = points[i]. x + XX-> btransform. x;
-		p[i].y = REVERT(points[i]. y + XX-> btransform. y);
+		p[i].y = REVERT(points[i]. y + XX-> btransform. y - 1.0);
 		RANGE2(p[i].x, p[i].y);
 	}
 	p[numPts].x = points[0]. x + XX-> btransform. x;
-	p[numPts].y = REVERT(points[0]. y + XX-> btransform. y);
+	p[numPts].y = REVERT(points[0]. y + XX-> btransform. y - 1.0);
 	RANGE2(p[numPts].x, p[numPts].y);
 
 	ok = my_XRenderCompositeDoublePoly(
