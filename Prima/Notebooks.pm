@@ -1161,9 +1161,9 @@ sub on_paint
 			);
 		}
 
-		my $y = $size[1] - $s * DefBorderX + $s * Prima::TabSet::DefGapY;
-		my $x = $size[0] - $s * DefBorderX - $s * DefBookmarkX;
-		return if $y < $s * DefBorderX * 2 + $s * DefBookmarkX;
+		my $y = int($size[1] - $s * DefBorderX + $s * Prima::TabSet::DefGapY);
+		my $x = int($size[0] - $s * DefBorderX - $s * DefBookmarkX);
+		return if $y < int($s * DefBorderX * 2 + $s * DefBookmarkX);
 
 		my $ar  = 0;
 		my ($pi, $mpi) = (
@@ -1218,14 +1218,14 @@ sub on_paint
 			$canvas-> line( $x - 0, $y - 2, $x + $s * DefBookmarkX - 4, $y - $s * DefBookmarkX + 2);
 			$canvas-> line( $x + 5, $y - $s * DefBookmarkX - 2, $x + $s * DefBookmarkX - 5, $y - $s * DefBookmarkX - 2);
 
-			$canvas-> polyline([
-				$x + $s * 4, $y - $s * DefBookmarkX + $s * 6,
-				$x + $s * 10, $y - $s * DefBookmarkX + $s * 6,
-				$x + $s * 10, $y - $s * DefBookmarkX + $s * 8]) if $ar & 1;
-
 			my $S = int($s);
 			my $dx = $s * DefBookmarkX / 2;
 			my ( $x1, $y1) = ( $x + $dx, $y - $dx);
+			$canvas-> polyline([
+				$x + $s * 4,  $y - $s * DefBookmarkX + $s * 6,
+				$x + $s * 10, $y - $s * DefBookmarkX + $s * 6,
+				$x + $s * 10, $y1 - $s * 8]) if $ar & 1;
+
 			if ( $ar & 2 ) {
 				$canvas-> line( $x1 + $S * 1, $y1 + $S * 4, $x1 + $S * 3, $y1 + $S * 4);
 				$canvas-> line( $x1 + $S * 5, $y1 + $S * 6, $x1 + $S * 5, $y1 + $S * 8);
@@ -1239,7 +1239,11 @@ sub on_paint
 			} else {
 				$canvas-> line( $s * DefBorderX + 4, $y - $fh * 1.6 - 1, $x - $s * 6, $y - $fh * 1.6 - 1);
 			}
-			$canvas-> polyline([ $x + $s * 4, $y1 - $s * 9, $x + $s * 4, $y1 - $s * 8, $x + $s * 10, $y1 - $s * 8]) if $ar & 1;
+			$canvas-> polyline([
+				$x + $s * 4,  $y - $s * DefBookmarkX + $s * 6,
+				$x + $s * 4,  $y1 - $s * 8,
+				$x + $s * 10, $y1 - $s * 8
+			]) if $ar & 1;
 			if ( $ar & 2 ) {
 				$canvas-> line( $x1 + $S * 3, $y1 + $S * 2, $x1 + $S * 3, $y1 + $S * 3);
 				$canvas-> line( $x1 + $S * 6, $y1 + $S * 6, $x1 + $S * 7, $y1 + $S * 6);
