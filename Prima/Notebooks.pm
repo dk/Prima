@@ -38,7 +38,7 @@ sub profile_default
 		colorset         => \@warpColors,
 		firstTab         => 0,
 		focusedTab       => 0,
-		height           => $font-> { height} > 14 ? $font-> { height} * 2 : 28,
+		height           => $font-> { height}*2 + $::application->uiScaling * DefGapY,
 		lineWidth        => 1,
 		ownerBackColor   => 1,
 		selectable       => 1,
@@ -1080,7 +1080,6 @@ sub init
 	%profile = $self-> SUPER::init(%profile);
 
 	my @size = $self-> size;
-	my $maxh = $self-> font-> height * 2;
 
 	$self-> {tabSet} = $profile{tabsetClass}-> create(
 		owner         => $self,
@@ -1089,7 +1088,6 @@ sub init
 		width         => $size[0],
 		top           => $size[1] - 1,
 		growMode      => gm::Ceiling,
-		height        => $maxh > 28 ? $maxh : 28,
 		(map { $_     => $profile{$_}} keys %tabsetProps),
 		buffered      => 1,
 		designScale   => undef,
