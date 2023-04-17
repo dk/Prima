@@ -458,9 +458,10 @@ sub profile_default
 {
 	my $def = $_[ 0]-> SUPER::profile_default;
 	my %prf = (
-		name        => ref $_[ 0],
-		owner       => $::application,
-		delegations => undef,
+		name            => ref $_[ 0],
+		owner           => $::application,
+		delegations     => undef,
+		deepChildLookup => 0,
 	);
 	@$def{keys %prf} = values %prf;
 	return $def;
@@ -521,7 +522,7 @@ sub AUTOLOAD
 	Carp::confess "There is no such thing as \"$expectedMethod\"\n"
 		if scalar(@_) or not ref $self;
 	my ($componentName) = $expectedMethod =~ /::([^:]+)$/;
-	my $component = $self-> bring( $componentName, $self->autoloadDeepLookup ? 1000 : 0);
+	my $component = $self-> bring( $componentName, $self->deepChildLookup ? 1000 : 0);
 	Carp::confess("Unknown widget or method \"$expectedMethod\"")
 		unless $component && ref($component);
 	return $component;

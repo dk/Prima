@@ -34,6 +34,7 @@ Component_init( Handle self, HV * profile)
 		((( PComponent) var-> owner)-> self)-> attach( var-> owner, self);
 	my-> set_name( self, pget_sv( name));
 	my-> set_delegations( self, pget_sv( delegations));
+	my-> set_deepChildLookup( self, pget_B( deepChildLookup ));
 	var-> evQueue = plist_create( 8, 8);
 	apc_component_create( self);
 
