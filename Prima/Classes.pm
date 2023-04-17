@@ -513,8 +513,6 @@ sub get_notify_sub
 	return undef;
 }
 
-sub AUTOLOAD_DEEP_LOOKUP { $#_ ? $_[0]->{_autoload_deep_lookup} = $_[1] : $_[0]->{_autoload_deep_lookup} }
-
 sub AUTOLOAD
 {
 	no strict;
@@ -523,7 +521,7 @@ sub AUTOLOAD
 	Carp::confess "There is no such thing as \"$expectedMethod\"\n"
 		if scalar(@_) or not ref $self;
 	my ($componentName) = $expectedMethod =~ /::([^:]+)$/;
-	my $component = $self-> bring( $componentName, $self->{_autoload_deep_lookup} ? 1000 : 0);
+	my $component = $self-> bring( $componentName, $self->autoloadDeepLookup ? 1000 : 0);
 	Carp::confess("Unknown widget or method \"$expectedMethod\"")
 		unless $component && ref($component);
 	return $component;

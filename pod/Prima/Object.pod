@@ -783,12 +783,12 @@ possible the usage of the following constructs:
    ...
    $owner-> Obj-> destroy;
    ...
-   $obj-> AUTOLOAD_DEEP_LOOKUP(1);
+   $obj-> deepChildLookup(1);
    $obj-> insert(Foo => name => 'Bar');
    $owner-> Bar-> do_something;
 
 
-See also: C<find_component>, C<AUTOLOAD_DEEP_LOOKUP>
+See also: C<find_component>, C<deepChildLookup>
 
 =item can_event
 
@@ -956,15 +956,15 @@ Removes all notification subs from all event lists bound to REFERRER object.
 
 =over 4
 
-=item AUTOLOAD_DEEP_LOOKUP BOOL
+=item deepChildLookup BOOL
 
 If set, autoload component lookup by name uses a breadth-first deep lookup into the object hierarchy.
 If unset (default), only immediate children objects are searched.
 
-   $self->AUTOLOAD_DEEP_LOOKUP(0);
+   $self->deepChildLookup(0);
    $self->Child1->GrandChild2;
    ...
-   $self->AUTOLOAD_DEEP_LOOKUP(1);
+   $self->deepChildLookup(1);
    $self->GrandChild2;
 
 =item eventFlag STATE

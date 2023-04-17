@@ -379,6 +379,14 @@ Component_pop_event( Handle self)
 
 
 Bool
+Component_deepChildLookup( Handle self, Bool set, Bool deepChildLookup)
+{
+	if ( set )
+		opt_set( optDeepLookup );
+	return is_opt( optDeepLookup );
+}
+
+Bool
 Component_eventFlag( Handle self, Bool set, Bool eventFlag)
 {
 	if ( var-> stage == csDead)

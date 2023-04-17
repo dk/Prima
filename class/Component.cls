@@ -4,6 +4,7 @@ object Prima::Component( Prima::Object)
 	char        *name;
 	ApiHandle   handle;              # apc handle
 
+	property Bool      deepChildLookup;
 	property Bool      eventFlag;
 	property SV *      delegations;
 	property SV *      name;

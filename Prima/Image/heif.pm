@@ -253,7 +253,7 @@ sub save_dialog
 		Prima::message($@);
 		return;
 	}
-	$dialog->AUTOLOAD_DEEP_LOOKUP(1);
+	$dialog->deepChildLookup(1);
 	$dialog->Properties->expand_all;
 	$dialog->{refs} = \%data;
 	$dialog->{data} = {};
