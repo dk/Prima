@@ -9,6 +9,7 @@ my $d = Prima::Drawable-> create( width => 1, height => 1, type => im::RGB, anti
 my (@z, $i, @fpo, $fillPatternCount);
 
 my $can_antialias = $d->antialias;
+my $can_alpha     = $d->can_draw_alpha;
 $d->antialias(0);
 
 sub test
@@ -22,7 +23,7 @@ sub test
 }
 
 test( antialias => 0, 1 ) if $can_antialias;
-test( alpha => 255, 10 ) if $can_antialias;
+test( alpha => 255, 10 ) if $can_alpha;
 test( color => 0x123456, 0x654321 );
 test( backColor => 0x654321, 0x123456 );
 
@@ -150,7 +151,7 @@ sub check
 }
 
 check( antialias => 0,   1,  act => sub { $d->polyline([2,2,6,2,6,6]); }) if $can_antialias;
-check( alpha     => 200, 50, act => sub { $d->bar(2,2,6,6); }) if $can_antialias;
+check( alpha     => 200, 50, act => sub { $d->bar(2,2,6,6); }) if $can_alpha;
 $d->alpha(255);
 $d->antialias(0);
 
@@ -216,12 +217,9 @@ for my $aa ( 0, 1) {
 	check( linePattern => lp::Dot, lp::Dash, act => sub { $d->polyline([2,2,6,2,6,6]) });
 	$d->linePattern(lp::Solid);
 
-	unless ( $unix ) {
-		# X11 cannot do variable mitering
-		$d->lineWidth(2);
-		check( miterLimit => 1, 5, act => sub { $d->polyline([0,0,3,3,3,0]) });
-		$d->lineWidth(0);
-	}
+	$d->lineWidth(2);
+	check( miterLimit => 1, 5, act => sub { $d->polyline([0,0,3,3,3,0]) });
+	$d->lineWidth(0);
 
 	check( rop  => rop::NotPut, rop::CopyPut, act => sub { $d->bar(1,1,6,6) });
 	$d->rop(rop::CopyPut);

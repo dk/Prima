@@ -736,7 +736,7 @@ apc_gp_can_draw_alpha( Handle self)
 		return false;
 	else
 		return
-			guts.render_extension
+			guts.render_supports_argb32
 #ifdef WITH_COCOA
 			&& !prima_cocoa_is_x11_local()
 #endif
@@ -1489,11 +1489,10 @@ apc_gp_set_alpha( Handle self, int alpha)
 	if ( XF_IN_PAINT(XX)) {
 		if (XT_IS_BITMAP(XX) || (( XT_IS_PIXMAP(XX) || XT_IS_APPLICATION(XX)) && guts.depth==1))
 			alpha = 255;
-		if ( !guts.render_extension)
-			alpha = 255;
-
 		if ( XX-> alpha == alpha)
 			return true;
+		if ( !guts.render_supports_argb32)
+			alpha = 255;
 		XX-> alpha = alpha;
 		guts.xrender_pen_dirty = true;
 		if (
@@ -1562,7 +1561,10 @@ create_tile( Handle self, Handle image, Bool mono )
 	if ( mono || XT_IS_BITMAP(XX)) {
 		depth = 1;
 		flag = CACHE_BITMAP;
-	} else if ( XF_LAYERED(XX) || XX->alpha < 255 || XX->flags.antialias ) {
+	} else if (
+		(XF_LAYERED(XX) || XX->alpha < 255 || XX->flags.antialias) &&
+		guts.render_supports_argb32
+	) {
 		depth = guts.argb_depth;
 		flag = X(image)->type.icon ? CACHE_LAYERED_ALPHA : CACHE_LAYERED;
 	} else {

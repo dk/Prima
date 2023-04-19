@@ -85,7 +85,7 @@ prima_prepare_ximage( int width, int height, int format)
 		pformat = XYBitmap;
 		break;
 	case CACHE_LAYERED:
-		if ( guts. argb_depth ) {
+		if ( guts.render_supports_argb32 ) {
 			depth   = guts. argb_visual.depth;
 			idepth  = guts. argb_depth;
 			visual  = guts. argb_visual. visual;
@@ -420,7 +420,7 @@ apc_dbm_create( Handle self, int type)
 		depth = 1;
 		break;
 	case dbtLayered:
-		if ( guts. argb_depth ) {
+		if ( guts. render_supports_argb32 ) {
 			XX-> flags.layered = 1;
 			depth = guts. argb_depth;
 			XX-> colormap = guts. argbColormap;
@@ -1213,8 +1213,8 @@ create_image_cache( PImage img, int type, int alpha)
 	case CACHE_A8:
 	case CACHE_LAYERED:
 	case CACHE_LAYERED_ALPHA:
-		if ( !guts. argb_visual. visual ) {
-			warn("panic: no argb visual");
+		if ( !guts. render_supports_argb32 ) {
+			warn("panic: no argb support");
 			return NULL;
 		}
 		break;
@@ -2410,6 +2410,8 @@ get_image_dst_format( Handle self, int rop, int src_type, Bool use_xrender )
 
 	if ( use_xrender ) {
 		if ( !guts.render_extension )
+			return img_render_nullset;
+		if ( !guts.render_supports_argb32 && src_type == SRC_ARGB )
 			return img_render_nullset;
 		/* xrender cannot rops */
 		if ( src_type != SRC_LAYERED && src_type != SRC_ARGB && rop != ropCopyPut )

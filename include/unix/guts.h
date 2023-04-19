@@ -702,6 +702,7 @@ typedef struct _UnixGuts
 	Bool                         xft_no_antialias;
 	Bool                         randr_extension;
 	Bool                         render_extension;
+	Bool                         render_supports_argb32;
 	Bool                         composite_extension;
 	int                          composite_opcode;
 	Bool                         composite_error_triggered;
@@ -1184,7 +1185,7 @@ extern Bool
 prima_init_color_subsystem( char * error_buf);
 
 extern Bool
-prima_init_xrender_subsystem( char * error_buf);
+prima_init_xrender_subsystem( char * error_buf, Bool disable_argb32);
 
 extern Bool
 prima_find_color_mask_range( unsigned long mask, unsigned int * shift, unsigned int * range);

@@ -168,6 +168,7 @@ static Bool  do_no_shmem   = false;
 static Bool  do_no_gtk     = false;
 static Bool  do_no_quartz  = false;
 static Bool  do_no_xrender = false;
+static Bool  do_no_argb32  = false;
 static Bool  do_no_xim     = false;
 
 static Bool
@@ -435,7 +436,7 @@ init_x11( char * error_buf )
 	if ( !prima_init_clipboard_subsystem (error_buf)) return false;
 	if ( !prima_init_color_subsystem     (error_buf)) return false;
 	if ( !do_no_xrender)
-		if ( !prima_init_xrender_subsystem(error_buf)) return false;
+		if ( !prima_init_xrender_subsystem(error_buf, do_no_argb32)) return false;
 	if ( !prima_init_font_subsystem      (error_buf)) return false;
 #ifdef WITH_GTK
 	guts. use_gtk = do_no_gtk ? false : ( prima_gtk_init() != NULL );
@@ -539,6 +540,7 @@ window_subsystem_get_options( int * argc, char *** argv)
 #endif
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
 	"no-xrender",    "do not use XRender",
+	"no-argb32",     "do not use alpha rendering",
 #endif
 	"font",
 #ifdef USE_XFT
@@ -600,6 +602,10 @@ window_subsystem_set_option( char * option, char * value)
 	} else if ( strcmp( option, "no-xrender") == 0) {
 		if ( value) warn("`--no-xrender' option has no parameters");
 		do_no_xrender = true;
+		return true;
+	} else if ( strcmp( option, "no-argb32") == 0) {
+		if ( value) warn("`--no-argb32' option has no parameters");
+		do_no_argb32 = true;
 		return true;
 #ifdef X_HAVE_UTF8_STRING
 	} else if ( strcmp( option, "no-xim") == 0) {

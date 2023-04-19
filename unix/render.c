@@ -61,7 +61,7 @@ XRenderFindDisplay (Display *dpy);
 
 
 Bool
-prima_init_xrender_subsystem(char * error_buf)
+prima_init_xrender_subsystem(char * error_buf, Bool disable_argb32)
 {
 	int i, count;
 	XRenderPictFormat *f;
@@ -83,7 +83,6 @@ prima_init_xrender_subsystem(char * error_buf)
 			guts. xft_xrender_major_opcode = info-> codes-> major_opcode;
 	}
 #endif
-
 
 	template. depth = 32; /* XXX should try non-32 bit alpha'ed visuals */
 	list = XGetVisualInfo( DISP, VisualDepthMask, &template, &count);
@@ -107,28 +106,42 @@ prima_init_xrender_subsystem(char * error_buf)
 	if ( list) XFree( list);
 
 	/* find compat format for putting regular pixmaps */
-	if (!(guts. xrender_display_format = XRenderFindVisualFormat(DISP, guts.visual.visual))) {
+	if (
+		disable_argb32 ||
+		!(guts. xrender_display_format = XRenderFindVisualFormat(DISP, guts.visual.visual))
+	) {
 		guts. xrender_argb32_format = NULL;
 		guts. argb_visual. visual = NULL;
 		guts. argb_depth = 0;
+		return false;
 	}
 
-	if ( guts. argb_visual. visual )
+	if ( guts. argb_visual. visual ) {
 		guts. argbColormap = XCreateColormap( DISP, guts. root, guts. argb_visual. visual, AllocNone);
-	else {
+		guts. render_supports_argb32 = true;
+	} else {
 		Pdebug("no ARGB visual found\n");
-		guts. render_extension = false;
-		return true;
 	}
 
-	guts. xrender_a8_format = XRenderFindStandardFormat(DISP, PictStandardA8);
-	guts. xrender_a1_format = XRenderFindStandardFormat(DISP, PictStandardA1);
+	if ( !( guts. xrender_a8_format = XRenderFindStandardFormat(DISP, PictStandardA8))) {
+		Pdebug("no A8 visual found\n");
+		guts. render_extension = false;
+		return false;
+	}
+	if ( !( guts. xrender_a1_format = XRenderFindStandardFormat(DISP, PictStandardA1))) {
+		Pdebug("no A1 visual found\n");
+		guts. render_extension = false;
+		return false;
+	}
 
-	pen.pixmap      = XCreatePixmap( DISP, guts.root, 8, 8, guts.argb_depth);
-	pen.gcv.graphics_exposures = false;
+	pen.pixmap      = XCreatePixmap( DISP, guts.root, 8, 8,
+		guts.render_supports_argb32 ? guts.argb_depth : guts.depth);
 	pen.gc          = XCreateGC( DISP, pen.pixmap, GCGraphicsExposures, &pen.gcv);
 	xrp_attr.repeat = RepeatNormal;
-	pen.picture     = XRenderCreatePicture( DISP, pen.pixmap, guts.xrender_argb32_format, CPRepeat, &xrp_attr);
+	pen.picture     = XRenderCreatePicture( DISP, pen.pixmap,
+		guts.render_supports_argb32 ? guts.xrender_argb32_format : guts.xrender_display_format,
+		CPRepeat, &xrp_attr);
+	pen.gcv.graphics_exposures = false;
 	guts.xrender_pen_dirty = true;
 
 	return true;
@@ -156,8 +169,10 @@ prima_render_create_picture(XDrawable drawable, int depth)
 		xf = guts.xrender_a1_format;
 		break;
 	case 32:
-		xf = guts.xrender_argb32_format;
-		break;
+		if ( guts. render_supports_argb32) {
+			xf = guts.xrender_argb32_format;
+			break;
+		}
 	default:
 		xf = guts.xrender_display_format;
 	}
@@ -196,9 +211,12 @@ pen_update(Handle self)
 	}
 
 #define COMP(src,c) \
-	c = ((float) src) / 255.0 * (float)alpha + .5; \
-	c &= 0xff; \
-	c = ((c << guts.argb_bits.c##_range) >> 8) << guts.argb_bits.c##_shift;
+	if ( guts.render_supports_argb32) { \
+		c = ((float) src) / 255.0 * (float)alpha + .5; \
+		c &= 0xff; \
+		c = ((c << guts.argb_bits.c##_range) >> 8) << guts.argb_bits.c##_shift; \
+	} else \
+		c = ((src << guts.screen_bits.c##_range) >> 8) << guts.screen_bits.c##_shift; \
 
 	COMP(COLOR_R(fore),red);
 	COMP(COLOR_G(fore),green);
@@ -211,9 +229,11 @@ pen_update(Handle self)
 	pen.gcv.background = red | green | blue;
 #undef COMP
 
-	alpha = ((alpha << guts.argb_bits.alpha_range) >> 8) << guts.argb_bits.alpha_shift;
-	pen.gcv.foreground |= alpha;
-	pen.gcv.background |= alpha;
+	if (guts.render_supports_argb32) {
+		alpha = ((alpha << guts.argb_bits.alpha_range) >> 8) << guts.argb_bits.alpha_shift;
+		pen.gcv.foreground |= alpha;
+		pen.gcv.background |= alpha;
+	}
 
 	prima_get_fill_pattern_offsets(self, &pen.gcv.ts_x_origin, &pen.gcv.ts_y_origin);
 	pen.gcv.stipple = prima_get_hatch( &XX-> fill_pattern);
@@ -250,6 +270,11 @@ pen_create_tile(Handle self, Pixmap tile)
 	XRenderPictureAttributes xrp_attr;
 	xrp_attr.repeat = RepeatNormal;
 
+	if ( !guts.render_supports_argb32) {
+		XX-> fp_render_picture = XRenderCreatePicture( DISP, tile, guts.xrender_display_format, CPRepeat, &xrp_attr);
+		return;
+	}
+
 	if (
 		PDrawable(self)-> fillPatternImage &&
 		PObject(PDrawable(self)->fillPatternImage)->stage == csNormal &&
@@ -281,19 +306,35 @@ pen_create_stipple(Handle self, Pixmap stipple)
 	Point sz;
 
 	sz = get_pixmap_size( stipple );
-	if ( !( XX-> fp_render_pen = XCreatePixmap( DISP, guts.root, sz.x, sz.y, guts.argb_depth)))
-		return;
 
-	gcv.foreground = DEV_RGBA(&guts.argb_bits,
-		COLOR_R(XX->fore.color) * XX->alpha / 255,
-		COLOR_G(XX->fore.color) * XX->alpha / 255,
-		COLOR_B(XX->fore.color) * XX->alpha / 255,
-		XX->alpha);
-	gcv.background = DEV_RGBA(&guts.argb_bits,
-		COLOR_R(XX->back.color) * XX->alpha / 255,
-		COLOR_G(XX->back.color) * XX->alpha / 255,
-		COLOR_B(XX->back.color) * XX->alpha / 255,
-		(XX->rop2 == ropNoOper) ? 0 : XX->alpha);
+	if ( guts. render_supports_argb32 ) {
+		if ( !( XX-> fp_render_pen = XCreatePixmap( DISP, guts.root, sz.x, sz.y, guts.argb_depth)))
+			return;
+		gcv.foreground = DEV_RGBA(&guts.argb_bits,
+			COLOR_R(XX->fore.color) * XX->alpha / 255,
+			COLOR_G(XX->fore.color) * XX->alpha / 255,
+			COLOR_B(XX->fore.color) * XX->alpha / 255,
+			XX->alpha);
+		gcv.background = DEV_RGBA(&guts.argb_bits,
+			COLOR_R(XX->back.color) * XX->alpha / 255,
+			COLOR_G(XX->back.color) * XX->alpha / 255,
+			COLOR_B(XX->back.color) * XX->alpha / 255,
+			(XX->rop2 == ropNoOper) ? 0 : XX->alpha);
+	} else {
+		if ( !( XX-> fp_render_pen = XCreatePixmap( DISP, guts.root, sz.x, sz.y, guts.depth)))
+			return;
+		gcv.foreground = DEV_RGB(&guts.screen_bits,
+			COLOR_R(XX->fore.color),
+			COLOR_G(XX->fore.color),
+			COLOR_B(XX->fore.color)
+		);
+		gcv.background = DEV_RGB(&guts.screen_bits,
+			COLOR_R(XX->back.color),
+			COLOR_G(XX->back.color),
+			COLOR_B(XX->back.color)
+		);
+	}
+
 	if ( !( gc = XCreateGC(DISP, XX-> fp_render_pen, GCForeground|GCBackground, &gcv))) {
 		XFreePixmap( DISP, XX-> fp_render_pen );
 		XX-> fp_render_pen = 0;
@@ -301,11 +342,13 @@ pen_create_stipple(Handle self, Pixmap stipple)
 	}
 
 	XCopyPlane( DISP, stipple, XX-> fp_render_pen, gc, 0, 0, sz.x, sz.y, 0, 0, 1);
-
 	XFreeGC(DISP, gc);
 
 	xrp_attr.repeat = RepeatNormal;
-	if ( !( XX-> fp_render_picture = XRenderCreatePicture( DISP, XX-> fp_render_pen, guts.xrender_argb32_format, CPRepeat, &xrp_attr))) {
+	if ( !( XX-> fp_render_picture = XRenderCreatePicture( DISP, XX-> fp_render_pen,
+		guts.render_supports_argb32 ? guts.xrender_argb32_format : guts.xrender_display_format,
+		CPRepeat, &xrp_attr
+	))) {
 		XFreePixmap(DISP, XX-> fp_render_pen);
 		XX-> fp_render_pen = 0;
 		return;
