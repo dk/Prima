@@ -24,7 +24,7 @@ $w = Prima::MainWindow-> create(
 				$arabic-> textDirection( $td);
 				$editor-> textDirection( $td);
 				$pod->textDirection($td);
-				$pod->format(1);
+				$pod->format( keep_offset => 1 );
 			} ],
 			[ "~Set font" => sub {
 				$font_dialog //= Prima::Dialog::FontDialog-> create(logFont => $w->font);
