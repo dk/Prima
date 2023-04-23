@@ -473,7 +473,7 @@ sub paint_flat
 		$canvas-> antialias(1);
 		$canvas-> lineWidth( $lw );
 		$canvas-> new_path-> round_rect(
-			0 + $lw/2, 0 + $lw/2, $w - $lw/2 - 1, $h - $lw/2 - 1, 
+			0 + $lw/2, 0 + $lw/2, $w - $lw/2, $h - $lw/2,
 			$self-> font-> height
 		)-> fill_stroke;
 	}) unless $self-> transparent;
