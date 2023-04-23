@@ -72,6 +72,7 @@ sub profile_check_in
 		if exists $p-> {height} || exists $p-> {size} || exists $p-> {rect} || ( exists $p-> {top} && exists $p-> {bottom});
 	$p-> {alignment} = ( $p->{textDirection} // $default->{textDirection} ) ?
 		ta::Right : ta::Left unless exists $p->{alignment};
+	$p-> {_explicit_borderWidth} = exists $p->{borderWidth};
 	$self-> SUPER::profile_check_in( $p, $default);
 	@{$p}{qw(selStart selEnd)} = @{$p-> {selection}} if exists( $p-> { selection});
 }
@@ -94,6 +95,9 @@ sub init
 
 	my %profile = $self-> SUPER::init(@_);
 	$self->init_undo(\%profile);
+
+	$profile{borderWidth} = $self->{borderWidth}
+		if !$profile{_explicit_borderWidth} && $self->{_skin_affects_borderWidth};
 
 	for ( qw(
 		textDirection textLigation
@@ -119,7 +123,10 @@ sub skin
 	return $_[0]->SUPER::skin unless $#_;
 	my $self = shift;
 	$self->SUPER::skin($_[1]);
-	$self->borderWidth(1) if $self->SUPER::skin eq 'flat';
+	if ($self->SUPER::skin eq 'flat') {
+		$self->borderWidth(1);
+		$self->{_skin_affects_borderWidth} = 1;
+	}
 	$self->repaint;
 }
 
@@ -140,13 +147,12 @@ sub on_paint
 
 	my $border = $self-> {borderWidth};
 	if ( $self-> skin eq 'flat') {
-		$canvas-> graphic_context( sub {
-			$canvas-> lineWidth(1);
-			$canvas-> color( $self-> dark3DColor );
-			$canvas-> rectangle(0,0,$size[0]-1,$size[1]-1);
-			$canvas-> color( $clr[1]);
-			$canvas-> bar( 1, 1, $size[0]-2, $size[1]-2);
-		});
+		$canvas-> rect_and_bar(
+			Prima::rect->new(@size)->inclusive,
+			$self-> dark3DColor,
+			$clr[1],
+			$border
+		);
 	} else {
 		$self-> rect_bevel( $canvas, Prima::rect->new(@size)->inclusive,
 			width => $border,

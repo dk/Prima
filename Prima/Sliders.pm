@@ -515,7 +515,12 @@ sub on_paint
 {
 	my ( $self, $canvas) = @_;
 	my @s = $canvas-> size;
-	$canvas-> rect3d( 0, 0, $s[0]-1, $s[1]-1, 1, $self-> dark3DColor, $self-> light3DColor);
+	if ( $self-> skin eq 'flat') {
+		$canvas->color( $self->dark3DColor);
+		$canvas->rectangle(0,0,$s[0]-1,$s[1]-1);
+	} else {
+		$canvas-> rect3d( 0, 0, $s[0]-1, $s[1]-1, 1, $self-> dark3DColor, $self-> light3DColor);
+	}
 }
 
 sub InputLine_MouseWheel

@@ -102,6 +102,7 @@ sub icon
 
 package Prima::OutlineViewer;
 use base qw(Prima::Widget Prima::Widget::MouseScroller Prima::Widget::GroupScroller Prima::Widget::ListBoxUtils);
+__PACKAGE__->inherit_core_methods('Prima::Widget::GroupScroller');
 
 use constant DATA     => 0;
 use constant DOWN     => 1;
@@ -138,13 +139,9 @@ sub profile_default
 	my $def = $_[ 0]-> SUPER::profile_default;
 	my %prf = (
 		autoHeight     => 1,
-		autoHScroll    => 1,
-		autoVScroll    => 1,
-		borderWidth    => 2,
 		extendedSelect => 0,
 		dragable       => 1,
 		drawLines      => undef,
-		hScroll        => 0,
 		focusedItem    => -1,
 		iconCollapsed  => undef,
 		iconExpanded   => undef,
@@ -156,12 +153,8 @@ sub profile_default
 		topItem        => 0,
 		offset         => 0,
 		scaleChildren  => 0,
-		scrollBarClass => 'Prima::ScrollBar',
-		hScrollBarProfile=>{},
-		vScrollBarProfile=>{},
 		selectable     => 1,
 		showItemHint   => 1,
-		vScroll        => 1,
 		widgetClass    => wc::ListBox,
 	);
 	@$def{keys %prf} = values %prf;
@@ -176,8 +169,6 @@ sub profile_check_in
 	$p-> { autoHeight} = 0 if
 		exists $p-> { itemHeight}
 		&& !exists $p-> {autoHeight};
-	$p-> {autoHScroll} = 0 if exists $p-> {hScroll};
-	$p-> {autoVScroll} = 0 if exists $p-> {vScroll};
 	$p-> {multiSelect} = 1 if
 		exists $p-> { extendedSelect}
 		&& $p-> {extendedSelect}
@@ -191,8 +182,8 @@ sub init
 	my $self = shift;
 	for ( qw( topItem focusedItem))
 		{ $self-> {$_} = -1; }
-	for ( qw( autoHScroll autoVScroll scrollTransaction dx dy hScroll vScroll
-		offset count autoHeight borderWidth multiSelect extendedSelect
+	for ( qw( scrollTransaction dx dy 
+		offset count autoHeight multiSelect extendedSelect
 		rows maxWidth hintActive showItemHint dragable))
 		{ $self-> {$_} = 0; }
 	for ( qw( itemHeight indent))
@@ -201,8 +192,7 @@ sub init
 	$self-> {iconStyle}  = 'default';
 	my %profile = $self-> SUPER::init(@_);
 	$self-> setup_indents;
-	$self->{$_} = $profile{$_} for qw(scrollBarClass hScrollBarProfile vScrollBarProfile);
-	for ( qw( autoHScroll autoVScroll hScroll vScroll offset itemHeight autoHeight borderWidth
+	for ( qw( offset itemHeight autoHeight 
 		indent items focusedItem topItem showItemHint dragable multiSelect extendedSelect
 		iconStyle skin iconCollapsed iconExpanded drawLines
 	))
@@ -1333,8 +1323,7 @@ sub set_offset
 	}
 
 	$self-> makehint(0);
-	$self-> scroll( $oldOfs - $offset, 0,
-						clipRect => \@a);
+	$self-> scroll( $oldOfs - $offset, 0, clipRect => \@a);
 }
 
 sub set_top_item
@@ -1356,8 +1345,7 @@ sub set_top_item
 		$self-> {scrollTransaction} = 0;
 	}
 
-	$self-> scroll( 0, ($topItem - $oldTop) * $ih,
-						clipRect => \@a);
+	$self-> scroll( 0, ($topItem - $oldTop) * $ih, clipRect => \@a);
 }
 
 

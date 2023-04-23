@@ -6,6 +6,57 @@ use warnings;
 use Prima;
 use Prima::ScrollBar;
 
+sub CORE_METHODS { qw(profile_default profile_check_in init skin) }
+
+sub profile_default
+{
+	my ( $orig, $self) = @_;
+	my $def = $orig->($self);
+	return {
+		%$def,
+		autoHScroll       => 1,
+		autoVScroll       => 1,
+		borderWidth       => 2,
+		hScroll           => 0,
+		hScrollBarProfile => {},
+		scrollBarClass    => 'Prima::ScrollBar',
+		vScroll           => 1,
+		vScrollBarProfile => {},
+	};
+}
+
+sub profile_check_in
+{
+	my ( $orig, $self, $p, $default) = @_;
+	$orig->($self, $p, $default);
+	$p-> {autoHScroll} = 0 if exists $p-> {hScroll};
+	$p-> {autoVScroll} = 0 if exists $p-> {vScroll};
+}
+
+sub init
+{
+	my ($orig, $self) = (shift, shift);
+	$self->{$_} = 0 for qw(autoVScroll autoHScroll hScroll vScroll borderWidth);
+	my %profile = $orig->($self, @_);
+	$self->{$_} = $profile{$_} for qw(scrollBarClass hScrollBarProfile vScrollBarProfile);
+	$self->borderWidth($profile{borderWidth}) unless $self->{_skin_affects_borderWidth};
+	$self-> $_( $profile{ $_}) for qw( autoHScroll autoVScroll hScroll vScroll);
+	return %profile;
+}
+
+sub skin
+{
+	my $orig = shift;
+	return $orig->(@_) unless $#_;
+	my $self = shift;
+	$orig->($self, $_[1]);
+	if ($orig->($self) eq 'flat') {
+		$self->{_skin_affects_borderWidth} = 1;
+		$self->borderWidth(1);
+	}
+	$self->repaint;
+}
+
 sub setup_indents
 {
 	my ($self) = @_;
@@ -76,6 +127,7 @@ sub insert_bone
 		onPaint   => sub {
 			my ( $self, $canvas, $owner, $w, $h) =
 				($_[0], $_[1], $_[0]-> owner, $_[0]-> size);
+			return $canvas->clear if $owner->skin eq 'flat';
 			$canvas-> color( $self-> backColor);
 			$canvas-> bar( 0, 1, $w - 2, $h - 1);
 			$canvas-> color( $owner-> light3DColor);
@@ -207,28 +259,19 @@ sub borderWidth     {($#_)?($_[0]-> set_border_width( $_[1])):return $_[0]-> {bo
 sub hScroll         {($#_)?$_[0]-> set_h_scroll       ($_[1]):return $_[0]-> {hScroll}}
 sub vScroll         {($#_)?$_[0]-> set_v_scroll       ($_[1]):return $_[0]-> {vScroll}}
 
-sub skin
-{
-	return $_[0]->SUPER::skin unless $#_;
-	my $self = shift;
-	$self->SUPER::skin($_[1]);
-	$self->borderWidth(1) if $self->SUPER::skin eq 'flat';
-	$self->repaint;
-}
-
 sub draw_border
 {
 	my ( $self, $canvas, $backColor, @size) = @_;
 
 	@size = $self-> size unless @size;
 	if ( $self-> skin eq 'flat') {
-		$canvas-> graphic_context( sub {
-			$canvas-> lineWidth(1);
-			$canvas-> color( $self-> dark3DColor ); 
-			$canvas-> rectangle(0, 0, $size[0]-1, $size[1]-1);
-			$canvas-> color( $backColor // $self-> backColor );
-			$canvas-> bar( 1, 1, $size[0]-2, $size[1]-2);
-		});
+		$canvas-> rect_and_bar(
+			0, 0,
+			$size[0]-1, $size[1]-1,
+			$self-> dark3DColor,
+			$backColor // $self-> backColor,
+			$self->{borderWidth}
+		);
 	} else {
 		$self-> rect_bevel(
 			$canvas,

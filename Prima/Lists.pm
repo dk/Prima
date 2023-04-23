@@ -23,6 +23,7 @@ eval 'use constant Grid => 1 + MaxId;' unless exists $ci::{Grid};
 
 package Prima::AbstractListViewer;
 use base qw(Prima::Widget Prima::Widget::MouseScroller Prima::Widget::GroupScroller Prima::Widget::ListBoxUtils);
+__PACKAGE__->inherit_core_methods('Prima::Widget::GroupScroller');
 
 {
 my %RNT = (
@@ -43,15 +44,11 @@ sub profile_default
 	my %prf = (
 		align          => ta::Left,
 		autoHeight     => 1,
-		autoHScroll    => 1,
-		autoVScroll    => 1,
-		borderWidth    => 2,
 		extendedSelect => 0,
 		drawGrid       => 1,
 		dragable       => 0,
 		focusedItem    => -1,
 		gridColor      => cl::Black,
-		hScroll        => 0,
 		integralHeight => 0,
 		integralWidth  => 0,
 		itemHeight     => $def-> {font}-> {height},
@@ -61,13 +58,9 @@ sub profile_default
 		offset         => 0,
 		topItem        => 0,
 		scaleChildren  => 0,
-		scrollBarClass => 'Prima::ScrollBar',
-		hScrollBarProfile=>{},
-		vScrollBarProfile=>{},
 		selectable     => 1,
 		selectedItems  => [],
 		vertical       => 1,
-		vScroll        => 1,
 		widgetClass    => wc::ListBox,
 	);
 	@$def{keys %prf} = values %prf;
@@ -95,8 +88,6 @@ sub profile_check_in
 	$p-> { integralWidth} = 1 if
 		! exists $p->{integralWidth} and
 		$multi_column and not($vertical);
-	$p-> {autoHScroll} = 0 if exists $p-> {hScroll};
-	$p-> {autoVScroll} = 0 if exists $p-> {vScroll};
 }
 
 sub init
@@ -105,9 +96,9 @@ sub init
 	for ( qw( lastItem topItem focusedItem))
 		{ $self-> {$_} = -1; }
 	for ( qw(
-		autoHScroll autoVScroll scrollTransaction gridColor dx dy hScroll vScroll
+		scrollTransaction gridColor dx dy 
 		itemWidth offset multiColumn count autoHeight multiSelect
-		extendedSelect borderWidth dragable ))
+		extendedSelect dragable ))
 		{ $self-> {$_} = 0; }
 	for ( qw( drawGrid itemHeight integralWidth integralHeight vertical align))
 		{ $self-> {$_} = 1; }
@@ -115,11 +106,10 @@ sub init
 	my %profile = $self-> SUPER::init(@_);
 	$self-> setup_indents;
 	$self-> {selectedItems} = {} unless $profile{multiSelect};
-	$self->{$_} = $profile{$_} for qw(scrollBarClass hScrollBarProfile vScrollBarProfile);
 	for ( qw(
-		autoHScroll autoVScroll gridColor hScroll vScroll offset multiColumn
+		gridColor offset multiColumn
 		itemHeight autoHeight itemWidth multiSelect extendedSelect integralHeight
-		integralWidth focusedItem topItem selectedItems borderWidth dragable
+		integralWidth focusedItem topItem selectedItems dragable
 		vertical drawGrid align))
 		{ $self-> $_( $profile{ $_}); }
 	$self-> reset;

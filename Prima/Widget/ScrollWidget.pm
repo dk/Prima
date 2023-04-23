@@ -3,6 +3,7 @@ use strict;
 use warnings;
 use Prima;
 use base qw(Prima::Widget Prima::Widget::GroupScroller);
+__PACKAGE__->inherit_core_methods('Prima::Widget::GroupScroller');
 
 {
 my %RNT = (
@@ -17,42 +18,22 @@ sub profile_default
 {
 	my $def = $_[ 0]-> SUPER::profile_default;
 	my %prf = (
-		autoHScroll    => 1,
-		autoVScroll    => 1,
-		borderWidth    => 0,
-		hScroll        => 0,
-		vScroll        => 0,
 		deltaX         => 0,
 		deltaY         => 0,
 		limitX         => 0,
 		limitY         => 0,
-		scrollBarClass => 'Prima::ScrollBar',
-		hScrollBarProfile=>{},
-		vScrollBarProfile=>{},
 	);
 	@$def{keys %prf} = values %prf;
 	return $def;
 }
 
-sub profile_check_in
-{
-	my ( $self, $p, $default) = @_;
-	$self-> SUPER::profile_check_in( $p, $default);
-	$p-> {autoHScroll} = 0 if exists $p-> {hScroll};
-	$p-> {autoVScroll} = 0 if exists $p-> {vScroll};
-}
-
 sub init
 {
 	my $self = shift;
-	for ( qw( autoHScroll autoVScroll scrollTransaction hScroll vScroll
-				limitX limitY deltaX deltaY borderWidth winX winY))
+	for ( qw( scrollTransaction limitX limitY deltaX deltaY borderWidth winX winY))
 		{ $self->{$_} = 0; }
 	my %profile = $self-> SUPER::init(@_);
 	$self-> setup_indents;
-	$self->{$_} = $profile{$_} for qw(scrollBarClass hScrollBarProfile vScrollBarProfile);
-	for ( qw( autoHScroll autoVScroll hScroll vScroll borderWidth))
-		{ $self->$_( $profile{ $_}); }
 	$self-> limits( $profile{limitX}, $profile{limitY});
 	$self-> deltas( $profile{deltaX}, $profile{deltaY});
 	$self-> reset_scrolls;

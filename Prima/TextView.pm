@@ -7,6 +7,7 @@ use Prima;
 use Prima::ScrollBar;
 use Prima::Drawable::TextBlock;
 use base qw(Prima::Widget Prima::Widget::MouseScroller Prima::Widget::GroupScroller);
+__PACKAGE__->inherit_core_methods('Prima::Widget::GroupScroller');
 
 use constant YMAX => 1000;
 
@@ -14,16 +15,13 @@ sub profile_default
 {
 	my $def = $_[ 0]-> SUPER::profile_default;
 	my %prf = (
-		autoHScroll       => 1,
 		autoVScroll       => 0,
-		borderWidth     => 2,
 		colorMap        => [ $def-> {color}, $def-> {backColor} ],
 		fontPalette     => [ {
 			name     => $def-> {font}-> {name},
 			encoding => '',
 			pitch    => fp::Default,
 		}],
-		hScroll         => 1,
 		offset          => 0,
 		paneWidth       => 0,
 		paneHeight      => 0,
@@ -31,14 +29,10 @@ sub profile_default
 		resolution      => [ $::application-> resolution ],
 		topLine         => 0,
 		scaleChildren   => 0,
-		scrollBarClass  => 'Prima::ScrollBar',
-		hScrollBarProfile=> {},
-		vScrollBarProfile=> {},
 		selectable      => 1,
 		textDirection   => $::application->textDirection,
 		textOutBaseline => 1,
 		textRef         => '',
-		vScroll         => 1,
 		widgetClass     => wc::Edit,
 		pointer         => cr::Text,
 	);
@@ -59,15 +53,13 @@ sub profile_check_in
 		$p-> { paneHeight} = $p-> { paneSize}-> [ 1];
 	}
 	$p-> { text} = '' if exists( $p-> { textRef});
-	$p-> {autoHScroll} = 0 if exists $p-> {hScroll};
-	$p-> {autoVScroll} = 0 if exists $p-> {vScroll};
 }
 
 sub init
 {
 	my $self = shift;
-	for ( qw( topLine scrollTransaction hScroll vScroll offset textDirection
-		paneWidth paneHeight borderWidth autoVScroll autoHScroll))
+	for ( qw( topLine scrollTransaction offset textDirection
+		paneWidth paneHeight ))
 		{ $self-> {$_} = 0; }
 	my %profile = $self-> SUPER::init(@_);
 	$self-> {paneSize} = [0,0];
@@ -82,10 +74,7 @@ sub init
 	$self-> {ymap} = [];
 	$self-> setup_indents;
 	$self-> resolution( @{$profile{resolution}});
-	$self->{$_} = $profile{$_} for qw(scrollBarClass hScrollBarProfile vScrollBarProfile);
-	for ( qw( autoHScroll autoVScroll colorMap fontPalette
-				hScroll vScroll borderWidth paneWidth paneHeight
-				offset topLine textDirection text textRef))
+	for ( qw( colorMap fontPalette paneWidth paneHeight offset topLine textDirection text textRef))
 		{ $self-> $_( $profile{ $_}); }
 	return %profile;
 }

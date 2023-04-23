@@ -17,6 +17,7 @@ use base qw(
 	Prima::Widget Prima::Widget::MouseScroller Prima::Widget::GroupScroller
 	Prima::Widget::UndoActions Prima::Widget::BidiInput
 );
+__PACKAGE__->inherit_core_methods('Prima::Widget::GroupScroller');
 
 {
 my %RNT = (
@@ -108,10 +109,7 @@ sub profile_default
 			[ Redo            => 0, 0, '^R', q(redo)],
 		],
 		autoIndent        => 1,
-		autoHScroll       => 1,
-		autoVScroll       => 1,
 		blockType         => bt::CUA,
-		borderWidth       => 2,
 		cursorSize        => [ $::application-> get_default_cursor_width, $font-> { height}],
 		cursorVisible     => 1,
 		cursorX           => 0,
@@ -146,16 +144,12 @@ utime values vec wait waitpid wantarray warn while write y
 		)], cl::Blue],
 		hiliteChars       => ['~!@#$%^&*()+-=[]{};:\'"\\|?.,<>/', cl::Blue],
 		hiliteREs         => [ '(#.*)$', cl::Gray, '(\/\/.*)$', cl::Gray],
-		hScroll           => 0,
 		markers           => [],
 		modified          => 0,
 		offset            => 0,
 		pointerType       => cr::Text,
 		persistentBlock   => 0,
 		readOnly          => 0,
-		scrollBarClass    => 'Prima::ScrollBar',
-		hScrollBarProfile => {},
-		vScrollBarProfile => {},
 		selection         => [0, 0, 0, 0],
 		selStart          => [0, 0],
 		selEnd            => [0, 0],
@@ -166,7 +160,6 @@ utime values vec wait waitpid wantarray warn while write y
 		textDirection     => $rtl,
 		textLigation      => 1,
 		topLine           => 0,
-		vScroll           => 0,
 		undoLimit         => 1000,
 		wantTabs          => 0,
 		wantReturns       => 1,
@@ -187,8 +180,6 @@ sub profile_check_in
 		$p-> {selEnd  } = [$$s[2], $$s[3]];
 	}
 	$p-> { text} = '' if exists( $p-> { textRef});
-	$p-> {autoHScroll} = 0 if exists $p-> {hScroll};
-	$p-> {autoVScroll} = 0 if exists $p-> {vScroll};
 }
 
 sub init
@@ -197,10 +188,10 @@ sub init
 	for ( qw( autoIndent topLine  offset resetDisabled blockType persistentBlock
 		tabIndent wantReturns wantTabs))
 		{ $self-> {$_} = 1; }
-	for ( qw( readOnly wordWrap hScroll vScroll rows maxLineCount maxLineLength maxLineWidth
+	for ( qw( readOnly wordWrap rows maxLineCount maxLineLength maxLineWidth
 		scrollTransaction maxLine maxChunk capLen cursorY cursorX cursorWrap
 		cursorXl cursorYl syntaxHilite hiliteNumbers hiliteQStrings hiliteQQStrings
-		notifyChangeLock modified borderWidth autoHScroll autoVScroll blockShiftMark
+		notifyChangeLock modified blockShiftMark
 		textDirection textLigation
 	))
 		{ $self-> {$_} = 0;}
@@ -212,10 +203,8 @@ sub init
 	$self-> setup_indents;
 	$self-> init_undo(\%profile);
 	$profile{selection} = [@{$profile{selStart}}, @{$profile{selEnd}}];
-	$self->{$_} = $profile{$_} for qw(scrollBarClass hScrollBarProfile vScrollBarProfile);
 	for ( qw( hiliteNumbers hiliteQStrings hiliteQQStrings hiliteIDs hiliteChars hiliteREs
-		autoHScroll autoVScroll text
-		textRef syntaxHilite autoIndent persistentBlock blockType hScroll vScroll borderWidth
+		text textRef syntaxHilite autoIndent persistentBlock blockType 
 		topLine  tabIndent readOnly offset wordDelimiters wantTabs wantReturns
 		wordWrap cursorWrap markers textDirection textLigation ))
 		{ $self-> $_( $profile{ $_}); }

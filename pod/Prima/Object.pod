@@ -594,6 +594,80 @@ C<nt::Single>-prototyped event is used:
    }
    $result = $obj-> pop_event;
 
+=head1 Inheritance
+
+Building Prima classes are meant to be completely identical to standard perl OO
+model. F.ex. to subclass a new package, a standard
+
+   use base qw(ParentClass);
+
+or even
+
+   out @ISA = qw(ParentClass);
+
+should be just fine.
+
+However there are special considerations about the multiple inheritance, and the
+order of the ancestor classes. First, the base class should be a Prima class, i e
+
+   use base qw(Prima::Widget MyRole);
+
+not
+
+   use base qw(MyRole Prima::Widget);
+
+This is caused by the perl OO model where if more than one base class has the
+same method, only the first method will be actual, and Prima conforms to that.
+F ex defining C<MyRole::init> won't have any effect where MyRole is not the
+first base class (and things will explode badly if it is).
+
+In a very special case where MyRole I<needs> to have methods that overload Prima
+core, XS-implemented menthods, a special technique is used:
+
+=over
+
+=item *
+
+First, in MyRole, declare a special method C<CORE_METHODS>, returning all
+names of the core symbols to be overloaded in that role:
+
+   package MyRole;
+
+   sub CORE_METHODS { qw(setup) }
+
+Do not subsclass MyRole from Prima objects.
+
+=item *
+
+Define the methods as if you would define a normal overridden method, with one
+important exception: since perl's SUPER is package-based, not object based, the
+C<< $self->SUPER::foo() >> pattern will not work for calling the methods that
+are up in the hierarchy. Instead, the first parameter to these method is an
+anonymous subroutine that will call the needed SUPER method:
+
+   sub setup
+   {
+       my ( $orig, $self ) = ( shift, shift );
+       ...
+       $orig->( $self, @_ );
+       ...
+   }
+
+If you know L<Moose> standard syntax C<around>, this is exactly the same idea.
+
+=item *
+
+In the desendant class, inherit from MyRole normally, but in addition to that
+explicitly call to overload its special methods:
+
+   package MyWidget;
+   use base qw(Prima::Widget MyRole);
+   __PACKAGE__->inherit_core_methods('MyRole');
+
+=back
+
+Check also L<Prima::Widget::GroupScroller> as an example.
+
 =head1 API
 
 =head2 Prima::Object methods

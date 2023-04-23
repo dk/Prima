@@ -32,6 +32,7 @@ use constant RECT      => 7,8,9,10;
 
 package Prima::AbstractGridViewer;
 use base qw(Prima::Widget Prima::Widget::MouseScroller Prima::Widget::GroupScroller Prima::Widget::ListBoxUtils);
+__PACKAGE__->inherit_core_methods('Prima::Widget::GroupScroller');
 
 {
 my %RNT = (
@@ -54,9 +55,6 @@ sub profile_default
 	my %prf = (
 		allowChangeCellHeight   => 0,
 		allowChangeCellWidth    => 0,
-		autoHScroll             => 1,
-		autoVScroll             => 1,
-		borderWidth             => 2,
 		cellIndents             => [ 0, 0, 0, 0],
 		clipCells               => 1,
 		columns                 => 1,
@@ -69,29 +67,16 @@ sub profile_default
 		gridGravity             => 3,
 		indentCellBackColor     => cl::Gray,
 		indentCellColor         => cl::Black,
-		hScroll                 => 0,
 		leftCell                => 0,
 		multiSelect             => 0,
 		rows                    => 1,
 		topCell                 => 0,
 		scaleChildren           => 0,
-		scrollBarClass          => 'Prima::ScrollBar',
-		hScrollBarProfile       => {},
-		vScrollBarProfile       => {},
 		selectable              => 1,
-		vScroll                 => 1,
 		widgetClass             => wc::ListBox,
 	);
 	@$def{keys %prf} = values %prf;
 	return $def;
-}
-
-sub profile_check_in
-{
-	my ( $self, $p, $default) = @_;
-	$self-> SUPER::profile_check_in( $p, $default);
-	$p-> {autoHScroll} = 0 if exists $p-> {hScroll};
-	$p-> {autoVScroll} = 0 if exists $p-> {vScroll};
 }
 
 sub init
@@ -100,8 +85,8 @@ sub init
 
 	$self-> {$_} = -1 for qw( leftCell topCell);
 	$self-> {$_} = 0 for qw(
-		autoHScroll autoVScroll scrollTransaction gridColor hScroll vScroll dx dy
-		leftCell topCell multiSelect borderWidth visibleCols visibleRows
+		scrollTransaction gridColor dx dy
+		leftCell topCell multiSelect visibleCols visibleRows
 		indentCellColor indentCellBackColor clipCells cache_geometry_requests
 		allowChangeCellWidth allowChangeCellHeight gridGravity
 	);
@@ -113,13 +98,12 @@ sub init
 	my %profile = $self-> SUPER::init(@_);
 	$self-> setup_indents;
 
-	$self->{$_} = $profile{$_} for qw(scrollBarClass hScrollBarProfile vScrollBarProfile);
 	$self-> $_( $profile{ $_}) for qw(
 		allowChangeCellHeight allowChangeCellWidth
 		constantCellWidth constantCellHeight
-		autoHScroll autoVScroll drawHGrid drawVGrid gridColor hScroll vScroll
+		drawHGrid drawVGrid gridColor 
 		columns rows cellIndents
-		leftCell topCell multiSelect focusedCell borderWidth indentCellColor
+		leftCell topCell multiSelect focusedCell indentCellColor
 		indentCellBackColor clipCells gridGravity
 	);
 	$self-> reset;

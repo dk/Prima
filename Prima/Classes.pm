@@ -325,6 +325,20 @@ sub get
 	} @_;
 }
 
+sub inherit_core_methods
+{
+	my $dst = shift;
+	no strict 'refs';
+	no warnings 'redefine';
+	for my $pkg ( @_ ) {
+		my $methods = $pkg->can('CORE_METHODS') or next;
+		for my $method ( $methods->()) {
+			my $old = $dst->can($method);
+			*{ $dst . '::' . $method } = sub { *{ $pkg . '::' . $method }->($old, @_) };
+		}
+	}
+}
+
 package Prima::Font;
 
 sub new
