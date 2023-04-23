@@ -263,7 +263,7 @@ Widget_sizeMax( Handle self, Bool set, Point max)
 Bool
 Widget_size_notify( Handle self, Handle child, const Rect* metrix)
 {
-	if ( his-> growMode) {
+	if ( his-> growMode && his->geometry == gtGrowMode) {
 		Point size  =  his-> self-> get_virtual_size( child);
 		Point pos   =  his-> self-> get_origin( child);
 		Point osize = size, opos = pos;

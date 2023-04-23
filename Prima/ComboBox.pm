@@ -192,8 +192,11 @@ sub init
 sub check_auto_size
 {
 	my $self = $_[0];
-	$self-> geomHeight( $self-> {edit}-> default_geom_height )
-		if $self-> {autoHeight} && $self->{style} != cs::Simple && $self->{edit}->can('default_geom_height');
+	if ($self-> {autoHeight} && $self->{style} != cs::Simple && $self->{edit}->can('default_geom_height')) {
+		$self-> {list}-> growMode(0);
+		$self-> geomHeight( $self-> {edit}-> default_geom_height );
+		$self-> {list}-> growMode(gm::Client);
+	}
 }
 
 sub on_create
