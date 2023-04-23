@@ -40,7 +40,7 @@ sub rect3d
 	$self-> color( $c);
 }
 
-sub rect_and_bar
+sub rect_fill
 {
 	my ( $canvas, $x1, $y1, $x2, $y2, $fg, $bg, $lw) = @_;
 	($x1, $x2) = ($x2, $x1) if $x2 < $x1;

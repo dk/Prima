@@ -265,7 +265,7 @@ sub draw_border
 
 	@size = $self-> size unless @size;
 	if ( $self-> skin eq 'flat') {
-		$canvas-> rect_and_bar(
+		$canvas-> rect_fill(
 			0, 0,
 			$size[0]-1, $size[1]-1,
 			$self-> dark3DColor,

@@ -147,7 +147,7 @@ sub on_paint
 
 	my $border = $self-> {borderWidth};
 	if ( $self-> skin eq 'flat') {
-		$canvas-> rect_and_bar(
+		$canvas-> rect_fill(
 			Prima::rect->new(@size)->inclusive,
 			$self-> dark3DColor,
 			$clr[1],
