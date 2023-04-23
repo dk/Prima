@@ -40,6 +40,39 @@ sub rect3d
 	$self-> color( $c);
 }
 
+sub rect_and_bar
+{
+	my ( $canvas, $x1, $y1, $x2, $y2, $fg, $bg, $lw) = @_;
+	($x1, $x2) = ($x2, $x1) if $x2 < $x1;
+	($y1, $y2) = ($y2, $y1) if $y2 < $y1;
+	$lw //= 1;
+	$canvas-> graphic_context( sub {
+		if ( $lw <= 0 ) {
+			$canvas-> color( $bg ) if defined $bg;
+			$canvas-> bar( $x1, $y1, $x2, $y2 );
+		} elsif ( $x1 + $lw * 2 >= $x2 || $y1 + $lw * 2 >= $y2 ) {
+			$canvas-> color( $fg ) if defined $fg;
+			$canvas-> bar( $x1, $y1, $x2, $y2 );
+		} elsif ( $lw == 1 ) {
+			$bg //= $canvas->backColor;
+			$canvas-> color( $fg ) if defined $fg;
+			$canvas-> rectangle( $x1, $y1, $x2, $y2);
+			$canvas-> color( $bg );
+			$canvas-> bar( $x1 + 1, $y1 + 1, $x2 - 1, $y2 - 1);
+		} else {
+			$fg //= $canvas->color;
+			$canvas-> color( $bg ) if defined $bg;
+			$canvas-> bar( $x1 + $lw, $y1 + $lw, $x2 - $lw, $y2 - $lw);
+			$lw--;
+			$canvas-> color( $fg );
+			$canvas-> bar( $x1, $y1, $x1 + $lw, $y2);
+			$canvas-> bar( $x2 - $lw, $y1, $x2, $y2);
+			$canvas-> bar( $x1 + $lw + 1, $y1, $x2 - $lw - 1, $y1 + $lw);
+			$canvas-> bar( $x1 + $lw + 1, $y2 - $lw, $x2 - $lw - 1, $y2);
+		}
+	});
+}
+
 sub rect_focus
 {
 	my ( $canvas, $x, $y, $x1, $y1, $width) = @_;

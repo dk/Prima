@@ -1724,6 +1724,12 @@ No context is used, except color and backColor for a monochrome DeviceBitmap
 
 Returns success flag; if failed, C<$@> contains the error.
 
+=item rect_and_bar X1, Y1, X2, Y2, FOREGROUND, BACKGROUND, BORDER_WIDTH
+
+Draws a rectangle with outline color FOREGROUND and BORDER_WIDTH pixels,
+and fills it with color BACKGROUND. If FOREGROUND and/or BACKGROUND are
+undefined, currect colors are used. BORDER_WIDTH is 1 pixel if omitted
+
 =item rect3d X1, Y1, X2, Y2, WIDTH, LIGHT_COLOR, DARK_COLOR, [ BACK_COLOR ]
 
 Draws 3d-shaded rectangle in boundaries X1,Y1 - X2,Y2 with WIDTH line width
