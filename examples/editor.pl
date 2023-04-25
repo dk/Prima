@@ -164,6 +164,8 @@ sub profile_default
 					'~Right-to-left' => sub{ $_[0]-> {editor}-> textDirection( $_[2] )}],
 				[ '@*ligation' => '~Ligatures' => sub{ $_[0]-> {editor}-> textLigation( $_[2] )}],
 				[ 'Set ~font' => q(setfont)],
+				['Increase border' => 'Ctrl+A' => '^A' => sub { $_[0]->{editor}->borderWidth( $_[0]->{editor}->borderWidth + 1 ) }],
+				['Decrease border' => 'Ctrl+Z' => '^Z' => sub { $_[0]->{editor}->borderWidth( $_[0]->{editor}->borderWidth - 1 ) }],
 			]]
 		],
 	}
@@ -191,7 +193,7 @@ sub init
 		}
 	}
 	$fn = '.Untitled' unless defined $fn;
-	my $fh = $::application->font->height + 1;
+	my $fh = $::application->font->height + 2;
 	$self-> {editor} = $self-> insert( Editor =>
 		name      => 'Edit',
 		textRef   => \$cap,

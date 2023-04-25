@@ -31,15 +31,16 @@ sub profile_check_in
 	$orig->($self, $p, $default);
 	$p-> {autoHScroll} = 0 if exists $p-> {hScroll};
 	$p-> {autoVScroll} = 0 if exists $p-> {vScroll};
+	$p-> { GS_explicit_borderWidth} = exists $p->{borderWidth};
 }
 
 sub init
 {
 	my ($orig, $self) = (shift, shift);
-	$self->{$_} = 0 for qw(autoVScroll autoHScroll hScroll vScroll borderWidth);
+	$self->{$_} = 0 for qw(autoVScroll autoHScroll hScroll vScroll borderWidth GS_extra_border);
 	my %profile = $orig->($self, @_);
 	$self->{$_} = $profile{$_} for qw(scrollBarClass hScrollBarProfile vScrollBarProfile);
-	$self->borderWidth($profile{borderWidth}) unless $self->{_skin_affects_borderWidth};
+	$self->borderWidth($profile{borderWidth}) if !$self->{GS_skin_affects_borderWidth} || $profile{GS_explicit_borderWidth};
 	$self-> $_( $profile{ $_}) for qw( autoHScroll autoVScroll hScroll vScroll);
 	return %profile;
 }
@@ -51,8 +52,11 @@ sub skin
 	my $self = shift;
 	$orig->($self, $_[1]);
 	if ($orig->($self) eq 'flat') {
-		$self->{_skin_affects_borderWidth} = 1;
+		$self->{GS_skin_affects_borderWidth} = 1;
+		$self->{GS_extra_border} = 1;
 		$self->borderWidth(1);
+	} else {
+		$self->{GS_extra_border} = 0;
 	}
 	$self->repaint;
 }
@@ -64,7 +68,7 @@ sub setup_indents
 	my $bw = $self-> {borderWidth};
 	$self-> {indents}-> [$_] += $bw for 0..3;
 	$self-> {indents}-> [1] += $self-> {hScrollBar}-> height - 1 if $self-> {hScroll};
-	$self-> {indents}-> [2] += $self-> {vScrollBar}-> width - 1 if $self-> {vScroll};
+	$self-> {indents}-> [2] += $self-> {vScrollBar}-> width  - 1 if $self-> {vScroll};
 }
 
 sub set_border_width
@@ -80,25 +84,21 @@ sub set_border_width
 	my $obw  = $self-> {borderWidth};
 	$self-> {borderWidth} = $bw;
 
+	my $ebw = $self->{GS_extra_border} - 1;
 	$self-> {hScrollBar}-> set(
-		left   => $bw - 1,
-		bottom => $bw - 1,
-		width  => $size[0] -
-			$bw * 2 +
-			2 -
+		left   => $bw + $ebw,
+		bottom => $bw + $ebw,
+		width  => $size[0] - 
+			2 * $bw -
 			( $self-> {vScroll} ?
-				$self-> {vScrollBar}-> width - 2 :
-				0
-			),
+				$self-> {vScrollBar}-> width + $ebw * 3:
+				-$ebw * 2),
 	) if $self-> {hScroll};
 
 	$self-> {vScrollBar}-> set(
-		top    => $size[1] - $bw + 1,
-		right  => $size[0] - $bw + 1,
-		bottom => $bw + ( $self-> {hScroll} ?
-			$self-> {hScrollBar}-> height - 2 :
-			0
-		),
+		right        => $size[0] - $bw - $ebw,
+		top          => $size[1] - $bw - $ebw,
+		bottom       => $bw - $ebw + ( $self-> {hScroll} ? $self-> {hScrollBar}-> height + 3 * $ebw : 0),
 	) if $self-> {vScroll};
 
 	$self-> insert_bone if defined $self-> {bone};
@@ -115,16 +115,23 @@ sub insert_bone
 	my $bw   = $self-> {borderWidth};
 	$self-> {bone}-> destroy if defined $self-> {bone};
 
+	my $ebw = $self->{GS_extra_border} - 1;
 	$self-> {bone} = Prima::Widget-> new(
-		owner  => $self,
-		name   => q(Bone),
+		owner       => $self,
+		name        => q(Bone),
 		pointerType => cr::Arrow,
-		origin => [ $self-> width - $self-> {vScrollBar}-> width + 3 - $bw, $bw - 1],
-		size   => [ $self-> {vScrollBar}-> width-2, $self-> {hScrollBar}-> height-1],
-		growMode  => gm::GrowLoX,
+		origin      => [
+			$self-> width - $self-> {vScrollBar}-> width - $ebw * 2 - $bw,
+			$bw + $ebw
+		],
+		size        => [
+			$self-> {vScrollBar}-> width  + $ebw,
+			$self-> {hScrollBar}-> height + $ebw
+		],
+		growMode    => gm::GrowLoX,
 		widgetClass => wc::ScrollBar,
 		designScale => undef,
-		onPaint   => sub {
+		onPaint     => sub {
 			my ( $self, $canvas, $owner, $w, $h) =
 				($_[0], $_[1], $_[0]-> owner, $_[0]-> size);
 			return $canvas->clear if $owner->skin eq 'flat';
@@ -142,19 +149,20 @@ sub set_h_scroll
 	my ( $self, $hs) = @_;
 	return if ($hs ? 1 : 0) == $self-> {hScroll};
 	my $bw = $self-> {borderWidth} || 0;
+	my $ebw = $self->{GS_extra_border} - 1;
 	if ( $hs) {
 		$self-> {hScrollBar} = $self->{scrollBarClass}-> new(
 			owner       => $self,
 			name        => q(HScroll),
 			vertical    => 0,
-			origin      => [ $bw-1, $bw-1],
+			origin      => [ $bw + $ebw, $bw + $ebw],
 			growMode    => gm::GrowHiX,
 			pointerType => cr::Arrow,
 			width       => $self-> width -
-				2 * $bw + 2 -
+				2 * $bw -
 				( $self-> {vScroll} ?
-					$self-> {vScrollBar}-> width - 2 :
-					0),
+					$self-> {vScrollBar}-> width + $ebw * 3:
+					-$ebw * 2),
 			delegations => ['Change'],
 			designScale => undef,
 			%{ $self->{hScrollBarProfile} || {} },
@@ -166,7 +174,7 @@ sub set_h_scroll
 		if ( $self-> {vScroll}) {
 			my $h = $self-> {hScrollBar}-> height;
 			$self-> {vScrollBar}-> set(
-				bottom => $self-> {vScrollBar}-> bottom + $h - 2,
+				bottom => $self-> {vScrollBar}-> bottom + $h + $ebw,
 				top    => $self-> {vScrollBar}-> top,
 			);
 			$self-> insert_bone;
@@ -179,8 +187,8 @@ sub set_h_scroll
 		if ( $self-> {vScroll})
 		{
 			$self-> {vScrollBar}-> set(
-				bottom => $bw,
-				height => $self-> height - $bw * 2,
+				bottom => $bw + $ebw,
+				height => $self-> height - $bw * 2 - $ebw * 2,
 			);
 			$self-> {bone}-> destroy;
 			delete $self-> {bone};
@@ -196,22 +204,23 @@ sub set_v_scroll
 
 	my $bw = $self-> {borderWidth} || 0;
 	my @size = $self-> size;
+	my $ebw = $self->{GS_extra_border} - 1;
 
 	if ( $vs) {
 		my $width = exists( $self->{vScrollBarProfile}->{width} ) ?
 			$self->{vScrollBarProfile}->{width} :
 			$Prima::ScrollBar::stdMetrics[0];
 		$self-> {vScrollBar} = $self->{scrollBarClass}-> new(
-			owner    => $self,
-			name     => q(VScroll),
-			vertical => 1,
-			left     => $size[0] - $bw - $width + 1,
-			top      => $size[1] - $bw + 1,
-			bottom   => $bw + ( $self-> {hScroll} ? $self-> {hScrollBar}-> height - 2 : 0),
-			growMode => gm::GrowLoX | gm::GrowHiY,
+			owner        => $self,
+			name         => q(VScroll),
+			vertical     => 1,
+			left         => $size[0] - $bw - $width - $ebw,
+			top          => $size[1] - $bw - $ebw,
+			bottom       => $bw - $ebw + ( $self-> {hScroll} ? $self-> {hScrollBar}-> height + 3 * $ebw : 0),
+			growMode     => gm::GrowLoX | gm::GrowHiY,
 			pointerType  => cr::Arrow,
 			delegations  => ['Change'],
-			designScale => undef,
+			designScale  => undef,
 			%{ $self->{vScrollBarProfile} || {} },
 		);
 		$self-> {vScroll} = 1;
@@ -220,8 +229,7 @@ sub set_v_scroll
 
 		if ( $self-> {hScroll}) {
 			$self-> {hScrollBar}-> width(
-				$self-> {hScrollBar}-> width -
-				$self-> {vScrollBar}-> width + 2,
+				$size[0] - 2 * $bw - $ebw * 2 - $self->{vScrollBar}->width - $ebw, 
 			);
 			$self-> insert_bone;
 		}
@@ -231,7 +239,7 @@ sub set_v_scroll
 		$self-> {vScrollBar}-> destroy;
 		if ( $self-> {hScroll})
 		{
-			$self-> {hScrollBar}-> width( $size[0] - 2 * $bw + 2);
+			$self-> {hScrollBar}-> width( $size[0] - 2 * $bw - $ebw * 2);
 			$self-> {bone}-> destroy;
 			delete $self-> {bone};
 		}
