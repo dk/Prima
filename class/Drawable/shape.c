@@ -547,10 +547,12 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 		*sv_fonts = NULL_SV;
 	PTextShapeFunc system_shaper;
 	TextShapeRec t;
-	int shaper_type, level = tsDefault;
+	int shaper_type, level = tsDefault, replace_tabs = -1;
 	Bool skip_if_simple = false, return_zero = false, force_advances = false, 
-		reorder = true, polyfont = true;
+		reorder = true, polyfont = true, do_replace_tabs = false;
 	Bool gp_enter;
+	semistatic_t p_tabinfo;
+	uint16_t tabinfo_buf[256];
 
 	/* forward, if any */
 	if ( SvROK(text_sv)) {
@@ -584,9 +586,8 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 		skip_if_simple = pget_B(skip_if_simple);
 	if ( pexist(advances))
 		force_advances = pget_B(advances);
-	if ( pexist(reorder)) {
+	if ( pexist(reorder))
 		reorder = pget_B(reorder);
-	}
 	if ( !reorder )
 		t.flags &= ~toRTL;
 	if ( pexist(level)) {
@@ -603,6 +604,13 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 			t.flags |= pitch << toPitch;
 	} else if ( var-> font. pitch == fpFixed )
 		t.flags |= fpFixed << toPitch;
+	if ( pexist(replace_tabs)) {
+		replace_tabs = pget_i(replace_tabs);
+		if ( replace_tabs >= 0 ) {
+			force_advances = true;
+			semistatic_init( &p_tabinfo, &tabinfo_buf, sizeof(uint16_t), sizeof(tabinfo_buf) / sizeof(uint16_t));
+		}
+	}
 
 	hv_clear(profile); /* old gencls bork */
 
@@ -630,6 +638,19 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 	/* allocate buffers */
 	if (!(t.text = sv2uint32(text_sv, &t.len, &t.flags)))
 		goto EXIT;
+	if ( replace_tabs >= 0 ) {
+		int i;
+		skip_if_simple = false; /* advances will be fixed */
+		for ( i = 0; i < t.len; i++) {
+			if ( t.text[i] == 9 ) {
+				t.text[i] = 32;
+				do_replace_tabs = true;
+				if ( !semistatic_push(p_tabinfo, uint16_t, i))
+					goto EXIT;
+			}
+		}
+	}
+
 	if ( level == tsBytes ) {
 		int i;
 		uint32_t *c = t.text;
@@ -712,6 +733,27 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 
 	if (gp_enter) gpLEAVE;
 
+	/* fix advances for tabs */
+	if ( do_replace_tabs && t.advances) {
+		int i, j;
+		uint16_t n;
+		for (
+			i = j = 0,
+			n = semistatic_at(p_tabinfo, uint16_t, 0);
+			i < t.n_glyphs;
+			i++
+		) {
+			uint16_t ix = t.indexes[i];
+			if ( ix >= n ) {
+				if ( ix == n )
+					t.advances[ix] *= replace_tabs;
+				if ( ++j >= p_tabinfo.count )
+					break;
+				n = semistatic_at(p_tabinfo, uint16_t, j);
+			}
+		}
+	}
+
 	/* encode direction */
 	if ( level != tsBytes ) {
 		for ( i = 0; i < t.n_glyphs; i++) {
@@ -759,6 +801,7 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 	));
 
 EXIT:
+	if ( replace_tabs >= 0) semistatic_done( &p_tabinfo);
 	if (gp_enter) gpLEAVE;
 	if ( t.text     ) free(t.text     );
 	if ( t.v2l      ) free(t.v2l      );

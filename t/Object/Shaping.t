@@ -421,6 +421,18 @@ sub test_bytes
 	is_deeply( $k->indexes, [0,1,2], "two bytes index array");
 }
 
+sub test_tabs
+{
+	my $k = $w-> text_shape(" \t", replace_tabs => 8 );
+	SKIP: {
+		my $xg = $k->glyphs;
+		is( $xg->[0], $xg->[1], "tabs replaced");
+		my $xa = $k->advances;
+		skip("no advances", 1) unless $k;
+		is( $xa->[0] * 8, $xa->[1], "tabs replaced with correct width");
+	}
+}
+
 sub test_high_unicode
 {
 	ok(1, "high unicode");
@@ -639,6 +651,7 @@ sub run_test
 		test_shaping($found, $opt{fribidi});
 	}
 	test_bytes;
+	test_tabs;
 	test_high_unicode;
 	test_drawing;
 	test_glyphs_wrap;

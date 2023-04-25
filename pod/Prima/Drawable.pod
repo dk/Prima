@@ -1975,6 +1975,15 @@ might.
 A similar effect can be reached by prepending the text with U+202D
 (LEFT-TO-RIGHT OVERRIDE).
 
+=item replace_tabs INTEGER = -1
+
+If set to 0 or more, replaces tabs by spaces width widths multiplied by the option value.
+Since it needs advances to operate, automatically sets the C<advances> option.
+If the string passed indeed contains tab characters, also turns off C<skip_if_simple> option.
+
+Note: if using the result later in C<text_wrap>, set the C<tabIndent> parameters there to 1
+to avoid double multipliciaton of the tab character width.
+
 =item rtl BOOLEAN
 
 If set to 1, default text direction is assumed as RTL, and as LTR if set to 0.

@@ -250,7 +250,7 @@ sub reset
 			for my $line ( @{$self-> {lines}})
 			{
 				my @glyphs = $self-> text_shape_with_tabs_replaced( $line ) || ();
-				my $breaks = $self-> text_wrap( $line, $size[0], $twOpts, $ti, 0, -1, @glyphs);
+				my $breaks = $self-> text_wrap( $line, $size[0], $twOpts, 1, 0, -1, @glyphs);
 				for (my $i = 0; $i < @$breaks; $i+=2) {
 					my @chunk = ( undef ) x CM_SIZE;
 					$chunk[CM_CHAR_OFS] = $$breaks[$i];
@@ -1121,33 +1121,19 @@ sub text_shape_with_tabs_replaced
 {
 	my ( $self, $line) = @_;
 	return Prima::Drawable::Glyphs->new_empty unless length $line;
-
-	my $untabbed = $line;
-	my %opt = (
-		rtl      => $self->textDirection,
-		level    => ( $self-> textLigation ? ts::Full : ts::Glyphs ),
+	my $s = $self-> text_shape($line,
+		rtl          => $self->textDirection,
+		level        => ( $self-> textLigation ? ts::Full : ts::Glyphs ),
 		replace_tabs => $self->{tabIndent},
+		advances     => 1,
 	);
-	if ($line =~ /\t/) {
-		$opt{advances} = 1;
-		$untabbed =~ s/\t/ /g;
-	}
-	my $s = $self-> text_shape($untabbed, %opt);
 	unless ($s) {
 		warn "Prima::Edit: shaping error!\n";
 		eval { require Data::Dumper; };
 		unless ($@) {
-			print STDERR Data::Dumper::Dumper($untabbed, \%opt, $s);
+			print STDERR Data::Dumper::Dumper($line, $s);
 		}
 		$s = Prima::Drawable::Glyphs->new_empty;
-	}
-	if ( $opt{advances} && ( my $advances = $s-> advances)) {
-		my $indexes = $s-> indexes;
-		for my $ix (0..$#$advances) {
-			my $cix = $indexes->[$ix];
-			next unless substr($line, $cix & ~to::RTL, 1) eq "\t";
-			$advances->[$ix] *= $self->{tabIndent} 
-		}
 	}
 	return $s;
 }
@@ -2196,8 +2182,7 @@ sub set_line
 			$line,
 			$sz[0] - $self-> {defcw},
 			tw::WordBreak|tw::CalcTabs|tw::NewLineBreak|tw::ReturnChunks,
-			$self-> {tabIndent},
-			0, -1, @glyphs
+			1, 0, -1, @glyphs
 		);
 		my @chunkMap;
 		( undef, $ry) = $self-> physical_to_logical( 0, $y);
