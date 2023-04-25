@@ -456,7 +456,11 @@ sub on_paint
 
 	my $back = $focused ? $self-> hiliteBackColor : $self-> backColor;
 	my $fore = $focused ? $self-> hiliteColor : $self-> color;
-	$canvas-> rect3d( 0, 0, $W-1, $H-1, 1, $self-> dark3DColor, $self-> light3DColor, $back);
+	if ( $self-> skin eq 'flat') {
+		$canvas-> rect_fill( 0, 0, $W-1, $H-1, 1, $self-> dark3DColor, $back);
+	} else {
+		$canvas-> rect3d( 0, 0, $W-1, $H-1, 1, $self-> dark3DColor, $self-> light3DColor, $back);
+	}
 	my $icon = $combo-> {icons}[$combo-> focusedItem];
 	my $adj = 3;
 

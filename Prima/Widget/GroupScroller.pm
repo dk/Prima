@@ -268,9 +268,9 @@ sub draw_border
 		$canvas-> rect_fill(
 			0, 0,
 			$size[0]-1, $size[1]-1,
+			$self->{borderWidth},
 			$self-> dark3DColor,
-			$backColor // $self-> backColor,
-			$self->{borderWidth}
+			$backColor // $self-> backColor
 		);
 	} else {
 		$self-> rect_bevel(

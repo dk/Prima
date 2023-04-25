@@ -149,9 +149,9 @@ sub on_paint
 	if ( $self-> skin eq 'flat') {
 		$canvas-> rect_fill(
 			Prima::rect->new(@size)->inclusive,
+			$border,
 			$self-> dark3DColor,
-			$clr[1],
-			$border
+			$clr[1]
 		);
 	} else {
 		$self-> rect_bevel( $canvas, Prima::rect->new(@size)->inclusive,

@@ -42,7 +42,7 @@ sub rect3d
 
 sub rect_fill
 {
-	my ( $canvas, $x1, $y1, $x2, $y2, $fg, $bg, $lw) = @_;
+	my ( $canvas, $x1, $y1, $x2, $y2, $lw, $fg, $bg) = @_;
 	($x1, $x2) = ($x2, $x1) if $x2 < $x1;
 	($y1, $y2) = ($y2, $y1) if $y2 < $y1;
 	$lw //= 1;

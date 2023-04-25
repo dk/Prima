@@ -1732,7 +1732,7 @@ an inferior rectangle with it, otherwise the inferior rectangle is not touched.
 
 Context used: rop; color and backColor for a monochrome DeviceBitmap
 
-=item rect_fill X1, Y1, X2, Y2, FOREGROUND, BACKGROUND, BORDER_WIDTH
+=item rect_fill X1, Y1, X2, Y2, BORDER_WIDTH, FOREGROUND, BACKGROUND
 
 Draws a rectangle with outline color FOREGROUND and BORDER_WIDTH pixels,
 and fills it with color BACKGROUND. If FOREGROUND and/or BACKGROUND are

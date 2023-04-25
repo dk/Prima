@@ -84,7 +84,7 @@ sub profile_default
 		buttonProfile  => {},
 		hScrollBarProfile => {},
 		vScrollBarProfile => {},
-		listDelegations   => [qw(Leave SelectItem MouseUp Click KeyDown)],
+		listDelegations   => [qw(Leave SelectItem MouseUp Click KeyDown Paint)],
 		editDelegations   => [qw(FontChanged Create Setup KeyDown KeyUp Change Leave MouseWheel)],
 		buttonDelegations => [qw(ColorChanged FontChanged MouseDown MouseClick
 			MouseUp MouseMove MouseEnter MouseLeave Paint Enable Disable)],
@@ -253,6 +253,17 @@ sub List_KeyDown
 	}
 }
 
+sub List_Paint
+{
+	my ( $self, $list, $canvas) = @_;
+	if ( $self->skin eq 'flat') {
+		my $bw = $list->borderWidth;
+		$canvas-> clear($bw, $list->height-$bw, $list->width-1-$bw, $list->height-1);
+		$canvas-> clipRect(0,0,$list->width-1,$list->height-$bw-1);
+	}
+	$list->on_paint($canvas);
+}
+
 sub Button_ColorChanged
 {
 	my $self = shift;
@@ -356,14 +367,14 @@ sub Button_Paint
 		my $hbc = $self-> hiliteBackColor;
 		$canvas-> graphic_context( sub {
 			$canvas-> color( $self-> dark3DColor ); 
-			$canvas-> rectangle(0, 0, $w-1, $h-1);
+			$canvas-> rectangle(-1, 0, $w-1, $h-1); # yes, -1
 			my $c = cl::blend(
 				$self->map_color( $hbc ),
 				$self->map_color( $clr[1] ),
 				$self->{prelight} ? 0.33 : 0.66
 			);
 			$canvas-> color( $c );
-			$canvas-> bar( 1, 1, $w-2, $h-2);
+			$canvas-> bar( 1 - 1, 1, $w-2, $h-2);
 		});
 		$clr[0] = $self->hiliteColor;
 		$canvas-> translate(1,-1) if $lv;
