@@ -212,6 +212,5 @@ $ii->bar(0,0,7,7);
 my $jj = $ii->data;
 $ii->begin_paint;
 $ii->end_paint;
-is($ii->data, $jj, "begin/end paint preserves data");
-
+is(unpack('H*',$ii->data), unpack('H*',$jj), "begin/end paint preserves data");
 done_testing;
