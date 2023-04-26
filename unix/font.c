@@ -2096,8 +2096,7 @@ FAILED:
 			return false;
 		}
 		XCHECKPOINT;
-		prima_copy_xybitmap( r-> arena_bits, (Byte*)ximage-> data, r-> orgBox. x, r-> orgBox. y,
-			r-> lineSize,  ximage-> bytes_per_line);
+		prima_copy_1bit_ximage( r-> arena_bits, ximage, false);
 		XDestroyImage( ximage);
 
 		px = prima_prepare_ximage( r-> dimension. x, r-> dimension. y, CACHE_BITMAP);

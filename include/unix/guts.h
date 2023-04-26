@@ -1234,7 +1234,7 @@ extern Pixmap
 prima_get_hatch( FillPattern * fp);
 
 extern void
-prima_copy_xybitmap( unsigned char *data, const unsigned char *idata, int w, int h, int ls, int ils);
+prima_copy_1bit_ximage( unsigned char *data, XImage *i, Bool to_ximage);
 
 extern void
 prima_mirror_bytes( unsigned char *data, int dataSize);

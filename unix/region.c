@@ -352,7 +352,7 @@ apc_gp_get_region( Handle self, Handle rgn)
 		return false;
 	}
 
-	prima_copy_xybitmap( pi.data, (Byte*)i-> data, w, h, pi.lineSize, i-> bytes_per_line);
+	prima_copy_1bit_ximage( pi.data, i, false);
 	XDestroyImage( i);
 
 	rgnrec2 = img_region_mask(( Handle) &pi);

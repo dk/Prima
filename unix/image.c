@@ -495,28 +495,47 @@ prima_mirror_bits( void)
 	return bits;
 }
 
-void
-prima_copy_xybitmap( unsigned char *data, const unsigned char *idata, int w, int h, int ls, int ils)
+static void
+copy_xybitmap( unsigned char *data, const unsigned char *idata, int w, int h, int ls, int ils, int els)
 {
 	int y;
 	register int x;
 	Byte *mirrored_bits;
 
+	if ( els > ils ) els = ils;
+
 	/* XXX: MSB/LSB */
 	if ( guts.bit_order == MSBFirst) {
 		for ( y = h-1; y >= 0; y--) {
-			memcpy( ls*(h-y-1)+data, idata+y*ils, ls);
+			memcpy( ls*(h-y-1)+data, idata+y*ils, els);
 		}
 	} else {
 		mirrored_bits = prima_mirror_bits();
 		for ( y = h-1; y >= 0; y--) {
 			register const unsigned char *s = idata+y*ils;
 			register unsigned char *t = ls*(h-y-1)+data;
-			x = ls;
+			x = els;
 			while (x--)
 				*t++ = mirrored_bits[*s++];
 		}
 	}
+}
+
+void
+prima_copy_1bit_ximage( unsigned char *data, XImage *i, Bool to_ximage)
+{
+	if ( to_ximage )
+		copy_xybitmap(
+			(unsigned char*) i->data, (const unsigned char*) data,
+			i->width, i->height,
+			i->bytes_per_line, LINE_SIZE(i->width,1), i->bytes_per_line
+		);
+	else
+		copy_xybitmap(
+			data, (const unsigned char*) i->data,
+			i->width, i->height,
+			LINE_SIZE(i->width,1), i->bytes_per_line, EFFECTIVE_LINE_SIZE(i->width,1)
+		);
 }
 
 void
@@ -532,32 +551,14 @@ prima_mirror_bytes( unsigned char *data, int dataSize)
 static Bool
 create_cache1_1( Image *img, ImageCache *cache, Bool for_icon)
 {
-	unsigned char *data;
-	int ls;
-	int h = img-> h, w = img-> w;
-	int ils;
-	unsigned char *idata;
 	PrimaXImage *ximage;
-
-	if ( for_icon) {
-		ils = PIcon(img)->maskLine;
-		idata = PIcon(img)->mask;
-	} else {
-		ils = img-> lineSize;
-		idata = img-> data;
-	}
-
-	ximage = prima_prepare_ximage( w, h, CACHE_BITMAP);
-	if (!ximage) return false;
-	ls = get_ximage_bytes_per_line(ximage);
-	data = get_ximage_data(ximage);
-	prima_copy_xybitmap( data, idata, w, h, ls, ils);
-
-	if ( for_icon) {
+	if ( !( ximage = prima_prepare_ximage( img->w, img->h, CACHE_BITMAP)))
+		return false;
+	prima_copy_1bit_ximage( for_icon ? PIcon(img)->mask : img->data, ximage->image, true);
+	if ( for_icon)
 		cache-> icon  = ximage;
-	} else {
+	else
 		cache-> image = ximage;
-	}
 	return true;
 }
 
@@ -566,8 +567,6 @@ create_icon_cache8_1(PIcon img, ImageCache * cache)
 {
 	Byte * monomask;
 	PrimaXImage *ximage;
-	int ls;
-	unsigned char *data;
 
 	if (!(monomask = img->self->convert_mask((Handle)img, imbpp1)))
 		return false;
@@ -577,9 +576,7 @@ create_icon_cache8_1(PIcon img, ImageCache * cache)
 		free(monomask);
 		return false;
 	}
-	ls = get_ximage_bytes_per_line(ximage);
-	data = get_ximage_data(ximage);
-	prima_copy_xybitmap( data, monomask, img->w, img->h, ls, LINE_SIZE(img->w,imbpp1));
+	prima_copy_1bit_ximage( monomask, ximage->image, true);
 
 	free( monomask );
 	cache->icon = ximage;
@@ -2725,7 +2722,7 @@ prima_query_image( Handle self, XImage * i)
 	X(self)-> size. y = img-> h;
 
 	if ( target_depth == 1) {
-		prima_copy_xybitmap( img-> data, (Byte*)i-> data, img-> w, img-> h, img-> lineSize, i-> bytes_per_line);
+		prima_copy_1bit_ximage( img->data, i, false);
 	} else {
 	switch ( guts. idepth) {
 	case 8:

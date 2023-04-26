@@ -49,6 +49,12 @@ extern void init_image_support(void);
 
 /* image basic routines */
 #define LINE_SIZE(width,type) (((( width ) * (( type ) & imBPP) + 31) / 32) * 4)
+#define EFFECTIVE_LINE_SIZE(width,type) (\
+	 ((type&imBPP) == 1) ? (((width) + 7) / 8)  : \
+	(((type&imBPP) == 4) ? (((width) + 1) / 2) : \
+	((width)*(type&imBPP)/8)) \
+)
+
 extern Bool ic_stretch( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, int w, int h, int scaling, char * error);
 extern int  ic_stretch_suggest_type( int type, int scaling );
 extern void ic_type_convert( Handle self, Byte * dstData, PRGBColor dstPal, int dstType, int * palSize, Bool palSize_only);

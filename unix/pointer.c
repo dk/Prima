@@ -403,17 +403,11 @@ xlib_cursor_load( Handle self, int id, Handle icon)
 	CIcon(icon)-> create_empty( icon, w, h, imBW);
 	if (( im = XGetImage( DISP, p1, 0, 0, w, h, 1, XYPixmap)) == NULL)
 		goto FAIL;
-	prima_copy_xybitmap(
-		PIcon(icon)-> data, (Byte*)im-> data,
-		PIcon(icon)-> w, PIcon(icon)-> h,
-		PIcon(icon)-> lineSize, im-> bytes_per_line);
+	prima_copy_1bit_ximage(PIcon(icon)-> data, im, false);
 	XDestroyImage( im);
 	if (( im = XGetImage( DISP, p2, 0, 0, w, h, 1, XYPixmap)) == NULL)
 		goto FAIL;
-	prima_copy_xybitmap(
-		PIcon(icon)-> mask, (Byte*)im-> data,
-		PIcon(icon)-> w, PIcon(icon)-> h,
-		PIcon(icon)-> maskLine, im-> bytes_per_line);
+	prima_copy_1bit_ximage( PIcon(icon)-> mask, im, false);
 	if ( cp != NULL ) {
 		int i;
 		Byte * mask = PIcon(icon)-> mask;
