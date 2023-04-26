@@ -258,8 +258,15 @@ sub List_Paint
 	my ( $self, $list, $canvas) = @_;
 	if ( $self->skin eq 'flat') {
 		my $bw = $list->borderWidth;
-		$canvas-> clear($bw, $list->height-$bw, $list->width-1-$bw, $list->height-1);
-		$canvas-> clipRect(0,0,$list->width-1,$list->height-$bw-1);
+		if ( $bw > 0 ) {
+			my @sz = $list->size;
+			$canvas-> color($list->dark3DColor);
+			$canvas-> bar(0,$sz[1]-$bw-1,$bw-1,$sz[1]-1);
+			$canvas-> bar($sz[0]-$bw-1,$sz[1]-$bw-1,$sz[0]-1,$sz[1]-1);
+			$canvas-> color(cl::Back);
+			$canvas-> clear($bw, $sz[1]-$bw-1, $sz[0]-$bw-1, $sz[1]-1);
+			$canvas-> clipRect(0,0,$sz[0]-1,$sz[1]-$bw-1);
+		}
 	}
 	$list->on_paint($canvas);
 }
