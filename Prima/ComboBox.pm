@@ -260,10 +260,11 @@ sub List_Paint
 		my $bw = $list->borderWidth;
 		if ( $bw > 0 ) {
 			my @sz = $list->size;
+			my $cc = $list->color;
 			$canvas-> color($list->dark3DColor);
 			$canvas-> bar(0,$sz[1]-$bw-1,$bw-1,$sz[1]-1);
 			$canvas-> bar($sz[0]-$bw-1,$sz[1]-$bw-1,$sz[0]-1,$sz[1]-1);
-			$canvas-> color(cl::Back);
+			$canvas-> color($cc);
 			$canvas-> clear($bw, $sz[1]-$bw-1, $sz[0]-$bw-1, $sz[1]-1);
 			$canvas-> clipRect(0,0,$sz[0]-1,$sz[1]-$bw-1);
 		}
