@@ -534,6 +534,7 @@ sub renew_widgets
 	if ( $VB::form) {
 		my @f = ( $VB::form, $VB::form-> widgets);
 		$_ = $_-> name for @f;
+		@f = sort @f;
 		$VB::inspector-> Selector-> items( \@f);
 		my $fx = $VB::form-> focused ? $VB::form : $VB::form-> selectedWidget;
 		$fx = $VB::form unless $fx;
