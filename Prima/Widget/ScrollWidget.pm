@@ -18,6 +18,7 @@ sub profile_default
 {
 	my $def = $_[ 0]-> SUPER::profile_default;
 	my %prf = (
+		borderWidth    => 0,
 		deltaX         => 0,
 		deltaY         => 0,
 		limitX         => 0,

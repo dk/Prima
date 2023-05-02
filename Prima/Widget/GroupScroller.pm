@@ -12,8 +12,7 @@ sub profile_default
 {
 	my ( $orig, $self) = @_;
 	my $def = $orig->($self);
-	return {
-		%$def,
+	my $new = {
 		autoHScroll       => 1,
 		autoVScroll       => 1,
 		borderWidth       => 2,
@@ -22,7 +21,10 @@ sub profile_default
 		scrollBarClass    => 'Prima::ScrollBar',
 		vScroll           => 1,
 		vScrollBarProfile => {},
+		%$def,
 	};
+	$new->{GS_explicit_borderWidth} = 1 if exists $def->{borderWidth};
+	return $new;
 }
 
 sub profile_check_in
@@ -31,7 +33,7 @@ sub profile_check_in
 	$orig->($self, $p, $default);
 	$p-> {autoHScroll} = 0 if exists $p-> {hScroll};
 	$p-> {autoVScroll} = 0 if exists $p-> {vScroll};
-	$p-> { GS_explicit_borderWidth} = exists $p->{borderWidth};
+	$p-> { GS_explicit_borderWidth} = $default->{GS_explicit_borderWidth} || exists $p->{borderWidth};
 }
 
 sub init
