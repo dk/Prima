@@ -622,7 +622,7 @@ F ex defining C<MyRole::init> won't have any effect where MyRole is not the
 first base class (and things will explode badly if it is).
 
 In a very special case where MyRole I<needs> to have methods that overload Prima
-core, XS-implemented menthods, a special technique is used:
+core, XS-implemented methods, a special technique is used:
 
 =over
 
@@ -655,9 +655,14 @@ anonymous subroutine that will call the needed SUPER method:
 
 If you know L<Moose> standard syntax C<around>, this is exactly the same idea.
 
+Note that this method will be called I<after> the descendant class C<setup>,
+if the class has one. This is a bit confusing as in all types of OO inheritance
+sub-class code is always called after the super-class, not vice versa. This
+might change in the future, too.
+
 =item *
 
-In the desendant class, inherit from MyRole normally, but in addition to that
+In the descendant class, inherit from MyRole normally, but in addition to that
 explicitly call to overload its special methods:
 
    package MyWidget;
