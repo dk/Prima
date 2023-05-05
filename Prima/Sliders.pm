@@ -452,6 +452,7 @@ sub profile_default
 		%{Prima::InputLine-> profile_default},
 		%{$_[ 0]-> SUPER::profile_default},
 		autoEnableChildren => 1,
+		allowEmpty     => 0,
 		ownerBackColor => 1,
 		selectable     => 0,
 		scaleChildren  => 0,
@@ -506,7 +507,7 @@ sub init
 		%{$profile{editProfile}},
 		text        => $profile{value},
 	);
-	for (qw( min max step value circulate pageStep)) {$self-> $_($profile{$_});};
+	for (qw( allowEmpty min max step value circulate pageStep)) {$self-> $_($profile{$_});};
 	$self-> visible( $visible);
 	return %profile;
 }
@@ -529,6 +530,7 @@ sub InputLine_MouseWheel
 	$z = (abs($z) > 120) ? int($z/120) : (($z > 0) ? 1 : -1);
 	$z *= $self-> {pageStep} if $mod & km::Ctrl;
 	my $value = $self-> value;
+	$value = $self->min if $value eq '';
 	$self-> value( $value + $z * $self-> {step});
 	$self-> value( $z > 0 ? $self-> min : $self-> max)
 		if $self-> {circulate} && ( $self-> value == $value);
@@ -543,7 +545,9 @@ sub InputLine_DragEnd
 	return unless defined $text;
 	$text =~ s/^\s+//;
 	$text =~ s/\s+$//;
-	return if $text =~ /^-?\d+(\.\d+)?$/ and $text >= $self->min and $text <= $self->max;
+	my $ok = $text =~ /^-?\d+(\.\d+)?$/ && $text >= $self->min && $text <= $self->max;
+	$ok = 1 if $self->{allowEmpty} && $text eq '';
+	return unless $ok;
 	$edit->clear_event;
 	$edit->on_dragend(undef, $action, $mod, $x, $y, $ref);
 	$ref->{allow} = 0;
@@ -553,6 +557,7 @@ sub Spin_Increment
 {
 	my ( $self, $spin, $increment) = @_;
 	my $value = $self-> value;
+	$value = $self->min if $value eq '';
 	$self-> value( $value + $increment * $self-> {step});
 	$self-> value( $increment > 0 ? $self-> min : $self-> max)
 		if $self-> {circulate} && ( $self-> value == $value);
@@ -572,6 +577,7 @@ sub InputLine_KeyDown
 			$self-> value( $key == kb::PgDn ? $self-> min : $self-> max);
 		} else {
 			my $value = $self-> value;
+			$value = $self->min if $value eq '';
 			$self-> value( $value + $z);
 			$self-> value( $z > 0 ? $self-> min : $self-> max)
 				if $self-> {circulate} && ( $self-> value == $value);
@@ -610,7 +616,7 @@ sub set_bounds
 	my ( $self, $min, $max) = @_;
 	$max = $min if $max < $min;
 	( $self-> { min}, $self-> { max}) = ( $min, $max);
-	my $oldValue = $self-> value;
+	return if $self->{allowEmpty} && $self->value eq '';
 	$self-> value( $max) if $max < $self-> value;
 	$self-> value( $min) if $min > $self-> value;
 }
@@ -634,6 +640,7 @@ sub pageStep
 	$_[0]-> {pageStep} = $_[1];
 }
 
+sub allowEmpty   {$#_ ? $_[0]-> {allowEmpty} = $_[1] : return $_[0]-> {allowEmpty}}
 
 sub min          {($#_)?$_[0]-> set_bounds($_[1], $_[0]-> {'max'})      : return $_[0]-> {min};}
 sub max          {($#_)?$_[0]-> set_bounds($_[0]-> {'min'}, $_[1])      : return $_[0]-> {max};}
@@ -642,7 +649,10 @@ sub value
 {
 	if ($#_) {
 		my ( $self, $value) = @_;
-		if ( $value =~ m/^\s*([+-]?)(?=\d|\.\d)\d*(\.\d*)?([Ee]([+-]?\d+))?\s*$/) {
+		$value //= '';
+		if ( $self->{allowEmpty} && $value eq '') {
+			# ok
+		} elsif ( $value =~ m/^\s*([+-]?)(?=\d|\.\d)\d*(\.\d*)?([Ee]([+-]?\d+))?\s*$/) {
 			$value = $self-> {min} if $value < $self-> {min};
 			$value = $self-> {max} if $value > $self-> {max};
 		} else {
@@ -653,7 +663,9 @@ sub value
 	} else {
 		my $self = $_[0];
 		my $value = $self-> {edit}-> text;
-		if ( $value =~ m/^\s*([+-]?)(?=\d|\.\d)\d*(\.\d*)?([Ee]([+-]?\d+))?\s*$/) {
+		if ( $self->{allowEmpty} && $value eq '') {
+			# ok
+		} elsif ( $value =~ m/^\s*([+-]?)(?=\d|\.\d)\d*(\.\d*)?([Ee]([+-]?\d+))?\s*$/) {
 			$value = $self-> {min} if $value < $self-> {min};
 			$value = $self-> {max} if $value > $self-> {max};
 		} else {
@@ -2806,6 +2818,12 @@ selection properties.
 =head2 Properties
 
 =over
+
+=item allowEmpty BOOLEAN
+
+If set, allows an empty string as a valid value
+
+Default value: false
 
 =item circulate BOOLEAN
 
