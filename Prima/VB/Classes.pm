@@ -1068,7 +1068,7 @@ sub prf_types
 		pointer       => ['pointer',],
 		growMode      => ['growMode'],
 		geometry      => ['geometry'],
-		string        => ['helpContext', 'dndAware'],
+		string        => ['helpContext', 'dndAware', 'skin'],
 		text          => ['text', 'hint'],
 		selectingButtons=> ['selectingButtons'],
 		widgetClass   => ['widgetClass'],
@@ -1669,6 +1669,24 @@ sub open
 	my $self = shift;
 	$self-> SUPER::open( @_);
 	$self-> {A}-> min(0);
+}
+
+package Prima::VB::Types::uiv_undef;
+use strict;
+use vars qw(@ISA);
+@ISA = qw(Prima::VB::Types::uiv);
+
+sub open
+{
+	my $self = shift;
+	$self-> SUPER::open( @_);
+	$self-> {A}-> allowEmpty(1);
+}
+
+sub get
+{
+	my $t = $_[0]-> {A}-> text;
+	return length($t) ? $t : undef;
 }
 
 package Prima::VB::Types::bool;

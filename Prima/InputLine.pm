@@ -27,7 +27,7 @@ sub profile_default
 		autoHeight     => 1,
 		autoSelect     => 1,
 		autoTab        => 0,
-		borderWidth    => 2,
+		borderWidth    => undef,
 		charOffset     => 0,
 		cursorVisible  => 1,
 		cursorSize     => [ Prima::Application-> get_default_cursor_width, $font-> { height}],
@@ -72,7 +72,10 @@ sub profile_check_in
 		if exists $p-> {height} || exists $p-> {size} || exists $p-> {rect} || ( exists $p-> {top} && exists $p-> {bottom});
 	$p-> {alignment} = ( $p->{textDirection} // $default->{textDirection} ) ?
 		ta::Right : ta::Left unless exists $p->{alignment};
-	$p-> {_explicit_borderWidth} = exists $p->{borderWidth};
+	if ( ! defined $p->{borderWidth} && ! defined $default->{borderWidth}) {
+		my $skin = $p->{skin} // $default->{skin} // ( $p->{owner} ? $p->{owner}->skin : '' );
+		$p->{borderWidth} = ($skin eq 'flat') ? 1 : 2;
+	}
 	$self-> SUPER::profile_check_in( $p, $default);
 	@{$p}{qw(selStart selEnd)} = @{$p-> {selection}} if exists( $p-> { selection});
 }
@@ -96,9 +99,6 @@ sub init
 	my %profile = $self-> SUPER::init(@_);
 	$self->init_undo(\%profile);
 
-	$profile{borderWidth} = $self->{borderWidth}
-		if !$profile{_explicit_borderWidth} && $self->{_skin_affects_borderWidth};
-
 	for ( qw(
 		textDirection textLigation
 		writeOnly borderWidth passwordChar maxLen alignment
@@ -116,18 +116,6 @@ sub init
 	$self-> autoHeight( $profile{autoHeight});
 
 	return %profile;
-}
-
-sub skin
-{
-	return $_[0]->SUPER::skin unless $#_;
-	my $self = shift;
-	$self->SUPER::skin($_[1]);
-	if ($self->SUPER::skin eq 'flat') {
-		$self->borderWidth(1);
-		$self->{_skin_affects_borderWidth} = 1;
-	}
-	$self->repaint;
 }
 
 sub on_paint

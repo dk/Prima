@@ -259,8 +259,8 @@ sub prf_types
 	my $pt = $_[ 0]-> SUPER::prf_types;
 	my %de = (
 		bool    => [qw(flat vertical default checkable checked autoRepeat autoHeight autoWidth)],
-		uiv     => [qw(glyphs borderWidth defaultGlyph hiliteGlyph disabledGlyph pressedGlyph
-			holdGlyph imageScale )],
+		uiv     => [qw(glyphs defaultGlyph hiliteGlyph disabledGlyph pressedGlyph
+			holdGlyph imageScale borderWidth )],
 		modalResult  => ['modalResult'],
 		icon    => ['image',],
 		text    => ['hotKey'],
@@ -293,10 +293,10 @@ sub on_paint
 	my @size = $canvas-> size;
 	my $cl = $self-> color;
 	if ( $self-> prf('flat')) {
-		$canvas-> rect3d( 0,0,$size[0]-1,$size[1]-1,1,
-			cl::Gray,cl::Gray,$self-> backColor);
+		$canvas-> rect_fill( 0,0,$size[0]-1,$size[1]-1,$self->prf_get_borderWidth,
+			cl::Gray,$self-> backColor);
 	} else {
-		$canvas-> rect3d( 0,0,$size[0]-1,$size[1]-1,$self-> prf('borderWidth'),
+		$canvas-> rect3d( 0,0,$size[0]-1,$size[1]-1,$self-> prf_get_borderWidth,
 			$self-> light3DColor,$self-> dark3DColor,$self-> backColor);
 	}
 	my $i = $self-> prf('image');
@@ -417,7 +417,8 @@ sub prf_types
 		align   => ['alignment',],
 		bool    => [qw(writeOnly readOnly insertMode autoSelect autoHeight autoTab firstChar charOffset textDirection)],
 		upoint  => ['selection',],
-		uiv     => ['selStart','selEnd','maxLen','borderWidth'],
+		uiv     => ['selStart','selEnd','maxLen'],
+		uiv_undef=>[ qw(borderWidth)],
 		char    => ['passwordChar',],
 		string  => ['wordDelimiters',],
 	);
@@ -438,12 +439,15 @@ sub prf_adjust_default
 	);
 }
 
+sub prf_get_borderWidth { $_[0]->prf('borderWidth') // ((( $_[0]-> prf('skin') // $::application->skin // '') eq 'flat') ? 1 : 2) }
+
 sub on_paint
 {
 	my ( $self, $canvas) = @_;
 	my @sz = $canvas-> size;
 	my $cl = $self-> color;
-	my ( $a, $bw, $wo, $pc) = $self-> prf(qw( alignment borderWidth writeOnly passwordChar));
+	my ( $a, $wo, $pc) = $self-> prf(qw( alignment writeOnly passwordChar));
+	my $bw = $self->prf_get_borderWidth;
 	$canvas-> rect3d( 0,0,$sz[0]-1,$sz[1]-1,$bw,$self-> dark3DColor,$self-> light3DColor,$self-> backColor);
 	$canvas-> color( $cl);
 	$a = (ta::Left == $a ? dt::Left : (ta::Center == $a ? dt::Center : dt::Right));
@@ -579,15 +583,18 @@ sub on_paint
 package Prima::VB::BiScroller;
 use strict;
 
+sub prf_get_borderWidth { $_[0]->prf('borderWidth') // ((( $_[0]-> prf('skin') // $::application->skin // '') eq 'flat') ? 1 : 2) }
+
 sub paint_exterior
 {
 	my ( $self, $canvas) = @_;
 	my @sz = $canvas-> size;
 	my $cl = $self-> color;
-	my ( $bw, $hs, $vs, $ahs, $avs) =
-		$self-> prf(qw( borderWidth hScroll vScroll autoHScroll autoVScroll));
+	my ( $hs, $vs, $ahs, $avs) =
+		$self-> prf(qw( hScroll vScroll autoHScroll autoVScroll));
 	$hs ||= $ahs;
 	$vs ||= $avs;
+	my $bw = $self->prf_get_borderWidth;
 	$canvas-> rect3d( 0,0,$sz[0]-1,$sz[1]-1,$bw,
 		$self-> dark3DColor,$self-> light3DColor,$self-> backColor);
 	my $sw = 12 * $::application-> uiScaling;
@@ -653,7 +660,8 @@ sub prf_types
 		bool    => [qw(autoWidth vScroll hScroll multiSelect extendedSelect
 				autoHeight integralWidth integralHeight multiColumn
 				autoHScroll autoVScroll drawGrid vertical)],
-		uiv     => [qw(itemHeight itemWidth focusedItem borderWidth offset topItem)],
+		uiv     => [qw(itemHeight itemWidth focusedItem offset topItem)],
+		uiv_undef=>[ qw(borderWidth)],
 		color   => [qw(gridColor)],
 		items   => [qw(items selectedItems)],
 		string  => [qw(scrollBarClass)],
@@ -952,7 +960,8 @@ sub prf_types
 				persistentBlock readOnly syntaxHilite wantTabs wantReturns wordWrap
 				autoHScroll autoVScroll
 			)],
-		uiv     => [qw(borderWidth tabIndent undoLimit)],
+		uiv     => [qw(tabIndent undoLimit)],
+		uiv_undef=>[ qw(borderWidth)],
 		editBlockType => ['blockType',],
 		color   => [qw(hiliteNumbers hiliteQStrings hiliteQQStrings)],
 		string  => ['wordDelimiters','scrollBarClass'],
@@ -1002,7 +1011,8 @@ sub prf_types
 	my $pt = $_[ 0]-> SUPER::prf_types;
 	my %de = (
 		bool    => [qw(hScroll vScroll quality autoHScroll autoVScroll stretch)],
-		uiv     => [qw(borderWidth zoom)],
+		uiv     => [qw(zoom)],
+		uiv_undef=>[ qw(borderWidth)],
 		image   => ['image'],
 		align   => ['alignment',],
 		valign  => ['valignment',],
@@ -1071,7 +1081,8 @@ sub prf_types
 	my $pt = $_[ 0]-> SUPER::prf_types;
 	my %de = (
 		bool    => [qw(autoHScroll autoVScroll hScroll vScroll)],
-		uiv     => [qw(borderWidth deltaX deltaY limitX limitY)],
+		uiv     => [qw(deltaX deltaY limitX limitY)],
+		uiv_undef=>[ qw(borderWidth)],
 		string  => ['scrollBarClass',],
 	);
 	$_[0]-> prf_types_add( $pt, \%de);
@@ -1236,7 +1247,8 @@ sub on_paint
 	my ( $self, $canvas) = @_;
 	my @sz = $canvas-> size;
 	my $cl = $self-> color;
-	my ( $a, $bw) = $self-> prf(qw( alignment borderWidth));
+	my ( $a) = $self-> prf(qw( alignment ));
+	my $bw = $self->prf_get_borderWidth;
 	$canvas-> rect3d( 0,0,$sz[0]-1,$sz[1]-1,$bw,
 		$self-> dark3DColor,$self-> light3DColor,$self-> backColor);
 	$canvas-> rect3d( $sz[0]-$sz[1]-$bw,$bw,$sz[0]-1,$sz[1]-1,2,
@@ -1570,8 +1582,9 @@ sub prf_types
 	my $pt = $_[ 0]-> SUPER::prf_types;
 	my %de = (
 		bool    => [ qw(autoHScroll autoVScroll vScroll hScroll dragable autoHeight showItemHint)],
-		uiv     => [ qw(itemHeight itemWidth focusedItem borderWidth offset topItem indent
+		uiv     => [ qw(itemHeight itemWidth focusedItem offset topItem indent
 				openedGlyphs closedGlyphs)],
+		uiv_undef=>[ qw(borderWidth)],
 		treeItems => [qw(items)],
 		icon      => [qw(closedIcon openedIcon)],
 		string    => ['scrollBarClass',],
@@ -2372,8 +2385,9 @@ sub prf_types
 	my %de = (
 		bool    => [qw( allowChangeCellHeight allowChangeCellWidth autoHScroll autoVScroll
 				clipCells drawHGrid drawVGrid hScroll vScroll multiSelect)],
-		uiv     => [qw(borderWidth columns constantCellWidth constantCellHeight gridGravity
+		uiv     => [qw(columns constantCellWidth constantCellHeight gridGravity
 				leftCell topCell rows)],
+		uiv_undef=>[ qw(borderWidth)],
 		upoint  => [qw(focusedCell)],
 		color   => [qw(gridColor indentCellBackColor indentCellColor)],
 		urect   => [qw(cellIndents)],

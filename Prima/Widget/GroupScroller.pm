@@ -15,7 +15,7 @@ sub profile_default
 	my $new = {
 		autoHScroll       => 1,
 		autoVScroll       => 1,
-		borderWidth       => 2,
+		borderWidth       => undef,
 		hScroll           => 0,
 		hScrollBarProfile => {},
 		scrollBarClass    => 'Prima::ScrollBar',
@@ -23,7 +23,6 @@ sub profile_default
 		vScrollBarProfile => {},
 		%$def,
 	};
-	$new->{GS_explicit_borderWidth} = 1 if exists $def->{borderWidth};
 	return $new;
 }
 
@@ -33,7 +32,10 @@ sub profile_check_in
 	$orig->($self, $p, $default);
 	$p-> {autoHScroll} = 0 if exists $p-> {hScroll};
 	$p-> {autoVScroll} = 0 if exists $p-> {vScroll};
-	$p-> { GS_explicit_borderWidth} = $default->{GS_explicit_borderWidth} || exists $p->{borderWidth};
+	if ( ! defined $p->{borderWidth} && ! defined $default->{borderWidth}) {
+		my $skin = $p->{skin} // $default->{skin} // ( $p->{owner} ? $p->{owner}->skin : '' );
+		$p->{borderWidth} = ($skin eq 'flat') ? 1 : 2;
+	}
 }
 
 sub init
@@ -42,8 +44,7 @@ sub init
 	$self->{$_} = 0 for qw(autoVScroll autoHScroll hScroll vScroll borderWidth GS_extra_border);
 	my %profile = $orig->($self, @_);
 	$self->{$_} = $profile{$_} for qw(scrollBarClass hScrollBarProfile vScrollBarProfile);
-	$self->borderWidth($profile{borderWidth}) if !$self->{GS_skin_affects_borderWidth} || $profile{GS_explicit_borderWidth};
-	$self-> $_( $profile{ $_}) for qw( autoHScroll autoVScroll hScroll vScroll);
+	$self-> $_( $profile{ $_}) for qw(borderWidth autoHScroll autoVScroll hScroll vScroll);
 	return %profile;
 }
 
@@ -53,13 +54,7 @@ sub skin
 	return $orig->(@_) unless $#_;
 	my $self = shift;
 	$orig->($self, $_[1]);
-	if ($orig->($self) eq 'flat') {
-		$self->{GS_skin_affects_borderWidth} = 1;
-		$self->{GS_extra_border} = 1;
-		$self->borderWidth(1);
-	} else {
-		$self->{GS_extra_border} = 0;
-	}
+	$self->{GS_extra_border} = ($orig->($self) eq 'flat') ? 1 : 0;
 	$self->repaint;
 }
 
