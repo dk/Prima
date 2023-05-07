@@ -1145,6 +1145,12 @@ sub on_paint
 			$canvas-> rectangle(
 				0, 0, $size[0] - 1, $size[1] - 1 + $s * Prima::TabSet::DefGapY,
 			);
+			$canvas-> rectangle(
+				$s * DefBorderX-1, $on_top ?
+					$s * DefBorderX - 1 : $self-> {notebook}-> bottom - 2,
+				$size[0] - 1 - $s * DefBorderX,
+				$size[1] - $s * DefBorderX + $s * Prima::TabSet::DefGapY,
+			);
 		} else {
 			$canvas-> rect3d(
 				0, 0, $size[0] - 1, $size[1] - 1 + $s * Prima::TabSet::DefGapY,
@@ -1188,7 +1194,6 @@ sub on_paint
 			}
 		}
 		my $fh = $canvas-> font-> height + 8;
-
 		if ( $size[0] - $s * 2 * DefBorderX - $s * DefBookmarkX - 10 > 0 ) {
 			$canvas-> color( $c3d[0]);
 			$canvas-> line(

@@ -54,9 +54,9 @@ sub
 		profile => {
 			growMode => gm::GrowHiX | gm::GrowHiY,
 			name => 'TabbedNotebook1',
-			origin => [ 0, 64],
+			origin => [ 1, 64],
 			owner => 'Form1',
-			size => [ 329, 366],
+			size => [ 328, 386],
 			tabs => ['Page setup', 'Advanced', 'Spooling', 'Profiles', ],
 	}},
 	'Form1' => {
@@ -68,7 +68,7 @@ sub
 			bottom => 348,
 			centered => 1,
 			designScale => [ 6, 16],
-			height => 430,
+			height => 450,
 			left => 440,
 			name => 'Form1',
 			onCreate => Prima::VB::VBLoader::GO_SUB('my $self = $_[0];
@@ -93,7 +93,7 @@ $x-> HelpBtn-> notify(\'Click\') if
 ','Form1', 'onExecute'),
 			origin => [ 795, 325],
 			originDontCare => 0,
-			size => [ 330, 430],
+			size => [ 330, 450],
 			sizeDontCare => 0,
 			text => 'PostScript printer settings',
 			width => 330,
@@ -193,7 +193,7 @@ $x-> HelpBtn-> notify(\'Click\') if
 			name => 'Orientation',
 			origin => [ 8, 86],
 			owner => 'TabbedNotebook1',
-			size => [ 287, 76],
+			size => [ 282, 76],
 			text => 'Orientation',
 	}},
 	'CopyCount' => {
@@ -310,7 +310,7 @@ palette => [ 0,0,0,0,0,128,0,128,0,0,128,128,128,0,0,128,0,128,128,128,0,128,128
 			name => 'Color',
 			origin => [ 8, 9],
 			owner => 'TabbedNotebook1',
-			size => [ 287, 76],
+			size => [ 282, 76],
 			text => 'Color appearance',
 	}},
 	'ImageViewer3' => {
