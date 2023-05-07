@@ -19,7 +19,7 @@ sub profile_default
 		hScroll           => 0,
 		hScrollBarProfile => {},
 		scrollBarClass    => 'Prima::ScrollBar',
-		vScroll           => 1,
+		vScroll           => 0,
 		vScrollBarProfile => {},
 		%$def,
 	};
