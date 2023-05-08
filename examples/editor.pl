@@ -134,6 +134,7 @@ sub profile_default
 				['C~opy'  => 'Ctrl+Ins'   => kb::NoKey, sub{$_[0]-> {editor}-> copy}],
 				['~Paste' => 'Shift+Ins'  => kb::NoKey, sub{$_[0]-> {editor}-> paste}],
 				['~Delete' => 'Shift+Del' => kb::NoKey, sub{$_[0]-> {editor}-> delete_block}],
+				['~Select all' => 'Ctrl+A' => '^A' => sub { $_[0]->{editor}->select_all }],
 				[],
 				['~Find...' => 'Esc'      => kb::Esc   , q(find)],
 				['~Replace...'=> 'Ctrl+S' => '^S'      , q(replace)],
@@ -164,8 +165,6 @@ sub profile_default
 					'~Right-to-left' => sub{ $_[0]-> {editor}-> textDirection( $_[2] )}],
 				[ '@*ligation' => '~Ligatures' => sub{ $_[0]-> {editor}-> textLigation( $_[2] )}],
 				[ 'Set ~font' => q(setfont)],
-				['Increase border' => 'Ctrl+A' => '^A' => sub { $_[0]->{editor}->borderWidth( $_[0]->{editor}->borderWidth + 1 ) }],
-				['Decrease border' => 'Ctrl+Z' => '^Z' => sub { $_[0]->{editor}->borderWidth( $_[0]->{editor}->borderWidth - 1 ) }],
 			]]
 		],
 	}
