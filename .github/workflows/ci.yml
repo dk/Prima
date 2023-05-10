@@ -20,6 +20,7 @@ jobs:
       - name: Prepare
         run: |
             uname -a
+            apt-get update
             apt-get install -y libgtk2.0-dev libgif-dev libjpeg-dev libtiff-dev libxpm-dev libwebp-dev libfribidi-dev libharfbuzz-dev libthai-dev xvfb
             cpanm --notest Test::Pod
       - name: Build
