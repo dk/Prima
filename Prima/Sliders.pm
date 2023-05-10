@@ -1283,7 +1283,7 @@ sub on_paint
 	}
 
 	if ( $v) {
-		my $bw  = ( $size[0] - $sb) / 2;
+		my $bw  = int(( $size[0] - $sb) / 2 + .5);
 		return if $size[1] <= $kb * ($self-> {readOnly} ? 1 : 0) + 2 * $bh + 2;
 
 		$canvas-> translate((( $ta == 1) ? 1 : -1) * ( $bw - $sb - $kb), 0)
@@ -1393,7 +1393,7 @@ sub on_paint
 			}
 		}
 	} else {
-		my $bh  = ( $size[1] - $sb) / 2;
+		my $bh  = int(( $size[1] - $sb) / 2 + .5);
 		my $fh = $canvas-> font-> height;
 		return if $size[0] <= $kb * ($self-> {readOnly} ? 1 : 0) + 2 * $bw + 2;
 
