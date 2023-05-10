@@ -2513,6 +2513,7 @@ sub on_copy
 		# store(undef) is a special flag for x11 when data can be provided on demand for this format
 		$clipboard->store($_, undef) for map { $_->{mime} } @{ $self-> {GTKImageClipboardFormats} // [] };
 	} elsif ( $format eq 'Text' && $self->wantUnicodeInput) {
+		require Encode;
 		if ( Encode::is_utf8($data)) {
 			$clipboard-> store( 'UTF8', $data);
 		} else {
