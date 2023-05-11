@@ -205,6 +205,7 @@ typedef struct {
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
 	Color         xr_color;
 	Picture       xr_brush;
+	Picture       picture;
 #endif
 } MenuDrawRec;
 
@@ -891,7 +892,7 @@ render_fill( PMenuWindow w, MenuDrawRec *draw, Color clr, XPointDouble *pts, int
 		draw->xr_brush = XRenderCreateSolidFill (DISP, &c);
 	}
 	my_XRenderCompositeDoublePoly(
-		DISP, PictOpOver, draw->xr_brush, w->argb_picture,
+		DISP, PictOpOver, draw->xr_brush, draw->picture,
 		guts.xrender_a8_format,
 		0, 0, 0, 0, pts, numPts, WindingRule
 	);
@@ -1317,6 +1318,9 @@ typedef struct {
 	XWindow win;
 	Bool layered;
 	Handle self;
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+	Picture picture;
+#endif
 } PaintEvent;
 
 DECL_DRAW(custom)
@@ -1324,6 +1328,9 @@ DECL_DRAW(custom)
 	Point offset, size;
 	Event ev = { cmMenuItemPaint };
 	PaintEvent rec = { win, draw-> layered, self };
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+	rec.picture = draw->picture;
+#endif
 
 	offset = menu_item_offset( M(self), w, index);
 	size   = menu_item_size( M(self), w, index);
@@ -1424,6 +1431,7 @@ handle_menu_expose( XEvent *ev, XWindow win, Handle self)
 	CLIP_ARGB_PICTURE(w->argb_picture, rgn);
 
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+	draw.picture  = w->argb_picture;
 	draw.xr_color = clInvalid;
 	draw.xr_brush = (Picture) 0;
 #endif
@@ -2555,7 +2563,7 @@ apc_menu_item_begin_paint( Handle self, PEvent event)
 	YY-> type.widget   = 1;
 	YY-> flags.layered = pe->layered;
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
-	YY-> argb_picture  = M(pe->self)->w->argb_picture;
+	YY-> argb_picture  = pe->picture;
 #endif
 	YY-> gdrawable     = pe->win;
 	YY-> size          = event-> gen.P;
