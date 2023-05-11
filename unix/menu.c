@@ -202,6 +202,10 @@ typedef struct {
 	GC            gc;
 	Bool          layered;
 	unsigned long * c;
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+	Color         xr_color;
+	Picture       xr_brush;
+#endif
 } MenuDrawRec;
 
 static void
@@ -852,6 +856,48 @@ store_char( char * src, int srclen, int * srcptr, char * dst, int * dstptr, Bool
 	}
 }
 
+static Bool
+can_antialias( Handle self)
+{
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+	if ( !guts.render_extension)
+		return false;
+	self = PComponent(self)->owner;
+	if ( !self ) return false;
+	{
+		DEFXX;
+		if (XT_IS_BITMAP(XX) || (( XT_IS_PIXMAP(XX) || XT_IS_APPLICATION(XX)) && guts.depth==1))
+			return false;
+	}
+	return true;
+#else
+	return false;
+#endif
+}
+
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+static void
+render_fill( PMenuWindow w, MenuDrawRec *draw, Color clr, XPointDouble *pts, int numPts)
+{
+	if ( clr != draw->xr_color ) {
+		XRenderColor c;
+		if ( draw->xr_brush )
+			XRenderFreePicture( DISP, draw->xr_brush );
+		draw->xr_color = clr;
+		c.alpha = 0xffff;
+		c.red   = COLOR_R16(clr);
+		c.green = COLOR_G16(clr);
+		c.blue  = COLOR_B16(clr);
+		draw->xr_brush = XRenderCreateSolidFill (DISP, &c);
+	}
+	my_XRenderCompositeDoublePoly(
+		DISP, PictOpOver, draw->xr_brush, w->argb_picture,
+		guts.xrender_a8_format,
+		0, 0, 0, 0, pts, numPts, WindingRule
+	);
+}
+#endif
+
 #define DECL_DRAW(name) \
 static Bool \
 menuitem_draw_##name( \
@@ -989,41 +1035,94 @@ DECL_DRAW(submenu)
 	p[1].y = center - ave * 0.6;
 	p[2].x = mx - ave - MENU_CHECK_XOFFSET/2;
 	p[2].y = center + ave * 0.6 + 1;
-	if ( m-> flags. disabled && !selected) {
+	if ( can_antialias(self)) {
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
 		int i;
-		XSetForeground( DISP, draw->gc, draw->c[ciLight3DColor]);
+		XPointDouble pts[3];
 		for ( i = 0; i < 3; i++) {
-			p[i].x++;
-			p[i].y++;
+			pts[i].x = p[i].x;
+			pts[i].y = p[i].y;
 		}
+		if ( m-> flags. disabled && !selected) {
+			for ( i = 0; i < 3; i++) {
+				pts[i].x++;
+				pts[i].y++;
+			}
+			render_fill( w, draw, XX->rgb[ciLight3DColor], pts, 3);
+			for ( i = 0; i < 3; i++) {
+				pts[i].x--;
+				pts[i].y--;
+			}
+		}
+		render_fill( w, draw, clr, pts, 3);
+#endif
+	} else {
+		if ( m-> flags. disabled && !selected) {
+			int i;
+			XSetForeground( DISP, draw->gc, draw->c[ciLight3DColor]);
+			for ( i = 0; i < 3; i++) {
+				p[i].x++;
+				p[i].y++;
+			}
+			XFillPolygon( DISP, win, draw->gc, p, 3, Nonconvex, CoordModeOrigin);
+			for ( i = 0; i < 3; i++) {
+				p[i].x--;
+				p[i].y--;
+			}
+		}
+		XSetForeground( DISP, draw->gc, clr);
 		XFillPolygon( DISP, win, draw->gc, p, 3, Nonconvex, CoordModeOrigin);
-		for ( i = 0; i < 3; i++) {
-			p[i].x--;
-			p[i].y--;
-		}
 	}
-	XSetForeground( DISP, draw->gc, clr);
-	XFillPolygon( DISP, win, draw->gc, p, 3, Nonconvex, CoordModeOrigin);
 	return true;
 }
 
 DECL_DRAW(check)
 {
+	DEFMM;
 	int bottom = y + ix->height - MENU_ITEM_GAP - ix-> height * 0.2;
 	int ax = x + MENU_XOFFSET / 2;
-	XGCValues gcv;
-	gcv. line_width = 3;
-	XChangeGC( DISP, draw->gc, GCLineWidth, &gcv);
-	if ( m-> flags. disabled && !selected) {
-		XSetForeground( DISP, draw->gc, draw->c[ciLight3DColor]);
-		XDrawLine( DISP, win, draw->gc, ax + 1 + 1 , y + ix->height / 2 + 1, ax + MENU_XOFFSET - 2 + 1, bottom - 1);
-		XDrawLine( DISP, win, draw->gc, ax + MENU_XOFFSET - 2 + 1, bottom + 1, ax + MENU_CHECK_XOFFSET + 1, y + MENU_ITEM_GAP + ix-> height * 0.2);
+
+	if ( can_antialias(self)) {
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+		XPointDouble pts[] = {
+			{ax,                          y + ix->height/2},
+			{ax + MENU_XOFFSET,           bottom - 2},
+			{ax + MENU_CHECK_XOFFSET,     y + MENU_ITEM_GAP + ix->height * 0.2},
+			{ax + MENU_CHECK_XOFFSET - 2, y + MENU_ITEM_GAP + ix->height * 0.2 + 4},
+			{ax + MENU_XOFFSET,           bottom + 2},
+			{ax + 4,                      y + ix->height/2 + 4}
+		};
+		if ( m-> flags. disabled && !selected) {
+			int i;
+			XDouble dx = 1.0;
+
+			for ( i = 0; i < 6; i++) {
+				pts[i].x += dx;
+				pts[i].y += dx;
+			}
+			render_fill( w, draw, XX->rgb[ciLight3DColor], pts, 6);
+			for ( i = 0; i < 6; i++) {
+				pts[i].x -= dx;
+				pts[i].y -= dx;
+			}
+		}
+		render_fill( w, draw, clr, pts, 6);
+#endif
+	} else {
+		XGCValues gcv;
+		gcv. line_width = 3;
+		XChangeGC( DISP, draw->gc, GCLineWidth, &gcv);
+		if ( m-> flags. disabled && !selected) {
+			XSetForeground( DISP, draw->gc, draw->c[ciLight3DColor]);
+			XDrawLine( DISP, win, draw->gc, ax + 1 + 1 , y + ix->height / 2 + 1, ax + MENU_XOFFSET - 2 + 1, bottom - 1);
+			XDrawLine( DISP, win, draw->gc, ax + MENU_XOFFSET - 2 + 1, bottom + 1, ax + MENU_CHECK_XOFFSET + 1, y + MENU_ITEM_GAP + ix-> height * 0.2);
+		}
+		XSetForeground( DISP, draw->gc, clr);
+		XDrawLine( DISP, win, draw->gc, ax + 1, y + ix->height / 2, ax + MENU_XOFFSET - 2, bottom);
+		XDrawLine( DISP, win, draw->gc, ax + MENU_XOFFSET - 2, bottom, ax + MENU_CHECK_XOFFSET, y + MENU_ITEM_GAP + ix-> height * 0.2);
+		gcv. line_width = 1;
+		XChangeGC( DISP, draw->gc, GCLineWidth, &gcv);
 	}
-	XSetForeground( DISP, draw->gc, clr);
-	XDrawLine( DISP, win, draw->gc, ax + 1, y + ix->height / 2, ax + MENU_XOFFSET - 2, bottom);
-	XDrawLine( DISP, win, draw->gc, ax + MENU_XOFFSET - 2, bottom, ax + MENU_CHECK_XOFFSET, y + MENU_ITEM_GAP + ix-> height * 0.2);
-	gcv. line_width = 1;
-	XChangeGC( DISP, draw->gc, GCLineWidth, &gcv);
 
 	return true;
 }
@@ -1322,6 +1421,11 @@ handle_menu_expose( XEvent *ev, XWindow win, Handle self)
 	XCHECKPOINT;
 	CLIP_ARGB_PICTURE(w->argb_picture, rgn);
 
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+	draw.xr_color = clInvalid;
+	draw.xr_brush = (Picture) 0;
+#endif
+
 #ifdef USE_XFT
 	if ( !kf-> xft)
 #endif
@@ -1419,6 +1523,10 @@ handle_menu_expose( XEvent *ev, XWindow win, Handle self)
 #ifdef USE_XFT
 	if ( draw. xft_drawable)
 		XftDrawDestroy( draw. xft_drawable);
+#endif
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+	if ( draw.xr_brush)
+		XRenderFreePicture(DISP, draw.xr_brush);
 #endif
 	if ( draw. layered ) XFreeGC( DISP, draw. gc);
 	XFlush(DISP);

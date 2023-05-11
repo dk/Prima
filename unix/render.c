@@ -23,20 +23,6 @@ tesselation in xrender is horribly broken, but for now I'll give it a go to at l
 source is from https://github.com/freedesktop/xorg-libXrender/blob/master/src/Poly.c, (c) Keith Packard
 
 */
-int
-my_XRenderCompositeDoublePoly (Display		    *dpy,
-			    int			    op,
-			    Picture		    src,
-			    Picture		    dst,
-			    _Xconst XRenderPictFormat	*maskFormat,
-			    int			    xSrc,
-			    int			    ySrc,
-			    int			    xDst,
-			    int			    yDst,
-			    _Xconst XPointDouble    *fpoints,
-			    int			    npoints,
-			    int			    winding);
-
 typedef struct {
 	Picture   picture;
 	Pixmap    pixmap;

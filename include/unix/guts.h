@@ -1699,3 +1699,19 @@ prima_paint_box( Handle self, int w, int h, Matrix matrix, unsigned long foregro
 extern Bool
 prima_update_quarks_cache( Handle self);
 
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+int
+my_XRenderCompositeDoublePoly (Display		    *dpy,
+			    int			    op,
+			    Picture		    src,
+			    Picture		    dst,
+			    _Xconst XRenderPictFormat	*maskFormat,
+			    int			    xSrc,
+			    int			    ySrc,
+			    int			    xDst,
+			    int			    yDst,
+			    _Xconst XPointDouble    *fpoints,
+			    int			    npoints,
+			    int			    winding);
+#endif
+
