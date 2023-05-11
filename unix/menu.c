@@ -1037,7 +1037,7 @@ DECL_DRAW(checkbox)
 		y2 = y1 + MENU_CHECK_XOFFSET - 2;
 
 	XSetForeground( DISP, draw->gc, draw->c[m->flags.disabled ? ciLight3DColor : (MENU_PALETTE_SIZE-1)]);
-	XDrawLine( DISP, win, draw->gc, x1, y2, x2 + 1, y2);
+	XDrawLine( DISP, win, draw->gc, x1, y2, x2, y2);
 	XDrawLine( DISP, win, draw->gc, x2, y2, x2, y1);
 	XSetForeground( DISP, draw->gc, draw->c[ m->flags.disabled ? ciDisabledText : ciDark3DColor] );
 	XDrawLine( DISP, win, draw->gc, x2, y1, x1, y1);
@@ -1045,7 +1045,7 @@ DECL_DRAW(checkbox)
 
 	x1++; y1++; x2--; y2--;
 	XSetForeground( DISP, draw->gc, draw->c[ m->flags.disabled ? ciDisabledText : ciDark3DColor] );
-	XDrawLine( DISP, win, draw->gc, x1, y2, x2 + 1, y2);
+	XDrawLine( DISP, win, draw->gc, x1, y2, x2, y2);
 	XDrawLine( DISP, win, draw->gc, x2, y2, x2, y1);
 	XSetForeground( DISP, draw->gc, draw->c[ciLight3DColor]);
 	XDrawLine( DISP, win, draw->gc, x2, y1, x1, y1);
