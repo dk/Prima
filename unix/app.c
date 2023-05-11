@@ -393,7 +393,8 @@ init_x11( char * error_buf )
 	guts. ximages = hash_create();
 	gcv. graphics_exposures = false;
 	gcv. cap_style = CapProjecting;
-	guts. menugc = XCreateGC( DISP, guts. root, GCGraphicsExposures | GCCapStyle, &gcv);
+	gcv. line_width = 1;
+	guts. menugc = XCreateGC( DISP, guts. root, GCGraphicsExposures | GCCapStyle | GCLineWidth, &gcv);
 	guts. resolution. x = ( DisplayWidthMM( DISP, SCREEN) > 0) ? 
 		25.4 * guts. displaySize. x / DisplayWidthMM( DISP, SCREEN) + .5:
 		96;
