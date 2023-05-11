@@ -52,7 +52,7 @@ sub size { 0, shift->y_offset * 2 }
 
 sub draw
 {
-	my ( $self, $canvas, $colors, $x, $y, $w, $h, $selected ) = @_;
+	my ( $self, $owner, $canvas, $colors, $x, $y, $w, $h, $selected ) = @_;
 	$y += $h / 2 - 1;
 	$canvas->color($$colors[ci::Light3DColor]);
 	$canvas->line( $x - 1, $y, $x + $w - 1, $y);
@@ -121,7 +121,7 @@ sub size
 
 sub draw_bitmap
 {
-	my ( $self, $canvas, $colors, $icon, $x, $y, $w, $h) = @_;
+	my ( $self, $owner, $canvas, $colors, $icon, $x, $y, $w, $h) = @_;
 
 	my $key = "$icon";
 
@@ -230,7 +230,7 @@ sub draw_bitmap
 
 sub draw
 {
-	my ( $self, $canvas, $colors, $x, $y, $w, $h, $selected ) = @_;
+	my ( $self, $owner, $canvas, $colors, $x, $y, $w, $h, $selected ) = @_;
 	my $enabled    = $self->enabled;
 	my $vertical   = $self->vertical;
 	my $checked    = $self->checked;
@@ -247,7 +247,7 @@ sub draw
 
 	my $lw = 3;
 	if ( my $icon = $self-> icon ) {
-		$self-> draw_bitmap( $canvas, $colors, $icon, $x + 2, $y + $y_offset, $self->{icon_width}, $h - $y_offset * 2 );
+		$self-> draw_bitmap( $owner, $canvas, $colors, $icon, $x + 2, $y + $y_offset, $self->{icon_width}, $h - $y_offset * 2 );
 	} elsif ( $checked ) {
 		my $Y  = $y + $h / 2;
 		my $D  = $em * 0.25;
@@ -259,9 +259,14 @@ sub draw
 		my $X  = $x + $D / 4 + ($self->{icon_width} - $em) / 2;
 		my @r = ( $X, $Y - $D, $X + $D * 2, $Y + $D);
 		my $c1 = $$colors[$enabled ? ci::Dark3DColor : ci::DisabledText];
-		my $c2 = $enabled ? 0x404040 : $$colors[ci::Light3DColor];
-		$canvas-> rect3d( @r, 1, $c1, $c2);
-		$canvas-> rect3d( $r[0]+1,$r[1]+1,$r[2]-1,$r[3]-1, 1, $$colors[ci::Light3DColor], $c1);
+		if ( $owner->skin eq 'flat') {
+			$canvas-> color($c1);
+			$canvas-> rectangle(@r);
+		} else {
+			my $c2 = $enabled ? 0x404040 : $$colors[ci::Light3DColor];
+			$canvas-> rect3d( @r, 1, $c1, $c2);
+			$canvas-> rect3d( $r[0]+1,$r[1]+1,$r[2]-1,$r[3]-1, 1, $$colors[ci::Light3DColor], $c1);
+		}
 	}
 
 	$x += $self-> {icon_width} + $em / 2;
@@ -284,33 +289,30 @@ sub draw
 	$w -= $em * ($vertical ? 1.5 : 0.5 );
 
 	if ( $draw_check || $draw_accel || $draw_submenu ) {
-		$canvas-> lineEnd(le::Round) if $draw_check;
+		return unless $canvas->graphic_context_push;
+		$canvas->antialias(1) if $draw_check || $draw_submenu;
+		if ($draw_check) {
+			$canvas->lineWidth($lw);
+			$canvas->lineEnd(le::Round);
+		}
 		unless ( $self-> enabled ) {
 			$canvas->color( $$colors[ci::Light3DColor] );
 			my @tr = $canvas->translate;
-			$canvas->translate($tr[0] + 1, $tr[1] - 1);
-			if ($draw_check) {
-				$canvas->lineWidth($lw);
-				$canvas->polyline($draw_check);
-				$canvas->lineWidth(1);
-			}
-			$canvas->text_out( @$draw_accel ) if $draw_accel;
+			$canvas->polyline($draw_check)   if $draw_check;
+			$canvas->text_out( @$draw_accel) if $draw_accel;
 			$canvas->fillpoly($draw_submenu) if $draw_submenu;
 			$canvas->translate(@tr);
 			$canvas->color( $$colors[ci::DisabledText] );
 		} else {
 			$canvas->color( $$colors[$selected ? ci::HiliteText : ci::NormalText] );
 		}
-		if ($draw_check) {
-			$canvas->lineWidth($lw);
-			$canvas->polyline($draw_check);
-			$canvas->lineWidth(1);
-		}
+		$canvas->polyline($draw_check)    if $draw_check;
 		$canvas->text_out( @$draw_accel ) if $draw_accel;
-		$canvas->fillpoly($draw_submenu) if $draw_submenu;
+		$canvas->fillpoly($draw_submenu)  if $draw_submenu;
+		$canvas->graphic_context_pop;
 	}
 
-	$self-> draw_entry( $canvas, $colors, $x, $y, $w, $h, $selected);
+	$self-> draw_entry( $owner, $canvas, $colors, $x, $y, $w, $h, $selected);
 }
 
 sub entry_size { 0,0 }
@@ -328,7 +330,7 @@ sub entry_size
 
 sub draw_entry
 {
-	my ( $self, $canvas, $colors, $x, $y, $w, $h, $selected ) = @_;
+	my ( $self, $owner, $canvas, $colors, $x, $y, $w, $h, $selected ) = @_;
 
 	my $text = $self-> text;
 	$y += ( $h - $canvas-> font-> height ) / 2;
@@ -390,8 +392,8 @@ sub entry_size
 
 sub draw_entry
 {
-	my ( $self, $canvas, $colors, $x, $y, $w, $h, $selected ) = @_;
-	$self-> draw_bitmap( $canvas, $colors, $self-> image, $x, $y, $w, $h );
+	my ( $self, $owner, $canvas, $colors, $x, $y, $w, $h, $selected ) = @_;
+	$self-> draw_bitmap( $owner, $canvas, $colors, $self-> image, $x, $y, $w, $h );
 }
 
 package Prima::Menu::Item::Custom;
@@ -408,7 +410,7 @@ sub size
 
 sub draw
 {
-	my ( $self, $canvas, $colors, $x, $y, $w, $h, $selected ) = @_;
+	my ( $self, $owner, $canvas, $colors, $x, $y, $w, $h, $selected ) = @_;
 	my $cb   = $self->options->{onPaint} or return;
 	$cb->( $canvas-> menu, $self, $canvas, $selected, $x, $y, $x + $w - 1, $y + $h - 1);
 }
@@ -791,7 +793,7 @@ sub on_paint
 		next unless $cache->[OBJECT];
 		my @o = @{$cache}[X, Y];
 		my @s = @{$cache}[WIDTH, HEIGHT];
-		$cache->[OBJECT]->draw( $canvas, \@c, @$cache[X,Y,WIDTH,HEIGHT], $i == $self->{selectedItem});
+		$cache->[OBJECT]->draw( $self, $canvas, \@c, @$cache[X,Y,WIDTH,HEIGHT], $i == $self->{selectedItem});
 	}
 }
 

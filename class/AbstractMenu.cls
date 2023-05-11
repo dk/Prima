@@ -48,6 +48,7 @@ object Prima::AbstractMenu ( Prima::Component)
 	unsigned int autoEnum;
 	c_only void   dispose_menu( void * menu);
 	c_only void * new_menu( SV * sv, int level, void * avt);
+	c_only char * owner_skin();
 	c_only Bool   sub_call( PMenuItemReg m);
 	c_only Bool   sub_call_id ( int sysId);
 	c_only Bool   sub_call_key ( int key);

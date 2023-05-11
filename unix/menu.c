@@ -1030,13 +1030,18 @@ DECL_DRAW(check)
 
 DECL_DRAW(checkbox)
 {
-	int 
-		x1 = x  + MENU_XOFFSET / 2 + 1, 
+	int
+		x1 = x  + MENU_XOFFSET / 2 + 1,
 		y1 = y  + (ix-> height/2) - MENU_CHECK_XOFFSET/2 + 1,
 		x2 = x1 + MENU_CHECK_XOFFSET - 2,
 		y2 = y1 + MENU_CHECK_XOFFSET - 2;
 
 	XSetForeground( DISP, draw->gc, draw->c[m->flags.disabled ? ciLight3DColor : (MENU_PALETTE_SIZE-1)]);
+	if ( strcmp(CAbstractMenu(self)->owner_skin(self), "flat") == 0 ) {
+		XDrawRectangle( DISP, win, draw->gc, x1, y1, x2-x1, y2-y1);
+		return true;
+	}
+
 	XDrawLine( DISP, win, draw->gc, x1, y2, x2, y2);
 	XDrawLine( DISP, win, draw->gc, x2, y2, x2, y1);
 	XSetForeground( DISP, draw->gc, draw->c[ m->flags.disabled ? ciDisabledText : ciDark3DColor] );

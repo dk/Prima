@@ -1485,6 +1485,18 @@ AbstractMenu_handle_event( Handle self, PEvent event)
 	}
 }
 
+char*
+AbstractMenu_owner_skin(Handle self)
+{
+	SV * skin;
+	Handle owner = var->owner;
+	if ( owner == NULL_HANDLE ) return NULL;
+	if ( !kind_of(owner, CWidget)) return NULL;
+	skin = CWidget(owner)->skin(owner, 0, NULL_SV);
+	if ( !skin || !SvOK(skin)) return NULL;
+	return SvPV(skin, PL_na);
+}
+
 
 #ifdef __cplusplus
 }
