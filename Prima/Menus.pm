@@ -243,7 +243,7 @@ sub draw
 	my $em = $self-> em;
 	my $y_offset = $self-> y_offset;
 
-	my ($draw_check, $draw_accel, $draw_submenu);
+	my ($draw_check, $draw_accel, $draw_submenu, $draw_check_aa);
 
 	my $lw = 3;
 	if ( my $icon = $self-> icon ) {
@@ -252,7 +252,14 @@ sub draw
 		my $Y  = $y + $h / 2;
 		my $D  = $em * 0.25;
 		my $X  = $x + $lw / 2 + $D / 2 + ( $self->{icon_width} - $em) / 2;
-		$draw_check = [$X, $Y, $X + $D, $Y - $D, $X + $D * 3, $Y + $D];
+		$draw_check    = [$X, $Y, $X + $D, $Y - $D, $X + $D * 3, $Y + $D];
+		$draw_check_aa = [
+			$X - $lw / 2, $Y + $lw / 2,
+			$X + $D, $Y - $D,
+			$X + $D * 3 + $lw / 2, $Y + $D + $lw / 2,
+			$X + $D * 3 + $lw, $Y + $D + $lw,
+			$X + $D, $Y - $D - $lw,
+		];
 	} elsif ( $autotoggle ) {
 		my $Y  = $y + $h / 2;
 		my $D  = $em * 0.5;
@@ -292,13 +299,22 @@ sub draw
 		return unless $canvas->graphic_context_push;
 		$canvas->antialias(1) if $draw_check || $draw_submenu;
 		if ($draw_check) {
-			$canvas->lineWidth($lw);
-			$canvas->lineEnd(le::Round);
+			unless ( $canvas-> antialias ) {
+				$canvas->lineWidth($lw);
+				$canvas->lineEnd(le::Round);
+				undef $draw_check_aa;
+			}
 		}
 		unless ( $self-> enabled ) {
 			$canvas->color( $$colors[ci::Light3DColor] );
 			my @tr = $canvas->translate;
-			$canvas->polyline($draw_check)   if $draw_check;
+			if ( $draw_check ) {
+				if ( $draw_check_aa ) {
+					$canvas->fillpoly($draw_check_aa);
+				} else {
+					$canvas->polyline($draw_check);
+				}
+			}
 			$canvas->text_out( @$draw_accel) if $draw_accel;
 			$canvas->fillpoly($draw_submenu) if $draw_submenu;
 			$canvas->translate(@tr);
@@ -306,7 +322,13 @@ sub draw
 		} else {
 			$canvas->color( $$colors[$selected ? ci::HiliteText : ci::NormalText] );
 		}
-		$canvas->polyline($draw_check)    if $draw_check;
+		if ( $draw_check ) {
+			if ( $draw_check_aa ) {
+				$canvas->fillpoly($draw_check_aa);
+			} else {
+				$canvas->polyline($draw_check);
+			}
+		}
 		$canvas->text_out( @$draw_accel ) if $draw_accel;
 		$canvas->fillpoly($draw_submenu)  if $draw_submenu;
 		$canvas->graphic_context_pop;
@@ -1217,6 +1239,7 @@ sub cancel
 	}
 	$self->{submenu} = undef;
 	$self->{selectedItem} = -1;
+	return unless $self->alive;
 	$self->focused(0);
 	$self->repaint;
 	$self-> notify(q(MenuLeave));

@@ -1092,6 +1092,8 @@ DECL_DRAW(check)
 			{ax + MENU_XOFFSET,           bottom + 2},
 			{ax + 4,                      y + ix->height/2 + 4}
 		};
+		/* 2 155 7 157 12 152 10 156 7 161 6 159 - very good results */
+
 		if ( m-> flags. disabled && !selected) {
 			int i;
 			XDouble dx = 1.0;
