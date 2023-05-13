@@ -29,7 +29,6 @@ typedef struct {
 	Handle tile;
 	unsigned char * linePattern;
 	PRegionRec region;
-	Point translate;
 } ImgPaintContext, *PImgPaintContext;
 
 typedef void BitBltProc( Byte * src, Byte * dst, int count);
@@ -358,6 +357,7 @@ extern Bool img_region_foreach(
 extern Bool img_point_in_region( int x, int y, PRegionRec region);
 extern PRegionRec img_region_polygon( Point *pts, int count, int rule);
 extern PRegionRec img_region_mask( Handle mask);
+extern void img_region_offset( PRegionRec region, int dx, int dy);
 
 /* istXXX function */
 typedef double FilterFunc( const double x );

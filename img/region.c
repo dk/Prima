@@ -192,6 +192,18 @@ img_region_mask( Handle mask)
 	return rdata;
 }
 
+void
+img_region_offset( PRegionRec region, int dx, int dy)
+{
+	int j;
+	Box *r;
+	if ( region == NULL )
+		return;
+	for ( j = 0, r = region->boxes; j < region-> n_boxes; j++, r++) {
+		r-> x += dx;
+		r-> y += dy;
+	}
+}
 
 #ifndef MAX
 #define MAX(a,b) (((a) > (b)) ? (a) : (b))

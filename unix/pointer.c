@@ -230,6 +230,7 @@ load_pointer_font( void)
 static void
 draw_poly( Handle self, int n_points, Point * pts, int dx, int dy)
 {
+	int j;
 	PIcon i = (PIcon) self;
 	ImgPaintContext ctx = {
 		{0,0,0,0},
@@ -239,10 +240,14 @@ draw_poly( Handle self, int n_points, Point * pts, int dx, int dy)
 		{0,0},
 		NULL_HANDLE,
 		lpSolid,
-		NULL,
-		{dx,dy}
+		NULL
 	};
 	Image mask;
+
+	for ( j = 0; j < n_points; j++) {
+		pts[j].x += dx;
+		pts[j].y += dy;
+	}
 	img_fill_dummy(&mask, i->w, i->h, i->maskType, i->mask, NULL);
 	ctx.region = img_region_polygon( pts, n_points, fmWinding);
 	memset( &ctx.color, 0xff, sizeof(ctx.color));
@@ -255,6 +260,10 @@ draw_poly( Handle self, int n_points, Point * pts, int dx, int dy)
 	memset( &ctx.color, 0x0, sizeof(ctx.color));
 	img_polyline( self, n_points, pts, &ctx);
 	img_polyline((Handle) &mask, n_points, pts, &ctx);
+	for ( j = 0; j < n_points; j++) {
+		pts[j].x -= dx;
+		pts[j].y -= dy;
+	}
 }
 
 static void

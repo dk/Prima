@@ -351,10 +351,10 @@ img_polyline( Handle dest, int n_points, Point * points, PImgPaintContext ctx)
 		Point a, b;
 
 		/* printf("* p(%d): (%d,%d)-(%d,%d)\n", j, pp[0].x, pp[0].y, pp[1].x, pp[1].y); */
-		a.x = pp[0].x + ctx->translate.x;
-		a.y = pp[0].y + ctx->translate.y;
-		b.x = pp[1].x + ctx->translate.x;
-		b.y = pp[1].y + ctx->translate.y;
+		a.x = pp[0].x;
+		a.y = pp[0].y;
+		b.x = pp[1].x;
+		b.y = pp[1].y;
 		if (a.x == b.x && a.y == b.y && n_points > 2) continue;
 
 		if (
