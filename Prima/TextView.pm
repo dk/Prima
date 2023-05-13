@@ -33,6 +33,7 @@ sub profile_default
 		textDirection   => $::application->textDirection,
 		textOutBaseline => 1,
 		textRef         => '',
+		vScroll         => 1,
 		widgetClass     => wc::Edit,
 		pointer         => cr::Text,
 	);
