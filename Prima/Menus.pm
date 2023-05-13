@@ -15,7 +15,6 @@ sub new
 	return $self;
 }
 
-sub check_width   { 10 }
 sub y_offset      { 5 }
 
 sub selectable    { 1 }
@@ -67,8 +66,8 @@ use base qw(Prima::Menu::Item);
 
 sub is_separator { 0 }
 
-# horizontal: (CHECK=EM) EM/2 TEXT (EM/2 ACCEL)? EM/2
-# vertical:    CHECK=EM  EM/2 TEXT (EM/2 ACCEL)? EM/2 DOWN=EM
+# horizontal: (CHECK=2*EM) EM/2 TEXT (EM/2 ACCEL)? EM/2
+# vertical:    CHECK=2*EM  EM/2 TEXT (EM/2 ACCEL)? EM/2 DOWN=EM
 
 sub em { $_[0]-> {em_width} }
 
@@ -96,7 +95,7 @@ sub size
 		$h = $asz[1] if $h > $asz[1];
 		$sz[1] = $h if $sz[1] < $h;
 	} else {
-		$icon_width = $em # space for *
+		$icon_width = 2 * $em # space for *
 			if $self->vertical || $self->checked || $self->autoToggle;
 	}
 
@@ -249,16 +248,20 @@ sub draw
 	if ( my $icon = $self-> icon ) {
 		$self-> draw_bitmap( $owner, $canvas, $colors, $icon, $x + 2, $y + $y_offset, $self->{icon_width}, $h - $y_offset * 2 );
 	} elsif ( $checked ) {
-		my $Y  = $y + $h / 2;
-		my $D  = $em * 0.25;
-		my $X  = $x + $lw / 2 + $D / 2 + ( $self->{icon_width} - $em) / 2;
-		$draw_check    = [$X, $Y, $X + $D, $Y - $D, $X + $D * 3, $Y + $D];
+		my $font = $canvas->font;
+		my $Dx = $em * 0.25;
+		my $Dy = ($font->{ascent} - $font->{internalLeading}) / 2;
+		my $Y  = $y + ($h - $font->{height} / 2);
+		my $X  = $x + $lw / 2 + $Dx / 2 + ( $self->{icon_width} - $em) / 2;
+		my $Xw = $font->{height} / 6;
+		$Xw = 3 if $Xw < 3;
+		$Xw /= 2;
+		$draw_check    = [$X, $Y, $X + $Dx, $Y - $Dy, $X + $Dx * 3, $Y + $Dy];
 		$draw_check_aa = [
-			$X - $lw / 2, $Y + $lw / 2,
-			$X + $D, $Y - $D,
-			$X + $D * 3 + $lw / 2, $Y + $D + $lw / 2,
-			$X + $D * 3 + $lw, $Y + $D + $lw,
-			$X + $D, $Y - $D - $lw,
+			$X - $Xw, $Y,
+			$X + $Dx, $Y - $Dy + $Xw,
+			$X + $Dx * 3 + $lw, $Y + $Dy,
+			$X + $Dx, $Y - $Dy - $Xw,
 		];
 	} elsif ( $autotoggle ) {
 		my $Y  = $y + $h / 2;
@@ -267,8 +270,13 @@ sub draw
 		my @r = ( $X, $Y - $D, $X + $D * 2, $Y + $D);
 		my $c1 = $$colors[$enabled ? ci::Dark3DColor : ci::DisabledText];
 		if ( $owner->skin eq 'flat') {
+			my $lw = $canvas->font->{height} / 20;
+			$lw = 1 if $lw < 1;
+			$canvas-> lineWidth( $lw );
 			$canvas-> color($c1);
+			$canvas-> lineJoin(lj::Miter);
 			$canvas-> rectangle(@r);
+			$canvas-> lineWidth(1.0);
 		} else {
 			my $c2 = $enabled ? 0x404040 : $$colors[ci::Light3DColor];
 			$canvas-> rect3d( @r, 1, $c1, $c2);
@@ -383,6 +391,7 @@ sub autoToggle { 0 }
 sub accel      { "" }
 sub key        { 0 }
 sub data       { undef }
+sub icon       { undef }
 sub image      { undef }
 sub submenu    { undef }
 sub items      { undef }
@@ -434,7 +443,9 @@ sub draw
 {
 	my ( $self, $owner, $canvas, $colors, $x, $y, $w, $h, $selected ) = @_;
 	my $cb   = $self->options->{onPaint} or return;
+	return unless $canvas->graphic_context_push;
 	$cb->( $canvas-> menu, $self, $canvas, $selected, $x, $y, $x + $w - 1, $y + $h - 1);
+	$canvas->graphic_context_pop;
 }
 
 package Prima::Menu::Common;

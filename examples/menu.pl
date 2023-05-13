@@ -271,7 +271,6 @@ package UserInit;
 
 my $w = TestWindow-> create(
 	text      => "Menu and input line example",
-	bottom    => 300,
 	size      => [ 360, 160],
 	menuItems => TestWindow::create_menu,
 	designScale => [ 7, 16 ],
