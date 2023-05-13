@@ -202,10 +202,18 @@ sub draw_text
 			$xx = $x2 - $canvas-> get_text_width( $lines[ $tl]);
 		}
 		$tl++;
-		$canvas-> line(
-			$xx + $tildes-> {tildeStart}, $starty - $fh * $tl,
-			$xx + $tildes-> {tildeEnd}  , $starty - $fh * $tl
-		);
+		my $lw = $canvas->font->height / 20;
+		$lw = 1.0 if $lw < 1.0;
+		if ( $canvas->graphic_context_push ) {
+			$canvas->lineWidth($lw);
+			$canvas->linePattern(lp::Solid);
+			$canvas->lineEnd(le::Square);
+			$canvas-> line(
+				$xx + $tildes-> {tildeStart}, $starty - $fh * $tl,
+				$xx + $tildes-> {tildeEnd}  , $starty - $fh * $tl
+			);
+			$canvas->graphic_context_pop;
+		}
 	}
 
 	$canvas-> clipRect( @clipSave) if $flags & dt::UseClip;
