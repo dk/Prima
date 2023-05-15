@@ -226,9 +226,10 @@ sub Day_Paint
 	$canvas-> color($c);
 	$canvas-> clipRect( Prima::rect->new(@sz)->shrink(2)->inclusive );
 	my $fdo = $owner-> firstDayOfWeek ? 6 : 0;
+	my $sunday = (cl::distance( $canvas->backColor, cl::Black) > 200) ? 0xc00000 : 0xff0000;
 	for ( $i = 0; $i < 7; $i++) {
 		my $tw = $canvas->get_text_width( $owner-> {days}-> [$i] );
-		$canvas-> color( 0xc00000 ) if $i == $fdo;
+		$canvas-> color( $sunday ) if $i == $fdo;
 		$canvas-> text_shape_out( $owner-> {days}-> [$i],
 			$i * $zs[0] + ($self->{X} - $tw)/2, $sz[1]-$zs[1]+$zs[3],
 		);
@@ -251,7 +252,7 @@ sub Day_Paint
 				( 1 + $dow) * $zs[0] - 1, $y - $zs[3] + $zs[1] - 1
 			);
 			$canvas-> color(( $d == $i) ? cl::HiliteText : cl::Fore);
-			$canvas-> color( 0xc00000 ) if $d != $i && $dow == $fdo;
+			$canvas-> color( $sunday ) if $d != $i && $dow == $fdo;
 			$canvas-> text_shape_out( $i + 1, $dow * $zs[0] + $zs[2], $y);
 			$canvas-> rect_focus(
 				$dow * $zs[0] + 2, $y - $zs[3],
@@ -259,7 +260,7 @@ sub Day_Paint
 			) if $d == $i && $self-> focused;
 			$canvas-> color( $c);
 		} else {
-			$canvas-> color( 0xc00000 ) if $dow == $fdo;
+			$canvas-> color( $sunday ) if $dow == $fdo;
 			$canvas-> text_shape_out( $i + 1, $dow * $zs[0] + $zs[2], $y);
 			$canvas-> color( $c ) if $dow == $fdo;
 		}

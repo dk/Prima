@@ -322,15 +322,12 @@ sub Example_Paint
 {
 	my ( $owner, $self, $canvas) = @_;
 	my @size = $canvas-> size;
-	$canvas-> color( $canvas-> get_nearest_color( $self-> backColor));
-	$canvas-> bar( 0, 0, @size);
-	$canvas-> color( cl::Black);
-	my $f = $self-> font;
+	$canvas-> clear;
 	my $line = $owner-> sampleText;
 	$canvas-> text_shape_out(
 		$line,
 		( $size[0] - $canvas-> get_text_width( $line)) / 2,
-		( $size[1] - $f-> height) / 2
+		( $size[1] - $canvas->font-> height) / 2
 	);
 }
 

@@ -1056,7 +1056,7 @@ sub paint_flat
 
 		if ( $self-> { checked} || $self->{ pressed } ) {
 			my $at = $self-> { pressed} ? 1 : 0;
-			$canvas-> color( cl::Black);
+			$canvas-> color( $clr[0]);
 			$canvas-> lineWidth( 2);
 			$canvas-> translate( $at, -$at);
 			my $path2 = $canvas->new_path;

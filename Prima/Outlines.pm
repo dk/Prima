@@ -62,8 +62,8 @@ sub init_image_triangle
 	for my $i (0,1) {
 		$images[$i] = Prima::DeviceBitmap->new(
 			size      => \@imageSize,
-			backColor => cl::White,
-			color     => cl::Black,
+			backColor => cl::Back | wc::ListBox,
+			color     => cl::Fore | wc::ListBox,
 		);
 		$images[$i]->clear;
 		$images[$i]->lineWidth($lw);
