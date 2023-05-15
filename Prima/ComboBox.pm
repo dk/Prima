@@ -85,7 +85,7 @@ sub profile_default
 		hScrollBarProfile => {},
 		vScrollBarProfile => {},
 		listDelegations   => [qw(Leave SelectItem MouseUp Click KeyDown Paint)],
-		editDelegations   => [qw(FontChanged Create Setup KeyDown KeyUp Change Leave MouseWheel)],
+		editDelegations   => [qw(FontChanged Create Setup KeyDown KeyUp Change Leave MouseWheel MouseDown)],
 		buttonDelegations => [qw(ColorChanged FontChanged MouseDown MouseClick
 			MouseUp MouseMove MouseEnter MouseLeave Paint Enable Disable)],
 	}
@@ -573,6 +573,13 @@ sub InputLine_Change
 		$edit-> {interaction} = undef;
 	}
 	$list-> {interaction} = undef;
+}
+
+sub InputLine_MouseDown
+{
+	my ( $self, $edit, $mod, $x, $y) = @_;
+	# there's no literal input in cs::DropDown, so don't confuse the user
+	$self-> listVisible(0) if $self->style == cs::DropDown && $self->listVisible;
 }
 
 sub InputLine_MouseWheel
