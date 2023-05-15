@@ -227,7 +227,12 @@ sub prelight_color
 	$coeff //= 1.05;
 	return 0 if $coeff <= 0;
 	$color = $self->map_color($color) if $color & cl::SysFlag;
-	if (( $color == 0xffffff && $coeff > 1) || ($color == 0 && $coeff < 1)) {
+	my $blend = cl::blend( $color, $self->map_color($self->hiliteBackColor), 0.25 );
+	return $blend if cl::distance( $blend, $color ) > 30;
+	if (
+		((cl::distance(cl::White, $color) < 30) && $coeff > 1) ||
+		((cl::distance(cl::Black, $color) < 30) && $coeff < 1)
+	) {
 		$coeff = 1/$coeff;
 	}
 	$coeff = ($coeff - 1) * 256;
