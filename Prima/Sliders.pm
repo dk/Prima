@@ -243,6 +243,7 @@ sub profile_default
 		%{$_[ 0]-> SUPER::profile_default},
 		width        => 18 * $::application-> uiScaling,
 		height       => 18 * $::application-> uiScaling,
+		flatSeparator => 0,
 	}
 }
 
@@ -252,6 +253,14 @@ sub profile_check_in
 	$p-> {height} = $p-> {width}  if !exists( $p-> {height}) && exists( $p-> {width});
 	$p-> {width}  = $p-> {height} if exists( $p-> {height}) && !exists( $p-> {width});
 	$self-> SUPER::profile_check_in( $p, $default);
+}
+
+sub init
+{
+	my $self = shift;
+	my %profile = $self-> SUPER::init( @_);
+	$self-> {flatSeparator} = $profile{flatSeparator};
+	return %profile;
 }
 
 sub on_mousedown
@@ -339,7 +348,6 @@ sub fix_triangle
 	return \@spot;
 }
 
-
 sub on_paint
 {
 	my ( $self, $canvas) = @_;
@@ -367,7 +375,12 @@ sub on_paint
 		]);
 	}
 
-	unless ( $flat ) {
+	if ( $flat ) {
+		if ( $self->{flatSeparator}) {
+			$canvas-> color( $self-> dark3DColor );
+			$canvas-> line(0, 0, 0, $size[1]);
+		}
+	} else {
 		$canvas-> color( $p == 1 ? 0x404040 : $c3d[1]);
 		$canvas-> polyline( [0, 0, 0, $size[1] - 1, $size[0] - 2, $size[1] - 1]);
 		$canvas-> color( $p == 1 ? $c3d[1]  : $c3d[0]);
@@ -419,6 +432,8 @@ sub set_state
 	$self-> {pressState} = $s;
 	$self-> repaint;
 }
+
+sub flatSeparator { $#_ ? $_[0]->{flatSeparator} = $_[1] : $_[0]->{flatSeparator} }
 
 package Prima::SpinEdit;
 use vars qw(@ISA %editProps %spinDynas);
@@ -484,11 +499,13 @@ sub init
 	my ( $w, $h) = ( $self-> size);
 	$self-> {spin} = $self-> insert( $profile{spinClass} =>
 		ownerBackColor => 1,
+		ownerColor     => 1,
 		name           => 'Spin',
 		bottom         => 1,
 		right          => $w - 1,
 		height         => $h - 1 * 2,
 		growMode       => gm::Right,
+		flatSeparator  => 1,
 		delegations    => $profile{spinDelegations},
 		(map { $_ => $profile{$_}} grep { exists $profile{$_} ? 1 : 0} keys %spinDynas),
 		%{$profile{spinProfile}},
