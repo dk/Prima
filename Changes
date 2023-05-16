@@ -4,9 +4,13 @@ Revision history for Perl module Prima
  - Fully rewrite win32 socket engine, now is single-threaded
  - Drawable.matrix returns Prima::Matrix objects
  - Speedup x11 matrix image rendering with XRender
- - Introduce Widget.skin and an optional flat skin for toolkit widgets
+ - Use XRender on mac/XQuartz
  - Add a 3D demo
+ - Introduce new Widget.skin
  - Flat skin is default now (use Prima::Application skin => 'classic' to revert)
+ - Add a mechanism to allow secondary roles to override core methods.
+ - Move scrolling and border width properties to a secondary role Widget::GroupScroller
+ - Add Component.deepChildLookup to address grand-children by their name same as the direct children
 
 1.68 2023-02-25
  - Process signals inside event loop
