@@ -251,17 +251,19 @@ sub draw
 		my $font = $canvas->font;
 		my $Dx = $em * 0.25;
 		my $Dy = ($font->{ascent} - $font->{internalLeading}) / 2;
-		my $Y  = $y + ($h - $font->{height} / 2);
+		my $Y  = $y + $h / 2 + $font->{descent};
 		my $X  = $x + $lw / 2 + $Dx / 2 + ( $self->{icon_width} - $em) / 2;
 		my $Xw = $font->{height} / 6;
 		$Xw = 3 if $Xw < 3;
 		$Xw /= 2;
+		$Y -= $Xw;
 		$draw_check    = [$X, $Y, $X + $Dx, $Y - $Dy, $X + $Dx * 3, $Y + $Dy];
 		$draw_check_aa = [
 			$X - $Xw, $Y,
-			$X + $Dx, $Y - $Dy + $Xw,
-			$X + $Dx * 3 + $lw, $Y + $Dy,
 			$X + $Dx, $Y - $Dy - $Xw,
+			$X + $Dx * 3 + $lw, $Y + $Dy,
+			$X + $Dx, $Y - $Dy + $Xw,
+			$X, $Y - $Xw,
 		];
 	} elsif ( $autotoggle ) {
 		my $Y  = $y + $h / 2;
