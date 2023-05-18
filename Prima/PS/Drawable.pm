@@ -64,6 +64,8 @@ sub save_state
 	);
 }
 
+sub abandon_state { delete $_[0]->{save_state} }
+
 sub restore_state
 {
 	my $self = $_[0];

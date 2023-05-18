@@ -366,7 +366,7 @@ sub abort_doc
 	return unless $self-> {can_draw};
 	$self-> {can_draw} = 0;
 	$self-> SUPER::end_paint;
-	$self-> restore_state;
+	$self-> abandon_state;
 	delete $self-> {$_} for
 		qw (save_state ps_data changed page_prefix);
 }
