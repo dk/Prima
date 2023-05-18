@@ -54,13 +54,14 @@ sub init_image_triangle
 	my $iw = int( $uis * 11 + .5);
 	$iw++ unless $iw % 2;
 	my @imageSize = ($iw, $iw);
-	my $lw = int( $uis + .5);
-	$lw-- if ($lw > 1 && $lw % 2) || !$::application->can_draw_alpha;
+	my $lw = $::application->can_draw_alpha ? $uis : int($uis);
 	my @c2 = map { int ( $_ / 2 ) } @imageSize;
+	my $lw2 = $lw * 2;
 
 	my @images;
 	for my $i (0,1) {
 		$images[$i] = Prima::DeviceBitmap->new(
+			antialias => 1,
 			size      => \@imageSize,
 			backColor => cl::Back | wc::ListBox,
 			color     => cl::Fore | wc::ListBox,
@@ -71,11 +72,11 @@ sub init_image_triangle
 		$images[$i]->translate(0, $imageSize[1]*0.25) if $i;
 		$images[$i]->polyline( [
 			$i ? (
-				$lw, $c2[1], $imageSize[0]-1-$lw, $c2[1],
-				$c2[0], $lw, $lw, $c2[1]
+				$lw2, $c2[1], $imageSize[0]-1-$lw2, $c2[1],
+				$c2[0], $lw2, $lw2, $c2[1]
 			) : (
-				$c2[0], $lw, $c2[0], $imageSize[1]-1-$lw,
-				$imageSize[0]-1-$lw, $c2[1], $c2[0], $lw
+				$c2[0], $lw2, $c2[0], $imageSize[1]-1-$lw2,
+				$imageSize[0]-1-$lw2, $c2[1], $c2[0], $lw2
 			)
 		]);
 	}
