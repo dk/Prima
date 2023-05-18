@@ -108,7 +108,7 @@ See also: L<Prima::Matrix>
 
 =head1 Prima::Matrix
 
-Same as C<Prima::matrix> but explicitly binds to a drawable objects, so that
+Same as C<Prima::matrix> but explicitly binds to drawable objects, so that
 all changes to the matrix are immediately reflected in the drawable.
 
 Features all the methods available to C<Prima::matrix> (except C<apply>), plus
