@@ -609,7 +609,10 @@ sub _arc
 	$xopt{precision} = $self->{curr}->{precision} // 24;
 	$xopt{precision} = $scaling if $xopt{precision} // 24 > $scaling;
 	$xopt{integer}   = !$self->{subpixel};
-	$xopt{precision} *= 2 if $self->{subpixel} && $self->canvas->get_paint_state == ps::Disabled; # emulated AA for images
+	$xopt{precision} *= 2 if
+		$self->{subpixel} &&
+		$self->canvas && 
+		$self->canvas->get_paint_state == ps::Disabled; # emulated AA for images
 	for my $set ( @$nurbset ) {
 		my ( $points, @options ) = @$set;
 		my $poly = $self-> matrix_apply( $points );
