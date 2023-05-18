@@ -141,7 +141,7 @@ sub spool
 
 sub is_custom_line
 {
-	my ($self, $for_closed_shapes) = shift;
+	my ($self, $for_closed_shapes) = @_;
 	return $self->{lineEnd_flags} ? (
 		$for_closed_shapes ? ( $self->{lineEnd_flags} & 2 ) : 1
 	) : 0;
@@ -176,7 +176,10 @@ sub update_custom_line
 	$le //= $self->SUPER::lineEnd;
 	$self->{lineEnd_flags} = ref($le) ? 1 : 0;
 	if ( $self->{lineEnd_flags} ) {
-		$self->{lineEnd_flags} |= 2 if defined($le->[2]) || defined($le->[3]);
+		$self->{lineEnd_flags} |= 2 unless # unsafe for closed shapes
+			(!ref($le->[0]) && (( $le->[1] // $le->[0] ) eq $le->[0])) ||
+			($self->SUPER::linePattern eq lp::Solid)
+		;
 	} else {
 		$self-> {changed}-> {lineEnd} = 1;
 	}
