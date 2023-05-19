@@ -38,6 +38,7 @@ sub profile_default
 		selectable   => 1,
 		autoHeight   => 1,
 		autoWidth    => 1,
+		autoShaping  => 0,
 	}
 }
 
@@ -82,10 +83,7 @@ sub init
 {
 	my $self = shift;
 	my %profile = $self-> SUPER::init(@_);
-	$self-> { hotKey}  = $profile{ hotKey};
-	$self-> { pressed} = $profile{ pressed};
-	$self-> { autoHeight} = $profile{ autoHeight};
-	$self-> { autoWidth}  = $profile{ autoWidth};
+	$self-> {$_} = $profile{$_} for qw(autoWidth autoHeight hotKey pressed autoShaping);
 	return %profile;
 }
 
@@ -94,7 +92,13 @@ sub skin
 	return $_[0]->SUPER::skin unless $#_;
 	my $self = shift;
 	$self->SUPER::skin($_[1]);
-	$self->buffered(1) if $self->SUPER::skin eq 'flat';
+	if ($self->SUPER::skin eq 'flat') {
+		$self->buffered(1);
+		$self->update_shape if $self->autoShaping;
+	} else {
+		$self->buffered(0);
+		$self->shape(undef) if $self->autoShaping;
+	}
 	$self->repaint;
 }
 
@@ -108,6 +112,8 @@ sub cancel_transaction
 		$self-> pressed( 0);
 	}
 }
+
+sub on_size { $_[0]->update_shape if $_[0]->skin eq 'flat' and $_[0]->autoShaping }
 
 sub on_keydown
 {
@@ -241,6 +247,7 @@ sub on_mouseleave
 sub on_fontchanged
 {
 	$_[0]-> check_auto_size;
+	$_[0]-> update_shape if $_[0]->skin eq 'flat' and $_[0]->autoShaping;
 }
 
 sub draw_veil
@@ -348,6 +355,23 @@ sub autoWidth
 	$self-> {autoWidth} = ( $a ? 1 : 0);
 	$self-> check_auto_size if $a;
 }
+
+sub autoShaping
+{
+	return $_[0]-> {autoShaping} unless $#_;
+	my ( $self, $a) = @_;
+	return if ( $self-> {autoShaping} ? 1 : 0) == ( $a ? 1 : 0);
+	$self-> {autoShaping} = ( $a ? 1 : 0);
+	if ( $a ) {
+		if ( $self->skin eq 'flat') {
+			$self->shape(undef);
+		} else {
+			$self->update_shape;
+		}
+	}
+}
+
+sub update_shape {}
 
 sub check_auto_size
 {
@@ -477,6 +501,17 @@ sub paint_flat
 			$self-> font-> height
 		)-> fill_stroke;
 	}) unless $self-> transparent;
+}
+
+sub update_shape
+{
+	my $self = shift;
+	my @sz = $self->size;
+	my $shape = $self-> new_path-> round_rect(
+		-1.5, -1.5, $sz[0]+.5, $sz[1]+.5,
+		$self-> font-> height
+	)-> region;
+	$self->shape($shape);
 }
 
 sub on_paint
@@ -1589,6 +1624,16 @@ released. Useful for emulating the marginal scroll-bar buttons.
 
 Default value: 0
 
+=item autoShaping BOOLEAN
+
+If 1, the button C<shape> is autmatically update when the button size and/or
+font are updated, if the current skin can make use of non-rectangular shapes.
+Generally is unneeded unless the owner of the button has a different back color
+or features some custom painting.
+
+Default value: 0
+
+See also: F<examples/triangle.pl>, F<examples/dragdrop.pl>
 
 =item autoWidth BOOLEAN
 
@@ -1596,7 +1641,6 @@ If 1, the button width is automatically changed as text extensions
 change.
 
 Default value: 1
-
 
 =item borderWidth INTEGER
 

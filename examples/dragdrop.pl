@@ -42,6 +42,7 @@ sub add_buttons
 		hint => 'Copy',
 		checked => $mode & dnd::Copy,
 		checkable   => 1,
+		autoShaping => 1,
 		onClick => sub { set_dnd_mode( $self ) },
 	], [ SpeedButton => 
 		rect => [ 5 + $d, $h, 5 + $d * 2, $h + $d ],
@@ -51,6 +52,7 @@ sub add_buttons
 		checkable   => 1,
 		checked => $mode & dnd::Move,
 		onClick => sub { set_dnd_mode( $self ) },
+		autoShaping => 1,
 	], [ SpeedButton => 
 		rect => [ 5 + $d * 2, $h, 5 + $d * 3, $h + $d ],
 		name => 'Link',
@@ -59,6 +61,7 @@ sub add_buttons
 		checkable   => 1,
 		checked => $mode & dnd::Link,
 		onClick => sub { set_dnd_mode( $self ) },
+		autoShaping => 1,
 	]
 	);
 }

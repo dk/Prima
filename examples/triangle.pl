@@ -147,6 +147,7 @@ $w-> insert( Button =>
 	# centered => 1,
 	growMode => gm::Center,
 	onClick => sub { $::application-> close},
+	autoShaping => 1,
 );
 
 run Prima;
