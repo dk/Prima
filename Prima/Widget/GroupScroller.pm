@@ -269,31 +269,25 @@ sub draw_border
 	my ( $self, $canvas, $backColor, @size) = @_;
 
 	@size = $self-> size unless @size;
+	@size = Prima::rect->new(@size)->inclusive;
 	if ( $self-> skin eq 'flat') {
 		if ( defined $backColor ) {
 			$canvas-> rect_fill(
-				0, 0,
-				$size[0]-1, $size[1]-1,
+				@size,
 				$self->{borderWidth},
 				$self-> dark3DColor,
 				$backColor
 			);
 		} else {
-			$canvas->graphic_context( sub {
-				$canvas->color($self->dark3DColor);
-				$canvas->linePattern(lp::Solid);
-				$canvas->lineJoin(lj::Miter);
-				$canvas->lineWidth($self->{borderWidth});
-				$canvas->antialias(0);
-				my $lw = int( $self->{borderWidth} / 2 + .5);
-				$canvas->rectangle( $lw, $lw, $size[0]-1-$lw, $size[1]-1-$lw);
-			});
+			$canvas-> rect_solid(
+				@size,
+				$self->{borderWidth},
+				$self-> dark3DColor,
+			);
 		}
 	} else {
 		$self-> rect_bevel(
-			$canvas,
-			0, 0,
-			$size[0]-1, $size[1]-1,
+			$canvas, @size,
 			width => $self-> {borderWidth},
 			panel => 1,
 			fill  => $backColor,

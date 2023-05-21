@@ -40,6 +40,35 @@ sub rect3d
 	$self-> color( $c);
 }
 
+sub rect_solid
+{
+	my ( $canvas, $x1, $y1, $x2, $y2, $lw, $fg) = @_;
+	($x1, $x2) = ($x2, $x1) if $x2 < $x1;
+	($y1, $y2) = ($y2, $y1) if $y2 < $y1;
+	$lw //= 1;
+	return if $lw < 1;
+	$canvas-> graphic_context( sub {
+		$canvas->antialias(0);
+		$canvas->fillPattern(fp::Solid);
+		$canvas-> color( $fg ) if defined $fg;
+		if ( $x1 + $lw * 2 >= $x2 || $y1 + $lw * 2 >= $y2 ) {
+			$canvas-> bar( $x1, $y1, $x2, $y2 );
+		} elsif ( $lw == 1 ) {
+			$canvas-> lineWidth(0);
+			$canvas-> linePattern(lp::Solid);
+			$canvas-> rectangle( $x1, $y1, $x2, $y2);
+		} else {
+			$lw--;
+			$canvas-> bars([
+				$x1, $y1, $x1 + $lw, $y2,
+				$x2 - $lw, $y1, $x2, $y2,
+				$x1 + $lw + 1, $y1, $x2 - $lw - 1, $y1 + $lw,
+				$x1 + $lw + 1, $y2 - $lw, $x2 - $lw - 1, $y2
+			]);
+		}
+	});
+}
+
 sub rect_fill
 {
 	my ( $canvas, $x1, $y1, $x2, $y2, $lw, $fg, $bg) = @_;
@@ -47,8 +76,10 @@ sub rect_fill
 	($y1, $y2) = ($y2, $y1) if $y2 < $y1;
 	$lw //= 1;
 	$canvas-> graphic_context( sub {
+		$canvas->antialias(0);
 		if ( $lw <= 0 ) {
 			$canvas-> color( $bg ) if defined $bg;
+			$canvas-> fillPattern(fp::Solid);
 			$canvas-> bar( $x1, $y1, $x2, $y2 );
 		} elsif ( $x1 + $lw * 2 >= $x2 || $y1 + $lw * 2 >= $y2 ) {
 			$canvas-> color( $fg ) if defined $fg;
@@ -56,6 +87,8 @@ sub rect_fill
 		} elsif ( $lw == 1 ) {
 			$bg //= $canvas->backColor;
 			$canvas-> color( $fg ) if defined $fg;
+			$canvas-> lineWidth(0);
+			$canvas-> linePattern(lp::Solid);
 			$canvas-> rectangle( $x1, $y1, $x2, $y2);
 			$canvas-> color( $bg );
 			$canvas-> bar( $x1 + 1, $y1 + 1, $x2 - 1, $y2 - 1);
@@ -65,10 +98,13 @@ sub rect_fill
 			$canvas-> bar( $x1 + $lw, $y1 + $lw, $x2 - $lw, $y2 - $lw);
 			$lw--;
 			$canvas-> color( $fg );
-			$canvas-> bar( $x1, $y1, $x1 + $lw, $y2);
-			$canvas-> bar( $x2 - $lw, $y1, $x2, $y2);
-			$canvas-> bar( $x1 + $lw + 1, $y1, $x2 - $lw - 1, $y1 + $lw);
-			$canvas-> bar( $x1 + $lw + 1, $y2 - $lw, $x2 - $lw - 1, $y2);
+			$canvas-> fillPattern(fp::Solid);
+			$canvas-> bars([
+				$x1, $y1, $x1 + $lw, $y2,
+				$x2 - $lw, $y1, $x2, $y2,
+				$x1 + $lw + 1, $y1, $x2 - $lw - 1, $y1 + $lw,
+				$x1 + $lw + 1, $y2 - $lw, $x2 - $lw - 1, $y2
+			]);
 		}
 	});
 }
@@ -95,10 +131,12 @@ sub rect_focus
 		$canvas-> bar( $x, $y, $x1, $y1);
 	} else {
 		$width -= 1;
-		$canvas-> bar( $x, $y, $x1, $y + $width);
-		$canvas-> bar( $x, $y1 - $width, $x1, $y1);
-		$canvas-> bar( $x, $y + $width + 1, $x + $width, $y1 - $width - 1);
-		$canvas-> bar( $x1 - $width, $y + $width + 1, $x1, $y1 - $width - 1);
+		$canvas-> bars([
+			$x, $y, $x1, $y + $width,
+			$x, $y1 - $width, $x1, $y1,
+			$x, $y + $width + 1, $x + $width, $y1 - $width - 1,
+			$x1 - $width, $y + $width + 1, $x1, $y1 - $width - 1
+		]);
 	}
 
 	$canvas-> graphic_context_pop;
@@ -574,8 +612,8 @@ sub render_pattern
 		autoMasking => am::None,
 	);
 
-	if ( $opt{color}) {
-		$target->backColor($opt{color}) if $opt{color};
+	if ( defined $opt{color}) {
+		$target->backColor($opt{color});
 		$target->clear;
 	}
 	if ( exists $opt{alpha} && $handle->isa('Prima::Icon')) {

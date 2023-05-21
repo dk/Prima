@@ -1736,7 +1736,10 @@ Context used: rop; color and backColor for a monochrome DeviceBitmap
 
 Draws a rectangle with outline color FOREGROUND and BORDER_WIDTH pixels,
 and fills it with color BACKGROUND. If FOREGROUND and/or BACKGROUND are
-undefined, currect colors are used. BORDER_WIDTH is 1 pixel if omitted
+undefined, currect colors are used. BORDER_WIDTH is 1 pixel if omitted.
+
+Contrary to a call to C<rectangle()> with line width greater than 1, never
+paints pixels outside the given rectange; border is painted inwards.
 
 Context used: rop, fillPattern
 
@@ -1745,6 +1748,17 @@ Context used: rop, fillPattern
 Draws a marquee rectangle in boundaries X1,Y1 - X2,Y2 with WIDTH line width.
 
 No context is used.
+
+=item rect_solid X1, Y1, X2, Y2, BORDER_WIDTH, FOREGROUND
+
+Draws a rectangle with outline color FOREGROUND and BORDER_WIDTH pixels.  If
+FOREGROUND is undefined, currect color is used. BORDER_WIDTH is 1 pixel if
+omitted.
+
+Contrary to a call to C<rectangle()> with line width greater than 1, never
+paints pixels outside the given rectange; border is painted inwards.
+
+Context used: rop
 
 =item rectangle X1, Y1, X2, Y2
 
