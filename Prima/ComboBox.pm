@@ -256,7 +256,7 @@ sub List_KeyDown
 sub List_Paint
 {
 	my ( $self, $list, $canvas) = @_;
-	if ( $self->skin eq 'flat') {
+	if ( $self->skin eq 'flat' && $list->isa('Prima::Widget::GroupScroller')) {
 		my $bw = $list->borderWidth;
 		if ( $bw > 0 ) {
 			my @sz = $list->size;
