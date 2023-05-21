@@ -51,7 +51,7 @@ sub rect_solid
 		$canvas->antialias(0);
 		$canvas->fillPattern(fp::Solid);
 		$canvas-> color( $fg ) if defined $fg;
-		if ( $x1 + $lw * 2 >= $x2 || $y1 + $lw * 2 >= $y2 ) {
+		if ( $x1 + $lw * 2 > $x2 || $y1 + $lw * 2 > $y2 ) {
 			$canvas-> bar( $x1, $y1, $x2, $y2 );
 		} elsif ( $lw == 1 ) {
 			$canvas-> lineWidth(0);
@@ -81,7 +81,7 @@ sub rect_fill
 			$canvas-> color( $bg ) if defined $bg;
 			$canvas-> fillPattern(fp::Solid);
 			$canvas-> bar( $x1, $y1, $x2, $y2 );
-		} elsif ( $x1 + $lw * 2 >= $x2 || $y1 + $lw * 2 >= $y2 ) {
+		} elsif ( $x1 + $lw * 2 > $x2 || $y1 + $lw * 2 > $y2 ) {
 			$canvas-> color( $fg ) if defined $fg;
 			$canvas-> bar( $x1, $y1, $x2, $y2 );
 		} elsif ( $lw == 1 ) {
