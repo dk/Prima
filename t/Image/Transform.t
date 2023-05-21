@@ -94,8 +94,8 @@ $p->bar(0,0,$k->size);
 for (my $i = 0; $i < 360; $i++) {
 	my $d = $k->dup;
 	$d->rotate($i);
-	my $dx = ($p-> width  - $d->width) / 2; 
-	my $dy = ($p-> height - $d->height) / 2; 
+	my $dx = int(($p-> width  - $d->width) / 2 + .5);
+	my $dy = int(($p-> height - $d->height) / 2 + .5);
 	$p->put_image($dx,$dy,$d,rop::OrPut);
 }
 my $sum = $p->sum / 255;

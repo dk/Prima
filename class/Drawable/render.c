@@ -604,7 +604,9 @@ widen_line(AV * path, NPolyPolyline *poly, DrawablePaintState *state, Bool integ
 	w.datum_size        = integer_precision ? sizeof(int) : sizeof(double);
 	w.datum_type        = integer_precision ? "i" : "d";
 	w.state             = state;
-	w.lw2               = state->line_width / 2;
+	w.lw2               = state->line_width / 2 -
+		(integer_precision ? 0.5 : 0) /* expect fmOverlay for filling the resulting shape */
+		;
 
 	p = last_p = poly;
 	if ( !p ) return false;

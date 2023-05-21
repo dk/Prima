@@ -1083,6 +1083,10 @@ sub widen_old
 
 	my @dst;
 	my $lw2 = $lw / 2;
+
+	# classic widening algorithm doesn't do that (I believe) because there's no fm::Overlay - but Prima has it
+	$lw2 -= 0.5 unless $self->{subpixel};
+
 	for ( @$pp ) {
 		next unless @$_;
 
