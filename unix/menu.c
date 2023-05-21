@@ -1079,12 +1079,12 @@ DECL_DRAW(submenu)
 
 DECL_DRAW(check)
 {
-	DEFMM;
 	int bottom = y + ix->height - MENU_ITEM_GAP - ix-> height * 0.2;
 	int ax = x + MENU_XOFFSET / 2;
 
 	if ( can_antialias(self)) {
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+		DEFMM;
 		XPointDouble pts[] = {
 			{ax,                          y + ix->height/2},
 			{ax + MENU_XOFFSET,           bottom - 2},

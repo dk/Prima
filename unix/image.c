@@ -2006,7 +2006,7 @@ FAIL:
 	XFreePixmap( DISP, pixmap );
 	return ret;
 #else
-	return fallback( self, image, req);
+	return false;
 #endif
 }
 
@@ -2452,8 +2452,12 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
 	req.src_y = img->h - yFrom - yLen;
 	req.dst_x = x;
 	req.dst_y = XX->size. y - y - yLen;
-	req.w     = req.dst_w = xLen;
-	req.h     = req.dst_h = yLen;
+	req.w     = xLen;
+	req.h     = yLen;
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+	req.dst_w = req.w;
+	req.dst_h = req.h;
+#endif
 
 	src = get_image_src_format(self, image, &rop);
 	if ( rop > ropNoOper ) return false;
@@ -2533,8 +2537,12 @@ apc_image_begin_paint( Handle self)
 		PutImageRequest req;
 		PutImageFunc ** dst = layered ? img_put_on_layered : ( bitmap ? img_put_on_bitmap : img_put_on_pixmap );
 		bzero(&req, sizeof(req));
-		req.w   = req.dst_w = img-> w;
-		req.h   = req.dst_h = img-> h;
+		req.w   = img-> w;
+		req.h   = img-> h;
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+		req.dst_w = req.w;
+		req.dst_h = req.h;
+#endif
 		req.rop = layered ? ropSrcCopy : GXcopy;
 		req.old_rop = XX-> gcv. function;
 		(*dst[layered ? SRC_ARGB : SRC_IMAGE])(self, self, &req);
