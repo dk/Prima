@@ -270,13 +270,25 @@ sub draw_border
 
 	@size = $self-> size unless @size;
 	if ( $self-> skin eq 'flat') {
-		$canvas-> rect_fill(
-			0, 0,
-			$size[0]-1, $size[1]-1,
-			$self->{borderWidth},
-			$self-> dark3DColor,
-			$backColor // $self-> backColor
-		);
+		if ( defined $backColor ) {
+			$canvas-> rect_fill(
+				0, 0,
+				$size[0]-1, $size[1]-1,
+				$self->{borderWidth},
+				$self-> dark3DColor,
+				$backColor
+			);
+		} else {
+			$canvas->graphic_context( sub {
+				$canvas->color($self->dark3DColor);
+				$canvas->linePattern(lp::Solid);
+				$canvas->lineJoin(lj::Miter);
+				$canvas->lineWidth($self->{borderWidth});
+				$canvas->antialias(0);
+				my $lw = int( $self->{borderWidth} / 2 + .5);
+				$canvas->rectangle( $lw, $lw, $size[0]-1-$lw, $size[1]-1-$lw);
+			});
+		}
 	} else {
 		$self-> rect_bevel(
 			$canvas,
