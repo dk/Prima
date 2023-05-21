@@ -32,7 +32,7 @@ sub profile_default
 		color          => cl::Black,
 		selectable     => 0,
 		tabStop        => 0,
-		widgetClass    => wc::Button,
+		widgetClass    => wc::ScrollBar,
 	}
 }
 
