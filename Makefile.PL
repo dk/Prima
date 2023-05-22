@@ -2057,6 +2057,29 @@ VER
 		}
 	}
 
+	if ( grep {/gif/} @ACTIVE_CODECS) {
+		printlog "Checking for libgif version...";
+		my $ver = compile_and_run(<<'VER') // '';
+#include <stdio.h>
+#include <gif_lib.h>
+int main() {
+#if defined(GIFLIB_MAJOR)
+	printf("%d.%d\n", GIFLIB_MAJOR, GIFLIB_MINOR);
+#else
+	printf("%s\n", GIF_LIB_VERSION);
+#endif
+	return 0;
+}
+VER
+		if ( $ver =~ /.*(\d+)\.(\d+)$/) {
+			printlog "$1.$2\n";
+		} else {
+			printlog " - no usable version found ($ver)\n";
+			@ACTIVE_CODECS = grep { !/gif/ } @ACTIVE_CODECS;
+			$PASSIVE_CODECS{'img/codec_gif.c'} = 1;
+		}
+	}
+
 	unless ( @ACTIVE_CODECS) {
 		$binary_prereq = $prereq;
 		$PREREQ{"Prima::codecs::$prereq"} = 0;
