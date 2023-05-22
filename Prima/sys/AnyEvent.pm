@@ -3,7 +3,7 @@ package Prima::sys::AnyEvent;
 use strict;
 use warnings;
 use AnyEvent;
-use Prima qw(Application);
+use Prima;
 
 sub io
 {
