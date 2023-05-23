@@ -2063,20 +2063,29 @@ VER
 #include <stdio.h>
 #include <gif_lib.h>
 int main() {
+	void *p;
 #if defined(GIFLIB_MAJOR)
 	printf("%d.%d\n", GIFLIB_MAJOR, GIFLIB_MINOR);
 #else
 	printf("%s\n", GIF_LIB_VERSION);
+	p = MakeMapObject; /* observed some linking failures on the function in v4.1 */
 #endif
 	return 0;
 }
 VER
-		if ( $ver =~ /.*(\d+)\.(\d+)$/) {
-			printlog "$1.$2\n";
+		if ( $ver =~ /.*(\d+)\.(\d+)/) {
+			if ( $1 < 4 ) {
+				$ver = "$1.$2";
+				goto NO_GIF;
+			} else {
+				printlog "$1.$2\n";
+			}
 		} else {
-			printlog " - no usable version found ($ver)\n";
+		NO_GIF:
+			printlog "no usable version found ($ver)\n";
 			@ACTIVE_CODECS = grep { !/gif/ } @ACTIVE_CODECS;
 			$PASSIVE_CODECS{'img/codec_gif.c'} = 1;
+			push @warn_codecs, 'gif';
 		}
 	}
 
