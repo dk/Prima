@@ -514,18 +514,15 @@ ic_stretch_box( int type, Byte * src_data, int src_w, int src_h, Byte * dst_data
 		dst_line = -dst_line;
 	}
 	if ( abs_h < src_h) {
-		int j = 0;
 		Byte * last_dst_data;
 		ystep.l = STEP( abs_h / src_h);
 		xproc( src_data, last_dst_data = dst_data, src_w, w, abs_w, xstep.l);
 		dst_data += dst_line;
-		j++;
 		for ( i = 0; i < src_h; i++) {
 			if ( count.i.i > last) {
 				xproc( src_data, last_dst_data = dst_data, src_w, w, abs_w, xstep.l);
 				dst_data += dst_line;
 				last = count.i.i;
-				j++;
 			} else if ( yproc && i > 0 ) {
 				bzero(pimpl_buf.heap, dst_line);
 				xproc( src_data , pimpl_buf.heap, src_w, w, abs_w, xstep.l);

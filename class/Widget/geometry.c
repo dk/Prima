@@ -384,10 +384,10 @@ slave_height( register PWidget slavePtr, register int plus)
 }
 
 static int
-XExpansion(slavePtr, cavityWidth)
-	register PWidget slavePtr; /* First in list of remaining slaves. */
-	int cavityWidth;           /* Horizontal space left for all remaining slaves. */
-{
+XExpansion(
+	register PWidget slavePtr, /* First in list of remaining slaves. */
+	int cavityWidth           /* Horizontal space left for all remaining slaves. */
+) {
 	int numExpand, minExpand, curExpand;
 	int childWidth;
 
@@ -446,12 +446,12 @@ XExpansion(slavePtr, cavityWidth)
 */
 
 static int
-YExpansion(slavePtr, cavityHeight)
-	register PWidget slavePtr;	        /* First in list of remaining
+YExpansion(
+	register PWidget slavePtr,	        /* First in list of remaining
 													* slaves. */
-	int cavityHeight;			/* Vertical space left for all
+	int cavityHeight			/* Vertical space left for all
 													* remaining slaves. */
-{
+) {
 	int numExpand, minExpand, curExpand;
 	int childHeight;
 
