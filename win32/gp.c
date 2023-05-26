@@ -1363,6 +1363,8 @@ Bool
 select_world_transform(Handle self, Bool want_transform)
 {
 	objCheck 0;
+	if ( ! sys ps )
+		return false;
 
 	if (
 		is_apt( aptCachedWorldTransform ) &&

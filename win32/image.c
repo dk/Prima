@@ -1376,6 +1376,7 @@ apc_gp_stretch_image( Handle self, Handle image,
 	dobjCheck(image) false;
 
 	select_world_transform(self, use_matrix);
+	select_world_transform(image, false);
 
 	if ( src_h < 0) {
 		src_h = -src_h;
