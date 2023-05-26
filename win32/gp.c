@@ -1121,6 +1121,14 @@ apc_gp_set_font( Handle self, PFont font)
 		sys otmsStrikeoutSize = sys otmsStrikeoutPosition = sys otmsUnderscoreSize = sys otmsUnderscorePosition = -1;
 	}
 
+	if ( !(sys tmPitchAndFamily & TMPF_TRUETYPE)) {
+		BYTE signature[4];
+		if ( GetFontData(sys ps, 0, 0, signature, 4) == 4 ) {
+			if (*((DWORD*)signature) == 0x4F54544F)
+				sys tmPitchAndFamily |= TMPF_OPENTYPE;
+		}
+	}
+
 	sys font_sin = sys font_cos = 0.0;
 
 	return true;

@@ -73,6 +73,8 @@ typedef HANDLE SOCKETHANDLE;
 #define WM_FIRST_USER_MESSAGE             ( WM_USER +100)
 #define WM_LAST_USER_MESSAGE              ( WM_USER +900)
 
+#define TMPF_OPENTYPE          0x0100
+
 #ifndef WM_DPICHANGED
 #define WM_DPICHANGED                     0x02E0
 #endif
@@ -475,7 +477,7 @@ typedef struct _DrawableData
 	int            alpha;
 
 	/* cached GetTextMetrics */
-	BYTE           tmPitchAndFamily;
+	WORD           tmPitchAndFamily;
 	LONG           tmOverhang;
 	int            otmsStrikeoutSize, otmsStrikeoutPosition, otmsUnderscoreSize, otmsUnderscorePosition;
 	float          font_sin, font_cos;

@@ -1120,17 +1120,17 @@ PTextShapeFunc
 apc_gp_get_text_shaper( Handle self, int * type)
 {
 	if ( *type == tsBytes ) {
-		*type = (sys tmPitchAndFamily & TMPF_TRUETYPE) ?
+		*type = (sys tmPitchAndFamily & (TMPF_TRUETYPE|TMPF_OPENTYPE)) ?
 			tsGlyphs :
 			tsNone;
 		return win32_byte_mapper;
 	} else if ( *type == tsGlyphs ) {
-		*type = (sys tmPitchAndFamily & TMPF_TRUETYPE) ?
+		*type = (sys tmPitchAndFamily & (TMPF_TRUETYPE|TMPF_OPENTYPE)) ?
 			tsGlyphs :
 			tsNone;
 		return win32_unicode_mapper;
 	} else {
-		*type = (sys tmPitchAndFamily & TMPF_TRUETYPE) ?
+		*type = (sys tmPitchAndFamily & (TMPF_TRUETYPE|TMPF_OPENTYPE)) ?
 			tsFull :
 			tsNone;
 		return win32_unicode_shaper;
