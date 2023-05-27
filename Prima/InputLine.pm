@@ -1293,8 +1293,8 @@ Default value: 2
 
 =item charOffset INTEGER
 
-Selects the position of the cursor in clusters starting from
-the beginning of visual text.
+charOffset gets the current position of the cursor
+charOffset N sets the cursor at position N
 
 =item firstChar
 
