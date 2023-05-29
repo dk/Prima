@@ -921,9 +921,9 @@ sub on_keydown
 
 		my $chr = chr $code;
 		utf8::upgrade($chr) if $mod & km::Unicode;
-		my $ll = $self-> get_chunk_cluster_length($cs[1]);
+		my $ll = length($c);
 		$c .= ' ' x ($cs[0] - $ll) if $cs[0] > $ll;
-		my $s = $self->get_shaped_chunk($cs[1]);
+		my $s = $self-> text_shape_with_tabs_replaced($c);
 		my ($new_text, $new_offset) = $self->handle_bidi_input(
 			action     => (($block || $self->insertMode) ? q(insert) : q(overtype)),
 			at         => $cs[0],
@@ -937,8 +937,9 @@ sub on_keydown
 			(q(add), $cs[0], $l + $repeat) : 
 			q(overtype)
 		));
+
 		$self-> cursor(
-			$self->get_shaped_chunk($cs[1])->index2cluster($new_offset, 1),
+			$self->text_shape_with_tabs_replaced($new_text)->index2cluster($new_offset, 1),
 			$cs[1]
 		);
 		$self-> end_undo_group;
@@ -1740,7 +1741,7 @@ sub visual_to_physical
 
 	my $cm = $self->{chunkMap};
 	my ($ly, $chunks) = $self-> get_line_dimension($y);
-	my ($px, $i);
+	my ($px, $i) = (0);
 	for ( $i = 0; $i < $chunks; $i++) {
 		$px = $$cm[($ly + $i) * CM_SIZE + CM_CHAR_OFS];
 		my $n_clusters = $self-> get_chunk_cluster_length( $ly + $i );
@@ -1921,38 +1922,23 @@ sub set_marking
 	$mark ? $self-> start_block( $blockType || $self-> {blockType}) : $self-> end_block;
 }
 
-sub cursor_down
-{
-	my ( $self, $d ) = @_;
-	$d ||= 1;
-	my ( $x, $y ) = @{$self}{qw(cursorXl cursorYl)};
-	$d = $self->{maxLine} - $y if $y + $d > $self->{maxLine};
-	return if $d <= 0;
-	if ( $self-> textDirection ) {
-		my $n1 = $self-> get_chunk_cluster_length($y);
-		my $n2 = $self-> get_chunk_cluster_length($y + $d);
-		my $x1 = $n1 - $x;
-		$x = $n2 - $x1;
-	}
-	$self->cursorLog($x, $y + $d);
-}
-
-sub cursor_up
+sub cursor_up_down
 {
 	my ( $self, $d ) = @_;
 	$d ||= 1;
 	my (undef, $y1) = $self-> logical_to_visual( undef, $self-> {cursorYl});
-	my ($x, $y2)    = $self-> logical_to_visual( $self-> {cursorXl}, $self-> {cursorYl} - $d);
-
+	my ($x, $y2)    = $self-> logical_to_visual( $self-> {cursorXl}, $self-> {cursorYl} + $d);
 	if ( $self-> textDirection ) {
 		my $n1 = $self-> get_chunk_cluster_length($y1);
 		my $n2 = $self-> get_chunk_cluster_length($y2);
 		my $x1 = $n1 - $x;
 		$x = $n2 - $x1;
 	}
-
 	$self->cursor($x, $y2);
 }
+
+sub cursor_down { shift-> cursor_up_down( shift //  1 ) }
+sub cursor_up   { shift-> cursor_up_down( shift // -1 ) }
 
 sub cursor_left
 {

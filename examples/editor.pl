@@ -146,7 +146,7 @@ sub profile_default
 			['~Options' => [
 				[ '@syx' => '~Syntax hilite' => sub{ $_[0]-> {editor}-> syntaxHilite( $_[2] )}],
 				[ '@*aid' => '~Auto indent' => sub{ $_[0]-> {editor}-> autoIndent( $_[2] )}],
-				[ '@wwp' => '~Word wrap' => sub{ $_[0]-> {editor}-> wordWrap( $_[2] )}],
+				[ '@*wwp' => '~Word wrap' => sub{ $_[0]-> {editor}-> wordWrap( $_[2] )}],
 				[ '@cwp' => '~Cursor wrap' => sub{ $_[0]-> {editor}-> cursorWrap( $_[2] )}],
 				[ '@tab' => 'Enter ~tabs in text' => sub{ $_[0]-> {editor}-> wantTabs( $_[2] )}],
 				[ '@psb' => '~Persistent blocks' => sub{ $_[0]-> {editor}-> persistentBlock( $_[2] )}],
