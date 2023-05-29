@@ -916,14 +916,9 @@ sub on_keydown
 		$self-> delete_block if $block;
 
 		my @cs = $self-> cursor;
-		my $c  = $self-> get_line( $cs[1]);
-		my $l = 0;
-
 		my $chr = chr $code;
 		utf8::upgrade($chr) if $mod & km::Unicode;
-		my $ll = length($c);
-		$c .= ' ' x ($cs[0] - $ll) if $cs[0] > $ll;
-		my $s = $self-> text_shape_with_tabs_replaced($c);
+		my ($c, $s) = $self-> get_line_for_edit(@cs);
 		my ($new_text, $new_offset) = $self->handle_bidi_input(
 			action     => (($block || $self->insertMode) ? q(insert) : q(overtype)),
 			at         => $cs[0],
@@ -931,10 +926,10 @@ sub on_keydown
 			text       => $c,
 			rtl        => $self->textDirection,
 			glyphs     => $s,
-			n_clusters => $ll,
+			n_clusters => $s->n_clusters,
 		);
 		$self-> set_line( $cs[1], $new_text, (($block || $self->insertMode) ?
-			(q(add), $cs[0], $l + $repeat) : 
+			(q(add), $cs[0], $repeat) :
 			q(overtype)
 		));
 
@@ -1116,6 +1111,18 @@ sub get_line
 {
 	my ( $self, $index) = @_;
 	return $self-> {maxLine} >= 0 ? $self-> {lines}-> [$index] : '';
+}
+
+sub get_line_for_edit
+{
+	my ($self, $x, $y) = @_;
+	my $c  = $self-> get_line( $y);
+	if ( defined $x ) {
+		my $ll = length($c);
+		$c .= ' ' x ($x - $ll) if $x > $ll;
+	}
+	my $s = $self-> text_shape_with_tabs_replaced($c);
+	return ($c, $s);
 }
 
 sub text_shape_with_tabs_replaced
@@ -2531,19 +2538,19 @@ sub delete_char
 	$self-> begin_undo_group;
 	while ( $repeat-- ) {
 		my @cs = $self->cursor;
-		my $s = $self->get_shaped_chunk($cs[1]);
+		my ($c,$s) = $self->get_line_for_edit(@cs);
 		my ($new_text, $new_offset) = $self->handle_bidi_input(
 			action     => ($self->insertMode ? q(delete) : q(cut)),
 			at         => $cs[0],
-			text       => $self->get_line($cs[1]),
+			text       => $c,
 			rtl        => $self->textDirection,
 			glyphs     => $s,
-			n_clusters => $self->get_chunk_cluster_length($cs[1]),
+			n_clusters => $s->n_clusters,
 		);
 		if ( defined $new_text ) {
 			$self-> set_line( $cs[1], $new_text, q(delete), $cs[0], 1);
 			$self-> cursor(
-				$self->get_shaped_chunk($cs[1])->index2cluster($new_offset),
+				$self->text_shape_with_tabs_replaced($new_text)->index2cluster($new_offset),
 				$cs[1]
 			);
 		} elsif ( $cs[1] < $self->{maxLine} ) {
@@ -2562,24 +2569,26 @@ sub back_char
 	$self-> begin_undo_group;
 	while ( $repeat-- ) {
 		my @cs = $self->cursor;
-		my $s = $self->get_shaped_chunk($cs[1]);
+		my ($c,$s) = $self->get_line_for_edit(@cs);
 		my ($new_text, $new_offset) = $self->handle_bidi_input(
 			action     => q(backspace),
 			at         => $cs[0],
 			text       => $self->get_line($cs[1]),
 			rtl        => $self->textDirection,
 			glyphs     => $s,
-			n_clusters => $self->get_chunk_cluster_length($cs[1]),
+			n_clusters => $s->n_clusters,
 		);
 		if ( defined $new_text ) {
 			$self-> set_line( $cs[1], $new_text, q(delete), $cs[0], 1);
 			$self-> cursor(
-				$self->get_shaped_chunk($cs[1])->index2cluster($new_offset),
+				$self->text_shape_with_tabs_replaced($new_text)->index2cluster($new_offset),
 				$cs[1]
 			);
+			print "case 1\n";
 		} elsif ( $cs[1] > 0 ) {
-			my $l = $self->get_chunk_cluster_length($cs[1] - 1),
-			$self-> delete_text( length($self->get_line($cs[1] - 1)), $cs[1] - 1, 1 );
+			my $c = $self->get_line($cs[1] - 1);
+			my $l = $self->text_shape_with_tabs_replaced($c)->n_clusters;
+			$self-> delete_text( length($c), $cs[1] - 1, 1 );
 			$self-> cursor($l, $cs[1] - 1);
 		}
 	}
@@ -2596,15 +2605,15 @@ sub delete_to_end
 {
 	my $self = $_[0];
 	my @cs = $self-> cursor;
-	my $px = $self->get_shaped_chunk($cs[1])->cursor2offset($cs[0], $self->textDirection);
-	my $c  = $self-> get_line( $cs[1]);
+	my ( $c, $s ) = $self->get_line_for_edit(@cs);
+	my $px = $s->cursor2offset($cs[0], $self->textDirection);
 	return if $px > length( $c);
 
 	$self-> set_line(
 		$cs[1], substr($c, 0, $px), 
-		q(delete), $cs[0], $self->get_chunk_cluster_length($cs[1]) - $cs[0]
+		q(delete), $cs[0], $s->n_clusters - $cs[0]
 	);
-	my $s      = $self->get_shaped_chunk($cs[1]);
+	$s = $self->text_shape_with_tabs_replaced($self->get_line($cs[1]));
 	my $last   = $s->index2cluster($s->text_length);
 	my $is_rtl = $s->cluster2index($last) & to::RTL;
 	$self-> cursor( $last - ($is_rtl ? 1 : 0), $cs[1] );
