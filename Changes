@@ -1,6 +1,6 @@
 Revision history for Perl module Prima
 
-1.69 202X-XX-XX
+1.69 2023-05-30
  - Fully rewrite win32 socket engine, now is single-threaded
  - Drawable.matrix returns Prima::Matrix objects
  - Speedup x11 matrix image rendering with XRender
