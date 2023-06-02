@@ -2151,7 +2151,7 @@ img_render_image_on_picture( Handle self, Handle image, PutImageRequest * req, B
 
 	picture = prima_render_create_picture(pixmap, on_layered ? 32 : 0);
 	RENDER_APPLY_TRANSFORM(picture);
-	RENDER_COMPOSITE( ofs, ROP_SRC_OR_COPY, picture);
+	RENDER_COMPOSITE( ofs, PictOpSrc, picture);
 	RENDER_FREE(picture);
 	XRENDER_SYNC_NEEDED;
 	ret = true;
@@ -2406,7 +2406,7 @@ get_image_dst_format( Handle self, int rop, int src_type, Bool use_xrender )
 	DEFXX;
 
 	if ( use_xrender ) {
-		if ( !guts.render_extension )
+		if ( !guts.render_extension || !guts.render_matrix_enabled )
 			return img_render_nullset;
 		if ( !guts.render_supports_argb32 && src_type == SRC_ARGB )
 			return img_render_nullset;

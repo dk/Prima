@@ -703,6 +703,7 @@ typedef struct _UnixGuts
 	Bool                         randr_extension;
 	Bool                         render_extension;
 	Bool                         render_supports_argb32;
+	Bool                         render_matrix_enabled;
 	Bool                         composite_extension;
 	int                          composite_opcode;
 	Bool                         composite_error_triggered;

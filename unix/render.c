@@ -93,13 +93,16 @@ prima_init_xrender_subsystem(char * error_buf, Bool disable_argb32)
 
 	/* find compat format for putting regular pixmaps */
 	if (
-		disable_argb32 ||
 		!(guts. xrender_display_format = XRenderFindVisualFormat(DISP, guts.visual.visual))
 	) {
 		guts. xrender_argb32_format = NULL;
 		guts. argb_visual. visual = NULL;
 		guts. argb_depth = 0;
-		return false;
+		return true;
+	}
+
+	if ( disable_argb32 ) {
+		guts. argb_visual. visual = NULL;
 	}
 
 	if ( guts. argb_visual. visual ) {

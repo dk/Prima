@@ -168,6 +168,7 @@ static Bool  do_no_shmem   = false;
 static Bool  do_no_gtk     = false;
 static Bool  do_no_quartz  = false;
 static Bool  do_no_xrender = false;
+static Bool  do_no_xrender_matrix = false;
 static Bool  do_no_argb32  = false;
 static Bool  do_no_xim     = false;
 
@@ -436,8 +437,10 @@ init_x11( char * error_buf )
 	apc_timer_set_timeout( MENU_UNFOCUS_TIMER, 50);
 	if ( !prima_init_clipboard_subsystem (error_buf)) return false;
 	if ( !prima_init_color_subsystem     (error_buf)) return false;
-	if ( !do_no_xrender)
+	if ( !do_no_xrender) {
 		if ( !prima_init_xrender_subsystem(error_buf, do_no_argb32)) return false;
+		guts.render_matrix_enabled = !do_no_xrender_matrix;
+	}
 	if ( !prima_init_font_subsystem      (error_buf)) return false;
 #ifdef WITH_GTK
 	guts. use_gtk = do_no_gtk ? false : ( prima_gtk_init() != NULL );
@@ -607,6 +610,10 @@ window_subsystem_set_option( char * option, char * value)
 	} else if ( strcmp( option, "no-argb32") == 0) {
 		if ( value) warn("`--no-argb32' option has no parameters");
 		do_no_argb32 = true;
+		return true;
+	} else if ( strcmp( option, "no-xrender-matrix") == 0) {
+		if ( value) warn("`--no-xrender-matrix' option has no parameters");
+		do_no_xrender_matrix = true;
 		return true;
 #ifdef X_HAVE_UTF8_STRING
 	} else if ( strcmp( option, "no-xim") == 0) {
