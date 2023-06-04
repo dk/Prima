@@ -544,6 +544,7 @@ window_subsystem_get_options( int * argc, char *** argv)
 #endif
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
 	"no-xrender",    "do not use XRender",
+	"no-xrender-matrix",    "do not use XRender matrix capacities",
 	"no-argb32",     "do not use alpha rendering",
 #endif
 	"font",
