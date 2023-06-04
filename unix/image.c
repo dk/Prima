@@ -1110,7 +1110,7 @@ create_rgb_to_alpha_xpixel_lut( int ncolors, const Byte * alpha, XPixel *lut)
 }
 
 static Bool
-create_argb_cache(PIcon img, ImageCache * cache, int type)
+create_argb_cache(PIcon img, ImageCache * cache, int type, int alpha_channel)
 {
 	static XPixel lur[NPalEntries8], lub[NPalEntries8], lug[NPalEntries8], lua[NPalEntries8];
 	static Bool initialize = true;
@@ -1164,7 +1164,7 @@ create_argb_cache(PIcon img, ImageCache * cache, int type)
 		}
 		break;
 	case CACHE_LAYERED: {
-		XPixel alpha = lua[0]; /* RGB without A assumes A=0, transparent */
+		XPixel alpha = lua[alpha_channel];
 		for ( y = h-1; y >= 0; y--) {
 			register Pixel24 *line = (Pixel24*)(img-> data + y*img-> lineSize);
 			register Pixel32 *d = (Pixel32*)(ls*(h-y-1)+(unsigned char *)data);
@@ -1189,7 +1189,7 @@ create_argb_cache(PIcon img, ImageCache * cache, int type)
 }
 
 static ImageCache*
-create_image_cache( PImage img, int type, int alpha)
+create_image_cache( PImage img, int type, int alpha_mul, int alpha_channel)
 {
 	PDrawableSysData IMG = X((Handle)img);
 	int target_bpp;
@@ -1251,7 +1251,13 @@ create_image_cache( PImage img, int type, int alpha)
 		cache-> icon = NULL;
 
 	if ( cache-> image != NULL) {
-		if ( cache-> type == type && cache->alpha == alpha) return cache;
+		if ( type != CACHE_LAYERED )
+			alpha_channel = 0;
+		if (
+			cache-> type == type &&
+			cache->alpha_mul == alpha_mul &&
+			cache->alpha_channel == alpha_channel
+		) return cache;
 		destroy_ximage( cache-> image);
 		cache-> image = NULL;
 	}
@@ -1279,7 +1285,7 @@ create_image_cache( PImage img, int type, int alpha)
 		PIcon i = (PIcon) pass;
 
 		/* premultiply */
-		if ( alpha != 255 ) {
+		if ( alpha_mul != 255 ) {
 			if ( !dup)
 				if (!(dup = img-> self-> dup(( Handle) img)))
 					return NULL;
@@ -1300,27 +1306,29 @@ create_image_cache( PImage img, int type, int alpha)
 			i-> self-> set_maskType(dup, imbpp8);
 		}
 
-		if ( alpha != 255 ) {
-			img_premultiply_alpha_constant( dup, alpha);
+		if ( alpha_mul != 255 ) {
+			img_premultiply_alpha_constant( dup, alpha_mul);
 			if ( XT_IS_ICON(IMG)) {
 				Image dummy;
 				img_fill_dummy( &dummy, img->w, img->h, imByte, PIcon(dup)->mask, std256gray_palette);
-				img_premultiply_alpha_constant( (Handle) &dummy, alpha);
+				img_premultiply_alpha_constant( (Handle) &dummy, alpha_mul);
 			}
 		}
-
 		ok = create_argb_cache(i, cache,
-			(XT_IS_ICON(IMG) && type == CACHE_LAYERED_ALPHA) ? CACHE_LAYERED_ALPHA : CACHE_LAYERED
+			(XT_IS_ICON(IMG) && type == CACHE_LAYERED_ALPHA) ? CACHE_LAYERED_ALPHA : CACHE_LAYERED,
+			alpha_channel
 		);
 		if ( dup) Object_destroy(dup);
 		if ( !ok ) return NULL;
 
 		cache-> type = type;
-		cache->alpha = alpha;
+		cache-> alpha_mul = alpha_mul;
+		cache-> alpha_channel = alpha_channel;
 		return cache;
 	}
 
-	cache->alpha = alpha;
+	cache->alpha_mul = alpha_mul;
+	cache->alpha_channel = alpha_channel;
 	if ( type == CACHE_A8 ) {
 		Bool ok;
 		PImage i = (PImage) pass;
@@ -1331,7 +1339,7 @@ create_image_cache( PImage img, int type, int alpha)
 			i = (PImage) dup;
 			i-> self-> set_type(dup, imByte);
 		}
-		ok = create_argb_cache((PIcon) i, cache, CACHE_A8);
+		ok = create_argb_cache((PIcon) i, cache, CACHE_A8, 0);
 		if ( dup) Object_destroy(dup);
 		if ( !ok ) return NULL;
 
@@ -1428,14 +1436,22 @@ create_image_cache( PImage img, int type, int alpha)
 }
 
 ImageCache*
-prima_image_cache( PImage img, int type, int alpha)
+prima_image_cache( PImage img, int type, int alpha_mul, int alpha_channel)
 {
 	ImageCache *cache = &X((Handle)img)-> image_cache;
 
-	if ( cache-> image != NULL && cache-> type == type && cache->alpha == alpha)
+	if ( cache->type != CACHE_LAYERED )
+		alpha_channel = 0;
+
+	if (
+		cache-> image         != NULL          &&
+		cache-> type          == type          &&
+		cache-> alpha_mul     == alpha_mul     &&
+		cache-> alpha_channel == alpha_channel
+	)
 		return cache;
 
-	return create_image_cache(img, type, alpha);
+	return create_image_cache(img, type, alpha_mul, alpha_channel);
 }
 
 Bool
@@ -1447,7 +1463,7 @@ prima_create_icon_pixmaps( Handle self, Pixmap *xor, Pixmap *and)
 	GC gc;
 	XGCValues gcv;
 
-	cache = prima_image_cache((PImage)icon, CACHE_BITMAP, 255);
+	cache = prima_image_cache((PImage)icon, CACHE_BITMAP, 255, 0);
 	if ( !cache) return false;
 	p1 = XCreatePixmap( DISP, guts. root, icon-> w, icon-> h, 1);
 	p2 = XCreatePixmap( DISP, guts. root, icon-> w, icon-> h, 1);
@@ -1716,7 +1732,7 @@ img_put_image_on_bitmap( Handle self, Handle image, PutImageRequest * req)
 	PImage img = (PImage) image;
 	PDrawableSysData YY = X(image);
 
-	if (!(cache = prima_image_cache(img, CACHE_BITMAP, 255)))
+	if (!(cache = prima_image_cache(img, CACHE_BITMAP, 255, 0)))
 		return false;
 
 	if ( XT_IS_ICON(YY) && !img_put_icon_mask( self, cache->icon, req))
@@ -1755,7 +1771,7 @@ img_put_argb_on_bitmap( Handle self, Handle image, PutImageRequest * req)
 
 	PImage img = (PImage) image;
 
-	if (!(cache = prima_image_cache(img, CACHE_BITMAP, 255)))
+	if (!(cache = prima_image_cache(img, CACHE_BITMAP, 255, 0)))
 		return false;
 
 	if ( !img_put_icon_mask( self, cache->icon, req))
@@ -1839,7 +1855,7 @@ img_put_image_on_pixmap( Handle self, Handle image, PutImageRequest * req)
 	PImage img = (PImage) image;
 	PDrawableSysData YY = X(image);
 
-	if (!(cache = prima_image_cache(img, CACHE_PIXMAP, 255)))
+	if (!(cache = prima_image_cache(img, CACHE_PIXMAP, 255, 0)))
 		return false;
 
 	if ( XT_IS_ICON(YY) && !img_put_icon_mask( self, cache->icon, req))
@@ -1897,7 +1913,7 @@ img_put_image_on_widget( Handle self, Handle image, PutImageRequest * req)
 	PImage img = (PImage) image;
 	PDrawableSysData YY = X(image);
 
-	if (!(cache = prima_image_cache(img, CACHE_PIXMAP, 255)))
+	if (!(cache = prima_image_cache(img, CACHE_PIXMAP, 255, 0)))
 		return false;
 
 	if ( XT_IS_ICON(YY) && !img_put_icon_mask( self, cache->icon, req))
@@ -1927,7 +1943,7 @@ img_put_image_on_layered( Handle self, Handle image, PutImageRequest * req)
 {
 	ImageCache *cache;
 	PDrawableSysData YY = X(image);
-	if (!(cache = prima_image_cache((PImage) image, CACHE_LAYERED, 255)))
+	if (!(cache = prima_image_cache((PImage) image, CACHE_LAYERED, 255, 0)))
 		return false;
 	if ( XT_IS_ICON(YY) && !img_put_icon_mask( self, cache->icon, req))
 		return false;
@@ -1980,7 +1996,7 @@ img_render_argb_on_pixmap_or_widget( Handle self, Handle image, PutImageRequest 
 	Bool ret = false;
 	Picture picture;
 
-	if (!(cache = prima_image_cache((PImage) image, CACHE_LAYERED_ALPHA, 255)))
+	if (!(cache = prima_image_cache((PImage) image, CACHE_LAYERED_ALPHA, 255, 0)))
 		return false;
 
 	pixmap = XCreatePixmap( DISP, guts.root, req->w, req->h, guts. argb_visual. depth);
@@ -2016,7 +2032,7 @@ img_put_a8_on_layered( Handle self, Handle image, PutImageRequest * req)
 	DEFXX;
 	Bool ok;
 	ImageCache *cache;
-	if (!(cache = prima_image_cache((PImage) image, CACHE_A8, 255)))
+	if (!(cache = prima_image_cache((PImage) image, CACHE_A8, 255, 0)))
 		return false;
 	XSetPlaneMask( DISP, XX-> gc, guts. argb_bits. alpha_mask);
 	req->rop = GXcopy;
@@ -2037,7 +2053,7 @@ img_put_argb_on_layered( Handle self, Handle image, PutImageRequest * req)
 	Bool ret = false;
 	Picture picture;
 
-	if (!(cache = prima_image_cache((PImage) image, CACHE_LAYERED_ALPHA, 255)))
+	if (!(cache = prima_image_cache((PImage) image, CACHE_LAYERED_ALPHA, 255, 0)))
 		return false;
 
 	pixmap = XCreatePixmap( DISP, guts.root, req->w, req->h, guts. argb_visual. depth);
@@ -2125,9 +2141,10 @@ img_render_image_on_picture( Handle self, Handle image, PutImageRequest * req, B
 	Bool ret = false;
 	Picture picture;
 
+	/* request alpha_channel=255 because PictOpOver emulates SrcCopy here */
 	if (!(cache = prima_image_cache((PImage) image,
 		on_layered ? CACHE_LAYERED : CACHE_PIXMAP,
-		255)))
+		255, 255)))
 		return false;
 
 	pixmap = XCreatePixmap( DISP, guts.root, req->w, req->h,
@@ -2151,7 +2168,7 @@ img_render_image_on_picture( Handle self, Handle image, PutImageRequest * req, B
 
 	picture = prima_render_create_picture(pixmap, on_layered ? 32 : 0);
 	RENDER_APPLY_TRANSFORM(picture);
-	RENDER_COMPOSITE( ofs, PictOpSrc, picture);
+	RENDER_COMPOSITE( ofs, PictOpOver, picture);
 	RENDER_FREE(picture);
 	XRENDER_SYNC_NEEDED;
 	ret = true;
@@ -2924,7 +2941,7 @@ prima_std_pixmap( Handle self, int type)
 	PImage img = ( PImage) self;
 	unsigned long fore, back;
 
-	ImageCache * xi = prima_image_cache(( PImage) self, type, 255);
+	ImageCache * xi = prima_image_cache(( PImage) self, type, 255, 0);
 	if ( !xi) return NULL_HANDLE;
 
 	px = XCreatePixmap( DISP, guts. root, img-> w, img-> h,

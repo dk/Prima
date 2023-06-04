@@ -1576,7 +1576,7 @@ create_tile( Handle self, Handle image, Bool mono )
 	XCHECKPOINT;
 	if ( !px ) return 0;
 
-	if (!(cache = prima_image_cache((PImage) image, flag, mono ? 255 : XX->alpha))) {
+	if (!(cache = prima_image_cache((PImage) image, flag, mono ? 255 : XX->alpha, 255))) {
 		XFreePixmap(DISP, px);
 		return 0;
 	}

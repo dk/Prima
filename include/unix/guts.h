@@ -149,7 +149,7 @@ typedef struct _PrimaXImage
 #define CACHE_A8             6
 
 typedef struct {
-	int type, alpha;
+	int type, alpha_mul, alpha_channel;
 	PrimaXImage *image;
 	PrimaXImage *icon;
 } ImageCache;
@@ -1244,7 +1244,7 @@ extern Bool
 prima_create_icon_pixmaps( Handle bw_icon, Pixmap *xor, Pixmap *and);
 
 extern ImageCache*
-prima_image_cache( PImage img, int type, int alpha);
+prima_image_cache( PImage img, int type, int alpha_mul, int alpha_channel);
 
 extern Bool
 prima_put_ximage( XDrawable win, GC gc, PrimaXImage *i,
