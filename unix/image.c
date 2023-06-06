@@ -562,28 +562,6 @@ create_cache1_1( Image *img, ImageCache *cache, Bool for_icon)
 	return true;
 }
 
-static Bool
-create_icon_cache8_1(PIcon img, ImageCache * cache)
-{
-	Byte * monomask;
-	PrimaXImage *ximage;
-
-	if (!(monomask = img->self->convert_mask((Handle)img, imbpp1)))
-		return false;
-
-	ximage = prima_prepare_ximage( img->w, img->h, CACHE_BITMAP);
-	if (!ximage) {
-		free(monomask);
-		return false;
-	}
-	prima_copy_1bit_ximage( monomask, ximage->image, true);
-
-	free( monomask );
-	cache->icon = ximage;
-
-	return true;
-}
-
 static void
 create_rgb_to_8_lut( int ncolors, const PRGBColor pal, Pixel8 *lut)
 {
@@ -1241,11 +1219,17 @@ create_image_cache( PImage img, int type, int alpha_mul, int alpha_channel)
 	/* create icon cache, if any */
 	if ( XT_IS_ICON(IMG) && type != CACHE_LAYERED_ALPHA) {
 		if ( cache-> icon == NULL) {
-			Bool ok;
-			ok = ( PIcon(img)-> maskType == imbpp8 ) ?
-				create_icon_cache8_1(( PIcon) img, cache) :
-				create_cache1_1( img, cache, true);
-			if ( !ok ) return NULL;
+			if ( PIcon(img)->maskType == imbpp8) {
+				if ( !dup) {
+					if (!(dup = img-> self-> dup(( Handle) img)))
+						return NULL;
+				}
+				CIcon(dup)->set_maskType(dup, imbpp1);
+				pass = ( PImage) dup;
+			}
+
+			if ( !create_cache1_1(pass, cache, true))
+				return NULL;
 		}
 	} else
 		cache-> icon = NULL;
