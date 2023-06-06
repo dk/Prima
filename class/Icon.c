@@ -323,8 +323,8 @@ Icon_convert_mask( Handle self, int type )
 	switch (type) {
 	case imbpp1:
 		/* downgrade */
-		memset( colorref,     1, 1   );
-		memset( colorref + 1, 0, 255 );
+		memset( colorref,       1, 255);
+		memset( colorref + 255, 0, 1  );
 		for ( i = 0, dst = ret; i < var->h; i++, src += srcLine, dst += dstLine) {
 			memset( dst, 0, dstLine );
 			bc_byte_mono_cr( src, dst, var-> w, colorref);
@@ -343,6 +343,32 @@ Icon_convert_mask( Handle self, int type )
 	return ret;
 }
 
+static void
+ic_mask_downgrade( Handle self )
+{
+	int i, type = var->type & imBPP, bpp = (var->type & imBPP ) / 8;
+	Byte *src = var->data, *mask = var->mask;
+	for ( i = 0; i < var-> h; i++, src += var->lineSize, mask += var->maskLine) {
+		switch (type) {
+		/* remove alpha pixels with mask as bits */
+		case 1: {
+			register Byte *s = src, *m = mask;
+			register unsigned int ls = var->lineSize;
+			while ( ls-- > 0 )
+				*(s++) &= *(m++);
+			break;
+		}
+
+		/* remove alpha pixels with mask as bytes */
+		case 4:
+			bc_a8mask_nibble( mask, src, var->w);
+			break;
+		default:
+			bc_a8mask_multibyte( mask, src, var->w, bpp);
+		}
+	}
+}
+
 int
 Icon_maskType( Handle self, Bool set, int type)
 {
@@ -351,6 +377,10 @@ Icon_maskType( Handle self, Bool set, int type)
 
 	type &= ~imGrayScale;
 	if ( var-> maskType == type) return 0;
+
+	if ( var-> mask && var->maskType == imbpp8 && (var->type & imBPP) != 1)
+		ic_mask_downgrade(self);
+
 	switch ( type ) {
 	case imbpp1:
 	case imbpp8:
@@ -365,6 +395,9 @@ Icon_maskType( Handle self, Bool set, int type)
 	default:
 		croak("mask type must be either im::bpp1 or im::bpp8");
 	}
+
+	if ( var-> mask && var->maskType == imbpp8 && (var->type & imBPP) == 1)
+		ic_mask_downgrade(self);
 
 	var-> maskType = type;
 	return 1;

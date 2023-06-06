@@ -313,6 +313,10 @@ extern void bc_rgb_a_rgba( Byte * rgb_source, Byte * a_source, Byte * rgba_dest,
 extern void bc_bgr_a_rgba( Byte * bgr_source, Byte * a_source, Byte * rgba_dest, int count);
 
 
+/* remove pixels based on a mask */
+extern void bc_a8mask_nibble( register Byte *mask, register Byte *pixels, unsigned int width);
+extern void bc_a8mask_multibyte( register Byte *mask, register Byte *pixels, unsigned int width, int pixel_width);
+
 /* misc */
 
 extern void ibc_repad( Byte * source, Byte * dest, int srcLineSize, int dstLineSize, int srcDataSize, int dstDataSize, int srcBPP, int dstBPP, void * bit_conv_proc, Bool reverse);

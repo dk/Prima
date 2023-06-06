@@ -234,6 +234,48 @@ void bc_bgr_a_rgba( register Byte * bgr_source,  register Byte * a_source, regis
 	}
 }
 
+void
+bc_a8mask_nibble( register Byte *mask, register Byte *pixels, unsigned int width)
+{
+	register unsigned int half_width = width / 2;
+	while ( half_width-- > 0 ) {
+		if ( *(mask++) != 255 ) *pixels &= 0x0f;
+		if ( *(mask++) != 255 ) *pixels &= 0xf0;
+		pixels++;
+		width -= 2;
+	}
+	if ( width != 0 && *(mask++) != 255 )
+		*pixels &= 0x0f;
+}
+
+void
+bc_a8mask_multibyte( register Byte *mask, register Byte *pixels, unsigned int width, int pixel_width)
+{
+	switch ( pixel_width ) {
+	case 1:
+		while ( width-- > 0 ) {
+			if ( *(mask++) != 255) *pixels = 0x0;
+			pixels++;
+		}
+		break;
+	case 3:
+		while ( width-- > 0 ) {
+			if ( *(mask++) != 255)
+				pixels[0] = pixels[1] = pixels[2] = 0;
+			pixels += 3;
+		}
+		break;
+	default:
+		while ( width-- > 0 ) {
+			if ( *(mask++) != 255) {
+				int i;
+				for ( i = 0; i < pixel_width; i++) 
+					pixels[i] = 0;
+			}
+			pixels += pixel_width;
+		}
+	}
+}
 
 #ifdef __cplusplus
 }

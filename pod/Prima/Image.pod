@@ -714,6 +714,9 @@ aligned with C<::maskLineSize> bytes per row.
 Is either C<im::bpp1> (1) or C<im::bpp8> (8). The latter can be used
 as a layered (argb) source surface to draw with blending effect.
 
+Note: if a mask with depth 8 is downgraded to depth 1, the image pixels
+that correspond to alpha values lesser than 255 will be reset to 0.
+
 =back
 
 =head2 Prima::DeviceBitmap properties
