@@ -1060,11 +1060,11 @@ ic_stretch_filtered( int type, Byte * old_data, int old_w, int old_h, Byte * new
 		mirror_x = 0;
 	}
 
-	if ( !stretch_filtered( type, old_data, old_w, old_h, new_data, w, h, scaling, error ))
+	if ( !stretch_filtered( type, old_data, old_w, old_h, new_data, abs_w, abs_h, scaling, error ))
 		return false;
 
-	if ( mirror_x ) img_mirror_raw( type, w, h, new_data, 0 );
-	if ( mirror_y ) img_mirror_raw( type, w, h, new_data, 1 );
+	if ( mirror_x ) img_mirror_raw( type, abs_w, abs_h, new_data, 0 );
+	if ( mirror_y ) img_mirror_raw( type, abs_w, abs_h, new_data, 1 );
 
 	return true;
 }
