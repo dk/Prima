@@ -957,7 +957,7 @@ apc_img_save( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq, H
 			SV * c = NULL;
 			if ( pexist( codecID))
 				c = pget_sv( codecID);
-			else if ( self &&
+			else if ( self &&  (( PAnyObject) self)-> mate &&
 				hv_exists(( HV*)SvRV((( PAnyObject) self)-> mate), "extras", 6)
 			) {
 				SV ** sv = hv_fetch(( HV*)SvRV((( PAnyObject) self)-> mate), "extras", 6, 0);
@@ -1095,7 +1095,7 @@ apc_img_save( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq, H
 		PImage im;
 
 		im = ( PImage) fi. frameMap[ i];
-		if ( hv_exists(( HV*)SvRV( im-> mate), "extras", 6)) {
+		if ( im-> mate && hv_exists(( HV*)SvRV( im-> mate), "extras", 6)) {
 			SV ** sv = hv_fetch(( HV*)SvRV( im-> mate), "extras", 6, 0);
 			if ( sv && SvOK( *sv) && SvROK( *sv) && SvTYPE( SvRV( *sv)) == SVt_PVHV) {
 				HV * hv = ( HV *) SvRV( *sv);
