@@ -3001,19 +3001,20 @@ put_transformed(Handle self, Handle image, int x, int y, int rop, Matrix matrix)
 	x += floor(r.left);
 	y += floor(r.bottom);
 
+
 	if ( XT_IS_ICON(YY)) {
 		img->self->set_preserveType(image, 0);
 		img->self->matrix_transform(image, matrix, fill);
 		if ( !guts.render_supports_argb32 )
 			CIcon(img)->set_maskType( self, imbpp1 );
-		return apc_gp_put_image( self, image, x, y, 0, 0, img->w, img-> h, rop);
+		return apc_gp_put_image( self, image, x, y, 0, 0, img->w, img-> h, ropXorPut);
 	} else {
 		Handle ok;
 		Handle icon = img->self->convert_to_icon(image, imbpp8, NULL);
 		CIcon(icon)->matrix_transform(icon, matrix, fill);
 		if ( !guts.render_supports_argb32 )
 			CIcon(icon)->set_maskType( icon, imbpp1 );
-		ok = apc_gp_put_image( self, icon, x, y, 0, 0, PIcon(icon)->w, PIcon(icon)->h, ropXorPut);
+		ok = apc_gp_put_image( self, icon, x, y, 0, 0, PIcon(icon)->w, PIcon(icon)->h, rop);
 		Object_destroy(icon);
 		return ok;
 	}
@@ -3105,7 +3106,6 @@ apc_gp_stretch_image_x11( Handle self, Handle image,
 		/* extract local bits */
 		obj = CImage(image)->extract( image, src_x, src_y, src_w, src_h );
 		if ( !obj ) return false;
-		CImage(obj)-> set_scaling( obj, istBox );
 		if ( use_matrix ) {
 			Matrix m1, m2, m3;
 			prima_matrix_set_identity(m1);
