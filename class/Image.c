@@ -4,6 +4,7 @@
 #include "Drawable_private.h"
 #include "Image.h"
 #include "Image_private.h"
+#include "Icon.h"
 #include "Region.h"
 #include "img_conv.h"
 #include <Image.inc>
@@ -516,6 +517,62 @@ Image_dup( Handle self)
 	return h;
 }
 
+static NRect
+pt4_extents( NPoint *pt)
+{
+	int i;
+	double x1, x2, y1, y2;
+	NRect r;
+	x1 = x2 = pt[0].x;
+	y1 = y2 = pt[0].y;
+	for ( i = 1; i < 4; i++) {
+		if ( x1 > pt[i].x ) x1 = pt[i].x;
+		if ( y1 > pt[i].y ) y1 = pt[i].y;
+		if ( x2 < pt[i].x ) x2 = pt[i].x;
+		if ( y2 < pt[i].y ) y2 = pt[i].y;
+	}
+	r.left   = x1;
+	r.bottom = y1;
+	r.right  = x2;
+	r.top    = y2;
+	return r;
+}
+
+static Bool
+put_transformed(Handle self, Handle image, int x, int y, Matrix matrix, int rop)
+{
+	ColorPixel fill;
+	PImage img = (PImage) image;
+	NRect r;
+	NPoint pt[4];
+
+	memset(&fill, 0x0, sizeof(fill));
+	r.left   = 0.0;
+	r.bottom = 0.0;
+	r.right  = (double) img->w;
+	r.top    = (double) img->h;
+
+	prima_matrix_is_square_rectangular( matrix, &r, pt);
+	r = pt4_extents(pt);
+	x += floor(r.left);
+	y += floor(r.bottom);
+
+	if ( kind_of(image, CIcon)) {
+		img->self->set_preserveType(image, 0);
+		img->self->matrix_transform(image, matrix, fill);
+		return img_put( self, image, x, y, 0, 0, img->w, img->h, img->w, img->h, ropCopyPut, var->regionData, NULL);
+	} else {
+		Handle ok;
+		Handle icon;
+		icon = img->self->convert_to_icon(image, imbpp8, NULL);
+		img  = (PImage) icon;
+		CIcon(icon)->matrix_transform(icon, matrix, fill);
+		ok = img_put( self, icon, x, y, 0, 0, img->w, img->h, img->w, img->h, rop, var->regionData, NULL);
+		Object_destroy(icon);
+		return ok;
+	}
+}
+
 Bool
 Image_put_image_indirect( Handle self, Handle image, int x, int y, int xFrom, int yFrom, int xDestLen, int yDestLen, int xLen, int yLen, int rop)
 {
@@ -535,8 +592,24 @@ Image_put_image_indirect( Handle self, Handle image, int x, int y, int xFrom, in
 		color = colorbuf;
 	}
 
-	ret = img_put( self, image, x + (*matrix)[4], y + (*matrix)[5], xFrom, yFrom, xDestLen, yDestLen, xLen, yLen, rop,
-		var->regionData, color);
+	prima_matrix_apply_int_to_int(*matrix, &x, &y);
+	if ( prima_matrix_is_translated_only(*matrix)) {
+		ret = img_put( self, image, x, y, xFrom, yFrom, xDestLen, yDestLen, xLen, yLen, rop,
+			var->regionData, color);
+	} else {
+		Handle obj;
+		Matrix m1, m2, m3;
+
+		if ( !( obj = CImage(image)->extract( image, xFrom, yFrom, xDestLen, yDestLen )))
+			return false;
+		CImage(obj)-> set_scaling( obj, istTriangle );
+		prima_matrix_set_identity(m1);
+		m1[0] = (double) xDestLen / PImage(image)->w;
+		m1[3] = (double) yDestLen / PImage(image)->h;
+		COPY_MATRIX_WITHOUT_TRANSLATION( *matrix, m2);
+		prima_matrix_multiply(m1, m2, m3);
+		ret = put_transformed( self, obj, x, y, m3, rop);
+	}
 	my-> update_change( self);
 	return ret;
 }
