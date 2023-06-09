@@ -2030,9 +2030,22 @@ apc_gp_get_glyph_outline( Handle self, int index, int flags, int ** buffer)
 Bool
 apc_gp_set_text_matrix( Handle self, Matrix matrix)
 {
+	Bool old_want_world_transform, new_want_world_transform;
 	objCheck 0;
-	apt_assign( aptWantWorldTransform, !prima_matrix_is_identity( matrix ));
-	apt_clear( aptCachedWorldTransform );
+
+	old_want_world_transform = is_apt(aptWantWorldTransform);
+	new_want_world_transform = !prima_matrix_is_identity( matrix );
+	if ( old_want_world_transform && !new_want_world_transform ) {
+		XFORM xf = { 1.0, 0.0, 0.0, 1.0, 0.0, 0.0 };
+		SetViewportOrgEx( sys ps, 0, 0, NULL );
+		SetWorldTransform( sys ps, &xf );
+		apt_set( aptCachedWorldTransform );
+	} else {
+		apt_clear( aptCachedWorldTransform );
+	}
+
+	apt_assign( aptWantWorldTransform, new_want_world_transform);
+
 	return true;
 }
 
