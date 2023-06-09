@@ -1422,6 +1422,43 @@ apc_gp_stretch_image( Handle self, Handle image,
 	req. dst_h = dst_h;
 	req. rop   = rop;
 
+	if (use_matrix) {
+		Matrix *m0 = &var current_state.matrix;
+		Matrix m1  = {
+			(*m0)[0], -((*m0)[1]),
+			-((*m0)[2]), (*m0)[3],
+			0, 0
+		};
+		XFORM xf  = {
+			(*m0)[0], -((*m0)[1]),
+			-((*m0)[2]), (*m0)[3],
+			dst_x - sys transform2.x,
+			sys last_size.y - dst_y - 1 - sys transform2.y
+		};
+		NPoint
+			delta = {-0.5, 0.5},
+			pixel[2] = {{1.0,0.0},{0.0,1.0}},
+			pixel_size;
+
+		/* win32 aperture is upper (0,0), while we need lower (0,dst_h-1).
+		Also, experiments show that the target pixel aperture is not at (0,0) but at (0.5,0.5),
+		in the center of the first target pixel -
+		determine the size of that pixel to translate it back after eventual scaling */
+		prima_matrix_apply2( m1, pixel, pixel, 2);
+		pixel_size.x = sqrt( pixel[0].x * pixel[0].x + pixel[0].y * pixel[0].y);
+		pixel_size.y = sqrt( pixel[1].x * pixel[1].x + pixel[1].y * pixel[1].y);
+		if ( pixel_size.x > 0.0 ) delta.x /= pixel_size.x;
+		if ( pixel_size.y > 0.0 ) delta.y /= pixel_size.y;
+		delta.y -= (double) dst_h;
+		prima_matrix_apply( m1, &delta.x, &delta.y);
+		xf.eDx += delta.x;
+		xf.eDy += delta.y;
+		SetWorldTransform( sys ps, &xf );
+		apt_clear( aptCachedWorldTransform );
+		req.dst_x = 0;
+		req.dst_y = 0;
+	}
+
 	if ( dsys( image) options. aptDeviceBitmap ) {
 		PDeviceBitmap p = (PDeviceBitmap) image;
 		switch (p->type) {
