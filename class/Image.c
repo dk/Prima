@@ -602,7 +602,7 @@ Image_put_image_indirect( Handle self, Handle image, int x, int y, int xFrom, in
 
 		if ( !( obj = CImage(image)->extract( image, xFrom, yFrom, xDestLen, yDestLen )))
 			return false;
-		CImage(obj)-> set_scaling( obj, istTriangle );
+		CImage(obj)-> set_scaling( obj, PImage(image)->scaling );
 		prima_matrix_set_identity(m1);
 		m1[0] = (double) xDestLen / PImage(image)->w;
 		m1[3] = (double) yDestLen / PImage(image)->h;

@@ -1209,7 +1209,7 @@ img_2d_transform( Handle self, Matrix matrix, ColorPixel fill, PImage output)
 			if ( !ic_stretch( i->type,
 				src->data, src->w / channels, src->h,
 				dst->data, dst->w * mx / channels, dst->h * my,
-				istTriangle, errbuf)) {
+				src->scaling, errbuf)) {
 				if ( step > 0 )
 					free(tmp_images[step].data);
 				free(tmp_images[step + 1].data);
