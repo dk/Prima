@@ -232,6 +232,14 @@ fill_dimensions( Point * points, Point min_p, Point * out_min, Point * out_dim)
 	}
 }
 
+static void
+point_swap( Point *a, Point *b)
+{
+	Point p0 = *a;
+	*a = *b;
+	*b = p0;
+}
+
 static Bool transform_fail(void) {
 	warn("Image.rotate/transform: transformation results in invalid image");
 	return false;
@@ -240,10 +248,10 @@ static Bool transform_fail(void) {
 /* Transform 4 corners to next shearing, then calculate integral pixels it occupies.
 This is needed to calculate the least enclosed rect for a sheared (and, ultimately, rotated) image */
 static Bool
-apply_shear( Point * points, float func_mul, float func_add, int w, int h, int index, Point * out_min, Point * out_dim)
+apply_shear( Point * points, float func_mul, float func_add, int w, int h, int index, Point * out_min, Point * out_dim, Point *aperture)
 {
 	int i, min_i;
-	Point * p, min_p;
+	Point * p, min_p, p0 = points[0];
 	float max_shift, min = 0, max = 0, center, tmp[4];
 
 	max_shift = (func_mul >= 0) ? 0 : func_mul * ((index ? w : h) - 1);
@@ -287,16 +295,24 @@ apply_shear( Point * points, float func_mul, float func_add, int w, int h, int i
 		min_p.y = 0;
 	}
 
+	if ( aperture != NULL ) {
+		int n0 = (int)(floorf(tmp[0])) - min_i;
+		if (index)
+			aperture-> y -= n0 - p0.y;
+		else
+			aperture-> x -= n0 - p0.x;
+	}
+
 	fill_dimensions( points, min_p, out_min, out_dim);
 	return true;
 }
 
 /* Transform 4 corners to scaling shearing, then calculate integral pixels it occupies. */
 static Bool
-apply_scale( Point * points, float sx, float sy, Point * out_min, Point * out_dim)
+apply_scale( Point * points, float sx, float sy, Point * out_min, Point * out_dim, Point *aperture)
 {
 	int i;
-	Point * p, min_p;
+	Point * p, min_p, p0 = points[0];
 	NPoint min, max, center, tmp[4];
 
 	/* apply shearing */
@@ -331,21 +347,40 @@ apply_scale( Point * points, float sx, float sy, Point * out_min, Point * out_di
 			min_p.y = p->y;
 	}
 
+	if ( sx < 0 ) {
+		point_swap( points + 0, points + 1 );
+		point_swap( points + 2, points + 3 );
+	}
+	if ( sy < 0 ) {
+		point_swap( points + 0, points + 3 );
+		point_swap( points + 1, points + 2 );
+	}
+	if ( aperture != NULL ) {
+		aperture->x += p0.x - points[0].x + min_p.x;
+		aperture->y += p0.y - points[0].y + min_p.y;
+	}
+
 	fill_dimensions( points, min_p, out_min, out_dim);
+
 	return true;
 }
 
 static Bool
-apply_rotate90( Point * points, int h, Point * out_min, Point * out_dim)
+apply_rotate90( Point * points, int h, Point * out_min, Point * out_dim, Point * aperture)
 {
 	int i;
-	Point * p, min_p = {0,0};
+	Point * p, min_p = {0,0}, p0 = points[0];
 	for ( i = 0, p = points; i < 4; i++, p++) {
 		int x = h - p->y;
 		p-> y = p-> x;
 		p-> x = x;
 	}
+
+	aperture->x += p0.x - points[0].x;
+	aperture->y += p0.y - points[0].y;
 	fill_dimensions( points, min_p, out_min, out_dim);
+	memmove( points + 1, points + 0, sizeof(Point) * 3);
+	points[3] = p0;
 	return true;
 }
 
@@ -750,7 +785,7 @@ fix_ffills( int type, int channels, ColorPixel fill, float * ffill )
 
 /* Fast rotation by Paeth algorithm. Accepts grayscale images with bpp >= 8, and 24 bpp RGBs */
 Bool
-img_generic_rotate( Handle self, float degrees, PImage output, ColorPixel fill)
+img_generic_rotate( Handle self, float degrees, PImage output, ColorPixel fill, NPoint delta, Point *aperture)
 {
 	Bool apply_180 = false;
 	Image *i = (PImage)self, s0, s1, s2;
@@ -759,12 +794,22 @@ img_generic_rotate( Handle self, float degrees, PImage output, ColorPixel fill)
 	int type, channels;
 	FilterFunc *filter = find_filter(i->scaling);
 	float ffill[3] = {0,0,0};
+	Point _aperture;
+
+	while (degrees < 0.0  ) degrees += 360.0;
+	while (degrees > 360.0) degrees -= 360.0;
+
+	if ( aperture == NULL ) aperture = &_aperture;
+	aperture->x = aperture->y = 0;
 
 	reduce_image_to_channels( i->type, &type, &channels);
 	fix_ffills( type, channels, fill, ffill );
 
-	if ( degrees < 270 && degrees > 90 ) {
-		degrees -= 180;
+	if ( degrees < 270.0 && degrees > 90.0 ) {
+		aperture->x -= i->w;
+		aperture->y -= i->h;
+
+		degrees -= 180.0;
 		apply_180 = true;
 	}
 
@@ -775,11 +820,13 @@ img_generic_rotate( Handle self, float degrees, PImage output, ColorPixel fill)
 	bzero(&p, sizeof(p));
 	p[1].x = p[2].x = i->w - 1;
 	p[2].y = p[3].y = i->h - 1;
+	if ( apply_180 )
+		point_swap( &p[0], &p[2]);
 
 	if ( !(
-		apply_shear(p, tan2, 0, i->w, i-> h, 0, &s1min, &s1dim) &&
-		apply_shear(p, sin1, 0, s1dim.x, s1dim.y, 1, &s2min, &s2dim) &&
-		apply_shear(p, tan2, 0, s2dim.x, s2dim.y, 0, &s3min, &s3dim)
+		apply_shear(p, tan2, 0,       i->w,    i-> h,   0, &s1min, &s1dim, aperture) &&
+		apply_shear(p, sin1, delta.y, s1dim.x, s1dim.y, 1, &s2min, &s2dim, aperture) &&
+		apply_shear(p, tan2, delta.x, s2dim.x, s2dim.y, 0, &s3min, &s3dim, aperture)
 	))
 		return false;
 
@@ -791,7 +838,7 @@ img_generic_rotate( Handle self, float degrees, PImage output, ColorPixel fill)
 		free(s1.data);
 		return false;
 	}
-	shear_y(&s1, channels, &s2, sin1, 0.0, filter, -s2min.y, ffill);
+	shear_y(&s1, channels, &s2, sin1, delta.y, filter, -s2min.y, ffill);
 	free(s1.data);
 
 	s3dim.x++; /* double shearing by x can result in 2 extra pixels, not just 1 */
@@ -799,7 +846,7 @@ img_generic_rotate( Handle self, float degrees, PImage output, ColorPixel fill)
 		free(s1.data);
 		return false;
 	}
-	shear_x(&s2, channels, output, tan2, 0.0, filter, -s3min.x, ffill, false);
+	shear_x(&s2, channels, output, tan2, delta.x, filter, -s3min.x, ffill, false);
 	free(s2.data);
 
 	output-> w /= channels;
@@ -830,43 +877,166 @@ integral_rotate( Handle self, int degrees, PImage output)
 	return true;
 }
 
+static Bool
+scale( Handle self, double mx, double my, PImage output)
+{
+	PImage i = (PImage) self;
+	NPoint sz   = { mx * i->w, my * i->h};
+	char errbuf[256];
+	int w, h;
+ 	w = (sz.x < 0) ? (sz.x - 0.5) : (sz.x + 0.5);
+	h = (sz.y < 0) ? (sz.y - 0.5) : (sz.y + 0.5);
+
+	img_fill_dummy( output, abs(w), abs(h), i->type, NULL, i->palette);
+	if (!(output->data = malloc( output->dataSize))) {
+		warn("not enough memory: %d bytes", output->dataSize);
+		return false;
+	}
+
+	if ( !ic_stretch( i->type,
+		i->data, i->w, i->h,
+		output->data, w, h,
+		(i->scaling < istTriangle) ? istBox : i->scaling,
+		errbuf
+	)) {
+		free(output->data);
+		warn("%s", errbuf);
+		return false;
+	}
+
+	return true;
+}
+
 /* max image size is 16K, so best precision we need is 1/32 K */
 static void
 roundoff(double *m, int count)
 {
 	while ( count-- ) {
-		m[count] = floorf(m[count] * 32768.0 + 0.5) / 32768.0;
+		*m = floorf((*m) * 32768.0 + 0.5) / 32768.0;
 		m++;
 	}
 }
 
-/* very special case for rotation */
+/* very special case for rotation and scaling */
 static int
-check_rotated_case( Handle self, Matrix matrix, PImage output, ColorPixel fill)
+check_rotated_case( Handle self, Matrix matrix, PImage output, ColorPixel fill, Point *aperture)
 {
-	if ( matrix[4] != 0.0 || matrix[5] != 0.0 ) return -1;
+	Image *i, src;
+	Bool ok;
+	double mx = 1.0, my = 1.0, angle = 0.0;
+	int fixed_angle = -1;
 
-	if ( matrix[0] == matrix[3] && matrix[1] == -matrix[2] ) {
-		float angle = acos(matrix[0]);
-		double sin1  = sin( angle );
-		roundoff( &sin1, 1);
-		if ( sin1 == matrix[1] ) {
-			float cos1 = matrix[0];
-			if ( cos1 == 0.0 ) {
-				if ( sin1 == 1.0 ) 
-					return integral_rotate(self, 90, output);
-				else if ( sin1 == -1.0 )
-					return integral_rotate(self, 270, output);
-			} else if ( cos1 == 1.0 && sin1 == 0.0 ) {
-				img_fill_dummy( output, 0, 0, 0, NULL, NULL);
-				return true;
-			} else if ( cos1 == -1.0 && sin1 == 0.0 ) 
-				return integral_rotate(self, 180, output);
+	if ( matrix[4] != 0.0 || matrix[5] != 0.0 )
+		return -1;
 
-			return img_generic_rotate( self, angle * RAD, output, fill);
+	if ( matrix[0] == 0.0 && matrix[3] == 0.0 ) {
+		if ( matrix[1] < 0 && matrix[2] > 0 ) {
+			fixed_angle = 270;
+			mx = -matrix[1];
+			my = matrix[2];
+		} else {
+			fixed_angle = 90;
+			mx = matrix[1];
+			my = -matrix[2];
+		}
+	} else if ( matrix[1] == 0.0 && matrix[2] == 0.0 ) {
+		if ( matrix[0] < 0 && matrix[3] < 0 ) {
+			mx = -matrix[0];
+			my = -matrix[3];
+			fixed_angle = 180;
+		} else {
+			mx = matrix[0];
+			my = matrix[3];
+			fixed_angle = 0;
 		}
 	}
-	return -1;
+
+	if ( fixed_angle < 0 ) {
+		int i;
+		double angles[2], mcos, msin, angle1, angle2, m[4];
+		angles[0] = RAD * (angle1 = atan2(matrix[1], matrix[0]));
+		angles[1] = RAD * (angle2 = atan2(-matrix[2], matrix[3]));
+		roundoff(angles,2);
+		if ( fabs(angles[0] - angles[1]) > 0.001 )
+			return -1;
+
+		mcos = cos(angle1);
+		msin = sin(angle1);
+		m[0] = ( mcos != 0.0 ) ?  matrix[0] / mcos : 1.0;
+		m[1] = ( msin != 0.0 ) ?  matrix[1] / msin : 1.0;
+		m[2] = ( msin != 0.0 ) ? -matrix[2] / msin : 1.0;
+		m[3] = ( mcos != 0.0 ) ?  matrix[3] / mcos : 1.0;
+		roundoff(m, 4);
+		if ( m[0] != m[1] || m[2] != m[3])
+			return -1;
+
+		mx = m[0];
+		my = m[2];
+		angle = angle1;
+	}
+
+	i = (PImage) self;
+	img_fill_dummy( &src, i->w, i->h, i->type, i->data, i->palette);
+
+	if ( mx != 1.0 || my != 1.0 ) {
+		Image tmp;
+		if ( !scale(( Handle) &src, mx, my, &tmp))
+			return false;
+		if ( mx > 0 )
+			aperture-> x *= mx;
+		else
+			aperture-> x -= tmp.w;
+		if ( my > 0 )
+			aperture-> y *= my;
+		else
+			aperture-> y -= tmp.h;
+		if ( fixed_angle == 0 ) {
+			*output = tmp;
+			return true;
+		}
+		src = tmp;
+	}
+
+	switch (fixed_angle) {
+	case 0:
+		img_fill_dummy( output, 0, 0, 0, NULL, NULL);
+		return true;
+	case 90:
+		aperture-> x -= src.h;
+		if ( mx < 0 ) {
+			aperture-> y -= src.w;
+			aperture-> x += src.w;
+		}
+		if ( my < 0 ) {
+			aperture-> y += src.h;
+			aperture-> x += src.h;
+		}
+		ok = integral_rotate((Handle) &src, 90, output);
+		break;
+	case 180:
+		aperture-> x -= src.w;
+		aperture-> y -= src.h;
+		ok = integral_rotate((Handle) &src, 180, output);
+		break;
+	case 270:
+		aperture-> y -= src.w;
+		ok = integral_rotate((Handle) &src, 270, output);
+		break;
+	default: {
+		NPoint delta;
+		Point extra_aperture;
+
+		delta.x = matrix[4];
+		delta.y = matrix[5];
+		ok = img_generic_rotate((Handle) &src, angle * RAD, output, fill, delta, &extra_aperture);
+		aperture->x += extra_aperture.x;
+		aperture->y += extra_aperture.y;
+	}}
+
+	if ( src.data != i->data)
+		free(src.data);
+
+	return ok;
 }
 
 // #define DEBUG 1
@@ -1089,8 +1259,10 @@ add_offsetting( float mx, float my, ImgOpPipeline *iop)
    rotation to angles near 90,270. So it detects rotations to cover for at least these cases,
    and additionally checks whether 90/180/270 integral rotation can be applied. */
 
+extern int   apc_img_save( Handle self, char * fileName, Bool is_utf8, void* ioreq, void * profile, char * error);
+
 Bool
-img_2d_transform( Handle self, Matrix matrix, ColorPixel fill, PImage output)
+img_2d_transform( Handle self, Matrix matrix, ColorPixel fill, PImage output, Point *aperture)
 {
 	int applied_steps = 0, n, step, type, channels;
 	Point p[4], dimensions[MAX_STEPS+1], offsets[MAX_STEPS];
@@ -1099,18 +1271,22 @@ img_2d_transform( Handle self, Matrix matrix, ColorPixel fill, PImage output)
 	ImgOpPipeline iop;
 	ImgOp *io;
 	float ffill[3];
+	Point _aperture;
 
-	matrix[4] = matrix[4] - floorf(matrix[4]);
-	matrix[5] = matrix[5] - floorf(matrix[5]);
+	if ( aperture == NULL ) aperture = &_aperture;
+	aperture->x = floor(matrix[4]);
+	aperture->y = floor(matrix[5]);
+	matrix[4] -= (double) aperture->x;
+	matrix[5] -= (double) aperture->y;
 	roundoff((double*) matrix, 6);
 
-	if ((n = check_rotated_case(self, matrix, output, fill)) >= 0)
+	if ((n = check_rotated_case(self, matrix, output, fill, aperture)) >= 0)
 		return n;
 
 	memset( &iop, 0, sizeof(iop));
 	if (matrix[0] != 1.0 || matrix[1] != 0.0 || matrix[2] != 0.0 || matrix[3] != 1.0)
 		select_ldu(matrix, &iop);
-	if ( matrix[4] != 0.0 || matrix[5] != 0.0 )
+	if ( matrix[4] != 0.0 || matrix[5] != 0.0 ) 
 		add_offsetting(matrix[4], matrix[5], &iop);
 
 	for ( n = 0; n < iop.n_steps; n++ )
@@ -1135,7 +1311,7 @@ img_2d_transform( Handle self, Matrix matrix, ColorPixel fill, PImage output)
 
 			if ( !apply_shear(p, io->p1, io->p2,
 				dimensions[step].x, dimensions[step].y, 0,
-				&offsets[step], &dimensions[step+1]))
+				&offsets[step], &dimensions[step+1], aperture))
 				return false;
 			applied_steps++;
 			break;
@@ -1144,19 +1320,19 @@ img_2d_transform( Handle self, Matrix matrix, ColorPixel fill, PImage output)
 
 			if ( !apply_shear(p, io->p1, io->p2,
 				dimensions[step].x, dimensions[step].y, 1,
-				&offsets[step], &dimensions[step+1]))
+				&offsets[step], &dimensions[step+1], aperture))
 				return false;
 			applied_steps++;
 			break;
 		case STEP_SCALE:
 			if ( io->p1 == 1.0 && io-> p2 == 1.0 ) goto SKIP;
 
-			if ( !apply_scale(p, io->p1, io->p2, &offsets[step], &dimensions[step+1]))
+			if ( !apply_scale(p, io->p1, io->p2, &offsets[step], &dimensions[step+1], aperture))
 				return false;
 			applied_steps++;
 			break;
 		case STEP_ROTATE_90:
-			if ( !apply_rotate90(p, dimensions[step].y, &offsets[step], &dimensions[step+1]))
+			if ( !apply_rotate90(p, dimensions[step].y, &offsets[step], &dimensions[step+1], aperture))
 				return false;
 			applied_steps++;
 			break;
@@ -1209,7 +1385,9 @@ img_2d_transform( Handle self, Matrix matrix, ColorPixel fill, PImage output)
 			if ( !ic_stretch( i->type,
 				src->data, src->w / channels, src->h,
 				dst->data, dst->w * mx / channels, dst->h * my,
-				src->scaling, errbuf)) {
+				(i->scaling < istTriangle) ? istBox : i->scaling,
+				errbuf
+			)) {
 				if ( step > 0 )
 					free(tmp_images[step].data);
 				free(tmp_images[step + 1].data);
@@ -1218,7 +1396,6 @@ img_2d_transform( Handle self, Matrix matrix, ColorPixel fill, PImage output)
 			}
 			break;
 		}}
-
 
 		if ( step > 0 )
 			free(tmp_images[step].data);

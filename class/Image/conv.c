@@ -434,6 +434,7 @@ generic_rotate( Handle self, float degrees, ColorPixel fill)
 {
 	Image i;
 	int desired_type = var->type;
+	NPoint delta = {0,0};
 
 	if (( desired_type & imBPP) <= 8) 
 		desired_type = (desired_type & imGrayScale) ? imByte : imRGB;
@@ -452,7 +453,7 @@ generic_rotate( Handle self, float degrees, ColorPixel fill)
 		return ok;
 	}
 
-	if (!img_generic_rotate( self, degrees, &i, fill))
+	if (!img_generic_rotate( self, degrees, &i, fill, delta, NULL))
 		return false;
 
 	free( var->data);
@@ -918,7 +919,7 @@ Image_stats( Handle self, Bool set, int index, double value)
 }
 
 Bool
-Image_matrix_transform( Handle self, Matrix matrix, ColorPixel fill)
+Image_matrix_transform( Handle self, Matrix matrix, ColorPixel fill, Point *aperture)
 {
 	Image i;
 	int desired_type = var->type;
@@ -930,7 +931,7 @@ Image_matrix_transform( Handle self, Matrix matrix, ColorPixel fill)
 		Bool ok;
 		int type = var->type;
 		my->set_type( self, desired_type );
-		ok = my->matrix_transform( self, matrix, fill );
+		ok = my->matrix_transform( self, matrix, fill, aperture );
 		if ( is_opt( optPreserveType)) {
 			int conv = var-> conversion;
 			my-> set_conversion( self, ictNone);
@@ -940,7 +941,7 @@ Image_matrix_transform( Handle self, Matrix matrix, ColorPixel fill)
 		return ok;
 	}
 
-	if (!img_2d_transform( self, matrix, fill, &i ))
+	if (!img_2d_transform( self, matrix, fill, &i, aperture ))
 		return false;
 
 	if ( i.data != NULL ) {
@@ -989,7 +990,7 @@ Image_transform( Handle self, HV * profile )
 		Image_read_pixel( self, pget_sv(fill), &fill );
 
 	hv_clear(profile);
-	return my-> matrix_transform( self, matrix, fill );
+	return my-> matrix_transform( self, matrix, fill, NULL );
 
 FAIL:
 	hv_clear(profile);

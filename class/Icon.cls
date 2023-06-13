@@ -32,7 +32,7 @@ object Prima::Icon( Prima::Image)
 	c_only void       create_empty( int width, int height, int type);
 	c_only void       create_empty_icon( int width, int height, int type, int maskType);
 	c_only void       make_empty();
-	c_only Bool       matrix_transform( Matrix matrix, ColorPixel fill);
+	c_only Bool       matrix_transform( Matrix matrix, ColorPixel fill, Point *aperture);
 	c_only void       update_change();
 	c_only void       stretch( int width, int height);
 	c_only Byte*      convert_mask( int type );

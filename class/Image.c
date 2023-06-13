@@ -517,56 +517,29 @@ Image_dup( Handle self)
 	return h;
 }
 
-static NRect
-pt4_extents( NPoint *pt)
-{
-	int i;
-	double x1, x2, y1, y2;
-	NRect r;
-	x1 = x2 = pt[0].x;
-	y1 = y2 = pt[0].y;
-	for ( i = 1; i < 4; i++) {
-		if ( x1 > pt[i].x ) x1 = pt[i].x;
-		if ( y1 > pt[i].y ) y1 = pt[i].y;
-		if ( x2 < pt[i].x ) x2 = pt[i].x;
-		if ( y2 < pt[i].y ) y2 = pt[i].y;
-	}
-	r.left   = x1;
-	r.bottom = y1;
-	r.right  = x2;
-	r.top    = y2;
-	return r;
-}
-
 static Bool
 put_transformed(Handle self, Handle image, int x, int y, Matrix matrix, int rop)
 {
 	ColorPixel fill;
 	PImage img = (PImage) image;
-	NRect r;
-	NPoint pt[4];
-
-	memset(&fill, 0x0, sizeof(fill));
-	r.left   = 0.0;
-	r.bottom = 0.0;
-	r.right  = (double) img->w;
-	r.top    = (double) img->h;
-
-	prima_matrix_is_square_rectangular( matrix, &r, pt);
-	r = pt4_extents(pt);
-	x += floor(r.left);
-	y += floor(r.bottom);
+	Point aperture;
+	memset(&fill, 0xff, sizeof(fill));
 
 	if ( kind_of(image, CIcon)) {
 		img->self->set_preserveType(image, 0);
-		img->self->matrix_transform(image, matrix, fill);
+		img->self->matrix_transform(image, matrix, fill, &aperture);
+		x += aperture.x;
+		y += aperture.y;
 		return img_put( self, image, x, y, 0, 0, img->w, img->h, img->w, img->h, ropCopyPut, var->regionData, NULL);
 	} else {
 		Handle ok;
 		Handle icon;
+		icon = image;
 		icon = img->self->convert_to_icon(image, imbpp8, NULL);
 		img  = (PImage) icon;
-		CIcon(icon)->matrix_transform(icon, matrix, fill);
+		CIcon(icon)->matrix_transform(icon, matrix, fill, &aperture);
+		x += aperture.x;
+		y += aperture.y;
 		ok = img_put( self, icon, x, y, 0, 0, img->w, img->h, img->w, img->h, rop, var->regionData, NULL);
 		Object_destroy(icon);
 		return ok;

@@ -983,7 +983,7 @@ Icon_rotate( Handle self, double degrees, SV * svfill)
 }
 
 Bool
-Icon_matrix_transform( Handle self, Matrix matrix, ColorPixel fill)
+Icon_matrix_transform( Handle self, Matrix matrix, ColorPixel fill, Point *aperture)
 {
 	Bool ok;
 	Image dummy;
@@ -1001,10 +1001,10 @@ Icon_matrix_transform( Handle self, Matrix matrix, ColorPixel fill)
 
 	bzero(&icon_fill, sizeof(icon_fill));
 
-	ok = inherited matrix_transform(self, matrix, icon_fill);
+	ok = inherited matrix_transform(self, matrix, icon_fill, aperture);
 	if ( ok ) {
 		Image i;
-		ok = img_2d_transform((Handle) &dummy, matrix, icon_fill, &i );
+		ok = img_2d_transform((Handle) &dummy, matrix, icon_fill, &i, NULL );
 		if ( ok ) {
 			free( var-> mask );
 			var-> mask     = i.data;
