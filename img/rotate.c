@@ -952,7 +952,6 @@ check_rotated_case( Handle self, Matrix matrix, PImage output, ColorPixel fill, 
 	}
 
 	if ( fixed_angle < 0 ) {
-		int i;
 		double angles[2], mcos, msin, angle1, angle2, m[4];
 		angles[0] = RAD * (angle1 = atan2(matrix[1], matrix[0]));
 		angles[1] = RAD * (angle2 = atan2(-matrix[2], matrix[3]));
