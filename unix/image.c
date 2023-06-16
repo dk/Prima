@@ -2987,31 +2987,24 @@ put_transformed(Handle self, Handle image, int x, int y, int rop, Matrix matrix)
 	ColorPixel fill;
 	PImage img = (PImage) image;
 	PDrawableSysData YY = X(image);
-	NRect r;
-	NPoint pt[4];
+	Point aperture;
 
 	memset(&fill, 0x0, sizeof(fill));
-	r.left   = 0.0;
-	r.bottom = 0.0;
-	r.right  = (double) img->w;
-	r.top    = (double) img->h;
-
-	prima_matrix_is_square_rectangular( matrix, &r, pt);
-	r = pt4_extents(pt);
-	x += floor(r.left);
-	y += floor(r.bottom);
-
 
 	if ( XT_IS_ICON(YY)) {
 		img->self->set_preserveType(image, 0);
-		img->self->matrix_transform(image, matrix, fill, NULL);
+		img->self->matrix_transform(image, matrix, fill, &aperture);
+		x += aperture.x;
+		y += aperture.y;
 		if ( !guts.render_supports_argb32 )
 			CIcon(img)->set_maskType( self, imbpp1 );
 		return apc_gp_put_image( self, image, x, y, 0, 0, img->w, img-> h, ropXorPut);
 	} else {
 		Handle ok;
 		Handle icon = img->self->convert_to_icon(image, imbpp8, NULL);
-		CIcon(icon)->matrix_transform(icon, matrix, fill, NULL);
+		CIcon(icon)->matrix_transform(icon, matrix, fill, &aperture);
+		x += aperture.x;
+		y += aperture.y;
 		if ( !guts.render_supports_argb32 )
 			CIcon(icon)->set_maskType( icon, imbpp1 );
 		ok = apc_gp_put_image( self, icon, x, y, 0, 0, PIcon(icon)->w, PIcon(icon)->h, rop);
