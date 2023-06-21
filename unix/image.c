@@ -1167,14 +1167,12 @@ create_argb_cache(PIcon img, ImageCache * cache, int type, int alpha_channel)
 }
 
 static ImageCache*
-create_image_cache( PImage img, int type, int alpha_mul, int alpha_channel)
+create_image_cache( PImage img, int type, int data_mul, int mask_mul, int alpha_channel)
 {
-	PDrawableSysData IMG = X((Handle)img);
-	int target_bpp;
-	ImageCache *cache    = &X((Handle)img)-> image_cache;
 	Bool ret;
-	Handle dup = NULL_HANDLE;
-	PImage pass = img;
+	int target_bpp;
+	ImgDup dup;
+	ImageCache *cache  = &X((Handle)img)-> image_cache;
 
 	/* common validity checks */
 	if ( img-> w == 0 || img-> h == 0) return NULL;
@@ -1216,117 +1214,104 @@ create_image_cache( PImage img, int type, int alpha_mul, int alpha_channel)
 		target_bpp = guts. idepth;
 	}
 
+	IMGDUP_INIT(dup,img);
+
 	/* create icon cache, if any */
-	if ( XT_IS_ICON(IMG) && type != CACHE_LAYERED_ALPHA) {
+	if ( XT_IS_ICON(IMGDUP_X(dup)) && type != CACHE_LAYERED_ALPHA) {
 		if ( cache-> icon == NULL) {
-			if ( PIcon(img)->maskType == imbpp8) {
-				if ( !dup) {
-					if (!(dup = img-> self-> dup(( Handle) img)))
-						return NULL;
-				}
-				CIcon(dup)->set_maskType(dup, imbpp1);
-				pass = ( PImage) dup;
+			if ( IMGDUP_I(dup)->maskType == imbpp8) {
+				if ( !IMGDUP(dup)) goto FAIL;
+				IMGDUP_CALL(dup, set_maskType, imbpp1);
 			}
 
-			if ( !create_cache1_1(pass, cache, true))
+			if ( !create_cache1_1((PImage) IMGDUP_I(dup), cache, true)) {
+				IMGDUP_DONE(dup);
 				return NULL;
+			}
 		}
-	} else
+	} else {
+		destroy_ximage( cache-> icon);
 		cache-> icon = NULL;
+	}
 
 	if ( cache-> image != NULL) {
 		if ( type != CACHE_LAYERED )
 			alpha_channel = 0;
 		if (
 			cache-> type == type &&
-			cache->alpha_mul == alpha_mul &&
-			cache->alpha_channel == alpha_channel
-		) return cache;
+			cache-> data_mul == data_mul &&
+			cache-> mask_mul == mask_mul &&
+			cache-> alpha_channel == alpha_channel
+		) {
+			IMGDUP_DONE(dup);
+			return cache;
+		}
 		destroy_ximage( cache-> image);
 		cache-> image = NULL;
 	}
 
-
 	/* convert from funky image types */
 	if (( img-> type & ( imRealNumber | imComplexNumber | imTrigComplexNumber)) ||
 		( img-> type == imLong || img-> type == imShort)) {
-		if ( !dup) {
-			if (!(dup = img-> self-> dup(( Handle) img)))
-				return NULL;
-		}
-		pass = ( PImage) dup;
-		pass-> self->resample(( Handle) pass,
-			pass-> self->stats(( Handle) pass, false, isRangeLo, 0),
-			pass-> self->stats(( Handle) pass, false, isRangeHi, 0),
+		if ( !IMGDUP(dup)) goto FAIL;
+		IMGDUP_CALL(dup, resample,
+			IMGDUP_CALL(dup, stats, false, isRangeLo, 0),
+			IMGDUP_CALL(dup, stats, false, isRangeHi, 0),
 			0, 255
 		);
-		pass-> self-> set_type(( Handle) pass, imByte);
+		IMGDUP_CALL(dup, set_type, imByte);
 	}
 
 	/* treat ARGB separately, and leave */
 	if ( type == CACHE_LAYERED || type == CACHE_LAYERED_ALPHA ) {
-		Bool ok;
-		PIcon i = (PIcon) pass;
-
 		/* premultiply */
-		if ( alpha_mul != 255 ) {
-			if ( !dup)
-				if (!(dup = img-> self-> dup(( Handle) img)))
-					return NULL;
+		if ( data_mul != 255 || mask_mul != 255 ) {
+			if ( !IMGDUP(dup)) goto FAIL;
 		}
-		if ( i->type != imRGB ) {
-			if ( !dup)
-				if (!(dup = img-> self-> dup(( Handle) i)))
-					return NULL;
-			i = (PIcon) dup;
-			i-> self-> set_type(dup, imRGB);
+		if ( IMGDUP_I(dup)->type != imRGB ) {
+			if ( !IMGDUP(dup)) goto FAIL;
+			IMGDUP_CALL(dup, set_type, imRGB);
 		}
 
-		if ( XT_IS_ICON(IMG) && type == CACHE_LAYERED_ALPHA && i->maskType != imbpp8 ) {
-			if ( !dup)
-				if (!(dup = i-> self-> dup((Handle) i)))
-					return NULL;
-			i = (PIcon) dup;
-			i-> self-> set_maskType(dup, imbpp8);
+		if ( XT_IS_ICON(IMGDUP_X(dup)) && type == CACHE_LAYERED_ALPHA && IMGDUP_I(dup)->maskType != imbpp8 ) {
+			if ( !IMGDUP(dup)) goto FAIL;
+			IMGDUP_CALL(dup, set_maskType, imbpp8);
 		}
 
-		if ( alpha_mul != 255 ) {
-			img_premultiply_alpha_constant( dup, alpha_mul);
-			if ( XT_IS_ICON(IMG)) {
-				Image dummy;
-				img_fill_dummy( &dummy, img->w, img->h, imByte, PIcon(dup)->mask, std256gray_palette);
-				img_premultiply_alpha_constant( (Handle) &dummy, alpha_mul);
-			}
+		if ( data_mul != 255 )
+			img_premultiply_alpha_constant( IMGDUP_H(dup), data_mul);
+
+		if ( mask_mul != 255 && XT_IS_ICON(IMGDUP_X(dup))) {
+			Image dummy;
+			PIcon i = IMGDUP_I(dup);
+			img_fill_dummy( &dummy, i->w, i->h, imByte, i->mask, std256gray_palette);
+			img_premultiply_alpha_constant( (Handle) &dummy, mask_mul);
 		}
-		ok = create_argb_cache(i, cache,
-			(XT_IS_ICON(IMG) && type == CACHE_LAYERED_ALPHA) ? CACHE_LAYERED_ALPHA : CACHE_LAYERED,
+
+		if ( !create_argb_cache(IMGDUP_I(dup), cache,
+			(IMGDUP_X(dup) && type == CACHE_LAYERED_ALPHA) ? CACHE_LAYERED_ALPHA : CACHE_LAYERED,
 			alpha_channel
-		);
-		if ( dup) Object_destroy(dup);
-		if ( !ok ) return NULL;
+		)) goto FAIL;
+		IMGDUP_DONE(dup);
 
-		cache-> type = type;
-		cache-> alpha_mul = alpha_mul;
+		cache-> type          = type;
+		cache-> data_mul      = data_mul;
+		cache-> mask_mul      = mask_mul;
 		cache-> alpha_channel = alpha_channel;
 		return cache;
 	}
 
-	cache->alpha_mul = alpha_mul;
+	cache-> data_mul     = data_mul;
+	cache-> mask_mul     = mask_mul;
 	cache->alpha_channel = alpha_channel;
 	if ( type == CACHE_A8 ) {
-		Bool ok;
-		PImage i = (PImage) pass;
-		if ( i->type != imByte ) {
-			if ( !dup)
-				if (!(dup = img-> self-> dup(( Handle) i)))
-					return NULL;
-			i = (PImage) dup;
-			i-> self-> set_type(dup, imByte);
+		if ( IMGDUP_I(dup)->type != imByte ) {
+			if ( !IMGDUP(dup)) goto FAIL;
+			IMGDUP_CALL(dup, set_type, imByte);
 		}
-		ok = create_argb_cache((PIcon) i, cache, CACHE_A8, 0);
-		if ( dup) Object_destroy(dup);
-		if ( !ok ) return NULL;
-
+		if ( !create_argb_cache(IMGDUP_I(dup), cache, CACHE_A8, 0))
+			goto FAIL;
+		IMGDUP_DONE(dup);
 		cache-> type = type;
 		return cache;
 	}
@@ -1340,11 +1325,9 @@ create_image_cache( PImage img, int type, int alpha_mul, int alpha_channel)
 	if ( target_bpp <= 8 && img-> type != imBW) {
 		int bpp, colors = 0;
 		RGBColor palbuf[256], *palptr = NULL;
-		if ( !dup) {
-			if (!(dup = img-> self-> dup(( Handle) img)))
-				return NULL;
-		}
-		pass = ( PImage) dup;
+
+		if ( !IMGDUP(dup)) goto FAIL;
+
 		if ( target_bpp <= 1) bpp = imbpp1; else
 		if ( target_bpp <= 4) bpp = imbpp4; else bpp = imbpp8;
 
@@ -1361,81 +1344,83 @@ create_image_cache( PImage img, int type, int alpha_mul, int alpha_channel)
 			}
 			palptr = palbuf;
 		}
-		pass-> self-> reset( dup, bpp, palptr, colors);
+		IMGDUP_CALL(dup, reset, bpp, palptr, colors);
 	}
 
 	/* convert image bits */
-	switch ( pass-> type & imBPP) {
-	case 1:   ret = create_cache1( pass, cache, target_bpp); break;
-	case 4:   ret = create_cache4( pass, cache, target_bpp); break;
-	case 8:   ret = create_cache8( pass, cache, target_bpp); break;
-	case 24:  ret = create_cache24(pass, cache, target_bpp); break;
+	switch ( IMGDUP_I(dup)-> type & imBPP) {
+	case 1:   ret = create_cache1( (PImage)IMGDUP_H(dup), cache, target_bpp); break;
+	case 4:   ret = create_cache4( (PImage)IMGDUP_H(dup), cache, target_bpp); break;
+	case 8:   ret = create_cache8( (PImage)IMGDUP_H(dup), cache, target_bpp); break;
+	case 24:  ret = create_cache24((PImage)IMGDUP_H(dup), cache, target_bpp); break;
 	default:
 		warn( "UAI_015: unsupported image type");
 		return NULL;
 	}
-	if ( !ret) {
-		if ( dup) Object_destroy(dup);
-		return NULL;
-	}
+	if ( !ret) goto FAIL;
 
 	/* on paletted displays, acquire actual color indexes, and
 		remap pixels to match them */
-	if (( guts. palSize > 0) && (( pass-> type & imBPP) != 24)) {
+	if (( guts. palSize > 0) && (( IMGDUP_I(dup)-> type & imBPP) != 24)) {
 		int i, maxRank = RANK_FREE;
-		Byte * p = X((Handle)img)-> palette;
+		Byte * p = IMGDUP_X(dup)-> palette;
 
 		if ( type == CACHE_LOW_RES) /* don't use dynamic colors */
 			maxRank = RANK_LOCKED;
 
-		for ( i = 0; i < pass-> palSize; i++) {
+		for ( i = 0; i < IMGDUP_I(dup)-> palSize; i++) {
 			int j = guts. mappingPlace[i] = prima_color_find( NULL_HANDLE,
 				RGB_COMPOSITE(
-				pass-> palette[i].r,
-				pass-> palette[i].g,
-				pass-> palette[i].b
+				IMGDUP_I(dup)-> palette[i].r,
+				IMGDUP_I(dup)-> palette[i].g,
+				IMGDUP_I(dup)-> palette[i].b
 				), -1, NULL, maxRank);
 
 			if ( p && ( prima_lpal_get( p, j) == RANK_FREE))
 				prima_color_add_ref(( Handle) img, j, RANK_LOCKED);
 		}
-		for ( i = pass-> palSize; i < 256; i++) guts. mappingPlace[i] = 0;
+		for ( i = IMGDUP_I(dup)-> palSize; i < 256; i++) guts. mappingPlace[i] = 0;
 
 		switch(target_bpp){
-		case 8: if ((pass-> type & imBPP) != 1) cache_remap_8( img, cache); break;
-		case 4: if ((pass-> type & imBPP) != 1) cache_remap_4( img, cache); break;
+		case 8: if ((IMGDUP_I(dup)-> type & imBPP) != 1) cache_remap_8( img, cache); break;
+		case 4: if ((IMGDUP_I(dup)-> type & imBPP) != 1) cache_remap_4( img, cache); break;
 		case 1: cache_remap_1( img, cache); break;
 		default: warn("UAI_019: palette is not supported");
 		}
 	} else if ( target_bpp == 1 ) {
-		RGBColor * p = pass->palette;
+		RGBColor * p = IMGDUP_I(dup)->palette;
 		guts. mappingPlace[0] = (p[0].r + p[0].g + p[0].b > 382) ? 0xff : 0;
 		guts. mappingPlace[1] = (p[1].r + p[1].g + p[1].b > 382) ? 0xff : 0;
 		cache_remap_1( img, cache);
 	}
 
-	if ( dup) Object_destroy(dup);
+	IMGDUP_DONE(dup);
 	cache-> type = type;
 	return cache;
+
+FAIL:
+	IMGDUP_DONE(dup);
+	return NULL;
 }
 
 ImageCache*
-prima_image_cache( PImage img, int type, int alpha_mul, int alpha_channel)
+prima_image_cache( PImage img, int type, int data_mul, int mask_mul, int alpha_channel)
 {
 	ImageCache *cache = &X((Handle)img)-> image_cache;
 
-	if ( cache->type != CACHE_LAYERED )
+	if ( type != CACHE_LAYERED )
 		alpha_channel = 0;
 
 	if (
-		cache-> image         != NULL          &&
-		cache-> type          == type          &&
-		cache-> alpha_mul     == alpha_mul     &&
+		cache-> image         != NULL     &&
+		cache-> type          == type     &&
+		cache-> data_mul      == data_mul &&
+		cache-> mask_mul      == mask_mul &&
 		cache-> alpha_channel == alpha_channel
 	)
 		return cache;
 
-	return create_image_cache(img, type, alpha_mul, alpha_channel);
+	return create_image_cache(img, type, data_mul, mask_mul, alpha_channel);
 }
 
 Bool
@@ -1447,7 +1432,7 @@ prima_create_icon_pixmaps( Handle self, Pixmap *xor, Pixmap *and)
 	GC gc;
 	XGCValues gcv;
 
-	cache = prima_image_cache((PImage)icon, CACHE_BITMAP, 255, 0);
+	cache = SIMPLE_IMAGE_CACHE(icon, CACHE_BITMAP);
 	if ( !cache) return false;
 	p1 = XCreatePixmap( DISP, guts. root, icon-> w, icon-> h, 1);
 	p2 = XCreatePixmap( DISP, guts. root, icon-> w, icon-> h, 1);
@@ -1716,7 +1701,7 @@ img_put_image_on_bitmap( Handle self, Handle image, PutImageRequest * req)
 	PImage img = (PImage) image;
 	PDrawableSysData YY = X(image);
 
-	if (!(cache = prima_image_cache(img, CACHE_BITMAP, 255, 0)))
+	if (!(cache = SIMPLE_IMAGE_CACHE(img, CACHE_BITMAP)))
 		return false;
 
 	if ( XT_IS_ICON(YY) && !img_put_icon_mask( self, cache->icon, req))
@@ -1755,7 +1740,7 @@ img_put_argb_on_bitmap( Handle self, Handle image, PutImageRequest * req)
 
 	PImage img = (PImage) image;
 
-	if (!(cache = prima_image_cache(img, CACHE_BITMAP, 255, 0)))
+	if (!(cache = SIMPLE_IMAGE_CACHE(img, CACHE_BITMAP)))
 		return false;
 
 	if ( !img_put_icon_mask( self, cache->icon, req))
@@ -1839,7 +1824,7 @@ img_put_image_on_pixmap( Handle self, Handle image, PutImageRequest * req)
 	PImage img = (PImage) image;
 	PDrawableSysData YY = X(image);
 
-	if (!(cache = prima_image_cache(img, CACHE_PIXMAP, 255, 0)))
+	if (!(cache = SIMPLE_IMAGE_CACHE(img, CACHE_PIXMAP)))
 		return false;
 
 	if ( XT_IS_ICON(YY) && !img_put_icon_mask( self, cache->icon, req))
@@ -1897,7 +1882,7 @@ img_put_image_on_widget( Handle self, Handle image, PutImageRequest * req)
 	PImage img = (PImage) image;
 	PDrawableSysData YY = X(image);
 
-	if (!(cache = prima_image_cache(img, CACHE_PIXMAP, 255, 0)))
+	if (!(cache = SIMPLE_IMAGE_CACHE(img, CACHE_PIXMAP)))
 		return false;
 
 	if ( XT_IS_ICON(YY) && !img_put_icon_mask( self, cache->icon, req))
@@ -1927,7 +1912,7 @@ img_put_image_on_layered( Handle self, Handle image, PutImageRequest * req)
 {
 	ImageCache *cache;
 	PDrawableSysData YY = X(image);
-	if (!(cache = prima_image_cache((PImage) image, CACHE_LAYERED, 255, 0)))
+	if (!(cache = SIMPLE_IMAGE_CACHE(image, CACHE_LAYERED)))
 		return false;
 	if ( XT_IS_ICON(YY) && !img_put_icon_mask( self, cache->icon, req))
 		return false;
@@ -1980,7 +1965,7 @@ img_render_argb_on_pixmap_or_widget( Handle self, Handle image, PutImageRequest 
 	Bool ret = false;
 	Picture picture;
 
-	if (!(cache = prima_image_cache((PImage) image, CACHE_LAYERED_ALPHA, 255, 0)))
+	if (!(cache = SIMPLE_IMAGE_CACHE(image, CACHE_LAYERED_ALPHA)))
 		return false;
 
 	pixmap = XCreatePixmap( DISP, guts.root, req->w, req->h, guts. argb_visual. depth);
@@ -2016,7 +2001,7 @@ img_put_a8_on_layered( Handle self, Handle image, PutImageRequest * req)
 	DEFXX;
 	Bool ok;
 	ImageCache *cache;
-	if (!(cache = prima_image_cache((PImage) image, CACHE_A8, 255, 0)))
+	if (!(cache = SIMPLE_IMAGE_CACHE(image, CACHE_A8)))
 		return false;
 	XSetPlaneMask( DISP, XX-> gc, guts. argb_bits. alpha_mask);
 	req->rop = GXcopy;
@@ -2037,7 +2022,7 @@ img_put_argb_on_layered( Handle self, Handle image, PutImageRequest * req)
 	Bool ret = false;
 	Picture picture;
 
-	if (!(cache = prima_image_cache((PImage) image, CACHE_LAYERED_ALPHA, 255, 0)))
+	if (!(cache = SIMPLE_IMAGE_CACHE(image, CACHE_LAYERED_ALPHA)))
 		return false;
 
 	pixmap = XCreatePixmap( DISP, guts.root, req->w, req->h, guts. argb_visual. depth);
@@ -2128,7 +2113,7 @@ img_render_image_on_picture( Handle self, Handle image, PutImageRequest * req, B
 	/* request alpha_channel=255 because PictOpOver emulates SrcCopy here */
 	if (!(cache = prima_image_cache((PImage) image,
 		on_layered ? CACHE_LAYERED : CACHE_PIXMAP,
-		255, 255)))
+		255, 255, 255)))
 		return false;
 
 	pixmap = XCreatePixmap( DISP, guts.root, req->w, req->h,
@@ -2925,7 +2910,7 @@ prima_std_pixmap( Handle self, int type)
 	PImage img = ( PImage) self;
 	unsigned long fore, back;
 
-	ImageCache * xi = prima_image_cache(( PImage) self, type, 255, 0);
+	ImageCache * xi = SIMPLE_IMAGE_CACHE(self, type);
 	if ( !xi) return NULL_HANDLE;
 
 	px = XCreatePixmap( DISP, guts. root, img-> w, img-> h,

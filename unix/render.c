@@ -259,30 +259,11 @@ pen_create_tile(Handle self, Pixmap tile)
 	XRenderPictureAttributes xrp_attr;
 	xrp_attr.repeat = RepeatNormal;
 
-	if ( !guts.render_supports_argb32) {
-		XX-> fp_render_picture = XRenderCreatePicture( DISP, tile, guts.xrender_display_format, CPRepeat, &xrp_attr);
-		return;
-	}
-
-	if (
-		PDrawable(self)-> fillPatternImage &&
-		PObject(PDrawable(self)->fillPatternImage)->stage == csNormal &&
-		!X(PDrawable(self)-> fillPatternImage)->type.icon
-	) {
-		GC gc;
-		XGCValues gcv;
-
-		gcv.foreground = ((XX->alpha << guts. argb_bits. alpha_range) >> 8) << guts. argb_bits. alpha_shift;
-		if ( ( gc = XCreateGC(DISP, tile, GCForeground, &gcv))) {
-			Point sz = get_pixmap_size( tile );
-			XSetPlaneMask( DISP, gc, guts.argb_bits.alpha_mask);
-			XFillRectangle( DISP, tile, gc, 0, 0, sz.x, sz.y);
-			XFreeGC( DISP, gc);
-			XFLUSH;
-		}
-	}
-
-	XX-> fp_render_picture = XRenderCreatePicture( DISP, tile, guts.xrender_argb32_format, CPRepeat, &xrp_attr);
+	XX-> fp_render_picture = XRenderCreatePicture(
+		DISP, tile,
+		guts.render_supports_argb32 ? guts.xrender_argb32_format : guts.xrender_display_format,
+		CPRepeat, &xrp_attr
+	);
 }
 
 static void

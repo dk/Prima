@@ -171,6 +171,19 @@ prima_matrix_set_identity( Matrix matrix);
 Bool
 prima_matrix_is_square_rectangular( Matrix matrix, NRect *src_dest_rect, NPoint *dest_polygon);
 
+/* misc */
+typedef struct {
+	Handle orig;
+	Handle dup;
+} ImgDup;
+
+#define IMGDUP_INIT(d,org)   d.dup = d.orig = (Handle)(org)
+#define IMGDUP(d)            (( d.dup == d.orig ) ? ((d.dup = CImage(d.orig)->dup(d.orig)) != NULL_HANDLE) : true)
+#define IMGDUP_DONE(d)       if ( d.dup != d.orig ) Object_destroy(d.dup)
+#define IMGDUP_I(d)          (PIcon(d.dup))
+#define IMGDUP_C(d)          (CIcon(d.dup))
+#define IMGDUP_H(d)          d.dup
+#define IMGDUP_CALL(d,f,...) (CIcon(d.dup))->f(d.dup,__VA_ARGS__)
 
 #ifdef __cplusplus
 }

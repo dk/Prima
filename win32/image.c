@@ -162,10 +162,10 @@ icon2argb( PIcon i, uint32_t * argb_bits, Bool invert, unsigned int alpha)
 		register Byte *rgb_ptr = rgb_bits, *a_ptr = a_bits, *argb_ptr = (Byte*) argb_bits;
 		register int x = i->w;
 		for ( ; x > 0; x--) {
-			*argb_ptr++ = *rgb_ptr++;
-			*argb_ptr++ = *rgb_ptr++;
-			*argb_ptr++ = *rgb_ptr++;
-			*argb_ptr++ = *a_ptr++ * alpha / 255;
+			*argb_ptr++ = *rgb_ptr++ * alpha / 255;
+			*argb_ptr++ = *rgb_ptr++ * alpha / 255;
+			*argb_ptr++ = *rgb_ptr++ * alpha / 255;
+			*argb_ptr++ = *a_ptr++   * alpha / 255;
 		}
 	}
 
