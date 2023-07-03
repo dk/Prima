@@ -215,8 +215,11 @@ sub on_mousemove
 		if ( $self-> enabled ) {
 			my $prelight = $self-> x2pos($x);
 			if (( $prelight // '') ne ($self->{prelight} // '')) {
-				$self->{prelight} = $prelight;
-				$self-> repaint;
+				if ( defined($self->{prelight} = $prelight)) {
+					$self->fader_in_mouse_enter;
+				} else {
+					$self->fader_out_mouse_leave;
+				}
 			}
 		}
 		return;
@@ -453,7 +456,7 @@ sub on_drawtab
 	my $color = ( $self-> {colored} && !$flat && ( $i >= 0)) ?
 		( $colorset->[ $i % scalar @$colorset]) : $$clr[1];
 	if (($self->{prelight} // '') eq ($i // '')) {
-		$color = cl::blend( $color, $self-> prelight_color($color), $self->fader_current_value // 1);
+		$color = $self->fader_prelight_color($color);
 	}
 	$canvas-> color($color);
 	$canvas-> fillpoly( $poly);

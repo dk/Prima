@@ -135,7 +135,7 @@ sub on_paint
 		($self-> disabledColor, $self-> disabledBackColor);
 	@selClr = ($self-> hiliteColor, $self-> hiliteBackColor);
 	$clr[1] = cl::blend( $clr[1], $self->prelight_color($clr[1]), $self->fader_current_value // 1)
-		if $self->enabled;
+		if $self->enabled && $self->{mouse_in};
 
 	my $border = $self-> {borderWidth};
 	if ( $self-> skin eq 'flat') {
@@ -844,13 +844,14 @@ sub on_mouseenter
 	my $self = shift;
 	return unless $self->enabled;
 	$self->fader_in_mouse_enter;
+	$self->{mouse_in} = 1;
 }
 
 sub on_mouseleave
 {
 	my $self = shift;
 	return unless $self->enabled;
-	$self->fader_out_mouse_leave;
+	$self->fader_out_mouse_leave( sub { delete $self->{mouse_in} });
 }
 
 sub on_size

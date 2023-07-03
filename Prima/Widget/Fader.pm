@@ -187,6 +187,14 @@ sub fader_out_mouse_leave
 
 sub fader_current_value { shift->fader_var('current') }
 
+sub fader_prelight_color
+{
+	my ( $self, $color, $mul ) = @_;
+	my $f = ($self-> fader_current_value // 1.0) * ( $mul // 1.0);
+	my $p = $self-> prelight_color($color);
+	return cl::blend( $color, $p, $f);
+}
+
 1;
 
 =head1 NAME
@@ -207,10 +215,7 @@ Fading- in/out functions
 	sub on_paint
 	{
 		my ( $self, $canvas ) = @_;
-		$canvas->backColor( cl::blend(
-			$self-> backColor, $self-> hiliteBackColor,
-			$self-> fader_current_value // 1)
-		);
+		$canvas->backColor( $self-> fader_prelight_color( $self-> hiliteBackColor ));
 		$canvas->clear;
 	}
 

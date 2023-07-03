@@ -71,7 +71,7 @@ sub init
 	$self-> {header} = $self-> insert( $profile{headerClass} =>
 		name     => 'Header',
 		origin   => [ $bw, $sz[1] - $bw - $hh],
-		size     => [ $sz[0] - $bw * 2 + 1, $hh],
+		size     => [ $sz[0] - $bw * 2, $hh],
 		vertical => 0,
 		growMode => gm::Ceiling,
 		items    => $profile{headers},

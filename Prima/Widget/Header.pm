@@ -5,9 +5,10 @@ package Prima::Widget::Header;
 use strict;
 use warnings;
 use Prima::Classes;
-
-use vars qw(@ISA);
-@ISA = qw(Prima::Widget);
+use base qw(
+	Prima::Widget
+	Prima::Widget::Fader
+);
 
 use constant CaptureBrimWidth => 2;
 
@@ -74,16 +75,19 @@ sub on_paint
 
 	my ($prelightPart, $prelightColor) = (-1);
 	if ( defined $self->{prelight} ) {
-		$prelightColor = $self-> prelight_color($c[1]);
+		$prelightColor = $self-> fader_prelight_color($c[1]);
 		$prelightPart = $self->{prelight};
 	}
 	my $flat = $self->skin eq 'flat';
+	my $showlines;
 
 	if ( $flat ) {
 		$canvas-> backColor($c[1]);
 		$canvas-> clear;
+		$showlines = $self->{mouse_in};
 	} else {
 		$canvas-> rect3d( 0, 0, $size[0]-1, $size[1]-1, 1, @c3d, $c[1]);
+		$showlines = 1;
 	}
 	my $v = $self-> {vertical};
 	my ( $x, $y) = ( - $self-> {offset}, ( $size[1] - $self-> {fontHeight}) / 2);
@@ -145,7 +149,7 @@ sub on_paint
 		$v ?
 			$canvas-> line( 1, $d, $size[0] - 2, $d) :
 			$canvas-> line( $d, 1, $d, $size[1] - 2)
-			unless $flat;
+			if $showlines;
 		last if $d > $lim - 3;
 		$d++;
 	}
@@ -309,8 +313,11 @@ sub on_mousemove
 
 			my $prelight = (defined($p) && $p >= 0) ? $p : undef;
 			if (( $prelight // -1 ) != ( $self->{prelight} // -1)) {
-				$self->{prelight} = $prelight;
-				$self->repaint;
+				if ( defined($self->{prelight} = $prelight)) {
+					$self->fader_in_mouse_enter;
+				} else {
+					$self->fader_out_mouse_leave;
+				}
 			}
 
 		}
@@ -383,10 +390,20 @@ sub on_mousemove
 	}
 }
 
+sub on_mouseenter
+{
+	my $self = shift;
+	if ($self->enabled) {
+		$self-> fader_in_mouse_enter;
+		$self-> {mouse_in} = 1;
+	}
+}
+
 sub on_mouseleave
 {
 	my $self = shift;
-	$self-> repaint if defined( delete $self->{prelight} );
+	$self-> fader_out_mouse_leave( sub { delete $self->{prelight} } );
+	delete $self-> {mouse_in};
 }
 
 sub on_mouseclick
