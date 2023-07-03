@@ -17,7 +17,11 @@ use Carp;
 use Prima qw(StdBitmap);
 
 package Prima::AbstractButton;
-use base qw(Prima::Widget Prima::Widget::MouseScroller Prima::Widget::Fade);
+use base qw(
+	Prima::Widget
+	Prima::Widget::MouseScroller
+	Prima::Widget::Fader
+);
 
 {
 my %RNT = (
@@ -229,13 +233,13 @@ sub on_mouseenter
 		!$self-> {mouseTransaction} &&
 		$self-> enabled
 	) {
-		$self-> fade_in_mouse_enter;
+		$self-> fader_in_mouse_enter;
 	}
 }
 
 sub on_mouseleave
 {
-	shift-> fade_out_mouse_leave
+	shift-> fader_out_mouse_leave
 }
 
 
@@ -491,7 +495,7 @@ sub paint_flat
 		if ( $self->enabled ) {
 			if ( $self->{hilite}) {
 				$lw++;
-			} elsif ( defined ( my $f = $self->fade_current_value)) {
+			} elsif ( defined ( my $f = $self->fader_current_value)) {
 				$lw += $f;
 			}
 		}
@@ -531,7 +535,7 @@ sub on_paint
 		}
 	}
 	if ( $self->enabled ) {
-		$clr[1] = $self-> fade_current_color($clr[1]);
+		$clr[1] = $self-> fader_current_color($clr[1]);
 	} else {
 		@clr = ( $self-> disabledColor, $self-> disabledBackColor);
 	}
@@ -1116,7 +1120,7 @@ sub on_paint
 		} else {
 			@clr = ($self-> color, $self-> backColor);
 		}
-		$clr[1] = $self-> fade_current_color($clr[1]);
+		$clr[1] = $self-> fader_current_color($clr[1]);
 	} else {
 		@clr = ($self-> disabledColor, $self-> disabledBackColor);
 	}
@@ -1242,7 +1246,7 @@ sub on_paint
 		} else {
 			@clr = ($self-> color, $self-> backColor);
 		}
-		$clr[1] = $self-> fade_current_color($clr[1]);
+		$clr[1] = $self-> fader_current_color($clr[1]);
 	} else {
 		@clr = ($self-> disabledColor, $self-> disabledBackColor);
 	}

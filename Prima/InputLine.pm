@@ -5,7 +5,13 @@ use strict;
 use warnings;
 use Prima;
 use Prima::Drawable::Glyphs;
-use base qw(Prima::Widget Prima::Widget::MouseScroller Prima::Widget::UndoActions Prima::Widget::BidiInput);
+use base qw(
+	Prima::Widget
+	Prima::Widget::Fader
+	Prima::Widget::BidiInput
+	Prima::Widget::MouseScroller
+	Prima::Widget::UndoActions
+);
 
 {
 my %RNT = (
@@ -125,13 +131,10 @@ sub on_paint
 	my @clr;
 	my @selClr;
 	@clr = $self-> enabled ?
-		($self-> color,
-			$self->{prelight} ?
-				$self-> prelight_color($self-> backColor) :
-				$self-> backColor
-		) :
+		($self-> color, $self-> backColor) :
 		($self-> disabledColor, $self-> disabledBackColor);
 	@selClr = ($self-> hiliteColor, $self-> hiliteBackColor);
+	$clr[1] = $self->fader_current_color($clr[1]) if $self->enabled;
 
 	my $border = $self-> {borderWidth};
 	if ( $self-> skin eq 'flat') {
@@ -838,17 +841,15 @@ sub on_mouseup
 sub on_mouseenter
 {
 	my $self = shift;
-	$self->{prelight} = 1;
 	return unless $self->enabled;
-	$self->repaint;
+	$self->fader_in_mouse_enter;
 }
 
 sub on_mouseleave
 {
 	my $self = shift;
-	delete $self->{prelight};
 	return unless $self->enabled;
-	$self->repaint;
+	$self->fader_out_mouse_leave;
 }
 
 sub on_size

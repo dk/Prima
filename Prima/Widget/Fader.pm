@@ -1,14 +1,14 @@
-package Prima::Widget::Fade;
+package Prima::Widget::Fader;
 use strict;
 use warnings;
 use Prima;
 use Carp qw(carp);
 
-sub fade_action_property
+sub fader_action_property
 {
 	my ( $self, $f, %opt ) = @_;
 
-	carp("fade_applicator: 'property' required"), return unless defined $opt{property};
+	carp("fader_applicator: 'property' required"), return unless defined $opt{property};
 	$f->{property} = $opt{property};
 	return sub {
 		my ( $self, $f, $value ) = @_;
@@ -17,11 +17,11 @@ sub fade_action_property
 	};
 }
 
-sub fade_action_callback
+sub fader_action_callback
 {
 	my ( $self, $f, %opt ) = @_;
 
-	carp("fade_applicator: 'callback' required"), return unless defined $opt{callback};
+	carp("fader_applicator: 'callback' required"), return unless defined $opt{callback};
 	$f->{callback} = $opt{callback};
 	return sub {
 		my ( $self, $f, $value ) = @_;
@@ -29,9 +29,9 @@ sub fade_action_callback
 	};
 }
 
-sub fade_type_identity { sub { $_[2] } }
+sub fader_type_identity { sub { $_[2] } }
 
-sub fade_type_colorblend
+sub fader_type_colorblend
 {
 	my ( $self, $f, %opt ) = @_;
 
@@ -46,7 +46,7 @@ sub fade_type_colorblend
 	};
 }
 
-sub fade_function_linear
+sub fader_function_linear
 {
 	my ( $self, $f, %opt ) = @_;
 	return sub {
@@ -56,38 +56,38 @@ sub fade_function_linear
 }
 
 
-sub fade_timer        { $_[0]->{__fade_timer} ? $_[0]->{__fade_timer}->{timer} : undef }
-sub fade_timer_active { $_[0]->fade_timer ? $_[0]->fade_timer-> get_active : 0 }
+sub fader_timer        { $_[0]->{__fader_timer} ? $_[0]->{__fader_timer}->{timer} : undef }
+sub fader_timer_active { $_[0]->fader_timer ? $_[0]->fader_timer-> get_active : 0 }
 
-sub fade_var
+sub fader_var
 {
-	return unless my $f = shift->{__fade_timer};
+	return unless my $f = shift->{__fader_timer};
 	$f = $f->{vars};
 	return $#_ ? $f->{$_[0]} = $_[1] : $f->{$_[0]};
 }
 
-sub fade_var_delete
+sub fader_var_delete
 {
-	return unless my $f = shift->{__fade_timer};
+	return unless my $f = shift->{__fader_timer};
 	delete $f->{vars}->{$_[0]};
 }
 
-sub fade_timer_stop
+sub fader_timer_stop
 {
 	my $self = shift;
 	my $f;
-	if ( $f = $self->{__fade_timer}) {
+	if ( $f = $self->{__fader_timer}) {
 		$f->{timer}->destroy if $f->{timer};
 		$f->{onEnd}->( $self, 0 ) if $f->{onEnd};
 	}
-	delete $self->{__fade_timer};
+	delete $self->{__fader_timer};
 }
 
-sub fade_timer_start
+sub fader_timer_start
 {
 	my ($self, %opt) = @_;
 
-	$self-> fade_timer_stop;
+	$self-> fader_timer_stop;
 
 	my %obj = (
 		quant   => abs($opt{quant} // 50),
@@ -100,36 +100,36 @@ sub fade_timer_start
 	return if $obj{max} == 0;
 
 	$obj{steps} = int($obj{max} / $obj{quant}) +!!+ ($obj{max} % $obj{quant});
-	$self->{__fade_timer} = \%obj;
+	$self->{__fader_timer} = \%obj;
 
 	$opt{type}     //= 'identity';
 	$opt{function} //= 'linear';
 	for my $selector (qw(function type action)) {
-		carp("fade_timer_start: $selector required"), next unless defined $opt{$selector};
-		next if $obj{$selector} = $self->can("fade_${selector}_$opt{$selector}")->($self, \%obj, %opt);
-		delete $self->{__fade_timer};
+		carp("fader_timer_start: $selector required"), next unless defined $opt{$selector};
+		next if $obj{$selector} = $self->can("fader_${selector}_$opt{$selector}")->($self, \%obj, %opt);
+		delete $self->{__fader_timer};
 		carp("unknown $selector $opt{$selector}");
 		return;
 	}
 
-	$self->{__fade_timer}->{timer} = Prima::Timer-> new(
+	$self->{__fader_timer}->{timer} = Prima::Timer-> new(
 		owner      => $self,
 		name       => q(FadeTimer),
 		timeout    => $obj{quant},
 		onTick     => sub { $self-> FadeTimer_Tick( @_)},
-		onDestroy  => sub { undef $self->{__fade_timer} },
+		onDestroy  => sub { undef $self->{__fader_timer} },
 	);
 
-	$self-> fade_timer-> start;
+	$self-> fader_timer-> start;
 }
 
 sub FadeTimer_Tick
 {
 	my ( $self, $timer) = @_;
-	my $f = $self->{__fade_timer};
+	my $f = $self->{__fader_timer};
 	if ( !$f || $f->{stop} ) {
 		$f->{onEnd}->( $self, 0 ) if $f && $f->{onEnd};
-		$self-> fade_timer_stop;
+		$self-> fader_timer_stop;
 		return;
 	}
 
@@ -148,56 +148,56 @@ sub FadeTimer_Tick
 	}
 }
 
-sub fade_in_mouse_enter
+sub fader_in_mouse_enter
 {
 	my $self = shift;
-	$self-> fade_timer_start(
+	$self-> fader_timer_start(
 		action   => 'callback',
 		callback => sub {
 			my ( $self, $f, $value ) = @_;
-			$self->fade_var( current => $value );
+			$self->fader_var( current => $value );
 			$self->repaint;
 		},
 		onEnd    => sub {
 			my ( $self, $f, $ends_okay ) = @_;
-			$self->fade_var_delete( 'current' );
+			$self->fader_var_delete( 'current' );
 			if ($ends_okay) {
 				$self->{hilite} = 1;
 				$self->repaint;
 			}
 		},
 	);
-	$self->fade_var( current => 0.0 );
+	$self->fader_var( current => 0.0 );
 }
 
-sub fade_out_mouse_leave
+sub fader_out_mouse_leave
 {
 	my $self = shift;
-	if ( $self-> {hilite} or defined $self->fade_var('current') ) {
-		$self-> fade_timer_start(
+	if ( $self-> {hilite} or defined $self->fader_var('current') ) {
+		$self-> fader_timer_start(
 			action   => 'callback',
 			callback => sub {
 				my ( $self, $f, $value ) = @_;
-				$self->fade_var( current => (1.0 - $value) );
+				$self->fader_var( current => (1.0 - $value) );
 				$self->repaint;
 			},
 			onEnd    => sub {
-				shift->fade_var_delete( 'current' );
+				shift->fader_var_delete( 'current' );
 			},
 		);
 		undef $self-> {hilite};
 	}
 }
 
-sub fade_current_value { shift->fade_var('current') }
+sub fader_current_value { shift->fader_var('current') }
 
-sub fade_current_color
+sub fader_current_color
 {
 	my ( $self, $color) = @_;
 	$color = $self->map_color($color);
 	if ( $self->{hilite}) {
 		return $self-> prelight_color($color);
-	} elsif ( defined ( my $f = $self->fade_var('current'))) {
+	} elsif ( defined ( my $f = $self->fader_var('current'))) {
 		return cl::blend( $color, $self-> prelight_color($color), $f);
 	} else {
 		return $color;
@@ -208,7 +208,7 @@ sub fade_current_color
 
 =head1 NAME
 
-Prima::Widget::Fade
+Prima::Widget::Fader
 
 =head1 DESCRIPTION
 
@@ -218,14 +218,14 @@ Fading- in/out functions
 
 	use base qw(Prima::Widget Prima::Widget::Fade);
 
-	sub on_mouseenter { shift-> fade_in_mouse_enter }
-	sub on_mouseleave { shift-> fade_out_mouse_leave }
+	sub on_mouseenter { shift-> fader_in_mouse_enter }
+	sub on_mouseleave { shift-> fader_out_mouse_leave }
 
 	sub on_paint
 	{
 		my ( $self, $canvas ) = @_;
 		my $color = $self->{hilite} ? $self->hiliteBackColor : $self->backColor;
-		$canvas->backColor( $self-> fade_current_color($color) );
+		$canvas->backColor( $self-> fader_current_color($color) );
 		$canvas->clear;
 	}
 

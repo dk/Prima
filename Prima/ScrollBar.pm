@@ -11,7 +11,10 @@ use vars qw(@ISA @stdMetrics);
 use strict;
 use warnings;
 use Prima;
-use base qw(Prima::Widget Prima::Widget::MouseScroller);
+use base qw(
+	Prima::Widget
+	Prima::Widget::MouseScroller
+);
 
 @stdMetrics = Prima::Application-> get_default_scrollbar_metrics;
 
