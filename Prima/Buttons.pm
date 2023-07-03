@@ -43,6 +43,7 @@ sub profile_default
 		autoHeight   => 1,
 		autoWidth    => 1,
 		autoShaping  => 0,
+		buffered     => 1,
 	}
 }
 
@@ -97,10 +98,8 @@ sub skin
 	my $self = shift;
 	$self->SUPER::skin($_[1]);
 	if ($self->SUPER::skin eq 'flat') {
-		$self->buffered(1);
 		$self->update_shape if $self->autoShaping;
 	} else {
-		$self->buffered(0);
 		$self->shape(undef) if $self->autoShaping;
 	}
 	$self->repaint;

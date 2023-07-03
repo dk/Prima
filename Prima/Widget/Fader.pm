@@ -150,7 +150,7 @@ sub FadeTimer_Tick
 
 sub fader_in_mouse_enter
 {
-	my $self = shift;
+	my ($self, $onEnd) = @_;
 	$self-> fader_timer_start(
 		action   => 'callback',
 		callback => sub {
@@ -165,6 +165,7 @@ sub fader_in_mouse_enter
 				$self->{hilite} = 1;
 				$self->repaint;
 			}
+			$onEnd->(@_) if $onEnd;
 		},
 	);
 	$self->fader_var( current => 0.0 );
@@ -172,7 +173,7 @@ sub fader_in_mouse_enter
 
 sub fader_out_mouse_leave
 {
-	my $self = shift;
+	my ($self, $onEnd) = @_;
 	if ( $self-> {hilite} or defined $self->fader_var('current') ) {
 		$self-> fader_timer_start(
 			action   => 'callback',
@@ -182,7 +183,8 @@ sub fader_out_mouse_leave
 				$self->repaint;
 			},
 			onEnd    => sub {
-				shift->fader_var_delete( 'current' );
+				$_[0]->fader_var_delete( 'current' );
+				$onEnd->(@_) if $onEnd;
 			},
 		);
 		undef $self-> {hilite};

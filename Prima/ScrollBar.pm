@@ -13,6 +13,7 @@ use warnings;
 use Prima;
 use base qw(
 	Prima::Widget
+	Prima::Widget::Fader
 	Prima::Widget::MouseScroller
 );
 
@@ -119,10 +120,12 @@ sub draw_pad
 		if ( $self->{$part}->{pressed}) {
 			$clr = $hbc;
 		} elsif ( $self->enabled) {
-			my $pct = (( $self->{prelight} // '') eq $part) ? 0.33 : 0.66;
+			my $pct = 0.33;
+			$pct *= 1 + ( $self-> fader_current_value // 1 )
+				if ( $self->{prelight} // '') eq $part;
 			$clr = cl::blend(
-				$self->map_color( $hbc ),
 				$self->map_color( $base_color ),
+				$self->map_color( $hbc ),
 				$pct
 			);
 		} else {
@@ -132,7 +135,7 @@ sub draw_pad
 		$canvas-> bar( @{$self-> {$part}-> {rect}} );
 	} else {
 		if ( defined $self->{prelight} && $self->{prelight} eq $part && $self->enabled ) {
-			$base_color = $self-> prelight_color($base_color, 1.25);
+			$base_color = $self-> prelight_color($base_color, 1 + (.25 * ($self->fader_current_value // 0)));
 		}
 		my @palette = ( $base_color, $self->dark3DColor );
 		my @spline  = ( 1, 0 );
@@ -496,6 +499,12 @@ sub on_mouseup
 	}
 }
 
+sub on_mouseenter
+{
+	my $self = shift;
+	$self-> fader_in_mouse_enter if $self->enabled && $self->skin eq 'flat';
+}
+
 sub on_mousemove
 {
 	my ( $self, $mod, $x, $y) = @_;
@@ -555,7 +564,12 @@ sub on_mousemove
 sub on_mouseleave
 {
 	my $self = shift;
-	$self-> repaint if defined( delete $self->{prelight} );
+	if ( $self->skin eq 'flat') {
+		$self-> fader_out_mouse_leave( sub { delete $self->{prelight} } );
+	} else {
+		delete $self->{prelight};
+		$self->repaint;
+	}
 }
 
 sub on_mousewheel
