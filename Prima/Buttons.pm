@@ -17,7 +17,7 @@ use Carp;
 use Prima qw(StdBitmap);
 
 package Prima::AbstractButton;
-use base qw(Prima::Widget Prima::Widget::MouseScroller);
+use base qw(Prima::Widget Prima::Widget::MouseScroller Prima::Widget::Fade);
 
 {
 my %RNT = (
@@ -229,18 +229,13 @@ sub on_mouseenter
 		!$self-> {mouseTransaction} &&
 		$self-> enabled
 	) {
-		$self-> {hilite} = 1;
-		$self-> repaint;
+		$self-> fade_in_mouse_enter;
 	}
 }
 
 sub on_mouseleave
 {
-	my $self = $_[0];
-	if ( $self-> {hilite}) {
-		undef $self-> {hilite};
-		$self-> repaint;
-	}
+	shift-> fade_out_mouse_leave
 }
 
 
@@ -492,8 +487,14 @@ sub paint_flat
 		$canvas-> backColor( $clr[1]);
 		$canvas-> color( $clr[0]);
 		my $lw = 1;
-		$lw++ if $self->{hilite} && $self->enabled;
 		$lw++ if $self->{default};
+		if ( $self->enabled ) {
+			if ( $self->{hilite}) {
+				$lw++;
+			} elsif ( defined ( my $f = $self->fade_current_value)) {
+				$lw += $f;
+			}
+		}
 		$canvas-> antialias(1);
 		$canvas-> lineWidth( $lw );
 		$canvas-> new_path-> round_rect(
@@ -529,9 +530,12 @@ sub on_paint
 			@clr = ( $self-> hiliteColor, $self-> hiliteBackColor);
 		}
 	}
-	$clr[1] = $self-> prelight_color($clr[1]) if $self->{hilite} && $self-> enabled;
-	@clr = ( $self-> disabledColor, $self-> disabledBackColor)
-		if !$self-> enabled;
+	if ( $self->enabled ) {
+		$clr[1] = $self-> fade_current_color($clr[1]);
+	} else {
+		@clr = ( $self-> disabledColor, $self-> disabledBackColor);
+	}
+
 	my @size = $canvas-> size;
 
 	my $shift  = $self-> {checked} ? 1 : 0;
@@ -1112,7 +1116,7 @@ sub on_paint
 		} else {
 			@clr = ($self-> color, $self-> backColor);
 		}
-		$clr[1] = $self-> prelight_color($clr[1]) if $self->{hilite} && $self-> enabled;
+		$clr[1] = $self-> fade_current_color($clr[1]);
 	} else {
 		@clr = ($self-> disabledColor, $self-> disabledBackColor);
 	}
@@ -1238,7 +1242,7 @@ sub on_paint
 		} else {
 			@clr = ($self-> color, $self-> backColor);
 		}
-		$clr[1] = $self-> prelight_color($clr[1]) if $self->{hilite} && $self-> enabled;
+		$clr[1] = $self-> fade_current_color($clr[1]);
 	} else {
 		@clr = ($self-> disabledColor, $self-> disabledBackColor);
 	}

@@ -376,6 +376,7 @@ Prima/Utils.pm
 Prima/Widget/BidiInput.pm
 Prima/Widget/Date.pm
 Prima/Widget/EventRectangles.pm
+Prima/Widget/Fade.pm
 Prima/Widget/GroupScroller.pm
 Prima/Widget/Header.pm
 Prima/Widget/IntIndents.pm

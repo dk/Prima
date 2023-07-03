@@ -474,6 +474,8 @@ L<Prima::PS::Printer> - PostScript and PDF interfaces to C<Prima::Printer>
 
 L<Prima::Widget::BidiInput> - heuristics for i18n input
 
+L<Prima::Widget::Fade> - fading- in/out functions
+
 L<Prima::Widget::GroupScroller> - optional automatic scroll bars
 
 L<Prima::Widget::Header> - multi-column header widget

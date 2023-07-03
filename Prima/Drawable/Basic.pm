@@ -714,7 +714,7 @@ sub render_pattern
 
 Prima::Drawable::Basic
 
-=head1 NAME
+=head1 DESCRIPTION
 
 Basic drawing routines for Prima::Drawable
 
