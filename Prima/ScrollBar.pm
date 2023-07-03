@@ -135,7 +135,8 @@ sub draw_pad
 		$canvas-> bar( @{$self-> {$part}-> {rect}} );
 	} else {
 		if ( defined $self->{prelight} && $self->{prelight} eq $part && $self->enabled ) {
-			$base_color = $self-> prelight_color($base_color, 1 + (.25 * ($self->fader_current_value // 0)));
+			my $hc = $self-> prelight_color($base_color, 1.25);
+			$base_color = cl::blend( $base_color, $hc, $self->fader_current_value // 1);
 		}
 		my @palette = ( $base_color, $self->dark3DColor );
 		my @spline  = ( 1, 0 );
@@ -502,7 +503,7 @@ sub on_mouseup
 sub on_mouseenter
 {
 	my $self = shift;
-	$self-> fader_in_mouse_enter if $self->enabled && $self->skin eq 'flat';
+	$self-> fader_in_mouse_enter if $self->enabled;
 }
 
 sub on_mousemove
@@ -564,12 +565,7 @@ sub on_mousemove
 sub on_mouseleave
 {
 	my $self = shift;
-	if ( $self->skin eq 'flat') {
-		$self-> fader_out_mouse_leave( sub { delete $self->{prelight} } );
-	} else {
-		delete $self->{prelight};
-		$self->repaint;
-	}
+	$self-> fader_out_mouse_leave( sub { delete $self->{prelight} } );
 }
 
 sub on_mousewheel

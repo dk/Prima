@@ -106,8 +106,8 @@ my $w = Prima::MainWindow-> create(
 	designScale => [7, 16],
 	menuItems => [
 		['~Skin' => [
-			[ '(*default' => 'Default' => \&set_style ],
-			[ ')flat'     => 'Flat'    => \&set_style ],
+			[ '(classic'  => 'Classic 3D' => \&set_style ],
+			[ ')flat'     => 'Flat'       => \&set_style ],
 		]],
 	],
 );

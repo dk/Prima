@@ -105,6 +105,19 @@ sub skin
 	$self->repaint;
 }
 
+sub fader_current_color
+{
+	my ( $self, $color) = @_;
+	$color = $self->map_color($color);
+	if ( $self->{hilite}) {
+		return $self-> prelight_color($color);
+	} elsif ( defined ( my $f = $self->fader_current_value)) {
+		return cl::blend( $color, $self-> prelight_color($color), $f);
+	} else {
+		return $color;
+	}
+}
+
 sub cancel_transaction
 {
 	my $self = $_[0];
@@ -232,13 +245,21 @@ sub on_mouseenter
 		!$self-> {mouseTransaction} &&
 		$self-> enabled
 	) {
-		$self-> fader_in_mouse_enter;
+		$self-> fader_in_mouse_enter( sub {
+			my ( $self, $f, $ends_okay ) = @_;
+			if ($ends_okay) {
+				$self->{hilite} = 1;
+				$self->repaint;
+			}
+		});
 	}
 }
 
 sub on_mouseleave
 {
-	shift-> fader_out_mouse_leave
+	my $self = shift;
+	$self-> fader_out_mouse_leave;
+	undef $self-> {hilite};
 }
 
 

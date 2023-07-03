@@ -161,10 +161,6 @@ sub fader_in_mouse_enter
 		onEnd    => sub {
 			my ( $self, $f, $ends_okay ) = @_;
 			$self->fader_var_delete( 'current' );
-			if ($ends_okay) {
-				$self->{hilite} = 1;
-				$self->repaint;
-			}
 			$onEnd->(@_) if $onEnd;
 		},
 	);
@@ -174,37 +170,22 @@ sub fader_in_mouse_enter
 sub fader_out_mouse_leave
 {
 	my ($self, $onEnd) = @_;
-	if ( $self-> {hilite} or defined $self->fader_var('current') ) {
-		$self-> fader_timer_start(
-			action   => 'callback',
-			callback => sub {
-				my ( $self, $f, $value ) = @_;
-				$self->fader_var( current => (1.0 - $value) );
-				$self->repaint;
-			},
-			onEnd    => sub {
-				$_[0]->fader_var_delete( 'current' );
-				$onEnd->(@_) if $onEnd;
-			},
-		);
-		undef $self-> {hilite};
-	}
+
+	$self-> fader_timer_start(
+		action   => 'callback',
+		callback => sub {
+			my ( $self, $f, $value ) = @_;
+			$self->fader_var( current => (1.0 - $value) );
+			$self->repaint;
+		},
+		onEnd    => sub {
+			$_[0]->fader_var_delete( 'current' );
+			$onEnd->(@_) if $onEnd;
+		},
+	);
 }
 
 sub fader_current_value { shift->fader_var('current') }
-
-sub fader_current_color
-{
-	my ( $self, $color) = @_;
-	$color = $self->map_color($color);
-	if ( $self->{hilite}) {
-		return $self-> prelight_color($color);
-	} elsif ( defined ( my $f = $self->fader_var('current'))) {
-		return cl::blend( $color, $self-> prelight_color($color), $f);
-	} else {
-		return $color;
-	}
-}
 
 1;
 
@@ -226,8 +207,10 @@ Fading- in/out functions
 	sub on_paint
 	{
 		my ( $self, $canvas ) = @_;
-		my $color = $self->{hilite} ? $self->hiliteBackColor : $self->backColor;
-		$canvas->backColor( $self-> fader_current_color($color) );
+		$canvas->backColor( cl::blend(
+			$self-> backColor, $self-> hiliteBackColor,
+			$self-> fader_current_value // 1)
+		);
 		$canvas->clear;
 	}
 

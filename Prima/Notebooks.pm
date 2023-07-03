@@ -5,7 +5,11 @@ use warnings;
 use Prima qw(Widget::ScrollWidget);
 
 package Prima::TabSet;
-use base qw(Prima::Widget Prima::Widget::MouseScroller);
+use base qw(
+	Prima::Widget
+	Prima::Widget::Fader
+	Prima::Widget::MouseScroller
+);
 
 
 {
@@ -202,6 +206,7 @@ sub on_mouseup
 	$self-> {mouseTransaction} = undef;
 }
 
+sub on_mouseenter { shift-> fader_in_mouse_enter }
 
 sub on_mousemove
 {
@@ -227,7 +232,7 @@ sub on_mousemove
 sub on_mouseleave
 {
 	my $self = shift;
-	$self-> repaint if defined( delete $self->{prelight} );
+	$self-> fader_out_mouse_leave( sub { delete $self->{prelight} } );
 }
 
 sub on_mouseclick
@@ -447,7 +452,9 @@ sub on_drawtab
 	my $colorset = $self->{colorset};
 	my $color = ( $self-> {colored} && !$flat && ( $i >= 0)) ?
 		( $colorset->[ $i % scalar @$colorset]) : $$clr[1];
-	$color = $self-> prelight_color($color) if ($self->{prelight} // '') eq ($i // '');
+	if (($self->{prelight} // '') eq ($i // '')) {
+		$color = cl::blend( $color, $self-> prelight_color($color), $self->fader_current_value // 1);
+	}
 	$canvas-> color($color);
 	$canvas-> fillpoly( $poly);
 	$canvas-> fillpoly( $poly2) if $poly2;
