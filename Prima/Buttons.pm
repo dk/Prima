@@ -330,7 +330,13 @@ sub caption_box
 	my $cap = $self-> text;
 	$cap =~ s/~//;
 	$canvas = $self unless $canvas;
-	return $canvas-> get_text_width( $cap), $canvas-> font-> height;
+	my $end_paint_info = $canvas->get_paint_state == ps::Disabled;
+	$canvas->begin_paint_info if $end_paint_info;
+	$canvas-> font-> style( $canvas-> font-> style  | fs::Bold )
+		if $self-> {default} && $self->skin eq 'flat';
+	my ( $w, $h ) = ($canvas-> get_text_width( $cap), $canvas-> font-> height);
+	$canvas->end_paint_info if $end_paint_info;
+	return ($w, $h);
 }
 
 sub calc_geom_size { $_[0]-> caption_box }
