@@ -393,15 +393,15 @@ sub on_mousemove
 sub on_mouseenter
 {
 	my $self = shift;
-	if ($self->enabled) {
-		$self-> fader_in_mouse_enter;
-		$self-> {mouse_in} = 1;
-	}
+	return unless $self->enabled;
+	$self-> fader_in_mouse_enter;
+	$self-> {mouse_in} = 1;
 }
 
 sub on_mouseleave
 {
 	my $self = shift;
+	return unless $self->enabled;
 	$self-> fader_out_mouse_leave( sub { delete $self->{prelight} } );
 	delete $self-> {mouse_in};
 }

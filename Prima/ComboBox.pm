@@ -8,6 +8,9 @@ use constant DropDownList =>  2;
 use strict;
 use warnings;
 
+package Prima::ComboBox::Button;
+use base qw(Prima::Widget Prima::Widget::Fader);
+
 package Prima::ComboBox;
 
 use vars qw(@ISA %listProps %editProps %listDynas $capture_mode);
@@ -77,7 +80,7 @@ sub profile_default
 
 		editClass      => 'Prima::InputLine',
 		listClass      => 'Prima::ListBox',
-		buttonClass    => 'Prima::Widget',
+		buttonClass    => 'Prima::ComboBox::Button',
 		scrollBarClass => 'Prima::ScrollBar',
 		editProfile    => {},
 		listProfile    => {},
@@ -324,17 +327,16 @@ sub Button_MouseEnter
 {
 	my ( $self, $button ) = @_;
 	if ( !$button->capture && $self->enabled) {
+		$button-> fader_in_mouse_enter;
 		$button->{prelight} = 1;
-		$button->repaint;
 	}
 }
 
 sub Button_MouseLeave
 {
 	my ( $self, $button ) = @_;
-	if ( !$button->capture && $button->{prelight}) {
-		delete $button->{prelight};
-		$button->repaint;
+	if ( !$button->capture && $self->enabled) {
+		$button-> fader_out_mouse_leave( sub { delete $button->{prelight} });
 	}
 
 }
@@ -376,10 +378,13 @@ sub Button_Paint
 		$canvas-> graphic_context( sub {
 			$canvas-> color( $self-> dark3DColor ); 
 			$canvas-> rectangle(-1, 0, $w-1, $h-1); # yes, -1
+			my $pct = 0.33;
+			$pct *= 1 + ( $self-> fader_current_value // 1 )
+				if $self->{prelight};
 			my $c = cl::blend(
-				$self->map_color( $hbc ),
 				$self->map_color( $clr[1] ),
-				$self->{prelight} ? 0.33 : 0.66
+				$self->map_color( $hbc ),
+				$pct
 			);
 			$canvas-> color( $c );
 			$canvas-> bar( 1 - 1, 1, $w-2, $h-2);
@@ -387,7 +392,7 @@ sub Button_Paint
 		$clr[0] = $self->hiliteColor;
 		$canvas-> translate(1,-1) if $lv;
 	} else {
-		$clr[1] = $self->prelight_color($clr[1]) if $self->{prelight};
+		$clr[1] = $self->fader_prelight_color($clr[1]) if $self->{prelight};
 		$self-> rect_bevel(
 			$canvas, 0, 0, $w-1, $h-1,
 			fill => $self-> new_gradient(

@@ -258,8 +258,10 @@ sub on_mouseenter
 sub on_mouseleave
 {
 	my $self = shift;
-	$self-> fader_out_mouse_leave;
-	undef $self-> {hilite};
+	if ( $self-> enabled ) {
+		$self-> fader_out_mouse_leave;
+		undef $self-> {hilite};
+	}
 }
 
 

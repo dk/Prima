@@ -565,6 +565,7 @@ sub on_mousemove
 sub on_mouseleave
 {
 	my $self = shift;
+	return unless $self->enabled;
 	$self-> fader_out_mouse_leave( sub { delete $self->{prelight} } );
 }
 

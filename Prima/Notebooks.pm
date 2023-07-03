@@ -206,7 +206,12 @@ sub on_mouseup
 	$self-> {mouseTransaction} = undef;
 }
 
-sub on_mouseenter { shift-> fader_in_mouse_enter }
+sub on_mouseenter
+{
+	my $self = shift;
+	return unless $self->enabled;
+	$self-> fader_in_mouse_enter;
+}
 
 sub on_mousemove
 {
@@ -235,6 +240,7 @@ sub on_mousemove
 sub on_mouseleave
 {
 	my $self = shift;
+	return unless $self->enabled;
 	$self-> fader_out_mouse_leave( sub { delete $self->{prelight} } );
 }
 
