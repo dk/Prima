@@ -205,7 +205,7 @@ Prima::Widget::Fader
 
 Fading- in/out functions
 
-=head2 SYNOPSIS
+=head1 SYNOPSIS
 
 	use base qw(Prima::Widget Prima::Widget::Fade);
 
@@ -218,5 +218,44 @@ Fading- in/out functions
 		$canvas->backColor( $self-> fader_prelight_color( $self-> hiliteBackColor ));
 		$canvas->clear;
 	}
+
+
+=head1 API
+
+The API is currently under design so the parts that are documented are those that expected
+to be staying intact.
+
+=over
+
+=item fader_in_mouse_enter [ $onEnd :: ( self, storage, transition_is_finished ) ]
+
+Initiates a fade-in transition, calls repaint on each step.
+Calls eventual callback C< $onEnd > when the transition is either finished or aborted.
+
+=item fader_out_mouse_leave [ $onEnd :: ( self, storage, transition_is_finished ) ]
+
+Initiates a fade-out transition, calls repaint on each step.
+Calls eventual callback C< $onEnd > when the transition is either finished or aborted.
+
+=item fader_current_value
+
+Returns the current fader value in the range from 0 to 1.
+Returns C<undef> if there is no current fading transition running
+
+=item fader_prelight_color $COLOR [, $MULTIPLIER ]
+
+Given a base C<$COLOR>, increases (or decreases) its brightness according to
+C<fader_current_value>, and an eventual C<$MULTIPLIER> that is expected to be in
+the range from 0 to 1.
+
+=back
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<Prima::Widget>
 
 =cut
