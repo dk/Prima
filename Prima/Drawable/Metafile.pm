@@ -164,7 +164,7 @@ sub execute
 	my @tx   = $canvas-> translate;
 	my @fpo  = $canvas-> fillPatternOffset;
 
-	return unless $self->graphic_context_push;
+	return unless $canvas->graphic_context_push;
 	$canvas->translate($x + $tx[0], $y + $tx[1]);
 
 	for my $cmd ( @{ $self->{code} } ) {
@@ -198,7 +198,7 @@ sub execute
 		}
 	}
 
-	$self->graphic_context_pop;
+	$canvas->graphic_context_pop;
 }
 
 1;
