@@ -1934,38 +1934,4 @@ apc_gp_pop( Handle self, void * user_data)
 	return true;
 }
 
-void
-prima_paint_box( Handle self, int w, int h, Matrix matrix, unsigned long foreground )
-{
-	DEFXX;
-	int i;
-	Matrix m;
-	XGCValues old_gcv, gcv;
-	XPoint xp[4];
-	Point pp[4];
-
-	XGetGCValues( DISP, XX-> gc, GCForeground|GCFunction|GCFillStyle, &old_gcv);
-
-	gcv. foreground = foreground;
-	gcv. function   = GXcopy;
-	gcv. fill_style = FillSolid;
-	XChangeGC( DISP, XX-> gc, GCForeground|GCFunction|GCFillStyle, &gcv);
-
-	COPY_MATRIX( matrix, m );
-	bzero(&pp, sizeof(pp));
-	pp[1].x = pp[2].x = w;
-	pp[2].y = pp[3].y = h;
-	if ( matrix )
-		prima_matrix_apply2_int_to_int( m, pp, pp, 4);
-	for ( i = 0; i < 4; i++) {
-		xp[i].x = (short) pp[i].x + XX-> btransform.x;
-		xp[i].y = (short) REVERT(pp[i].y + XX-> btransform.y);
-		RANGE2(xp[i].x, xp[i].y);
-	}
-
-	XFillPolygon( DISP, XX-> gdrawable, XX-> gc, xp, 4, Convex, CoordModeOrigin);
-
-	XChangeGC( DISP, XX-> gc, GCForeground|GCFunction|GCFillStyle, &old_gcv);
-}
-
 

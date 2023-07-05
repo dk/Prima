@@ -310,11 +310,29 @@ gp_text_out_rotated(
 void
 prima_paint_text_background( Handle self, Point * p, int x, int y )
 {
-	Matrix m;
-	COPY_MATRIX_WITHOUT_TRANSLATION( MY_MATRIX, m );
-	m[4] = x;
-	m[5] = y;
-	prima_paint_box( self, p[2].x, p[2].y, m, X(self)->back.primary);
+	DEFXX;
+	int i;
+	XGCValues old_gcv, gcv;
+	XPoint xp[4];
+	int map[4] = {0,1,3,2};
+
+	XGetGCValues( DISP, XX-> gc, GCForeground|GCFunction|GCFillStyle, &old_gcv);
+
+	gcv. foreground = X(self)->back.primary;
+	gcv. function   = GXcopy;
+	gcv. fill_style = FillSolid;
+	XChangeGC( DISP, XX-> gc, GCForeground|GCFunction|GCFillStyle, &gcv);
+
+	for ( i = 0; i < 4; i++) {
+		int j = map[i];
+		xp[j].x = (short) x + p[i].x + XX-> btransform.x;
+		xp[j].y = (short) REVERT(y + p[i].y + XX-> btransform.y);
+		RANGE2(xp[j].x, xp[j].y);
+	}
+
+	XFillPolygon( DISP, XX-> gdrawable, XX-> gc, xp, 4, Convex, CoordModeOrigin);
+
+	XChangeGC( DISP, XX-> gc, GCForeground|GCFunction|GCFillStyle, &old_gcv);
 }
 
 static void

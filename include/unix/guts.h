@@ -1697,9 +1697,6 @@ prima_get_cursor(Handle self);
 extern void
 prima_paint_text_background( Handle self, Point * p, int x, int y );
 
-extern void
-prima_paint_box( Handle self, int w, int h, Matrix matrix, unsigned long foreground );
-
 extern Bool
 prima_update_quarks_cache( Handle self);
 
