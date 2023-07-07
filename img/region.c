@@ -432,6 +432,35 @@ EXIT:
 	return region;
 }
 
+/* compress region vertically */
+static PRegionRec
+compress_region( PRegionRec region)
+{
+	int i, n;
+	Box *prev, *curr;
+	for (
+		i = 1, n = region-> n_boxes, prev = region->boxes, curr = prev + 1;
+		i < n;
+		i++, curr++
+	) {
+		if (
+			curr->x == prev->x &&
+			curr->y == prev->y + 1 &&
+			curr->width == prev->width
+		) {
+			prev->height += curr->height;
+			region-> n_boxes--;
+		} else {
+			if ( curr - prev > 1 ) {
+				memmove( prev + 1, curr, sizeof(Box) * (n - i));
+				curr = prev + 1;
+			}
+			prev = curr;
+		}
+	}
+	return region;
+}
+
 /*
 
 The code below is based on the libX11 region implementation
@@ -1371,7 +1400,7 @@ img_region_polygon(
     	PRegionRec new = superimpose_outline(region, Pts, Count);
 	if (new) region = new;
     }
-    return(region);
+    return compress_region(region);
 }
 
 #ifdef __cplusplus
