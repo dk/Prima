@@ -1425,9 +1425,11 @@ Adds full ellipse to the path.
 
 =item glyph INDEX, %OPTIONS
 
-Adds glyph outline to the path. C<%OPTIONS> are passed as is to L<Prima::Drawable/renger_glyph>.
-Note that filled glyphs require C<fillMode> without the C<fm::Overlay> bit set and C<fill> option set
-to generate proper shapes with holes.
+Adds glyph outline to the path. C<%OPTIONS> are passed as is to
+L<Prima::Drawable/renger_glyph>, except the C<fill> option.
+
+Note that filled glyphs require C<fillMode> without the C<fm::Overlay> bit set
+and the C<fill> option set to generate proper shapes with holes.
 
 =item line, rline @POINTS
 
@@ -1469,6 +1471,9 @@ Adds C<TEXT> to the path. C<%OPTIONS> are same as in L<Prima::Drawable/render_gl
 except that C<unicode> is deduced automatically based on whether C<TEXT> has utf8 bit
 on or off; and an extra option C<cache> with a hash can be used to speed up the function
 with subsequent calls. C<baseline> option is same as L<Prima::Drawable/textOutBaseline>.
+
+Note that filled glyphs require C<fillMode> without the C<fm::Overlay> bit set
+and the C<fill> option set to generate proper shapes with holes.
 
 =back
 

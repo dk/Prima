@@ -30,11 +30,11 @@ $i-> end_paint_info;
 $i-> size( $textx + 20, $texty + 20);
 my @is = $i-> size;
 my $path;
-	
+
 if ( $i->font->{vector}) {
 	$i = $i->new_path;
 	$i->translate( 10, 10 );
-	$i->text('PRIMA');
+	$i->text('PRIMA', fill => 1);
 	$path = $i;
 	$i = $i->region(fm::Winding);
 } else {
@@ -55,7 +55,11 @@ my $w = Prima::MainWindow-> create(
 	buffered => 1,
 	palette => [ map { ($_) x 3 } 0..255 ],
 	onPaint => sub {
-	my ( $self, $canvas) = @_;
+		my ( $self, $canvas) = @_;
+
+		# XXX modern X11 is extremely bad with complex regions, use XRender
+		$canvas->antialias(1);
+
 		$canvas->clear;
 		$g1->ellipse($is[0]/2 ,$is[1]/2, $is[0], $is[0]);
 		$canvas-> region( $i);
