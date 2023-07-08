@@ -15,6 +15,7 @@ use base qw(
 {
 my %RNT = (
 	%{Prima::Widget-> notification_types()},
+	%{Prima::Widget::Fader-> notification_types()},
 	DrawTab     => nt::Action,
 	MeasureTab  => nt::Action,
 );
@@ -241,8 +242,10 @@ sub on_mouseleave
 {
 	my $self = shift;
 	return unless $self->enabled;
-	$self-> fader_out_mouse_leave( sub { delete $self->{prelight} } );
+	$self-> fader_out_mouse_leave;
 }
+
+sub on_fadeout { delete shift->{prelight} }
 
 sub on_mouseclick
 {

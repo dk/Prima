@@ -15,7 +15,8 @@ use base qw(
 
 {
 my %RNT = (
-	%{Prima::Dialog-> notification_types()},
+	%{Prima::Widget-> notification_types()},
+	%{Prima::Widget::Fader-> notification_types()},
 	Validate => nt::Notification,
 );
 
@@ -850,9 +851,10 @@ sub on_mouseenter
 sub on_mouseleave
 {
 	my $self = shift;
-	return unless $self->enabled;
-	$self->fader_out_mouse_leave( sub { delete $self->{mouse_in} });
+	$self->fader_out_mouse_leave if $self->enabled;
 }
+
+sub on_fadeout { delete shift->{mouse_in} }
 
 sub on_size
 {

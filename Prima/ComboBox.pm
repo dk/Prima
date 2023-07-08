@@ -11,6 +11,16 @@ use warnings;
 package Prima::ComboBox::Button;
 use base qw(Prima::Widget Prima::Widget::Fader);
 
+{
+my %RNT = (
+	%{Prima::Widget-> notification_types()},
+	%{Prima::Widget::Fader-> notification_types()},
+	Check => nt::Default,
+);
+
+sub notification_types { return \%RNT; }
+}
+
 package Prima::ComboBox;
 
 use vars qw(@ISA %listProps %editProps %listDynas $capture_mode);
@@ -90,7 +100,7 @@ sub profile_default
 		listDelegations   => [qw(Leave SelectItem MouseUp Click KeyDown Paint)],
 		editDelegations   => [qw(FontChanged Create Setup KeyDown KeyUp Change Leave MouseWheel MouseDown)],
 		buttonDelegations => [qw(ColorChanged FontChanged MouseDown MouseClick
-			MouseUp MouseMove MouseEnter MouseLeave Paint Enable Disable)],
+			MouseUp MouseMove MouseEnter MouseLeave Paint Enable Disable FadeOut)],
 	}
 }
 
@@ -336,10 +346,12 @@ sub Button_MouseLeave
 {
 	my ( $self, $button ) = @_;
 	if ( !$button->capture && $self->enabled) {
-		$button-> fader_out_mouse_leave( sub { delete $button->{prelight} });
+		$button-> fader_out_mouse_leave;
 	}
 
 }
+
+sub Button_FadeOut { delete $_[1]->{prelight} }
 
 sub Button_MouseUp { $_[1]-> capture(0); }
 

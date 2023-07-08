@@ -45,6 +45,7 @@ sub profile_default
 {
 my %RNT = (
 	%{Prima::Widget-> notification_types()},
+	%{Prima::Widget::Fader-> notification_types()},
 	Track => nt::Default,
 );
 
@@ -566,8 +567,10 @@ sub on_mouseleave
 {
 	my $self = shift;
 	return unless $self->enabled;
-	$self-> fader_out_mouse_leave( sub { delete $self->{prelight} } );
+	$self-> fader_out_mouse_leave;
 }
+
+sub on_fadeout { delete shift->{prelight} }
 
 sub on_mousewheel
 {

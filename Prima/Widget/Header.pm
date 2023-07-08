@@ -15,6 +15,7 @@ use constant CaptureBrimWidth => 2;
 {
 my %RNT = (
 	%{Prima::Widget-> notification_types()},
+	%{Prima::Widget::Fader-> notification_types()},
 	DrawItem    => nt::Action,
 	MeasureItem => nt::Action,
 	MoveItem    => nt::Action,
@@ -402,8 +403,13 @@ sub on_mouseleave
 {
 	my $self = shift;
 	return unless $self->enabled;
-	$self-> fader_out_mouse_leave( sub { delete $self->{prelight} } );
+	$self-> fader_out_mouse_leave;
 	delete $self-> {mouse_in};
+}
+
+sub on_fadeout
+{
+	delete shift->{prelight}
 }
 
 sub on_mouseclick

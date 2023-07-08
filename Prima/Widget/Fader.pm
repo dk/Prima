@@ -4,6 +4,12 @@ use warnings;
 use Prima;
 use Carp qw(carp);
 
+sub notification_types {{
+	FadeIn      => nt::Action,
+	FadeOut     => nt::Action,
+	FadeRepaint => nt::Action,
+}}
+
 sub fader_action_property
 {
 	my ( $self, $f, %opt ) = @_;
@@ -148,20 +154,24 @@ sub FadeTimer_Tick
 	}
 }
 
+sub on_faderepaint { shift->repaint }
+sub on_fadein  {}
+sub on_fadeout {}
+
 sub fader_in_mouse_enter
 {
-	my ($self, $onEnd) = @_;
+	my ($self) = @_;
 	$self-> fader_timer_start(
 		action   => 'callback',
 		callback => sub {
 			my ( $self, $f, $value ) = @_;
 			$self->fader_var( current => $value );
-			$self->repaint;
+			$self->notify(q(FadeRepaint));
 		},
 		onEnd    => sub {
 			my ( $self, $f, $ends_okay ) = @_;
 			$self->fader_var_delete( 'current' );
-			$onEnd->(@_) if $onEnd;
+			$self->notify(q(FadeIn), $ends_okay);
 		},
 	);
 	$self->fader_var( current => 0.0 );
@@ -169,18 +179,19 @@ sub fader_in_mouse_enter
 
 sub fader_out_mouse_leave
 {
-	my ($self, $onEnd) = @_;
+	my ($self) = @_;
 
 	$self-> fader_timer_start(
 		action   => 'callback',
 		callback => sub {
 			my ( $self, $f, $value ) = @_;
 			$self->fader_var( current => (1.0 - $value) );
-			$self->repaint;
+			$self->notify(q(FadeRepaint));
 		},
 		onEnd    => sub {
-			$_[0]->fader_var_delete( 'current' );
-			$onEnd->(@_) if $onEnd;
+			my ( $self, $f, $ends_okay ) = @_;
+			$self->fader_var_delete( 'current' );
+			$self->notify(q(FadeOut), $ends_okay);
 		},
 	);
 }
@@ -207,7 +218,14 @@ Fading- in/out functions
 
 =head1 SYNOPSIS
 
-	use base qw(Prima::Widget Prima::Widget::Fade);
+	use base qw(Prima::Widget Prima::Widget::Fader);
+	{
+	my %RNT = (
+		%{Prima::Widget-> notification_types()},
+		%{Prima::Widget::Fader-> notification_types()},
+	);
+	sub notification_types { return \%RNT; }
+	}
 
 	sub on_mouseenter { shift-> fader_in_mouse_enter }
 	sub on_mouseleave { shift-> fader_out_mouse_leave }
@@ -224,6 +242,8 @@ Fading- in/out functions
 
 The API is currently under design so the parts that are documented are those that expected
 to be staying intact.
+
+=head2 Methods
 
 =over
 
@@ -247,6 +267,27 @@ Returns C<undef> if there is no current fading transition running
 Given a base C<$COLOR>, increases (or decreases) its brightness according to
 C<fader_current_value>, and an eventual C<$MULTIPLIER> that is expected to be in
 the range from 0 to 1.
+
+=back
+
+=head2 Events
+
+=over
+
+=item FadeIn $ENDS_OK
+
+Called when C<fader_in_mouse_enter> is finished the fading, the C<$ENDS_OK> flag
+is set to 0 if the process was overridden by another fader call, 1 otherwise.
+
+=item FadeOut $ENDS_OK
+
+Called when C<fader_out_mouse_leave> is finished the fading, the C<$ENDS_OK> flag
+is set to 0 if the process was overridden by another fader call, 1 otherwise.
+
+=item FadeRepaint
+
+By default repaints the whole widget, but can be overloaded if only some
+widget parts need to reflect the fader effect.
 
 =back
 

@@ -26,6 +26,7 @@ use base qw(
 {
 my %RNT = (
 	%{Prima::Widget-> notification_types()},
+	%{Prima::Widget::Fader-> notification_types()},
 	Check => nt::Default,
 );
 
@@ -237,22 +238,22 @@ sub on_mousemove
 	$self-> notify(q(Click));
 }
 
+sub on_fadein
+{
+	my ( $self, $ends_okay ) = @_;
+	if ($ends_okay) {
+		$self->{hilite} = 1;
+		$self->repaint;
+	}
+}
+
 sub on_mouseenter
 {
 	my $self = $_[0];
-	if (
+	$self-> fader_in_mouse_enter if
 		!$self-> {spaceTransaction} &&
 		!$self-> {mouseTransaction} &&
-		$self-> enabled
-	) {
-		$self-> fader_in_mouse_enter( sub {
-			my ( $self, $f, $ends_okay ) = @_;
-			if ($ends_okay) {
-				$self->{hilite} = 1;
-				$self->repaint;
-			}
-		});
-	}
+		$self-> enabled;
 }
 
 sub on_mouseleave
