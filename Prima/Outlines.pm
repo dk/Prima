@@ -102,7 +102,13 @@ sub icon
 }
 
 package Prima::OutlineViewer;
-use base qw(Prima::Widget Prima::Widget::MouseScroller Prima::Widget::GroupScroller Prima::Widget::ListBoxUtils);
+use base qw(
+	Prima::Widget
+	Prima::Widget::Fader
+	Prima::Widget::MouseScroller
+	Prima::Widget::GroupScroller
+	Prima::Widget::ListBoxUtils
+);
 __PACKAGE__->inherit_core_methods('Prima::Widget::GroupScroller');
 
 use constant DATA     => 0;
@@ -123,6 +129,7 @@ use constant SELECTED => 4;
 {
 my %RNT = (
 	%{Prima::Widget-> notification_types()},
+	%{Prima::Widget::Fader-> notification_types()},
 	SelectItem  => nt::Default,
 	DrawItem    => nt::Action,
 	Stringify   => nt::Action,
@@ -719,7 +726,11 @@ sub update_prelight
 			$self->{prelight} // (),
 			$item // ()
 		);
-		$self->{prelight} = $item;
+		if ( defined $item ) {
+			$self->{prelight} = $item;
+		} else {
+			$self-> fader_out_mouse_leave;
+		}
 		$self->redraw_items( @redraw );
 	}
 }
@@ -803,11 +814,32 @@ sub on_mousewheel
 	$self-> update_prelight($x,$y);
 }
 
+sub on_mouseenter
+{
+	my $self = shift;
+	$self-> fader_in_mouse_enter;
+}
+
 sub on_mouseleave
 {
 	my $self = shift;
-	my $prelight = delete $self->{prelight};
-	$self-> redraw_items( $prelight ) if defined $prelight;
+	my $eventual_current_prelight = $self->{prelight};
+	$self-> fader_out_mouse_leave;
+	$self->{prelight} = $eventual_current_prelight;
+}
+
+sub on_fadeout
+{
+	my $self = shift;
+	my $p = delete $self->{prelight};
+	$self->redraw_items($p) if defined $p; # eventual double prelight
+}
+
+sub on_faderepaint
+{
+	my $self = shift;
+	return unless defined $self->{prelight};
+	$self-> redraw_items( $self->{prelight} );
 }
 
 sub on_enable  { $_[0]-> repaint; }

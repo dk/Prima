@@ -31,12 +31,19 @@ use constant TOP       => 10;
 use constant RECT      => 7,8,9,10;
 
 package Prima::AbstractGridViewer;
-use base qw(Prima::Widget Prima::Widget::MouseScroller Prima::Widget::GroupScroller Prima::Widget::ListBoxUtils);
+use base qw(
+	Prima::Widget
+	Prima::Widget::Fader
+	Prima::Widget::GroupScroller
+	Prima::Widget::ListBoxUtils
+	Prima::Widget::MouseScroller
+);
 __PACKAGE__->inherit_core_methods('Prima::Widget::GroupScroller');
 
 {
 my %RNT = (
 	%{Prima::Widget-> notification_types()},
+	%{Prima::Widget::Fader-> notification_types()},
 	DrawCell      => nt::Action,
 	GetRange      => nt::Action,
 	GetAlignment  => nt::Action,
@@ -1179,11 +1186,32 @@ sub on_mousewheel
 	$self-> update_prelight_and_pointer($x, $y);
 }
 
+sub on_mouseenter
+{
+	my $self = shift;
+	$self-> fader_in_mouse_enter;
+}
+
 sub on_mouseleave
+{
+	my $self = shift;
+	my $eventual_current_prelight = $self->{prelight};
+	$self-> fader_out_mouse_leave;
+	$self->{prelight} = $eventual_current_prelight;
+}
+
+sub on_fadeout
 {
 	my $self = shift;
 	my $prelight = delete $self->{prelight};
 	$self-> redraw_cell( @$prelight ) if defined $prelight;
+}
+
+sub on_faderepaint
+{
+	my $self = shift;
+	return unless defined $self->{prelight};
+	$self-> redraw_cell( @{$self->{prelight}} );
 }
 
 sub on_paint

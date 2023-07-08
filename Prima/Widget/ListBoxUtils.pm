@@ -9,6 +9,7 @@ sub draw_item_background
 	if ( $prelight ) {
 		$back_color //= $canvas-> backColor;
 		my $c = $self-> color;
+		$back_color = $self->map_color($back_color);
 		$prelight = $self->can('fader_prelight_color') ?
 			$self->fader_prelight_color($back_color) :
 			$self->prelight_color($back_color);
