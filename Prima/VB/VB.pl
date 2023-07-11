@@ -2534,6 +2534,9 @@ VB - Visual Builder for the Prima toolkit
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/vb-large.png">
 
+=head1 SYNOPSIS
+
+Run the C<VB> command in your terminal
 
 =head1 DESCRIPTION
 
