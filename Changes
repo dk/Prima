@@ -1,5 +1,9 @@
 Revision history for Perl module Prima
 
+1.70 2023-XX-XX
+ - Use fading effects in widgets
+ - Solidify emulated 2D transformations with images
+
 1.69 2023-05-30
  - Fully rewrite win32 socket engine, now is single-threaded
  - Drawable.matrix returns Prima::Matrix objects
