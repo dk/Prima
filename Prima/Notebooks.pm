@@ -221,8 +221,9 @@ sub on_mousemove
 		if ( $self-> enabled ) {
 			my $prelight = $self-> x2pos($x);
 			if (( $prelight // '') ne ($self->{prelight} // '')) {
-				if ( defined($self->{prelight} = $prelight)) {
-					$self->fader_in_mouse_enter;
+				if ( defined($prelight)) {
+					$self-> fader_in_mouse_enter unless defined $self->{prelight};
+					$self->{prelight} = $prelight;
 				} else {
 					$self->fader_out_mouse_leave;
 				}

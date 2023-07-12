@@ -577,6 +577,7 @@ sub update_prelight
 	my $prelight;
 	if ( $y >= $a[1] && $y < $a[3] && $x >= $a[0] && $x < $a[2]) {
 		my ($item, $aux) = $self-> point2item( $x, $y);
+		$item = -1 if $item >= $self->{count};
 		$prelight = ($item >= 0) ? $item : undef unless defined $aux;
 	}
 	if ( ( $self->{prelight} // -1 ) != ( $prelight // -1 )) {
@@ -585,6 +586,7 @@ sub update_prelight
 			$prelight // ()
 		);
 		if ( defined $prelight ) {
+			$self-> fader_in_mouse_enter unless defined $self->{prelight};
 			$self->{prelight} = $prelight;
 		} else {
 			$self-> fader_out_mouse_leave;
@@ -690,9 +692,7 @@ sub on_mouseenter
 sub on_mouseleave
 {
 	my $self = shift;
-	my $eventual_current_prelight = $self->{prelight};
 	$self-> fader_out_mouse_leave;
-	$self->{prelight} = $eventual_current_prelight;
 }
 
 sub on_fadeout

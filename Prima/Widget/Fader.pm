@@ -161,6 +161,9 @@ sub on_fadeout {}
 sub fader_in_mouse_enter
 {
 	my ($self) = @_;
+	my $action = $self->fader_var('action') // '';
+	return if $action eq 'in';
+
 	$self-> fader_timer_start(
 		action   => 'callback',
 		callback => sub {
@@ -170,16 +173,19 @@ sub fader_in_mouse_enter
 		},
 		onEnd    => sub {
 			my ( $self, $f, $ends_okay ) = @_;
-			$self->fader_var_delete( 'current' );
 			$self->notify(q(FadeIn), $ends_okay);
 		},
 	);
 	$self->fader_var( current => 0.0 );
+	$self->fader_var( action  => 'in');
 }
 
 sub fader_out_mouse_leave
 {
 	my ($self) = @_;
+
+	my $action = $self->fader_var('action') // '';
+	return if $action eq 'out';
 
 	$self-> fader_timer_start(
 		action   => 'callback',
@@ -190,13 +196,13 @@ sub fader_out_mouse_leave
 		},
 		onEnd    => sub {
 			my ( $self, $f, $ends_okay ) = @_;
-			$self->fader_var_delete( 'current' );
 			$self->notify(q(FadeOut), $ends_okay);
 		},
 	);
+	$self->fader_var( action  => 'out');
 }
 
-sub fader_current_value { shift->fader_var('current') }
+sub fader_current_value  { shift->fader_var('current') }
 
 sub fader_prelight_color
 {

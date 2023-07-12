@@ -1048,19 +1048,29 @@ sub update_prelight_and_pointer
 	my ( $cx, $cy, %hints) = $self-> point2cell( $x, $y );
 	my @prelight = (-1,-1);
 	my @old      = @{$self->{prelight} // [-1,-1]};
+	my $fade     = 1;
 	if ( defined($hints{x_grid}) && $self-> allowChangeCellWidth) {
 		$self-> pointerType( cr::SizeWE);
+		$fade = 0;
 	} elsif ( defined($hints{y_grid}) && $self-> allowChangeCellHeight) {
 		$self-> pointerType( cr::SizeNS);
+		$fade = 0;
 	} else {
 		@prelight = ($cx, $cy) if $hints{normal};
 		$self-> pointerType( cr::Default);
 	}
 
 	if ( join('.', @prelight ) ne join('.', @old)) {
-		$self->{prelight} = ( $prelight[0] < 0 ) ? undef : \@prelight;
-		$self->redraw_cell( @old )      if $old[0]      >= 0;
-		$self->redraw_cell( @prelight ) if $prelight[0] >= 0;
+		$self->redraw_cell( @old ) if $old[0]      >= 0;
+		if ( $prelight[0] >= 0 ) {
+			$self->{prelight} = \@prelight;
+			$self-> redraw_cell( @prelight );
+			$self-> fader_in_mouse_enter unless defined $self->{prelight};
+		} elsif ( $fade ) {
+			$self-> fader_out_mouse_leave;
+		} else {
+			$self-> {prelight} = undef;
+		}
 	}
 }
 
@@ -1195,9 +1205,7 @@ sub on_mouseenter
 sub on_mouseleave
 {
 	my $self = shift;
-	my $eventual_current_prelight = $self->{prelight};
 	$self-> fader_out_mouse_leave;
-	$self->{prelight} = $eventual_current_prelight;
 }
 
 sub on_fadeout

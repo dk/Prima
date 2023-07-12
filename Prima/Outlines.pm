@@ -712,6 +712,7 @@ sub update_prelight
 		$y = $a[3] - $y;
 		$item = $self-> {topItem} + int( $y / $self-> {itemHeight});
 	}
+	undef $item if $item >= $self->{count};
 
 	if ( $self-> {showItemHint} ) {
 		if ( defined $item ) {
@@ -727,6 +728,7 @@ sub update_prelight
 			$item // ()
 		);
 		if ( defined $item ) {
+			$self-> fader_in_mouse_enter unless defined $self->{prelight};
 			$self->{prelight} = $item;
 		} else {
 			$self-> fader_out_mouse_leave;
@@ -823,9 +825,7 @@ sub on_mouseenter
 sub on_mouseleave
 {
 	my $self = shift;
-	my $eventual_current_prelight = $self->{prelight};
 	$self-> fader_out_mouse_leave;
-	$self->{prelight} = $eventual_current_prelight;
 }
 
 sub on_fadeout
@@ -1117,6 +1117,8 @@ sub redraw_items
 	my $ih = $self-> {itemHeight};
 
 	my %match;
+	my $buffered = $self->buffered;
+	$self->buffered(1) unless $buffered;
 	for my $i ( @items ) {
 		next unless $i >= 0 && $i >= $self-> {topItem} && $i <= $self-> {topItem} + $self-> {rows};
 		next if $match{$i}++;
@@ -1125,6 +1127,10 @@ sub redraw_items
 			$a[0], $a[3] - ( $i + 1) * $ih,
 			$a[2], $a[3] - $i * $ih
 		);
+	}
+	unless ($buffered) {
+		$self->update_view;
+		$self->buffered(0);
 	}
 }
 
