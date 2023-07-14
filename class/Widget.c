@@ -589,6 +589,18 @@ Widget_is_child( Handle self, Handle owner)
 	return false;
 }
 
+Bool
+Widget_is_surface_buffered( Handle self)
+{
+	if (
+		!is_opt(optBuffered) ||
+		!is_opt(optInDraw)   ||
+		 is_opt(optInDrawInfo)
+	)
+		return false;
+	return apc_widget_surface_is_buffered(self);
+}
+
 /*::j */
 
 /*::l */

@@ -1551,6 +1551,12 @@ apc_widget_get_layered_request( Handle self)
 }
 
 Bool
+apc_widget_surface_is_buffered( Handle self)
+{
+	return sys bm != NULL;
+}
+
+Bool
 apc_widget_surface_is_layered( Handle self)
 {
 	Handle top;

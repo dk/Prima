@@ -1189,11 +1189,13 @@ to the screen then. Used when complex drawing methods are used,
 or if output smoothness is desired.
 
 This behavior can not be always granted, however. If there is not
-enough memory, then widget draws in the usual manner.
+enough memory, then widget draws in the usual manner. One can
+check whether the buffering request was granted by calling the
+C<is_surface_buffered> method.
 
 Default value: 0
 
-See also: C<Paint>
+See also: C<Paint>, L</is_surface_buffered>.
 
 =item capture BOOLEAN, CLIP_OBJECT = undef
 
@@ -2298,6 +2300,14 @@ Marks the rectangular area of a widget as 'invalid',
 so re-painting of the area happens. See L</"Graphic content">.
 
 See also: C<validate_rect>, C<get_invalid_rect>, C<repaint>, C<Paint>, C<syncPaint>, C<update_view>
+
+=item is_surface_buffered
+
+Returns true if the C<buffered> property is set and the buffering request was granted.
+The value is only valid inside C<begin_paint/end_paint> bracket, and is always false
+otherwise.
+
+See also: L</buffered>
 
 =item is_surface_layered
 

@@ -687,6 +687,12 @@ apc_widget_surface_is_layered( Handle self)
 	return X(self)-> flags. layered;
 }
 
+Bool
+apc_widget_surface_is_buffered( Handle self)
+{
+	return X(self)-> gdrawable != X(self)-> udrawable;
+}
+
 Point
 apc_widget_get_pos( Handle self)
 {

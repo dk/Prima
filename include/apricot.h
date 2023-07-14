@@ -2242,6 +2242,9 @@ extern Bool
 apc_widget_is_focused( Handle self);
 
 extern Bool
+apc_widget_surface_is_buffered( Handle self);
+
+extern Bool
 apc_widget_surface_is_layered( Handle self);
 
 extern Bool
