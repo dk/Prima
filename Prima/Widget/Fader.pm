@@ -154,7 +154,27 @@ sub FadeTimer_Tick
 	}
 }
 
-sub on_faderepaint { shift->repaint }
+sub fader_cancel_if_unbuffered
+{
+	my $self = shift;
+	if ( $self->fader_var('test_buffering')) {
+		$self->fader_var_delete('test_buffering');
+		if ( $self->buffered && !$self->is_surface_buffered ) {
+			# refuse fading to avoid horrible blinking
+			my $f = $self->{__fader_timer};
+			$f->{current} = $f->{max};
+			$f->{stop} = 1;
+		}
+	}
+}
+
+sub on_faderepaint
+{
+	my $self = shift;
+	$self->fader_cancel_if_unbuffered;
+	$self->repaint;
+}
+
 sub on_fadein  {}
 sub on_fadeout {}
 
@@ -178,6 +198,7 @@ sub fader_in_mouse_enter
 	);
 	$self->fader_var( current => 0.0 );
 	$self->fader_var( action  => 'in');
+	$self->fader_var( test_buffering => 1 );
 }
 
 sub fader_out_mouse_leave
@@ -200,6 +221,7 @@ sub fader_out_mouse_leave
 		},
 	);
 	$self->fader_var( action  => 'out');
+	$self->fader_var( test_buffering => 1 );
 }
 
 sub fader_current_value  { shift->fader_var('current') }

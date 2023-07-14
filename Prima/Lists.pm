@@ -706,6 +706,7 @@ sub on_faderepaint
 {
 	my $self = shift;
 	return unless defined $self->{prelight};
+	$self-> fader_cancel_if_unbuffered;
 	$self-> redraw_items( $self->{prelight} );
 }
 
