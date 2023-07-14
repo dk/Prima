@@ -85,10 +85,15 @@ img_premultiply_alpha_constant( Handle self, int alpha)
 {
 	Byte * data;
 	int i, j, pixels;
+	Image dummy;
 	if ( PImage(self)-> type == imByte ) {
 		pixels = 1;
 	} else if ( PImage(self)-> type == imRGB ) {
 		pixels = 3;
+	} else if (( PImage(self)-> type & imBPP) <= 8 ) {
+		img_fill_dummy( &dummy, PImage(self)->palSize * 3, 1, imByte, NULL, NULL);
+		self = (Handle) &dummy;
+		pixels = 1;
 	} else {
 		croak("Not implemented");
 	}
