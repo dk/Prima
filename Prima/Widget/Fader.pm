@@ -148,9 +148,10 @@ sub FadeTimer_Tick
 
 	my $value = $f-> {function}->( $self, $f );
 	$value = $f->{type}->($self, $f, $value );
+	$f->{ends_okay} = 1;
 	$f->{action}->( $self, $f, $value );
 	if ($f->{stop} && ( my $onEnd = delete $f->{onEnd})) {
-		$onEnd->( $self, $f, 1 );
+		$onEnd->( $self, $f, $f->{ends_okay} );
 	}
 }
 
@@ -164,6 +165,7 @@ sub fader_cancel_if_unbuffered
 			my $f = $self->{__fader_timer};
 			$f->{current} = $f->{max};
 			$f->{stop} = 1;
+			$f->{ends_okay} = 0;
 		}
 	}
 }
@@ -275,15 +277,13 @@ to be staying intact.
 
 =over
 
-=item fader_in_mouse_enter [ $onEnd :: ( self, storage, transition_is_finished ) ]
+=item fader_in_mouse_enter
 
 Initiates a fade-in transition, calls repaint on each step.
-Calls eventual callback C< $onEnd > when the transition is either finished or aborted.
 
-=item fader_out_mouse_leave [ $onEnd :: ( self, storage, transition_is_finished ) ]
+=item fader_out_mouse_leave
 
 Initiates a fade-out transition, calls repaint on each step.
-Calls eventual callback C< $onEnd > when the transition is either finished or aborted.
 
 =item fader_current_value
 
