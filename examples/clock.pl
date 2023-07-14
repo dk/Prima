@@ -37,7 +37,7 @@ my $mw = Prima::MainWindow->new(
 				[ 'system' => '~System' => \&set_time_format ],
 				[],
 				[ 'hh:mm:ss' => \&set_time_format ],
-				[ 'hh:mm AM' => \&set_time_format ],
+				[ 'hh:mm AA' => \&set_time_format ],
 				[ 'hr:hh min:mm sec:ss' => \&set_time_format ],
 			]],
 			['~Date format' => [
@@ -45,6 +45,7 @@ my $mw = Prima::MainWindow->new(
 				[],
 				[ 'YYYY-MM-DD' => \&set_date_format ],
 				[ 'MM/DD/YYYY' => \&set_date_format ],
+				[ 'MM YYYY' => \&set_date_format ],
 				[ 'DD/MM/YY'   => \&set_date_format ],
 				[ 'year:YYYY month:MM day:DD' => \&set_date_format ],
 			]],

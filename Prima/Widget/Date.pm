@@ -134,7 +134,12 @@ sub date2str
 	$p[1] ++;
 
 	my $print = $self->{mask}->{print};
-	my @pp    = map { defined($_) ? $p[$_] : () } @$print;
+	my @pp;
+	for my $t (0..2) {
+		my $pos;
+		next unless defined ($pos = $print->[$t]);
+		$pp[$pos] = $p[$t];
+	}
 	return sprintf $self->{mask}->{format}, @pp;
 }
 

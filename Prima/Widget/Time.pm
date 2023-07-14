@@ -36,6 +36,8 @@ sub time2str
 	my @time = ref($_[0]) ? @{ $_[0] } : @_;
 	my $mask  = $self->{mask};
 	my @pp;
+	my $terms = 3;
+
 	if ( defined $mask->[4]) {
 		if ( $time[2] == 0 ) {
 			@time[2,3] = (12, 'AM');
@@ -49,9 +51,15 @@ sub time2str
 		}
 		$time[3] = lc $time[3] unless $mask->[9];
 		@pp = map { defined($_) ? $time[$_] : () } @$mask[1..4];
-	} else {
-		@pp = map { defined($_) ? $time[$_] : () } @$mask[1..3];
+		$terms++;
 	}
+
+	for my $t (1..$terms) {
+		my $pos;
+		next unless defined ($pos = $mask->[$t]);
+		$pp[$pos] = $time[$t - 1];
+	}
+
 	return sprintf $mask->[0], @pp;
 }
 
