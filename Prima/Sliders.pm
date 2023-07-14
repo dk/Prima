@@ -1176,7 +1176,18 @@ use constant Dual        => 2;
 
 package Prima::Slider;
 use vars qw(@ISA);
-@ISA = qw(Prima::AbstractSlider);
+use base qw(
+	Prima::AbstractSlider
+	Prima::Widget::Fader
+);
+
+{
+my %RNT = (
+	%{Prima::AbstractSlider-> notification_types()},
+	%{Prima::Widget::Fader-> notification_types()},
+);
+sub notification_types { return \%RNT; }
+}
 
 sub profile_default
 {
@@ -1237,6 +1248,11 @@ sub on_paint
 	}
 	my @c3d  = ( $self-> dark3DColor, $self-> light3DColor);
 	my @cht  = ( $self-> hiliteColor, $self-> hiliteBackColor);
+	if ( $enabled ) {
+		my $blend = $self->{mouse_in} ? $self->fader_current_value // 1 : 0;
+		$cht[1] = cl::blend(( map { $self->map_color($_) } ( $clr[1], $cht[1] )), $blend / 2 + .5);
+	}
+
 	my @glyph_deltas = ([$clr[0], 0, 0]);
 	unshift @glyph_deltas, [cl::White, 1, -1] unless $enabled;
 	my $flat = $self-> skin eq 'flat';
@@ -1721,11 +1737,21 @@ sub on_mousemove
 	$self-> notify(q(Track)) if !$self-> {autoTrack} && $ov != $self-> {value};
 }
 
+sub on_mouseenter
+{
+	my $self = shift;
+	$self-> fader_in_mouse_enter;
+	$self-> {mouse_in} = 1;
+}
+
 sub on_mouseleave
 {
 	my $self = shift;
 	$self-> repaint_knob if defined( delete $self->{prelight} );
+	$self-> fader_out_mouse_leave;
 }
+
+sub on_fadeout { delete shift->{mouse_in} }
 
 sub on_keydown
 {
@@ -2559,20 +2585,6 @@ sub init
 	return %profile;
 }
 
-sub mask2icon
-{
-	my ( $mask, $color ) = @_;
-	my $bits = Prima::Image->new(
-		size => [ $mask-> size ],
-		type => im::Byte,
-		backColor => $color,
-	);
-	$bits-> clear;
-	my $icon = Prima::Icon-> create_combined($bits, $mask);
-	$icon->premultiply_alpha;
-	return $icon;
-}
-
 sub create_tab
 {
 	my ( $self, $x, $y ) = @_;
@@ -2593,12 +2605,12 @@ sub create_tab
 	$tabend_mask->new_gradient(
 		palette => [cl::Black, cl::White, cl::Black],
 	)->bar(0, 0, $y * 2, 1, 1);
-	my $tabend = mask2icon( $tabend_mask, cl::Black );
+	my $tabend = $tabend_mask->to_colormask(cl::Black);
 
 	$tab_mask-> put_image_indirect( $tabend_mask, 0, 0, $y, 0, $y, 1, $y, 1, rop::SrcOver | rop::ConstantColor);
 	$tab_mask-> put_image_indirect( $tabend_mask, $tab_mask-> width - $y, 0, 0, 0, $y, 1, $y, 1, rop::SrcOver | rop::ConstantColor);
 
-	$self->{cache}->{tab}  = mask2icon( $tab_mask, cl::White )-> bitmap;
+	$self->{cache}->{tab}  = $tab_mask-> to_colormask(cl::White)-> bitmap;
 	$self->{cache}->{tabx} = $tab_mask-> width;
 }
 
