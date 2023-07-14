@@ -842,6 +842,7 @@ Icon_set( Handle self, HV * profile)
 		pdelete( maskType);
 		pdelete( mask);
 	NO_MASK:
+		;
 	}
 
 	inherited set ( self, profile);
