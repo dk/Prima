@@ -160,13 +160,20 @@ sub fader_cancel_if_unbuffered
 	my $self = shift;
 	if ( $self->fader_var('test_buffering')) {
 		$self->fader_var_delete('test_buffering');
-		if ( $self->buffered && !$self->is_surface_buffered ) {
-			# refuse fading to avoid horrible blinking
-			my $f = $self->{__fader_timer};
-			$f->{current} = $f->{max};
-			$f->{stop} = 1;
-			$f->{ends_okay} = 0;
-		}
+
+		my $pid;
+		$pid = $self->add_notification( Paint => sub {
+			$self->remove_notification($pid);
+			if ( $self->buffered && !$self->is_surface_buffered ) {
+				# refuse fading to avoid horrible blinking
+				my $f = $self->{__fader_timer};
+				$f->{current} = $f->{max};
+				$f->{stop} = 1;
+				$f->{ends_okay} = 0;
+				$self->fader_var( current => (($self->fader_var('action') // '' ) eq 'in') ? 1 : 0);
+			}
+			$self->notify('Paint', $_[1]);
+		});
 	}
 }
 
@@ -200,7 +207,7 @@ sub fader_in_mouse_enter
 	);
 	$self->fader_var( current => 0.0 );
 	$self->fader_var( action  => 'in');
-	$self->fader_var( test_buffering => 1 );
+	$self->fader_var( test_buffering => 1 ) if $self->buffered;
 }
 
 sub fader_out_mouse_leave
@@ -223,7 +230,7 @@ sub fader_out_mouse_leave
 		},
 	);
 	$self->fader_var( action  => 'out');
-	$self->fader_var( test_buffering => 1 );
+	$self->fader_var( test_buffering => 1 ) if $self->buffered;
 }
 
 sub fader_current_value  { shift->fader_var('current') }
