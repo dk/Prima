@@ -983,8 +983,18 @@ sub profile_check_in
 {
 	my ( $self, $p, $default) = @_;
 
-	if ( exists $p-> {mask} and not exists $p-> {autoMasking}) {
-		$p-> {autoMasking} = am::None;
+	if ( exists $p-> {mask} ) {
+		$p-> {autoMasking} = am::None if not exists $p-> {autoMasking};
+		if (ref($p->{mask}) && UNIVERSAL::isa($p->{mask}, 'Prima::Image')) {
+			my $i = $p->{mask};
+			my $newbpp = ($i->get_bpp == 1) ? 1 : 8;
+			if ( exists $p->{maskType} && $p->{maskType} != $newbpp ) {
+				$p->{mask} = $i->clone( type => $newbpp )->data;
+			} else {
+				$p->{maskType} = $newbpp;
+			}
+		}
+
 	}
 	$self-> SUPER::profile_check_in( $p, $default);
 }

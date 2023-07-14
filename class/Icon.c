@@ -824,19 +824,24 @@ Icon_set( Handle self, HV * profile)
 {
 	dPROFILE;
 
-	if (pexist( maskType)) {
+	if ( pexist( maskType) && pexist( mask )) {
+		SV *svmask   = pget_sv(mask);
 		int maskType = pget_i(maskType);
-		if ( maskType == var-> maskType ) pdelete( maskType );
-	}
-
-	if ( pexist( maskType) && pexist( mask ))
-	{
-		free( var-> mask );
-		var-> mask = NULL;
-		my-> set_maskType( self, pget_i( maskType));
-		my-> set_mask( self, pget_sv( mask));
+		if ( svmask && SvOK(svmask) && SvROK(svmask)) {
+			if ( !copy_mask_from_image(self, svmask))
+				goto NO_MASK;
+			my-> set_maskType( self, maskType);
+		} else if ( maskType != var->maskType) {
+			free( var-> mask );
+			var-> mask = NULL;
+			my-> set_maskType( self, maskType);
+			my-> set_mask( self, svmask);
+		} else {
+			my-> set_mask( self, svmask);
+		}
 		pdelete( maskType);
 		pdelete( mask);
+	NO_MASK:
 	}
 
 	inherited set ( self, profile);
