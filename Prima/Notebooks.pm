@@ -227,6 +227,7 @@ sub on_mousemove
 				} else {
 					$self->fader_out_mouse_leave;
 				}
+				$self->repaint;
 			}
 		}
 		return;
