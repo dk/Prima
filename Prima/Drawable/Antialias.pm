@@ -77,15 +77,7 @@ sub apply_surface
 	} elsif ( $canvas->isa('Prima::Image') && ! $canvas->get_paint_state ) {
 		return $canvas-> put_image( $x, $y, $alpha, rop::SrcOver | rop::ConstantColor );
 	} else {
-		my $bits = Prima::Image->new(
-			size  => [ $alpha-> size ],
-			type  => im::RGB,
-			color => $canvas-> color,
-		);
-		$bits-> bar(0, 0, $alpha->size);
-		my $icon = Prima::Icon-> create_combined( $bits, $alpha );
-		$icon->premultiply_alpha;
-		return $canvas-> put_image( $x, $y, $icon, rop::Blend );
+		return $canvas-> put_image( $x, $y, $alpha->to_colormask( $canvas-> color) , rop::Blend );
 	}
 }
 

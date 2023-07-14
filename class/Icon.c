@@ -257,12 +257,61 @@ Icon_init( Handle self, HV * profile)
 	CORE_INIT_TRANSIENT(Icon);
 }
 
+static Bool
+copy_mask_from_image( Handle self, SV * svmask)
+{
+	Handle h;
+	PImage i;
+	Byte *m, bpp;
+
+	if ( !( h = gimme_the_mate(svmask)) || !kind_of(h, CImage)) {
+		warn("Icon.mask: not a Prima::Image object");
+		return false;
+	}
+	i = (PImage) h;
+	if ( i-> h != var-> h || i-> w != var-> w ) {
+		warn("Icon.mask: mask size doesn't match");
+		return false;
+	}
+
+	bpp = i-> type & imBPP;
+	if (bpp == var-> maskType ) {
+		memcpy( var-> mask, i->data, var->maskSize );
+		return true;
+	}
+
+	if ( bpp != 1 && bpp != 8 ) {
+		/* down/upgrade to imByte */
+		Handle h2;
+		PImage i2;
+		if ( !( h2 = CImage(h)->dup(h)))
+			return false;
+		CImage(h2)->set_type(h2, imByte);
+		i2 = (PImage) h2;
+		if ( !( m = malloc(i2-> dataSize ))) {
+			Object_destroy(h2);
+			return false;
+		}
+		memcpy( m, i2->data, i2->dataSize);
+		Object_destroy(h2);
+		bpp = 8;
+	} else {
+		if ( !( m = malloc(i-> dataSize )))
+			return false;
+		memcpy( m, i->data, i->dataSize);
+	}
+
+	free( var-> mask );
+	var-> mask     = m;
+	var-> maskType = bpp;
+	var-> maskLine = LINE_SIZE( var-> w, bpp );
+	var-> maskSize = var-> maskLine * var-> h;
+	return true;
+}
 
 SV *
 Icon_mask( Handle self, Bool set, SV * svmask)
 {
-	STRLEN maskSize;
-	void * mask;
 	int am = var-> autoMasking;
 	if ( var-> stage > csFrozen) return NULL_SV;
 	if ( !set) {
@@ -274,9 +323,19 @@ Icon_mask( Handle self, Bool set, SV * svmask)
 		SvPOK_only(sv);
 		return sv;
 	}
-	mask = SvPV( svmask, maskSize);
-	if ( is_opt( optInDraw) || maskSize <= 0) return NULL_SV;
-	memcpy( var-> mask, mask, (maskSize > (STRLEN)var-> maskSize) ? (STRLEN)var-> maskSize : maskSize);
+
+	if ( !SvOK(svmask)) return NULL_SV;
+
+	if ( SvROK(svmask)) {
+		if ( !copy_mask_from_image( self, svmask ))
+			return NULL_SV;
+	} else {
+		STRLEN maskSize;
+		void * mask;
+		mask = SvPV( svmask, maskSize);
+		if ( is_opt( optInDraw) || maskSize <= 0) return NULL_SV;
+		memcpy( var-> mask, mask, (maskSize > (STRLEN)var-> maskSize) ? (STRLEN)var-> maskSize : maskSize);
+	}
 	var-> autoMasking = amNone;
 	my-> update_change( self);
 	var-> autoMasking = am;

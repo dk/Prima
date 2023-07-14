@@ -930,6 +930,20 @@ sub to_rgba
 	return $i;
 }
 
+sub to_colormask
+{
+	my ( $self, $color ) = @_;
+	my $icon = Prima::Icon->new(
+		size      => [ $self-> size ],
+		type      => im::RGB,
+		backColor => $color,
+		mask      => $self,
+	);
+	$icon-> clear;
+	$icon-> premultiply_alpha;
+	return $icon;
+}
+
 sub load_stream
 {
 	shift;

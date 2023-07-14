@@ -689,9 +689,10 @@ disregarding the C<::autoMasking> value.
 
 =item mask SCALAR
 
-Provides access to the transparency bitmap. On get-call, returns
-all bitmap pixels, aligned to 4-byte boundary in 1-bit format. On set-call,
-stores the provided transparency data with same alignment.
+Provides access to the transparency bitmap. On a get-call, returns
+all bitmap pixels, aligned to 4-byte boundary in 1-bit format. On a set-call,
+stores the provided transparency data with same alignment. If the SCALAR
+is an image object, copies its pixels as a new mask.
 
 =item maskColor COLOR
 
@@ -920,6 +921,12 @@ shear factor for the other one to zero.
 
 Creates an icon from image, with C<$MASK_DEPTH> integer (can be either 1 or 8),
 and $C<$MASK_TEMPLATE> scalar used for newly populate mask.
+
+=item to_colormask COLOR
+
+Creates a new icon with bit depth 24 filled with COLOR, where the mask
+bits are copied from the caller image object and upgraded to bit depth 8,
+if needed.
 
 =item to_rgba TYPE=undef
 
