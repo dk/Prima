@@ -922,9 +922,8 @@ process_wm_sync_data( Handle self, WMSyncData * wmsd)
 }
 
 static Bool
-wm_event( Handle self, XEvent *xev, PEvent ev)
+handle_wm_event( Handle self, XEvent *xev, PEvent ev)
 {
-
 	switch ( xev-> xany. type) {
 	case ClientMessage:
 		if ( xev-> xclient. message_type == WM_PROTOCOLS) {
@@ -1081,6 +1080,464 @@ STOP:;
 	return skipped;
 }
 
+static Handle
+redirect_mousegrab( Handle self, int *x, int *y)
+{
+	if ( guts. grab_widget != NULL_HANDLE && self != guts. grab_widget) {
+		XWindow rx;
+		XTranslateCoordinates( DISP,
+			X(self)-> client,
+			PWidget(guts. grab_widget)-> handle,
+			*x, *y, x, y, &rx);
+		return guts.grab_widget;
+	}
+
+	return self;
+}
+
+static Handle
+handle_mouse_updown_event( Handle self, XEvent *ev, Event *e, Event *secondary, Bool down)
+{
+	DEFXX;
+	XButtonEvent *bev;
+
+	guts. last_time = ev-> xbutton. time;
+	if ( down && guts. currentMenu) prima_end_menu();
+	if (prima_no_input(XX, false, down)) return false;
+
+	e-> cmd = down ? cmMouseDown : cmMouseUp;
+	self = redirect_mousegrab(self, &ev-> xbutton.x, &ev-> xbutton.y);
+	XX = X(self);
+
+	bev = &ev-> xbutton;
+	bev-> x -= XX-> origin. x - XX-> ackOrigin. x;
+	bev-> y += XX-> origin. y - XX-> ackOrigin. y;
+	if ( ev-> xany. window == guts. root && guts. grab_redirect) {
+		bev-> x -= guts. grab_translate_mouse. x;
+		bev-> y -= guts. grab_translate_mouse. y;
+	}
+	switch (bev-> button) {
+	case Button1:
+		e->pos. button = mb1;
+		break;
+	case Button2:
+		e->pos. button = mb2;
+		break;
+	case Button3:
+		e->pos. button = mb3;
+		break;
+	case Button4:
+		e->pos. button = mb4;
+		break;
+	case Button5:
+		e->pos. button = mb5;
+		break;
+	case Button6:
+		e->pos. button = mb6;
+		break;
+	case Button7:
+		e->pos. button = mb7;
+		break;
+	case Button8:
+		e->pos. button = mb8;
+		break;
+	case Button9:
+		e->pos. button = mb9;
+		break;
+	case Button10:
+		e->pos. button = mb10;
+		break;
+	case Button11:
+		e->pos. button = mb11;
+		break;
+	case Button12:
+		e->pos. button = mb12;
+		break;
+	case Button13:
+		e->pos. button = mb13;
+		break;
+	case Button14:
+		e->pos. button = mb14;
+		break;
+	case Button15:
+		e->pos. button = mb15;
+		break;
+	case Button16:
+		e->pos. button = mb16;
+		break;
+	default:
+		return NULL_HANDLE;
+	}
+
+	e->pos. where. x = bev-> x;
+	e->pos. where. y = XX-> size. y - bev-> y - 1;
+	if ( bev-> state & ShiftMask)     e->pos.mod |= kmShift;
+	if ( bev-> state & ControlMask)   e->pos.mod |= kmCtrl;
+	if ( bev-> state & Mod1Mask)      e->pos.mod |= kmAlt;
+	if ( bev-> state & Button1Mask)   e->pos.mod |= mb1;
+	if ( bev-> state & Button2Mask)   e->pos.mod |= mb2;
+	if ( bev-> state & Button3Mask)   e->pos.mod |= mb3;
+	if ( bev-> state & Button4Mask)   e->pos.mod |= mb4;
+	if ( bev-> state & Button5Mask)   e->pos.mod |= mb5;
+	if ( bev-> state & Button6Mask)   e->pos.mod |= mb6;
+	if ( bev-> state & Button7Mask)   e->pos.mod |= mb7;
+
+	if ( e->cmd == cmMouseDown &&
+		guts.last_button_event.type == cmMouseUp &&
+		bev-> window == guts.last_button_event.window &&
+		bev-> button == guts.last_button_event.button &&
+		bev-> button != guts. mouse_wheel_up &&
+		bev-> button != guts. mouse_wheel_down &&
+		bev-> time - guts.last_button_event.time <= guts.click_time_frame
+	) {
+		e->cmd = cmMouseClick;
+		e->pos. nth = ++guts.last_mouseclick_number;
+	}
+
+	if (
+		(e->cmd == cmMouseDown || e->cmd == cmMouseUp) &&
+		(
+			( guts. mouse_wheel_up   != 0 && bev-> button == guts. mouse_wheel_up) ||
+			( guts. mouse_wheel_down != 0 && bev-> button == guts. mouse_wheel_down)
+		)
+	) {
+		if ( e->cmd == cmMouseDown ) {
+			e->cmd = cmMouseWheel;
+			e->pos. button = bev-> button == guts. mouse_wheel_up ? WHEEL_DELTA : -WHEEL_DELTA;
+		} else {
+			e->cmd = 0;
+		}
+	} else if ( e->cmd == cmMouseUp &&
+		guts.last_button_event.type == cmMouseDown &&
+		bev-> window == guts.last_button_event.window &&
+		bev-> button == guts.last_button_event.button &&
+		bev-> time - guts.last_button_event.time <= guts.click_time_frame) {
+		secondary-> cmd = cmMouseClick;
+		secondary-> pos. where. x = e->pos. where. x;
+		secondary-> pos. where. y = e->pos. where. y;
+		secondary-> pos. mod = e->pos. mod;
+		secondary-> pos. button = e->pos. button;
+		memcpy( &guts.last_click, bev, sizeof(guts.last_click));
+		guts. last_mouseclick_number = 1;
+		if ( e->pos. button == mbRight) {
+			Event ev;
+			bzero( &ev, sizeof(ev));
+			ev. cmd = cmPopup;
+			ev. gen. B = true;
+			ev. gen. P. x = e->pos. where. x;
+			ev. gen. P. y = e->pos. where. y;
+			apc_message( self, &ev, true);
+			if ( PObject( self)-> stage == csDead) return NULL_HANDLE;
+		}
+	}
+	memcpy( &guts.last_button_event, bev, sizeof(*bev));
+	guts. last_button_event.type = e-> cmd;
+
+	if ( e->cmd == cmMouseDown) {
+		Handle x = prima_find_root_parent(self);
+		Handle f = prima_find_root_parent(guts. focused ? guts. focused : prima_guts.application);
+		if ( XX-> flags. first_click) {
+			if ( ! is_opt( optSelectable)) {
+				if ( x && x != f && X(x)-> type. window)
+					XSetInputFocus( DISP, PWidget(x)-> handle, RevertToParent, bev-> time);
+			}
+		} else {
+			if ( x != f) {
+				e->cmd = 0;
+				if (P_APPLICATION-> hintUnder == self)
+					CWidget(self)-> set_hintVisible( self, 0);
+				if (( PWidget(self)-> options. optSelectable) && ( PWidget(self)-> selectingButtons & e->pos. button))
+					apc_widget_set_focused( self);
+			}
+		}
+	}
+
+	return self;
+}
+
+static Handle
+handle_mousemove_event( Handle self, XEvent *ev, Event *e)
+{
+	DEFXX;
+	e-> cmd = cmMouseMove;
+	guts. last_time = ev-> xmotion. time;
+	self = redirect_mousegrab(self, &ev-> xmotion.x, &ev-> xmotion.y);
+	XX = X(self);
+	ev-> xmotion. x -= XX-> origin. x - XX-> ackOrigin. x;
+	ev-> xmotion. y += XX-> origin. y - XX-> ackOrigin. y;
+	if ( ev-> xany. window == guts. root && guts. grab_redirect) {
+		ev-> xmotion. x -= guts. grab_translate_mouse. x;
+		ev-> xmotion. y -= guts. grab_translate_mouse. y;
+	}
+	e-> pos. where. x = ev-> xmotion. x;
+	e-> pos. where. y = XX-> size. y - ev-> xmotion. y - 1;
+	if ( ev-> xmotion. state & ShiftMask)     e->pos.mod |= kmShift;
+	if ( ev-> xmotion. state & ControlMask)   e->pos.mod |= kmCtrl;
+	if ( ev-> xmotion. state & Mod1Mask)      e->pos.mod |= kmAlt;
+	if ( ev-> xmotion. state & Button1Mask)   e->pos.mod |= mb1;
+	if ( ev-> xmotion. state & Button2Mask)   e->pos.mod |= mb2;
+	if ( ev-> xmotion. state & Button3Mask)   e->pos.mod |= mb3;
+	if ( ev-> xmotion. state & Button4Mask)   e->pos.mod |= mb4;
+	if ( ev-> xmotion. state & Button5Mask)   e->pos.mod |= mb5;
+	if ( ev-> xmotion. state & Button6Mask)   e->pos.mod |= mb6;
+	if ( ev-> xmotion. state & Button7Mask)   e->pos.mod |= mb7;
+
+	return self;
+}
+
+static void
+handle_focus_in( Handle self, XEvent *ev, Event *e)
+{
+	DEFXX;
+	Handle frame = self;
+	switch ( ev-> xfocus. detail) {
+	case NotifyVirtual:
+	case NotifyPointer:
+	case NotifyPointerRoot:
+	case NotifyDetailNone:
+		return;
+	case NotifyNonlinearVirtual:
+		if (!XT_IS_WINDOW(XX)) return;
+		break;
+	}
+
+	if ( guts. message_boxes) {
+		struct MsgDlg * md = guts. message_boxes;
+		while ( md) {
+			XSetInputFocus( DISP, md-> w, RevertToNone, CurrentTime);
+			md = md-> next;
+		}
+		return;
+	}
+
+	syntetic_mouse_move(); /* XXX - simulated MouseMove event for compatibility reasons */
+
+	if (!XT_IS_WINDOW(XX))
+		frame = C_APPLICATION-> top_frame( prima_guts.application, self);
+
+	if ( C_APPLICATION-> map_focus( prima_guts.application, frame) != frame) {
+		C_APPLICATION-> popup_modal( prima_guts.application);
+		return;
+	}
+
+	if ( XT_IS_WINDOW(XX)) {
+		Event ee = *e;
+		ee.cmd = cmActivate;
+		SELF_MESSAGE(ee);
+		if (( PObject( self)-> stage == csDead) ||
+			( ev-> xfocus. detail == NotifyNonlinearVirtual)) return;
+	}
+
+	if ( guts. focused) prima_no_cursor( guts. focused);
+	guts. focused = self;
+	prima_update_cursor( guts. focused);
+	e-> cmd = cmReceiveFocus;
+	if ( guts.use_xim )
+		prima_xim_focus_in(self);
+}
+
+static void
+handle_focus_out( Handle self, XEvent *ev, Event *e)
+{
+	DEFXX;
+	switch ( ev-> xfocus. detail) {
+	case NotifyVirtual:
+	case NotifyPointer:
+	case NotifyPointerRoot:
+	case NotifyDetailNone:
+		return;
+	case NotifyNonlinearVirtual:
+		if (!XT_IS_WINDOW(XX)) return;
+		break;
+	}
+
+	if ( XT_IS_WINDOW(XX)) {
+		Event ee = *e;
+		ee.cmd = cmDeactivate;
+		SELF_MESSAGE(ee);
+		if (( PObject( self)-> stage == csDead) ||
+			( ev-> xfocus. detail == NotifyNonlinearVirtual)) return;
+	}
+
+	if ( guts. focused) prima_no_cursor( guts. focused);
+	if ( self == guts. focused) guts. focused = NULL_HANDLE;
+	e->cmd = cmReleaseFocus;
+	if ( guts.use_xim )
+		prima_xim_focus_out();
+}
+
+static void
+handle_immediate_configure_event( Handle self, XWindow win, XEvent *ev)
+{
+	DEFXX;
+	if ( XT_IS_WINDOW(XX)) {
+		if ( win != XX-> client) {
+			int nh;
+			WMSyncData wmsd;
+			Bool size_changed =
+				XX-> ackFrameSize. x != ev-> xconfigure. width ||
+				XX-> ackFrameSize. y != ev-> xconfigure. height;
+			wmsd. allow_cmSize = true;
+			XX-> ackOrigin. x = ev-> xconfigure. x;
+			XX-> ackOrigin. y = X(X(self)-> owner)-> size. y - ev-> xconfigure. height - ev-> xconfigure. y;
+			XX-> ackFrameSize. x   = ev-> xconfigure. width;
+			XX-> ackFrameSize. y   = ev-> xconfigure. height;
+			nh = ev-> xconfigure. height - XX-> menuHeight;
+			if ( nh < 1 ) nh = 1;
+			XMoveResizeWindow( DISP, XX-> client, 0, XX-> menuHeight, ev-> xconfigure. width, nh);
+			if ( PWindow( self)-> menu) {
+				if ( size_changed) {
+					M(PWindow( self)-> menu)-> paint_pending = true;
+					XResizeWindow( DISP, PComponent(PWindow( self)-> menu)-> handle,
+						ev-> xconfigure. width, XX-> menuHeight);
+				}
+				M(PWindow( self)-> menu)-> w-> pos. x = ev-> xconfigure. x;
+				M(PWindow( self)-> menu)-> w-> pos. y = ev-> xconfigure. y;
+				prima_end_menu();
+			}
+			wm_sync_data_from_event( self, &wmsd, &ev-> xconfigure, XX-> flags. mapped);
+			process_wm_sync_data( self, &wmsd);
+		} else {
+			XX-> ackSize. x  = ev-> xconfigure. width;
+			XX-> ackSize. y  = ev-> xconfigure. height;
+		}
+	} else {
+		XX-> ackSize. x   = ev-> xconfigure. width;
+		XX-> ackSize. y   = ev-> xconfigure. height;
+		XX-> ackOrigin. x = ev-> xconfigure. x;
+		XX-> ackOrigin. y = X(X(self)-> owner)-> size. y - ev-> xconfigure. height - ev-> xconfigure. y;
+	}
+}
+
+static void
+handle_stackable_configure_event( Handle self, XWindow win, XEvent *ev)
+{
+	DEFXX;
+	if ( XT_IS_WINDOW(XX)) {
+		if ( win != XX-> client) {
+			int nh;
+			WMSyncData wmsd;
+			ConfigureEventPair *n1, *n2;
+			Bool match = false, size_changed;
+
+			if ( compress_configure_events( ev)) return;
+
+			size_changed =
+				XX-> ackFrameSize. x != ev-> xconfigure. width ||
+				XX-> ackFrameSize. y != ev-> xconfigure. height;
+			nh = ev-> xconfigure. height - XX-> menuHeight;
+			if ( nh < 1 ) nh = 1;
+			XMoveResizeWindow( DISP, XX-> client, 0, XX-> menuHeight, ev-> xconfigure. width, nh);
+
+			wmsd. allow_cmSize = true;
+			wm_sync_data_from_event( self, &wmsd, &ev-> xconfigure, XX-> flags. mapped);
+			XX-> ackOrigin. x = wmsd. origin. x;
+			XX-> ackOrigin. y = wmsd. origin. y;
+			XX-> ackFrameSize. x = ev-> xconfigure. width;
+			XX-> ackFrameSize. y = ev-> xconfigure. height;
+
+			if (( n1 = TAILQ_FIRST( &XX-> configure_pairs))) {
+				if ( n1-> w == ev-> xconfigure. width &&
+					n1-> h == ev-> xconfigure. height) {
+					n1-> match = true;
+					wmsd. size. x  = XX-> size.x;
+					wmsd. size. y = XX-> size.y + XX-> menuHeight;
+					match = true;
+				} else if ( n1-> match && (n2 = TAILQ_NEXT( n1, link)) &&
+					n2-> w == ev-> xconfigure. width &&
+					n2-> h == ev-> xconfigure. height) {
+					n2-> match = true;
+					wmsd. size. x  = XX-> size.x;
+					wmsd. size. y = XX-> size.y + XX-> menuHeight;
+					TAILQ_REMOVE( &XX-> configure_pairs, n1, link);
+					free( n1);
+					match = true;
+				}
+
+				if ( !match) {
+					while ( n1 != NULL) {
+						n2 = TAILQ_NEXT(n1, link);
+						free( n1);
+						n1 = n2;
+					}
+					TAILQ_INIT( &XX-> configure_pairs);
+				}
+			}
+
+			Edebug("event: configure: %d --> %d %d\n", ev-> xany.serial, ev-> xconfigure. width, ev-> xconfigure. height);
+			XX-> flags. configured = 1;
+			process_wm_sync_data( self, &wmsd);
+
+			if ( PWindow( self)-> menu) {
+				if ( size_changed) {
+					XEvent e;
+					Handle menu = PWindow( self)-> menu;
+					M(PWindow( self)-> menu)-> paint_pending = true;
+					XResizeWindow( DISP, PComponent(PWindow( self)-> menu)-> handle,
+						ev-> xconfigure. width, XX-> menuHeight);
+					e. type = ConfigureNotify;
+					e. xconfigure. width  = ev-> xconfigure. width;
+					e. xconfigure. height = XX-> menuHeight;
+					prima_handle_menu_event( &e, PAbstractMenu(menu)-> handle, menu);
+				}
+				M(PWindow( self)-> menu)-> w-> pos. x = ev-> xconfigure. x;
+				M(PWindow( self)-> menu)-> w-> pos. y = ev-> xconfigure. y;
+			}
+			prima_end_menu();
+		} else {
+			XX-> ackSize. x = ev-> xconfigure. width;
+			XX-> ackSize. y = ev-> xconfigure. height;
+		}
+	} else {
+		XX-> ackOrigin. x = ev-> xconfigure. x;
+		XX-> ackOrigin. y = X(X(self)-> owner)-> ackSize. y - ev-> xconfigure. height - ev-> xconfigure. y;
+		XX-> ackSize. x   = ev-> xconfigure. width;
+		XX-> ackSize. y   = ev-> xconfigure. height;
+		XX-> flags. configured = 1;
+	}
+}
+
+static void
+handle_mouse_enter_leave( Handle self, XEvent *ev, Event *e, Bool enter)
+{
+	DEFXX;
+	if ( ev-> xcrossing. mode != NotifyNormal )
+		return;
+	if ( ev-> xcrossing. subwindow != None)
+		return;
+	guts. last_time = ev-> xcrossing. time;
+
+	if ( enter ) {
+		if (( guts. pointer_invisible_count == 0) && XX-> flags. pointer_obscured) {
+			XX-> flags. pointer_obscured = 0;
+			XDefineCursor( DISP, XX-> udrawable, prima_get_cursor(self));
+		} else if (( guts. pointer_invisible_count < 0) && !XX-> flags. pointer_obscured) {
+			XX-> flags. pointer_obscured = 1;
+			XDefineCursor( DISP, XX-> udrawable, guts. null_pointer);
+		}
+		e-> cmd = cmMouseEnter;
+	} else
+		e-> cmd = cmMouseLeave;
+
+	e-> pos. where. x = ev-> xcrossing. x;
+	e-> pos. where. y = XX-> size. y - ev-> xcrossing. y - 1;
+}
+
+static void
+handle_map_events( Handle self, XWindow win, Bool map)
+{
+	DEFXX;
+	if ( XT_IS_WINDOW(XX) && win != XX-> client) {
+		WMSyncData wmsd;
+		open_wm_sync_data( self, &wmsd);
+		wmsd. mapped = map;
+		process_wm_sync_data( self, &wmsd);
+	}
+	if ( !XT_IS_WINDOW(XX) || win != XX-> client) {
+		XX-> flags. mapped = map;
+	}
+}
+
 static char * xevdefs[] = { "0", "1"
 ,"KeyPress" ,"KeyRelease" ,"ButtonPress" ,"ButtonRelease" ,"MotionNotify" ,"EnterNotify"
 ,"LeaveNotify" ,"FocusIn" ,"FocusOut" ,"KeymapNotify" ,"Expose" ,"GraphicsExpose"
@@ -1098,7 +1555,6 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 	Bool was_sent;
 	Event e, secondary;
 	PDrawableSysData selfxx;
-	XButtonEvent *bev;
 	KeySym keysym = 0;
 	int cmd;
 
@@ -1221,7 +1677,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 				return;
 			}
 		}
-	case KeyRelease: {
+	case KeyRelease:
 		guts. last_time = ev-> xkey. time;
 		if ( !ev-> xkey. send_event && self != guts. focused && guts. focused) {
 			/* bypass pointer-driven input */
@@ -1233,311 +1689,32 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 		if (prima_no_input(XX, false, ev-> type == KeyPress)) return;
 		handle_key_event( self, &ev-> xkey, &e, &keysym, ev-> type == KeyRelease);
 		break;
-	}
-	case ButtonPress: {
-		guts. last_time = ev-> xbutton. time;
-		if ( guts. currentMenu) prima_end_menu();
-		if (prima_no_input(XX, false, true)) return;
-		if ( guts. grab_widget != NULL_HANDLE && self != guts. grab_widget) {
-			XWindow rx;
-			XTranslateCoordinates( DISP, XX-> client, PWidget(guts. grab_widget)-> handle,
-				ev-> xbutton.x, ev-> xbutton.y,
-				&ev-> xbutton.x, &ev-> xbutton.y, &rx);
-			self = guts. grab_widget;
-			XX = X(self);
-		}
-		bev = &ev-> xbutton;
-		e. cmd = cmMouseDown;
-	ButtonEvent:
-		bev-> x -= XX-> origin. x - XX-> ackOrigin. x;
-		bev-> y += XX-> origin. y - XX-> ackOrigin. y;
-		if ( ev-> xany. window == guts. root && guts. grab_redirect) {
-			bev-> x -= guts. grab_translate_mouse. x;
-			bev-> y -= guts. grab_translate_mouse. y;
-		}
-		switch (bev-> button) {
-		case Button1:
-			e. pos. button = mb1;
-			break;
-		case Button2:
-			e. pos. button = mb2;
-			break;
-		case Button3:
-			e. pos. button = mb3;
-			break;
-		case Button4:
-			e. pos. button = mb4;
-			break;
-		case Button5:
-			e. pos. button = mb5;
-			break;
-		case Button6:
-			e. pos. button = mb6;
-			break;
-		case Button7:
-			e. pos. button = mb7;
-			break;
-		case Button8:
-			e. pos. button = mb8;
-			break;
-		case Button9:
-			e. pos. button = mb9;
-			break;
-		case Button10:
-			e. pos. button = mb10;
-			break;
-		case Button11:
-			e. pos. button = mb11;
-			break;
-		case Button12:
-			e. pos. button = mb12;
-			break;
-		case Button13:
-			e. pos. button = mb13;
-			break;
-		case Button14:
-			e. pos. button = mb14;
-			break;
-		case Button15:
-			e. pos. button = mb15;
-			break;
-		case Button16:
-			e. pos. button = mb16;
-			break;
-		default:
+
+	case ButtonPress:
+	case ButtonRelease:
+		self = handle_mouse_updown_event(self, ev, &e, &secondary, ev->type == ButtonPress);
+		if ( self == NULL_HANDLE )
 			return;
-		}
-		e. pos. where. x = bev-> x;
-		e. pos. where. y = XX-> size. y - bev-> y - 1;
-		if ( bev-> state & ShiftMask)     e.pos.mod |= kmShift;
-		if ( bev-> state & ControlMask)   e.pos.mod |= kmCtrl;
-		if ( bev-> state & Mod1Mask)      e.pos.mod |= kmAlt;
-		if ( bev-> state & Button1Mask)   e.pos.mod |= mb1;
-		if ( bev-> state & Button2Mask)   e.pos.mod |= mb2;
-		if ( bev-> state & Button3Mask)   e.pos.mod |= mb3;
-		if ( bev-> state & Button4Mask)   e.pos.mod |= mb4;
-		if ( bev-> state & Button5Mask)   e.pos.mod |= mb5;
-		if ( bev-> state & Button6Mask)   e.pos.mod |= mb6;
-		if ( bev-> state & Button7Mask)   e.pos.mod |= mb7;
-
-		if ( e. cmd == cmMouseDown &&
-			guts.last_button_event.type == cmMouseUp &&
-			bev-> window == guts.last_button_event.window &&
-			bev-> button == guts.last_button_event.button &&
-			bev-> button != guts. mouse_wheel_up &&
-			bev-> button != guts. mouse_wheel_down &&
-			bev-> time - guts.last_button_event.time <= guts.click_time_frame
-		) {
-			e. cmd = cmMouseClick;
-			e. pos. nth = ++guts.last_mouseclick_number;
-		}
-
-		if (
-			(e. cmd == cmMouseDown || e. cmd == cmMouseUp) &&
-			(
-				( guts. mouse_wheel_up   != 0 && bev-> button == guts. mouse_wheel_up) ||
-				( guts. mouse_wheel_down != 0 && bev-> button == guts. mouse_wheel_down)
-			)
-		) {
-			if ( e. cmd == cmMouseDown ) {
-				e. cmd = cmMouseWheel;
-				e. pos. button = bev-> button == guts. mouse_wheel_up ? WHEEL_DELTA : -WHEEL_DELTA;
-			} else {
-				e. cmd = 0;
-			}
-		} else if ( e.cmd == cmMouseUp &&
-			guts.last_button_event.type == cmMouseDown &&
-			bev-> window == guts.last_button_event.window &&
-			bev-> button == guts.last_button_event.button &&
-			bev-> time - guts.last_button_event.time <= guts.click_time_frame) {
-			secondary. cmd = cmMouseClick;
-			secondary. pos. where. x = e. pos. where. x;
-			secondary. pos. where. y = e. pos. where. y;
-			secondary. pos. mod = e. pos. mod;
-			secondary. pos. button = e. pos. button;
-			memcpy( &guts.last_click, bev, sizeof(guts.last_click));
-			guts. last_mouseclick_number = 1;
-			if ( e. pos. button == mbRight) {
-				Event ev;
-				bzero( &ev, sizeof(ev));
-				ev. cmd = cmPopup;
-				ev. gen. B = true;
-				ev. gen. P. x = e. pos. where. x;
-				ev. gen. P. y = e. pos. where. y;
-				apc_message( self, &ev, true);
-				if ( PObject( self)-> stage == csDead) return;
-			}
-		}
-		memcpy( &guts.last_button_event, bev, sizeof(*bev));
-		guts. last_button_event.type = e.cmd;
-
-		if ( e. cmd == cmMouseDown) {
-			Handle x = prima_find_root_parent(self);
-			Handle f = prima_find_root_parent(guts. focused ? guts. focused : prima_guts.application);
-			if ( XX-> flags. first_click) {
-				if ( ! is_opt( optSelectable)) {
-					if ( x && x != f && X(x)-> type. window)
-						XSetInputFocus( DISP, PWidget(x)-> handle, RevertToParent, bev-> time);
-				}
-			} else {
-				if ( x != f) {
-					e. cmd = 0;
-					if (P_APPLICATION-> hintUnder == self)
-						CWidget(self)-> set_hintVisible( self, 0);
-					if (( PWidget(self)-> options. optSelectable) && ( PWidget(self)-> selectingButtons & e. pos. button))
-						apc_widget_set_focused( self);
-				}
-			}
-		}
+		XX = X(self);
 		break;
-	}
-	case ButtonRelease: {
-		guts. last_time = ev-> xbutton. time;
-		if (prima_no_input(XX, false, false)) return;
-		if ( guts. grab_widget != NULL_HANDLE && self != guts. grab_widget) {
-			XWindow rx;
-			XTranslateCoordinates( DISP, XX-> client, PWidget(guts. grab_widget)-> handle,
-				ev-> xbutton.x, ev-> xbutton.y,
-				&ev-> xbutton.x, &ev-> xbutton.y, &rx);
-			self = guts. grab_widget;
-			XX = X(self);
-		}
-		bev = &ev-> xbutton;
-		e. cmd = cmMouseUp;
-		goto ButtonEvent;
-	}
-	case MotionNotify: {
-		guts. last_time = ev-> xmotion. time;
-		if ( guts. grab_widget != NULL_HANDLE && self != guts. grab_widget) {
-			XWindow rx;
-			XTranslateCoordinates( DISP, XX-> client, PWidget(guts. grab_widget)-> handle,
-				ev-> xmotion.x, ev-> xmotion.y,
-				&ev-> xmotion.x, &ev-> xmotion.y, &rx);
-			self = guts. grab_widget;
-			XX = X(self);
-		}
-		ev-> xmotion. x -= XX-> origin. x - XX-> ackOrigin. x;
-		ev-> xmotion. y += XX-> origin. y - XX-> ackOrigin. y;
-		e. cmd = cmMouseMove;
-		if ( ev-> xany. window == guts. root && guts. grab_redirect) {
-			ev-> xmotion. x -= guts. grab_translate_mouse. x;
-			ev-> xmotion. y -= guts. grab_translate_mouse. y;
-		}
-		e. pos. where. x = ev-> xmotion. x;
-		e. pos. where. y = XX-> size. y - ev-> xmotion. y - 1;
-		if ( ev-> xmotion. state & ShiftMask)     e.pos.mod |= kmShift;
-		if ( ev-> xmotion. state & ControlMask)   e.pos.mod |= kmCtrl;
-		if ( ev-> xmotion. state & Mod1Mask)      e.pos.mod |= kmAlt;
-		if ( ev-> xmotion. state & Button1Mask)   e.pos.mod |= mb1;
-		if ( ev-> xmotion. state & Button2Mask)   e.pos.mod |= mb2;
-		if ( ev-> xmotion. state & Button3Mask)   e.pos.mod |= mb3;
-		if ( ev-> xmotion. state & Button4Mask)   e.pos.mod |= mb4;
-		if ( ev-> xmotion. state & Button5Mask)   e.pos.mod |= mb5;
-		if ( ev-> xmotion. state & Button6Mask)   e.pos.mod |= mb6;
-		if ( ev-> xmotion. state & Button7Mask)   e.pos.mod |= mb7;
-		break;
-	}
-	case EnterNotify: {
-		if ( ev-> xcrossing. mode != NotifyNormal )
-			break;
-
-		if (( guts. pointer_invisible_count == 0) && XX-> flags. pointer_obscured) {
-			XX-> flags. pointer_obscured = 0;
-			XDefineCursor( DISP, XX-> udrawable, prima_get_cursor(self));
-		} else if (( guts. pointer_invisible_count < 0) && !XX-> flags. pointer_obscured) {
-			XX-> flags. pointer_obscured = 1;
-			XDefineCursor( DISP, XX-> udrawable, guts. null_pointer);
-		}
-		guts. last_time = ev-> xcrossing. time;
-		e. cmd = cmMouseEnter;
-	CrossingEvent:
-		if ( ev-> xcrossing. subwindow != None) return;
-		e. pos. where. x = ev-> xcrossing. x;
-		e. pos. where. y = XX-> size. y - ev-> xcrossing. y - 1;
-		break;
-	}
-	case LeaveNotify: {
-		if ( ev-> xcrossing. mode != NotifyNormal )
-			break;
-		guts. last_time = ev-> xcrossing. time;
-		e. cmd = cmMouseLeave;
-		goto CrossingEvent;
-	}
-	case FocusIn: {
-		Handle frame = self;
-		switch ( ev-> xfocus. detail) {
-		case NotifyVirtual:
-		case NotifyPointer:
-		case NotifyPointerRoot:
-		case NotifyDetailNone:
+	case MotionNotify:
+		self = handle_mousemove_event(self, ev, &e);
+		if ( self == NULL_HANDLE )
 			return;
-		case NotifyNonlinearVirtual:
-			if (!XT_IS_WINDOW(XX)) return;
-			break;
-		}
-
-		if ( guts. message_boxes) {
-			struct MsgDlg * md = guts. message_boxes;
-			while ( md) {
-				XSetInputFocus( DISP, md-> w, RevertToNone, CurrentTime);
-				md = md-> next;
-			}
-			return;
-		}
-
-		syntetic_mouse_move(); /* XXX - simulated MouseMove event for compatibility reasons */
-
-		if (!XT_IS_WINDOW(XX))
-			frame = C_APPLICATION-> top_frame( prima_guts.application, self);
-		if ( C_APPLICATION-> map_focus( prima_guts.application, frame) != frame) {
-			C_APPLICATION-> popup_modal( prima_guts.application);
-			break;
-		}
-
-		if ( XT_IS_WINDOW(XX)) {
-			e. cmd = cmActivate;
-			SELF_MESSAGE(e);
-			if (( PObject( self)-> stage == csDead) ||
-				( ev-> xfocus. detail == NotifyNonlinearVirtual)) return;
-		}
-
-		if ( guts. focused) prima_no_cursor( guts. focused);
-		guts. focused = self;
-		prima_update_cursor( guts. focused);
-		e. cmd = cmReceiveFocus;
-		if ( guts.use_xim )
-			prima_xim_focus_in(self);
+		XX = X(self);
 		break;
-	}
-	case FocusOut: {
-		switch ( ev-> xfocus. detail) {
-		case NotifyVirtual:
-		case NotifyPointer:
-		case NotifyPointerRoot:
-		case NotifyDetailNone:
-			return;
-		case NotifyNonlinearVirtual:
-			if (!XT_IS_WINDOW(XX)) return;
-			break;
-		}
 
-		if ( XT_IS_WINDOW(XX)) {
-			e. cmd = cmDeactivate;
-			SELF_MESSAGE(e);
-			if (( PObject( self)-> stage == csDead) ||
-				( ev-> xfocus. detail == NotifyNonlinearVirtual)) return;
-		}
+	case EnterNotify:
+	case LeaveNotify:
+		handle_mouse_enter_leave( self, ev, &e, ev->type == EnterNotify);
+		break;
+	case FocusIn:
+		handle_focus_in( self, ev, &e);
+		break;
+	case FocusOut:
+		handle_focus_out( self, ev, &e);
+		break;
 
-		if ( guts. focused) prima_no_cursor( guts. focused);
-		if ( self == guts. focused) guts. focused = NULL_HANDLE;
-		e. cmd = cmReleaseFocus;
-		if ( guts.use_xim )
-			prima_xim_focus_out();
-		break;
-	}
-	case KeymapNotify: {
-		break;
-	}
 	case GraphicsExpose:
 	case Expose: {
 		XRectangle r;
@@ -1557,229 +1734,57 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 		}
 
 		process_transparents(self);
-		return;
-	}
-	case NoExpose: {
 		break;
 	}
-	case VisibilityNotify: {
+
+	case VisibilityNotify:
 		XX-> flags. exposed = ( ev-> xvisibility. state != VisibilityFullyObscured);
 		break;
-	}
-	case CreateNotify: {
+	case MapNotify:
+	case UnmapNotify:
+		handle_map_events( self, win, ev->type == MapNotify);
 		break;
-	}
-	case DestroyNotify: {
-		break;
-	}
-	case UnmapNotify: {
-		if ( XT_IS_WINDOW(XX) && win != XX-> client) {
-			WMSyncData wmsd;
-			open_wm_sync_data( self, &wmsd);
-			wmsd. mapped = false;
-			process_wm_sync_data( self, &wmsd);
-		}
-		if ( !XT_IS_WINDOW(XX) || win != XX-> client) {
-			XX-> flags. mapped = false;
-		}
-		break;
-	}
-	case MapNotify: {
-		if ( XT_IS_WINDOW(XX) && win != XX-> client) {
-			WMSyncData wmsd;
-			open_wm_sync_data( self, &wmsd);
-			wmsd. mapped = true;
-			process_wm_sync_data( self, &wmsd);
-		}
-		if ( !XT_IS_WINDOW(XX) || win != XX-> client) {
-			XX-> flags. mapped = true;
-		}
-		break;
-	}
-	case MapRequest: {
-		break;
-	}
 
 	case ReparentNotify: {
-			XWindow p = ev-> xreparent. parent;
-			if ( !XX-> type. window) return;
-			XX-> real_parent = ( p == guts. root) ? NULL_HANDLE : p;
-			if ( XX-> real_parent) {
-				XWindow dummy;
-				XTranslateCoordinates( DISP, X_WINDOW, XX-> real_parent,
-					0, 0, &XX-> decorationSize.x, &XX-> decorationSize.y, &dummy);
-			} else
-				XX-> decorationSize. x = XX-> decorationSize. y = 0;
+		XWindow p = ev-> xreparent. parent;
+		if ( !XX-> type. window) return;
+		XX-> real_parent = ( p == guts. root) ? NULL_HANDLE : p;
+		if ( XX-> real_parent) {
+			XWindow dummy;
+			XTranslateCoordinates( DISP, X_WINDOW, XX-> real_parent,
+				0, 0, &XX-> decorationSize.x, &XX-> decorationSize.y, &dummy);
+		} else
+			XX-> decorationSize. x = XX-> decorationSize. y = 0;
 		}
-		return;
+		break;
 
 	case -ConfigureNotify:
-		if ( XT_IS_WINDOW(XX)) {
-			if ( win != XX-> client) {
-				int nh;
-				WMSyncData wmsd;
-				Bool size_changed =
-					XX-> ackFrameSize. x != ev-> xconfigure. width ||
-					XX-> ackFrameSize. y != ev-> xconfigure. height;
-				wmsd. allow_cmSize = true;
-				XX-> ackOrigin. x = ev-> xconfigure. x;
-				XX-> ackOrigin. y = X(X(self)-> owner)-> size. y - ev-> xconfigure. height - ev-> xconfigure. y;
-				XX-> ackFrameSize. x   = ev-> xconfigure. width;
-				XX-> ackFrameSize. y   = ev-> xconfigure. height;
-				nh = ev-> xconfigure. height - XX-> menuHeight;
-				if ( nh < 1 ) nh = 1;
-				XMoveResizeWindow( DISP, XX-> client, 0, XX-> menuHeight, ev-> xconfigure. width, nh);
-				if ( PWindow( self)-> menu) {
-					if ( size_changed) {
-						M(PWindow( self)-> menu)-> paint_pending = true;
-						XResizeWindow( DISP, PComponent(PWindow( self)-> menu)-> handle,
-							ev-> xconfigure. width, XX-> menuHeight);
-					}
-					M(PWindow( self)-> menu)-> w-> pos. x = ev-> xconfigure. x;
-					M(PWindow( self)-> menu)-> w-> pos. y = ev-> xconfigure. y;
-					prima_end_menu();
-				}
-				wm_sync_data_from_event( self, &wmsd, &ev-> xconfigure, XX-> flags. mapped);
-				process_wm_sync_data( self, &wmsd);
-			} else {
-				XX-> ackSize. x  = ev-> xconfigure. width;
-				XX-> ackSize. y  = ev-> xconfigure. height;
-			}
-		} else {
-			XX-> ackSize. x   = ev-> xconfigure. width;
-			XX-> ackSize. y   = ev-> xconfigure. height;
-			XX-> ackOrigin. x = ev-> xconfigure. x;
-			XX-> ackOrigin. y = X(X(self)-> owner)-> size. y - ev-> xconfigure. height - ev-> xconfigure. y;
-		}
-		return;
+		handle_immediate_configure_event( self, win, ev);
+		break;
 	case ConfigureNotify:
-		if ( XT_IS_WINDOW(XX)) {
-			if ( win != XX-> client) {
-				int nh;
-				WMSyncData wmsd;
-				ConfigureEventPair *n1, *n2;
-				Bool match = false, size_changed;
-
-				if ( compress_configure_events( ev)) return;
-
-				size_changed =
-					XX-> ackFrameSize. x != ev-> xconfigure. width ||
-					XX-> ackFrameSize. y != ev-> xconfigure. height;
-				nh = ev-> xconfigure. height - XX-> menuHeight;
-				if ( nh < 1 ) nh = 1;
-				XMoveResizeWindow( DISP, XX-> client, 0, XX-> menuHeight, ev-> xconfigure. width, nh);
-
-				wmsd. allow_cmSize = true;
-				wm_sync_data_from_event( self, &wmsd, &ev-> xconfigure, XX-> flags. mapped);
-				XX-> ackOrigin. x = wmsd. origin. x;
-				XX-> ackOrigin. y = wmsd. origin. y;
-				XX-> ackFrameSize. x = ev-> xconfigure. width;
-				XX-> ackFrameSize. y = ev-> xconfigure. height;
-
-				if (( n1 = TAILQ_FIRST( &XX-> configure_pairs))) {
-					if ( n1-> w == ev-> xconfigure. width &&
-						n1-> h == ev-> xconfigure. height) {
-						n1-> match = true;
-						wmsd. size. x  = XX-> size.x;
-						wmsd. size. y = XX-> size.y + XX-> menuHeight;
-						match = true;
-					} else if ( n1-> match && (n2 = TAILQ_NEXT( n1, link)) &&
-						n2-> w == ev-> xconfigure. width &&
-						n2-> h == ev-> xconfigure. height) {
-						n2-> match = true;
-						wmsd. size. x  = XX-> size.x;
-						wmsd. size. y = XX-> size.y + XX-> menuHeight;
-						TAILQ_REMOVE( &XX-> configure_pairs, n1, link);
-						free( n1);
-						match = true;
-					}
-
-					if ( !match) {
-						while ( n1 != NULL) {
-							n2 = TAILQ_NEXT(n1, link);
-							free( n1);
-							n1 = n2;
-						}
-						TAILQ_INIT( &XX-> configure_pairs);
-					}
-				}
-
-				Edebug("event: configure: %d --> %d %d\n", ev-> xany.serial, ev-> xconfigure. width, ev-> xconfigure. height);
-				XX-> flags. configured = 1;
-				process_wm_sync_data( self, &wmsd);
-
-				if ( PWindow( self)-> menu) {
-					if ( size_changed) {
-						XEvent e;
-						Handle menu = PWindow( self)-> menu;
-						M(PWindow( self)-> menu)-> paint_pending = true;
-						XResizeWindow( DISP, PComponent(PWindow( self)-> menu)-> handle,
-							ev-> xconfigure. width, XX-> menuHeight);
-						e. type = ConfigureNotify;
-						e. xconfigure. width  = ev-> xconfigure. width;
-						e. xconfigure. height = XX-> menuHeight;
-						prima_handle_menu_event( &e, PAbstractMenu(menu)-> handle, menu);
-					}
-					M(PWindow( self)-> menu)-> w-> pos. x = ev-> xconfigure. x;
-					M(PWindow( self)-> menu)-> w-> pos. y = ev-> xconfigure. y;
-				}
-				prima_end_menu();
-			} else {
-				XX-> ackSize. x = ev-> xconfigure. width;
-				XX-> ackSize. y = ev-> xconfigure. height;
-			}
-		} else {
-			XX-> ackOrigin. x = ev-> xconfigure. x;
-			XX-> ackOrigin. y = X(X(self)-> owner)-> ackSize. y - ev-> xconfigure. height - ev-> xconfigure. y;
-			XX-> ackSize. x   = ev-> xconfigure. width;
-			XX-> ackSize. y   = ev-> xconfigure. height;
-			XX-> flags. configured = 1;
-		}
-		return;
-	case ConfigureRequest: {
+		handle_stackable_configure_event( self, win, ev);
 		break;
-	}
-	case GravityNotify: {
+	case PropertyNotify:
+		handle_wm_event( self, ev, &e);
 		break;
-	}
-	case ResizeRequest: {
-		break;
-	}
-	case CirculateNotify: {
-		break;
-	}
-	case CirculateRequest: {
-		break;
-	}
-	case PropertyNotify: {
-		wm_event( self, ev, &e);
-		break;
-	}
 	case SelectionClear:
-	case SelectionRequest: {
+	case SelectionRequest:
 		prima_handle_selection_event( ev, win, self);
 		break;
-	}
-	case SelectionNotify: {
+	case SelectionNotify:
 		guts. last_time = ev-> xselection. time;
 		break;
-	}
-	case ColormapNotify: {
-		break;
-	}
-	case ClientMessage: {
+	case ClientMessage:
 		if ( ev-> xclient. message_type == CREATE_EVENT) {
 			e. cmd = cmSetup;
 		} else {
-			wm_event( self, ev, &e);
+			handle_wm_event( self, ev, &e);
 			prima_handle_dnd_event( self, ev);
 		}
 		break;
-	}
-	case MappingNotify: {
+	case MappingNotify:
 		XRefreshKeyboardMapping( &ev-> xmapping);
 		break;
-	}
 	}
 
 	if ( e. cmd) {
