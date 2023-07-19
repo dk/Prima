@@ -30,7 +30,7 @@ sub init
 
 my @props = qw(
 	alpha antialias
-	color backColor fillMode fillPattern font lineEnd
+	color backColor fillMode fillPattern lineEnd
 	lineJoin linePattern lineWidth rop rop2 miterLimit
 	textOpaque textOutBaseline 
 );
@@ -62,7 +62,7 @@ for my $prop_name (qw(
 }
 
 for my $prop_name (qw(
-	translate
+	translate set_matrix set_font
 )) {
 	no strict 'refs';
 	*{$prop_name} = sub {
@@ -177,6 +177,11 @@ sub execute
 			$canvas->$method(@args);
 		} elsif ( $cmd eq 'translate' ) {
 			$canvas->translate($cmd[0] + $tx[0] + $x, $cmd[1] + $tx[1] + $y);
+		} elsif ( $cmd eq 'set_matrix' ) {
+			my @args = @{ $cmd[0] };
+			$canvas->set_matrix([ @args[0..3], $args[4] + $tx[0] + $x, $args[5] + $tx[1] + $y]);
+		} elsif ( $cmd eq 'set_font' ) {
+			$canvas->set_font($cmd[0]);
 		} elsif ( $cmd eq 'clipRect' ) {
 			if ( 4 == grep { $_ == -1 } @cmd ) {
 				$actual_rgn = $rgn;
