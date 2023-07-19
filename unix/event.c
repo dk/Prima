@@ -928,6 +928,7 @@ wm_event( Handle self, XEvent *xev, PEvent ev)
 	switch ( xev-> xany. type) {
 	case ClientMessage:
 		if ( xev-> xclient. message_type == WM_PROTOCOLS) {
+			Edebug("event: ClientMessage=%s\n", XGetAtomName( DISP, (Atom) xev-> xclient. data. l[0]));
 			if ((Atom) xev-> xclient. data. l[0] == WM_DELETE_WINDOW) {
 				if ( guts. message_boxes) return false;
 				if ( self != C_APPLICATION-> map_focus( prima_guts.application, self))
@@ -1437,6 +1438,9 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 		break;
 	}
 	case EnterNotify: {
+		if ( ev-> xcrossing. mode != NotifyNormal )
+			break;
+
 		if (( guts. pointer_invisible_count == 0) && XX-> flags. pointer_obscured) {
 			XX-> flags. pointer_obscured = 0;
 			XDefineCursor( DISP, XX-> udrawable, prima_get_cursor(self));
@@ -1453,6 +1457,8 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 		break;
 	}
 	case LeaveNotify: {
+		if ( ev-> xcrossing. mode != NotifyNormal )
+			break;
 		guts. last_time = ev-> xcrossing. time;
 		e. cmd = cmMouseLeave;
 		goto CrossingEvent;
