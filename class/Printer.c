@@ -129,17 +129,11 @@ Printer_end_paint_info( Handle self)
 	inherited end_paint_info( self);
 }
 
-extern SV *
-Application_fonts( Handle self, char * name, char * encoding);
-
 SV *
 Printer_fonts( Handle self, char * name, char * encoding)
 {
 	return Application_fonts( self, name, encoding);
 }
-
-extern SV*
-Application_font_encodings( Handle self, char * encoding);
 
 SV*
 Printer_font_encodings( Handle self, char * encoding)
