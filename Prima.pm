@@ -119,7 +119,7 @@ __END__
 
 =head1 NAME
 
-Prima - a perl graphic toolkit
+Prima - a Perl graphic toolkit
 
 =head1 SYNOPSIS
 
@@ -141,18 +141,18 @@ Prima - a perl graphic toolkit
 
 	run Prima;
 
-See more screenshots at L<http://prima.eu.org/big-picture> .
+See more screenshots at L<http://prima.eu.org/big-picture>.
 
 =head1 DESCRIPTION
 
-The toolkit is combined from two basic set of classes - core and external. The
-core classes are coded in C and form a base line for every Prima object 
-written in perl. The usage of C is possible together with the toolkit; however,
-its full power is revealed in the perl domain. The external classes present 
-easily expandable set of widgets, written completely in perl and communicating 
-with the system using Prima library calls. 
+The toolkit is a combination of two basic sets of classes - core and external. The
+core classes are coded in C and form a baseline for every Prima object 
+written in Perl. The usage of C is possible together with the toolkit; however,
+its full power is revealed in the Perl domain. The external classes present 
+an easily expandable set of widgets, written entirely in Perl and communicating 
+with the system using Prima library calls.
 
-The core classes form an hierarchy, which is displayed below:
+The core classes form a hierarchy, which is displayed below:
 
 	Prima::Object
 		Prima::Component
@@ -187,9 +187,9 @@ A basic construct for a program written with Prima obviously requires
 
 	use Prima;
 
-code; however, the effective programming requires usage of the other
-modules, for example, C<Prima::Buttons>, which contains set of
-button widgets. C<Prima.pm> module can be
+code; however, effective programming requires usage of the other
+modules, for example, C<Prima::Buttons>, which contains a set of
+button widgets. The C<Prima.pm> module can be
 invoked with a list of such modules, which makes the construction
 
 	use Prima;
@@ -205,7 +205,7 @@ Another basic issue is the event loop, which is called by
 	run Prima;
 
 sentence and requires a C<Prima::Application> object to be created beforehand.
-Invoking C<Prima::Application> standard module is one of the possible ways to 
+Invoking the C<Prima::Application> standard module is one of the possible ways to 
 create an application object. The program usually terminates after the event loop
 is finished.
 
@@ -215,13 +215,13 @@ The window is created by invoking
 
 or
 
-	Prima::MainWindow-> create()
+	Prima::MainWindow->create()
 
-code with the additional parameters. Actually, all Prima objects are created by such a
+code with additional parameters. Actually, all Prima objects are created by such a
 scheme. The class name is passed as the first parameter, and a custom set
 of parameters is passed afterwards. These parameters are usually 
 represented in a hash syntax, although actually passed as an array.
-The hash syntax is preferred for the code readability:
+The hash syntax is preferred for code readability:
 
 	$new_object = Class->new(
 		parameter => value,
@@ -229,11 +229,11 @@ The hash syntax is preferred for the code readability:
 		...
 	);
 
-Here, parameters are the class properties names, and differ from class to
+Here, parameters are the class property names, and they differ from class to
 class. Classes often have common properties, primarily due to the
 object inheritance.
 
-In the example, the following properties are set :
+In the example, the following properties are set:
 
 	Window::text
 	Window::size
@@ -243,7 +243,7 @@ In the example, the following properties are set :
 
 Property values can be of any type, given that they are scalar. As depicted
 here, C<::text> property accepts a string, C<::size> - an anonymous array 
-of two integers and C<onClick> - a sub.
+of two integers, and C<onClick> - a sub.
 
 onXxxx are special properties that form a class of I<events>, 
 which share the C<new>/C<create> syntax, and are additive when 
@@ -267,7 +267,7 @@ Displays a system message box with TEXT.
 
 When the C<Prima::Dialog::FileDialog> module is loaded, these shortcut methods
 are registered in the C<Prima::> namespace as an alternative to the same
-methods in the module's own namespace. The methods execute standard file open
+methods in the module's namespace. The methods execute standard file open
 and save dialogs, correspondingly.
 
 See L<Prima::Dialog::FileDialog> for more.
@@ -279,7 +279,7 @@ or C<close> method is called.
 
 =item parse_argv @ARGS
 
-Parses prima options from @ARGS, returns unparsed arguments. 
+Parses Prima options from @ARGS, returns unparsed arguments.
 
 =back
 
@@ -291,7 +291,7 @@ particular platform. Run
 	perl -e '$ARGV[0]=q(--help); require Prima'
 
 or any Prima program with C<--help> argument to get the list of supported
-arguments. Programmaticaly, setting and obtaining these options can be done
+arguments. Programmatically, setting and obtaining these options can be done
 by using C<Prima::options> routine.
 
 In cases where Prima argument parsing conflicts with application options, use
@@ -550,7 +550,7 @@ L<Prima::sys::FS> - unicode-aware core file functions
 
 The Prima manual pages often provide information for more than one Prima class.
 To quickly find out the manual page of a desired class, as well as display the
-inheritance information, use C<prima-class> command. The command can produce output in
+inheritance information, use the C<prima-class> command. The command can produce output in
 text and pod formats; the latter feature is used by the standard Prima documentation
 viewer C<podview> ( see File/Run/prima-class ).
 
