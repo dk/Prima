@@ -67,14 +67,6 @@ rop
 
 backRop
 
-lineWidth
-
-lineJoin
-
-lineStyle
-
-miterLimit
-
 fillPattern
 
 fillPolyWinding

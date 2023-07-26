@@ -360,15 +360,18 @@ argb icons. Calls to C<bitmap> on argb icons produce identical layered device bi
 * Putting argb icons and layered device bitmap on other drawables yields identical
 results.
 
-Putting of argb source surfaces can be only used with two rops, C<rop::SrcOver>
-(default) and C<rop::SrcCopy>. The former produces blending effect, while the
-latter copies alpha bits over to the destination surface. Prima internal
-implementation of C<put_image> and C<stretch_image> functions extends the
-allowed set of rops when operating on images outside the begin_paint/end_paint
-brackets. These rops support 12 Porter-Duff operators, some more "photoshop"
-operators, and special flags to specify constant alpha values to override the
-existing alpha channel, if any.
-See more in L<Prima::Drawable/Raster operations>.
+Putting images on argb source surfaces can be only used with two rops,
+C<rop::Blend> (default) and C<rop::SrcCopy>. The former produces blending
+effect, while the latter copies alpha bits over to the destination surface.
+Also, a special C<rop::AlphaCopy> can be used to treat 8-bit grayscale source
+images as alpha maps, to replace the alpha pixels only.
+
+Prima internal implementation of C<put_image> and C<stretch_image> functions
+extends the allowed set of rops when operating on images outside the
+begin_paint/end_paint brackets. These rops support 12 Porter-Duff operators,
+some more "photoshop" operators, and special flags to specify constant alpha
+values to override the existing alpha channel, if any.  See more in
+L<Prima::Drawable/Raster operations>.
 
 Caveats: In Windows, mouse events will not be delivered to the layered widget
 if the pixel under the mouse pointer is fully transparent.

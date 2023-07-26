@@ -669,7 +669,7 @@ need to construct an Icon object.
 
 =head3 rop::Blend
 
-C<rop::Blend> is same as C<rop::SrcCopy> except the source pixels are assumed
+C<rop::Blend> is same as C<rop::SrcOver> except the source pixels are assumed
 to be already premultiplied with the source alpha. This is the default ROP
 when drawing with 8-bit icon masks or on layered surfaces, and it reflects the
 expectation of the OS that images come premultiplied.
@@ -729,7 +729,7 @@ Combine the rop constant using this formula:
 
    $rop = rop::XXX |
       rop::SrcAlpha | ( $src_alpha << rop::SrcAlphaShift ) |
-      rop::DstAlpha | ( $src_alpha << rop::DstAlphaShift )
+      rop::DstAlpha | ( $dst_alpha << rop::DstAlphaShift )
 
 or by calling C<rop::alpha($rop, [ $src_alpha, [ $dst_alpha ]])> that does the same.
 
@@ -816,7 +816,7 @@ $matrix->apply($drawable) >>.
 
 There is also a property C<matrix>, that is not really orthogonal to the C<get_matrix>/
 C<set_matrix> method pair, as C<matrix> returns a C<Prima::Matrix> object, that, contrary
-to a C<Prima::matrix> object return by C<get_matrix>, is a direct accessor to the drawable's
+to a C<Prima::matrix> object returned by C<get_matrix>, is a direct accessor to the drawable's
 matrix:
 
 	my $m = $self->get_matrix;
@@ -922,7 +922,7 @@ The syntax for custom line end style is:
    command ::= line or conic or cubic
    points  ::= set of x,y coordinate pairs (vertices)
 
-and individual commands accept arbitrary number of vertices, but no less than 1 for C<line>,
+where individual commands accept arbitrary number of vertices, but no less than 1 for C<line>,
 2 for C<conic>, and 3 for C<cubic>.
 
 The commands are executed sequentially on a coordinate grid where line width is
@@ -1078,7 +1078,7 @@ There are some predefined patterns, that can be referred via C<fp::> constants:
 
 =for podview </cut>
 
-( the actual patterns are hardcoded in primguts.c )
+( the actual patterns are hardcoded in api/api.c )
 The default pattern is fp::Solid.
 
 On a get-call, does not return the C<fp::> value but the corresponding array
@@ -1326,7 +1326,8 @@ The predefined constants are:
 Not all systems are capable of accepting user-defined line patterns,
 and in such situation the C<lp::> constants are mapped to the system-defined
 patterns. In Win9x, for example, lp::DashDotDot is much different from
-its string definition.
+its string definition. This however is only actual for lines with width=0,
+as wider lines are rendered by the Prima internal code.
 
 Default value is lp::Solid.
 
@@ -1391,8 +1392,6 @@ Assuming line join is C<lj::Miter> and line angle is 30 degrees:
 =for podview </cut>
 
 =for html -->
-
-Note: does not work under X11.
 
 =item palette [ @PALETTE ]
 
