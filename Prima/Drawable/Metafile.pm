@@ -75,6 +75,12 @@ for my $prop_name (qw(
 	};
 }
 
+sub call
+{
+	my ( $self, @args ) = @_;
+	push @{ $self->{code} }, [ call => @args ];
+}
+
 sub size
 {
 	return @{ $_[0]->{size} } unless $#_;
@@ -200,6 +206,9 @@ sub execute
 		} elsif ( $cmd eq 'fillPatternOffset' ) {
 			$cmd[$_] += $fpo[$_] for 0,1;
 			$canvas-> fillPatternOffset(@cmd);
+		} elsif ( $cmd eq 'call') {
+			my ($sub, @args) = @cmd;
+			$sub->( $self, $canvas, @args );
 		}
 	}
 
@@ -230,6 +239,11 @@ Metafiles can record graphic primitives and replay them later on another canvas.
 =head1 API
 
 =over
+
+=item call $SUB::($self,$canvas,@ARGS), @ARGS
+
+C<$SUB> will be called when the metafile is executed, with the first two parameter
+the metafile and the target canvas, and C<@ARGS> thereafter.
 
 =item clear
 
