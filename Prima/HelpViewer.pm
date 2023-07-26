@@ -274,6 +274,11 @@ sub metafile
 	$m1->begin_paint;
 	$m1->antialias(1);
 	$m1->lineWidth(1.3);
+	$m1->call( sub {
+		my ( $self, $button ) = @_;
+		$button->fader_set_blended_color(cl::Back, wc::Menu|cl::Hilite);
+		$button->fillpoly($p);
+	});
 	$m1->color(cl::Black);
 	$m1->polyline($p) ;
 	$m1->end_paint;

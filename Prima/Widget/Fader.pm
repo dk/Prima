@@ -243,6 +243,15 @@ sub fader_prelight_color
 	return cl::blend( $color, $p, $f);
 }
 
+sub fader_set_blended_color
+{
+	my ( $self, $cl1, $cl2 ) = @_;
+	my $f = $self->fader_current_value // 0;
+	$cl1 = $self->map_color($cl1);
+	$cl2 = $self->map_color($cl2);
+	$self->color( cl::blend( $cl1, $cl2, $f ));
+}
+
 1;
 
 =head1 NAME

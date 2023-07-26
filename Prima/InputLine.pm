@@ -135,7 +135,7 @@ sub on_paint
 		($self-> color, $self-> backColor) :
 		($self-> disabledColor, $self-> disabledBackColor);
 	@selClr = ($self-> hiliteColor, $self-> hiliteBackColor);
-	$clr[1] = cl::blend( $clr[1], $self->prelight_color($clr[1]), $self->fader_current_value // 1)
+	$clr[1] = $self->fader_prelight_color($clr[1])
 		if $self->enabled && $self->{mouse_in};
 
 	my $border = $self-> {borderWidth};
