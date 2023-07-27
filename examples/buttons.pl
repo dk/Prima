@@ -125,9 +125,15 @@ $w->insert( "Radio"      , origin => [  50,140]);
 
 my $metafile = Prima::Drawable::Metafile->new( size => [70, 70] );
 $metafile->begin_paint;
-$metafile->lineJoin(lj::Miter);
-$metafile->lineWidth(5);
 $metafile->antialias(1);
+$metafile->lineJoin(lj::Miter);
+$metafile->call( sub {
+	my ($self, $canvas) = @_;
+	my $f = $canvas->fader_current_value // 0;
+	$canvas->lineWidth( 5 * ( 1 - $f) );
+	$canvas->color(cl::blend( $canvas->map_color(cl::Fore), cl::Green, $f));
+});
+
 my $c = 3.14159 * 2 / 7;
 my @pts = map { 35 + int(25 * $_ + .5) } (
 	1,0,
@@ -159,25 +165,6 @@ $w->insert(
 	text => '',
 	name => 'Meta',
 	hiliteGlyph => $metafile2,
-	onFadeRepaint => sub {
-		my $self = shift;
-		my $f = $self->fader_current_value;
-		return if $self->pressed;
-		if ( $f == 0 || $f == 1) {
-			$self-> image($metafile);
-		} else {
-			my $mf = Prima::Drawable::Metafile->new( size => [70, 70] );
-			$mf->begin_paint;
-			$mf->antialias(1);
-			$mf->lineJoin(lj::Miter);
-			$mf->lineWidth( 5 * ( 1 - $f) );
-			$mf->color(cl::blend( $self->color, cl::Green, $f));
-			$mf->polyline(\@pts);
-			$mf->end_paint;
-			$self->image($mf);
-		}
-		$self->repaint;
-	},
 );
 
 run Prima;
