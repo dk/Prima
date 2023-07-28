@@ -348,6 +348,11 @@ apc_file_detach( Handle self)
 			if ( 0 == --ev-> refcnt ) {
 				WSACloseEvent(( WSAEVENT ) ev-> event );
 				hash_delete( socket_events, &sys s.file.object, sizeof( sys s.file.object), true);
+			} else {
+				int m = var eventMask;
+				var eventMask = 0;
+				socket_event_update_mask( Handle self)
+				var eventMask = m;
 			}
 		}
 		list_delete( &ts, self);
