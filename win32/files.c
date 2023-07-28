@@ -351,7 +351,7 @@ apc_file_detach( Handle self)
 			} else {
 				int m = var eventMask;
 				var eventMask = 0;
-				socket_event_update_mask( Handle self)
+				socket_event_update_mask(self);
 				var eventMask = m;
 			}
 		}
