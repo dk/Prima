@@ -180,16 +180,19 @@ process_file_msg( WINHANDLE src)
 	if ( available_events == 0 ) return true;
 
 	for ( i = 0; i < ts.count; i++) {
+		int e;
 		Handle self = ts.items[ i];
 		if ( sys s.file.event != src)
 			continue;
+		if (( e = (available_events & var eventMask)) == 0)
+			continue;
 
 		protect_object(self);
-		if ( available_events & feRead)
+		if ( e & feRead)
 			dispatch_file_event( self, cmFileRead );
-		if ( available_events & feWrite)
+		if ( e & feWrite)
 			dispatch_file_event( self, cmFileWrite );
-		if ( available_events & feException)
+		if ( e & feException)
 			dispatch_file_event( self, cmFileException );
 		unprotect_object(self);
 	}
