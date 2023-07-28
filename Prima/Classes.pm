@@ -104,6 +104,28 @@ sub STORESIZE {
 }
 sub DELETE    { warn "This array does not implement delete functionality" }
 sub PUSH      { $_[0]->[REF] .= pack( $_[0]->[PACK] . '*', @_[1..$#_] ) if $#_ }
+sub POP       { length($_[0]->[REF]) ? unpack( $_[0]->[PACK], CORE::substr( $_[0]->[REF], -$_[0]->[SIZE], $_[0]->[SIZE], '' )) : undef }
+sub SHIFT     { length($_[0]->[REF]) ? unpack( $_[0]->[PACK], CORE::substr( $_[0]->[REF], 0, $_[0]->[SIZE], '' )) : undef }
+sub UNSHIFT   { CORE::substr( $_[0]->[REF], 0, 0, pack( $_[0]->[PACK] . '*', @_[1..$#_] )) if $#_ }
+sub CLEAR     { CORE::substr( $_[0]->[REF], 0 ) = '' }
+
+sub SPLICE
+{
+	# thanks to Dan Kogai and his Tie::Array::Pack for this code
+	my $self      = shift;
+	my $offset    = @_ ? shift() : 0;
+	my $unit_size = $self->[SIZE];
+	my $arr_len   = length( $self->[REF] ) / $unit_size;
+	$offset += $arr_len if $offset < 0;
+	my $length = @_ ? shift() : ($arr_len - $offset);
+	$length += $arr_len - $offset if $length < 0;
+	my @result = unpack(
+		$self->[PACK] . $length,
+		CORE::substr( $self->[REF], $offset * $unit_size, $length * $unit_size )
+	);
+	CORE::substr( $self->[REF], $offset * $unit_size, $length * $unit_size, pack( $self->[PACK] x @_, @_ )) if @_;
+	return wantarray ? @result : pop @result;
+}
 
 package Prima::rect;
 
