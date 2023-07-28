@@ -826,6 +826,8 @@ sub default
 	$self-> repaint;
 }
 
+sub hilite { $_[0]->{hilite} }
+
 sub defaultGlyph {($#_)?($_[0]-> {defaultGlyph} = $_[1],$_[0]-> repaint) :return $_[0]-> {defaultGlyph}}
 sub hiliteGlyph  {($#_)?($_[0]-> {hiliteGlyph}  = $_[1],$_[0]-> repaint) :return $_[0]-> {hiliteGlyph}}
 sub disabledGlyph{($#_)?($_[0]-> {disabledGlyph}= $_[1],$_[0]-> repaint) :return $_[0]-> {disabledGlyph}}
@@ -1744,7 +1746,11 @@ L<hiliteGlyph>, L<disabledGlyph>, L<pressedGlyph>, L<holdGlyph>.
 
 Default value: 1
 
-=item hiliteGlyph INTEGE | IMAGE | METAFILER
+=item hilite
+
+Read-only property, return 1 if the button is highlighted, 0 otherwise.
+
+=item hiliteGlyph INTEGER | IMAGE | METAFILER
 
 Selects index of the sub-image for the state when the mouse pointer is
 over the button. This image is used only when L<flat> property is set.
