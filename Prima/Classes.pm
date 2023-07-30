@@ -2286,6 +2286,8 @@ sub on_change
 	for (0,1) {
 		$sz[$_] = $as[$_] if $sz[$_] > $as[0];
 	}
+	$sz[0] += $self->font->width * 2;
+	$sz[1] += $self->font->height;
 	$self-> size(@sz);
 }
 
@@ -2297,7 +2299,9 @@ sub on_paint
 	$canvas-> rectangle( 0, 0, $size[0]-1, $size[1]-1);
 
 	my @ln = $canvas->text_split_lines($self->text) or return;
-	my ($x, $y, $fh) = ( 3, $size[1] - 1, $self->font->height);
+	my ($x, $y, $fh, $fw) = ( 3, $size[1] - 1, $self->font->height, $self->font->width);
+	$x += $fw;
+	$y -= $fh / 2;
 	for my $t (@ln) {
 		$y -= ref($t) ? $t->height($canvas) : $fh;
 		$canvas-> text_shape_out( $t, $x, $y);
