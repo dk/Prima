@@ -104,6 +104,7 @@ sub profile_default
 			[ CutMS          => 0, 0, '^X', q(cut)],
 			[ CopyMS         => 0, 0, '^C', q(copy)],
 			[ PasteMS        => 0, 0, '^V', q(paste)],
+			[ SelectAll      => 0, 0, '^A', q(select_all)],
 # undo
 			[ Undo            => 0, 0, km::Alt|kb::Backspace, q(undo)],
 			[ Redo            => 0, 0, '^R', q(redo)],
