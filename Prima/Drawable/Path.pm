@@ -249,7 +249,6 @@ sub arc
 	@_ > 5 or Carp::croak('bad parameters to arc');
 	my ( $cx, $cy, $dx, $dy, $from, $to, $tilt) = @_;
 	return $self if $from == $to;
-	$dx--, $dy-- unless $self->{subpixel};
 	if ( $tilt // 0.0 ) {
 		return $self-> save->
 			scale( $dx / 2, $dy / 2)->
@@ -271,7 +270,6 @@ sub rarc
 	@_ > 3 or Carp::croak('bad parameters to arcto');
 	my ( $dx, $dy, $from, $to, $tilt) = @_;
 	return $self if $from == $to;
-	$dx--, $dy-- unless $self->{subpixel};
 	$self->save;
 	$self->scale( $dx / 2, $dy / 2);
 	$self->rotate( $tilt // 0.0);
@@ -285,7 +283,6 @@ sub ellipse
 	@_ > 2 or Carp::croak('bad parameters to ellipse');
 	my ( $cx, $cy, $dx, $dy, $tilt) = @_;
 	$dy //= $dx;
-	$dx--, $dy-- unless $self->{subpixel};
 	$self-> save->
 		matrix( $dx / 2, 0, 0, $dy / 2, $cx, $cy )->
 		rotate( $tilt // 0.0)->
@@ -298,7 +295,6 @@ sub chord
 	my $self = shift;
 	@_ == 6 or Carp::croak('bad parameters to chord');
 	my ( $cx, $cy, $dx, $dy, $start, $end) = @_;
-	$dx--, $dy-- unless $self->{subpixel};
 	$self-> save->
 		matrix( $dx / 2, 0, 0, $dy / 2, $cx, $cy )->
 		circular_arc( $start, $end )->
@@ -330,7 +326,6 @@ sub sector
 	my $self = shift;
 	@_ == 6 or Carp::croak('bad parameters to sector');
 	my ( $cx, $cy, $dx, $dy, $start, $end) = @_;
-	$dx--, $dy-- unless $self->{subpixel};
 	$self-> save->
 		matrix( $dx / 2, 0, 0, $dy / 2, $cx, $cy )->
 		line(0,0)->
@@ -618,7 +613,6 @@ sub _arc
 	for my $set ( @$nurbset ) {
 		my ( $points, @options ) = @$set;
 		my $poly = $self-> matrix_apply( $points );
-		my $m = $self->{curr}->{matrix};
 		if ( $xopt{integer} && $xopt{precision} < 3) {
 			my $n = $self->new_array;
 			push @$n, Prima::Utils::nearest_i(@$poly[0,1,-2,-1]);
