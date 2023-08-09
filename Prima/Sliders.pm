@@ -1872,11 +1872,16 @@ sub borderWidth
 
 package Prima::CircularSlider;
 use vars qw(@ISA);
-@ISA = qw(Prima::AbstractSlider Prima::Widget::MouseScroller);
+@ISA = qw(
+	Prima::AbstractSlider
+	Prima::Widget::Fader
+	Prima::Widget::MouseScroller
+);
 
 {
 my %RNT = (
 	%{Prima::AbstractSlider-> notification_types()},
+	%{Prima::Widget::Fader-> notification_types()},
 	Stringify  => nt::Action,
 );
 sub notification_types { return \%RNT; }
@@ -2117,6 +2122,19 @@ sub offset2data
 	return cos($a), sin($a);
 }
 
+sub effective_dial_diameter
+{
+	my $self = shift;
+	my $radx = $self->{radius};
+	my $drad = 5;
+	for my $lw ( 2..4) {
+		$radx -= 100;
+		last if $radx < 0;
+		$drad++;
+	}
+	return $self->{radius} * 2 - $drad;
+}
+
 sub on_paint
 {
 	my ( $self, $canvas) = @_;
@@ -2124,7 +2142,7 @@ sub on_paint
 	my $prelight;
 	if ( $self->enabled ) {
 		@clr = ( $self-> color, $self-> backColor);
-		$prelight = $self->prelight_color($clr[1]) if $self->{prelight};
+		$prelight = $self->fader_prelight_color($self->map_color($clr[1])) if $self->{prelight};
 	} else {
 		@clr = ( $self-> disabledColor, $self-> disabledBackColor);
 	}
@@ -2134,15 +2152,6 @@ sub on_paint
 	my ( $range, $min, $tval, $tlen, $ttxt, $bw) =
 	( abs($self-> {max} - $self-> {min}), $self-> {min}, $self-> {tickVal},
 	$self-> {tickLen}, $self-> {tickTxt}, $self->{buttonWidth} );
-
-	if ( defined $self-> {singlePaint}) {
-		my @clip1 = @{$self-> {expectedClip}};
-		my @clip2 = $self-> clipRect;
-		my $i;
-		for ( $i = 0; $i < 4; $i++) {
-			$self-> {singlePaint} = undef, last if $clip1[$i] != $clip2[$i];
-		}
-	}
 
 	$canvas-> color( $clr[1]);
 	$canvas-> bar( 0, 0, @size) if !$self-> transparent && !defined $self-> {singlePaint};
@@ -2154,15 +2163,9 @@ sub on_paint
 
 	goto AFTER_DIAL unless $self->{show_dial};
 	if ( defined $self-> {singlePaint}) {
-		my $drad = 5;
-		my $radx = $rad;
-		for my $lw ( 2..4) {
-			$radx -= 100;
-			last if $radx < 0;
-			$drad++;
-		}
+		my $drad = $self->effective_dial_diameter;
 		$canvas-> color( $prelight ) if $self->{prelight};
-		$canvas-> fill_ellipse( @cpt[0..1], $rad*2-$drad, $rad*2-$drad);
+		$canvas-> fill_ellipse( @cpt[0..1], $drad, $drad);
 		$canvas-> color( $clr[0]);
 	} else {
 		if ($self->{prelight}) {
@@ -2422,8 +2425,12 @@ sub on_mousemove
 		if ( $self-> enabled ) {
 			my ( undef, $prelight) = $self-> xy2val( $x, $y);
 			if (($prelight // 0) != ($self->{prelight} // 0)) {
-				$self->{prelight} = $prelight;
-				$self->repaint_circle;
+				if ( $prelight ) {
+					$self->fader_in_mouse_enter;
+					$self->{prelight} = $prelight;
+				} else {
+					$self->fader_out_mouse_leave;
+				}
 			}
 		}
 		return;
@@ -2445,11 +2452,9 @@ sub on_mousemove
 	}
 }
 
-sub on_mouseleave
-{
-	my $self = shift;
-	$self-> repaint_circle if defined( delete $self->{prelight} );
-}
+sub on_mouseleave  { shift-> fader_out_mouse_leave }
+sub on_fadeout     { delete shift->{prelight} }
+sub on_faderepaint { shift->repaint_circle }
 
 sub on_mouseclick
 {
@@ -2489,18 +2494,23 @@ sub buttons     {($#_)?$_[0]-> set_buttons     ($_[1]):return $_[0]-> {buttons};
 sub repaint_circle
 {
 	my $self = shift;
-	$self-> {singlePaint} = 1;
-	my $radius = $self->{radius} // 0;
-	my @clip = (
-		int( $self-> {circX} - $radius),
-		int( $self-> {circY} - $radius),
-		int( $self-> {circX} + $radius),
-		int( $self-> {circY} + $radius),
+
+	my $buffer = Prima::DeviceBitmap->new(
+		size      => [ $self-> size ],
+		type      => dbt::Pixmap,
+		font      => $self->font,
 	);
-	$self-> {expectedClip} = \@clip;
-	$self-> invalidate_rect( @clip[0..1], $clip[2]+1, $clip[3]+1);
-	$self-> update_view;
+	return $self->repaint unless $buffer;
+
+	$self-> {singlePaint} = 1;
+	$self-> notify( Paint => $buffer );
 	$self-> {singlePaint} = undef;
+
+	my $drad = $self->effective_dial_diameter;
+	$self-> begin_paint;
+	$self-> region( $self-> new_path-> ellipse( $self->{circX}, $self->{circY}, $drad, $drad)->region);
+	$self-> put_image( 0,0,$buffer );
+	$self-> end_paint;
 }
 
 sub value
