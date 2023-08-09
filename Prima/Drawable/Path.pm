@@ -249,7 +249,11 @@ sub arc
 	@_ > 5 or Carp::croak('bad parameters to arc');
 	my ( $cx, $cy, $dx, $dy, $from, $to, $tilt) = @_;
 	return $self if $from == $to;
-	$dx--, $dy-- unless $self->{subpixel};
+	unless ($self->{subpixel}) {
+		$dx--;
+		$dy--;
+		return $self if $dx <= 0 || $dy <= 0;
+	}
 	if ( $tilt // 0.0 ) {
 		return $self-> save->
 			scale( $dx / 2, $dy / 2)->
@@ -271,7 +275,11 @@ sub rarc
 	@_ > 3 or Carp::croak('bad parameters to arcto');
 	my ( $dx, $dy, $from, $to, $tilt) = @_;
 	return $self if $from == $to;
-	$dx--, $dy-- unless $self->{subpixel};
+	unless ($self->{subpixel}) {
+		$dx--;
+		$dy--;
+		return $self if $dx <= 0 || $dy <= 0;
+	}
 	$self->save;
 	$self->scale( $dx / 2, $dy / 2);
 	$self->rotate( $tilt // 0.0);
@@ -285,7 +293,11 @@ sub ellipse
 	@_ > 2 or Carp::croak('bad parameters to ellipse');
 	my ( $cx, $cy, $dx, $dy, $tilt) = @_;
 	$dy //= $dx;
-	$dx--, $dy-- unless $self->{subpixel};
+	unless ($self->{subpixel}) {
+		$dx--;
+		$dy--;
+		return $self if $dx <= 0 || $dy <= 0;
+	}
 	$self-> save->
 		matrix( $dx / 2, 0, 0, $dy / 2, $cx, $cy )->
 		rotate( $tilt // 0.0)->
@@ -298,7 +310,11 @@ sub chord
 	my $self = shift;
 	@_ == 6 or Carp::croak('bad parameters to chord');
 	my ( $cx, $cy, $dx, $dy, $start, $end) = @_;
-	$dx--, $dy-- unless $self->{subpixel};
+	unless ($self->{subpixel}) {
+		$dx--;
+		$dy--;
+		return $self if $dx <= 0 || $dy <= 0;
+	}
 	$self-> save->
 		matrix( $dx / 2, 0, 0, $dy / 2, $cx, $cy )->
 		circular_arc( $start, $end )->
@@ -330,7 +346,11 @@ sub sector
 	my $self = shift;
 	@_ == 6 or Carp::croak('bad parameters to sector');
 	my ( $cx, $cy, $dx, $dy, $start, $end) = @_;
-	$dx--, $dy-- unless $self->{subpixel};
+	unless ($self->{subpixel}) {
+		$dx--;
+		$dy--;
+		return $self if $dx <= 0 || $dy <= 0;
+	}
 	$self-> save->
 		matrix( $dx / 2, 0, 0, $dy / 2, $cx, $cy )->
 		line(0,0)->
@@ -633,7 +653,7 @@ sub _arc
 sub acquire
 {
 	my $c = $_[0]->{canvas};
-	$_[0]->{subpixel} = $c->antialias || $c->alpha < 255;
+	$_[0]->{subpixel} = $c->antialias;
 }
 
 sub stroke
