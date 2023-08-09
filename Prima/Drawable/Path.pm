@@ -342,6 +342,8 @@ sub sector
 sub round_rect
 {
 	my ( $self, $x, $y, $x1, $y1, $maxd) = @_;
+	return $self->rectangle($x, $y, $x1, $y1) if $maxd <= 0;
+
 	( $x1, $x) = ( $x, $x1) if $x > $x1;
 	( $y1, $y) = ( $y, $y1) if $y > $y1;
 	my ( $dx, $dy) = ( $x1 - $x, $y1 - $y);

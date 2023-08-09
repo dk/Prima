@@ -529,11 +529,18 @@ sub paint_flat
 			}
 		}
 		$canvas-> antialias(1);
+		my $dw;
+		if ( $canvas-> antialias ) {
+			$dw = $self->font->height;
+		} else {
+			$dw = 0;
+			$lw = int($lw + .5);
+		}
 		$canvas-> lineWidth( $lw );
-		$canvas-> new_path-> round_rect(
-			0 + $lw/2, 0 + $lw/2, $w - $lw/2, $h - $lw/2,
-			$self-> font-> height
-		)-> fill_stroke;
+		$canvas->
+			new_path->
+			round_rect( 0 + $lw/2, 0 + $lw/2, $w - $lw/2 - 1, $h - $lw/2 - 1, $dw)->
+			fill_stroke;
 	}) unless $self-> transparent;
 }
 
