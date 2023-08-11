@@ -85,7 +85,6 @@ sub profile_default
 			[ CtrlDelete     => 0, 0, kb::Delete|km::Ctrl, sub {
 				$_[0]-> has_selection ? $_[0]-> delete_block : $_[0]-> delete_word(0);
 			}],
-			[ DeleteChunk    => 0, 0, '^Y',          q(delete_current_chunk)],
 			[ DeleteToEnd    => 0, 0, '^E',          q(delete_to_end) ],
 			[ DupLine        => 0, 0, '^K',          sub {$_[0]-> insert_line($_[0]-> cursorY, $_[0]-> get_line($_[0]-> cursorY)) }],
 			[ DeleteBlock    => 0, 0, '@D',          q(delete_block) ],
@@ -106,8 +105,8 @@ sub profile_default
 			[ PasteMS        => 0, 0, '^V', q(paste)],
 			[ SelectAll      => 0, 0, '^A', q(select_all)],
 # undo
-			[ Undo            => 0, 0, km::Alt|kb::Backspace, q(undo)],
-			[ Redo            => 0, 0, '^R', q(redo)],
+			[ Undo           => 0, 0, '^Z', q(undo)],
+			[ Redo           => 0, 0, '^Y', q(redo)],
 		],
 		autoIndent        => 1,
 		blockType         => bt::CUA,
