@@ -314,10 +314,11 @@ notify_sys_handle( Handle self )
 
 // Window
 Bool
-apc_window_create( Handle self, Handle owner, Bool int border_icons,
-						int border_style, Bool taskList, int windowState,
-						int on_top, Bool usePos, Bool useSize, Bool layered)
-{
+apc_window_create(
+	Handle self, Handle owner, int border_icons,
+	int border_style, Bool taskList, int windowState,
+	int on_top, Bool usePos, Bool useSize, Bool layered
+) {
 	Bool reset = false;
 	ViewProfile vprf;
 	int oStage = var stage;
@@ -994,7 +995,7 @@ apc_widget_map_color( Handle self, Color color)
 }
 
 Bool
-apc_widget_create( Handle self, Handle owner, Bool Bool clipOwner, ApiHandle parent_handle, Bool layered)
+apc_widget_create( Handle self, Handle owner, Bool clipOwner, ApiHandle parent_handle, Bool layered)
 {
 	Bool reset = false, redraw = false;
 	ViewProfile vprf;
