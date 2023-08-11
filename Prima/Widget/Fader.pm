@@ -193,6 +193,10 @@ sub fader_in_mouse_enter
 	my $action = $self->fader_var('action') // '';
 	return if $action eq 'in';
 
+	my $turn_buffering_off = !$self->buffered;
+	$self->buffered(1) if $turn_buffering_off;
+	my $turn_syncpaint_off = !$self->syncPaint;
+	$self->syncPaint(1) if $turn_syncpaint_off;
 	$self-> fader_timer_start(
 		action   => 'callback',
 		callback => sub {
@@ -203,11 +207,13 @@ sub fader_in_mouse_enter
 		onEnd    => sub {
 			my ( $self, $f, $ends_okay ) = @_;
 			$self->notify(q(FadeIn), $ends_okay);
+			$self->buffered(0) if $turn_buffering_off;
+			$self->syncPaint(0) if $turn_syncpaint_off;
 		},
 	);
 	$self->fader_var( current => 0.0 );
 	$self->fader_var( action  => 'in');
-	$self->fader_var( test_buffering => 1 ) if $self->buffered;
+	$self->fader_var( test_buffering => 1 );
 }
 
 sub fader_out_mouse_leave
@@ -217,6 +223,10 @@ sub fader_out_mouse_leave
 	my $action = $self->fader_var('action') // '';
 	return if $action eq 'out';
 
+	my $turn_buffering_off = !$self->buffered;
+	$self->buffered(1) if $turn_buffering_off;
+	my $turn_syncpaint_off = !$self->syncPaint;
+	$self->syncPaint(1) if $turn_syncpaint_off;
 	$self-> fader_timer_start(
 		action   => 'callback',
 		callback => sub {
@@ -227,6 +237,8 @@ sub fader_out_mouse_leave
 		onEnd    => sub {
 			my ( $self, $f, $ends_okay ) = @_;
 			$self->notify(q(FadeOut), $ends_okay);
+			$self->buffered(0) if $turn_buffering_off;
+			$self->syncPaint(0) if $turn_syncpaint_off;
 		},
 	);
 	$self->fader_var( action  => 'out');
