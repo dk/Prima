@@ -241,8 +241,7 @@ prima_notify_sys_handle( Handle self )
 }
 
 Bool
-apc_widget_create( Handle self, Handle owner, Bool sync_paint,
-						Bool clip_owner, Bool transparent, ApiHandle parentHandle, Bool layered)
+apc_widget_create( Handle self, Handle owner, Bool clip_owner, ApiHandle parentHandle, Bool layered)
 {
 	DEFXX;
 	ViewProfile vprf;
@@ -299,7 +298,6 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
 		XCHECKPOINT;
 	}
 
-	XX-> flags. transparent = !!transparent;
 	XX-> type.drawable = true;
 	XX-> type.widget = true;
 	if ( !clip_owner || ( owner == prima_guts.application)) {
@@ -318,7 +316,6 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
 	XX-> owner = real_owner;
 
 	XX-> flags. clip_owner = !!clip_owner;
-	XX-> flags. sync_paint = !!sync_paint;
 	XX-> flags. layered    = !!layered;
 	XX-> flags. layered_requested = !!layered_requested;
 
@@ -1449,6 +1446,23 @@ apc_widget_set_size_bounds( Handle self, Point min, Point max)
 		bzero( &hints, sizeof( hints));
 		apc_SetWMNormalHints( self, &hints);
 	}
+	return true;
+}
+
+Bool
+apc_widget_set_sync_paint( Handle self, Bool sync_paint)
+{
+	X(self)-> flags. sync_paint = sync_paint;
+	return true;
+}
+
+Bool
+apc_widget_set_transparent( Handle self, Bool transparent)
+{
+	DEFXX;
+	if ( XX-> type. window)
+		return false;
+	XX-> flags. transparent = transparent;
 	return true;
 }
 

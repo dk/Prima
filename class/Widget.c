@@ -103,9 +103,11 @@ Widget_init( Handle self, HV * profile)
 	my-> set_selectable         ( self, pget_B( selectable));
 	my-> set_skin               ( self, pget_sv( skin));
 	my-> set_showHint           ( self, pget_B( showHint));
+	my-> set_syncPaint          ( self, pget_B( syncPaint));
 	my-> set_tabOrder           ( self, pget_i( tabOrder));
 	my-> set_tabStop            ( self, pget_B( tabStop));
 	my-> set_text               ( self, pget_sv( text));
+	my-> set_transparent        ( self, pget_B( transparent));
 
 	opt_assign( optScaleChildren, pget_B( scaleChildren));
 
@@ -216,34 +218,28 @@ Widget_update_sys_handle( Handle self, HV * profile)
 	dPROFILE;
 	enter_method;
 	Handle    owner;
-	Bool      clipOwner, layered, syncPaint, transparent;
+	Bool      clipOwner, layered;
 	ApiHandle parentHandle;
 	if (!(
 		pexist( owner) ||
-		pexist( syncPaint) ||
 		pexist( clipOwner) ||
 		pexist( layered) ||
-		pexist( parentHandle) ||
-		pexist( transparent)
+		pexist( parentHandle)
 	)) return;
 
 	owner        = pexist( owner)        ? pget_H( owner)        : var-> owner;
 	clipOwner    = pexist( clipOwner)    ? pget_B( clipOwner)    : my-> get_clipOwner( self);
 	parentHandle = pexist( parentHandle) ? pget_i( parentHandle) : apc_widget_get_parent_handle( self);
 	layered      = pexist( layered)      ? pget_B( layered)      : my-> get_layered(self);
-	syncPaint    = pexist( syncPaint)    ? pget_B( syncPaint)    : my-> get_syncPaint( self);
-	transparent  = pexist( transparent)  ? pget_B( transparent)  : my-> get_transparent( self);
 
 	if ( parentHandle) {
 		if (( owner != prima_guts.application) && clipOwner)
 			croak("Cannot accept 'parentHandle' for non-application child and clip-owner widget");
 	}
 
-	if ( !apc_widget_create( self, owner, syncPaint, clipOwner, transparent, parentHandle, layered))
+	if ( !apc_widget_create( self, owner, clipOwner, parentHandle, layered))
 		croak( "Cannot create widget");
 
-	pdelete( transparent);
-	pdelete( syncPaint);
 	pdelete( clipOwner);
 	pdelete( parentHandle);
 	pdelete( layered);
@@ -2240,30 +2236,19 @@ Widget_size( Handle self, Bool set, Point size)
 Bool
 Widget_syncPaint( Handle self, Bool set, Bool syncPaint)
 {
-	HV * profile;
-	enter_method;
-	if ( !set)
+	if ( set)
+		return apc_widget_set_sync_paint( self, syncPaint );
+	else
 		return apc_widget_get_sync_paint( self);
-	profile = newHV();
-	pset_i( syncPaint, syncPaint);
-	my-> set( self, profile);
-	sv_free(( SV *) profile);
-	return false;
 }
-
 
 Bool
 Widget_transparent( Handle self, Bool set, Bool transparent)
 {
-	HV * profile;
-	enter_method;
-	if ( !set)
+	if ( set)
+		return apc_widget_set_transparent( self, transparent);
+	else
 		return apc_widget_get_transparent( self);
-	profile = newHV();
-	pset_i( transparent, transparent);
-	my-> set( self, profile);
-	sv_free(( SV *) profile);
-	return false;
 }
 
 SV *

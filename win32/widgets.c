@@ -129,7 +129,7 @@ static Bool repost_msgs( PostMsg * msg, Handle self)
 }
 
 static Bool
-create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
+create_group( Handle self, Handle owner, Bool clipOwner,
 				Bool taskListed, int class_name, DWORD style, DWORD exstyle,
 				Bool usePos, Bool useSize,
 				ViewProfile * vprf, HWND parent_handle)
@@ -239,7 +239,6 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
 	}
 
 	apt_assign( aptClipOwner, clipOwner);
-	apt_assign( aptSyncPaint, syncPaint);
 	apt_set( aptEnabled);
 	apt_clear( aptRepaintPending );
 	apt_clear( aptMovePending );
@@ -315,7 +314,7 @@ notify_sys_handle( Handle self )
 
 // Window
 Bool
-apc_window_create( Handle self, Handle owner, Bool syncPaint, int border_icons,
+apc_window_create( Handle self, Handle owner, Bool int border_icons,
 						int border_style, Bool taskList, int windowState,
 						int on_top, Bool usePos, Bool useSize, Bool layered)
 {
@@ -385,7 +384,7 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, int border_icons,
 	apt_assign( aptLayered, layered );
 
 	if ( reset || ( var handle == NULL_HANDLE))
-		if ( !create_group( self, owner, syncPaint, false,
+		if ( !create_group( self, owner, false,
 				taskList, WC_FRAME, style, exstyle, usePos, useSize, &vprf, NULL)) {
 			if ( on_top >= 0) {
 				apt_assign( aptOnTop, on_top);
@@ -400,7 +399,6 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, int border_icons,
 	ws. border_style = sys s. window. border_style = border_style;
 	ws. border_icons = sys s. window. border_icons = border_icons;
 	ws. state       = sys s. window. state       = windowState;
-	apt_assign( aptSyncPaint, syncPaint);
 	apt_assign( aptTaskList,  taskList);
 	if ( usePos) apt_set( aptWinPosDetermined);
 	if ( reset)
@@ -996,8 +994,7 @@ apc_widget_map_color( Handle self, Color color)
 }
 
 Bool
-apc_widget_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
-						Bool transparent, ApiHandle parent_handle, Bool layered)
+apc_widget_create( Handle self, Handle owner, Bool Bool clipOwner, ApiHandle parent_handle, Bool layered)
 {
 	Bool reset = false, redraw = false;
 	ViewProfile vprf;
@@ -1040,7 +1037,7 @@ apc_widget_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
 	}
 	if ( !reset) apt_set( aptClipByChildren );
 	if ( reset || ( var handle == NULL_HANDLE))
-		create_group( self, owner, syncPaint, clipOwner, 0, WC_CUSTOM,
+		create_group( self, owner, clipOwner, 0, WC_CUSTOM,
 			WS_CHILD, exstyle, 1, 1, &vprf, ( HWND) parent_handle);
 	apt_set( aptWinPosDetermined);
 	if ( reset)
@@ -1050,10 +1047,7 @@ apc_widget_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
 		var owner = oldOwner;
 		var stage = oStage;
 	}
-	if ( is_apt( aptTransparent) != transparent && !reset)
-		redraw = true;
 	if ( redraw) apc_widget_redraw( self);
-	apt_assign( aptTransparent, transparent);
 	if ( reset) {
 		notify_sys_handle( self );
 		apc_widget_redraw( self);
@@ -2190,6 +2184,24 @@ apc_widget_set_shape( Handle self, Handle mask)
 			apiErrRet;
 	}
 	hwnd_repaint_layered( self, false );
+	return true;
+}
+
+Bool
+apc_widget_set_sync_paint( Handle self, Bool syncPaint)
+{
+	objCheck false;
+	apt_assign( aptSyncPaint, syncPaint );
+	return true;
+}
+
+Bool
+apc_widget_set_transparent( Handle self, Bool transparent)
+{
+	objCheck false;
+	if ( sys class_name == WC_FRAME)
+		return false;
+	apt_assign( aptTransparent, transparent);
 	return true;
 }
 

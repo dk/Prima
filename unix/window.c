@@ -576,7 +576,7 @@ create_window( Handle self, XWindow parent, unsigned long valuemask, XSetWindowA
 }
 
 Bool
-apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
+apc_window_create( Handle self, Handle owner, int border_icons,
 	int border_style, Bool task_list, int window_state,
 	int on_top, Bool use_origin, Bool use_size, Bool layered
 ) {
@@ -655,7 +655,6 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
 	XX-> flags.iconic      = ( window_state == wsMinimized) ? 1 : 0;
 	XX-> borderIcons       = border_icons;
 	XX-> flags.clip_owner  = false;
-	XX-> flags.sync_paint  = sync_paint;
 	XX-> flags.task_listed = 1;
 	XX-> flags.layered     = XX-> flags. layered_requested = !!layered;
 	XX-> flags. sizeable   = border_style == bsSizeable;
@@ -690,7 +689,7 @@ recreate_window_with_emulated_fullscreen( Handle self, int window_state)
 {
 	DEFXX;
 	return apc_window_create( self,
-	 	PComponent(self)->owner, XX->flags.sync_paint, XX->borderIcons,
+	 	PComponent(self)->owner, XX->borderIcons,
 	 	XX->flags.sizeable ? bsSizeable : bsDialog, XX->flags.task_listed, window_state,
 	 	XX->flags.on_top, false, false, XX->flags.layered);
 }

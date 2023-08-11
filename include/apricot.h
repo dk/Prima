@@ -2050,7 +2050,7 @@ apc_component_fullname_changed_notify( Handle self);
 
 /* Window */
 extern Bool
-apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons, int borderStyle,
+apc_window_create( Handle self, Handle owner, int borderIcons, int borderStyle,
 	Bool taskList, int windowState, int onTop, Bool useOrigin, Bool useSize, Bool layered);
 
 extern Bool
@@ -2163,8 +2163,7 @@ typedef struct {
 } GeomInfo, *PGeomInfo;
 
 extern Bool
-apc_widget_create( Handle self, Handle owner, Bool syncPaint,
-	Bool clipOwner, Bool transparent, ApiHandle parentHandle, Bool layered);
+apc_widget_create( Handle self, Handle owner, Bool clipOwner, ApiHandle parentHandle, Bool layered);
 
 extern Bool
 apc_widget_begin_paint( Handle self, Bool insideOnPaint);
@@ -2320,6 +2319,12 @@ apc_widget_set_size( Handle self, int width, int height);
 
 extern Bool
 apc_widget_set_size_bounds( Handle self, Point min, Point max);
+
+extern Bool
+apc_widget_set_sync_paint( Handle self, Bool sync_paint);
+
+extern Bool
+apc_widget_set_transparent( Handle self, Bool transparent);
 
 extern Bool
 apc_widget_set_visible( Handle self, Bool show);

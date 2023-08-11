@@ -84,12 +84,11 @@ Window_update_sys_handle( Handle self, HV * profile)
 	dPROFILE;
 	Handle owner;
 	int borderIcons, borderStyle, windowState, onTop;
-	Bool taskListed, syncPaint, originDontCare, sizeDontCare, layered;
+	Bool taskListed, originDontCare, sizeDontCare, layered;
 
 	var-> widgetClass = wcWindow;
 	if (!(
 		pexist( owner) ||
-		pexist( syncPaint) ||
 		pexist( taskListed) ||
 		pexist( borderIcons) ||
 		pexist( onTop) ||
@@ -98,7 +97,6 @@ Window_update_sys_handle( Handle self, HV * profile)
 	)) return;
 
 	owner          = pexist( owner )      ? pget_H( owner )       : var-> owner;
-	syncPaint      = pexist( syncPaint)   ? pget_B( syncPaint)    : my-> get_syncPaint( self);
 	borderIcons    = pexist( borderIcons) ? pget_i( borderIcons)  : my-> get_borderIcons( self);
 	borderStyle    = pexist( borderStyle) ? pget_i( borderStyle)  : my-> get_borderStyle( self);
 	taskListed     = pexist( taskListed)  ? pget_B( taskListed)   : my-> get_taskListed( self);
@@ -111,13 +109,12 @@ Window_update_sys_handle( Handle self, HV * profile)
 	if ( pexist( owner)) my-> cancel_children( self);
 
 	if ( !apc_window_create( self,
-		owner, syncPaint, borderIcons, borderStyle, taskListed, windowState,
+		owner, borderIcons, borderStyle, taskListed, windowState,
 		onTop, originDontCare, sizeDontCare, layered))
 		croak("Cannot create window");
 
 	pdelete( borderStyle);
 	pdelete( borderIcons);
-	pdelete( syncPaint);
 	pdelete( taskListed);
 	pdelete( windowState);
 	pdelete( onTop);
