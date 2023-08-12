@@ -66,6 +66,7 @@ sub load
 	warn $@ if @i && !$i[-1];
 
 	return unless @i;
+
 	my $model = $class->detect_animation($i[0]->{extras}) or return;
 	$model = 'Prima::Image::Animate::' . $model;
 
@@ -119,7 +120,7 @@ sub reset
 	delete @{$self}{qw(canvas bgColor saveCanvas
 		saveMask image info
 		screenWidth screenHeight
-		loopCount changedRect cache
+		loopCount changedRect 
 		)};
 
 	my $i = $self-> {images};
@@ -179,24 +180,14 @@ sub draw_background
 {
 	my ( $self, $canvas, $x, $y) = @_;
 	return 0 unless $self-> {canvas};
-        my $a = $self->bgAlpha // 0xff;
-        return 0 if $a == 0 || !defined $self->bgColor;
-        if ( $a == 0xff ) {
-                my $c = $canvas->color;
-                $canvas->color($self->bgColor);
-                $canvas->bar($x, $y, $x + $self->{screenWidth}, $y + $self->{screenHeight});
-                $canvas->color($c);
-        } else {
-                my $px = $self->{cache}->{bgpixel} //= Prima::Icon->new(
-                        size     => [1,1],
-                        type     => im::RGB,
-                        maskType => im::bpp8,
-                        data     => join('', map { chr } cl::premultiply(cl::to_bgr($self->bgColor))),
-                        mask     => chr($a),
-                );
-                $canvas->stretch_image( $x, $y, $self->{screenWidth}, $self->{screenHeight}, $px, rop::Blend);
-        }
-        return 1;
+	my $a = $self->bgAlpha // 0xff;
+	return 0 if $a == 0 || !defined $self->bgColor;
+	my $c = $canvas->color;
+	$canvas->color($self->bgColor);
+	$canvas->rop(rop::alpha(rop::SrcOver, $a)) if $a != 0xff;
+	$canvas->bar($x, $y, $x + $self->{screenWidth} - 1, $y + $self->{screenHeight} - 1);
+	$canvas->rop(rop::CopyPut);
+	return 1;
 }
 
 sub is_stopped
@@ -248,10 +239,6 @@ sub get_extras
 	$e-> {screenWidth}      ||= $ix-> width;
 	$e-> {$_} ||= 0 for qw(disposalMethod useScreenPalette delayTime left top);
 
-	# gif doesn't support explicit masks, therefore
-	# when image actually has a mask, autoMaskign is set to am::Index
-	$e-> {iconic} = $ix-> isa('Prima::Icon') && $ix-> autoMasking != am::None;
-
 	return $e;
 }
 
@@ -268,7 +255,7 @@ sub next
 	if ( $info-> {disposalMethod} == DISPOSE_CLEAR) {
 		$self-> {canvas}-> backColor( 0);
 		$self-> {canvas}-> clear;
-		$self-> {mask}-> backColor(cl::Set);
+		$self-> {mask}-> backColor(0xffffff);
 		$self-> {mask}-> clear;
 
 		%ret = %{ $self-> {changedRect} };
@@ -290,38 +277,20 @@ sub next
 
 	$info = $self->{info};
 	if ( $info-> {disposalMethod} == DISPOSE_RESTORE_PREVIOUS) {
-		my $c  = Prima::DeviceBitmap-> new(
-			width      => $sz[0],
-			height     => $sz[1],
-			type       => dbt::Pixmap,
-		);
-		$c-> put_image( 0, 0, $self-> {canvas});
-		$self-> {saveCanvas} = $self-> {canvas};
-		$self-> {canvas} = $c;
-
-		$c = Prima::DeviceBitmap-> new(
-			width      => $sz[0],
-			height     => $sz[1],
-			type       => dbt::Bitmap,
-		);
-		$c-> put_image( 0, 0, $self-> {mask});
-		$self-> {saveMask} = $self-> {mask};
-		$self-> {mask} = $c;
-
-		$self-> {saveRect} = $self-> {changedRect};
+		$self->{saveCanvas} = $self->{canvas};
+		$self->{canvas}     = $self->{canvas}->dup;
+		$self->{saveMask}   = $self->{mask};
+		$self->{mask}       = $self->{mask}->dup;
+		$self->{saveRect}   = $self-> {changedRect};
 	}
 
 	$self-> {changedRect} = $self->union_rect( $self-> {changedRect}, $info-> {rect});
 	%ret = %{ $self->union_rect( \%ret, $info-> {rect}) };
 
 	# draw the current frame
-	if ( $info-> {iconic}) {
+	if ( defined $info-> {transparentColorIndex}) {
 		my ( $xor, $and) = $self-> {image}-> split;
 		# combine masks
-		$self-> {mask}-> set(
-			color     => cl::Clear,
-			backColor => cl::Set,
-		);
 		$self-> {mask}-> put_image(
 			$info-> {rect}-> {left},
 			$info-> {rect}-> {bottom},
@@ -330,7 +299,7 @@ sub next
 		);
 	} else {
 		my @is = $self->{image}->size;
-		$self-> {mask}-> color(cl::Clear);
+		$self-> {mask}-> color(0);
 		$self-> {mask}-> bar(
 			$info-> {rect}-> {left},
 			$info-> {rect}-> {bottom},
@@ -363,18 +332,18 @@ sub reset
 	$self-> {$_} = $e-> {$_} for qw(screenWidth screenHeight);
 
 	# create canvas and mask
-	$self-> {canvas}  = Prima::DeviceBitmap-> new(
+	$self-> {canvas}  = Prima::Image-> new(
 		width      => $e-> {screenWidth},
 		height     => $e-> {screenHeight},
-		type       => dbt::Pixmap,
+		type       => im::RGB,
 		backColor  => 0,
 	);
 	$self-> {canvas}-> clear; # canvas is all-0 initially
 
-	$self-> {mask}    = Prima::DeviceBitmap-> new(
+	$self-> {mask}    = Prima::Image-> new(
 		width      => $e-> {screenWidth},
 		height     => $e-> {screenHeight},
-		type       => dbt::Bitmap,
+		type       => im::BW,
 		backColor  => 0xFFFFFF,
 		color      => 0x000000,
 	);
@@ -410,15 +379,9 @@ sub image
 		type      => im::RGB,
 		backColor => $self-> {bgColor} || 0,
 	);
-	$i-> begin_paint;
 	$i-> clear;
-	$i-> set(
-		color     => cl::Clear,
-		backColor => cl::Set,
-	);
 	$i-> put_image( 0, 0,$self-> {mask},   rop::AndPut);
 	$i-> put_image( 0, 0,$self-> {canvas}, rop::XorPut);
-	$i-> end_paint;
 
 	return $i;
 }
@@ -426,17 +389,9 @@ sub image
 sub draw
 {
 	my ( $self, $canvas, $x, $y) = @_;
-
 	return unless $self-> {canvas};
-
-	my %save = map { $_ => $canvas-> $_() } qw(color backColor);
-	$canvas-> set(
-		color     => cl::Clear,
-		backColor => cl::Set,
-	);
 	$canvas-> put_image( $x, $y, $self-> {mask},   rop::AndPut);
 	$canvas-> put_image( $x, $y, $self-> {canvas}, rop::XorPut);
-	$canvas-> set( %save);
 }
 
 
@@ -485,7 +440,7 @@ sub next
 		%ret = %{ $info-> {rect} };
 	} elsif ( $info-> {disposalMethod} eq 'background') {
 		# dispose from the previous frame and calculate the changed rect
-		$self-> {canvas}-> color(cl::Clear);
+		$self-> {canvas}-> color(0);
 		$self-> {canvas}-> bar(
 			$info-> {rect}-> {left},
 			$info-> {rect}-> {bottom},
@@ -524,10 +479,11 @@ sub reset
 	my $e = $self-> get_extras(0);
 	return unless $e;
 
-	$self-> {canvas}  = Prima::DeviceBitmap-> new(
+	$self-> {canvas}  = Prima::Icon-> new(
 		width      => $e-> {screenWidth},
 		height     => $e-> {screenHeight},
-		type       => dbt::Layered,
+		type       => im::RGB,
+		maskType   => 8,
 		backColor  => 0,
 	);
 	$self-> {canvas}-> clear; # canvas is black and transparent
