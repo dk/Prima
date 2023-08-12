@@ -63,9 +63,10 @@ sub setup_indents
 	my ($self) = @_;
 	$self-> {indents} = [ 0,0,0,0];
 	my $bw = $self-> {borderWidth};
+	my $ebw = $self->{GS_extra_border} - 1;
 	$self-> {indents}-> [$_] += $bw for 0..3;
-	$self-> {indents}-> [1] += $self-> {hScrollBar}-> height - 1 if $self-> {hScroll};
-	$self-> {indents}-> [2] += $self-> {vScrollBar}-> width  - 1 if $self-> {vScroll};
+	$self-> {indents}-> [1] += $self-> {hScrollBar}-> height + $ebw if $self-> {hScroll};
+	$self-> {indents}-> [2] += $self-> {vScrollBar}-> width  + $ebw if $self-> {vScroll};
 }
 
 sub set_border_width
