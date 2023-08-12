@@ -53,7 +53,7 @@ sub skin
 	my $orig = shift;
 	return $orig->(@_) unless $#_;
 	my $self = shift;
-	$orig->($self, $_[1]);
+	$orig->($self, $_[0]);
 	$self->{GS_extra_border} = ($orig->($self) eq 'flat') ? 1 : 0;
 	$self->repaint;
 }
