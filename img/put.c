@@ -92,7 +92,13 @@ img_put(
 			return img_put_alpha( dest, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, rop, region);
 		}
 		img_fill_dummy( &dummy, s-> w, s-> h, imBW, s-> mask, stdmono_palette);
-		img_put( dest, (Handle) &dummy, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, ropAndPut, region, color);
+		if ( kind_of( dest, CIcon)) {
+			Image dummy2;
+			PIcon d = PIcon(dest);
+			img_fill_dummy( &dummy2, d-> w, d-> h, imBW, d-> mask, stdmono_palette);
+			img_put((Handle) &dummy2, (Handle) &dummy, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, ropAndPut, region, NULL);
+		}
+		img_put( dest, (Handle) &dummy, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, ropAndPut, region, NULL);
 		rop = ropXorPut;
 	} else if ( rop == ropAlphaCopy ) {
 		Bool ok;
