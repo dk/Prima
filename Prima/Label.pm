@@ -592,7 +592,8 @@ Default value: C<undef>.
 
 =item hotKey CHAR
 
-A key that the label will react to if pressed, even when out of focus.
+A key (defined by CHAR) that the label will react to if pressed, if the label has the focus
+The combination ALT + Key works always if the label has the focus or not
 
 =item showAccelChar BOOLEAN
 

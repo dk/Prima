@@ -1604,7 +1604,8 @@ Called whenever the user presses the button.
 
 =item hotKey CHAR
 
-A key that the button will react to if pressed, even when out of focus.
+A key (defined by CHAR) that the button will react to if pressed, if the button has the focus
+The combination ALT + Key works always if the button has the focus or not
 
 =item pressed BOOLEAN
 
