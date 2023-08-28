@@ -3024,7 +3024,7 @@ Example: coord("z") is (1,3);
 
 =item ParseSyntax TEXT, RESULT_ARRAY_REF
 
-Called when syntax highlighting is requires - TEXT is a string to be parsed,
+Called when syntax highlighting is required - TEXT is a string to be parsed,
 and the parsing results to be stored in RESULT_ARRAY_REF, which is a reference
 to an array of integer pairs, each representing a single-colored text chunk.
 The first integer in the pairs is the length of a chunk, the second - color
@@ -3038,7 +3038,7 @@ value ( C<cl::XXX> constants ).
 
 =item autoIndent BOOLEAN
 
-Selects if the auto indenting feature is on.
+Turns the auto indenting on or off
 
 Default value: 1
 
@@ -3097,9 +3097,9 @@ See also: L<cursor_left>, L<cursor_right>, L<word_left>, L<word_right>.
 
 =item insertMode BOOLEAN
 
-Governs the typing mode - if 1, the typed text is inserted, if 0, the text overwrites
+Set the typing mode - if 1, the typed text is inserted, if 0, the text overwrites
 the old text. When C<insertMode> is 0, the cursor shape is thick and covers the whole
-character; when 1, it is of default width.
+character; when 1, it is of the default cursor width.
 
 Default toggle key: Insert
 
@@ -3230,7 +3230,7 @@ Manages the selection end. See L<selection>, X2 and Y2.
 
 =item syntaxHilite BOOLEAN
 
-Governs the syntax highlighting. Is not implemented for word wrapping mode.
+Governs the syntax highlighting.
 
 =item tabIndent INTEGER
 
@@ -3261,7 +3261,7 @@ Provides access to all the text data. The lines are separated by
 the new line ( \n ) character. TEXT_PTR is a pointer to text string.
 
 The property is more efficient than L<text> with the large text,
-because the copying of the text scalar to the stack stage is eliminated.
+because the copying of the text scalar to the stack is eliminated.
 
 See also: L<text>.
 
@@ -3319,7 +3319,7 @@ method.
 
 =item add_marker X, Y
 
-Adds visual coordinated X,Y to L<markers> property.
+Adds visual coordinated X,Y to the L<markers> property.
 
 =item back_char [ REPEAT = 1 ]
 
