@@ -2584,7 +2584,6 @@ sub back_char
 				$self->text_shape_with_tabs_replaced($new_text)->index2cluster($new_offset),
 				$cs[1]
 			);
-			print "case 1\n";
 		} elsif ( $cs[1] > 0 ) {
 			my $c = $self->get_line($cs[1] - 1);
 			my $l = $self->text_shape_with_tabs_replaced($c)->n_clusters;
