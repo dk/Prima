@@ -458,10 +458,12 @@ sub stroke_primitive
 	return 1 if $lp eq lp::Null && $self->rop2 == rop::NoOper;
 
 	my $path = $self->new_path;
+	$path->matrix( $self-> matrix );
 	$path->$request(@_);
 
 	return $self->graphic_context( sub {
 		$self-> lineWidth(0);
+		$self-> matrix-> identity;
 		return $path->stroke;
 	} ) if !$self->antialias && $self->alpha == 255 && $self->lineWidth < 1.5;
 
@@ -470,6 +472,7 @@ sub stroke_primitive
 		(!$self->antialias && $self->lineWidth == 0) ? (lineWidth => 1) : (),
 	);
 	return unless $self->graphic_context_push;
+	$self-> matrix-> identity;
 	$self->fillPattern(fp::Solid);
 	$self->fillMode(fm::Winding | fm::Overlay);
 	$self->color($self->backColor) if $lp eq lp::Null;
@@ -482,11 +485,19 @@ sub fill_primitive
 {
 	my ( $self, $request ) = (shift, shift);
 	my $path = $self->new_path;
+
+	return unless $self->graphic_context_push;
+	my $ok = 1;
+	$path->matrix( $self-> matrix );
 	$path->$request(@_);
+	$self-> matrix-> identity;
 	for ($path->points(fill => 1)) {
-		return 0 unless $self->fillpoly($_);
+		next if $self->fillpoly($_);
+		$ok = 0;
+		last;
 	}
-	return 1;
+	$self->graphic_context_pop;
+	return $ok;
 }
 
 sub text_shape_out
