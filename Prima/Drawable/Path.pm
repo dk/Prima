@@ -629,7 +629,7 @@ sub _arc
 
 	my %xopt;
 	$xopt{precision} = $self->{curr}->{precision} // 24;
-	$xopt{precision} = $scaling if $xopt{precision} // 24 > $scaling;
+	$xopt{precision} = $scaling if $xopt{precision} > $scaling;
 	$xopt{integer}   = !$self->{subpixel};
 	$xopt{precision} *= 2 if
 		$self->{subpixel} &&
