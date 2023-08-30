@@ -945,6 +945,7 @@ sub on_keydown
 sub on_fontchanged
 {
 	my $self = $_[0];
+	$self-> reset_shaping_caches;
 	$self-> reset_render;
 	$self-> reset_scrolls;
 }
