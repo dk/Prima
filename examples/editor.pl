@@ -388,6 +388,7 @@ sub do_find
 			return;
 		}
 		$e-> cursor(($$p{options} & fdo::BackwardSearch) ? $n[0] : $n[2], $n[1]);
+		$_ = $e-> physical_to_visual($_,$n[1]) for @n[0,2];
 		$e-> selection( $n[0], $n[1], $n[2], $n[1]);
 		unless ( $$p{asFind}) {
 			if ( $$p{options} & fdo::ReplacePrompt) {

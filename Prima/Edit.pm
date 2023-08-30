@@ -2856,7 +2856,6 @@ sub find
 	my $c = $self-> get_line( $y);
 	my ( $subLine, $re, $re2, $matcher );
 	$x = length( $c) if $x < 0;
-	$x = $self-> visual_to_physical($x, $y);
 
 	$re  .= '\\b' if $options & fdo::WordsOnly;
 	$re  .= $line;
@@ -2882,9 +2881,8 @@ sub find
 	}
 	my ($nX, $nY, $len, $newStr) = $matcher->($self, $x, $y, $c, $subLine, $match, $replaceLine);
 	return unless defined $nX;
-	my $nX1 = $self-> physical_to_visual($nX, $nY);
-	my $nX2 = $self-> physical_to_visual($nX + $len - 1, $nY) + 1;
-	$nX2--, $nX1++ if $nX1 > $nX2;
+	my $nX1 = $nX;
+	my $nX2 = $nX + $len;
 	return ($nX1, $nY, $nX2, $newStr);
 }
 
@@ -3491,12 +3489,12 @@ Stops the block selection session.
 =item find SEARCH_STRING, [ X = 0, Y = 0, REPLACE_LINE = '', OPTIONS ]
 
 Tries to find ( and, if REPLACE_LINE is defined, to replace with it )
-SEARCH_STRING from (X,Y) visual coordinates. OPTIONS is an integer
+SEARCH_STRING from (X,Y) physical coordinates. OPTIONS is an integer
 that consists of the C<fdo::> constants; the same constants are used
 in L<Prima::Dialog::FindDialog>, which provides graphic interface to the find and replace
 facilities of L<Prima::Edit>.
 
-Returns X1, Y, X2, NEW_STRING where X1.Y-X2.Y are visual coordinates of
+Returns X1, Y, X2, NEW_STRING where X1.Y-X2.Y are physical coordinates of
 the found string, and NEW_STRING is the replaced version (if any)
 
 =over
@@ -3522,6 +3520,8 @@ If set, the search direction is backwards.
 Not used in the class, however, used in L<Prima::Dialog::FindDialog>.
 
 =back
+
+See also: F<examples/editor.pl>
 
 =item get_chunk CHUNK_ID
 
