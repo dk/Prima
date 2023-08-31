@@ -339,15 +339,16 @@ extern void img_fill_alpha_buf( Byte * dst, Byte * src, int width, int bpp);
 
 typedef struct _NPolyPolyline {
 	unsigned int n_points, size;
-	Byte *lj_hints_map;
+	Byte *lj_hints;
 	double theta; /* tangent for single-point polylines */
 	struct _NPolyPolyline *next, *prev;
 	NPoint *points;
 	Byte buf[1];
 } NPolyPolyline;
+
 extern NPolyPolyline* img_polyline2patterns(
-	NPoint * points, int n_points, Byte * lj_hints_map, 
-	double line_width, unsigned char * line_pattern, 
+	NPoint * points, int n_points, Byte * lj_hints,
+	double line_width, unsigned char * line_pattern,
 	Bool integer_precision
 );
 

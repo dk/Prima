@@ -1093,6 +1093,9 @@ sub poly2patterns
 
 # Adapted from wine/dlls/gdi32/path.c:WidenPath()
 # (c) Martin Boehme, Huw D M Davies, Dmitry Timoshkov, Alexandre Julliard
+#
+# I keep this for easy debugging and reference, however this implementation
+# doesn't include the line join hinting that is present in render_polyline()
 sub widen_old
 {
 	my ( $self, %opt ) = @_;
@@ -1296,53 +1299,6 @@ sub widen_old
 		}
 		$dst->open;
 	}
-	return $dst;
-}
-
-sub widen_new0
-{
-	my ( $self, %opt ) = @_;
-	$self->acquire;
-
-	my $dst = ref($self)->new( undef,
-		%$self,
-		canvas   => $self->{canvas},
-		commands => [],
-	);
-
-	my @pp;
-	{
-		local $self->{subpixel} = 1;
-		@pp = $self->points;
-	}
-
-	for my $p ( @pp ) {
-		next unless @$p;
-		my $cmds = $self->{canvas}->render_polyline( $p, %opt,
-			path    => 1,
-			integer => $self->{subpixel} ? 0 : 1,
-		);
-
-		for ( my $i = 0; $i < @$cmds;) {
-			my $cmd   = $cmds->[$i++];
-			my $param = $cmds->[$i++];
-			if ( $cmd eq 'line') {
-				$dst->line( $param );
-			} elsif ( $cmd eq 'arc') {
-				$dst->$cmd( @$param );
-			} elsif ( $cmd eq 'conic') {
-				$dst->spline( $param, degree => 2, closed => 0 );
-			} elsif ( $cmd eq 'cubic') {
-				$dst->spline( $param, degree => 3, closed => 0 );
-			} elsif ( $cmd eq 'open') {
-				$dst->open;
-			} else {
-				warn "** panic: unknown render_polyline command '$cmd'";
-				last;
-			}
-		}
-	}
-
 	return $dst;
 }
 

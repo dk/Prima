@@ -755,7 +755,7 @@ widen_line(AV * path, NPolyPolyline *poly, DrawablePaintState *state, Bool integ
 					( state-> miter_limit < fabs( 1.0 / sin( alpha / 2 )))
 				))
 					lj = ljBevel;
-				if ( p-> lj_hints_map && p-> lj_hints_map[i] )
+				if ( p-> lj_hints && p-> lj_hints[i] )
 					lj = ljMiter;
 #undef DMIN
 				if ( i == 0 ) {
@@ -875,9 +875,8 @@ render_wide_line(
 	NPoint *points, unsigned int n_points,
 	DrawablePaintState *state,
 	unsigned char * line_pattern, Bool integer_precision,
-	Byte *lj_hints_map
-)
-{
+	Byte *lj_hints
+) {
 	AV* path;
 	NPolyPolyline* poly = NULL, static_poly;
 	Bool ok = false;
@@ -895,13 +894,13 @@ render_wide_line(
 	)
 		return NULL;
 
-	if ( !( poly  = img_polyline2patterns(points, n_points, lj_hints_map, state->line_width, line_pattern, integer_precision))) {
+	if ( !( poly  = img_polyline2patterns(points, n_points, lj_hints, state->line_width, line_pattern, integer_precision))) {
 		poly = &static_poly;
 		poly-> next     = NULL;
 		poly-> prev     = NULL;
 		poly-> n_points = n_points;
 		poly-> points   = points;
-		poly-> lj_hints_map = lj_hints_map;
+		poly-> lj_hints = lj_hints;
 	}
 
 	path = newAV();

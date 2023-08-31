@@ -208,7 +208,6 @@ apc_gp_aa_fill_poly( Handle self, int numPts, NPoint * points)
 	objCheck false;
 
 	select_world_transform(self, false);
-	printf("R %d points\n", numPts);
 
 	if (( is_apt(aptDeviceBitmap) && ((PDeviceBitmap)self)->type == dbtBitmap)) {
 		Bool ok;
