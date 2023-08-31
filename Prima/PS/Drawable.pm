@@ -674,7 +674,7 @@ sub primitive
 	my $src = Prima::Drawable::Path->new( undef, subpixel => 1 );
 	$src->$cmd(@param);
 
-	my @pp = map { @$_ } @{$src->points};
+	my @pp = $src->points;
 	for my $p ( @pp ) {
 		next unless @$p;
 		my $cmds = $self->render_polyline( $p, path => 1, integer => 0);
@@ -900,7 +900,7 @@ sub stroke
 		subpixel => 1,
 		commands => $self->commands,
 	);
-	for ( map { @$_ } @{ $path->points }) {
+	for ( $path->points ) {
 		next if 4 > @$_;
 		$c->primitive( polyline => $_ );
 	}

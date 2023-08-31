@@ -409,31 +409,24 @@ sub points
 			matrix => [ identity ],
 			( map { $_, $self->{$_} } qw(precision) )
 		};
-		$self->{points} = [[ $self->new_array ]];
+		$self->{points} = [ $self->new_array ];
 		my $c = $self->{commands};
 		for ( my $i = 0; $i < @$c; ) {
 			my ($cmd,$len) = @$c[$i,$i+1];
 			$self-> can("_$cmd")-> ( $self, @$c[$i+2..$i+$len+1] );
 			$i += $len + 2;
 		}
+		my @p;
 		for my $ppp ( @{$self->{points}}) {
-			@$ppp = grep { @$_ > 2 } @$ppp;
-			Prima::array::deduplicate($_,2,4) for @$ppp;
+			next if @$ppp < 4;
+			Prima::array::deduplicate($ppp,2,4);
+			push @p, $ppp;
 		}
+		$self->{points} = \@p;
 		$self->{last_matrix} = $self->{curr}->{matrix};
 	}
 
-	if ( $opt{fill} ) {
-		my @ret;
-		for my $ppp ( @{ $self->points } ) {
-			my $arr = $self->new_array;
-			Prima::array::append( $arr, $_ ) for @$ppp;
-			push @ret, $arr if @$arr > 2;
-		}
-		return @ret;
-	}
-
-	return $self->{points};
+	return wantarray ? @{$self->{points}} : $self->{points};
 }
 
 sub last_matrix
@@ -446,9 +439,7 @@ sub last_matrix
 sub last_point
 {
 	for ( reverse @{ shift->{points} }) {
-		for ( reverse @$_ ) {
-			return $$_[-2], $$_[-1] if @$_;
-		}
+		return $$_[-2], $$_[-1] if @$_;
 	}
 	return 0,0;
 }
@@ -516,27 +507,28 @@ sub  _moveto
 	my ( $self, $mx, $my, $rel) = @_;
 	($mx, $my) = $self->matrix_apply($mx, $my);
 	my ($lx, $ly) = $rel ? $self->last_point : (0,0);
-	my $arr = $self->new_array;
-	push @$arr, $self->{subpixel} ? ($lx + $mx, $ly + $my) : Prima::Utils::nearest_i($lx + $mx, $ly + $my);
-	push @{$self->{points}->[-1]}, $arr;
+	push @{$self->{points}->[-1]},
+		$self->{subpixel} ?
+			($lx + $mx, $ly + $my) :
+			Prima::Utils::nearest_i($lx + $mx, $ly + $my);
 }
 
-sub _open { push @{$_[0]->{points}}, [$_[0]->new_array] }
+sub _open { push @{$_[0]->{points}}, $_[0]->new_array }
 
 sub _close
 {
 	my $self = shift;
 	my $p = $self->{points};
 	return unless @$p;
-	my $l = $p->[-1]->[-1];
+	my $l = $p->[-1];
 	push @$l, $$l[0], $$l[1] if @$l && ($$l[0] != $$l[-2] || $$l[1] != $$l[-1]);
-	push @$p, [$self->new_array];
+	push @$p, $self->new_array;
 }
 
 sub _line
 {
 	my ( $self, $line ) = @_;
-	Prima::array::append( $self->{points}->[-1]->[-1],
+	Prima::array::append( $self->{points}->[-1],
 		Prima::Drawable->render_polyline( $line,
 			matrix  => $self->{curr}->{matrix},
 			integer => !$self->{subpixel},
@@ -547,7 +539,7 @@ sub _line
 sub _spline
 {
 	my ( $self, $points, $options ) = @_;
-	Prima::array::append( $self->{points}->[-1]->[-1],
+	Prima::array::append( $self->{points}->[-1],
 		Prima::Drawable->render_spline(
 			$self-> matrix_apply( $points ),
 			%$options,
@@ -646,7 +638,7 @@ sub _arc
 		} elsif ($xopt{precision} >= 2) {
 			$poly = Prima::Drawable->render_spline( $poly, @options, %xopt);
 		}
-		Prima::array::append( $self->{points}->[-1]->[-1], $poly);
+		Prima::array::append( $self->{points}->[-1], $poly);
 	}
 }
 
@@ -661,7 +653,7 @@ sub stroke
 	return 0 unless $_[0]->{canvas};
 	$_[0]->acquire;
 	my $emulated_aa = $_[0]->{antialias} && !$_[0]->{canvas}->antialias;
-	for ( map { @$_ } @{ $_[0]->points }) {
+	for ( $_[0]->points ) {
 		next if 4 > @$_;
 		if ( $emulated_aa ) {
 			return 0 unless $_[0]->{canvas}->new_aa_surface->polyline($_);
@@ -677,14 +669,13 @@ sub fill
 	my ( $self, $fillMode ) = @_;
 	return 0 unless my $c = $self->{canvas};
 	$self->acquire;
-	my @p = $self->points(fill => 1);
 	my $ok = 1;
 	my $save;
 	if ( defined $fillMode ) {
 		$save = $c->fillMode;
 		$c->fillMode($fillMode);
 	}
-	for ( @p ) {
+	for ( $self->points ) {
 		next if 4 > @$_;
 		if ( $self->{antialias} && !$_[0]->{canvas}->antialias) {
 			last unless $ok &= $c->new_aa_surface->fillpoly($_);
@@ -894,7 +885,7 @@ sub contours
 {
 	my $self = shift;
 	my @ret;
-	for my $pp ( map { @$_ } @{ $self->points } ) {
+	for my $pp ( $self->points ) {
 		my @contour;
 		next if @$pp < 2;
 		my $closed = $pp->[0] == $pp->[-2] && $pp->[1] == $pp->[-1];
@@ -1079,7 +1070,7 @@ sub widen_old
 	my $pp;
 	{
 		local $self->{subpixel} = 1;
-		$pp = [ map { @$_ } @{$self->points} ];
+		$pp = $self->points;
 	}
 	return $dst if $lp eq lp::Null;
 	$pp = poly2patterns($pp, $lp, $lw, !$self->{subpixel}) if $lp ne lp::Solid;
@@ -1277,7 +1268,7 @@ sub widen_new
 	my @pp;
 	{
 		local $self->{subpixel} = 1;
-		@pp = map { @$_ } @{$self->points};
+		@pp = $self->points;
 	}
 
 	for my $p ( @pp ) {
@@ -1310,13 +1301,13 @@ sub widen_new
 	return $dst;
 }
 
-*widen = \&widen_new;
-#*widen = \&widen_old;
+#*widen = \&widen_new;
+*widen = \&widen_old;
 
 sub extents
 {
 	my $self = shift;
-	my @pp = map { @$_ } @{ $self->points };
+	my @pp = $self->points;
 	return unless @pp;
 	my ( $x1, $y1, $x2, $y2 ) = @{$pp[0]}[0,1,0,1];
 	for my $p ( @pp ) {
@@ -1343,7 +1334,7 @@ sub clip
 	$p->clear;
 	$p->set(%opt) if scalar keys %opt;
 	$p->translate($tx, $ty);
-	$p->fillpoly($_) for $self->points(fill => 1);
+	$p->fillpoly($_) for $self->points;
 	return $p->image;
 }
 
@@ -1354,7 +1345,7 @@ sub region
 	$mode //= fm::Winding | fm::Overlay;
 	$rgnop //= rgnop::Union;
 	$reg ? $reg->combine($_, $rgnop) : ($reg = $_)
-		for map { Prima::Region->new( polygon => $_, fillMode => $mode) } $self->points(fill => 1);
+		for map { Prima::Region->new( polygon => $_, fillMode => $mode) } $self->points;
 	return $reg // Prima::Region->new;
 }
 
@@ -1621,11 +1612,10 @@ pixels, to be suitable for direct send to the polyline() API call. If PRESCALE
 factor is set, it is used instead to premultiply coordinates of arc anchor
 points used to render the lines.
 
-=item points %opt
+=item points
 
 Runs all accumulated commands, and returns rendered set of points, suitable
-for further calls to either C<Prima::Drawable::polyline> or C<Prima::Drawable::fillpoly>
-depending on the C<$opt{fill}> flag.
+for further calls to C<Prima::Drawable::polyline> and C<Prima::Drawable::fillpoly>.
 
 =item region MODE=fm::Winding|fm::Overlay, RGNOP=rgnop::Union
 
