@@ -755,6 +755,8 @@ widen_line(AV * path, NPolyPolyline *poly, DrawablePaintState *state, Bool integ
 					( state-> miter_limit < fabs( 1.0 / sin( alpha / 2 )))
 				))
 					lj = ljBevel;
+				if ( p-> lj_hints_map && p-> lj_hints_map[i] )
+					lj = ljMiter;
 #undef DMIN
 				if ( i == 0 ) {
 					firstin.x = o.x + d1.x;
@@ -869,7 +871,12 @@ render_line2fill(NPoint *buffer, int count, Bool as_integer)
 }
 
 static SV *
-render_wide_line( NPoint *points, unsigned int n_points, DrawablePaintState *state, unsigned char * line_pattern, Bool integer_precision )
+render_wide_line(
+	NPoint *points, unsigned int n_points,
+	DrawablePaintState *state,
+	unsigned char * line_pattern, Bool integer_precision,
+	Byte *lj_hints_map
+)
 {
 	AV* path;
 	NPolyPolyline* poly = NULL, static_poly;
@@ -888,12 +895,13 @@ render_wide_line( NPoint *points, unsigned int n_points, DrawablePaintState *sta
 	)
 		return NULL;
 
-	if ( !( poly  = img_polyline2patterns(points, n_points, state->line_width, line_pattern, integer_precision))) {
+	if ( !( poly  = img_polyline2patterns(points, n_points, lj_hints_map, state->line_width, line_pattern, integer_precision))) {
 		poly = &static_poly;
 		poly-> next     = NULL;
 		poly-> prev     = NULL;
 		poly-> n_points = n_points;
 		poly-> points   = points;
+		poly-> lj_hints_map = lj_hints_map;
 	}
 
 	path = newAV();
@@ -938,6 +946,7 @@ Drawable_render_polyline( SV * obj, SV * points, HV * profile)
 	double *input = NULL, *buffer = NULL, box[4];
 	SV * ret = NULL_SV;
 	void * storage;
+	Byte *lj_hints_map = NULL;
 
 	if (( input = (double*) prima_read_array( points, "render_polyline", 'd', 2, 1, -1, &count, &free_input)) == NULL)
 		goto EXIT;
@@ -1021,7 +1030,25 @@ Drawable_render_polyline( SV * obj, SV * points, HV * profile)
 			if ( lp && lp != NULL_SV) line_pattern = (unsigned char*) SvPV_nolen(lp);
 		}
 
-		ret = render_wide_line(( NPoint*) buffer, count, &state, line_pattern, as_integer );
+		if ( pexist(line_join_hints) && SvOK(pget_sv(line_join_hints))) {
+			int i, n_lj_hints, *lj_hints = NULL;
+			lj_hints = (int*) prima_read_array(
+				pget_sv(line_join_hints), "line_join_hints", 'i',
+				1, 0, -1,
+				&n_lj_hints, NULL
+			);
+			if ( !lj_hints ) goto EXIT;
+			if ( !( lj_hints_map = malloc( count ))) {
+				free( lj_hints );
+				goto EXIT;
+			}
+			bzero( lj_hints_map, count );
+			for ( i = 0; i < n_lj_hints; i++)
+				lj_hints_map[ lj_hints[ i ] ] = 1;
+			free( lj_hints );
+		}
+
+		ret = render_wide_line(( NPoint*) buffer, count, &state, line_pattern, as_integer, lj_hints_map );
 		if ( ret == NULL ) {
 			AV * av = newAV();
 			av_push(av, newSVpv("line", 0));
@@ -1044,6 +1071,7 @@ Drawable_render_polyline( SV * obj, SV * points, HV * profile)
 		as_integer ? "i" : "d");
 
 EXIT:
+	if ( lj_hints_map ) free( lj_hints_map );
 	if ( free_buffer ) free( buffer );
 	if ( free_input ) free(input);
 	hv_clear(profile); /* old gencls bork */

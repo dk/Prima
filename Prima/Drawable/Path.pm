@@ -400,30 +400,74 @@ sub round_rect
 
 sub new_array { shift->{subpixel} ? Prima::array->new_double : Prima::array->new_int }
 
+sub new_contour
+{
+	my $self = shift;
+	my $p = $self->{points};
+	while (@$p && @{$p->[-1]} < 4) {
+		$self->{hint_map}->[ $#$p ] = undef
+			if exists $self->{hint_map};
+		pop @$p;
+	}
+	push @$p, $self->new_array;
+}
+
 sub points
 {
 	my ($self, %opt) = @_;
+
+	my ($with_hints, $hints);
+	if ( $opt{hints}) {
+		delete $self->{points};
+		$with_hints = 1;
+	}
+
 	unless ( $self->{points} ) {
 		local $self->{stack} = [];
 		local $self->{curr}  = {
 			matrix => [ identity ],
 			( map { $_, $self->{$_} } qw(precision) )
 		};
-		$self->{points} = [ $self->new_array ];
+		my $p = $self->{points} = [ $self->new_array ];
+
+		my ( $lj_signal, $lj_override ) = (0,0);
 		my $c = $self->{commands};
+		$hints = $self->{hint_map} = [] if $with_hints;
+
 		for ( my $i = 0; $i < @$c; ) {
+
 			my ($cmd,$len) = @$c[$i,$i+1];
+
+			my ($np, $got_hint);
+			if ( $with_hints ) {
+				if ( $cmd eq 'spline' || $cmd eq 'arc') {
+					$lj_signal = 1;
+				} elsif ( $cmd eq 'line') {
+					$lj_signal = 0;
+				}
+				if ( $lj_signal != $lj_override ) {
+					push @{ $hints->[$#$p] }, scalar(@{$p->[-1]}) / 2;
+					$lj_override = $lj_signal;
+					$got_hint = 1;
+				}
+				$np = @$p;
+			}
+
 			$self-> can("_$cmd")-> ( $self, @$c[$i+2..$i+$len+1] );
 			$i += $len + 2;
+
+			$lj_signal = $lj_override = $got_hint = 0 if $with_hints &&
+				( $np != @$p || ($got_hint && !defined( $hints->[$#$p] )));
 		}
-		my @p;
-		for my $ppp ( @{$self->{points}}) {
-			next if @$ppp < 4;
-			Prima::array::deduplicate($ppp,2,4);
-			push @p, $ppp;
-		}
-		$self->{points} = \@p;
+		$self-> new_contour;
+		pop @$p;
+
 		$self->{last_matrix} = $self->{curr}->{matrix};
+	}
+
+	if ( $opt{hints}) {
+		delete $self->{hint_map};
+		return $self->{points}, $hints;
 	}
 
 	return wantarray ? @{$self->{points}} : $self->{points};
@@ -513,7 +557,7 @@ sub  _moveto
 			Prima::Utils::nearest_i($lx + $mx, $ly + $my);
 }
 
-sub _open { push @{$_[0]->{points}}, $_[0]->new_array }
+sub _open { shift-> new_contour }
 
 sub _close
 {
@@ -522,30 +566,30 @@ sub _close
 	return unless @$p;
 	my $l = $p->[-1];
 	push @$l, $$l[0], $$l[1] if @$l && ($$l[0] != $$l[-2] || $$l[1] != $$l[-1]);
-	push @$p, $self->new_array;
+	$self-> new_contour;
 }
 
 sub _line
 {
 	my ( $self, $line ) = @_;
-	Prima::array::append( $self->{points}->[-1],
-		Prima::Drawable->render_polyline( $line,
-			matrix  => $self->{curr}->{matrix},
-			integer => !$self->{subpixel},
-		)
+	my $ppp = Prima::Drawable->render_polyline( $line,
+		matrix  => $self->{curr}->{matrix},
+		integer => !$self->{subpixel},
 	);
+	Prima::array::deduplicate($ppp,2,4);
+	Prima::array::append( $self->{points}->[-1], $ppp);
 }
 
 sub _spline
 {
 	my ( $self, $points, $options ) = @_;
-	Prima::array::append( $self->{points}->[-1],
-		Prima::Drawable->render_spline(
-			$self-> matrix_apply( $points ),
-			%$options,
-			integer => !$self->{subpixel},
-		)
+	my $ppp = Prima::Drawable->render_spline(
+		$self-> matrix_apply( $points ),
+		%$options,
+		integer => !$self->{subpixel},
 	);
+	Prima::array::deduplicate($ppp,2,4);
+	Prima::array::append( $self->{points}->[-1], $ppp);
 }
 
 # Reference:
@@ -638,6 +682,7 @@ sub _arc
 		} elsif ($xopt{precision} >= 2) {
 			$poly = Prima::Drawable->render_spline( $poly, @options, %xopt);
 		}
+		Prima::array::deduplicate($poly,2,4);
 		Prima::array::append( $self->{points}->[-1], $poly);
 	}
 }
@@ -1254,7 +1299,7 @@ sub widen_old
 	return $dst;
 }
 
-sub widen_new
+sub widen_new0
 {
 	my ( $self, %opt ) = @_;
 	$self->acquire;
@@ -1301,8 +1346,58 @@ sub widen_new
 	return $dst;
 }
 
-#*widen = \&widen_new;
-*widen = \&widen_old;
+sub widen_new
+{
+	my ( $self, %opt ) = @_;
+	$self->acquire;
+
+	my $dst = ref($self)->new( undef,
+		%$self,
+		canvas   => $self->{canvas},
+		commands => [],
+	);
+
+	my ($pp, $hints);
+	{
+		local $self->{subpixel} = 1;
+		 ($pp, $hints) = $self-> points( hints => 1);
+	}
+
+	for (my $j = 0; $j < @$pp; $j++ ) {
+		my $p = $pp->[$j];
+		my $h = $hints->[$j];
+
+		my $cmds = $self->{canvas}->render_polyline( $p, %opt,
+			path    => 1,
+			integer => ($self->{subpixel} ? 0 : 1),
+			line_join_hints => $h,
+		);
+
+		for ( my $i = 0; $i < @$cmds;) {
+			my $cmd   = $cmds->[$i++];
+			my $param = $cmds->[$i++];
+			if ( $cmd eq 'line') {
+				$dst->line( $param );
+			} elsif ( $cmd eq 'arc') {
+				$dst->$cmd( @$param );
+			} elsif ( $cmd eq 'conic') {
+				$dst->spline( $param, degree => 2, closed => 0 );
+			} elsif ( $cmd eq 'cubic') {
+				$dst->spline( $param, degree => 3, closed => 0 );
+			} elsif ( $cmd eq 'open') {
+				$dst->open;
+			} else {
+				warn "** panic: unknown render_polyline command '$cmd'";
+				last;
+			}
+		}
+	}
+
+	return $dst;
+}
+
+*widen = \&widen_new;
+#*widen = \&widen_old;
 
 sub extents
 {
