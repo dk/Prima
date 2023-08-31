@@ -1360,7 +1360,7 @@ sub widen_new
 	my ($pp, $hints);
 	{
 		local $self->{subpixel} = 1;
-		 ($pp, $hints) = $self-> points( hints => 1);
+		($pp, $hints) = $self-> points( hints => 1);
 	}
 
 	for (my $j = 0; $j < @$pp; $j++ ) {

@@ -1031,7 +1031,8 @@ Drawable_render_polyline( SV * obj, SV * points, HV * profile)
 		}
 
 		if ( pexist(line_join_hints) && SvOK(pget_sv(line_join_hints))) {
-			int i, n_lj_hints, *lj_hints = NULL;
+			int i, j, n_lj_hints, *lj_hints = NULL;
+			Bool lj_state = false;
 			lj_hints = (int*) prima_read_array(
 				pget_sv(line_join_hints), "line_join_hints", 'i',
 				1, 0, -1,
@@ -1043,8 +1044,13 @@ Drawable_render_polyline( SV * obj, SV * points, HV * profile)
 				goto EXIT;
 			}
 			bzero( lj_hints_map, count );
-			for ( i = 0; i < n_lj_hints; i++)
-				lj_hints_map[ lj_hints[ i ] ] = 1;
+			for ( i = j = 0; i < count; i++) {
+				if ( j < n_lj_hints && lj_hints[j] == i ) {
+					lj_state = !lj_state;
+					j++;
+				}
+				lj_hints_map[i] = lj_state;
+			}
 			free( lj_hints );
 		}
 

@@ -482,15 +482,31 @@ nppl_alloc( NPolyPolyline *old, Bool use_lj_hint_map, unsigned int new_size)
 		bzero( p, sz );
 	} else {
 		int old_size = old->size;
+		NPolyPolyline *prev = old->prev;
+		/*
+		printf("ALLOC ? (%p,%p) <- %p -> (%p,%p)\n",
+			old->prev, old->prev ? old->prev->next : NULL,
+			old,
+			old->next ? old->next->prev : NULL, old->next);
+		*/
 		if ( new_size < old_size )
 			return old;
 		if ( !( p = realloc( old, sz )))
 			return NULL;
-		if (old->prev) old->prev->next = p;
+		if (prev)
+			prev->next = p;
+		if (p->next)
+			p->next->prev = p;
 		if ( use_lj_hint_map ) {
 			p->lj_hints_map = p-> buf + sz1;
 			memmove( p->lj_hints_map, p-> buf + sizeof(NPoint) * old_size, sizeof(Byte) * old_size);
 		}
+		/*
+		printf("ALLOC ! (%p,%p) <- %p -> (%p,%p)\n",
+			p->prev, p->prev ? p->prev->next : NULL,
+			p,
+			p->next ? p->next->prev : NULL, p->next);
+		*/
 	}
 	p->size = new_size;
 	p->points = (NPoint*) p->buf;
@@ -591,7 +607,6 @@ img_polyline2patterns( NPoint * points, int n_points, Byte *lj_hints_map, double
 				NPolyPolyline*p;
 				if ( !( p = nppl_alloc(NULL, lj_hints_map != NULL, 32)))
 					goto EXIT;
-				// lj_override_flag keep
 				/* printf("new segment %g.%g %g.%g / %g.%g %g.%g\n", a.x, a.y, b.x, b.y, last_a.x, last_a.y, last_b.x, last_b.y); */
 				if ( curr != NULL ) {
 					if ( curr-> n_points == 1 )
@@ -601,6 +616,7 @@ img_polyline2patterns( NPoint * points, int n_points, Byte *lj_hints_map, double
 					curr = p;
 				} else
 					curr = dst = p;
+				/* printf("NEW (%p) <- %p [%p]\n", curr->prev, curr, dst); */
 				last_a = a;
 				last_b = b;
 				pivot_registered = false;
@@ -682,8 +698,10 @@ img_polyline2patterns( NPoint * points, int n_points, Byte *lj_hints_map, double
 #define ADD_POINT(aa,bb) \
 	if ( black && curr ) { /* curr should be definitely non-NULL by now */ \
 		if ( curr->n_points > curr-> size - 2) {                       \
+			Bool change_dst = curr == dst;                         \
 			if ( !( curr = nppl_alloc(curr, lj_hints_map != NULL, curr->size * 2)))  \
 				goto EXIT;                                     \
+			if (change_dst) dst = curr;                            \
 		}                                                              \
 		ADD_POINT_ENTRY(aa);                                           \
 		ADD_POINT_ENTRY(bb);                                           \
@@ -740,7 +758,6 @@ img_polyline2patterns( NPoint * points, int n_points, Byte *lj_hints_map, double
 		if ( dst == curr ) dst = NULL;
 	}
 	if ( closed && pattern[0] > 1.0 && strokelen > 1.0 && curr != dst ) {
-		/* XXX */
 		NPolyPolyline *p = dst;
 		dst = dst->next;
 		if ( curr->n_points > curr-> size - p-> n_points) {
