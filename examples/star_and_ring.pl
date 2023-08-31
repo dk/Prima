@@ -17,15 +17,15 @@ my $w = Prima::MainWindow->new(
 	layered      => 1,
 	buffered     => 1,
 	text         => 'Star & ring',
-	size         => [1600,1200],
 	backColor    => 0,
+	size         => [300,300],
 	onMouseDown  => sub { shift->{grab} = 1 },
 	onMouseUp    => sub { shift->{grab} = 0 },
 	onPaint => sub {
 		my ( $self, $canvas ) = @_;
 		$self->clear;
 		my @size = $self->size;
-		my $lw   = (($size[0] < $size[1]) ? $size[0] : $size[1]) / 15;
+		my $lw   = (($size[0] < $size[1]) ? $size[0] : $size[1]) / 10;
 		$lw = 2 if $lw < 2;
 		if ( $self-> {grab} ) {
 			my ( $x, $y ) = $self-> pointerPos;
@@ -40,20 +40,20 @@ my $w = Prima::MainWindow->new(
 			alpha     => 192
 		);
 		$canvas-> matrix->
-			rotate($alpha)->
-			scale(map { $_ / 2 - $lw * 2 } @size)->
+			rotate(-$alpha)->
+			scale(map { $_ / 2 - $lw } @size)->
 			translate(map { $_ / 2 } @size);
 		$canvas-> ellipse( 0, 0, 2, 2);
 		$canvas-> color( cl::LightBlue );
 		$canvas-> fillpoly([
-			0.15,0.15,
-			0,1,
-			-0.15,0.15,
-			-1,0,
-			-0.15,-0.15,
-			0,-1,
-			0.15,-0.15,
-			1,0
+			0.25,0.25,
+			0,1.25,
+			-0.25,0.25,
+			-1.25,0,
+			-0.25,-0.25,
+			0,-1.25,
+			0.25,-0.25,
+			1.25,0
 		]);
 	}
 );
@@ -61,7 +61,7 @@ my $w = Prima::MainWindow->new(
 $w-> insert( Timer =>
 	timeout => 5,
 	onTick  => sub {
-		$alpha += 1;
+		$alpha += 0.1;
 		$alpha = 0 if $alpha > 360;
 		$w-> repaint;
 	}
