@@ -2378,6 +2378,16 @@ shape. The commands are: I<arc> (6 arguments, same as the C<arc> primitive),
 I<line> with 1 argument, a polyline array (respects the C<integer> option), and
 I<open> with no arguments.
 
+See L<Prima::Drawable::Path/widen> for usage. See also C<line_join_hints> below.
+
+=item line_join_hints ARRAY OF INTEGERS
+
+Only when the C<path> option is present:
+
+Specially formatted array of indexes that hint where inside the polyline there
+are boundaries between points than need to override C<lineJoin> and force it to
+be C<lj::Miter>.
+
 See L<Prima::Drawable::Path/widen> for usage.
 
 =back

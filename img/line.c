@@ -469,23 +469,48 @@ img_polyline( Handle dest, int n_points, Point * points, PImgPaintContext ctx)
 }
 
 static NPolyPolyline*
-nppl_alloc( NPolyPolyline *old, unsigned int new_size)
+nppl_alloc( NPolyPolyline *old, Bool use_lj_hints, unsigned int new_size)
 {
 	NPolyPolyline *p;
-	unsigned int sz =  sizeof(NPolyPolyline) + sizeof(NPoint) * new_size;
+	unsigned int sz1 = sizeof(NPoint) * new_size;
+	unsigned int sz  = sizeof(NPolyPolyline) + sz1;
+
+	if ( use_lj_hints ) sz += sizeof(Byte) * new_size;
+
 	if ( old == NULL ) {
 		if ( !( p = malloc(sz)))
 			return NULL;
 		bzero( p, sz );
 	} else {
-		if ( new_size < old->size )
+		int old_size = old->size;
+		NPolyPolyline *prev = old->prev;
+		/*
+		printf("ALLOC ? (%p,%p) <- %p -> (%p,%p)\n",
+			old->prev, old->prev ? old->prev->next : NULL,
+			old,
+			old->next ? old->next->prev : NULL, old->next);
+		*/
+		if ( new_size < old_size )
 			return old;
 		if ( !( p = realloc( old, sz )))
 			return NULL;
-		if (old->prev) old->prev->next = p;
+		if (prev)
+			prev->next = p;
+		if (p->next)
+			p->next->prev = p;
+		if ( use_lj_hints )
+			memmove( p-> buf + sz1, p-> buf + sizeof(NPoint) * old_size, sizeof(Byte) * old_size);
+		/*
+		printf("ALLOC ! (%p,%p) <- %p -> (%p,%p)\n",
+			p->prev, p->prev ? p->prev->next : NULL,
+			p,
+			p->next ? p->next->prev : NULL, p->next);
+		*/
 	}
 	p->size = new_size;
-	p->points = p->buf;
+	p->points = (NPoint*) p->buf;
+	if ( use_lj_hints )
+		p->lj_hints = p-> buf + sz1;
 	p->theta = -1000000.0;
 	return p;
 }
@@ -522,7 +547,7 @@ doesn't work. So we help it by filling the tangent for such single points
 }
 
 NPolyPolyline*
-img_polyline2patterns( NPoint * points, int n_points, double line_width, unsigned char * line_pattern, Bool integer_precision)
+img_polyline2patterns( NPoint * points, int n_points, Byte *lj_hints, double line_width, unsigned char * line_pattern, Bool integer_precision)
 {
 	NPolyPolyline *dst = NULL, *curr = NULL;
 	int i, pattern_len;
@@ -534,6 +559,7 @@ img_polyline2patterns( NPoint * points, int n_points, double line_width, unsigne
 	float advance, strokelen, pixlen, draw, plotted;
 	double dx, dy;
 	NPoint a, b, a1, b1, r, last_a, last_b;
+	Bool lj_override_flag = false;
 
 	if (integer_precision)
 		bzero(sqrt_table, sizeof(sqrt_table));
@@ -578,7 +604,7 @@ img_polyline2patterns( NPoint * points, int n_points, double line_width, unsigne
 			joiner = 0;
 			if ( strokecolor ) {
 				NPolyPolyline*p;
-				if ( !( p = nppl_alloc(NULL, 32)))
+				if ( !( p = nppl_alloc(NULL, lj_hints != NULL, 32)))
 					goto EXIT;
 				/* printf("new segment %g.%g %g.%g / %g.%g %g.%g\n", a.x, a.y, b.x, b.y, last_a.x, last_a.y, last_b.x, last_b.y); */
 				if ( curr != NULL ) {
@@ -589,6 +615,7 @@ img_polyline2patterns( NPoint * points, int n_points, double line_width, unsigne
 					curr = p;
 				} else
 					curr = dst = p;
+				/* printf("NEW (%p) <- %p [%p]\n", curr->prev, curr, dst); */
 				last_a = a;
 				last_b = b;
 				pivot_registered = false;
@@ -598,6 +625,8 @@ img_polyline2patterns( NPoint * points, int n_points, double line_width, unsigne
 		/* advance to new point */
 		if ( new_point ) {
 			double dl;
+			if ( lj_hints)
+				lj_override_flag = lj_hints[i];
 			a = points[i++];
 			if ( i >= n_points ) break;
 			b = points[i];
@@ -655,21 +684,28 @@ img_polyline2patterns( NPoint * points, int n_points, double line_width, unsigne
 			pivot_detected = false;
 		}
 
+#define ADD_POINT_ENTRY(xx)                                                \
+	if ( curr->n_points == 0 ||                                        \
+		curr->points[curr->n_points-1].x != xx.x ||                \
+		curr->points[curr->n_points-1].y != xx.y) {                \
+		curr->points[curr->n_points] = xx;                         \
+		if ( lj_hints)                                             \
+			curr->lj_hints[curr->n_points] = lj_override_flag; \
+		curr->n_points++;                                          \
+	}
+
 #define ADD_POINT(aa,bb) \
 	if ( black && curr ) { /* curr should be definitely non-NULL by now */ \
 		if ( curr->n_points > curr-> size - 2) {                       \
-			if ( !( curr = nppl_alloc(curr, curr->size * 2)))      \
+			Bool change_dst = curr == dst;                         \
+			if ( !( curr = nppl_alloc(curr, lj_hints != NULL, curr->size * 2)))  \
 				goto EXIT;                                     \
+			if (change_dst) dst = curr;                            \
 		}                                                              \
-		if ( curr->n_points == 0 ||                                    \
-			curr->points[curr->n_points-1].x != aa.x ||            \
-			curr->points[curr->n_points-1].y != aa.y)              \
-			curr->points[curr->n_points++] = aa;                   \
-		if ( curr->n_points == 0 ||                                    \
-			curr->points[curr->n_points-1].x != bb.x ||            \
-			curr->points[curr->n_points-1].y != bb.y)              \
-			curr->points[curr->n_points++] = bb;                   \
+		ADD_POINT_ENTRY(aa);                                           \
+		ADD_POINT_ENTRY(bb);                                           \
 	}
+
 		if ( draw < pixlen ) {
 			/* normal line segment, ends before to pattern segment */
 			plotted += draw;
@@ -720,15 +756,19 @@ img_polyline2patterns( NPoint * points, int n_points, double line_width, unsigne
 		if ( p ) p->next = NULL;
 		if ( dst == curr ) dst = NULL;
 	}
+
+	/* merge the tail with the head if they collide */
 	if ( closed && pattern[0] > 1.0 && strokelen > 1.0 && curr != dst ) {
-		NPolyPolyline *p = curr;
-		curr = curr->prev;
-		curr->next = NULL;
+		NPolyPolyline *p = dst;
+		dst = dst->next;
 		if ( curr->n_points > curr-> size - p-> n_points) {
-			if ( !( curr = nppl_alloc(curr, curr->size + p-> n_points)))
+			if ( !( curr = nppl_alloc(curr, lj_hints != NULL, curr->size + p-> n_points)))
 				goto EXIT;
 		}
-		memcpy( p->points, curr-> points + curr->n_points, p->n_points);
+		memcpy( curr-> points + curr->n_points, p-> points, p->n_points * sizeof(NPoint));
+		if ( curr-> lj_hints)
+			memcpy( curr-> lj_hints + curr-> n_points, p-> lj_hints, p->n_points * sizeof(Byte));
+		curr-> n_points += p-> n_points;
 		free( p );
 	}
 	ok = true;
