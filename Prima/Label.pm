@@ -279,11 +279,7 @@ sub reset_lines
 
 	$self-> begin_paint_info;
 
-	my $text  = $self-> text;
-	my $lines = $self-> text_wrap_shape( $text, $width,
-		options => $opt,
-		rtl     => $self->textDirection,
-	);
+	my $lines = $self-> text_wrap( $self->text, $width // -1, $opt, 1);
 	my $lastRef = pop @{$lines};
 	$self-> {textLines} = scalar @$lines;
 	for( qw( tildeStart tildeEnd tildeLine)) {$self-> {$_} = $lastRef-> {$_}}
