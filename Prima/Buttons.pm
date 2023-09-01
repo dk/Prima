@@ -300,7 +300,7 @@ sub draw_caption
 	my ( $self, $canvas, $x, $y) = @_;
 	my ($cap, $tilde) = @{ $self-> text_wrap_shape( $self-> text, 
 		undef, 
-		options => tw::CalcMnemonic|tw::CollapseTilde|tw::ExpandTabs,
+		options => tw::CalcMnemonic|tw::CollapseTilde|tw::ExpandTabs|tw::ReturnGlyphs,
 		tabs    => 1,
 	) };
 	unless ( $self->enabled) {
