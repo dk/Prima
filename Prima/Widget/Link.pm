@@ -100,6 +100,8 @@ sub open_browser
 	if ( Prima::Application-> get_system_info-> {apc} == apc::Win32) {
 		open UNIQUE_FILE_HANDLE_NEVER_TO_BE_CLOSED, "|start $url";
 		close UNIQUE_FILE_HANDLE_NEVER_TO_BE_CLOSED if 0;
+	} elsif ( $^O eq 'darwin') {
+		return !system( open => $url );
 	} else {
 		my $pg;
 		CMD: for my $cmd ( qw(xdg-open x-www-browser www-browser firefox mozilla sensible-browser netscape)) {
