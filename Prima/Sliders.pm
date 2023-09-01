@@ -2494,6 +2494,7 @@ sub buttons     {($#_)?$_[0]-> set_buttons     ($_[1]):return $_[0]-> {buttons};
 sub repaint_circle
 {
 	my $self = shift;
+	return unless $self->{show_dial};
 
 	my $buffer = Prima::DeviceBitmap->new(
 		size      => [ $self-> size ],
