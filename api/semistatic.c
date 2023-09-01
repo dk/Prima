@@ -22,7 +22,9 @@ semistatic_expand( semistatic_t * s, unsigned int desired_elems )
 	if ( desired_elems > 0 ) {
 		if ( s-> size >= desired_elems )
 			return 1;
-		s-> size = desired_elems;
+		s-> size *= 2;
+		if ( desired_elems > s-> size )
+			s-> size = desired_elems;
 	} else {
 		s-> size *= 2;
 	}
