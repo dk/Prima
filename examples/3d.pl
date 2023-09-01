@@ -14,10 +14,14 @@ use POSIX qw(ceil floor);
 use Time::HiRes qw(time);
 use Prima qw(Application StdBitmap);
 
+my $shade          = 0xff0000;
 my $pi             = atan2(1,0)*2;
 my $twopi          = $pi*2;
-my ( $x, $y, $direction, $paces ) = (15.3,-1.2,$pi,0);
+my ( $x, $y, $direction, $paces ) = (15.3,-1.2,$pi/4,0);
 my $wall           = Prima::StdBitmap::image(0);
+$wall->type(im::Byte);
+$wall->type(8);
+$wall->colormap( map { $_ & $shade } $wall->colormap);
 my @wall_size      = $wall->size;
 my $size           = 32;
 my @grid           = map {(0.3 > rand) ? 1 : 0} 1..$size*$size;
@@ -79,13 +83,13 @@ sub _rayentry
 
 sub cast
 {
-	my ($x, $y, $angle, $range) = @_;
+	my ($ox, $oy, $angle, $range) = @_;
 	my $sin    = sin($angle);
 	my $cos    = cos($angle);
 	my $sincos = $sin / $cos;
 	my $cossin = $cos / $sin;
 
-	my @rays = _rayentry(X,$x,Y,$y,HEIGHT,-1);
+	my @rays = _rayentry(X,$ox,Y,$oy,HEIGHT,-1);
 
 	while (1) {
 		my $r = @rays - RAYSIZE;
@@ -122,10 +126,13 @@ sub cast
 		$nextstep->[DISTANCE] = $distance + sqrt($nextstep->[LENGTH2]);
 		$nextstep->[SHADING]  = $shiftx ? ( $cos < 0 ? 2 : 0 ) : ( $sin < 0 ? 2 : 1 );
 		$nextstep->[OFFSET]   = $offset - int($offset);
+		$nextstep->[OFFSET]   = 1 - $nextstep->[OFFSET] if 
+			($stepx[LENGTH2] < $stepy[LENGTH2]) ? ($x < $ox) : ($y > $oy);
 
 		last if $nextstep->[DISTANCE] > $range;
 		push @rays, @$nextstep;
 	};
+
 	return \@rays;
 }
 
@@ -133,7 +140,7 @@ sub draw_sky
 {
 	my ($canvas) = @_;
 	$canvas->new_gradient(
-		palette => [0,0xffffff,0],
+		palette => [0,$shade,0],
 		poly    => [0,0,0.5,0.3,1,1],
 	)->bar(0,0,$canvas->size);
 }
@@ -151,22 +158,23 @@ sub draw_column
 		my $step         = $s / RAYSIZE;
 		my $cos_distance = $cos_angle * $rays->[$s + DISTANCE] || 1;
 		my $bottom       = int( $height / 2 * (1 - 1 / $cos_distance) + .5);
-		if ( $step == $hit && $cos_distance) {
-			my $texturex = int( $wall_size[0] * $rays->[$s + OFFSET]);
-			my $wproj_height = int( $height * $grid[$rays->[$s + HEIGHT]] / $cos_distance + .5);
-			$canvas->put_image_indirect( $wall,
-				$left,     $bottom,
-				$texturex, 0,
-				$width,    $wproj_height,
-				1,         $wall_size[1],
-				rop::CopyPut);
+		next unless $step == $hit && $cos_distance;
 
-			next unless $can_alpha;
-			my $alpha = ($rays->[$s + DISTANCE] + $rays->[$s + SHADING]) / 5;
-			$alpha = 0 if $alpha < 0;
-			$canvas->alpha($alpha * 255);
-			$canvas->bar( $left, $bottom, $left + $width - 1, $bottom + $wproj_height - 1);
-		}
+		my $texturex = int( $wall_size[0] * $rays->[$s + OFFSET]);
+		my $wproj_height = int( $height * $grid[$rays->[$s + HEIGHT]] / $cos_distance + .5);
+		$canvas->put_image_indirect( $wall,
+			$left,     $bottom,
+			$texturex, 0,
+			$width,    $wproj_height,
+			1,         $wall_size[1],
+			rop::CopyPut);
+
+		last unless $can_alpha;
+		my $alpha = ($rays->[$s + DISTANCE] + $rays->[$s + SHADING]) / 5;
+		$alpha = 0 if $alpha < 0;
+		$canvas->alpha($alpha * 255);
+		$canvas->bar( $left, $bottom, $left + $width - 1, $bottom + $wproj_height - 1);
+		last;
 	}
 
 }
@@ -206,7 +214,7 @@ my $w = Prima::MainWindow->new(
 		draw_sky($canvas);
 		draw_columns($canvas);
 		my $t = time;
-		$canvas->color(cl::White);
+		$canvas->color($shade);
 		$seconds = $t - $last_time;
 		$canvas->alpha(255);
 		$canvas->text_out(sprintf("%.1d fps", 1/$seconds),0,0);
