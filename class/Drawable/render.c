@@ -741,6 +741,8 @@ widen_line(AV * path, NPolyPolyline *poly, DrawablePaintState *state, Bool integ
 				d2.y = sign * w.lw2 * sin(theta + alpha + PI_2);
 
 				lj = state-> line_join;
+				if ( p-> lj_hints && p-> lj_hints[i] )
+					lj = ljBevel;
 #define DMIN 3
 				if (
 					lj != ljMiter &&
@@ -755,8 +757,6 @@ widen_line(AV * path, NPolyPolyline *poly, DrawablePaintState *state, Bool integ
 					( state-> miter_limit < fabs( 1.0 / sin( alpha / 2 )))
 				))
 					lj = ljBevel;
-				if ( p-> lj_hints && p-> lj_hints[i] )
-					lj = ljMiter;
 #undef DMIN
 				if ( i == 0 ) {
 					firstin.x = o.x + d1.x;
@@ -1038,17 +1038,26 @@ Drawable_render_polyline( SV * obj, SV * points, HV * profile)
 				&n_lj_hints, NULL
 			);
 			if ( !lj_hints ) goto EXIT;
-			if ( !( lj_hints_map = malloc( count ))) {
-				free( lj_hints );
-				goto EXIT;
-			}
-			bzero( lj_hints_map, count );
-			for ( i = j = 0; i < count; i++) {
-				if ( j < n_lj_hints && lj_hints[j] == i ) {
-					lj_state = !lj_state;
-					j++;
+
+			switch ( n_lj_hints ) {
+			case 0:
+				break;
+			case 1:
+				state.line_join = ljBevel;
+				break;
+			default:
+				if ( !( lj_hints_map = malloc( count ))) {
+					free( lj_hints );
+					goto EXIT;
 				}
-				lj_hints_map[i] = lj_state;
+				bzero( lj_hints_map, count );
+				for ( i = j = 0; i < count; i++) {
+					if ( j < n_lj_hints && lj_hints[j] == i ) {
+						lj_state = !lj_state;
+						j++;
+					}
+					lj_hints_map[i] = lj_state;
+				}
 			}
 			free( lj_hints );
 		}

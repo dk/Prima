@@ -40,7 +40,7 @@ my $w = Prima::MainWindow->new(
 			alpha     => 192
 		);
 		$canvas-> matrix->
-			rotate(-$alpha)->
+			rotate($alpha)->
 			scale(map { $_ / 2 - $lw } @size)->
 			translate(map { $_ / 2 } @size);
 		$canvas-> ellipse( 0, 0, 2, 2);
