@@ -1258,8 +1258,6 @@ add_offsetting( float mx, float my, ImgOpPipeline *iop)
    rotation to angles near 90,270. So it detects rotations to cover for at least these cases,
    and additionally checks whether 90/180/270 integral rotation can be applied. */
 
-extern int   apc_img_save( Handle self, char * fileName, Bool is_utf8, void* ioreq, void * profile, char * error);
-
 Bool
 img_2d_transform( Handle self, Matrix matrix, ColorPixel fill, PImage output, Point *aperture)
 {

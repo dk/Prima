@@ -689,7 +689,7 @@ recreate_window_with_emulated_fullscreen( Handle self, int window_state)
 {
 	DEFXX;
 	return apc_window_create( self,
-	 	PComponent(self)->owner, XX->borderIcons,
+		PComponent(self)->owner, XX->borderIcons,
 	 	XX->flags.sizeable ? bsSizeable : bsDialog, XX->flags.task_listed, window_state,
 	 	XX->flags.on_top, false, false, XX->flags.layered);
 }

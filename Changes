@@ -3,6 +3,15 @@ Revision history for Perl module Prima
 1.70 2023-XX-XX
  - Use fading effects in widgets
  - Solidify emulated 2D transformations with images
+   -- Add aperture point for Image.matrix_transform
+ - Animation is using core image processing instead of DeviceBitmap
+ - Path rendering is optimized for widened arcs and splines
+ - Add Widget.is_surface_buffered to check if .buffered(1) was respected
+ - Edit.find() changed the coordinate system used, from visual to physical
+ - Core Icon.put_image(Icon) will affect the destinations 1-bit mask
+ - Image.premultiply_alpha(constant) will work on palettes when bpp <= 8
+ - Add Image.to_colormask
+ - Add --no-xrender-matrix command line switch for x11 builds
 
 1.69 2023-05-30
  - Fully rewrite win32 socket engine, now is single-threaded
