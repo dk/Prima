@@ -126,8 +126,7 @@ sub cast
 		$nextstep->[DISTANCE] = $distance + sqrt($nextstep->[LENGTH2]);
 		$nextstep->[SHADING]  = $shiftx ? ( $cos < 0 ? 2 : 0 ) : ( $sin < 0 ? 2 : 1 );
 		$nextstep->[OFFSET]   = $offset - int($offset);
-		$nextstep->[OFFSET]   = 1 - $nextstep->[OFFSET] if 
-			($stepx[LENGTH2] < $stepy[LENGTH2]) ? ($x < $ox) : ($y > $oy);
+		$nextstep->[OFFSET]   = 1 - $nextstep->[OFFSET] if $shiftx ? ($x < $ox) : ($y > $oy);
 
 		last if $nextstep->[DISTANCE] > $range;
 		push @rays, @$nextstep;
@@ -154,40 +153,54 @@ sub draw_column
 	$hit     += RAYSIZE while $hit < @$rays && ( $rays->[$hit] < 0 || $grid[$rays->[$hit]] == 0 );
 	$hit      = ($hit - HEIGHT)/RAYSIZE;
 
+	my $got_rain;
 	for ( my $s = @$rays - RAYSIZE; $s >= 0; $s -= RAYSIZE) {
 		my $step         = $s / RAYSIZE;
 		my $cos_distance = $cos_angle * $rays->[$s + DISTANCE] || 1;
 		my $bottom       = int( $height / 2 * (1 - 1 / $cos_distance) + .5);
-		next unless $step == $hit && $cos_distance;
+		if ( $step == $hit && $cos_distance) {
+			my $texturex = int( $wall_size[0] * $rays->[$s + OFFSET]);
+			my $wproj_height = int( $height * $grid[$rays->[$s + HEIGHT]] / $cos_distance + .5);
+			$canvas->put_image_indirect( $wall,
+				$left,     $bottom,
+				$texturex, 0,
+				$width,    $wproj_height,
+				1,         $wall_size[1],
+				rop::CopyPut);
 
-		my $texturex = int( $wall_size[0] * $rays->[$s + OFFSET]);
-		my $wproj_height = int( $height * $grid[$rays->[$s + HEIGHT]] / $cos_distance + .5);
-		$canvas->put_image_indirect( $wall,
-			$left,     $bottom,
-			$texturex, 0,
-			$width,    $wproj_height,
-			1,         $wall_size[1],
-			rop::CopyPut);
+			last unless $can_alpha;
+			my $alpha = ($rays->[$s + DISTANCE] + $rays->[$s + SHADING]) / 5;
+			$alpha = 0 if $alpha < 0;
+			$canvas->alpha($alpha * 255);
+			$canvas->bar( $left, $bottom, $left + $width - 1, $bottom + $wproj_height - 1);
+			last;
+		}
 
-		last unless $can_alpha;
-		my $alpha = ($rays->[$s + DISTANCE] + $rays->[$s + SHADING]) / 5;
-		$alpha = 0 if $alpha < 0;
-		$canvas->alpha($alpha * 255);
-		$canvas->bar( $left, $bottom, $left + $width - 1, $bottom + $wproj_height - 1);
-		last;
+		unless ($got_rain) {
+			my $rain_drops   = $step * (rand() ** 3);
+			my $rain_height  = ($rain_drops > 0) ? 0.2 * $height / $cos_distance : 0;
+			while ( $draw_rain && --$rain_drops > 0 ) {
+				my $top = rand() * $height;
+				push @$rain, $left, $top, $left, $top+$rain_height;
+				$got_rain = 1;
+			}
+		}
 	}
-
 }
 
 sub draw_columns
 {
 	my $canvas = shift;
 	$canvas->color(cl::Black);
+	my $rain = Prima::array->new_int;
 	for ( my $column = 0; $column < $resolution; $column++) {
 		my $angle = $fov * ( $column / $resolution - 0.5 );
 		my $ray   = $cast_cache->[$column] //= cast($x, $y, $direction + $angle, $range, $size);
-		draw_column($column, $ray, cos($angle), $canvas);
+		draw_column($column, $ray, cos($angle), $canvas, $rain);
 	}
+	$canvas->color($shade | 0x404040);
+	$canvas->alpha(42);
+	$canvas->bars( $rain );
 	$canvas->alpha(255);
 }
 
