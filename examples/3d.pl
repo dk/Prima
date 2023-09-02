@@ -28,14 +28,12 @@ my @grid           = map {(0.3 > rand) ? 1 : 0} 1..$size*$size;
 my $fov            = $pi * 0.4;
 my $resolution     = 320;
 my $range          = 14;
-my $cast_cache;
 my $seconds        = 1;
 my $draw_rain      = 1;
 my $light          = 0;
 my $can_alpha      = $::application->can_draw_alpha;
 $wall->data( ~$wall->data) unless $can_alpha;
-
-my ( $width, $height, $spacing, $scale ) ;
+my ( $width, $height, $spacing, $scale, $cast_cache ) ;
 
 sub rotate
 {
@@ -220,7 +218,6 @@ sub draw_weapon
 	my $boby = sin($paces * 4) * $scale * 6;
 	my $left = $width * 0.5 + $bobx;
 	my $top  = $boby - 50 * $scale;
-
 	$canvas->graphic_context( sub {
 		$canvas->antialias(1);
 		$canvas->matrix->scale( $scale )->translate( $left, $top );
@@ -230,7 +227,6 @@ sub draw_weapon
 		$canvas->new_path->spline([100, 0, 50, 90, 0, 200])->spline([5, 190, 55, 90, 105, 0])->fill;
 	});
 }
-
 
 my $last_time = time;
 my $w = Prima::MainWindow->new(
@@ -264,10 +260,6 @@ my $w = Prima::MainWindow->new(
 	},
 );
 
-
-$w->insert(Timer => 
-	onTick => sub { $w->repaint },
-	timeout => 5,
-)->start;
+$w->insert(Timer => onTick => sub { $w->repaint }, timeout => 5 )->start;
 
 run Prima;
