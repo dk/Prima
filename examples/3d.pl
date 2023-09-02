@@ -31,6 +31,7 @@ my $range          = 14;
 my $cast_cache;
 my $seconds        = 1;
 my $draw_rain      = 1;
+my $light          = 0;
 my $can_alpha      = $::application->can_draw_alpha;
 $wall->data( ~$wall->data) unless $can_alpha;
 
@@ -138,8 +139,16 @@ sub cast
 sub draw_sky
 {
 	my ($canvas) = @_;
+
+	if ( $light > 0 ) {
+		my $l = $light - 10 * $seconds;
+		$light = ($l < 0) ? 0 : $l;
+	} elsif ( rand() * 5 < $seconds ) {
+		$light = 2;
+	}
+
 	$canvas->new_gradient(
-		palette => [0,$shade,0],
+		palette => [map { cl::blend($_,0xffffff,$light) } 0,$shade,0],
 		poly    => [0,0,0.5,0.3,1,1],
 	)->bar(0,0,$canvas->size);
 }
@@ -204,6 +213,25 @@ sub draw_columns
 	$canvas->alpha(255);
 }
 
+sub draw_weapon
+{
+	my ( $canvas ) = @_;
+	my $bobx = cos($paces * 2) * $scale * 6;
+	my $boby = sin($paces * 4) * $scale * 6;
+	my $left = $width * 0.5 + $bobx;
+	my $top  = $boby - 50 * $scale;
+
+	$canvas->graphic_context( sub {
+		$canvas->antialias(1);
+		$canvas->matrix->scale( $scale )->translate( $left, $top );
+		$canvas->color((0xcccccc & $shade) | 0x222222);
+		$canvas->new_path->spline([90, 0, 40, 80, 0, 190])->spline([0, 200, 50, 90, 100, 0])->fill;
+		$canvas->color((0x444444 & $shade) | 0x222222);
+		$canvas->new_path->spline([100, 0, 50, 90, 0, 200])->spline([5, 190, 55, 90, 105, 0])->fill;
+	});
+}
+
+
 my $last_time = time;
 my $w = Prima::MainWindow->new(
 	text => 'raycaster',
@@ -226,6 +254,7 @@ my $w = Prima::MainWindow->new(
 		my ( $self, $canvas ) = @_;
 		draw_sky($canvas);
 		draw_columns($canvas);
+		draw_weapon($canvas);
 		my $t = time;
 		$canvas->color($shade);
 		$seconds = $t - $last_time;
