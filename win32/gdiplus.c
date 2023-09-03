@@ -27,8 +27,10 @@ create_gdip_surface(Handle self)
 	rgn = CreateRectRgn(0,0,0,0);
 	if ( GetClipRgn( sys ps, rgn ) > 0 )
 		SelectClipRgn( sys ps, NULL);
-	else
+	else {
+		DeleteObject( rgn);
 		rgn = NULL;
+	}
 
 	GPCALL GdipCreateFromHDC(sys ps, &sys graphics);
 	apiGPErrCheckRet(false);
