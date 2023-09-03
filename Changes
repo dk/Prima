@@ -1,6 +1,6 @@
 Revision history for Perl module Prima
 
-1.70 2023-XX-XX
+1.70 2023-09-03
  - Use fading effects in widgets
  - Solidify emulated 2D transformations with images
    -- Add aperture point for Image.matrix_transform
