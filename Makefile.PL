@@ -2650,6 +2650,9 @@ H
 		;
 	$t .= <<H;
 
+xtest ::
+\t\$(MAKE) test TEST_FILES=t/*/*.xt
+
 bindist: all
 \t$^X $0 --bindist $DISTNAME
 

@@ -155,6 +155,8 @@ gmake, or nmake for Win32):
     make test
     make install
 
+(the brave souls may run `make xtest` too)
+
 If 'perl Makefile.PL' fails, the compilation history along with errors can be
 found in makefile.log.
 
