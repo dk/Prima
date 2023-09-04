@@ -33,6 +33,7 @@ my $draw_rain      = 1;
 my $light          = 0;
 my $can_alpha      = $::application->can_draw_alpha;
 $wall->data( ~$wall->data) unless $can_alpha;
+$wall = $wall->bitmap if $can_alpha;
 my ( $width, $height, $spacing, $scale, $cast_cache ) ;
 
 sub rotate
