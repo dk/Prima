@@ -539,7 +539,7 @@ sub text_wrap_shape
 	} else {
 		$shaped = $self-> text_shape( $text, %opt );
 	}
-	return $self->text_wrap( $text, $width // -1, $opt, delete($opt{tabs}) // 8) unless $shaped;
+	return $self->text_wrap( $text, $width // -1, $opt & ~tw::ReturnGlyphs, delete($opt{tabs}) // 8) unless $shaped;
 	my $ret    = $self-> text_wrap( $text, $width // -1, $opt, delete($opt{tabs}) // 8, 0, -1, $shaped);
 
 	if (( my $justify = delete $opt{justify} ) && $ret && @$ret ) {
