@@ -5,7 +5,7 @@ Prima::tutorial - introductory tutorial
 =head1 DESCRIPTION
 
 Programming graphic interfaces is often considered a somewhat boring business, and not
-without a cause. It is a small pride in knowing that your buttons and
+without a cause. There is little pride in knowing that your buttons and
 scrollbars work exactly as millions of others buttons and scrollbars do, so
 whichever GUI toolkit is chosen, it is usually regarded as a tool of small
 importance, and the less obtrusive, the better. Given that, and trying to live
