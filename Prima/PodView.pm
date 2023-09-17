@@ -1166,7 +1166,7 @@ sub add
 	} elsif (( $style == STYLE_ITEM) && ( $p =~ /^\*\s*$/ || $p =~ /^\d+\.?$/)) {
 		push @$g,
 			tb::wrap(tb::WRAP_MODE_OFF),
-			tb::color(0),
+			tb::color(tb::COLOR_INDEX | 0),
 			tb::code( \&_bulletpaint, ($p =~ /^\*\s*$/) ? 1 : 0),
 			tb::moveto( 1, 0, tb::X_DIMENSION_FONT_HEIGHT),
 			tb::wrap(tb::WRAP_MODE_ON);
@@ -1222,7 +1222,7 @@ sub add
 			fontId    => 0,
 			fontSize  => 0,
 			wrap      => 1,
-			color     => tb::COLOR_INDEX,
+			color     => tb::COLOR_INDEX | 0,
 			backColor => tb::BACKCOLOR_DEFAULT,
 		);
 		my ( $link, $linkHREF) = ( 0, '');
