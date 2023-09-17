@@ -1099,6 +1099,7 @@ int
 Widget_hintVisible( Handle self, Bool set, int hintVisible)
 {
 	Bool wantVisible;
+	Rect r = {-1,-1,-1,-1};
 	if ( !set)
 		return P_APPLICATION-> hintVisible;
 	if ( var-> stage >= csDead) return false;
@@ -1108,7 +1109,7 @@ Widget_hintVisible( Handle self, Bool set, int hintVisible)
 		if ( !SvOK(var->hint) || (SvCUR( var-> hint) == 0)) return false;
 		if ( hintVisible > 0) P_APPLICATION-> hintActive = -1; /* immediate */
 	}
-	C_APPLICATION-> set_hint_action( prima_guts.application, self, wantVisible, false);
+	C_APPLICATION-> set_hint_action( prima_guts.application, self, wantVisible, false, r);
 	return false;
 }
 

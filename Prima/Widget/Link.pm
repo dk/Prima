@@ -201,6 +201,7 @@ sub on_mousemove
 	my $or = $self->{last_link_pointer}->[0];
 	$self-> {last_link_pointer} = [$r, $new_ptr];
 
+	my @around = (-1,-1,-1,-1);
 	for my $rc (
 		($or < 0) ? () : $self->id2rectangles( $or ),
 		($r  < 0) ? () : $self->id2rectangles( $r  ),
@@ -208,6 +209,8 @@ sub on_mousemove
 		my @rc = @$rc;
 		$owner-> notify(qw(LinkAdjustRect), $self, \@rc);
 		$owner-> invalidate_rect(@rc[0..3]);
+		@around = $owner->client_to_screen(@rc[0..3])
+			if $rc[0] <= $x && $rc[1] <= $y && $rc[2] > $x && $rc[3] > $y;
 	}
 
 	if ( $r >= 0 ) {
@@ -216,7 +219,7 @@ sub on_mousemove
 		goto NO_HINT unless length($hint // '');
 		$owner->hint( $hint );
 		$owner->showHint(1);
-		$::application->set_hint_action($owner, 1, 1);
+		$::application->set_hint_action($owner, 1, 1, @around);
 	} else {
 	NO_HINT:
 		$owner->hint('');

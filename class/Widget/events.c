@@ -543,12 +543,16 @@ void Widget_handle_event( Handle self, PEvent event)
 				var-> hint &&
 				SvOK(var->hint) &&
 				SvCUR(var-> hint)
-			)
-				C_APPLICATION-> set_hint_action( prima_guts.application, self, true, true);
+			) {
+				Rect r = {-1,-1,-1,-1};
+				C_APPLICATION-> set_hint_action( prima_guts.application, self, true, true, r);
+			}
 			break;
-		case cmMouseLeave:
-			if ( prima_guts.application && is_opt( optShowHint))
-				C_APPLICATION-> set_hint_action( prima_guts.application, self, false, true);
+		case cmMouseLeave: 
+			if ( prima_guts.application && is_opt( optShowHint)) {
+				Rect r = {-1,-1,-1,-1};
+				C_APPLICATION-> set_hint_action( prima_guts.application, self, false, true, r);
+			}
 			my-> notify( self, "<s", "MouseLeave");
 			break;
 		case cmKeyDown:

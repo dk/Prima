@@ -57,6 +57,7 @@ Application_init( Handle self, HV * profile)
 	}
 	var->  text = newSVpv("", 0);
 	var->  hint = newSVpv("", 0);
+	var->  hintAround.left = var-> hintAround.bottom = var->hintAround.right = var->hintAround.top = -1;
 	opt_set( optModalHorizon);
 
 	/* store extra info */
@@ -188,7 +189,7 @@ Application_set( Handle self, HV * profile)
 	pdelete( helpClass);
 	pdelete( helpModule);
 	pdelete( rect);
-	pdelete( rigth);
+	pdelete( right);
 	pdelete( selectable);
 	pdelete( shape);
 	pdelete( size);
@@ -757,11 +758,12 @@ Application_get_scroll_rate( Handle self)
 	return ret;
 }
 
-static void hshow( Handle self)
+static void
+hshow( Handle self)
 {
 	PWidget_vmt hintUnder = CWidget( var->  hintUnder);
 	SV * text = hintUnder-> get_hint( var->  hintUnder);
-	Point size  = hintUnder-> get_size( var->  hintUnder);
+	Point size;
 	Point s = my-> get_size( self);
 	Point fin = {0,0};
 	Point pos = fin;
@@ -769,7 +771,20 @@ static void hshow( Handle self)
 	Point hintSize;
 	PWidget_vmt hintWidget = CWidget( var->  hintWidget);
 
-	apc_widget_map_points( var-> hintUnder, true, 1, &pos);
+	if (
+		var-> hintAround.left   == -1 &&
+		var-> hintAround.bottom == -1 &&
+		var-> hintAround.right  == -1 &&
+		var-> hintAround.top    == -1
+	) {
+		size = hintUnder-> get_size( var->  hintUnder);
+		apc_widget_map_points( var-> hintUnder, true, 1, &pos);
+	} else {
+		pos.x  = var->hintAround.left;
+		pos.y  = var->hintAround.bottom;
+		size.x = var->hintAround.right - pos.x;
+		size.y = var->hintAround.top   - pos.y;
+	}
 
 	hintWidget-> set_text( var->  hintWidget, text);
 	hintSize = hintWidget-> get_size( var->  hintWidget);
@@ -781,7 +796,7 @@ static void hshow( Handle self)
 	if ( fin. x + hintSize. x >= s. x) fin. x = pos. x - hintSize. x;
 	if ( fin. x < 0) fin. x = 0;
 	if ( fin. y + hintSize. y >= s. y) fin. y = pos. y - hintSize. y;
-	if ( fin. y < 0) fin. y = pos. y + size. y + 1;
+	if ( fin. y < 0) fin. y = pos. y + size. y + 16;
 	if ( fin. y < 0) fin. y = 0;
 
 	hintWidget-> set_origin( var->  hintWidget, fin);
@@ -815,7 +830,7 @@ Application_HintTimer_handle_event( Handle timer, PEvent event)
 }
 
 void
-Application_set_hint_action( Handle self, Handle view, Bool show, Bool byMouse)
+Application_set_hint_action( Handle self, Handle view, Bool show, Bool byMouse, Rect around)
 {
 	if ( var-> stage >= csFrozen) return;
 	if ( show && !is_opt( optShowHint)) return;
@@ -829,12 +844,18 @@ Application_set_hint_action( Handle self, Handle view, Bool show, Bool byMouse)
 			ev. gen. H = view;
 			((( PTimer) var->  hintTimer)-> self)-> stop( var-> hintTimer);
 			var->  hintVisible = 1;
-			if (( PWidget( view)-> stage == csNormal) &&
-				( CWidget( view)-> message( view, &ev)))
+			if (
+				( PWidget( view)-> stage == csNormal) &&
+				( CWidget( view)-> message( view, &ev))
+			) {
+				var-> hintAround = around;
 				hshow( self);
+				var->  hintAround.left = var-> hintAround.bottom = var->hintAround.right = var->hintAround.top = -1;
+			}
 		} else {
 			if ( !byMouse && var->  hintActive == 1) return;
 			CTimer( var->  hintTimer)-> start( var-> hintTimer);
+			var-> hintAround = around;
 		}
 		var->  hintActive = 1;
 	} else {
@@ -842,6 +863,7 @@ Application_set_hint_action( Handle self, Handle view, Bool show, Bool byMouse)
 		int oldHV = var->  hintVisible;
 		if ( oldHA != -1)
 			((( PTimer) var-> hintTimer)-> self)-> stop( var-> hintTimer);
+		var->  hintAround.left = var-> hintAround.bottom = var->hintAround.right = var->hintAround.top = -1;
 		if ( var->  hintVisible)
 		{
 			Event ev = {cmHint};

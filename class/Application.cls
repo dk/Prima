@@ -88,7 +88,7 @@ object Prima::Application( Prima::Widget)
 	method Handle prev();
 	method void   send_to_back();
 	import void   setup();
-	method void   set_hint_action( Handle widget, Bool show, Bool mouseEvent);
+	method void   set_hint_action( Handle widget, Bool show, Bool mouseEvent, Rect around);
 	method void   show();
 	method Bool   stop( void)   => apc_application_stop;
 	static void   sync( char *dummy = "");
@@ -115,6 +115,7 @@ object Prima::Application( Prima::Widget)
 	int     hintActive;
 	Bool    hintVisible;
 	Handle  hintUnder;
+	Rect    hintAround;
 	Handle  topExclModal;
 	Handle  exclModal;
 	Handle  topSharedModal;
