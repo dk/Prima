@@ -1576,7 +1576,8 @@ static Bool
 propagate_skin( Handle owner, Handle self, void * dummy)
 {
 	enter_method;
-	my-> set_skin( self, var-> skin);
+	if ( is_opt( optOwnerSkin))
+		my-> set_skin( self,  NULL_SV );
 	return false;
 }
 
