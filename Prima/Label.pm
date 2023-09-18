@@ -591,6 +591,13 @@ Default value: C<undef>.
 A key (defined by CHAR) that the label will react to if pressed, if the label has the focus
 The combination ALT + Key works always if the label has the focus or not
 
+=item linkColor COLOR
+
+The color that is used to draw link texts.
+
+Default value is taken from L<Prima::Widget::Link>, and is currently hardcoded as green.
+So far there is no support for the system link color.
+
 =item showAccelChar BOOLEAN
 
 If 0, the tilde ( ~ ) character is collapsed from the text,
