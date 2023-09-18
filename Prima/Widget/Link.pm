@@ -158,6 +158,8 @@ sub on_linkpreview
 			visible   => 0,
 			size      => [ Prima::HintWidget-> max_extents ],
 			topicView => $topicView,
+			color     => $::application->hintColor,
+			backColor => $::application->hintBackColor,
 		);
 		if ( $pod->load_link($link, createIndex => 0, format => 0) ) {
 			if ( my $polyblock = $pod->export_blocks( trim_footer => 1, trim_header => $topicView || $tip) ) {

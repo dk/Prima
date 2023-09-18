@@ -132,6 +132,17 @@ sub profile_default
 	return $def;
 }
 
+sub profile_check_in
+{
+	my ( $self, $p, $default) = @_;
+	$self-> SUPER::profile_check_in( $p, $default);
+
+	unless ( exists $p->{colorMap} && (exists $p->{color} || exists $p->{backColor})) {
+		my $cm = $default->{colorMap};
+		$cm->[0] = $p->{color} if exists $p->{color};
+		$cm->[1] = $cm->[3] = $p->{backColor} if exists $p->{backColor};
+	}
+}
 
 sub init
 {
