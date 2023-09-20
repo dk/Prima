@@ -368,6 +368,8 @@ sub parse
 		my $token = shift @tokens;
 		# Look for the beginning of a sequence
 		if ( $token =~ /^[\n\r]+$/) {
+			push @$block, tb::extend( 1, 1 ) if
+				@$block > tb::BLK_START && $block->[-2] == tb::OP_WRAP && $block->[-1] == tb::WRAP_IMMEDIATE;
 			push @$block, tb::wrap( tb::WRAP_IMMEDIATE );
 		} elsif ( $token =~ /^([A-Z])(<(?:<+\s+)?)$/s && ! $state->{quote} ) {
 			# Push a new sequence onto the stack of those "in-progress"
