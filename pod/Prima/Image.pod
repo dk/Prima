@@ -706,6 +706,16 @@ A read-only property, returning the length of the mask row in bytes, as
 represented internally in memory. Data returned by the C<::mask> property is
 aligned with C<::maskLineSize> bytes per row.
 
+=item maskPixel ( X_OFFSET, Y_OFFSET ) PIXEL
+
+Provides per-pixel access to the icon mask.
+
+In the disabled mode, gets and sets the value directly from the mask memory.
+In the paint mode, and if (and only if) the mask depth is 8 bits, queries the
+alpha pixel value from the system paint surface.  Pixel values for all mask
+depths are treated uniformly, their values range from 0 to 255. For example,
+values for 1-bit mask pixels are 0 and 255, not 0 and 1.
+
 =item maskType INTEGER
 
 Is either C<im::bpp1> (1) or C<im::bpp8> (8). The latter can be used
@@ -719,6 +729,11 @@ that correspond to alpha values lesser than 255 will be reset to 0.
 =head2 Prima::DeviceBitmap properties
 
 =over
+
+=item maskPixel ( X_OFFSET, Y_OFFSET ) PIXEL
+
+Provides per-pixel access to the alpha component of the layered device bitmap.
+If the bitmap is not layered, the property does not do anything.
 
 =item type INTEGER
 

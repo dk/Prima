@@ -487,68 +487,64 @@ Icon_maskIndex( Handle self, Bool set, int index)
 	return -1;
 }
 
-SV *
-Icon_maskPixel( Handle self, Bool set, int x, int y, SV * pixel)
+int
+Icon_maskPixel( Handle self, Bool set, int x, int y, int pixel)
 {
 	Point pt;
 
+	pt = prima_matrix_apply_to_int( VAR_MATRIX, x, y );
+	x = pt.x;
+	y = pt.y;
+	if (x >= var->w || x < 0 || y >= var->h || y < 0)
+		return clInvalid;
+
 	if (!set) {
-		if ( opt_InPaint)
-			return inherited pixel(self,false,x,y,pixel);
-
-		pt = prima_matrix_apply_to_int( VAR_MATRIX, x, y );
-		x = pt.x;
-		y = pt.y;
-
-		if (x >= var->w || x < 0 || y >= var->h || y < 0)
-			return newSViv(clInvalid);
+		if ( is_opt( optInDraw) ) {
+			if ( var-> maskType == imbpp8 )
+				return apc_gp_get_mask_pixel( self, x, y );
+		}
 
 		switch (var->maskType) {
 		case imbpp1: {
-			Byte p = var->mask[ var->maskLine * y + ( x>>3 )];
+			Byte p = var->mask[ var->maskLine * y + ( x >> 3 )];
 			p = (p >> (7 - (x & 7))) & 1;
-			return newSViv(p);
+			return p ? 0xff : 0;
 		}
 		case imbpp8: {
-			Byte p = var->mask[ var->lineSize * y + x];
-			return newSViv(p);
+			Byte p = var->mask[ var->maskLine * y + x];
+			return p;
 		}
 		default:
-			return newSViv(clInvalid);
+			return clInvalid;
 		}
 	} else {
-		IV color;
-		if ( is_opt( optInDraw))
-			return inherited pixel(self,true,x,y,pixel);
+		Bool do_update = true;
+		if ( pixel < 0 ) pixel = 0;
+		if ( pixel > 255 ) pixel = 255;
+		if ( is_opt( optInDraw)) {
+			if ( var-> maskType == imbpp8 )
+				return apc_gp_set_mask_pixel( self, x, y, pixel );
+			else
+				do_update = false;
+		}
 
-		pt = prima_matrix_apply_to_int( VAR_MATRIX, x, y );
-		x = pt.x;
-		y = pt.y;
-
-
-		if ( x >= var->w || x < 0 || y >= var->h || y < 0)
-			return NULL_SV;
-
-		color = SvIV( pixel);
-		if ( color < 0 ) color = 0;
-		if ( color > 255 ) color = 255;
 		switch (var->maskType) {
 		case imbpp1 : {
 			int x1 = 7 - ( x & 7 );
-			Byte p = (color > 0) ? 1 : 0;
+			Byte p = (pixel > 0) ? 1 : 0;
 			Byte *pd = var->mask + (var->maskLine * y + ( x >> 3));
 			*pd &= ~(1 << x1);
 			*pd |= p << x1;
 			break;
 		}
 		case imbpp8:
-			var->mask[var->maskLine * y + x] = color;
+			var->mask[var->maskLine * y + x] = pixel & 0xff;
 			break;
 		default:
-			return NULL_SV;
+			return 0;
 		}
-		my->update_change( self);
-		return NULL_SV;
+		if ( do_update ) my->update_change( self);
+		return 0;
 	}
 }
 

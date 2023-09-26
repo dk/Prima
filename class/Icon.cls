@@ -17,7 +17,7 @@ object Prima::Icon( Prima::Image)
 	property int      maskType;
 	property Color    maskColor;
 	property int      maskIndex;
-	property SV *     maskPixel( int x, int y);
+	property int      maskPixel( int x, int y);
 	property int      autoMasking;
 	method Handle     bitmap();
 	method void       init( HV * profile);

@@ -3668,6 +3668,9 @@ END_TABLE(ggo,UV)
 extern int
 apc_gp_get_glyph_outline( Handle self, int index, int flags, int ** buffer);
 
+extern Byte
+apc_gp_get_mask_pixel( Handle self, int x, int y);
+
 extern Color
 apc_gp_get_pixel( Handle self, int x, int y);
 
@@ -3679,6 +3682,9 @@ apc_gp_put_image( Handle self, Handle image, int x, int y,
 						int xFrom, int yFrom, int xLen, int yLen, int rop);
 extern Bool
 apc_gp_rectangle( Handle self, int x1, int y1, int x2, int y2);
+
+extern Bool
+apc_gp_set_mask_pixel( Handle self, int x, int y, Byte pixel);
 
 extern Bool
 apc_gp_set_pixel( Handle self, int x, int y, Color color);

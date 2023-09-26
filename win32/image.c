@@ -1993,6 +1993,43 @@ apc_dbm_get_handle( Handle self)
 	return ( ApiHandle) sys ps;
 }
 
+Byte
+apc_gp_get_mask_pixel( Handle self, int x, int y)
+{
+	uint32_t *p;
+	PDrawable d = ( PDrawable ) self;
+	objCheck 0;
+
+	if ( !((is_apt(aptIcon) || is_apt(aptDeviceBitmap)) && is_apt(aptLayered)))
+		return false;
+	select_world_transform(self, false);
+	SHIFT_XY(x,y);
+	if ( x < 0 || x >= d-> w || y < 0 || y > d-> h) return 0;
+
+	p = sys s. image. argb_bits + d-> h * y + x;
+	return (*p) >> 24;
+}
+
+Bool
+apc_gp_set_mask_pixel( Handle self, int x, int y, Byte pixel)
+{
+	uint32_t *p;
+	PDrawable d = ( PDrawable ) self;
+	objCheck false;
+
+	if ( !((is_apt(aptIcon) || is_apt(aptDeviceBitmap)) && is_apt(aptLayered)))
+		return false;
+	select_world_transform(self, false);
+	SHIFT_XY(x,y);
+	if ( x < 0 || x >= d-> w || y < 0 || y > d-> h) return false;
+
+	p = sys s. image. argb_bits + d-> h * y + x;
+	*p &= 0x00ffffff;
+	*p |= ((uint32_t) pixel) << 24;
+
+	return true;
+}
+
 
 #ifdef __cplusplus
 }

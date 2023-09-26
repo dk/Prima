@@ -19,7 +19,7 @@ Image_pixel( Handle self, Bool set, int x, int y, SV * pixel)
 
 #define BGRto32(pal) ((var->palette[pal].r<<16) | (var->palette[pal].g<<8) | (var->palette[pal].b))
 	if (!set) {
-		if ( opt_InPaint)
+		if ( is_opt( optInDraw))
 			return inherited pixel(self,false,x,y,pixel);
 
 		pt = prima_matrix_apply_to_int( VAR_MATRIX, x, y );

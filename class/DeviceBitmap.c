@@ -100,6 +100,29 @@ DeviceBitmap_get_paint_state( Handle self)
 	return psEnabled;
 }
 
+int
+DeviceBitmap_maskPixel( Handle self, Bool set, int x, int y, int pixel)
+{
+	Point pt;
+
+	if ( var->type != dbtLayered )
+		return 0;
+
+	pt = prima_matrix_apply_to_int( var->current_state.matrix, x, y );
+	x = pt.x;
+	y = pt.y;
+	if (x >= var->w || x < 0 || y >= var->h || y < 0)
+		return clInvalid;
+
+	if (set) {
+		if ( pixel < 0 ) pixel = 0;
+		if ( pixel > 255 ) pixel = 255;
+		return apc_gp_set_mask_pixel( self, x, y, pixel );
+	} else {
+		return apc_gp_get_mask_pixel( self, x, y );
+	}
+}
+
 #ifdef __cplusplus
 }
 #endif

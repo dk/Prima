@@ -2,6 +2,7 @@ object Prima::DeviceBitmap( Prima::Drawable)
 {
 	int type;
 	property int type;
+	property int maskPixel(int x, int y);
 	method Bool   begin_paint();
 	method Bool   begin_paint_info();
 	method void   done();

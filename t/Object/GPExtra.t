@@ -213,4 +213,37 @@ my $jj = $ii->data;
 $ii->begin_paint;
 $ii->end_paint;
 is(unpack('H*',$ii->data), unpack('H*',$jj), "begin/end paint preserves data");
+
+if ( $can_argb  ) {
+	my $j = Prima::Icon->new(
+		size        => [1,1],
+		type        => im::RGB,
+		maskType    => 8,
+		autoMasking => am::None,
+	);
+	$j->pixel(0,0,0x102030);
+	$j->maskPixel(0,0,0x40);
+	is( $j->pixel(0,0), 0x102030, "icon.pixel(1)");
+	is( $j->maskPixel(0,0), 0x40, "icon.maskPixel(1)");
+	$j->begin_paint;
+	is( $j->pixel(0,0), 0x102030, "icon.pixel(2)");
+	is( $j->maskPixel(0,0), 0x40, "icon.maskPixel(2)");
+	$j->pixel(0,0,0x203040);
+	$j->maskPixel(0,0,0x50);
+	is( $j->pixel(0,0), 0x203040, "icon.pixel(3)");
+	is( $j->maskPixel(0,0), 0x50, "icon.maskPixel(3)");
+	$j->end_paint;
+	is( $j->pixel(0,0), 0x203040, "icon.pixel(4)");
+	is( $j->maskPixel(0,0), 0x50, "icon.maskPixel(4)");
+
+	$j = Prima::DeviceBitmap->new(
+		size        => [1,1],
+		type        => dbt::Layered,
+	);
+	$j->pixel(0,0,0x102030);
+	$j->maskPixel(0,0,0x40);
+	is( $j->pixel(0,0), 0x102030, "dbm.pixel");
+	is( $j->maskPixel(0,0), 0x40, "dbm.maskPixel");
+}
+
 done_testing;

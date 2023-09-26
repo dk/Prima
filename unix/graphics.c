@@ -1142,6 +1142,59 @@ apc_gp_flood_fill( Handle self, int x, int y, Color color, Bool singleBorder)
 	return ret;
 }
 
+Byte
+apc_gp_get_mask_pixel( Handle self, int x, int y)
+{
+	DEFXX;
+	XImage *im;
+	uint32_t p32 = 0;
+	int a, amax;
+	PRGBABitDescription bd;
+
+	if ( !opt_InPaint) return clInvalid;
+	SHIFT( x, y);
+	XRENDER_SYNC;
+
+	if ( x < 0 || x >= XX-> size.x || y < 0 || y >= XX-> size.y)
+		return 0;
+	if ( !((XT_IS_ICON(XX) || XT_IS_DBM(XX)) && XF_LAYERED(XX)))
+		return 0;
+
+	im = XGetImage( DISP, XX-> gdrawable, x, XX-> size.y - y - 1, 1, 1, AllPlanes, ZPixmap);
+	XCHECKPOINT;
+	if ( !im) return clInvalid;
+
+	bd = GET_RGBA_DESCRIPTION;
+	amax = 0xff;
+
+	switch ( guts.argb_visual.depth ) {
+	case 16:
+		p32 = *(( uint16_t*)(im-> data));
+		if ( guts.machine_byte_order != guts.byte_order)
+			p32 = REVERSE_BYTES_16(p32);
+		amax = 0xff & ( 0xff << ( 8 - bd-> alpha_range));
+		goto COMP;
+	case 24:
+		p32 = (im-> data[0] << 16) | (im-> data[1] << 8) | im-> data[2];
+		if ( guts.machine_byte_order != guts.byte_order)
+			p32 = REVERSE_BYTES_24(p32);
+		goto COMP;
+	case 32:
+		p32 = *(( uint32_t*)(im-> data));
+		if ( guts.machine_byte_order != guts.byte_order)
+			p32 = REVERSE_BYTES_32(p32);
+	COMP:
+		a = ((((p32 & bd-> alpha_mask) >> bd->alpha_shift) << 8) >> bd-> alpha_range) & 0xff;
+		if ( a == amax ) a = 0xff;
+		break;
+	default:
+		warn("UAG_009: get_mask_pixel not implemented for %d depth", guts.argb_visual.depth);
+	}
+
+	XDestroyImage( im);
+	return c;
+}
+
 Color
 apc_gp_get_pixel( Handle self, int x, int y)
 {
@@ -1322,6 +1375,31 @@ apc_gp_set_palette( Handle self)
 {
 	if ( XT_IS_WIDGET(X(self))) return true;
 	return prima_palette_replace( self, false);
+}
+
+Bool
+apc_gp_set_mask_pixel( Handle self, int x, int y, int pixel)
+{
+	DEFXX;
+
+	if ( PObject( self)-> options. optInDrawInfo)
+		return false;
+	if ( !XF_IN_PAINT(XX))
+		return false;
+	if ( x < 0 || x >= XX-> size.x || y < 0 || y >= XX-> size.y)
+		return false;
+	if ( !((XT_IS_ICON(XX) || XT_IS_DBM(XX)) && XF_LAYERED(XX)))
+		return false;
+	XRENDER_SYNC;
+
+	SHIFT(x, y);
+	XSetPlaneMask( DISP, XX-> gc, guts.argb_bits.alpha_mask);
+	XSetForeground( DISP, XX-> gc, DEV_A(&guts.argb_bits,pixel));
+	XDrawPoint( DISP, XX-> gdrawable, XX-> gc, x, REVERT( y));
+	XSetPlaneMask( DISP, XX-> gc, AllPlanes);
+	XFLUSH;
+
+	return true;
 }
 
 Bool
