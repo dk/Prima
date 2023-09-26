@@ -1151,7 +1151,7 @@ apc_gp_get_mask_pixel( Handle self, int x, int y)
 	int a, amax;
 	PRGBABitDescription bd;
 
-	if ( !opt_InPaint) return clInvalid;
+	if ( !opt_InPaint) return 0;
 	SHIFT( x, y);
 	XRENDER_SYNC;
 
@@ -1162,10 +1162,11 @@ apc_gp_get_mask_pixel( Handle self, int x, int y)
 
 	im = XGetImage( DISP, XX-> gdrawable, x, XX-> size.y - y - 1, 1, 1, AllPlanes, ZPixmap);
 	XCHECKPOINT;
-	if ( !im) return clInvalid;
+	if ( !im) return 0;
 
 	bd = GET_RGBA_DESCRIPTION;
 	amax = 0xff;
+	a = 0;
 
 	switch ( guts.argb_visual.depth ) {
 	case 16:
@@ -1192,7 +1193,7 @@ apc_gp_get_mask_pixel( Handle self, int x, int y)
 	}
 
 	XDestroyImage( im);
-	return c;
+	return a;
 }
 
 Color
@@ -1211,13 +1212,7 @@ apc_gp_get_pixel( Handle self, int x, int y)
 	if ( x < 0 || x >= XX-> size.x || y < 0 || y >= XX-> size.y)
 		return clInvalid;
 
-	if ( XT_IS_DBM(XX)) {
-		pixmap = XT_IS_PIXMAP(XX) ? true : false;
-	} else if ( XT_IS_BITMAP(XX)) {
-		pixmap = 0;
-	} else {
-		pixmap = guts. idepth > 1;
-	}
+	pixmap = XT_IS_BITMAP(XX) ? 0 : (guts. idepth > 1);
 
 	im = XGetImage( DISP, XX-> gdrawable, x, XX-> size.y - y - 1, 1, 1,
 						pixmap ? AllPlanes : 1,
@@ -1378,7 +1373,7 @@ apc_gp_set_palette( Handle self)
 }
 
 Bool
-apc_gp_set_mask_pixel( Handle self, int x, int y, int pixel)
+apc_gp_set_mask_pixel( Handle self, int x, int y, Byte pixel)
 {
 	DEFXX;
 
