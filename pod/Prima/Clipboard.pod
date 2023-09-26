@@ -32,22 +32,22 @@ for data exchange in drag-and-drop interactions.
 
 =head1 USAGE
 
-Prima::Clipboard provides access to the system clipboard data storage. For the
-easier communication, the system clipboard has one 'format' field, that is
+Prima::Clipboard provides access to the system clipboard data storage. For 
+easier communication, the system clipboard has one 'format' field, which is
 stored along with the data.  This field is used to distinguish between data
 formats.  Moreover, a clipboard can hold simultaneously several data instances,
 of different data formats. Since the primary usage of a clipboard is 'copying'
 and 'pasting', an application can store copied information in several formats,
-increasing possibility that the receiving application can recognize the data.
+increasing the possibility that the receiving application can recognize the data.
 
-Different systems provide spectrum of predefined data types, but the toolkit
+Different systems provide a spectrum of predefined data types, but the toolkit
 uses only three of these out of the box - ascii text, utf8 text, and image. It does not limit,
 however, the data format being one of these three types - an application is
 free to register its own formats. Both predefined and newly defined data
-formats are described by a string, and the three predefined formats are
-represented by C<'Text'>, C<'UTF8'>, and C<'Image'> string constants.
+formats are described by a string, while the three predefined formats are
+represented by the C<'Text'>, C<'UTF8'>, and C<'Image'> string constants.
 
-The most frequent usage of Prima::Clipboard is to preform two tasks - copying
+The most frequent usage of Prima::Clipboard is to perform two tasks - copying
 and pasting. Both can be exemplified by the following:
 
    my $c = $::application-> Clipboard;
@@ -63,13 +63,13 @@ Here is what happens under the hood:
 First, the default clipboard is accessible by an implicit name call, as an
 object named 'Clipboard'. This scheme makes it easily overridable.  A more
 important point is, that the default clipboard object might be accompanied by
-other clipboard objects. This is the case with X11 environment, which defines
+other clipboard objects. This is the case with the X11 environment, which defines
 also 'Primary' and 'Secondary' system clipboards. Their functionality is
 identical to the default clipboard, however. C<get_standard_clipboards()>
 method returns strings for the clipboards, provided by the system.
 
-Second, code for fetching and/or storing multi-format data is somewhat different.
-Clipboard is viewed as a shared system resource, and has to be 'opened',
+Second, the code for fetching and/or storing multi-format data is somewhat different.
+Clipboard is viewed as a shared system resource and has to be 'opened'
 before a process can grab it, so other processes can access the clipboard data
 only after the clipboard is 'closed' ( note: It is not so under X11, where
 there is no such thing as clipboard locking, -- but the toolkit imposes this model
@@ -77,7 +77,7 @@ for the consistency sake).
 
 C<fetch()> and C<store()> implicitly call C<open()> and C<close()>, but these
 functions must be called explicitly for the multi-format data handling. The
-code below illustrates the said:
+code below illustrates the following:
 
     # copy text and image
     if ( $c-> open) {
@@ -88,7 +88,7 @@ code below illustrates the said:
     }
 
     # check present formats and paste
-   if ( $c-> open) {
+    if ( $c-> open) {
       if ( $c-> format_exists('Text')) {
          $string = $c-> fetch('Text');
       }
@@ -106,7 +106,7 @@ The clear() call in the copying code is necessary so
 the newly written data will not mix with the old.
 
 At last, the newly registered formats can be accessed
-by a program:
+by the following example code:
 
    my $myformat = 'Very Special Old Pale Data Format';
    if ( $c-> register_format($myformat)) {
@@ -120,26 +120,27 @@ by a program:
 =head2 On-demand storage
 
 Under X11 it is possible to skip the generation of data in all possible
-clipboard format when when copying. The native X11 mechanism allows to ask the
+clipboard formats when copying the data. The native X11 mechanism allows to ask the
 source application for the exact data format needed by the target application,
-and the toolkit uses special event C<onClipboard> triggered on the application
+and the toolkit uses the special notification C<onClipboard> triggered on the application
 whenever necessary.
 
-By default this event handler responds to querying image in file encoded
+By default, this event handler responds to querying images in file-encoded
 formats (gif,jpg) under X11 on the fly. It can be extended to generate other
 formats as well. See L<Prima::Application/Events> Clipboard for the details.
 
 =head2 Custom formats
 
-Once registered, all processes in a GUI space can access the data by this
+Once registered, all processes in the GUI space can access the data in this
 format. The registration must take place also if a Prima-driven program needs
-to read data in a format, defined by an another program. In either case, the
-duplicate registration is a valid case.  When no longer needed, a format can be
-de-registered. It is not a mandatory action, however - the toolkit cleans up
-before exit. Moreover, the system maintains a reference counter on the
-custom-registered formats; de-registering thus does not mean deletion. If two
-processes use a custom format, and one exits and re-starts, the other still can
-access the data in the same format, registered by its previous incarnation.
+to read data in a format, defined by another program. In either case, the
+duplicate registration is a valid case.  When no longer needed, the format can
+be de-registered. It is not a mandatory action, however - the toolkit
+de-registers these formats before exiting. Moreover, the system maintains a reference
+counter on the custom-registered formats; de-registering thus does not mean
+deletion. If two processes use a custom format, and one exits and re-starts,
+the other still can access the data in the same format, registered by its
+previous incarnation.
 
 =head2 Unicode
 
@@ -149,56 +150,55 @@ time, by C<fetch>'ing content of C<Text> and C<UTF8> clipboard slots, the widget
 proposes its own pasting scheme, where the mechanics are hidden under the
 C<text> property call. The property is advised to be used instead of
 individual C<'Text'> and C<'UTF8'> formats. This method is used in all the
-standard widgets, and is implemented so the programmer can reprogram its
-default action by overloading C<PasteText> notification of
+standard widgets and is implemented so the programmer can reprogram its
+default action by overloading the C<PasteText> notification of
 C<Prima::Application> ( see L<Prima::Application/PasteText> ).
 
-The default action of C<PasteText> is to query first if C<'Text'> format is
+The default action of C<PasteText> is to query first if the C<'Text'> format is
 available, and if so, return the ascii text scalar. If
-C<Prima::Application::wantUnicodeInput> is set (default), C<'UTF8'> format is
-checked before resorting to C<'Text'>. It is clear that this scheme is not the
-only possibly needed, for example, an application may want to ignore ASCII
-text, or, ignore UTF8 text but have C<Prima::Application::wantUnicodeInput>
-set, etc.
+C<Prima::Application::wantUnicodeInput> is set (default), the C<'UTF8'> format
+is checked before resorting to C<'Text'>. This scheme is not the only possibly
+needed, for example, an application may want to ignore ASCII text, or,
+recognize UTF8 text but have the C<Prima::Application::wantUnicodeInput>
+cleared, etc.
 
-The symmetric action is C<CopyText>, that allows for a custom text conversion
+The symmetric action is C<CopyText>, which allows for a custom text conversion
 code to be installed.
 
 =head2 Images
 
 Image data can be transferred in different formats in different OSes. The
 lowest level is raw pixel data in display-based format, whereas GTK-based
-applications can also exchange images in file-based formats, such as bmp, png
-etc. To avoid further complications in the implementations, C<PasteImage>
+applications can also exchange images in file-based formats, such as bmp, png,
+etc. To avoid further complications in the implementations, the C<PasteImage>
 action was introduced to handle these cases, together with a symmetrical
 C<CopyImage>.
 
 The default action of C<PasteImage> is to check whether lossless encoded image data
 is present, and if so, load a new image from this data, before falling back to
-OS-dependent image storage.
+the OS-dependent image storage.
 
 When storing the image on the clipboard, only the default format, raw pixel data
 is used. Under X11 the toolkit can also serve images encoded as file formats.
 
 Note: Under X11 you'll need to keep the image alive during the whole time it might
 get copied from the application - Prima doesn't keep a copy of the image, only
-the reference. Changing the image after it was stored in the clipboard will affect
-the clipboard content.
-
+the reference. Changing the image after it was stored in the clipboard B<will>
+affect the clipboard content.
 
 =head2 Exact and meta formats
 
 Prima registers two special I<meta formats>, C<Image> and C<Text>, that
 interoperate with the system clipboard, storing data in the format that matches
-best with system convention when copying and pasting images and text,
-correspondingly. It is recommended to use meta-format calls (has_format, text,
-image, copy, paste) rather than exact format calls (format_exists, store,
-fetch) when possible.
+best with system conventions when copying and pasting images and text,
+correspondingly. It is recommended to use the meta-format calls (has_format,
+text, image, copy, paste) rather than exact format calls (format_exists, store,
+fetch) whenever possible.
 
-Where the exact format method operate on a single format data storage, meta
+Where the exact format method operates on a single format data storage, meta
 format calls may operate on several exact formats. F.ex. C<text> can check
-whether there exists a UTF-8 text storage, before resorting to 8-bit text.
-C<image> on X11 is even more complicated, and may use image codecs to transfer
+whether there exists a UTF-8 text storage before resorting to 8-bit text.
+C<image> on X11 is even more complicated and may use image codecs to transfer
 encoded PNG streams, for example.
 
 =head1 API
@@ -209,15 +209,15 @@ encoded PNG streams, for example.
 
 =item image OBJECT, [KEEP]
 
-Provides access to an image, stored in the system clipboard. In get-mode call
-return C<undef> if no image is stored.  In set-mode clears the clipboard unless
-KEEP is set.
+Provides access to an image, stored in the system clipboard. In the get-mode call
+returns C<undef> if no image is stored.  In the set-mode clears the clipboard unless
+the KEEP flag is set.
 
 =item text STRING, [KEEP]
 
-Provides access to the text stored in the system clipboard. In get-mode call
-return C<undef> if no text information is present.  In set-mode clears the
-clipboard unless KEEP is set.
+Provides access to the text stored in the system clipboard. In the get-mode
+returns C<undef> if no text information is present.  In the set-mode clears the
+clipboard unless the KEEP flag is set.
 
 =back
 
@@ -227,38 +227,38 @@ clipboard unless KEEP is set.
 
 =item clear
 
-Deletes all data from clipboard.
+Deletes all data from the clipboard.
 
 =item close
 
-Closes the open/close brackets. open() and close() can
-be called recursively; only the last close() removes the
-actual clipboard locking, so other processes can use it as well.
+Closes the open/close brackets. open() and close() can be called recursively.
+Only the last close() removes the actual clipboard locking, so that other processes
+can use it as well.
 
 =item copy FORMAT, DATA, KEEP
 
-Sets DATA in FORMAT. Clears the clipboard before unless KEEP is set.
+Sets DATA in FORMAT. Clears the clipboard before unless the KEEP flag is set.
 
 =item deregister_format FORMAT_STRING
 
 De-registers a previously registered data format.  Called implicitly for all
-not de-registered format before a clipboard object is destroyed.
+custom formats before the program exits.
 
 =item fetch FORMAT_STRING
 
 Returns the data of exact FORMAT_STRING data format, if present in the
-clipboard.  Depending on FORMAT_STRING, data is either text string for
-C<'Text'> format, Prima::Image object for C<'Image'> format and a binary scalar
-value for all custom formats.
+clipboard.  Depending on the FORMAT_STRING, data is either a text string for the
+C<'Text'> format, a Prima::Image object for the C<'Image'> format, or a binary
+scalar value for all custom formats.
 
 =item format_exists FORMAT_STRING
 
-Returns a boolean flag, showing whether FORMAT_STRING exact format data is
+Returns a boolean flag, reflecting whether the FORMAT_STRING exact format data is
 present in the clipboard or not.
 
 =item has_format FORMAT_STRING
 
-Returns a boolean flag, showing whether FORMAT_STRING meta format data is
+Returns a boolean flag, reflecting whether the FORMAT_STRING meta format data is
 present in the clipboard or not.
 
 =item get_handle
@@ -272,8 +272,8 @@ present in the clipboard.
 
 Only the predefined formats, and the formats registered via
 C<register_format()> are returned if C<INCLUDE_UNREGISTERED> is unset.  If the
-flag is set, then all existing formats returned, however their names are not
-necessarily are the same as registered with Prima.
+flag is set, then all existing formats are returned, however, their names are
+not necessarily the same as those registered with Prima.
 
 =item get_registered_formats
 
@@ -282,23 +282,25 @@ C<Image> are returned also.
 
 =item get_standard_clipboards
 
-Returns array of strings, each representing a system clipboard. The default
+Returns an array of strings, each representing a system clipboard. The default
 C<Clipboard> is always present. Other clipboards are optional. As an example,
 this function returns only C<Clipboard> under win32, but also C<Primary> and
 C<Secondary> under X11. The code, specific to these clipboards must refer to
 this function first.
 
+The drag-and-drop clipboard name is also returned here; it is system-specific.
+
 =item is_dnd
 
-Returns 1 if the clipboard is the special clipboard used as
-a proxy for drag and drop interactions.
+Returns 1 if the clipboard is the special clipboard used as a proxy for
+drag-and-drop interactions.
 
 See also: C<Widget/Drag and drop>, C<Application/get_dnd_clipboard>.
 
 =item open
 
 Opens a system clipboard and locks it for the process single use; returns a
-success flag. Subsequent C<open> calls are possible, and always return 1. Each
+success flag. Subsequent C<open> calls are possible and always return 1. Each
 C<open()> must correspond to C<close()>, otherwise the clipboard will stay
 locked until the blocking process is finished.
 
@@ -308,7 +310,7 @@ Returns data of meta format FORMAT_STRING if found in the clipboard, or undef ot
 
 =item register_format FORMAT_STRING
 
-Registers a data format under FORMAT_STRING string ID, returns a success flag.
+Registers a data format under FORMAT_STRING string ID, and returns a success flag.
 If a format is already registered, 1 is returned. All formats, registered via
 C<register_format()> are de-registered with C<deregister_format()> when a
 program is finished.
@@ -316,7 +318,7 @@ program is finished.
 =item store FORMAT_STRING, SCALAR
 
 Stores SCALAR value into the clipboard in FORMAT_STRING exact data format.
-Depending of FORMAT_STRING, SCALAR is treated as follows:
+Depending on FORMAT_STRING, the SCALAR value is treated as follows:
 
    FORMAT_STRING     SCALAR
    ------------------------------------
@@ -325,12 +327,11 @@ Depending of FORMAT_STRING, SCALAR is treated as follows:
    Image             Prima::Image object
    other formats     binary scalar value
 
-
-NB. All custom formats treated as a binary data. In case when the data are
+Note: All custom formats are treated as binary data. In case when the data are
 transferred between hosts with different byte orders no implicit conversions
-are made. It is up to the programmer whether to convert the data in a portable
-format, or leave it as is. The former option is of course preferable. As far as
-the author knows, the I<Storable> module from I<CPAN> collection provides the
+are made. It is up to the programmer whether to convert the data into a portable
+format or leave it as is. The former option is of course preferable. As far as
+the author knows, the I<Storable> module from the I<CPAN> collection provides the
 system-independent conversion routines.
 
 =back

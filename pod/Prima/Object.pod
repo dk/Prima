@@ -1,6 +1,6 @@
 =head1 NAME
 
-Prima::Object - Prima toolkit base classes
+Prima::Object - base toolkit classes
 
 =head1 SYNOPSIS
 
@@ -17,7 +17,7 @@ Prima::Object - Prima toolkit base classes
 	});
 
 	# can set multiple properties. note, that 'name' and 'owner',
-	# replace the old values, while onPostMessage are aggregated.
+	# replaces the old values, while onPostMessage subs are aggregated.
 	$obj-> set(
 	    name => 'AnObject',
 	    owner => $new_owner,
@@ -33,20 +33,20 @@ Prima::Object - Prima toolkit base classes
 
 =head1 DESCRIPTION
 
-Prima::Object and Prima::Component are the root objects of the Prima toolkit
-hierarchy. All the other objects are derived from the Component class, which in
-turn is the only descendant of Object class. Both of these classes are never
-used for spawning their instances, although this is possible using
+Prima::Object and Prima::Component are the root classes of the Prima toolkit
+hierarchy. All the other classes are derived from the Component class, which in
+turn is the only descendant of the Object class. Both of these classes are never
+used for instantiating objects, although this is possible with the
 
    Prima::Component-> new( .. parameters ... );
 
-call. This document describes the basic concepts of the OO programming with
-Prima toolkit. Although Component has wider functionality than Object, all
-examples will be explained on Component, since Object has no descendant classes
-and all the functionality of Object is present in Component.  Some of the
-information here can be found in L<Prima::internals> as well, the difference is
-that L<Prima::internals> considers the coding tasks from a C programmer's view,
-whereas this document is wholly about perl programming.
+call. This document describes the basic concepts of the OO programming with the
+Prima toolkit. Although the Component class has wider functionality than the Object class, all
+the examples will be explained using Component, since Object has no descendant classes
+other than Component anyway, and all the functionality of Object is present in Component too.
+This document partially overlaps with the information from L<Prima::internals>, where
+the latter though focuses on a C programmer's perspective,
+while this document is about the perl programming.
 
 =head1 Object base features
 
@@ -60,26 +60,28 @@ Object creation has fixed syntax:
      ...
    );
 
-Parameters and values form a hash, which is passed to the new() method.
-This hash is applied to a default parameter-value hash ( a I<profile> ),
+The parameters and the values form a hash which is passed to the new() method.
+This hash is applied to the default parameter-value hash ( a I<profile> ),
 specific to every Prima class. The object creation is performed in several
 stages.
 
-=over 4
+=over
 
 =item new
 
-new() calls profile_default() method that returns ( as its name states ) the
-default profile, a hash with the appropriate default values assigned to its
-keys.  The Component class defaults are ( see Classes.pm ):
+The new() constructor method calls the profile_default() method that returns (
+as its name states ) the default profile, a hash with the appropriate default
+values assigned to its keys.  The Component class defaults are
 
      name        => ref $_[ 0],
      owner       => $::application,
      delegations => undef,
 
-While the exact meaning of these parameters is described later, in
-L<"Properties">, the idea is that a newly created object will have 'owner'
-parameter set to '$::application' and 'delegations' to undef etc etc - unless
+(also, see the source file Prima/Classes.pm):
+
+While the exact meaning of these parameters is described later in
+L<"Properties">, the idea is that a newly created object will have the 'owner'
+parameter set to '$::application' and 'delegations' to undef, etc etc - unless
 these parameters are explicitly passed to new(). Example:
 
      $a1 = Prima::Component-> new();
@@ -89,107 +91,110 @@ $a1's owner will be $::application
      $a2 = Prima::Component-> new( owner => $a1);
 
 $a2's owner will be $a1.
-The actual merging of the default and the parameter hashes
-is performed on the next stage, in profile_check_in() method
-which is called inside profile_add() method.
+The actual merging of the default and the parameter hashes is performed in the
+next stage, in the profile_check_in() method which is called inside
+the profile_add() method.
 
-Note: the older syntax used create() instead of new(), which is still valid but is not preferred
+Note: the older syntax used create() instead of new(), which is still valid but is not preferred.
 
 =item profile_check_in
 
-A profile_check_in() method merges the default and the parameter profiles. By
-default all specified parameters have the ultimate precedence over the default
-ones, but in case the specification is incomplete or ambiguous, the
-profile_check_in()'s task is to determine actual parameter values. In case of
-Component, this method maintains a simple automatic naming of the newly created
-objects. If the object name was not specified with new(), it is assigned to
-a concatenated class name with an integer - Component1, Component2 etc.
+The profile_check_in() method merges the default and the parameter profiles. By
+default, all the specified parameters have the ultimate precedence over the
+default ones, but in case the parameter specification is incomplete or
+ambiguous, the profile_check_in()'s task is to determine the actual parameter
+values. For example, the Component::profile_check_in method maintains simple
+automatic naming of the newly created objects. That is, if the object's name
+was not passed to new() as a parameter, then it is assigned to a string formed
+from the class name and some number, for example, Component1, Component2, etc.
 
-Another example can be taken from Prima::Widget::profile_check_in().
-Prima::Widget horizontal position can be specified by using basic C<left> and
-C<width> parameters, and as well by auxiliary C<right>, C<size> and C<rect>.
-The default of both C<left> and C<width> is 100. But if only C<right>
-parameter, for example, was passed to new() it is profile_check_in() job to
-determine C<left> value, given that C<width> is still 100.
+In another example, the Prima::Widget::profile_check_in() method resolves
+eventual ambiguities caused by different ways of assigning widget positions on
+the screen. A widget's horizontal position can be specified by using the
+C<left> and C<width> parameters, as well as by the C<right>, C<size>, and/or
+C<rect>.  The default of both C<left> and C<width> properties is 100. But if,
+for example, only the C<right> parameter was passed to new(), then it is the
+profile_check_in()'s job to calculate the value for the C<left> property, given
+that C<width> is still 100.
 
-After profiles gets merged, the resulting hash is passed to the third stage,
+After the profiles are merged, the resulting hash is passed to the third stage,
 init().
 
 =item init
 
-init() duty is to map the profile content into object, e.g., assign C<name>
-property to C<name> parameter value, and so on - for all relevant parameters.
-After that, it has to return the profile in order the overridden subsequent
-init() methods can perform same actions. This stage along with the previous is
-exemplified in almost all Prima modules.
+The init() method's task is to map the profile hash into the newly created
+object, e.g., assign the C<name> parameter value to the C<name> property, and so on -
+for all relevant parameters.  After that, it has to return the profile so that
+the overridden init() methods can perform the same actions. This stage
+along with the previous one can be found in almost all Prima classes.
 
-Note: usually init() attaches the object to its owner in order to keep the
-newly-created object instance from being deleted by garbage-collection
-mechanisms. More on that later ( see L<"Links between objects">).
+Note: usually the init() attaches the object to its owner in keep the
+newly-created object instance from being deleted by the garbage-collection
+mechanisms. See more on that later ( see L<"Links between objects">).
 
-After init() finishes, new() calls setup() method
+After the init() finishes, the new() method calls the setup() method
 
 =item setup
 
-setup() method is a convenience function, it is used when some post-init
+The setup() method is a convenience function, it is used when any post-init
 actions must be taken. It is seldom overloaded, primarily because the
-Component::setup() method calls C<onCreate> notification, which is more
-convenient to overload than setup().
+Component::setup() method calls the C<onCreate> notification, which is more
+convenient to overload than the setup().
 
 =back
 
-As can be noticed from the code pieces above, a successful new() call
-returns a newly created object. If an error condition occurred, undef is
-returned. It must be noted, that only errors that were generated via die()
-during init() stage result in undef. Other errors raise an exception instead.
-It is not recommended to frame new() calls in an C<eval{}> block, because
-the error conditions can only occur in two situations. The first is a system
-error, either inside perl or Prima guts, and not much can be done here, since
-that error can very probably lead to an unstable program and almost always
-signals an implementation bug. The second reason is a caller's error, when an
-nonexistent parameter key or invalid value is passed; such conditions are not
-subject to a runtime error handling as are not the syntax errors.
+As can be noticed from the code pieces above, a successful new() call returns a
+newly created object. If an error condition occurs, undef is returned.  Only
+the errors that were generated via die() during the init() stage result in
+undef. Other errors raise an exception instead.  It is not recommended to wrap
+the new() calls in an C<eval{}> block and to recover after the error because it
+can only occur in the two following situations. The first is a system error,
+either inside perl or Prima core (f ex an out-of-memory error), and not much
+can be done here since that error can very probably lead to an unstable
+program. The second reason is the programmer's error when a nonexistent
+parameter key or an invalid value is passed.
 
-After new(), the object is subject to the event flow.  As C<onCreate> event
-is the first event the object receives, only after that stage other events can
-be circulated.
+After a call to the new() method, the object can participate in the toolkit's
+event flow.  The C<onCreate> event is always the first event the object
+receives, and after it, other events can be sent and received.
 
 =head2 Destruction
 
-Object destruction can be caused by many conditions, but all execution flow is
-finally passed through destroy() method.  destroy(), as well as new()
-performs several finalizing steps:
+Object destruction can be caused by many conditions, but the execution
+ultimately passes through the destroy() method.  destroy(), as well as new(),
+performs the following finalizing steps:
 
-=over 4
+=over
 
 =item cleanup
 
-The first method called inside destroy() is cleanup().  cleanup() is the pair
-to setup(), as destroy() is the pair to new(). cleanup() generates
-C<onDestroy> event, which can be overridden more easily than cleanup() itself.
+The first method called inside the destroy() is cleanup(). The cleanup() method
+is a counter-method to setup(), as destroy() is the counter-method to new().
+cleanup() generates the C<onDestroy> event, which again can be overridden more easily
+than the cleanup() itself.
 
-C<onDestroy> is the last event the object sees. After cleanup() no events are
+C<onDestroy> is always the last event the object sees. After the cleanup() no events are
 allowed to circulate.
 
 =item done
 
-done() method is the pair to init(), and is the place where all object
-resources are freed. Although it is as safe to overload done() as init(), it
-almost never gets overloaded, primarily because overloading C<onDestroy> is
-easier.
+The done() method is the counter-method to init() and is the proper place to
+free all object resources.  Although it is as safe to overload done() as
+init(), it gets overloaded, primarily because overloading
+C<onDestroy> is easier.
 
 =back
 
-The typical conditions that lead to object destruction are
-direct destroy() call, garbage collections mechanisms,
-user-initiated window close ( on C<Prima::Window> only ), and
-exception during init() stage. Thus, one must be careful implementing
-done() which is called after init() throws an exception.
+The typical conditions that lead to the object destruction are a direct
+destroy() call, the garbage collection mechanisms, the user-initiated window
+closing action ( for C<Prima::Window> only ), and an exception during the
+init() stage. Thus, one must be careful implementing done() which could be also
+called if init() throws an exception.
 
 =head2 Methods
 
-The class methods are declared and used with perl OO syntax, which allow both
-method of object referencing:
+The class methods are declared and used with the perl OO syntax, which allows two
+ways of referencing a method in the object's class:
 
   $object-> method();
 
@@ -198,26 +203,26 @@ and
   method( $object);
 
 The actual code is a sub, located under the object class package.  The
-overloaded methods that call their ancestor code use
+overloaded methods that call their ancestor code use the
 
   $object-> SUPER::method();
 
-syntax. Most Prima methods have fixed number of parameters.
+syntax. Most of the Prima methods have a fixed number of parameters.
 
 =head2 Properties
 
-Properties are methods that combine functionality of two ephemeral "get" and
-"set" methods. The idea behind properties is that many object parameters
+Properties are methods that combine the functionality of two ephemeral methods,
+"get" and "set". The idea behind properties is that many object parameters
 require two independent methods, one that returns some internal state and
 another that changes it.  For example, for managing the object name, set_name()
 and get_name() methods are needed. Indeed, the early Prima implementation dealt
-with large amount of these get's and set's, but later these method pairs were
-deprecated in the favor of properties.  Currently, there is only one method
-name() ( referred as C<::name> later in the documentation ).
+with a large amount of these get's and set's, but later these method pairs were
+deprecated in favor of the properties.  Instead, there is now only one method
+name() ( referred to as C<::name> later in the documentation ).
 
-The property returns a value if no parameters ( except the object) are passed,
+A property returns a value if no parameters (except the object itself) are passed,
 and changes the internal data to the passed parameters otherwise. Here's
-a sketch code for C<::name> property implementation:
+a sketch code for the C<::name> property implementation:
 
  sub name
  {
@@ -231,9 +236,9 @@ The properties can be set-called not only by name like
 
   $object-> name( "new name");
 
-but also with set() method. The set() method accepts a hash,
-that is much like to new(), and assigns the values to
-the corresponding properties. For example, the code
+but also with the set() method. The set() method accepts a hash, that is
+similar to hashes passed to new(), and also assigns its values to the
+corresponding properties. For example, the code
 
   $object-> name( "new name");
   $object-> owner( $owner);
@@ -245,14 +250,13 @@ can be rewritten as
      owner => $owner
   );
 
-A minor positive effect of a possible speed-up is gained by eliminating
-C-to-perl and perl-to-C calls, especially if the code called is implemented in
-C. The negative effect of such technique is that the order in which the
-properties are set, is undefined. Therefore, the usage of set() is recommended
-either when the property order is irrelevant, or it is known beforehand that
-such a call speeds up the code, or is an only way to achieve the result. An
-example of the latter case from L<Prima::internals> shows that Prima::Image
-calls
+A minor speed-up is gained here by eliminating some of the C-to-perl and perl-to-C
+calls, especially if the code called is implemented in C. The only problem with
+this technique is that the order in which the properties are set is undefined.
+Therefore, the usage of set() is recommended either when the property order is
+irrelevant, or it is known beforehand that such a call speeds up the code, or
+is the only way to achieve the required result. An example of the latter case
+shows that Prima::Image calls
 
     $image-> type( $a);
     $image-> palette( $b);
@@ -262,112 +266,111 @@ and
     $image-> palette( $b);
     $image-> type( $a);
 
-produce different results. It is indeed the only solution
-to call for such a change using
+produce different results. It is indeed the only solution to request a
+change that converts an image using both type and palette at the same time, to
+use the following code:
 
     $image-> set(
        type => $a,
        palette => $b
     );
 
-when it is known beforehand that C<Prima::Image::set> is aware of such
-combinations and calls neither C<::type> nor C<::palette> but
-performs another image conversion instead.
+This though makes sense only when it is known beforehand that
+C<Prima::Image::set> is aware of this combination and calls neither C<::type>
+nor C<::palette> but performs another image conversion instead.
 
 Some properties are read-only and some are write-only. Some methods that might
 be declared as properties are not; these are declared as plain methods with
 get_ or set_ name prefix. There is not much certainty about what methods are
 better off being declared as properties and vice versa.
 
-However, if get_ or set_ methods cannot be used in correspondingly write or
-read fashion, the R/O and W/O properties can. They raise an exception on an
+However, if get_ or set_ methods cannot be used in, correspondingly, write or
+read fashion, the R/O and W/O properties can. They raise an exception in an
 attempt to do so.
 
 =head2 Links between objects
 
-Prima::Component descendants can be used as containers, as objects that are on
-a higher hierarchy level than the others. This scheme is implemented in a
-child-owner relationship.  The 'children' objects have the C<::owner> property
-value assigned to a reference to a 'owner' object, while the 'owner' object
-conducts the list of its children. It is a one-to-many hierarchy scheme, as a
-'child' object can have only one owner, but an 'owner' object can have many
-children. The same object can be an owner and a child at the same time, so the
-owner-child hierarchy can be viewed as a tree-like structure.
+Prima::Component descendants can be used as containers, ie objects that are on
+a higher hierarchy level than the others, f ex the child-parent relationship.
+The 'children' objects have the C<::owner> property value assigned to a
+reference to an 'owner' object, while the 'owner' object contains the list of
+its children. It is a one-to-many hierarchy scheme, as a 'child' object can
+only have a single owner, while an 'owner' object can have many children. The
+same object can be an owner and a child at the same time, so the owner-child
+hierarchy can be viewed as a tree-like structure, too.
 
-Prima::Component::owner property maintains this relation, and is writable - the
-object can change its owner dynamically. There is no corresponding property
-that manages children objects, but is a method get_components(), that returns
-an array of the child references.
+The Prima::Component::owner property maintains such a relation, and is writable -
+the object can change its owner dynamically. There is no corresponding property
+that manages children objects, but there is the method get_components(), that
+returns an array of the child references.
 
 The owner-child relationship is used in several ways in the toolkit.  For
 example, the widgets that are children of another widget appear ( usually, but
-not always ) in the geometrical interior of the owner widget.  Some events (
-keyboard events, for example ) are propagated automatically up and/or down the
-object tree. Another important feature is that when an object gets destroyed,
-its children are destroyed first.  In a typical program the whole object tree
-roots in a Prima::Application object instance. When the application finishes,
-this feature helps cleaning up the widgets and quitting gracefully.
+not always ) inside of the rectangular area occupied by the owner widget.  Some
+events ( keyboard events, for example ) are propagated automatically up and/or
+down the object tree. Another important feature is that when an object gets
+destroyed its children are destroyed first.  In a typical program the whole
+object tree roots in a Prima::Application object instance. When the application
+finishes, this feature helps clean up the widgets and quit gracefully.
 
-Implementation note: name 'owner' was taken instead of initial 'parent',
+Implementation note: the name 'owner' was taken instead of the initial 'parent',
 because the 'parent' is a fixed term for widget hierarchy relationship
-description. Prima::Widget relationship between owner and child is not the same
+description. The Prima::Widget relationship between owner and child is not the same
 as GUI's parent-to-child.  The parent is the widget for the children widgets
 located in and clipped by its inferior. The owner widget is more than that, its
-children can be located outside its owner boundaries.
+children can be located outside its owner's boundaries.
 
-The special convenience variety of new(), the insert() method is used
-to explicitly select owner of the newly created object. insert() can
-be considered a 'constructor' in OO-terms. It makes the construct
+An alternative to the new() method, the insert() method is used to explicitly
+select the owner of the newly created object. The insert() method too can be
+considered a constructor in the OO-terms. It makes the code
 
    $obj = Class-> new( owner => $owner, name => 'name);
 
-more readable by introducing
+more readable by introducing the
 
    $obj = $owner-> insert( 'Class', name => 'name');
 
-scheme. These two code blocks are identical to each other.
+syntax. These two code blocks are identical
 
-There is another type of relation, where objects can hold references to each
+There is another type of relation where objects can hold references to each
 other. Internally this link level is used to keep objects from deletion by
-garbage collection mechanisms.  This relation is many-to-many scheme, where
+garbage collection mechanisms.  This relation is the many-to-many scheme, where
 every object can have many links to other objects. This functionality is
-managed by attach() and detach() methods.
+managed by the attach() and detach() methods.
 
 =head1 Events
 
 Prima::Component descendants employ a well-developed event propagation
-mechanism, which allows handling events using several different schemes.  An
+mechanism, which allows the handling of events using several different schemes.  An
 event is a condition, caused by the system or the user, or an explicit notify()
 call. The formerly described events onCreate and onDestroy are triggered after
 a new object is created or before it gets destroyed. These two events, and the
-described below onPostMessage are present in namespaces of all Prima objects.
-New classes can register their own events and define their execution flow,
-using notification_types() method.  This method returns all available
+described below onPostMessage event are available for all Prima
+objects.  New classes can register their own events and define their execution
+flow, using the notification_types() method.  This method returns all available
 information about the events registered in a class.
 
-Prima defines also a non-object event dispatching and filtering mechanism,
-available through L<"event_hook"> static method.
+Prima defines also the non-object event dispatching and filtering mechanism,
+available through the L<"event_hook"> static method.
 
 =head2 Propagation
 
-The event propagation mechanism has three layers of user-defined callback
-registration, that are called in different order and contexts when an event is
-triggered. The examples below show the usage of these layers. It is assumed
-that an implicit
+The event propagation mechanism has three different schemes of registering a user-defined callback,
+either on the object itself, on the object class, or on the class of some other object
+
+In the descriptions of the schemes below, there are example codes of how to catch
+the following event depending on the scheme used:
 
   $obj-> notify("PostMessage", $data1, $data2);
 
-call is issued for all these examples.
-
-=over 4
+=over
 
 =item Direct methods
 
-As it is usual in OO programming, event callback routines
-are declared as methods. 'Direct methods' employ such a paradigm,
-so if a class method with name C<on_postmessage> is present,
-it will be called as a method ( i.e., in the object context )
-when C<onPostMessage> event is triggered. Example:
+As is usual in the OO programming, event callback routines are declared as
+methods. 'Direct methods' employ this paradigm too, so if the class method
+named C<on_postmessage> is present, it will be called as a method ( i.e., in
+the object context ) when the C<onPostMessage> event is sent. For example:
 
  sub on_postmessage
  {
@@ -375,31 +378,32 @@ when C<onPostMessage> event is triggered. Example:
     ...
  }
 
-The callback name is a modified lower-case event name: the name for Create
-event is on_create, PostMessage - on_postmessage etc.  These methods can be
+The callback name is the modified lower-case event name: the name for the Create
+event is on_create, PostMessage - on_postmessage, etc.  These methods can be
 overloaded in the object's class descendants.  The only note on declaring these
-methods in the first instance is that no C<::SUPER> call is needed, because
+methods in the first instance is that no C<::SUPER> call is needed because
 these methods are not defined by default.
 
-Usually the direct methods are used for the internal object book-keeping,
-reacting on the events that are not designed to be passed higher. For example,
-a Prima::Button class catches mouse and keyboard events in such a fashion,
-because usually the only notification that is interesting for the code that
-employs push-buttons is C<Click>.  This scheme is convenient when an event
-handling routine serves the internal, implementation-specific needs.
+Usually, the direct methods are used for internal bookkeeping,
+reacting to the events that are not meant to be passed to the program. For
+example, the Prima::Button class catches mouse and keyboard events in such a
+way, because usually, the only notification that is interesting for the code
+that employs push-buttons is C<Click>, and rarely anything else. This scheme is
+convenient when an event handling routine serves internal,
+implementation-specific needs.
 
 =item Delegated methods
 
 The delegated methods are used when objects ( mostly widgets ) include other
 dependent objects, and the functionality requires interaction between these.
-The callback functions here are the same methods as direct methods, except that
-they get called in context of two, not one, objects. If, for example, a $obj's
-owner, $owner would be interested in $obj's PostMessage event, it would
-register the notification callback by
+The callback functions here are the same methods as the direct methods, except that
+they get called in the context of two, not one, objects. If, for example, an $obj's
+owner, $owner, would be interested in $obj's PostMessage event, it would
+register the notification callback by issuing the following call:
 
    $obj-> delegations([ $owner, 'PostMessage']);
 
-where the actual callback sub will be
+where the actual callback sub will be declared as
 
  sub Obj_PostMessage
  {
@@ -407,34 +411,36 @@ where the actual callback sub will be
  }
 
 Note that the naming style is different - the callback name is constructed from
-object name ( let assume that $obj's name is 'Obj') and the event name. ( This
-is one of the reasons why Component::profile_check_in() performs automatic
-naming of newly created objects). Note also that context objects are $self (
-that equals $owner ) and $obj.
+the object name ( let's assume that $obj's name is 'Obj') and the event name. (
+This is one of the reasons why Component::profile_check_in() performs automatic
+naming of newly created objects). Note also that the context objects are $self (
+that equals $owner in this case) and $obj.
 
-The delegated methods can be used not only for the owner-child relations. Every
+The delegated methods can be used not only for owner-child relations. Every
 Prima object is free to add a delegation method to every other object. However,
-if the objects are in other than owner-child relation, it is a good practice to
-add Destroy notification to the object which events are of interest, so if it
-gets destroyed, the partner object gets a message about that.
+if the objects are in other than the owner-child relation, it is a good
+practice to add Destroy notification to the object whose events are of
+interest, so if it gets destroyed, the partner object gets a message about
+that.
 
 =item Anonymous subroutines
 
 The two previous callback types are more relevant when a separate class is
-developed, but it is not necessary to declare a new class every time the event
-handling is needed.  It is possible to use the third and the most powerful
-event hook method using perl anonymous subroutines ( subs ) for the easy
-customization.
+designed. However, in the Prima toolkit, it is not necessary to declare a new
+class every time the event handling is needed. It is possible to use the third
+and the most powerful event hook scheme using perl anonymous subroutines ( subs
+) for easy customization.
 
 Contrary to the usual OO event implementations, when only one routine per class
-dispatches an event, and calls inherited handlers when it is appropriate, Prima
-event handling mechanism can accept many event handlers for one object ( it is
-greatly facilitated by the fact that perl has I<anonymous subs>, however).
+dispatches an event and calls the inherited handlers when it is appropriate,
+the Prima event handling mechanism can accept many event handlers for one object (
+it is greatly facilitated by the fact that perl has I<anonymous subs>,
+however).
 
 All the callback routines are called when an event is triggered, one by one in
 turn. If the direct and delegated methods can only be multiplexed by the usual
-OO inheritance, the anonymous subs are allowed to be multiple by the design.
-There are three syntaxes for setting such a event hook; the example below
+OO inheritance, the anonymous subs are allowed to be many by design.
+There are three syntaxes for setting such an event hook; the example below
 sets a hook on $obj using each syntax for a different situation:
 
 - during new():
@@ -447,22 +453,22 @@ sets a hook on $obj using each syntax for a different situation:
     ...
     );
 
-- after new using set()
+- after new() using set()
 
    $obj-> set( onPostMessage => sub {
        my ( $self, $data1, $data2) = @_;
    });
 
-- after new using event name:
+- after new() using the event name:
 
    $obj-> onPostMessage( sub {
        my ( $self, $data1, $data2) = @_;
    });
 
-As was noted in L<Prima>, the events can be addressed as properties, with the
-exception that they are not substitutive but additive.  The additivity is that
-when the latter type of syntax is used, the subs already registered do not get
-overwritten or discarded but stack in queue. Thus,
+The events can be addressed as properties, with the exception that they are not
+substitutive but additive. The additivity means that when the latter type of
+syntax is used, the subs already registered do not get overwritten or discarded
+but stack in the internal object queue. Thus,
 
    $obj-> onPostMessage( sub { print "1" });
    $obj-> onPostMessage( sub { print "2" });
@@ -474,47 +480,48 @@ code block would print
 
 as the execution result.
 
-This, it is a distinctive feature of a toolkit is that two objects of same class may
-have different set of event handlers.
+It is a distinctive feature of the Prima toolkit that two objects of the same
+class may have different set of event handlers.
 
 =back
 
 =head2 Flow
 
 When there is more than one handler of a particular event type present on an
-object, a question is risen about what are callbacks call priorities and when
-does the event processing stop. One of ways to regulate the event flow is based
-on prototyping events, by using notification_types() event type description.
-This function returns a hash, where keys are the event names and the values are
-the constants that describe the event flow. The constant can be a bitwise OR
-combination of several basic flow constants, that control the three aspects of
-the event flow.
+object, a question may arise about what are the callback's call priorities and
+when the event processing stops. One of the ways to regulate the event flow
+is based on prototyping events, by using the notification_types() event type
+description.  This function returns a hash, where the keys are the event names
+and the values are the constants that describe the event flow. A constant is a
+bitwise OR combination of several basic flow C<nt::XXX> constants, that control
+the following three aspects of the event flow:
 
-=over 4
+=over
 
 =item Order
 
-If both anonymous subs and direct/delegated methods are present, it must be
-decided which callback class must be called first.  Both 'orders' are useful:
-for example, if it is designed that a class's default action is to be
-overridden, it is better to call the custom actions first. If, on the contrary,
-the class action is primary, and the others are supplementary, the reverse
-order is preferred. One of two C<nt::PrivateFirst> and C<nt::CustomFirst>
-constants defines the order.
+If both anonymous subs and direct/delegated methods are present, the object
+needs to decide which callback class must be called first.  Both 'orders' are
+useful: for example, if a class is designed in such a way that some default
+action is meant to be overridden, it is better to call the custom actions
+first. If, on the contrary, a class event handler does most of the heavy
+lifting, then the reverse order may be preferred instead. One of the two
+C<nt::PrivateFirst> and C<nt::CustomFirst> constants defines the event
+execution order.
 
 =item Direction
 
-Almost the same as order, but for finer granulation of event flow, the
+Almost the same as the order, but used for finer granulation of the event flow, the
 direction constants C<nt::FluxNormal> and C<nt::FluxReverse> are used. The
-'normal flux' defines FIFO ( first in first out ) direction. That means, that
-the sooner the callback is registered, the greater priority it would possess
-during the execution.  The code block shown above
+'normal flux' defines the FIFO ( first in first out ) direction. That means, that
+the sooner the callback is registered, the greater priority it would have
+during the execution.  The code block from the example above
 
    $obj-> onPostMessage( sub { print "1" });
    $obj-> onPostMessage( sub { print "2" });
    $obj-> notify( "PostMessage", 0, 0);
 
-results in C<21>, not C<12> because PostMessage event type is prototyped
+results in C<21>, not C<12> because the PostMessage event type is prototyped as
 C<nt::FluxReverse>.
 
 =item Execution control
@@ -522,7 +529,7 @@ C<nt::FluxReverse>.
 It was stated above that the events are additive, - the callback storage is
 never discarded  when 'set'-syntax is used.  However, the event can be told to
 behave like a substitutive property, e.g. to call one and only one callback.
-This functionality is governed by C<nt::Single> bit in execution control
+This functionality is managed by the C<nt::Single> bit in the execution control
 constant set, which consists of the following constants:
 
   nt::Single
@@ -534,17 +541,18 @@ type declaration.  A C<nt::Single>-prototyped notification calls only the first
 ( or the last - depending on order and direction bits ) callback. The usage of
 this constant is somewhat limited.
 
-In contrary of C<nt::Single>, the C<nt::Multiple> constant sets the execution
-control to call all the available callbacks, with respect to direction and
-order bits.
+In contrast with C<nt::Single>, the C<nt::Multiple> constant sets the execution
+control to call all the available callbacks, with respect to the direction and
+the order bits.
 
-The third constant, C<nt::Event>, is the  impact as C<nt::Multiple>, except
-that the event flow can be stopped at any time by calling clear_event() method.
+The third constant, C<nt::Event>, is the same as C<nt::Multiple>, except
+that the event flow can be stopped at any time by calling the clear_event() method.
 
 =back
 
-Although there are 12 possible event type combinations, a half of them are not
-viable. Another half were assigned to unique more-less intelligible names:
+Although there are 12 possible event type combinations, half of them are not
+usable for anything. The combinations from another half were assigned more-less
+descriptive names:
 
   nt::Default       ( PrivateFirst | Multiple | FluxReverse)
   nt::Property      ( PrivateFirst | Single   | FluxNormal )
@@ -556,35 +564,35 @@ viable. Another half were assigned to unique more-less intelligible names:
 =head2 Success state
 
 Events do not return values, although the event generator, the notify() method
-does - it returns either 1 or 0, which is the value of event success state.
-The 0 and 1 results in general do not mean either success or failure, they
-simply reflect the fact whether clear_event() method was called during the
-processing - 1 if it was not, 0 otherwise. The state is kept during the whole
-processing stage, and can be accessed from Component::eventFlag property. Since
-it is allowed to call notify() inside event callbacks, the object maintains a
-stack for those states.  Component::eventFlags always works with the topmost
-one, and fails if is called from outside the event processing stage. Actually,
-clear_event() is an alias for ::eventFlag(0) call. The state stack is operated
-by push_event() and pop_event() methods.
+does - it returns either 1 or 0, which is the value of the event state.  The 0
+and 1 results however do not mean either success or failure, they simply
+reflect the fact whether the clear_event() method was called during the processing
+- 1 if it was not, 0 otherwise. The state is kept during the whole processing
+stage and can be accessed by the Component::eventFlag property. Since it is
+allowed to call the notify() method inside event callbacks, the object
+maintains a stack for those states. The Component::eventFlag property always
+works with the topmost one and fails if is called from outside the event
+processing stage; clear_event() is no more than an alias for the eventFlag(0) call.
+The state stack is operated by the push_event() and pop_event() methods.
 
-Implementation note: a call of clear_event() inside a C<nt::Event>-prototyped
-event call does not automatically stops the execution. The execution stops if
-the state value equals to 0 after the callback is finished.  A ::eventFlag(1)
+Implementation note: a call to clear_event() inside a C<nt::Event>-prototyped
+event call does not automatically stop the execution. The execution stops if
+the state value equals 0 after the callback is finished.  The eventFlag(1)
 call thus cancels the effect of clear_event().
 
 A particular coding style is used when the event is C<nt::Single>-prototyped
 and is called many times in a row, so overheads of calling notify() become a
-burden. Although notify() logic is somewhat complicated, it is rather simple
-with C<nt::Single> case. The helper function get_notify_sub() returns the context
-of callback to-be-called, so it can be used to emulate notify() behavior.
-Example:
+burden. Although the notify() logic is somewhat complicated, it is rather
+simple in the C<nt::Single> case. The helper function get_notify_sub() returns
+the context of the callback to be called, so it can be used to emulate the
+notify() behavior.  For example:
 
   for ( ... ) {
      $result = $obj-> notify( "Measure", @parms);
   }
 
 can be expressed in more cumbersome, but efficient code if
-C<nt::Single>-prototyped event is used:
+the C<nt::Single>-prototyped event is used:
 
    my ( $notifier, @notifyParms) = $obj-> get_notify_sub( "Measure" );
    $obj-> push_event;
@@ -596,8 +604,8 @@ C<nt::Single>-prototyped event is used:
 
 =head1 Inheritance
 
-Building Prima classes are meant to be completely identical to standard perl OO
-model. F.ex. to subclass a new package, a standard
+The design of the Prima classes is meant to be as close as possible to the standard
+perl OO model. F.ex. to subclass a new package, a standard
 
    use base qw(ParentClass);
 
@@ -607,7 +615,7 @@ or even
 
 should be just fine.
 
-However there are special considerations about the multiple inheritance, and the
+However, there are special considerations about the multiple inheritance and the
 order of the ancestor classes. First, the base class should be a Prima class, i e
 
    use base qw(Prima::Widget MyRole);
@@ -618,11 +626,11 @@ not
 
 This is caused by the perl OO model where if more than one base class has the
 same method, only the first method will be actual, and Prima conforms to that.
-F ex defining C<MyRole::init> won't have any effect where MyRole is not the
+F ex defining a C<MyRole::init> won't have any effect where MyRole is not the
 first base class (and things will explode badly if it is).
 
-In a very special case where MyRole I<needs> to have methods that overload Prima
-core, XS-implemented methods, a special technique is used:
+In a very special case where the MyRole class I<needs> to have methods that
+overload Prima core, XS-implemented methods, a special technique is used:
 
 =over
 
@@ -635,14 +643,14 @@ names of the core symbols to be overloaded in that role:
 
    sub CORE_METHODS { qw(setup) }
 
-Do not subsclass MyRole from Prima objects.
+Do not subclass MyRole from Prima objects though.
 
 =item *
 
 Define the methods as if you would define a normal overridden method, with one
-important exception: since perl's SUPER is package-based, not object based, the
+important exception: since perl's SUPER is package-based, not object-based, the
 C<< $self->SUPER::foo() >> pattern will not work for calling the methods that
-are up in the hierarchy. Instead, the first parameter to these method is an
+are up in the hierarchy. Instead, the first parameter to these methods is an
 anonymous subroutine that will call the needed SUPER method:
 
    sub setup
@@ -653,17 +661,17 @@ anonymous subroutine that will call the needed SUPER method:
        ...
    }
 
-If you know L<Moose> standard syntax C<around>, this is exactly the same idea.
+If you know L<Moose> standard syntax C<around>, this is the same idea.
 
-Note that this method will be called I<after> the descendant class C<setup>,
+Note that this method will be called I<after> the descendant class C<setup>
 if the class has one. This is a bit confusing as in all types of OO inheritance
 sub-class code is always called after the super-class, not vice versa. This
 might change in the future, too.
 
 =item *
 
-In the descendant class, inherit from MyRole normally, but in addition to that
-explicitly call to overload its special methods:
+In the descendant class, inherit from the MyRole normally, but in addition to that
+make the call to overload its special methods:
 
    package MyWidget;
    use base qw(Prima::Widget MyRole);
@@ -691,7 +699,7 @@ its init() stage. Example:
 
 =item cleanup
 
-Called right after destroy() started. Used to initiate C<cmDestroy>
+Called right after the destroy() started. Used to initiate the C<cmDestroy>
 event. Is never called directly.
 
 =item create CLASS, %PARAMETERS
@@ -700,44 +708,45 @@ Same as L<new>.
 
 =item destroy
 
-Initiates the object destruction. Perform in turn cleanup() and done() calls.
+Initiates the object destruction. Calls cleanup() and then done().
 destroy() can be called several times and is the only Prima re-entrant
 function, therefore may not be overloaded.
 
 =item done
 
-Called by destroy() after cleanup() is finished. Used to free the object
-resources, as a finalization stage.  During done() no events are allowed to
-circulate, and alive() returns 0. The object is not usable after done()
+Called by the destroy() method after cleanup() is finished. Used to free the
+object resources, as a finalization stage.  During done() no events are allowed
+to circulate, and alive() returns 0. The object is not usable after done()
 finishes. Is never called directly.
 
-Note: the eventual child objects are destroyed inside done() call.
+Note: the eventual child objects are destroyed inside the done() call.
 
 =item get @PARAMETERS
 
-Returns hash where keys are @PARAMETERS and values are
+Returns a hash where the keys are @PARAMETERS and values are
 the corresponding object properties.
 
 =item init %PARAMETERS
 
-The most important stage of object creation process.  %PARAMETERS is the
-modified hash that was passed to new().  The modification consists of
-merging with the result of profile_default() class method inside
+The most important stage of the object creation process.  %PARAMETERS is the
+modified hash that was passed to new().  The modification consists of 
+merging with the result of the profile_default() method inside the
 profile_check_in() method. init() is responsible for applying the relevant data
-into PARAMETERS to the object properties. Is never called directly.
+from PARAMETERS to the corresponding object properties. Is never called
+directly.
 
 =item insert CLASS, %PARAMETERS
 
-A convenience wrapper for new(), that explicitly sets
+A convenience wrapper for new() that explicitly sets
 the owner property for a newly created object.
 
    $obj = $owner-> insert( 'Class', name => 'name');
 
-is adequate to
+is identical to
 
    $obj = Class-> new( owner => $owner, name => 'name);
 
-code. insert() has another syntax that allows simultaneous
+insert() has another syntax that allows simultaneous
 creation of several objects:
 
    @objects = $owner-> insert(
@@ -746,13 +755,13 @@ creation of several objects:
      ...
    );
 
-With such syntax, all newly created objects would have $owner
+With this syntax, all newly created objects would have $owner
 set to their 'owner' properties.
 
 =item new CLASS, %PARAMETERS
 
-Creates a new object instance of a given CLASS
-and sets its properties corresponding to the passed parameter hash. Examples:
+Creates a new object instance of the given CLASS and sets its properties
+corresponding to the passed parameter hash. Examples:
 
    $obj = Class-> new( PARAMETERS);
    $obj = Prima::Object::new( "class" , PARAMETERS);
@@ -761,29 +770,32 @@ Is never called in an object context.
 
 Alias: create()
 
-
 =item profile_add PROFILE
 
-The first stage of object creation process.  PROFILE is a reference to a
-PARAMETERS hash, passed to new().  It is merged with profile_default() after
-passing both to profile_check_in(). The merge result is stored back in PROFILE.
-Is never called directly.
+The first stage of the object creation process.  The PROFILE is a reference to
+the PARAMETERS hash, passed to the new() method. The hash is merged with the
+hash produced by the profile_default() method after passing both through the
+profile_check_in(). The merge result is stored back in PROFILE.
+
+The method is never called directly.
 
 =item profile_check_in CUSTOM_PROFILE, DEFAULT_PROFILE
 
-The second stage of object creation process.  Resolves eventual ambiguities in
-CUSTOM_PROFILE, which is the reference to PARAMETERS passed to new(), by
-comparing to and using default values from DEFAULT_PROFILE, which is the result
-of profile_default() method. Is never called directly.
+The second stage of the object creation process.  Resolves eventual ambiguities in
+CUSTOM_PROFILE, which is the reference to the PARAMETERS passed to new(), by
+comparing to and using the default values from the DEFAULT_PROFILE, which in turn is the result
+of the profile_default() method.
+
+The method is never called directly.
 
 =item profile_default
 
-Returns hash of the appropriate default values for all properties of a class.
-In object creation process serves as a provider of fall-back values, and is
-called implicitly. This method can be used directly, contrary to the other
-creation process-related functions.
+Returns a hash of the appropriate default values for all properties of the
+class.  In the object creation process serves as a provider of fall-back
+values, and is called (once) during the process. The method can be used
+directly, contrary to the other creation process-related functions.
 
-Can be called in a context of class.
+Can be called in a context of a class.
 
 =item raise_ro TEXT
 
@@ -793,11 +805,11 @@ a set- context.
 =item raise_wo TEXT
 
 Throws an exception with text TEXT when a write-only property is called in
-a get- context.
+a get-context.
 
 =item set %PARAMETERS
 
-The default behavior is an equivalent to
+The default behavior is equivalent to the following code:
 
   sub set
   {
@@ -806,17 +818,17 @@ The default behavior is an equivalent to
      $obj-> $_( $PARAMETERS{$_}) for keys %PARAMETERS;
   }
 
-code. Assigns object properties correspondingly to PARAMETERS hash.  Many
+Assigns the object properties correspondingly to the PARAMETERS hash.  Many
 Prima::Component descendants overload set() to make it more efficient for
 particular parameter key patterns.
 
-As the code above, raises an exception if the key in PARAMETERS has no
+Like the code above, raises an exception if the key in PARAMETERS has no
 correspondent object property.
 
 =item setup
 
-The last stage of object creation process.  Called after init() finishes. Used
-to initiate C<cmCreate> event. Is never called directly.
+The last stage of the object creation process.  Called after init() finishes. Used
+to initiate the C<onCreate> event. Is never called directly.
 
 =back
 
@@ -826,36 +838,36 @@ to initiate C<cmCreate> event. Is never called directly.
 
 =item add_notification NAME, SUB, REFERRER = undef, INDEX = -1
 
-Adds SUB to the list of notification of event NAME.  REFEREE is the object
-reference, which is used to create a context to SUB and is passed as a
-parameter to it when called.  If REFEREE is undef ( or not specified ), the
-same object is assumed. REFEREE also gets implicitly attached to the object, -
-the implementation frees the link between objects when one of these gets
-destroyed.
+Adds the SUB to the list of notifications for the event NAME. REFEREE is the
+object reference, which is used to create a context to the SUB and is also
+passed as a parameter to it when the event callback is called.  If the REFEREE is
+undef ( or is not specified ), then the caller object is assumed. REFEREE also gets
+implicitly attached to the object, - the implementation frees the link between
+the objects when one of these gets destroyed.
 
-INDEX is a desired insert position in the notification list.  By default it is
--1, what means 'in the start'. If the notification type contains nt::FluxNormal
+INDEX is a desired insert position in the notification list.  By default, it is
+-1, which means 'in the start'. If the notification type contains nt::FluxNormal
 bit set, the newly inserted SUB will be called first. If it has
 nt::FluxReverse, it is called last, correspondingly.
 
-Returns positive integer value on success, 0 on failure.  This value can be
+Returns a positive integer value on success, and 0 on failure.  This value can be
 later used to refer to the SUB in remove_notification().
 
 See also: C<remove_notification>, C<get_notification>.
 
 =item attach OBJECT
 
-Inserts OBJECT to the attached objects list and increases OBJECT's reference
-count. The list can not hold more than one reference to the same object. The
-warning is issued on such an attempt.
+Inserts the OBJECT into the list of the attached objects and increases the OBJECT's
+reference count. The list may not hold more than one reference to the same
+object; the warning is issued on such an attempt.
 
 See also: C<detach>.
 
 =item bring NAME, MAX_DEPTH=0
 
-Looks for a child object that has name equals to NAME.  Returns its
-reference on success, undef otherwise. It is a convenience method, that makes
-possible the usage of the following constructs:
+Looks for the child object that has a name that equal to NAME.  Returns its reference
+on success, undef otherwise. It is a convenience method, that makes possible
+the usage of the following constructs:
 
    $obj-> name( "Obj");
    $obj-> owner( $owner);
@@ -866,33 +878,32 @@ possible the usage of the following constructs:
    $obj-> insert(Foo => name => 'Bar');
    $owner-> Bar-> do_something;
 
-
 See also: C<find_component>, C<deepChildLookup>
 
 =item can_event
 
-Returns true if the object event circulation is allowed.  In general, the same
+Returns true if the object event circulation is allowed. In general, the same
 as C<alive() == 1>, except that can_event() fails if an invalid object
 reference is passed.
 
 =item clear_event
 
 Clears the event state, that is set to 1 when the event processing begins.
-Signals the event execution stop for nt::Event-prototyped events.
+Signals the event execution stop for the nt::Event-prototyped events.
 
 See also: L<"Events">, C<push_event>, C<pop_event>, C<::eventFlag>, C<notify>.
 
-Use this call in your overloaded event handlers when wanted to signal that
+Use this call in your overloaded event handlers when signalling that
 further processing should be stopped, f ex onMouseDown doing something else than
 the base widget.
 
-See more in L<Execution control>. Consult the exact C<nt::> type of the
+See more in L<Execution control>. Check the exact C<nt::> type of the
 event in the Prima/Classes.pm source.
 
 =item detach OBJECT, KILL
 
-Removes OBJECT from the attached objects list and decreases OBJECT's reference
-count. If KILL is true, destroys OBJECT.
+Removes the OBJECT from the list of the attached objects and decreases the OBJECT's reference
+count. If KILL is true, destroys the OBJECT.
 
 See also: C<attach>
 
@@ -902,57 +913,57 @@ Issues a system-dependent warning sound signal.
 
 =item event_hook [ SUB ]
 
-Installs a SUB to receive all events on all Prima objects.  SUB receives same
-parameters passed to L<notify>, and must return an integer, either 1 or 0, to
-pass or block the event respectively.
+Installs the SUB to receive all events on all Prima objects. The SUB receives
+the same parameters passed to L<notify> and must return an integer, either 1
+or 0, to pass or block the event respectively.
 
-If no SUB is set, returns currently installed event hook pointer.  If SUB is
+If no SUB is set, returns the currently installed event hook pointer.  If SUB is
 set, replaces the old hook sub with SUB. If SUB is C<'undef'>, event filtering
 is not used.
 
 Since the C<'event_hook'> mechanism allows only one hook routine to be
 installed at a time, direct usage of the method is discouraged.  Instead, use
-L<Prima::EventHook> for multiplexing of the hook access.
+the L<Prima::EventHook> API for multiplexing access to the hook.
 
-The method is static, and can be called either with or without class or
+The method is static and can be called either with or without a class or an
 object as a first parameter.
 
 =item find_component NAME
 
 Performs a depth-first search on children tree hierarchy, matching the object
-that has name equal to NAME.  Returns its reference on success, undef
+that has a name equal to NAME.  Returns its reference on success, undef
 otherwise.
 
 See also: C<bring>
 
 =item get_components
 
-Returns array of the child objects.
+Returns an array of the child objects.
 
 See: C<new>, L<"Links between objects">.
 
 =item get_handle
 
-Returns a system-dependent handle for the object.  For example, Prima::Widget
-return its system WINDOW/HWND handles, Prima::DeviceBitmap - its system
-PIXMAP/HBITMAP handles, etc.
+Returns a system-dependent handle for the object. For example, Prima::Widget
+returns its system Window/HWND handles, Prima::DeviceBitmap - its system
+Pixmap/HBITMAP handles, etc.
 
-Can be used to pass the handle value outside the program, for an eventual
-interprocess communication scheme.
+Can be used to pass the handle value outside the program, for eventual
+interprocess communication.
 
 =item get_notification NAME, @INDEX_LIST
 
-For each index in INDEX_LIST return three scalars, bound at the index position
-in the NAME event notification list.  These three scalars are REFERRER, SUB and
+For each index in the INDEX_LIST returns three scalars, bound to the index position
+in the NAME event notification list.  These three scalars are REFERRER, SUB, and
 ID. REFERRER and SUB are those passed to C<add_notification>, and ID is its
-result.
+saved result.
 
 See also: C<remove_notification>, C<add_notification>.
 
 =item get_notify_sub NAME
 
-A convenience method for nt::Single-prototyped events.  Returns code reference
-and context for the first notification sub for event NAME.
+A convenience method for the nt::Single-prototyped events.  Returns the code reference
+and the context for the first notification sub for event NAME.
 
 See L<"Success state"> for example.
 
@@ -961,18 +972,18 @@ See L<"Success state"> for example.
 Returns a hash, where the keys are the event names and the values are the
 C<nt::> constants that describe the event flow.
 
-Can be called in a context of class.
+Can be called in the context of a class.
 
 See L<"Events"> and L<"Flow"> for details.
 
 =item notify NAME, @PARAMETERS
 
 Calls the subroutines bound to the event NAME with parameters @PARAMETERS in
-context of the object.  The calling order is described by C<nt::> constants,
-contained in the notification_types() result hash.
+the context of the object.  The calling order is described by the C<nt::> constants,
+from the hash returned by the notification_types().
 
-notify() accepts variable number of parameters, and while it is possible, it is
-not recommended to call notify() with the exceeding number of parameters; the
+notify() accepts a variable number of parameters, and while it is possible, it is
+not recommended to call notify() with the excessive number of parameters. The
 call with the deficient number of parameters results in an exception.
 
 Example:
@@ -983,36 +994,37 @@ See L<"Events"> and L<"Flow"> for details.
 
 =item pop_event
 
-Closes event processing stage brackets.
+Closes the event processing stage bracket.
 
 See C<push_event>, L<"Events">
 
 =item post_message SCALAR1, SCALAR2
 
-Calls C<PostMessage> event with parameters SCALAR1 and SCALAR2 once during idle
-event loop. Returns immediately.  Does not guarantee that C<PostMessage> will
-be called, however.
+Calls the C<PostMessage> event with parameters SCALAR1 and SCALAR2 once during
+the next idle event loop. Returns immediately.  Does not guarantee that
+C<PostMessage> will be called, however.
 
 See also L<Prima::Utils/post>
 
 =item push_event
 
-Opens event processing stage brackets.
+Opens the event processing stage bracket.
 
 See C<pop_event>, L<"Events">
 
 =item remove_notification ID
 
-Removes a notification subroutine that was registered before with
-C<add_notification>, where ID was its result. After successful removal, the
-eventual context object gets implicitly detached from the storage object.
+Removes the notification subroutine that was registered before using the
+C<add_notification> method, and where the ID was its result. After the
+successful removal, the eventual context object gets implicitly detached from
+the storage object.
 
 See also: C<add_notification>, C<get_notification>.
 
 =item set_notification NAME, SUB
 
-Adds SUB to the event NAME notification list. Almost never used directly, but
-is a key point in enabling the following notification add syntax
+Adds the SUB to the event NAME notification list. Rarely used directly, but
+is a key point in enabling the following syntax:
 
    $obj-> onPostMessage( sub { ... });
 
@@ -1024,10 +1036,9 @@ that are shortcuts for
 
    $obj-> add_notification( "PostMessage", sub { ... });
 
-
 =item unlink_notifier REFERRER
 
-Removes all notification subs from all event lists bound to REFERRER object.
+Removes all notification subs from all event lists bound to the REFERRER object.
 
 =back
 
@@ -1037,7 +1048,7 @@ Removes all notification subs from all event lists bound to REFERRER object.
 
 =item deepChildLookup BOOL
 
-If set, autoload component lookup by name uses a breadth-first deep lookup into the object hierarchy.
+If set, the lookup by name uses a breadth-first deep lookup into the object hierarchy.
 If unset (default), only immediate children objects are searched.
 
    $self->deepChildLookup(0);
@@ -1055,25 +1066,25 @@ See also: L<"Success state">, C<clear_event>, L<"Events">.
 
 =item delegations [ <REFERRER>, NAME, <NAME>, < <REFERRER>, NAME, ... > ]
 
-Accepts an anonymous array in I<set-> context, which consists of a list of event NAMEs,
-that a REFERRER object ( the caller object by default ) is interested in.
-Registers notification entries for routines if subs with naming scheme
-REFERRER_NAME are present on REFERRER name space.  The example code
+Accepts an anonymous array in the I<set-> context, which consists of a list of
+event NAMEs, that a REFERRER object ( the caller object by default ) is
+interested in. Registers notification entries if the subs with the naming
+scheme REFERRER_NAME are present on the REFERRER namespace.  The example code
 
    $obj-> name("Obj");
    $obj-> delegations([ $owner, 'PostMessage']);
 
-registers Obj_PostMessage callback if it is present in $owner namespace.
+registers the Obj_PostMessage callback if it is present in the $owner namespace.
 
-In I<get-> context returns an array reference that reflects the object's delegated
-events list content.
+In the I<get-> context returns an array reference that reflects the object's
+delegated events list content.
 
 See also: L<"Delegated methods">.
 
 =item name NAME
 
-Maintains object name. NAME can be an arbitrary string, however it is
-recommended against usage of special characters and spaces in NAME, to
+Maintains the object name. NAME can be an arbitrary string, however it is
+recommended against the usage of special characters and spaces in NAME, to
 facilitate the indirect object access coding style:
 
    $obj-> name( "Obj");
@@ -1082,32 +1093,32 @@ facilitate the indirect object access coding style:
    $owner-> Obj-> destroy;
 
 and to prevent system-dependent issues. If the system provides capabilities
-that allow to predefine some object parameters by its name ( or class), then it
-is impossible to know beforehand the system naming restrictions.  For example,
-in X window system the following resource string would make all Prima toolkit
-buttons green:
+that allow to predefining some object parameters by its name (or its class), then
+it is impossible to know beforehand the system naming restrictions.  For
+example, in the X11 window system the following resource string would make all
+Prima toolkit buttons green:
 
   Prima*Button*backColor: green
 
 In this case, using special characters such as C<:> or C<*> in the name of an object
-would make the X resource unusable.
+would make the X11 resource unusable.
 
 =item owner OBJECT
 
-Selects an owner of the object, which may be any Prima::Component descendant.
-Setting an owner to a object does not alter its reference count. Some classes
+Sets the owner of the object, which may be a Prima::Component descendant.
+Setting an owner to an object does not alter its reference count. Some classes
 allow OBJECT to be undef, while some do not. All widget objects can not exist
 without a valid owner; Prima::Application on the contrary can only exist with
-owner set to undef. Prima::Image objects are indifferent to the value of the
-owner property.
+the owner set to undef. Prima::Image objects are indifferent to the value of
+the owner property.
 
-Changing owner dynamically is allowed, but it is a main source of
-implementation bugs, since the whole hierarchy tree is needed to be recreated.
+Changing the owner dynamically is allowed, but it is a main source of
+implementation bugs since the whole hierarchy tree needs to be recreated.
 Although this effect is not visible in perl, the results are deeply
 system-dependent, and the code that changes owner property should be thoroughly
 tested.
 
-Changes to C<owner> result in up to three notifications: C<ChangeOwner>, which
+Changes to the C<owner> result in up to three notifications: C<ChangeOwner>, which
 is called to the object itself, C<ChildLeave>, which notifies the previous
 owner that the object is about to leave, and C<ChildEnter>, telling the new
 owner about the new child.
@@ -1120,7 +1131,7 @@ owner about the new child.
 
 =item ChangeOwner OLD_OWNER
 
-Called at runtime when the object changes its owner.
+Called when the object changes its owner.
 
 =item ChildEnter CHILD
 
@@ -1134,34 +1145,33 @@ it is getting destroyed or as a result of runtime owner change.
 
 =item Create
 
-The first event an event sees. Called automatically after init() is finished.
+The first event the object sees. Called automatically after init() is finished.
 Is never called directly.
 
 =item Destroy
 
-The last event an event sees. Called automatically before done() is started.
+The last event the object sees. Called automatically before done() is started.
 Is never called directly.
 
 =item PostMessage SCALAR1, SCALAR2
 
-Called after post_message() call is issued, not inside post_message() but at
-the next idle event loop.  SCALAR1 and SCALAR2 are the data passed to
-post_message().
+Called after the post_message() call is issued, however not inside
+post_message() but after the next idle event loop.  SCALAR1 and SCALAR2 are the
+data passed to the post_message().
 
 =item SysHandle
 
 Sometimes Prima needs to implicitly re-create the system handle of a component.
-The re-creation is not seen on the toolkit level, except for some repaints when
-widgets on screen are affected, but under the hood, when it happens, Prima
-creates a whole new system resource. This happens when the underlying system
-either doesn't have API to change a certain property during the runtime, or
-when such a re-creation happens on one of component's parent, leading to a
-downward cascade of children re-creation. Also, it may happen when the user
-changes some system settings resolution, so that some resources have to be changed
-accordingly.
+The re-creation usually happens deep inside the Prima core, however, if widgets
+on the screen are re-created, then they might get repainted.  This happens when
+the underlying system either doesn't have API to change a certain property
+during the runtime or when such a re-creation happens on one of the component's
+parents, leading to a downward cascade of re-creation of the children. Also, it may
+happen when the user changes some system settings resolution so that some
+resources have to be changed accordingly.
 
 This event will be only needed when the system handle (that can be acquired by
-C<get_handle> ) is used further, or in case when Prima doesn't restore some
+C<get_handle> ) is used further, or in the case when Prima doesn't restore some
 properties bound to the system handle.
 
 =back

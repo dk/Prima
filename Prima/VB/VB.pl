@@ -2863,7 +2863,7 @@ This code is executed when the form is run or loaded via C<Prima::VB::VBLoader>
 interface.
 
 The full explanation of properties and events is not provided here. It is
-not even the goal of this document, because the builder can work with the
+not even the goal of this document because the builder can work with the
 widgets irrespective of their property or event capabilities; this information
 is extracted by native toolkit functionality. To read on what each property or
 event means, use the documentation on the class of interest; L<Prima::Widget> is a good

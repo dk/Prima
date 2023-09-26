@@ -404,7 +404,7 @@ L<Prima::PodView> - POD browser widget
 
 L<Prima::ScrollBar> - scroll bars
 
-L<Prima::Sliders> - sliding bars, spin buttons and input lines, dial widget etc.
+L<Prima::Sliders> - sliding bars, spin buttons, dial widget etc.
 
 L<Prima::Spinner> - spinner animation
 

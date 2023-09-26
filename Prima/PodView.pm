@@ -2185,7 +2185,7 @@ on this stage.
 
 =head2 Topics
 
-Prima::PodView provides the C<::topicView> property, which governs whether
+Prima::PodView provides the C<::topicView> property, which manages whether
 the man page is viewed by topics or as a whole. When it is viewed as topics,
 C<{modelRange}> array selects the model blocks that include the topic.
 Thus, having a single model loaded, text blocks change dynamically.

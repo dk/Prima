@@ -1974,7 +1974,7 @@ prima_handle_menu_event( XEvent *ev, XWindow win, Handle self)
 }
 
 /* local menu access hacks; it's good idea to have
-	hot keys changeable through resources, but have no
+	hotkeys changeable through resources, but have no
 	idea ( and desire :) how to go through it */
 int
 prima_handle_menu_shortcuts( Handle self, XEvent * ev, KeySym keysym)

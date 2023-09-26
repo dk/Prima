@@ -36,28 +36,26 @@ Prima::Menu - pull-down and pop-up menu objects
 
 =head1 DESCRIPTION
 
-The document describes interfaces of Prima::AbstractMenu
-class, and its three descendants - Prima::Menu, Prima::Popup,
-and Prima::AccelTable, all aimed at different targets.
-Prima::AbstractMenu is a descendant of Prima::Component class,
-and its specialization is handling of menu items, held in
-a tree-like structure. Descendants of Prima::AbstractMenu
-are designed to be attached to widgets and windows, to serve
-as hints for the system-dependent pop-up and pull-down menus.
+The document describes the interfaces of Prima::AbstractMenu class, and its
+three descendants - Prima::Menu, Prima::Popup, and Prima::AccelTable.
+Prima::AbstractMenu is a descendant of the Prima::Component class, and its
+specialization is the handling of menu items, held in a tree-like structure.
+Descendants of Prima::AbstractMenu are designed to be attached to widgets and
+windows, to serve as hints for the system-dependent pop-up and pull-down menus.
 
 =head1 USAGE
 
 =head2 Menu items
 
-The central point of functionality in Prima::AbstractMenu-derived classes
-and their object instances ( further referred as 'menu classes'
-and 'menu objects'), is handling of a complex structure, contained in
-C<::items> property. This property is special in that its structure
-is a tree-like array of scalars, each of whose is either a description of
-a menu item or a reference to an array.
+The central point of functionality in Prima::AbstractMenu-derived classes and
+their object instances ( further referred to as 'menu classes' and 'menu
+objects'), is the handling of a complex structure, contained in the C<::items>
+property. This property is special in that its structure is a tree-like array
+of scalars, each of which is either a description of a menu item or a reference
+to an array.
 
-Parameters of an array must follow a special syntax, so the property
-input can be parsed and assigned correctly. In general, the syntax is
+Parameters of an array must follow a special syntax, so the property input can
+be parsed and assigned correctly. In general, the syntax is
 
    $menu-> items( [
       [ menu item description ],
@@ -65,64 +63,67 @@ input can be parsed and assigned correctly. In general, the syntax is
       ...
    ]);
 
-where 'menu item description' is an array of scalars,
-that can hold from 0 up to 6 elements. Each menu item has six fields,
-that qualify a full description of a menu item;
-the shorter arrays are shortcuts,
-that imply default or special cases. These base six fields are:
+where the 'menu item description' is an array of scalars, that can hold from 0
+up to 6 elements. Each menu item has six fields, that qualify a full
+description of a menu item. The shorter arrays are the shortcuts that imply
+some default or special cases. These base six fields are:
 
 =over
 
 =item Menu item name
 
-A string identifier.  Menu items can be accessed individually by their names,
-and the following fields can be managed by calling elemental properties, that
-require an item name. If not given, or empty, item name is assigned a string in
-a form '#ID' where ID is the unique integer value within the menu object.
+A string identifier. There are defined several shortcut properties in the
+Prima::MenuItem namespace that access the menu items and their data by the
+name.  If the menu item name is not given or is empty, the name is assigned a
+string in the form '#ID' where the ID is a unique integer value within the menu
+object.
 
-IDs are set for each menu item, disregarding whether they have names or not.
-Any menu item can be uniquely identified by its ID value, by supplying the '#ID'
-string, in the same fashion as named menu items.  When creating or copying menu
-items, names in format '#ID' are not accepted, and treated as if an empty
-string is passed. When copying menu items to another menu object, all menu
-items to be copied change their IDs, but explicitly set names are preserved.
-Since the anonymous menu items do not have name, their auto-generated names
-change also.
+The IDs are set for each menu item, disregarding whether they have names or
+not.  Any menu item can be uniquely identified by its ID value, by supplying
+the '#ID' string, in the same fashion as the named menu items.  When creating
+or copying menu items, names in the format '#ID' are ignored and treated as if an
+empty string is passed. When copying menu items to another menu object, all
+menu items to be copied change their IDs, but the explicitly set names are
+preserved.  Since the anonymous menu items do not have names their
+auto-generated names change also.
 
-If the name is prepended by special characters ( see below ), these characters
-are not treated as part of the name but as an item modifier.  This syntax is
+If the name is prepended by the special characters ( see below ), these characters
+are not treated as a part of the name but as an item modifier.  This syntax is
 valid only for C<::items> and C<insert()> functions, not for C<set_variable()>
 method.
 
 =over
 
-=item C<-> - item is disabled
+=item C<-> - the item is disabled
 
-=item C<*> - item is checked
+=item C<*> - the item is checked
 
-=item C<@> - item is using auto-toggling
+=item C<@> - the item is using auto-toggling
 
-=item C<?> - item is custom drawn
+=item C<?> - the item is custom drawn
 
-Expects C<onMeasure> and C<onPaint> callbacks in C<options>
+Expects the C<onMeasure> and C<onPaint> callbacks in C<options>
 
 =item C<(> and C<)> - radio group
 
-Items marked with parentheses are treated as a part of a group, where only a
-single item can be checked. Checking and unchecking happens automatically.
+The items marked with parentheses are treated as a part of a group, where only
+a single item can be checked at any time. Checking and unchecking happen
+automatically.
 
-A group is only valid for the same level where it was opened on (i.e. submenus
-don't inherit it).  A group is automatically terminated on a separator item. If
-that is not desired, mark it as C<(> too (consequent C<(> are allowed):
+A group is only valid on the same level where it was defined (i.e. submenus are
+not a part of the group). A group is automatically closed on the separator
+item. If that is not desired, mark it as C<(> too (consequent C<(>'s are
+allowed):
 
     [ '(one' ... ]
     [ 'two' ... ]
     [ '(' ],
-    [ ')last' ... ] 
+    [ ')last' ... ]
 
-When user hits an already checked item, nothing happens. However, when combined with
-auto-toggling (i.e. marked with C<(@>), a checked item becomes unchecked, thus the
-group can present a state where no items are checked, too.
+If the user hits an already checked item then nothing happens. However, when
+combined with auto-toggling (i.e. marked with C<(@>), a checked item becomes
+unchecked, thus the group can present a state where no items are checked as
+well.
 
 See also: C<group>
 
@@ -130,72 +131,68 @@ See also: C<group>
 
 =item Menu text / menu image
 
-A non-separator menu item can be visualized either as a
-text string or an image. These options are exclusive to each other,
-and therefore occupy same field. Menu text is an arbitrary string,
-with with ~ ( tilde ) quoting for a shortcut character, that the
-system uses as a hot key during menu navigation.
-Menu image is a L<Prima::Image> object of no particular color
-space and dimensions.
+A non-separator menu item can be visualized either as a text string or an
+image. These options exclude each other and therefore occupy the same field.
+The menu text is an arbitrary string, with the C<~> ( tilde ) character
+escaping a shortcut character, so that the system uses it as a hotkey during the menu
+navigation. The menu image is a L<Prima::Image> object.
 
-Note: tilde-marked character is also used in navigation for custom drawn menu
-items, even though they not necessarily draw the text itself.
+Note: the tilde-marked character is also recognized when navigating the custom
+drawn menu items, even though they not necessarily might draw the highlighted
+character.
 
-Menu text in menu item is accessible via the C<::text> property,
-and menu image via the C<::image> property. These can not accept
-or return sensible arguments simultaneously.
+The menu text in the menu item is accessible via the C<::text> property, and
+the menu image via the C<::image> property. Only one of these could be used,
+depending on whether the menu item contains text or image.
 
 =item Accelerator text
 
-An alternate text string, appearing together with a menu item
-or a menu image, usually serving as a description to the hot key,
-associated with a menu item. For example, if a hot key to
-a menu item is combination of 'enter' and 'control' keys, then
-usually accelerator text is 'Ctrl+Enter' string.
+An alternative text string that appears next to the menu item or the menu image,
+usually serving as a hotkey description.  For example, if the hotkey is a
+combination of the 'enter' and the 'control' keys, then usually the accelerator
+text is the 'Ctrl+Enter' string.
 
-Accelerator text in menu item is accessible via C<::accel>
-property.
+The accelerator text in the menu item is accessible via the C<::accel> property.
 
-NB: There is C<Prima::KeySelector::describe> function, that converts
-a key value to a string in human-readable format.
+Note: there is the C<Prima::KeySelector::describe> function which converts an
+integer key value to a string in the human-readable format, perfectly usable as
+accelerator text.
 
-=item Hot key
+=item hotkey
 
-An integer value, combined from either C<kb::XXX> constant or
-a character index with modifier key values ( C<km::XXX> constant ).
-This representation format is not that informative as three-integer
-key event format (CODE,KEY,MOD), described in L<Prima::Widget>.
-However, these formats are easily converted to each other:
-CODE,KEY,MOD is translated to INTEGER format by C<translate_key()>
-method. The reverse operation is not needed for C<Prima::AbstractMenu>
-functionality and is performed by C<Prima::KeySelector::translate_codes>
-method.
+An integer value, is a combination of either a C<kb::XXX> constant or a character
+index with the modifier key values ( C<km::XXX> constant ).  This format is
+less informative than the three-integer key event format (CODE,KEY,MOD),
+described in L<Prima::Widget>. However, these formats are easily converted to
+each other: CODE,KEY,MOD are translated to the INTEGER format by the
+C<translate_key()> method. The reverse operation is not needed for
+the C<Prima::AbstractMenu> functionality and is performed by the
+C<Prima::KeySelector::translate_codes> method.
 
-The integer value can be given in a some more readable format
-when submitting to C<::items>. Character and F-keys (from F1 to F16)
-can be used literally, without C<kb::> prepending, and the modifier
-keys can be hinted as prefix characters: km::Shift as '#',
-km::Ctrl as '^' and km::Alt as '@'. This way, combination of
-'control' and 'G' keys can be expressed as C<'^G'> literal,
-and 'control'+'shift'+'F10' - as C<'^#F10'>.
+The integer value can be given in a more readable format when calling the
+C<::items> method. Character and F-keys (from F1 to F16) can be used as string
+literals, without the C<kb::> constant, and the modifier keys can be hinted as
+prefix characters: km::Shift as '#', km::Ctrl as '^', and km::Alt as '@'. This
+way the combination of the 'control' and 'G' keys can be expressed as the
+C<'^G'> literal, and 'control'+'shift'+'F10' - as C<'^#F10'>.
 
-Hot key in menu item is accessible via C<::key>
-property. The property does accept literal key format,
-described above.
+The hotkey in menu items is accessible via the C<::key> property. This property
+accepts the literal key format described above.
 
-A literal key string can be converted to
-an integer value by C<translate_shortcut> method.
+A literal key string can be converted to an integer value by
+the C<translate_shortcut> method.
 
-When the user presses the key combination, that matches to hot key
-entry in a menu item, its action is triggered.
+When the user presses the key combination that matches the hotkey entry in a
+menu item, its action is triggered.
 
 =item Action
 
-Every non-separator and non-submenu item is destined to perform an action. The
-action can be set either as an anonymous sub, or as string with name of a
-method on the owner of a menu object. Both have their niche of usage, and both
-are supplied with three parameters, when called - the owner of a menu object,
-the name of a menu item, that triggered the action, and the menu checked status:
+Every non-separator and non-submenu item performs an action that needs to be
+defined explicitly. The action can be set either as an anonymous sub or as a
+string with the name of the method on the owner of the menu object. Both ways
+have their niches, and both use three parameters when called - the owner of the
+menu object, the name of the menu item, that triggered the action, and the new
+checked status of the menu item
 
    Prima::MainWindow-> new(
    	menuItems => [
@@ -210,65 +207,65 @@ the name of a menu item, that triggered the action, and the menu checked status:
    	]
    );
 
-Action scalar in menu item is accessible via C<::action>
-property.
+The action scalar in the menu item is accessible via the C<::action> property.
 
-A special built-in action can automatically toggle a menu item, instead of
-an explicit call
+A special built-in action can automatically toggle a menu item without
+the need to program that explicitly. The manual toggle of the menu item
+can be done by a code like this:
 
    $window->menu->toggle($item)
 
-To achieve this, add '@' character to the menu item name (see L<"Menu item name">).
+However, Prima can toggle the item automatically too, if the C<@> character is
+added to the menu item name (see L<"Menu item name">).
 
 =item Options
 
-At last, non-separator menu items can hold an extra hash in C<options> property.
+At last, the non-separator menu items can hold an extra hash in the C<options> property.
 The toolkit reserves the following keys for internal use:
 
 =over
 
 =item group INTEGER
 
-Same as C<group> property.
+Same as the C<group> property.
 
 =item icon HANDLE
 
-Uses to replace default check mark bitmap on a menu item
+Is used to replace the default checkmark bitmap on a menu item
 
 =item onMeasure MENUITEM, REF
 
-Required when custom painting is set. It is called when system needs to query
-menu item dimensions. C<REF> is a 2-item arrayref that needs to be set with
-pixel dimension.
+Required when the custom painting is requested. It is called when the system
+needs to query the menu item dimensions. C<REF> is a 2-item arrayref that needs
+to be set with the pixel dimensions of the item.
 
 =item onPaint MENUITEM, CANVAS, SELECTED, X1, Y1, X2, Y2
 
-Required when custom painting is set. It is called whenever system needs to
-draw a menu item. X1 - Y2 are coordinates of the rectangle where the drawing is
+Required when custom painting is requested. It is called whenever the system needs to
+draw the menu item. The X1 - Y2 are the coordinates of the rectangle where the drawing is
 allowed.
 
 =back
 
 =back
 
-Syntax of C<::items> does not provide 'disabled' and 'checked'
-states for a menu item as separate fields. These states
-can be set by using '-' and '*' prefix characters, as described above,
-in L<Menu item name>. They also can be assigned on per-item
-basis via C<::enabled> and C<::checked> properties.
+The syntax of the C<::items> method does not provide the 'disabled' and the
+'checked' states for a menu item as separate fields. These states can be only
+set by using the C<-> and the C<*> prefix characters, as described above, in
+L<Menu item name>. They can though be assigned later on a per-item basis via the
+C<::enabled> and the C<::checked> properties when the menu object is created.
 
-All these fields qualify a most common menu item,
-that has text, shortcut key and an action - a 'text item'.
-However, there are also two other types of menu items -
-a sub-menu and separator. The type of a menu items
-can not be changed except by full menu item tree change
-functions ( C<::items>, C<remove()>, C<insert()>.
+All these fields comprise the most common type of a menu item, that has a text,
+a shortcut key, and an action - a 'text item'.  However, there are also two
+other types of menu items - a sub-menu and a separator. The type of the menu
+item cannot be changed on the fly except by changing the full menu tree by the
+functions C<::items>, C<remove()>, and C<insert()>.
 
-Sub-menu item can hold same references as text menu item does,
-except the action field. Instead, the action field is used for
-a sub-menu reference scalar, pointing to another set of
-menu item description arrays. From that point of view, syntax of C<::items>
-can be more elaborated and shown as
+A sub-menu item can hold the same references as a text menu item does, except for the
+action field. Instead, the action field is used for a sub-menu reference
+scalar pointing to another set of menu item description arrays. From that
+point of view, the syntax of C<::items> can be more elaborated and shown in
+the following example:
 
    $menu-> items( [
       [ text menu item description ],
@@ -285,74 +282,71 @@ can be more elaborated and shown as
       ...
    ]);
 
-Separator items do not hold any fields, except name.
-Their purpose is to hint a logical division of menu items
-by the system, which visualizes them usually as non-selectable
+The separator items don't have any fields, except the name.  Their purpose is
+to hint a logical division of the menu items, usually as non-selectable
 horizontal lines.
 
-In menu bars, the first separator item met by parser is
-treated differently. It serves as a hint, that the following
-items must be shown in the right corner of a menu bar, contrary
-to the left-adjacent default layout. Subsequent separator items
-in a menu bar declaration can be either shown as a vertical
-division bars, or ignored.
+In the menu bars, the first separator item met by the menu parser is treated
+differently. It serves as a hint that the following items must be shown in the
+right corner of the menu bar, contrary to the left-adjacent default layout.
+Subsequent separator items in a menu bar declaration can be either shown as a
+vertical division bar, or ignored.
 
-With these menu items types and fields, it is possible
-to construct the described above menu description arrays.
-An item description array can hold from 0 to 6 scalars,
-and each combination is treated differently.
+All of these menu item types can be constructed by specifying menu description
+arrays.  An item description array can hold between 0 to 6 scalars, and each
+combination is treated differently:
 
 =over
 
 =item six - [ NAME, TEXT/IMAGE, ACCEL, KEY, ACTION/SUBMENU, DATA ]
 
-Six-scalar array is a fully qualified text-item description.
+A six-scalar array is a fully qualified text-item description.
 All fields correspond to the described above scalars.
 
 =item five [ NAME, TEXT/IMAGE, ACCEL, KEY, ACTION/SUBMENU ]
 
-Same as six-scalar syntax, but without DATA field.
-If DATA is skipped it is C<undef> by default.
+Same as the six-scalar syntax, but without the DATA field.
+If DATA is skipped then it is set to C<undef>.
 
 =item four [ TEXT/IMAGE, ACCEL, KEY, ACTION/SUBMENU ] or [ NAME, TEXT/IMAGE, ACTION/SUBMENU, DATA ]
 
-One of two, depending whether last item is a hashref or not.
+One of the two definitions, depending on whether the last item is a hashref or not.
 
-If not, same as five-scalar syntax, but without NAME field.
-When NAME is skipped it is assigned to an unique string
-within menu object.
+If the last item is not a hashref, then treated the same as the five-scalar
+syntax, but without the NAME field.  When NAME is skipped it is assigned to a
+unique string within the menu object.
 
-Otherwise same as three-scalar plus DATA hashref.
+Otherwise same as the three-scalar syntax plus the DATA hashref.
 
 =item three [ NAME, TEXT/IMAGE, ACTION/SUBMENU ] or [ TEXT/IMAGE, ACTION/SUBMENU, DATA ]
 
-One of two, depending whether last item is a hashref or not.
+One of the two definitions, depending on whether the last item is a hashref or not.
 
-In not, same as five-scalar syntax, but without ACCEL and KEY fields.
-KEY is C<kb::NoKey> by default, so no keyboard combination
-is bound to the item. Default ACCEL value is an empty string.
+If the last item is not a hashref, then treated the same as the five-scalar
+syntax, but without the ACCEL and the KEY fields.  KEY is C<kb::NoKey> by
+default, so no keyboard combination is bound to the item. The default ACCEL value
+is an empty string.
 
-Otherwise same as two-scalar plus DATA hashref.
+Otherwise the same as the two-scalar syntax plus DATA hashref.
 
 =item two [ TEXT/IMAGE, ACTION/SUBMENU ] or [ NAME, DATA ]
 
-One of two, depending whether last item is a hashref or not.
+One of the two definitions, depending on whether the last item is a hashref or not.
 
-If not, same as three-scalar syntax, but without NAME field.
+If the last item is not a hashref, then treated the same as the three-scalar
+syntax, but without the NAME field.
 
-Otherwise name with data reference. Useful for custom menu items that need at
-least the C<'?'> flag in the NAME.
+Otherwise treated as the menu items with the data reference. Useful for custom
+menu items that need at least the C<'?'> flag in the NAME.
 
-=item one and zero [ ]
+=item one and zero [ NAME ]
 
-Both empty and 1-scalar arrays indicate a separator
-menu item. In case of 1-scalar syntax, the scalar value
-is ignored.
+Both empty and 1-scalar arrays define a separator menu item. In the case of
+the 1-scalar syntax, the scalar value is the name of the separator item.
 
 =back
 
-As an example of all above said, a real-life piece of code
-is exemplified:
+As an example of all the above, here's an example of a menu tree:
 
    $img = Prima::Image-> create( ... );
    ...
@@ -375,7 +369,7 @@ is exemplified:
          ["~Duplicate menu"=>sub{ TestWindow->create( menu=>$_[0]->menu)}],
       ]],
       ...
-      [],                             # divisor in main menu opens
+      [],                             # divisor in the main menu opens
       [ "~Clusters" => [              # right-adjacent part
         [ "*".checker =>  "Checking Item"   => "Check"     ],
         [],
@@ -384,97 +378,84 @@ is exemplified:
       ]]
    ] );
 
-The code is stripped from 'menu.pl' from 'examples' directory
-in the toolkit installation. The reader is advised to
-run the example and learn the menu mechanics.
+The code is from the F<examples/menu.pl> in the toolkit installation. The
+reader is advised to run the example and learn the menu mechanics.
 
 =head2 Prima::MenuItem
 
-As described above, text and sub-menu items can be managed
-by elemental properties - C<::accel>, C<::text>, C<::image>,
-C<::checked>, C<::enabled>, C<::action>, C<::data>.
-All these, plus some other methods can be called in an
-alternative way, resembling name-based component calls
-of L<Prima::Object>. A code
+As briefly mentioned above, all menu items can be accessed using the following
+properties:  C<::accel>, C<::text>, C<::image>, C<::checked>, C<::enabled>,
+C<::action>, C<::data>.  These, plus some other methods can be also called in an
+alternative way, resembling name-based component calls of L<Prima::Object>. For
+example, the call
 
   $menu-> checked('CheckerMenuItem', 1);
 
-can be re-written as
+can be also written as
 
   $menu-> CheckerMenuItem-> checked(1);
 
-Name-based call substitutes Prima::MenuItem object,
-created on the fly. Prima::MenuItem class shares
-same functions of Prima::AbstractMenu, that handle
-individual menu items.
+Such name-based calls create temporary Prima::MenuItem objects that are only
+used to mimic the accessor functions from the Prima::AbstractMenu class and 
+not much else.
 
 =head2 Prima::Menu
 
-Objects, derived from Prima::Menu class are
-used to tandem Prima::Window objects, and their
-items to be shown as menu bar on top of the window.
+The Prima::Menu objects complement the Prima::Window objects so that their
+menu items are shown as the menu bar on top of the window.
 
-Prima::Menu is special in that its top-level items
-visualized horizontally, and in behavior of the top-level
-separator items ( see above, L<Menu items> ).
+Prima::Menu's top-level items are laid out horizontally, and the top-level
+separator items behave differently ( see above, L<Menu items> ).
 
-If C<::selected> is set to 1, then a menu object
-is visualized in a window, otherwise it is not.
-This behavior allows window to host multiple
-menu objects without clashing.
-When a Prima::Menu object gets 'selected', it displaces
-the previous 'selected' menu Prima::Menu object, and its items
-are installed into the visible menu bar. Prima::Window
-property C<::menu> then points to the menu object, and
-C<::menuItems> is an alias for C<::items> menu class property.
-Prima::Window's properties C<::menuFont> and C<::menuColorIndex>
-are used as visualization hints.
+If the C<::selected> property is set to 1, then a menu object is visualized in
+a window, otherwise it is not. This behavior allows a window to host multiple
+menu objects without interfering with each other.  When a Prima::Menu object
+gets 'selected', it displaces the previous 'selected' menu, and its items are
+installed in the window menu bar. The Prima::Window property C<::menu> then
+points to that new menu object. Another Prima::Window property C<::menuItems>
+is an alias for the C<::items> property of the currently selected menu object.
+Prima::Window's properties C<::menuFont> and C<::menuColorIndex> are used as
+visualization hints, if/when the system supports that.
 
 Prima::Menu provides no new methods or properties.
 
 =head2 Prima::Popup
 
-Objects, derived from Prima::Popup class are
-used together with Prima::Widget objects.
-Menu items are visualized when the user pressed
-the pop-up key or mouse buttons combination,
-in response to Prima::Widget's C<Popup> notification.
+Objects derived from the Prima::Popup class are used together with the
+Prima::Widget objects in the same way as the menu objects with the window
+objects. Popup items are shown when the user presses the system-defined pop-up
+key or mouse button, as a response to the Prima::Widget's C<Popup>
+notification.
 
-If C<::selected> is set to 1, then a menu object
-is visualized in the system pop-up menu, otherwise it is not.
-This behavior allows widget to host multiple
-menu objects without clashing.
-When a Prima::Popup object gets 'selected', it displaces
-the previous 'selected' menu Prima::Popup object.
-Prima::Widget
-property C<::popup> then points to the menu object, and
-C<::popupItems> is an alias for C<::items> menu class property.
-Prima::Widget's properties C<::popupFont> and C<::popupColorIndex>
-are used as visualization hints.
+If the C<::selected> property is set to 1, and the C<autoPopup> property is
+also set to 1, then a popup object can appear fully automatically, without the
+need to program the popup-menu appearance and handling.  This behavior allows a
+widget to host multiple popup objects without interfering with each other.
+When a Prima::Popup object gets 'selected', it displaces the previous
+'selected' popup object. The Prima::Widget property C<::popup> then points to
+that object. Another widget property C<::popupItems> is an alias for the
+C<::items> property of the currently selected popup object.  Prima::Widget's
+properties C<::popupFont> and Prima::Widgets's properties C<::popupFont> and
+C<::popupColorIndex> are used as visualization hints, if/when the system
+supports that.
 
-A Prima::Popup object can be visualized
-explicitly, by means of C<popup> method. The
-implicit visualization by the user is happened only
-if the C<::autoPopup> property is set to 1.
-
-Prima::Popup provides new C<popup> method
-and new C<::autoPopup> property.
+A Prima::Popup object can be also visualized explicitly, by calling the
+C<popup> method. 
 
 =head2 Prima::AccelTable
 
-This class is destined for a more limited functionality than Prima::Menu and Prima::Popup,
-primarily for mapping key strokes to predefined actions.
-Prima::AccelTable objects are never visualized, and
-consume no system resources, although full menu
-item management syntax is supported.
+This class has a more limited functionality than Prima::Menu or Prima::Popup
+and is primarily used for mapping keystrokes to actions.  Prima::AccelTable
+objects are never visualized, and consume no system resources, although the
+full menu item management syntax is supported.
 
-If C<::selected> is set to 1, then it displaces
-the previous 'selected' menu Prima::AccelTable object.
-Prima::Widget property C<::accelTable> then points to
-the menu object, and C<::accelItems> is an alias for
-C<::items> menu class property.
+If the C<::selected> property is set to 1, then an acceltable object displaces
+the previous 'selected' acceltable object. The Prima::Widget property
+C<::accelTable> then points to that object.  Another widget property
+C<::accelItems> is an alias for the C<::items> property of the currently
+selected acceltable object. 
 
-Prima::AccelTable provide no new methods or properties.
+Prima::AccelTable provides no new methods or properties.
 
 =head1 API
 
@@ -484,144 +465,129 @@ Prima::AccelTable provide no new methods or properties.
 
 =item accel NAME, STRING / Prima::MenuItem::accel STRING
 
-Manages accelerator text for a menu item.
-NAME is name of the menu item.
+Manages accelerator text for the menu item. NAME is the name of the menu item.
 
 =item action NAME, SCALAR / Prima::MenuItem::action SCALAR.
 
-Manages action for a menu item.
-NAME is name of the menu item.
-SCALAR can be either an anonymous sub or a method name,
-defined in the menu object owner's name space.
-Both called with three parameters -
-the owner of a menu object, the menu object itself and
-the name of the menu item.
+Manages the action for the menu item.  NAME is the name of the menu item.
+SCALAR can be either an anonymous sub or a method name, defined in the menu
+object owner's namespace.  Both are called with three parameters - the owner of
+the menu object, the menu object itself, and the name of the menu item.
 
 =item autoPopup BOOLEAN
 
 Only in Prima::Popup
 
-If set to 1 in selected state, calls C<popup()> action
-in response to C<Popup> notification, when the user
-presses the default key or mouse button combination.
+If set to 1 in the selected state, calls the C<popup()> method in response to the
+C<Popup> notification, when the user presses the system-defined hotkey or mouse
+button combination.
 
-If 0, the pop-up menu can not be executed implicitly.
+If 0, the pop-up menu can only be shown by a call to the C<popup> method
+programmatically.
 
 Default value: 1
 
 =item autoToggle NAME, SCALAR / Prima::MenuItem::autoToggle SCALAR.
 
-Manages autoToggle flag for a menu item. When set, C<checked> option is flipped
-when user selects the item. Also, in the unchecked state the system displays an
-empty check box icon where normally a check icon would appear, to hint the user
-that an item is a toggle, despite being unchecked.
+Manages the autoToggle flag for the menu item. When set, the C<checked> option is flipped
+when the user selects the item. Also, in the unchecked state, the system displays an
+empty check box icon where normally a check icon would appear, to hint to the user
+that the menu item is toggle-able, despite it being unchecked.
 
 =item checked NAME, BOOLEAN / Prima::MenuItem::checked BOOLEAN
 
-Manages 'checked' state of a menu item. If 'checked',
-a menu item visualized with a distinct check-mark near
-the menu item text or image. Its usage with sub-menu
-items is possible, although discouraged.
+Manages the 'checked' state of a menu item. If 'checked', a menu item is
+visualized with a distinct checkmark near the menu item text or image. Its
+usage with the sub-menu items is possible, although discouraged.
 
-NAME is name of the menu item.
+NAME is the name of the menu item.
 
-=item data NAME, SCALAR / Prima::MenuItem::data SCALAR
+=item data NAME, HASH / Prima::MenuItem::data HASH
 
-Manages the user data scalar.
-
-NAME is name of the menu item.
-SCALAR can be any scalar value, the toolkit does
-not use this property internally.
+Manages the user data hash.  NAME is the name of the menu item.
 
 =item enabled NAME, BOOLEAN / Prima::MenuItem::enabled BOOLEAN
 
-Manages 'enabled' state of a menu item. If 'enabled' is set, a menu
-item visualized with grayed or otherwise dimmed color palette. If a sub-menu
-item is disabled, whole sub-menu is inaccessible.
+Manages the 'enabled' state of the menu item. If 'enabled' is set, a menu
+item is visualized with a grayed or otherwise dimmed color palette. If a sub-menu
+item is disabled, the whole sub-menu is inaccessible.
 
 Default: true
 
-NAME is name of the menu item.
+NAME is the name of the menu item.
 
-=item group NAME, INTEGER / Prima::MenuItem::group INTEGER
+=item group NAME, GROUP_ID / Prima::MenuItem::group GROUP_ID
 
-If not 0, treated as a member of radio group with that number when checked.
-I.e. if one of the group is checked, others are unchecked.
+If not 0, the menu item is treated as a member of a radio group with the
+GROUP_ID number.  That means if one of the menu items that belong to the same
+group is checked, the other items are automatically unchecked.
 
 =item image NAME, OBJECT / Prima::MenuItem::image OBJECT
 
-Manages the image, bound with a menu item. OBJECT
-is a non-null Prima::Image object reference, with
-no particular color space or dimensions ( because
-of dimensions, its usage in top-level Prima::Menu
-items is discouraged ).
+Manages the image that is bound to the menu item. The OBJECT is a non-null
+Prima::Image object reference, with no particular color space or dimensions (
+because of dimensions, its usage in top-level Prima::Menu items is discouraged
+).
 
-C<::image> and C<::text> are mutually exclusive menu
-item properties, and can not be set together, but
-a menu item can change between image and text representation
-at run time by calling these properties.
+The C<::image> and the C<::text> properties are mutually exclusive, and can not be
+set together, but a menu item can change its representation between an image
+and a text during the runtime if these properties are called.
 
-NAME is name of the menu item.
+NAME is the name of the menu item.
 
 =item items SCALAR
 
-Manages the whole menu items tree. SCALAR is
-a multi-level anonymous array structure, with
-syntax described in L<Menu items>.
+Manages the whole menu items tree. SCALAR is a multi-level anonymous array
+structure, with the syntax described in L<Menu items>.
 
-C<::items> is an ultimate tool for reading
-and writing the menu items tree, but often
-it is too powerful, so there are elemental
-properties C<::accel>, C<::text>, C<::image>,
-C<::checked>, C<::enabled>, C<::action>,
-C<::data> declared, that handle menu items
-individually.
+The C<::items> property is an ultimate tool for reading and writing the menu
+items tree, but often it is too powerful, so there exist several easier-to-use
+properties C<::accel>, C<::text>, C<::image>, C<::checked>, C<::enabled>,
+C<::action>, C<::data>, that can access menu items individually.
 
 =item key NAME, KEY / Prima::MenuItem::key KEY
 
-Manages the hot key combination, bound with a menu item.
-Internally KEY is kept as an integer value, and get-mode
-call returns integers only, but set-mode accepts
-the literal key format - like, '^C', 'F5' strings.
+Manages the hotkey combination, bound with the menu item.
+Internally the KEY is kept as an integer value, and a get-mode
+call always returns integers. The set-mode calls, however, accept
+the literal key format - strings such as '^C' or 'F5'.
 
-NAME is name of the menu item, KEY is an integer value.
+NAME is the name of the menu item; KEY is an integer value.
 
 =item selected BOOLEAN
 
-If set to 1, menu object is granted extra functionality
-from a window or widget owner object. Different Prima::AbstractMenu
-descendant provided with different extra functionalities.
-In I<Usage> section, see L<Prima::Menu>, L<Prima::Popup>
-and L<Prima::AccelTable>.
+If set to 1, the menu object is granted extra functionality from a window or
+widget owner object. Different Prima::AbstractMenu descendants are equipped with
+different extra functionalities.  In the I<Usage> section, see L<Prima::Menu>,
+L<Prima::Popup>, and L<Prima::AccelTable>.
 
-Within each menu class, only one menu object can be selected
+Within each menu-owner object hierarchy , only one menu object can be selected
 for its owner.
 
-If set to 0, the only actions performed are
-implicit hot-key lookup when on C<KeyDown> event.
+If set to 0, the only actions performed are implicit hotkey lookup when on the
+C<KeyDown> event.
 
 Default value: 1
 
 =item submenu NAME, ARRAY / Prima::MenuItem::submenu ARRAY
 
-Manages submenu, if present on the item. On reading, is equivalent
-to C<get_items(NAME, 1)>. On writing, removes all items under NAME
-and inserts new ones.
+Manages a submenu, if it is present. A get-call of the C<submenu> property is
+equivalent to the C<get_items(NAME, 1)> call. On a set-call removes all of the
+items under the NAME and inserts new ones.
 
 See also: L<is_submenu>.
 
 =item text NAME, STRING / Prima::MenuItem::text STRING
 
-Manages the text, bound with a menu item. STRING
-is an arbitrary string, with '~' ( tilde ) quotation
-of a hot key character. The hot key character is only used
-when keyboard navigation of a pop-up or a pull-down menu
-is performed; it has no influence outside menu sessions.
+Manages the text bound to the menu item. The STRING is an arbitrary string,
+with the '~' ( tilde ) escape character of a hotkey character. The hotkey
+character is only used when the keyboard navigation of a pop-up or the
+pull-down user action is performed; does not influence outside the menu
+sessions.
 
-C<::text> and C<::image> are mutually exclusive menu
-item properties, and can not be set together, but
-a menu item can change between image and text representation
-at run time by calling these properties.
+The C<::image> and the C<::text> properties are mutually exclusive, and can not be
+set together, but a menu item can change its representation between an image
+and a text during the runtime if these properties are called.
 
 =back
 
@@ -632,17 +598,17 @@ at run time by calling these properties.
 =item check NAME / Prima::MenuItem::check
 
 Alias for C<checked(1)>.
-Sets menu item in checked state.
+Sets the menu item in the checked state.
 
 =item disable NAME / Prima::MenuItem::disable
 
 Alias for C<enabled(0)>.
-Sets menu item in disabled state.
+Sets the menu item in the disabled state.
 
 =item enabled NAME / Prima::MenuItem::enabled
 
 Alias for C<enabled(1)>.
-Sets menu item in enabled state.
+Sets the menu item in the enabled state.
 
 =item execute NAME
 
@@ -650,44 +616,41 @@ Calls the action associated with the menu item
 
 =item find_item_by_key KEY
 
-Finds items by the associated hot key combination
+Finds items by the associated hotkey combination
 
 =item get_handle
 
 Returns a system-dependent menu handle.
 
-NB: Prima::AccelTable use no system resources, and
+NB: Prima::AccelTable uses no system resources, and
 this method returns its object handle instead.
 
 =item get_children NAME
 
-Returns list of NAME's children
+Returns the list of children of the menu item with the name NAME
 
 =item get_item NAME, FULL_TREE = 0
 
-Returns items entry corresponding to NAME, with or without eventual full tree
-of children items, depending on FULL_TREE flag.
+Returns the item entry corresponding to NAME, with or without the eventual full
+tree of children items, depending on the FULL_TREE flag.
 
-=item get_item NAMES, FULL_TREE = 0
+=item get_items NAME, FULL_TREE = 1
 
 Returns immediate children items entries that have NAME as a parent, with or
-without eventual full tree of children items, depending on FULL_TREE flag.
+without the eventual full tree of children items, depending on the FULL_TREE flag.
 
 =item has_item NAME
 
-Returns boolean value, whether the menu object has
-a menu item with name NAME.
+Returns a boolean value, that is true if the menu object has a menu item with
+the name NAME.
 
 =item insert ITEMS, ROOT_NAME, INDEX
 
-Inserts menu item inside existing item tree.
-ITEMS has same syntax as C<::items>.
-ROOT_NAME is the name of a menu item, where the insertion
-must take place; if ROOT_NAME is an empty string, the
-insertion is performed to the top level items.
-INDEX is an offset, which the newly inserted items
-would possess after the insertion. INDEX 0 indicates
-the beginning, thus.
+Inserts menu items inside the existing item tree.  ITEMS has the same syntax as the
+C<::items> property.  ROOT_NAME is the name of the menu item, where the insertion
+must take place; if ROOT_NAME is an empty string, the insertion is performed to
+the top-level items.  INDEX is an offset, that the newly inserted items would
+possess after the insertion. INDEX 0 indicates the very start of the menu.
 
 Returns no value.
 
@@ -697,59 +660,56 @@ Returns true if the item is a separator, false otherwise
 
 =item is_submenu NAME
 
-Returns true if the item has submenu, false otherwise
+Returns true if the item has a submenu, false otherwise
 
 =item popup X_OFFSET, Y_OFFSET, [ LEFT = 0, BOTTOM = 0, RIGHT = 0, TOP = 0 ]
 
 Only in Prima::Popup
 
-Executes the system-driven pop-up menu, in location near
-(X_OFFSET,Y_OFFSET) pixel on the screen, with items from C<::items>
-tree. The pop-up menu is hinted to be positioned so that
-the rectangle, defined by (LEFT,BOTTOM) - (RIGHT,TOP) coordinates
-is not covered by the first-level menu. This is useful when a pop-up
-menu is triggered by a button widget, for example.
+Executes the system-driven pop-up menu, in the location near
+(X_OFFSET,Y_OFFSET) pixel on the screen, with the items from the C<::items> tree.
+The pop-up menu is hinted to be positioned so that the rectangle, defined by
+(LEFT,BOTTOM) - (RIGHT,TOP) coordinates is not covered by the first-level menu.
+This is useful when a pop-up menu is triggered by a button widget, for example.
 
-If during the execution the user selects a menu item,
-then its associated action is executed ( see C<action> ).
+If during the execution the user selects a menu item, then its associated
+action is executed ( see C<action> ).
 
 The method returns immediately and returns no value.
 
+There is no functionality to cancel the running popup session.
+
 =item remove NAME / Prima::MenuItem::remove
 
-Deletes a menu item from the items tree, and
-its sub-menus if the item is a sub-menu item.
+Deletes the menu item named NAME from the items tree, and its eventual sub-menus
 
 =item select
 
-Alias for C<selected(1)>.
-Sets menu object in selected state.
+Alias for C<selected(1)>.  Sets the menu object in the selected state, and
+deselects all menu siblings of the same type (ie Menu->select(1) won't affect the
+selected status for a popup, for example).
 
 =item set_variable NAME, NEW_NAME
 
-Changes the name of a menu item with NAME to NEW_NAME.
-NEW_NAME must not be an empty string and must not be in a
-'#integer' form.
+Changes the name of the menu item from NAME to NEW_NAME.  NEW_NAME must not be
+an empty string and must not be in the '#integer' form.
 
 =item toggle NAME / Prima::MenuItem::toggle
 
-Toggles the checked state of a menu item
-and returns the new state.
+Toggles the checked state of the menu item and returns the new state.
 
 =item translate_accel TEXT
 
-Locates a '~' ( tilde ) - escaped character in a TEXT
-string and returns its index ( as ord(lc())), or 0
-if no escaped characters were found.
+Locates a C<'~'> ( tilde ) - escaped character in the TEXT string and returns
+its index ( as ord(lc())), or 0 if no escaped characters were found.
 
 The method can be called with no object.
 
 =item translate_key CODE, KEY, MOD
 
-Translates three-integer key representation into
-the one-integer format and returns the integer value.
-The three-integer format is used in
-C<KeyDown> and C<KeyUp> notifications for Prima::Widget.
+Translates the three-integer key representation into the one-integer format and
+returns the integer value.  The three-integer format is used in the C<KeyDown>
+and the C<KeyUp> notifications for Prima::Widget.
 
 See L<Prima::Widget>
 
@@ -757,15 +717,15 @@ The method can be called with no object.
 
 =item translate_shortcut KEY
 
-Converts literal-represented KEY string
-into the integer format and returns the integer value.
+Converts string literal KEY string into the integer format and returns the
+integer value.
 
 The method can be called with no object.
 
 =item uncheck NAME / Prima::MenuItem::uncheck
 
 Alias for C<checked(0)>.
-Sets menu item in unchecked state.
+Sets the menu item in the unchecked state.
 
 =back
 
@@ -775,24 +735,25 @@ Sets menu item in unchecked state.
 
 =item Change ACTION [, NAME [, VALUE ]]
 
-Triggered when structure of the menu tree is changed. ACTION is the method call that triggered that action, and NAME
-is the menu item name, when applicable. If empty string, means root. VALUE is the new value, if applicable.
+Triggered when the structure of the menu tree is changed. ACTION is the method
+call that triggered that action, and NAME is the menu item name, when
+applicable. If NAME is an empty string, that means the affected menu item is
+the root of the item tree. VALUE is the new value, if applicable.
 
 =item ItemMeasure ITEMID, REF
 
-Called when system needs to query dimensions of a menu item that has custom
-painting bit set. C<REF> is a 2-item arrayref that needs to be set with pixel
-dimension.
+Called when the system needs to query the dimensions of a menu item that has the
+custom painting bit set. C<REF> is a 2-item arrayref that needs to be set 
+pixel-wise dimensions.
 
 See also: L<Options>
 
 =item ItemPaint CANVAS, ITEMID, SELECTED, X1, Y1, X2, Y2
 
-Called whenever system needs to draw a menu item that has custom painting bit
-set. X1 - Y2 are coordinates of the rectangle where the drawing is allowed.
+Called whenever the system needs to draw a menu item that has the custom painting bit
+set. X1 - Y2 are the coordinates of the rectangle where the drawing is allowed.
 
 See also: L<Options>
-
 
 =back
 

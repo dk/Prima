@@ -11,22 +11,22 @@ installation, and programming.
 
 =head2 What is Prima?
 
-Prima is a general purpose extensible graphical user interface toolkit with a
+Prima is a general-purpose extensible graphical user interface toolkit with a
 rich set of standard widgets and an emphasis on 2D image processing tasks. A
-Perl program using PRIMA looks and behaves identically on X, Win32.
+Perl program using Prima looks and behaves identically in the X11 and Windows
+environments.
 
 =head2 Yeah, right. So what is Prima again?
 
-Ok. A Yet Another Perl GUI.
+A Yet Another Perl GUI.
 
 =head2 Why bother with the Yet Another thing, while there is Perl-Tk and plenty of others?
 
-Prima was started on OS/2, where Tk didn't really run. We have had two options
+Prima was started on OS/2, where Tk didn't run. We have had two options
 - either port Tk, or write something on our own, probably better than the
 existing tools.  We believe that we've succeeded.
 
-Interestingly enough, Prima still builds for OS/2 (as of July 2012), but its support
-was killed because no one needs it anyway.
+However, Prima's support for OS/2 was removed because no one needed that in 2012.
 
 =head2 Why Perl?
 
@@ -40,22 +40,22 @@ Unless your language has runtime binding with perl, you cannot.
 =head2 Who wrote Prima?
 
 Dmitry Karasik implemented the majority of the toolkit, after the original idea
-by Anton Berezin. The latter and set of contributors helped the development of
+by Anton Berezin. Many contributors helped the development of
 the toolkit since then.
 
 =head2 What is the copyright?
 
 The copyright is a modified BSD license, where only two first paragraphs remain
-out of the original four. The text of copyright is present is almost all files
+out of the original four. The text of copyright is present in almost all files
 of the toolkit.
 
-=head2 I'd like to contribute.
+=head2 I'd like to contribute
 
-You can do this is several ways. The project would probably best benefit from
-the advocacy, because not many people use it. Of course, you can send in new
+You can do this in several ways. The project would probably best benefit from
+the advocacy because not many people use it. Of course, you can send in new
 widgets, patches, suggestions, or even donations. Also, documentation is the
-thing that needs a particular attention, since my native language is not
-English, so if there are volunteers for polishing of the Prima docs, you are
+topic that needs particular attention, since my native language is not
+English, so if there are volunteers for polishing the Prima docs, you are
 very welcome.
 
 =head1 INSTALLATION
@@ -68,21 +68,20 @@ documentation, and some other useful info.
 
 =head2 What is better, source or binary?
 
-Depends where your are and what are your goals. On unix, the best is to use the
-source. On win32 the binaries probably are preferred. If you happen to
-use cygwin you probably still better off using the source.
+Depends on where you are and what are your goals. On unix, the best is to use
+the source. On win32 the binaries based on Strawberry Perl distribution
+are preferred. If you happen to use cygwin you are probably still
+better off using the source.
 
-=head2 How to install binary distribution?
+=head2 How to install the binary distribution?
 
-First, check if you've downloaded Prima binary for the correct version of Perl.
-For win32 ActiveState builds, difference in the minor digits of the Perl
-version shouldn't be a problem, for example, binary distribution for Perl build
-#805 should work with Perl build #808, etc etc.
+First, check if you downloaded the Prima binary for the correct version of Perl,
+that should be enough.
 
 To install, unpack the archive and type 'perl ms_install.pl'.  The files will
 be copied into the perl tree.
 
-=head2 How to compile Prima from source?
+=head2 How to compile Prima from the source?
 
 Type the following:
 
@@ -90,21 +89,21 @@ Type the following:
    make
    make install
 
-If the 'perl Makefile.PL' fails complaining to strange errors, you can check
-makefile.log to see if anything is wrong. A typical situation here is that
-Makefile.PL may report that is cannot find Perl library, for example, where
-there actually it invokes the compiler in a wrong way.
+If the 'perl Makefile.PL' fails with errors, you can check makefile.log to see
+if anything is wrong. A typical situation here is that Makefile.PL might report
+that it cannot find the Perl library, for example, where the real problem is
+that it invokes the compiler in the wrong way.
 
-Note, that in order to get Prima working from sources, your system must contain
+Note, that to get Prima working from sources, your system must contain
 graphic libraries, such as libgif or ligjpeg, for Prima to load graphic
 files.
 
-=head2 What's about the graphic libraries?
+=head2 What about the graphic libraries?
 
-To load and save images, Prima employs graphic libraries. Such as, to load GIF
-files, libgif library is used, etc. Makefile.PL finds available libraries and
+To load and save images, Prima uses graphic libraries. Such as, to load GIF
+files, the libgif library is used, etc. Makefile.PL finds available libraries and
 links Prima against these. It is possible to compile Prima without any, but this
-is not really useful.
+is not useful.
 
 On every supported platform Prima can make use of the following graphic
 libraries:
@@ -115,76 +114,71 @@ libraries:
    libpng   - PNG images
    libtiff  - tiff images
    libwebp,libwebpdemux,libwebpmux  - WebP images
+   libheif  - Heif images
 
 Strawberry perl and Cygwin come with most of them, so on these installations Prima just
-compiles without any trouble. For other perl builds, use one of C<Prima::codecs::>
-modules that contains the needed include and lib files. If you're installing Prima
-through CPAN, that gets done automatically.
+compiles without any trouble. For other perl builds, use one of the C<Prima::codecs::>
+modules that contain the needed include and lib files. If you are installing Prima
+with CPAN, that gets done automatically.
 
 =head2 img/codec_XXX.c compile error
 
 C<img/codec_XXX.c> files are C sources for support of the graphic libraries. In
 case a particular codec does not compile, the ultimate fix is to remove the
-file and re-run Makefile.PL . This way, the problem can be avoided easily,
-although at cost of a lacking support for a graphic format.
+file and re-run Makefile.PL . This way the problem can be avoided easily,
+although at the cost of a lack of support for that graphic format.
 
-=head2 How'd I check what libraries are compiled in?
+=head2 How do I check what graphic libraries are supported?
 
-   perl -MPrima -e 'print map { $_->{name}.qq(\n) } @{Prima::Image->codecs};'
+   perl -MPrima::noX11 -MPrima -e 'print map { $_->{name}.qq(\n) } @{Prima::Image->codecs};'
 
 =head2 I have a graphic library installed, but Makefile.PL doesn't find it
 
-The library is probably located in a weird directory so Makefile.PL must be
-told to use it by adding LIBPATH+=/some/weird/lib, and possibly
-INCPATH+=/some/weird/include in the command line. Check makefile.log created by
-Makefile.PL for the actual errors reported when it tries to use the
-library.
+The library is probably located in such a location Makefile.PL must be
+told about by adding LIBPATH+=/mypath/lib, and possibly
+INCPATH+=/mypath/include in the command line. Check makefile.log created by
+Makefile.PL for the actual errors reported when it tries to use the library.
 
-=head2 Compile error
+=head2 Compile errors
 
-There are various reasons why a compilation may fail. The best would be
-to copy the output together with outputs of env and perl -V and send these to
-the author or better open a github issue here L<https://github.com/dk/Prima/issues>.
+There are various reasons why a compilation may fail. The best would be to copy
+the output together with outputs of env and perl -V and send these to the
+author, or better, open a GitHub issue here
+L<https://github.com/dk/Prima/issues>.
 
 =head2 Prima doesn't run
 
-Again, there are reasons for Prima to fail during the start.
+Again, there are reasons for Prima to fail.
 
 First, check whether all main files are installed correctly. F<Prima.pm> must
-be in your perl directory, and Prima library file ( F<Prima.a> or F<Prima.so> for
-unix, F<Prima.dll> for win32 ) is copied in the
-correct location in the perl tree.
+be in your perl directory, and the Prima library file ( F<Prima.a> or
+F<Prima.so> for unix, F<Prima.dll> for win32 ) is copied in the correct
+location in the perl tree.
 
 Second, try to run 'perl -MPrima -e 1' . If Prima.pm is not found, the error
 message would be something like
 
   Can't locate Prima.pm in @INC
 
-If Prima library or one of the libraries it depends on cannot be found, perl
-Dynaloader would complain. On win32 this usually happen when
-some dll files Prima needs are not found. If this is the case, try
-to copy these files into your PATH, for example in C:/Windows .
+If the Prima library or one of the libraries it depends on cannot be found,
+perl Dynaloader would complain. On win32 this usually happens when some dll
+files Prima needs are not found. If this is the case, try to copy these files
+into your PATH, for example in C:/Windows .
 
-=head2 Prima doesn't get installed using ppm (ActiveState)
+=head2 Cannot install Prima on ActiveState
 
-Prima uses a non-conventional build process, which is not picked up by the
-automated ActiveState ppm builder. So if you run "ppm install Prima" and
-it succeeds but installs nothing, try this:
-
-  ppm install --force http://cpan.uwinnipeg.ca/PPMPackages/10xx/Prima.ppd
-
-(Justin Allegakoen and Randy Kobes:thanks!)
-
-Alternatively you could try to install a compiler with C<ppm install MinGW> and
-then build Prima yourself.
+ActiveState doesn't seem to support anymore compilation of locally built
+libraries and doesn't provide precompiled Prima distributions either. Consider
+using Strawberry or msys2 builds instead.
 
 =head2 Prima error: Can't open display
 
-This error happens when you've compiled Prima for X11, and no connection to X11
-display can be established. Check your DISPLAY environment variable, or use
---display parameter when running Prima. If you do not want Prima to connect to
-the display, for example, to use it inside of a CGI script, either use --no-x11
-parameter or include C<use Prima::noX11> statement in your program.
+This error happens when you are running under the X11 environment and no
+connection to the X11 display can be established. Check your DISPLAY
+environment variable, or use the --display command line parameter. If you
+do not want Prima to connect to the display, for example, to use it inside of a
+CGI script, either use the --no-x11 parameter or include the
+C<use Prima::noX11> statement in your program.
 
 =head2 X11: my fonts are bad!
 
@@ -193,27 +187,28 @@ having been compiled with Xft/fontconfig. Read more in L<Prima::X11> .
 
 =head2 Where are the docs installed?
 
-Prima documentation comes in .pm and .pod files. These, when installed,
-are copied under perl tree, and under man tree in unix. So,
-'perldoc Prima' should be sufficient to invoke the main page
-of the Prima documentation. Other pages can be invoked as 'perldoc Prima::Buttons',
-say, or, for the graphical pod reader, 'podview Prima::Buttons'. podview
-is the Prima doc viewer, which is also capable of displaying any POD page.
+Prima documentation comes in .pm and .pod files. These, when installed, are
+copied under the perl tree, and the man tree in unix. So, 'perldoc Prima'
+should be sufficient to invoke the main page of the Prima documentation. Other
+pages can be invoked as 'perldoc Prima::Buttons', say, or, for the graphical
+pod reader, 'podview Prima::Buttons'. podview is the Prima doc viewer, which is
+also capable of displaying any POD page.
 
-There is also a pdf file on the Prima web site www.prima.eu.org, which contains
-the same set of documentation but composed as a single book. Its sources are
-in utils/makedoc directory, somewhat rudimentary and require an installation
-of latex and dvips to produce one of tex, dvi, ps, or pdf targets.
+There is also the pdf file on the Prima website L<http://prima.eu.org/> that
+contains the same set of documentation but composed as a single book. Its
+sources are in the F<utils/makedoc> directory, are somewhat rudimentary, and
+require an installation of latex and dvips to produce one of the tex, dvi, ps,
+or pdf targets.
 
 =head2 Screen grabbing doesn't work on MacOSX.
 
-It does if you 1) compile Prima with cocoa 2) allow the application (XQuartz
-and probably terminal) to access the screen. To do the latter, Choose Apple
-menu, System Preferences, click Security & Privacy, then click Privacy.  Click
-on an icon on the left lower corner to allow changes.  Then, in the screen
-recording tab, add XQuartz to the list of allowed applications. Note that it
-might not work if you run your application from a (remote) ssh session - I
-couldn't find how to a how to enable screen grabbing for sshd.
+It does if you 1) compile Prima with cocoa and 2) allow the application
+(XQuartz and probably terminal) to access the screen. To do the latter, Choose
+the Apple menu, System Preferences, click Security & Privacy, then click
+Privacy.  Click on an icon on the left lower corner to allow changes.  Then, in
+the screen recording tab, add XQuartz to the list of allowed applications. Note
+that it might not work if you run your application from a (remote) ssh session
+- I couldn't find how to enable screen grabbing for sshd.
 
 =head2 I've found a bug!
 
@@ -221,13 +216,13 @@ L<https://github.com/dk/Prima/issues> is the place.
 
 =head1 PROGRAMMING
 
-=head2 How can I use .fm files of the Visual Builder inside my program?
+=head2 How can I use the .fm files from the Visual Builder inside my program?
 
 podview L<Prima::VB::VBLoader>
 
-=head2 I want to use Prima inside CGI for loading and converting images only, without X11 display.
+=head2 I want to use Prima inside CGI for loading and converting images only, without an X11 display.
 
-   use Prima::noX11; # this prevents Prima from connecting to X11 display
+   use Prima::noX11; # this prevents Prima from connecting to the X11 display
    use Prima;
    my $i = Prima::Image-> load( ... )
 
@@ -243,25 +238,25 @@ Note that drawing on images will be somewhat limited.
 
 =head2 I want Prima::Edit to have feature XXX
 
-If the feature is not governed by none of the C<Prima::Edit> properties,
-you need to overload C<::on_paint>. It is not that hard as you might think.
+If the feature is not managed by none of the C<Prima::Edit> properties,
+you need to overload C<::on_paint>. It is not as hard as you might think.
 
-If the feature is generic enough, you can send a patch in the list.
+If the feature is generic enough, you can send a GitHub pull request.
 
 =head2 Tk ( Wx, Qt, whatever ) has a feature Prima doesn't.
 
-Well, I'd probably love to see the feature in Prima as well, but I don't
-have a time to write it myself. Send in a patch, and I promise I'll check it out.
+Well, I'd probably love to see the feature in Prima as well, but I don't have
+time to write it myself. Send in a patch, and I promise I'll check it out.
 
 =head2 I wrote a program and it looks ugly with another font size
 
-This would most certainly happen when you rely on your own screen properties.
+This would most certainly happen when you rely on your screen properties.
 There are several ways to avoid this problem.
 
 First, if one programs a window where there are many widgets independent of each
 other size, one actually can supply coordinates for these widgets as they are
-positioned on a screen. Don't forget to set C<designScale>
-property of the parent window, which contains dimensions of the font used to design the
+positioned on a screen. Don't forget to set the C<designScale>
+property of the parent window, which contains the dimensions of the font used to design the
 window. One can get these by executing
 
     perl -MPrima -MPrima::Application -le '$_=$::application->font; print $_->width, q( ), $_->height';
@@ -270,13 +265,13 @@ This way, the window and the widgets would get resized automatically under anoth
 
 Second, in case the widget layout is not that independent, one can position the
 widgets relatively to each other by explicitly calculating widget extension. For
-example, an C<InputLine> would have height relative to the font, and to have a
+example, an C<InputLine> would have a height relative to the font, and to have a
 widget placed exactly say 2 pixels above the input line, code something like
 
     my $input = $owner-> insert( InputLine, ... );
     my $widget = $owner-> insert( Widget, bottom => $input-> top + 2 );
 
-Of course one can change the font as well, but it is a bad idea since users
+Of course, one can change the font as well, but it is a bad idea since users
 would get annoyed by this.
 
 Third, one can use geometry managers, similar to the ones in Tk. See
@@ -290,28 +285,28 @@ purpose:
 =head2 How would I write a widget class myself?
 
 There are lots and lots of examples of this. Find a widget class similar to
-what you are about to write, and follow the idea. There are, though, some non-evident
-moments worth to enumerate.
+what you are about to write, and follow the idea. There are, though, some
+non-evident moments worth enumerating.
 
 =over
 
 =item *
 
 Test your widget class with different default settings, such as colors, fonts,
-parent sizes, widget properties such as buffered and visible.
+parent sizes, and widget properties such as C<buffered> and C<visible>.
 
 =item *
 
-Try to avoid special properties for C<create>, where for example a particular property
+Try to avoid special properties for C<new>, where for example a particular property
 must always be supplied, or never supplied, or a particular combination of properties is
 expected. See if the DWIM principle can be applied instead.
 
 =item *
 
-Do not be afraid to define and re-define notification types. These have large number
-of options, to be programmed once and then used as a DWIM helper. Consider for which
-notifications user callback routines ( onXxxx ) would be best to be called first, or
-last, whether a notification should be of multiple or single callback type.
+Do not be afraid to define and redefine notification types. These have a large number
+of options, to be programmed once and then used as DWIM helpers. Consider for what
+notifications the user callback routines ( onXxxx ) would be best to be called first, or
+last, and whether a notification should allow multiple callbacks or only one.
 
 If there is a functionality better off performed by the user-level code, consider
 creating an individual notification for this purpose.
@@ -320,7 +315,7 @@ creating an individual notification for this purpose.
 
 Repaint only the changed areas, not the whole widget.
 
-If your widget has scrollable areas, use C<scroll> method.
+If your widget has scrollable areas, use the C<scroll> method.
 
 Inside C<on_paint> check whether the whole or only a part of the widget is
 about to be repainted. Simple optimizations here increase the speed.
@@ -329,55 +324,58 @@ Avoid using pre-cooked data in C<on_paint>, such as when for example only a
 particular part of a widget was invalidated, and this fact is stored in an
 internal variable. This is because when the actual C<on_paint> call is
 executed, the invalid area may be larger than was invalidated by the class
-actions. If you must though, compare values of C<clipRect> property to see
+actions. If you must though, compare values of the C<clipRect> property to see
 whether the invalid area is indeed the same as it is expected.
 
 Remember, that inside on_paint all coordinates are inclusive-inclusive,
 while the widget coordinates generally are inclusive-exclusive.
 
-Note, that C<buffered> property does not guarantee that the widget
-output would be actually buffered. Same goes with C<antialias> and C<layered>;
-these functions are opportunistic.
+Note, that the C<buffered> property does not guarantee that the widget output
+would be buffered. The same goes with C<antialias> and C<layered>; these
+functions are opportunistic. Use the C<is_surface_buffered>, C<can_draw_alpha>, and
+C<is_surface_layered> functions to make sure that these requests were
+respected.
 
 =item *
 
-Write some documentation and example of use.
+Write some documentation and examples of use.
 
 =back
 
 =head2 How would I add my widget class to the VB palette?
 
-Check Prima/VB/examples/Widgety.pm . This file, if loaded through
-'Add widget' command in VB, adds example widget class and example
+Check Prima/VB/examples/Widgety.pm . This file, if loaded through the
+'Add widget' command in VB, adds the example widget class and example
 VB property into the VB palette and Object Inspector.
 
 =head2 How would I use unicode/UTF8 in Prima?
 
-Prima by default is unicode-aware, in some areas more than the Perl (as of 5.32) itself.
+Prima by default is unicode-aware, in some areas more than the Perl (as of
+5.38) itself.
 
-For example on win32 Perl has big difficulties with files with unicode
+For example, on win32 Perl has huge problems with filenames with unicode
 characters, and this is recommended to mitigate using L<Prima::sys::FS>, which
 overrides C<open>, C<opendir> and the like builtin functions with their
-unicode-friendly versions. It doesn't though overload C<-f>,C<-e> syntax, so
+unicode-friendly versions. It doesn't though overload C<-f> and C<-e> syntax, so
 use C<_f>,C<_e> etc instead.
 
-Displaying UTF8 text is unproblematic, because Perl scalars can be
+Displaying UTF8 text is unproblematic because Perl scalars can be
 unambiguously told whether the text they contain is in UTF8 or not. The text
-that comes from the user input, i e keyboard and clipboard, can be treated and
-reported to Prima either as UTF8 r plain text, depending on
+that comes from the user input, ie keyboard and clipboard, can be treated and
+reported to Prima either as UTF8 or plain text, depending on the
 C<Prima::Application::wantUnicodeInput> property, which is set to 1 by default.
 Remember though that if data are to be put through file I/O, the C<'utf8'> IO
 layer must be selected ( see L<open> ).
 
-The keyboard input is also easy, because a character key event comes with the
+The keyboard input is also easy because a character key event comes with the
 character code, not the character itself, and conversion between these is done
 via standard perl's C<chr> and C<ord>.
 
-The clipboard input is more complicated, because the clipboard may contain both
+The clipboard input is more complicated because the clipboard may contain both
 UTF8 and plain text data at once, and it must be decided by the programmer
 explicitly which one is desired.  See more in L<Prima::Clipboard/Unicode>.
 
-=head2 Is there a way to display POD text that comes with my program / package ?
+=head2 Is there a way to display the POD text that comes with my program / package ?
 
    $::application-> open_help( "file://$0" );
    $::application-> open_help( "file://$0|DESCRIPTION" );
@@ -389,12 +387,12 @@ Prima doesn't work if called from more than one thread, since Perl scalars
 cannot be shared between threads automatically, but only if explicitly told,
 by using L<thread::shared>. Prima does work in multithread environments though,
 but only given it runs within a dedicated thread. It is important not to
-call Prima methods from any other thread, because scalars that may be created
+call Prima methods from any other thread because scalars that may be created
 inside these calls will be unavailable to the Prima core, which would result
 in strange errors.
 
 It is possible to run things in parallel by calling the event processing
-by hands: instead of entering the main loop with
+by hand: instead of entering the main loop with
 
    run Prima;
 
@@ -408,11 +406,11 @@ That'll give Prima a chance to handle accumulated events, but that technique is
 only viable if calculations can be quantized into relatively short time frames.
 
 The generic solution would be harder to implement and debug, but it scales
-well. The idea is to fork a process, and communicate with it via its stdin
+well. The idea is to fork a process, then communicate with it via its stdin
 and/or stdout ( see L<perlipc> how to do that), and use L<Prima::File> to
 asynchronously read data passed through a pipe or a socket.
 
-Note: Win32 runtime library does not support asynchronous pipes, only
+Note: the Win32 runtime library does not support asynchronous pipes, only
 asynchronous sockets.  Cygwin does support both asynchronous pipes and sockets.
 
 =head2 How do I use Prima with AnyEvent or POE ?
@@ -451,7 +449,7 @@ below:
         use AnyEvent;
 
 You can call C<AnyEvent::detect> to check if the implementation is
-C<'AnyEvent::Impl::POE'> if you want to use Prima's event loop or it should be
+C<'AnyEvent::Impl::POE'> if you want to use Prima's event loop or if it should be
 the event loop implementation you expect such as C<'AnyEvent::Impl::EV'>;
 
 If you use L<POE::Loop::Prima> then you can continue to call C<run Prima> and
@@ -470,9 +468,8 @@ F<examples/socket_anyevent_poe.pl>.
 
 =head2 How do I post an asynchronous message?
 
-C<Prima::Component::post_message> method posts a message through the system event dispatcher
-and returns immediately; when the message is arrived, C<onPostMessage> notification is triggered:
-
+The C<Prima::Component::post_message> method posts a message through the system event dispatcher
+and returns immediately; when the message arrives, the C<onPostMessage> notification is triggered:
 
    use Prima qw(Application);
    my $w = Prima::MainWindow-> create( onPostMessage => sub { shift; print "@_\n" });
@@ -485,7 +482,7 @@ and returns immediately; when the message is arrived, C<onPostMessage> notificat
 This technique is fine when all calls to the C<post_message> on the object are
 controlled.  To multiplex callbacks one can use one of the two scalars passed
 to C<post_message> as callback identification. This is done by
-L<Prima::Utils/post>, that internally intercepts C<$::application>'s
+L<Prima::Utils/post>, which internally intercepts C<$::application>'s
 C<PostMessage> and provides the procedural interface to the same function:
 
    use Prima qw(Application);
@@ -499,23 +496,23 @@ C<PostMessage> and provides the procedural interface to the same function:
 
 =head2 Now to address widgets inside TabbedNotebook / TabbedScrollNotebook ?
 
-The tabbed notebooks work as parent widgets for C<Prima::Notebook>, that
-doesn't have any interface elements on its own, and provides only page flipping
+The tabbed notebooks work as parent widgets for C<Prima::Notebook>, which
+doesn't have any interface elements on its own and provides only a page-flipping
 function. The sub-widgets, therefore, are to be addressed as C<<
 $TabbedNotebook-> Notebook-> MyButton >>.
 
 =head2 How to compile a Prima-based module using XS?
 
 Take a look at L<Prima::IPA>, L<Prima::OpenGL>, L<Prima::Image::Magick>, L<PDL::PrimaImage>,
-and L<PDL::Drawing::Prima> . These modules compile against Prima dynamic module,
+and L<PDL::Drawing::Prima> . These modules compile against the Prima dynamic module and
 start from there. Note - it's important to include PRIMA_VERSION_BOOTCHECK in the "BOOT:"
-section, to avoid binary incompatibilities, if there should be any.
+section, to avoid binary incompatibilities if there should be any.
 
 =head2 How do I generate Prima executables with PAR?
 
-You'll need some files that PAR cannot detect automatically. During the compilation
-phase Makefile.PL creates utils/par.txt file that contains these files. Include them with this
-command:
+You'll need some files that PAR cannot detect automatically. During the
+compilation phase Makefile.PL creates the F<utils/par.txt> file that contains
+these files. Include them with this command:
 
    pp -A utils/par.txt -o a.out my_program
 

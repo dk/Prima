@@ -491,8 +491,9 @@ sub save
 	}
 
 	if ( $self->useBase64) {
-		my ($ok, $error) = $dup-> save_stream;
-		if ( $ok ) {
+		my $error;
+		my $ok = $dup-> save_stream;
+		if (defined $ok) {
 			my $f;
 			my $r_ok = open $f, ">", $self->fileName;
 			$error = "$!", goto FAIL unless $r_ok;
@@ -500,6 +501,7 @@ sub save
 			$error = "$!", goto FAIL unless close $f;
 			$ret = 1;
 		} else {
+			$error = "$@";
 		FAIL:
 			Prima::MsgBox::message("Error saving " . $self-> fileName . ":$error");
 		}

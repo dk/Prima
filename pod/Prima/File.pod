@@ -1,6 +1,6 @@
 =head1 NAME
 
-Prima::File - asynchronous stream I/O.
+Prima::File - asynchronous stream I/O
 
 =head1 SYNOPSIS
 
@@ -13,7 +13,7 @@ Prima::File - asynchronous stream I/O.
   $|=1;
   select STDOUT;
 
-  # create Prima listener on the reader end
+  # create a Prima listener on the reader end
   my $read = Prima::File-> new(
       file => \*READ,
       mask => fe::Read,
@@ -28,41 +28,41 @@ Prima::File - asynchronous stream I/O.
 
 =head1 DESCRIPTION
 
-Prima::File provides access to the I/O stream events,
-that are called when a file handle becomes readable, writable
-or if an exception occurred. Registering file handles to Prima::File
-objects makes possible the stream operations coexist with the event loop.
+The Prima::File class provides access to the I/O stream notifications that are
+called when a file handle becomes readable, writable, or if an
+exception/out-of-band message occurs. Registering file handles to Prima::File
+objects makes it possible for the stream operations to coexist with the event
+loop.
 
 =head1 USAGE
 
-Prima::File is a descendant of Prima::Component.
-Objects of Prima::File class must be bounded to a valid file handle object,
-before the associated events can occur:
+Prima::File is a descendant of Prima::Component.  Objects of the Prima::File
+class must be bounded to a valid file handle object before the associated
+events can occur:
 
   my $f = Prima::File-> create();
   $f-> file( *STDIN);
 
-When a file handle, bound via the C<::file> property becomes readable,
-writable or when an exception signaled, one of three correspondent
-events called - C<Read>, C<Write> or C<Exception>. When a handle is
-always readable, or always writable, or, some of these events are
-desired to be blocked, the file event mask can be set via the C<::mask>
-property:
+When a file handle bound via the C<::file> property becomes readable, writable,
+or when an exception/out-of-band message is signaled, one of three
+corresponding events is sent - C<Read>, C<Write>, or C<Exception>. When the
+file handle is always readable, or always writable, or, on the contrary, some
+of these events are desired to be blocked, the file event mask can be set via
+the C<::mask> property:
 
   $f-> mask( fe::Read | fe::Exception);
 
-When a file handle is not needed anymore, it is expected to
-be detached from an object explicitly:
+When the file handle is not needed anymore it is expected to
+be detached from the object explicitly:
 
   $f-> file( undef);
 
-However, if the system detects that a file handle is no longer valid,
-it is automatically detached. It is possible to check, if a file handle
+However, if the system detects that the file handle is no longer valid,
+it is automatically detached. It is possible to check if a file handle
 is still valid by calling the C<is_active()> method.
 
-Prima::File events are basically the same I/O callbacks, provided by
-a system C<select()> call. See documentation of your system's select()
-for the implementation details.
+Prima::File events based on the events provided by the C<select()> function on
+unix or on the C<WSAEnumNetworkEvents> function on Win32.
 
 =head1 API
 
@@ -72,18 +72,18 @@ for the implementation details.
 
 =item file HANDLE
 
-Selects a file handle, that is to be monitored for stream I/O events.  If
-HANDLE is C<undef>, object is returned to a passive state, and the previously
-bonded file handle is de-selected.
+Selects the file handle to be monitored for the I/O events.  If the HANDLE is
+C<undef>, the object is returned to the passive state, and the previously bonded
+file handle is de-selected.
 
-If the OS reports an error when attaching the file, f ex because there are
-too many objects to monitor, the file handle is reverted to C<undef>. Use that
-to check for an error.
+If the OS reports an error when attaching the file, f ex because there are too
+many objects to monitor, the file handle is reverted to C<undef>. Use that to
+check for an error.
 
 =item fd INTEGER
 
-Same as file(), but to be used for file descriptors. When this property is used,
-consequent get-calls to file() will return undef.
+Same as file(), but to be used for the file descriptors instead. When this
+property is used, consequent get-calls to file() will return undef.
 
 If the OS reports an error when attaching the file, f ex because there are
 too many objects to monitor, the file handle is reverted to C<undef>. Use that
@@ -91,14 +91,14 @@ to check for an error.
 
 =item mask EVENT_MASK
 
-Selects a event mask, that is a combination of C<fe::XXX> integer constants,
+Selects the event mask that is a combination of the C<fe::XXX> integer constants,
 each representing an event:
 
    fe::Read
    fe::Write
    fe::Exception
 
-The omitted events are effectively excluded from the system file event
+The masked events are effectively excluded from the system file event
 multiplexing mechanism.
 
 =back
@@ -110,13 +110,12 @@ multiplexing mechanism.
 =item get_handle
 
 Returns C<sprintf("0x%08x", fileno( file ))> string.
-If C<::file> is C<undef>, -1 is used instead fileno() result.
+If C<::file> is C<undef>, -1 is used instead of the fileno() result.
 
 =item is_active AUTODETACH = 0
 
-Returns a boolean flag, indicating if a file handle is valid.
-If AUTODETACH is 1, and the file handle is not valid,
-C<file(undef)> is called.
+Returns the boolean flag indicating if the file handle is valid.  If AUTODETACH
+is 1 and the file handle is not valid C<file(undef)> is called.
 
 =back
 
@@ -126,20 +125,20 @@ C<file(undef)> is called.
 
 =item Read
 
-Called when a file handle becomes readable. The callback procedure
+Called when the file handle becomes readable. The callback procedure
 is expected to call a non-blocking read() on the file handle.
 
 =item Write
 
-Called when a file handle becomes writable. The callback procedure
+Called when the file handle becomes writable. The callback procedure
 is expected to call a non-blocking write() on the file handle.
 
 =item Exception
 
-Called when an exception is signaled on a file handle.
-The exceptions are specific to handle type and the operating system.
-For example, a unix socket signals C<Exception> when a control status
-data for a pseudo terminal or an out-of-band data arrives.
+Called when an exception is signaled on the file handle.  The exceptions are
+specific to the handle type and the operating system.  For example, a unix
+socket may signal the C<Exception> event when control status data for a
+pseudoterminal or an out-of-band message arrives.
 
 =back
 
@@ -148,7 +147,7 @@ data for a pseudo terminal or an out-of-band data arrives.
 =head2 Unix
 
 Prima can monitor max FD_SETSIZE file handles (not Prima::File objects, these can
-refer to same file handles just fine). See also C<man 2 select>.
+refer to the same file handles just fine). See also C<man 2 select>.
 
 =head2 Win32
 
@@ -156,10 +155,10 @@ refer to same file handles just fine). See also C<man 2 select>.
 
 =item Files
 
-If Prima detects that a handle is neither a socket nor a console, it assumes that
-it is a "regular" file. Prima doesn't use any win32 api for checking on regular
-file handle availability for reading and writing, and therefore sends synthetic
-events without actual correlation whether the file handle is actually readable
+If Prima detects that the handle is neither a socket nor a console, it assumes that
+it is a regular file. Prima doesn't use any win32 api for checking on regular
+file handle availability for reading and writing and therefore sends synthetic
+events without actual correlation on whether the file handle is readable
 or writable.
 
 =item Pipes
@@ -168,13 +167,13 @@ Pipe handles are not implemented and won't work.
 
 =item Sockets
 
-Sockets work natively, however there's a single catch: according to the MSDN,
-WSAEventSelect() sets sockets in a non-blocking mode, however I couldn't
+Sockets work natively, however, there's a single catch: according to the MSDN,
+WSAEventSelect() sets sockets in a non-blocking mode, however, I couldn't
 confirm that when I was experimenting. If you want to be 100% covered, remember
-and restore the blocking flag in your event handlers.
+to save and restore the blocking flag in your event handlers.
 
-There can be normally max 63 sockets (not Prima::File objects, these can refer to same
-sockets just fine). Or max 62 sockets if STDIN is monitored too. See also 
+There can be normally a maximum of 63 sockets (not Prima::File objects, these can refer to the same
+sockets just fine). Or a maximum of 62 sockets if STDIN is monitored too. See also
 L<https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-msgwaitformultipleobjectsex> .
 
 =item STDIN

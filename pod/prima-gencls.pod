@@ -1,81 +1,77 @@
 =head1 NAME
 
-gencls - class interface compiler for Prima core modules
+prima-gencls - class interface compiler for Prima core modules
 
 =head1 SYNOPSIS
 
-  gencls --h --inc --tml -O -I<name> --depend --sayparent filename.cls
+  prima-gencls --h --inc --tml -O -I<name> --depend --sayparent filename.cls
 
 
 =head1 DESCRIPTION
 
-Creates headers with C macros and structures for Prima
-core module object definitions.
+Creates C files for Prima core module object definitions.
 
 =head1 ARGUMENTS
 
-gencls accepts the following arguments:
+The prima-gencls program accepts the following arguments:
 
 =over 4
 
 =item --h
 
-Generates .h file ( with declarations to be included in one or more files )
+Generates a .h file ( with the declarations to be included in one or more files )
 
 =item --inc
 
-Generates .inc file ( with declarations to be included in only file )
+Generates a .inc file ( with the declarations to be included in only one file )
 
 =item -O
 
-Turns optimizing algorithm for .inc files on. Algorithm is
-based on an assumption, that some functions are declared identically,
-therefore the code piece that handles the parameter and result conversion
-can be shared. With C<-O>
-flag on, a thunk body is replaced to a call to
-a function, which name is made up from all method parameters plus result.
-Actual function is not written in .inc file, but in .tml file.
-All duplicate declarations from a set of .tml files can be removed
-and the reminder written to one file by L<tmlink> utility.
+Turns on the optimizing algorithm for the .inc files. The algorithm is based on
+an assumption that some function bodies are identical, and so the duplicates
+can be detected and removed.  When the C<-O> flag is set, the body of such a function
+is replaced with a call to the function with an auto-generated name.  That
+function is not included in the .inc file, but in a .tml file instead.  All the
+duplicate declarations from a set of .tml files can be later removed by the
+L<tmlink> utility.
 
 =item --tml
 
-Generates .tml file. Turns C<-O> automatically on.
+Generates a .tml file. Turns the C<-O> flag on automatically.
 
 =item -Idirname
 
-Adds a directory to a search path, where the utility searches for
-.cls files. Can be specified several times.
+Adds a directory to a search path, where the program searches for the .cls
+files. Can be specified several times.
 
 =item --depend
 
-Prints out dependencies for a given file.
+Prints out dependencies for the given file.
 
 =item --sayparent
 
-Prints out the immediate parent of a class inside given file.
+Prints out the immediate parent of a class inside the given file.
 
 =back
 
 =head1 SYNTAX
 
-In short, the syntax of a .cls file can be described by the following scheme:
+The syntax of a .cls file can be described by the following scheme:
 
   [ zero or more type declarations ]
   [ zero or one class declaration ]
 
-Gencls produces .h, .inc or .tml files, with a base name of
-the .cls file, if no object or package name given, or
-with a name of the object or the package otherwise.
+The prima-gencls program produces .h, .inc, and .tml files with the same basename as
+the .cls file if no object or package name is given, or with the name of the object
+or the package inside the .cls file otherwise.
 
 =head2 Basic scalar data types
 
-Gencls has several built-in scalar data types, that it knows how to deal
-with. To 'deal' means that it can generate a code that transfers
-data of these types between C and perl, using XS ( see L<perlguts> )
+Prima-gencls can generate the conversion code for several built-in scalar data
+types that transfers data between C and perl, using the XS ( see L<perlguts> )
 library interface.
 
-The types are:
+These types are:
 
    int
    Bool
@@ -94,29 +90,27 @@ There are also some derived built-in types, which are
    Color
    U8
 
-that are mapped to int. The data undergo no conversion to int in transfer
-process, but it is stored instead to perl scalar using newSViv() function,
-which, in turn, may lose bits or a sign.
+that are mapped to the C<int> type. The data undergoes no conversion to int in
+the transfer process, but it is stored to the perl scalar using the newSViv()
+function which may lose bits or a sign.
 
 =head2 Derived data types
 
-The syntax for a new data types definition is as follows:
+The syntax for a new data type definition is as follows:
 
    <scope> <prefix> <id> <definition>
 
-A scope can be one of two pragmas, C<global> or C<local>.
-They hint the usage of a new data type, whether the type
-will be used only for one or more objects. Usage of
-C<local> is somewhat resembles C pragma static.
-Currently the only difference is that a function
-using a complex local type in the parameter list or
-as the result is not a subject for C<-O> optimization.
+A scope can be one of two pragmas, C<global> or C<local>.  That requests the
+usage locality of the new data type, i e whether the type will be used only for
+one class or in more than one. Usage of the C<local> scope somewhat resembles
+the C predicate C<static>.  The difference between the scopes is that a
+function using a complex local type in the parameter list, or as a result, will
+not be optimized out with the C<-O> flag.
 
 =head2 Scalar types
 
-New scalar types may only be aliased to the existing ones,
-primarily for C coding convenience.
-A scalar type can be defined in two ways:
+New scalar types may only be aliased to the existing ones, primarily for coding
+convenience in C.  A scalar type can be defined in two ways:
 
 =over
 
@@ -130,9 +124,8 @@ Example:
 
   global $Handle => int;
 
-The new type id will not be visible in C files, but the type
-will be substituted over all .cls files that include
-this definition.
+The new type id will not be visible in the C files, but the type will be
+substituted over all .cls files that include this definition.
 
 =item C macro
 
@@ -144,31 +137,25 @@ Example:
 
   global API_HANDLE UV
 
-Such code creates a C macro definition in
-.h header file in form
+Such code creates a C macro definition in the .h header file in the form
 
   #define id1 id2
 
-C macros with parameters are not allowed. id1 and id2 are
-not required to be present in .cls name space, and
-no substitution during .cls file processing is made.
-This pragma usage is very limited.
+C macros with parameters are not allowed. id1 and id2 are not required to be
+present in the .cls namespace, and no substitution during .cls file processing
+is made.
 
 =back
 
 =head2 Complex types
 
-Complex data types can be arrays, structs and hashes.
-They can be a combination or a vector of scalar ( but
-not complex) data types.
+Complex data types can be arrays, structs, and hashes.  Prima-gencls allows
+several combinations of complex data types that C language does not recognize.
+These will be described below.
 
-Gencls allows several combinations of complex data types
-that C language does not recognize. These will be described
-below.
-
-Complex data types do not get imported into perl code.
-A perl programmer must conform to the data type used
-when passing parameters to a function.
+The complex data types do not get imported into the perl code.  A perl program
+must conform to the data type used when passing the corresponding parameters to
+such a function.
 
 =over
 
@@ -190,13 +177,12 @@ Perl code:
 
   @ret = func( @array1, @array2);
 
-Note that array references are not used, and
-the number of items in all array parameters must
-be exactly as the dimensions of the arrays.
+Note that the array references are not used, and the number of items in the
+array parameters must be exactly the same as the dimensions of the arrays.
 
-Note: the following declaration will not compile
-with C compiler, as C cannot return arrays. However
-it is not treated as an error by gencls:
+Warning: the following declaration will not compile with the C compiler, as C
+cannot return arrays. However, this construct is not treated as an error by
+prima-gencls:
 
   Array func();
 
@@ -218,7 +204,7 @@ Example:
   }
 
 
-Example of functions using structs:
+Example of the functions using structs:
 
   Struc * func1( Struc a1, Struc * a2);
   Struc   func2( Struc a1, Struc * a2);
@@ -228,31 +214,29 @@ Perl code:
   @ret = func1( @struc1, @struc2);
   @ret = func2( @struc1, @struc2);
 
-Note that array references are not used, and
-both number and order of items in all array parameters
-must be set exactly as dimensions and order
-of the structs. Struct field names are not used
-in perl code as well.
+Note that the array references are not used, and both the number and order of items
+in the array parameters must be exactly as the dimensions and the order of the
+structs. The struct field names are not used in the perl code as well.
 
 =item Hashes
 
 Syntax:
 
   <scope> %id {
-     <basic_scalar_type> <id>;
+     <basic_scalar_type> <id> [with undef];
      ...
-     <basic_scalar_type> <id>;
+     <basic_scalar_type> <id> [with undef];
   };
 
 Example:
 
   global %Hash {
      int    number;
-     string id;
+     string id with undef;
   }
 
 
-Example of functions using hashes:
+Examples of the functions using hashes:
 
   Hash * func1( Hash a1, Hash * a2);
   Hash   func2( Hash a1, Hash * a2);
@@ -262,17 +246,17 @@ Perl code:
   %ret = %{func1( \%hash1, \%hash2)};
   %ret = %{func2( \%hash1, \%hash2)};
 
-Note that only hash references are used and returned.
-When a hash is passed from perl code it might have
-some or all fields unset. The C structure is filled
-and passed to a C function, and the fields that were
-unset are assigned to a corresponding C_TYPE_UNDEF
-value, where TYPE is one of NUMERIC, STRING and POINTER
-literals.
+Note that only the hash references are used and returned.  When a hash is
+passed from the perl code it might have some or all fields unset. The C
+structure is filled and passed to a C function, and the unset fields 
+are assigned to a corresponding C_TYPE_UNDEF value, where TYPE is one of
+NUMERIC, STRING, and POINTER literals. 
 
-Back conversion does not count on these values
-and always returns all hash keys with a corresponding
-pair.
+If the optional C<with undef> declarator was used, the C structure is augmented
+with additional struct C<undef> with boolean fields that explicitly reflect
+whether the perl value was passed or not.  The C-to-perl conversion respects
+these boolean flags as well and does not populate hash fields with this bit
+set.
 
 =back
 
@@ -286,22 +270,21 @@ Syntax:
       <declaration>
    }
 
-A .cls file can have zero or one namespace sections,
-filled with function descriptions. Functions described here
-will be exported to the given ID during initialization
-code. A namespace can be either C<object> or C<package>.
+A .cls file can have zero or one namespace sections filled with function
+descriptions. Functions described here will be exported to the given ID in the
+initialization code. A namespace can be either C<object> or C<package>.
 
-The package namespace syntax allows only declaration
-of functions inside a C<package> block.
+The package namespace syntax only allows functions without the prefix inside the
+C<package> block:
 
     package <Package ID> {
         <function description>
         ...
     }
 
-The object namespace syntax includes variables and properties
-as well as functions ( called methods in the object syntax ).
-The general object namespace syntax is
+The object namespace syntax allows variables and properties as
+functions ( called methods in the object syntax ).  The general object
+namespace syntax is
 
     object <Class ID> [(Parent class ID)] {
        <variables>
@@ -309,17 +292,10 @@ The general object namespace syntax is
        <properties>
     }
 
+Within the object namespace the inheritance syntax
+can be also used:
 
-Within an object namespace the inheritance syntax
-can be used:
-
-    object <Class ID> ( <Parent class ID>)  { ... }
-
-or a bare root object description ( with no ancestor )
-
-    object <Class ID> { ... }
-
-for the object class declaration.
+    object <Class ID> (<Parent class ID>)  { ... }
 
 =head2 Functions
 
@@ -329,33 +305,36 @@ Syntax:
 
 Examples:
 
-        int   package_func1( int a, int b = 1) => c_func_2;
-        Point package_func2( Struc * x, ...);
- method void  object_func3( HV * profile);
+ package A {
+    int   func1( int a, int b);
+    Point func2( Struc * x);
+ }
 
-A prefix is used with object functions ( methods ) only.
-More on the prefix in L<Methods> section.
+ object B
+    method int   func1( int a, int b = 1) => c_func_2;
+    import Point func2( Struc * x, ...);
+    c_only void  func3( HV * profile);
+ }
 
-A function can return nothing ( void ), a scalar ( int, string, etc )
-or a complex ( array, hash ) type. It can as well accept
-scalar and complex parameters, with type conversion that
-corresponds to the rules described above in L<Basic scalar data types>
-section.
+The prefix is used with object functions ( methods ) only.  More on the prefix
+in the L<Methods> section.
 
-If a function has parameters and/or result of a type that
-cannot be converted automatically between C and perl,
-it gets declared but not exposed to perl namespace.
-The corresponding warning is issued.
-It is not possible using gencls syntax to declare
-a function with custom parameters or result data.
-For such a purpose the explicit C declaration
-of code along with C<newXS> call must be made.
+A function can return nothing ( void ), a scalar ( int, string, etc ), or a
+complex ( array, hash ) type. It can as well accept scalar and complex
+parameters, with the type conversion that corresponds to the rules described
+above in the L<Basic scalar data types> section.
 
-Example: ellipsis (...) cannot be converted by gencls,
-however it is a legal C construction.
+If a function has parameters and/or a result of the type that cannot be converted
+automatically between C and perl, it gets declared but not exposed to the perl
+namespace.  A warning is also issued.  It is not possible to use the gencls
+syntax to declare a function with custom parameters or result types.  For such
+purpose, the explicit C declaration of the code along with a call to C<newXS>
+must be made.
+
+Example: ellipsis (...) cannot be converted by prima-gencls, even though it is a
+legal C construction.
 
   Point package_func2( Struc * x, ...);
-
 
 The function syntax has several convenience additions:
 
@@ -367,25 +346,23 @@ Example:
 
   void func( int a = 15);
 
-A function declared in such way can be called both
-with 0 or 1 parameters. If it is called with 0 parameters,
-an integer value of 15 will be automatically used.
-The syntax allows default parameters for types int,
-pointer and string and their scalar aliases.
+A function declared in such a way can be called both with 0 or 1 parameters. If
+it is called with 0 parameters, an integer value of 15 will be automatically
+used.  The syntax allows default parameters for types int, pointer, and string,
+and their scalar aliases.
 
-Default parameters can be as many as possible, but
-they have to be in the end of the function parameter list.
-Declaration C<func( int a = 1, int b)> is incorrect.
+The default parameters can be as many as possible, but they have to be at the
+end of the function parameter list.  The declaration C<func( int a = 1, int b)> is
+incorrect.
 
 =item Aliasing
 
-In the generated C code, a C function has to be called
-after the parameters have been parsed. Gencls expects
-a conforming function to be present in C code, with
-fixed name and parameter list. However, if the task of
-such function is a wrapper to an identical function
-published under another name, aliasing can be preformed
-to save both code and speed.
+In the generated C code, a C function has to be called after the parameters
+have been parsed. Prima-gencls expects a conforming function to be present in
+the C code, with the fixed name and parameter list. However, if the only task
+of such a function is to be a one-to-one wrapper to the identical function
+published under another name, aliasing can be performed to save both code and
+speed:
 
 Example:
 
@@ -393,25 +370,21 @@ Example:
       void func( int x) => internal;
    }
 
-A function declared in that way will not
-call Package_func() C function, but internal()
-function instead. The only request is that internal()
-function must have identical parameter and result declaration
-to a func().
+A function declared in that way will not call the Package_func() C function,
+but the internal() function instead. The only request here is that the
+internal() function must have the same C parameters and result as the func()
+function.
 
 =item Inline hash
 
-A handy way to call a function with a hash
-as a parameter from perl was devised. If
-a function is declared with the last parameter
-or type C<HV*>, then parameter translation
-from perl to C is performed as if all the parameters passed
-were a hash. This hash is passed to a C function
-and it's content returned then back to perl as a hash again.
-The hash content can be modified inside the C function.
+If a function is declared with the last parameter of the C<HV*> type then the
+parameter translation from perl to C is performed as if all the parameters
+passed are a hash. This hash is passed to the C function and its content
+is returned then back to perl as a hash again.  The hash content can be modified
+inside the C function.
 
-This declaration is used heavily in constructors,
-which perl code is typical
+This declaration is used heavily in constructors, that are coded in perl
+typically like this:
 
    sub init
    {
@@ -420,7 +393,7 @@ which perl code is typical
       return %ret;
    }
 
-and C code is usually
+and the corresponding C code is
 
    void Obj_init ( HV * profile) {
        inherited init( profile);
@@ -431,46 +404,36 @@ and C code is usually
 
 =head2 Methods
 
-Methods are functions called in a context of an object.
-Virtually all methods need to have an access to an object
-they are dealing with. Prima objects are visible in C
-as Handle data type. Such Handle is actually a pointer
-to an object instance, which in turn contains a pointer
+Methods are the functions called in the context of an object.
+Virtually all class methods need to have access to the object
+they are bound to. Prima objects are visible in C
+as the C<Handle> data type. The Handle is a pointer
+to the object instance which in turn contains a pointer
 to the object virtual methods table ( VMT ).
-To facilitate an OO-like syntax, this Handle parameter
-is almost never mentioned in all methods of an object description
-in a cls file, although being implicit counted, so every
-cls method declaration
+To facilitate the OO-like syntax, this Handle parameter
+is rarely mentioned in the method declarations:
 
    method void a( int x)
 
-for an object class Object is reflected in C as
+however, the signature of the corresponding  C function contains the Handle parameter
 
    void Object_a( Handle self, int x)
 
-function declaration. Contrary to package functions, that gencls
-is unable to publish if it is unable to deal with the
-unsupported on nonconvertible parameters, there is a way
-to issue such a declaration with a method. The primary use for that
-is the method name gets reserved in the object's VMT.
+Methods are accessible in C code by the direct name dereferencing of the
+C<Handle self> like this:
 
-Methods are accessible in C code by the direct name
-dereferencing of a C<Handle self> as a corresponding
-structure:
+    ((( PMyObject) self)-> self)-> my_method( self, ...);
 
-    ((( PSampleObject) self)-> self)-> sample_method( self, ...);
-
-A method can have one of six prefixes that govern C code
-generation:
+A method can have one of the following six prefixes that produce different C code
+wrappers:
 
 =over
 
 =item method
 
-This is the first and the most basic method type.
-It's prefix name, C<method> is therefore was chosen as the most
-descriptive name. Methods are expected to be coded in C,
-the object handle is implicit and is not included into a .cls description.
+This is the most basic method type.  Methods of this type are expected to be
+coded in C, the object handle is implicit and is not included in the .cls
+function declaration:
 
    method void a()
 
@@ -478,138 +441,123 @@ results in
 
    void Object_a( Handle self)
 
-C declaration. A published method automatically
-converts its parameters and a result between C and perl.
+C declaration. The published method automatically converts its parameters and
+the result between C and perl.
 
 =item public
 
-When the methods that have parameters and/or result that
-cannot be automatically converted between C and perl need to be declared,
-or the function declaration does not fit into C syntax,
-a C<public> prefix is used. The methods declared with C<public>
-is expected to communicate with perl by means of XS ( see L<perlxs>
-) interface. It is also expected that a C<public> method creates both
-REDEFINED and FROMPERL functions ( see L<Prima::internals>  for
-details). Examples are many throughout Prima source, and
-will not be shown here. C<public> methods usually have
-void result and no parameters, but that does not matter much,
-since gencls produces no conversion for such methods.
+When the methods need to have parameters and/or a result that cannot be
+automatically converted between C and perl, or the function declaration does
+not fit into the C syntax, the C<public> prefix is used. The methods declared
+as C<public> are expected to communicate with perl by through the XS ( see
+L<perlxs>) interface. It is also expected that the programmer declares the
+REDEFINED and FROMPERL functions in C code( see L<Prima::internals>  for
+details). Examples are many throughout the Prima source and will not be shown here.
+C<public> methods usually have the void result and no parameters, but that does not
+matter since prima-gencls provides no data conversion for such methods anyway.
 
 =item import
 
-For the methods that are unreasonable to code in C but in
-perl instead, gencls can be told to produce the corresponding
-wrappers using C<import> prefix. This kind of a method can
-be seen as C<method> inside-out. C<import> function does not
-need a C counterpart, except the auto-generated code.
-
+For the methods that are best implemented in perl instead of C,
+prima-gencls can produce the C-to-perl wrappers using the C<import> prefix. An
+C<import> function does not need a C counterpart, only the auto-generated code.
 
 =item static
 
-If a method has to be able to work both with and without
-an object instance, it needs to be prepended with C<static> prefix.
-C<static> methods are all alike C<method> ones, except that
-C<Handle self> first parameter is not implicitly declared.
-If a C<static> method is called without an object ( but with
-a class ), like
+If the method has to be able to work both with and without
+an object instance, it needs to be prepended with the C<static> prefix.
+C<static> methods are similar to C<method> except that
+the C<Handle self> first parameter is not implicitly declared.
+If the C<static> method is called without an object ( but with
+a class ), like for example
 
    Class::Object-> static_method();
 
-its first parameter is not a object but a "Class::Object" string.
-If a method never deals with an object, it is enough to use
-its declaration as
+its first parameter is not an object but the "Class::Object" string.
+If the method never uses that first parameter it is enough to 
+declare it as
 
    static a( char * className = "");
 
-but is if does, a
+but if it does, a
 
-   static a( SV * class_or_object = nil);
+   static a( SV * class_or_object = NULL);
 
-declaration is needed. In latter case C code itself has to determine
-what exactly has been passed, if ever. Note the default parameter
-here: a C<static> method is usually legible to call as
+declaration is needed. In the latter case C code itself has to determine what
+exactly has been passed, if ever. Note the default parameter here: a C<static>
+method is usually legible to call as
 
   Class::Object::static_method();
 
-where no parameters are passed to it. Without the default parameter
-such a call generates an 'insufficient parameters passed' runtime error.
+where no parameters are passed to it. Without the default parameter, such a call
+generates an 'insufficient parameters passed' runtime error.
 
 =item weird
 
-We couldn't find a better name for it. C<weird> prefix
-denotes a method that combined properties both from C<static>
-and C<public>. In other words, gencls generates no conversion
-code and expects no C<Handle self> as a first parameter for
-such a method. As an example Prima::Image::load can be depicted,
-which can be called using a wide spectrum of calling semantics
-( see L<Prima::image-load> for details).
+We couldn't find a better name for it. The C<weird> prefix
+describes a method that combines properties from both the C<static>
+and C<public> methods. Prima-gencls generates no conversion
+code for the C<weird> methods and expects no C<Handle self> as the first parameter.
+As an example, the Prima::Image::load function can be called using a wide
+spectrum of calling semantics ( see L<Prima::image-load> for details).
 
 =item c_only
 
-As its name states, C<c_only> is a method that is present on a VMT
-but is not accessible from perl. It can be overloaded from
-C only. Moreover, it is allowed to register a perl function with a name
-of a C<c_only> method, and still these entities will be wholly
-independent from each other - the overloading will not take place.
+The C<c_only> methods are present in the VMT but are not accessible from perl.
+They can be overloaded, but from C only. Moreover, it is allowed to register a
+perl function with the same name as the existing C<c_only> method, and these
+entities will be completely independent.
 
-NB: methods that have result and/or parameters data types that
-can not be converted automatically, change their prefix to C<c_only>.
-Probably this is the wrong behavior, and such condition have to signal
-an error.
+Note: methods that have a result and/or parameters declared as data types that cannot be
+converted automatically, change their prefix to C<c_only> during the .cls
+processing.  Probably this is the wrong behavior, and such a condition has to
+signal an error.
 
 =back
 
 =head2 Properties
 
-Prima toolkit introduces an entity named property,
-that is expected to replace method pairs whose function
-is to acquire and assign some internal object variable,
-for example, an object name, color etc. Instead of
-having pair of methods like Object::set_color and Object::get_color,
-a property Object::color is devised. A property is
-a method with the special considerations, in particular,
-when it is called without parameters, a 'get' mode
-is implied. In contrary, if it is called with one parameter,
-a 'set' mode is triggered. Note that on both 'set' and 'get'
-invocations C<Handle self> first implicit parameter is
-always present.
+The Prima toolkit introduces an entity named property, that is used to replace
+method pairs whose function is to acquire and assign some internal object
+variable, for example, an object name, color, etc. Instead of having a pair of
+methods like Object::set_color and Object::get_color, a property Object::color
+can be used instead. A property is a method with special considerations, in
+particular, when it is called without parameters, the get-mode is implied. On
+the contrary, if it is called with one parameter, such a call is treated as being
+done in the set-mode. Note that in both 'set' and 'get' invocations the first
+parameter C<Handle self> is implicit and is always present.
 
-Properties can operate with different, but fixed amount
-of parameters, and perform a 'set' and 'get' functions
-only for one. By default the only parameter is the implicit
-C<Handle self>:
+Properties can operate with different, but always fixed number
+of parameters. For example,
 
    property char * name
 
-has C counterpart
+has the C counterpart
 
    char * Object_name( Handle self, Bool set, char * name)
 
-Depending on a mode, C<Bool set> is either C<true> or C<false>.
-In 'set' mode a C code result is discarded, in 'get' mode
-the parameter value is undefined.
+Depending on the calling mode, the C<Bool set> argument is either C<true> or
+C<false>.  In the set-mode, the C code result is discarded, while in the
+get-mode the property parameter value is undefined.
 
-The syntax for multi-parameter property is
+The syntax for a multi-parameter property is
 
    property long pixel( int x, int y);
 
-and C code
+with the C code
 
    long Object_pixel( Handle self, Bool set, int x, int y, long pixel)
 
-Note that in the multi-parameter case the parameters declared
-after property name are always initialized, in both 'set' and 'get' modes.
+Note that in the multi-parameter case, the parameters declared after the
+property name are always initialized, in both the set- and get- modes.
 
 =head2 Instance variables
 
-Every object is characterized by its unique internal state.
-Gencls syntax allows a variable declaration, for variables that are
-allocated for every object instance. Although data type
-validation is not performed for variables, and their declarations
-just get copied 'as is', complex C declarations involving
-array, struct and function pointers are not recognized.
-As a workaround, pointers to typedef'd entities are used.
-Example:
+The prima-gencls syntax allows variable declarations for the variables that are
+allocated for every object instance. Although data type validation is not
+performed for variables, and their declarations just get copied as is, complex
+C declarations involving array, struct, and function pointers are not
+supported.  As a workaround, pointers to typedef'd entities are used.  Example:
 
    object SampleObject {
       int x;
@@ -617,12 +565,10 @@ Example:
       struct { int x } s; # illegal declaration
    }
 
-Variables are accessible in C code by direct name
-dereferencing of a C<Handle self> as a corresponding
-structure:
+The variables are accessible in C code by direct name
+dereferencing the C<Handle self>:
 
-    (( PSampleObject) self)-> x;
-
+    (( PMyObject) self)-> x;
 
 =head1 AUTHORS
 

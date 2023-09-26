@@ -1,6 +1,6 @@
 =head1 NAME
 
-Prima::Region - generic shape for clipping and hit testing
+Prima::Region - generic shapes for clipping and hit testing
 
 =head1 SYNOPSIS
 
@@ -20,9 +20,9 @@ Prima::Region - generic shape for clipping and hit testing
 
 =head1 DESCRIPTION
 
-Prima::Region is a descendant of Prima::Component. It serves a representation
-of a generic shape, that can be applied to a drawable, and checked whether points
-are within its boundaries.
+The Prima::Region class is a descendant of the Prima::Component class. A
+Prima::Region object is a representation of a generic shape that can be
+applied to a drawable and checked whether points are within its boundaries.
 
 =head1 API
 
@@ -30,44 +30,44 @@ are within its boundaries.
 
 =item new %OPTIONS
 
-Creates new region object. Without options, the region is empty.
-Following options can be used:
+Creates a new region object. If called without any options then the resulting region will be empty
+The following options can be used:
 
 =over
 
 =item rect => [ X1, Y1, X2, Y2 ]
 
-Create rectangular region with inclusive-inclusive coordinates.
+Creates a rectangular region with inclusive-inclusive coordinates.
 
 =item box => [ X, Y, WIDTH, HEIGHT ]
 
-Same as C<rect> but using other semantics.
+Same as C<rect> but using the I<box> semantics.
 
 =item polygon => \@POINTS, fillMode = 0
 
 Creates a polygon shape with vertices given in C<@POINTS>, and using
-an optional fillMode ( see L<Drawable/fillMode> ).
+the optional fillMode ( see L<Drawable/fillMode> ).
 
 =item image => IMAGE
 
-Creates a region that mirrors 1-bits in the image. If no pixels are set to 1,
-the region will be effectively empty.
+Creates a region from a 1-bit image. If the image contains no pixels that are
+set to 1, the resulting region is created as an empty region.
 
 =back
 
 =item bitmap with_offset => 0, type => dbt::Bitmap
 
 Paints the region on a newly created bitmap and returns it. By default,
-region offset is not included.
+the region offset is not included.
 
 =item box
 
-Returns (X,Y,WIDTH,HEIGHT) bounding box, that encloses smallest possible
+Returns the (X,Y,WIDTH,HEIGHT) bounding box that encloses the smallest possible
 rectangle, or (0,0,0,0) if the region is empty.
 
 =item combine REGION, OPERATION = rgnop::Copy
 
-Applies one of the following set operation to the region:
+Applies one of the following set operations to the region:
 
 =over
 
@@ -89,7 +89,7 @@ Performs XOR operation on the two regions.
 
 =item rgnop::Diff
 
-The resulting region is a difference of the two regions.
+The resulting region is a difference between the two regions.
 
 =back
 
@@ -99,12 +99,12 @@ Creates a duplicate region object
 
 =item get_boxes
 
-Returns a C<Prima::array> object filled with 4-integer tuples, where each is a 
-box defined as (x,y,width,height).
+Returns a C<Prima::array> object filled with 4-integer tuples, where each is a
+box defined as a (x,y,width,height) tuple.
 
 =item get_handle
 
-Returns a system handle for the region
+Returns the system handle for the region
 
 =item equals REGION
 
@@ -113,7 +113,7 @@ Returns true if the regions are equal, false otherwise.
 =item image with_offset => 0, type => dbt::Bitmap
 
 Paints the region on a newly created image and returns it. By default,
-region offset is not included.
+the region offset is not included.
 
 =item is_empty
 
@@ -129,14 +129,14 @@ Returns true if the (X,Y) point is inside the region
 
 =item rect_inside X1,Y1,X2,Y2
 
-Checks whether a rectangle given by inclusive-inclusive coordinates is inside, outside,
-or partially covered by the region. Return values are:
+Checks whether a rectangle given by the inclusive-inclusive coordinates is inside, outside,
+or partially covered by the region. The return value can be one of these flags:
 
    rgn::Inside
    rgn::Outside
    rgn::Partially
 
-where C<rgn::Outside> has value of 0.
+where the C<rgn::Outside> constant has the value of 0.
 
 =back
 

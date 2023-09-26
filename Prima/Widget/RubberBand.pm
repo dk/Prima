@@ -387,7 +387,7 @@ Hides the band, if drawn
 
 =item has_clip_rect
 
-Checks whether clipRect contains an actual clippring rectange or it is empty.
+Checks whether clipRect contains an actual clippring rectangle or it is empty.
 
 =item set %profile
 

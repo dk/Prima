@@ -1616,7 +1616,7 @@ Default value: 0
 =item text STRING
 
 The text that is drawn in the button. If STRING contains ~ ( tilde ) character,
-the following character is treated as a hot key, and the character is
+the following character is treated as a hotkey, and the character is
 underlined. If the user presses the corresponding character key then
 L<Click> event is called. This is true even when the button is out of focus.
 

@@ -4,24 +4,24 @@ Prima::tutorial - introductory tutorial
 
 =head1 DESCRIPTION
 
-Programming graphic interfaces is often considered a somewhat boring business, and not
-without a cause. There is little pride in knowing that your buttons and
-scrollbars work exactly as millions of others buttons and scrollbars do, so
-whichever GUI toolkit is chosen, it is usually regarded as a tool of small
-importance, and the less obtrusive, the better. Given that, and trying to live
-up to the famous Perl 'making easy things easy and hard things possible' mantra,
-this manual page is an introductory tutorial meant to show how to write easy
-things easy. The hard things are explained in the other Prima manual pages
-( see L<Prima> ).
+Programming of the graphic interfaces is often considered a somewhat boring
+business, and not without a cause. There is little pride in knowing that your
+buttons and scrollbars work exactly as millions of other buttons and scrollbars
+do, so whichever GUI toolkit is chosen, it is usually regarded as a tool of
+small importance, and the less it is obtrusive, the better. Given that, and
+trying to live up to the famous Perl 'making easy things easy and hard things
+possible' mantra, this manual page is an introductory tutorial meant to show
+how to write the easy things easy. The hard things are explained in the other
+Prima manual pages ( see L<Prima> ).
 
 =head1 Introduction - a "Hello world" program
 
 Prima is written and is expected to be used in some traditions of Perl coding,
-such as DWIM ( do what I mean ) or TMTOWTDI ( there are more than one way to do it).
-Perl itself is language (arguably) most effective in small programs, as the programmer
+such as DWIM ( do what I mean ) or TMTOWTDI ( there is more than one way to do it).
+Perl itself is the language (arguably) most effective in small programs, as the programmer
 doesn't need to include lines and lines of prerequisite code before even getting
 to the problem itself. Prima can't compete with that, but the introductory fee
-is low; a minimal working 'Hello world' can be written in three lines of code:
+is low; a minimal working 'Hello world' can be written in just three lines of code:
 
 	use Prima qw(Application);
 	Prima::MainWindow-> new( text => 'Hello world!');
@@ -32,21 +32,26 @@ is low; a minimal working 'Hello world' can be written in three lines of code:
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/tutorial/hello1.gif">
 
-Line 1 here is the invocation of modules I<Prima> and I<Prima::Application>. Sure,
-one can explicitly invoke both C<use Prima> and C<use Prima::Application> etc etc,
-but as module Prima doesn't export method names, the exemplified syntax is well-suited
-for such a compression.
+Line 1 is the invocation of modules I<Prima> and I<Prima::Application>.
+One can also explicitly invoke both C<use Prima> and C<use Prima::Application>,
+but since the module Prima doesn't export any method names, the syntax in the
+code example above allows one to write programs in a more concise style.
 
-Line 2 creates a window of I<Prima::MainWindow> class, which is visualized as a
-screen window, titled as 'Hello world'. The class terminates the application
-when the window is closed; this is the only difference from 'Window' windows,
-that do nothing after their closing. From here, C<Prima::> prefix in class names
-will be omitted, and will be used only when necessary, such as in code
-examples.
+Line 2 creates a new window object, and instance of the I<Prima::MainWindow>
+class, which is visualized as a window rectangle on the screen, with the title
+'Hello world'. The class terminates the application (and the program) when the
+window is closed; this is the only difference from the windows that are objects
+instances of the C<Prima::Window> class, which do nothing after they are closed
+by the user. 
 
-Line 3 enters the Prima event loop. The loop is terminated when the only instance
-of I<Application> class, created by C<use Prima::Application> invocation and
-stored in C<$::application> scalar, is destroyed.
+( Note: In this tutorial the C<Prima::> prefix in class names
+will be omitted and will be used only when necessary, such as in code
+examples ).
+
+Line 3 enters the Prima event loop. The loop is terminated when the only
+instance of the I<Application> class (that is created by the C<use
+Prima::Application> invocation) and stored in C<$::application> scalar, is
+destroyed.
 
 Strictly speaking, a minimal 'hello world' program can be written even in two
 lines:
@@ -59,32 +64,31 @@ lines:
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/tutorial/hello2.gif">
 
-but it is not illustrative and not useful. C<Prima::message> is rarely used,
-and is one of few methods contained in C<Prima::> namespace. To display a
-message, the I<MsgBox> module is often preferred, with its control over message
-buttons and pre-defined icons. With its use, the code above can be rewritten
-as
+but it is not very illustrative and not useful. The C<Prima::message> call is
+rarely used and is one of the few methods contained in the C<Prima::>
+namespace. To display a message, the I<MsgBox> module is often preferred, with
+its control over text in the buttons and with its appropriate usage of some
+pre-defined icons. If using this module instead the code above can be rewritten
+as this:
 
 	use Prima qw(Application MsgBox);
 	message('Hello world');
-
 
 =for podview <img src="tutorial/hello3.gif">
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/tutorial/hello3.gif">
 
-but where C<Prima::message> accepts the only text scalar parameters, C<Prima::MsgBox::message>
-can do lot more. For example
+but where C<Prima::message> accepts only text scalar parameters,
+C<Prima::MsgBox::message> can do a lot more. For example the code
 
 	use Prima qw(Application MsgBox);
 	message('Hello world', mb::OkCancel|mb::Information);
-
 
 =for podview <img src="tutorial/hello4.gif">
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/tutorial/hello4.gif">
 
-displays two buttons and an icon. A small achievement, but the following is a bit more interesting:
+displays two buttons and an icon. A small achievement, but the following code is a bit more interesting:
 
 	use Prima qw(Application MsgBox);
 	message('Hello world', mb::OkCancel|mb::Information,
@@ -106,8 +110,8 @@ displays two buttons and an icon. A small achievement, but the following is a bi
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/tutorial/hello5.gif">
 
-The definition of many object properties at once is a major feature of Prima, and is seen
-throughout the toolkit. Returning back to the very first example, we can demonstrate
+Defining many object properties at once is a major feature of Prima and is seen
+throughout the toolkit. Returning to the very first example we can demonstrate
 the manipulation of the window properties in the same fashion:
 
 	use Prima qw(Application);
@@ -118,15 +122,16 @@ the manipulation of the window properties in the same fashion:
 	);
 	run Prima;
 
-Note that the C<size> property is a two-integer array, and color constant is registered
-in C<cl::> namespace. In Prima there is a number of such two- and three-letter namespaces,
-containing usually integer constants for various purposes. The design reason for choosing
-such syntax over string constants ( as in Perl-Tk, such as C<< color => 'yellow' >> ) is that
-the syntax is checked on the compilation stage, thus narrowing the possibility of a bug.
+Note that the C<size> property is a two-integer array, and the color constant
+is registered in the C<cl::> namespace. In Prima, there are many similar two-
+and three-letter namespaces containing (usually integer) constants for various
+purposes. The design reason for choosing such syntax over the string constants
+( as f ex in Perl-Tk, such as C<< color => 'yellow' >> ) is that the syntax is
+checked on the compilation stage, thus narrowing the possibility of a bug.
 
-There are over a hundred properties, such as color, text, or size, defined on descendants
-of I<Widget> class. These can be set in C<new> ( alias C<create> ) call, or referred later,
-either individually
+There are over a hundred properties, such as color, text, or size, declared on
+descendants of the I<Widget> class. These can be set in a C<new> ( alias C<create> )
+call, or changed later, either individually
 
 	$window-> size( 300, 150);
 
@@ -137,9 +142,12 @@ or in a group
 		color => cl::Black,
 	);
 
-In addition to these, there are also more than 30 events, called whenever a certain
-action is performed; the events have syntax identical to the properties. Changing the code again,
-we can catch a mouse click on the window:
+In addition to these, there are also more than 30 events called whenever a
+certain action is performed; the events' syntax is identical to the properties'
+syntax.
+
+Now, back to the code. Here, if we change it again, we can now catch a mouse
+click on the window:
 
 	use Prima qw(Application MsgBox);
 	my $window = Prima::MainWindow-> new(
@@ -153,8 +161,8 @@ we can catch a mouse click on the window:
 	run Prima;
 
 While an interesting concept, it is not really practical if the only thing
-you want is to catch a click, and this is the part where a standard button
-probably should be preferred:
+you want is to catch a click, and this is the part where the standard button
+widget should probably be used instead:
 
 	use Prima qw(Application Buttons MsgBox);
 	my $window = Prima::MainWindow-> new(
@@ -168,30 +176,29 @@ probably should be preferred:
 	);
 	run Prima;
 
-
 =for podview <img src="tutorial/hello6.gif">
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/tutorial/hello6.gif">
 
-For those who know Perl-Tk and prefer its ways to position a widget, Prima
-provides I<pack> and I<place> interfaces. Here one can replace the line
+For those who know Perl-Tk and prefer its ways of positioning a widget, Prima
+provides the I<pack> and I<place> interfaces. Here one can replace the line
 
 	growMode => gm::Center,
 
-to
+with this line:
 
 	pack     => { expand => 1 },
 
-with exactly the same effect.
+where both produce the same effect.
 
-=head1 Widgets overview
+=head1 Overview of the widget classes
 
-Prima contains a set of standard ( in GUI terms ) widgets, such as
-buttons, input lines, list boxes, scroll bars, etc etc. These are
-diluted with the other more exotic widgets, such as POD viewer
-or docking windows. Technically, these are collected in C<Prima/*.pm>
-modules and each contains its own manual page, but for informational
-reasons here is the table of these, an excerpt of C<Prima> manpage:
+Prima contains a set of standard ( in GUI terms ) widgets, such as buttons,
+input lines, list boxes, scroll bars, etc. These are diluted with the other
+more exotic widgets, such as the POD viewer or docking windows. Technically,
+these are collected in C<Prima/*.pm> modules and each contains its own manual
+page, but for informational reasons here is the full table of the widget
+modules, an excerpt from the C<Prima> manpage:
 
 L<Prima::Buttons> - buttons and button grouping widgets
 
@@ -199,7 +206,7 @@ L<Prima::Calendar> - calendar widget
 
 L<Prima::ComboBox> - combo box widget
 
-L<Prima::DetailedList> - multi-column list viewer with controlling header widget
+L<Prima::DetailedList> - multi-column list viewer with a controlling header widget
 
 L<Prima::DetailedOutline> - a multi-column outline viewer with controlling header widget
 
@@ -235,15 +242,16 @@ L<Prima::PodView> - POD browser widget
 
 L<Prima::ScrollBar> - scroll bars
 
-L<Prima::Sliders> - sliding bars, spin buttons and input lines, dial widget etc.
+L<Prima::Sliders> - sliding bars, spin buttons, dial widget, etc.
 
 L<Prima::TextView> - rich text browser widget
 
 =head1 Building a menu
 
-In Prima, a tree-like menu is built by passing a nested set of arrays, where
+In Prima, a tree-like menu is built by building a set of nested arrays, where
 each array corresponds to a single menu entry. Such as, to modify the
-hello-world program to contain a simple menu, it is enough to write this:
+hello-world program to contain a simple menu, it is enough to write the code
+like this:
 
 	use Prima qw(Application MsgBox);
 	my $window = Prima::MainWindow-> new(
@@ -263,30 +271,31 @@ hello-world program to contain a simple menu, it is enough to write this:
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/tutorial/menu1.gif">
 
-Each of five arrays here in the example is written using different semantics, to represent
+Each of the five arrays here in the example is written using different semantics, to represent
 either a text menu item, a sub-menu entry, or a menu separator. Strictly speaking, menus
 can also display images, but that syntax is practically identical to the text item syntax.
 
 The idea behind all this complexity is to be able to tell what exactly the menu item is, just by
-looking at the number of items in each array. So, zero or one items are treated as a menu
+looking at the number of items in each array. So, zero or one item is treated as a menu
 separator:
 
 	[],
 	[ 'my_separator' ]
 
-The one-item syntax is needed when the separator menu item need to be later addressed
+The one-item syntax is needed when the separator menu item needs to be addressed
 explicitly. This means that each menu item after it is created is assigned a
-(unique) identifier, and that identifier looks like C<'#1'>, C<'#2'>, etc,
+(unique) identifier, and that identifier looks like C<'#1'>, C<'#2'>, etc.,
 unless it is given by the programmer. Here, for example, it is possible to delete the
 separator, after the menu is created:
 
 	$window-> menu-> remove('my_separator');
 
-It is also possible to assign the identifier to any menu item, not just to a separator.
-The other types (text,image,sub-menu) are discerned by looking at the type of scalars they
-contain. Thus, a two-item array with the last item an array reference (or, as before,
-three-item for the explicit ID set), is clearly a sub-menu. The reference, as in the
-example, may contain more menu items, in the recursive fashion:
+It is also possible to assign the identifier to any menu item, not just to
+separators.  The other types (text, image, sub-menu) are differentiated by
+looking at the type of scalars they contain. Thus, a two-item array with the
+last item an array reference (or, as before, three-item for the explicit ID
+set), is a sub-menu. The reference, as in the example, may contain even more
+menu items:
 
 		menuItems => [
 			[ '~File' => [
@@ -304,23 +313,27 @@ example, may contain more menu items, in the recursive fashion:
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/tutorial/menu2.gif">
 
-Finally, text items, with the most complex syntax, can be constructed with three to six
-items in the array. There can be set the left-aligned text string for the item, the
-right-aligned text string for the display of the hot key, if any, the definition of the
-hot key itself, and the action to be taken if the user has pressed either the menu item
-or the hot key combination. Also, as in the previous cases, the explicit ID can be set,
-and also an arbitrary data scalar, for generic needs. This said, the text item combinations are:
+Finally, text items, with the most complex syntax, can be constructed with
+three to six items in the array. One can set the left-aligned text string for
+the item, the right-aligned text string for the display of the hotkey, if any,
+the definition of the hotkey itself, and the action to be taken if the user has
+pressed either the menu item or the hotkey combination. Also, as in the
+previous cases, an explicit menu item ID can be set, and also an arbitrary data scalar,
+for the generic needs of the programmer.
+
+Here are the combinations of scalars in an array that are allowed for defining
+a text menu item:
 
 Three items - [ ID, text, action ]
 
-Four items - [ text, hot key text, hot key, action ]
+Four items - [ text, hotkey text, hotkey, action ]
 
-Five items - [ ID, text, hot key text, hot key, action ]
+Five items - [ ID, text, hotkey text, hotkey, action ]
 
-Six items - [ ID, text, hot key text, hot key, action, data ]
+Six items - [ ID, text, hotkey text, hotkey, action, data ]
 
-Image items are fully analogous to the text items, except that instead of the text
-string, an image object is supplied:
+The image menu items are fully analogous to the text items, except that instead
+of the text string, an image object is supplied:
 
 	use Prima qw(Application MsgBox);
 	use Prima::Utils qw(find_image);
@@ -342,11 +355,11 @@ string, an image object is supplied:
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/tutorial/menu3.gif">
 
-The action item of them menu description array points to the code executed when
+The action item of the menu description array points to the code executed when
 the menu item is selected.  It is either an anonymous subroutine, as it is
 shown in all the examples above, or a string.  The latter case will cause the
 method of the menu owner ( in this example, the window ) to be called. This can
-be useful when constructing a generic class with menu actions that can be
+be useful when constructing a generic class where the menu actions could be
 overridden:
 
 	use Prima qw(Application);
@@ -371,14 +384,18 @@ overridden:
 
 	run Prima;
 
-All actions are called with the menu item identifier passed in as a string parameter.
+All actions are called with the menu item identifier passed in as a string
+parameter.
 
-Another trick is to define a hot key. While its description can be arbitrary,
-and will be displayed as is, the hot key definition can be constructed in two
-ways. It is either a literal such as C<^A> for Control+A, or C<@B> for Alt+B,
-or C<^@#F10> for Control+Alt+Shift+F10. Or, alternatively, it is a combination
-of C<km::> constants either with ordinal of the character letter or the key
-code, where the key code is one of C<kb::> constants. The latter method
+Another useful trick here is how to define a hotkey. While the description of
+the hotkey can be an arbitrary string, which will be displayed as is, the
+definition of the hotkey is not that simple because one needs to encode the key
+combination that would trigger the menu item action.  A hotkey can be defined
+in two ways.  The hotkey definition scalar should either be a literal string
+such as C<^A> for Control+A, or C<@B> for Alt+B, or C<^@#F10> for
+Control+Alt+Shift+F10. Or it should be a combination of the C<km::> constants
+with the base key that is either the ordinal of the character letter, or
+the keycode, represented by one of the C<kb::> constants. The latter method
 produces a less readable code, but is more explicit and powerful:
 
 	[ '~Reboot', 'Ctrl+Alt+Delete', km::Alt | km::Ctrl | kb::Delete, sub {
@@ -390,9 +407,9 @@ This concludes the short tutorial on menus. To read more, see L<Prima::Menu> .
 
 =head1 Adding help to your program
 
-The toolkit comes with a POD viewer program C<podview> that can be
-incorporated into an application. This is rather straightforward as you can write
-the application manual in POD format.
+The toolkit comes with the POD viewer program C<podview> which can be easily
+incorporated into any application. This is meant to be rather straightforward
+so you can write an application manual directly in the POD format.
 
 =over
 
@@ -403,24 +420,25 @@ First, add some pod content to your main script, such as f ex:
    #!/usr/bin/env perl
    ...
    =pod
-   
+
    =head1 NAME
-   
+
    My program
-   
+
    =cut
 
 exactly as if you wanted C<perldoc> to display it.
 
 =item *
 
-Second, add an invocation code, possibly inside a menu:
+Second, add the invocation code, possibly inside the menu:
 
 	['~Help' => 'F1' => 'F1' => sub {
 		$::application-> open_help("file://$0|DESCRIPTION");
 	}],
 
-C<open_help> can also take a standard C<< LE<lt>linkE<gt> >> syntax so for example
+The C<open_help> method can also take the standard C<< LE<lt>linkE<gt> >> syntax
+so for example the code
 
    open_help("My::Module/help")
 
@@ -428,13 +446,13 @@ is also okay.
 
 =item *
 
-Finally, consider if text-only POD is okay for you or you need images embedded
-in the pod.  This is somewhat tricky because the perl maintainers actively
-reject the idea of having images in pod, however metacpan.org can display
-images in the perl documentation alright, and so does Prima, however both use
-different syntax.
+Finally, consider if the text-only POD is okay for you or if you need any
+images embedded in the pod documentation.  This is somewhat tricky because the
+perl maintainers actively reject the idea of having images in the pod format,
+while metacpan.org can display images in the perl documentation just fine, and
+so does Prima, however, both use different syntaxes.
 
-Here is an example of a mixed content that will show graphic when the graphic display is available, and
+Here is an example of the mixed content that shows graphics when the graphic display is available, and
 just plain text otherwise:
 
    =for podview <img src="illustration.gif" cut=1 title="Horizontal font measurements">
@@ -452,10 +470,10 @@ just plain text otherwise:
 
    =for podview </cut>
 
-GIF is chosen because Prima keeps all of its internal images into this format,
-so it is a most safe fallback.  However any other format is okay too.
+The GIF image format is chosen because Prima keeps all of its internal images as multi-frame GIFs,
+so in a way, it is also the safest fallback.  However, any other image file format will do too.
 
-If you don't need a text fallback, just just this:
+If you don't need the text fallback, just just this:
 
   =for podview <img src="illustration.gif">
 

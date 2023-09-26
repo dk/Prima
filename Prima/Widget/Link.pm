@@ -434,7 +434,7 @@ font size etc. C<%DEFAULTS> is sent internally to C<tb::block_walk> that might
 need eventual default parameters.
 
 Scans BLOCKS and add monotonically increasing LINK_ID to new
-link rectanges. Return new LINK_ID.
+link rectangles. Return new LINK_ID.
 
 =item clear_positions
 

@@ -340,13 +340,13 @@ Returns a list of gradient colors for each step from 1 to BREADTH.
 
 =item ellipse X, Y, DIAM_X, DIAM_Y
 
-Draws a filled ellipse with center in (X,Y) and diameters (DIAM_X,DIAM_Y)
+Draws a filled ellipse with the center in (X,Y) and diameters (DIAM_X,DIAM_Y)
 
 Context used: fillPattern, rop, rop2
 
 =item sector X, Y, DIAM_X, DIAM_Y, START_ANGLE, END_ANGLE
 
-Draws a filled sector with center in (X,Y) and diameters (DIAM_X,DIAM_Y) from START_ANGLE to END_ANGLE
+Draws a filled sector with the center in (X,Y) and diameters (DIAM_X,DIAM_Y) from START_ANGLE to END_ANGLE
 
 Context used: fillPattern, rop, rop2
 

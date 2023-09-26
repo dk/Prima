@@ -348,11 +348,11 @@ See L<Prima::Application/get_system_info>
 
 See L<Prima::Window/borderIcons>
 
-	bi::SystemMenu  - system menu button and/or close button
-	                  ( usually with icon ) is shown
+	bi::SystemMenu  - the system menu button and/or close button
+	                  ( usually with the icon ) 
 	bi::Minimize    - minimize button
-	bi::Maximize    - maximize ( and eventual restore )
-	bi::TitleBar    - window title
+	bi::Maximize    - maximize/restore button
+	bi::TitleBar    - the window title
 	bi::All         - all of the above
 
 =head2 bs::  - border styles
@@ -362,7 +362,7 @@ See L<Prima::Window/borderStyle>
 	bs::None      - no border
 	bs::Single    - thin border
 	bs::Dialog    - thick border
-	bs::Sizeable  - thick border with interactive resize capabilities
+	bs::Sizeable  - border that can be resized
 
 =head2 ci::  - color indices
 
@@ -537,6 +537,9 @@ See L<Prima::Widget/pointerType>
 	cr::DragCopy                pointer to indicate that a dnd::Copy action can be accepted
 	cr::DragMove                pointer to indicate that a dnd::Move action can be accepted
 	cr::DragLink                pointer to indicate that a dnd::Link action can be accepted
+        cr::Crosshair               the crosshair pointer
+        cr::UpArrow                 arrow directed upwards
+        cr::QuestionArrow           question mark pointer
 	cr::User                    user-defined icon
 
 =head2 dbt::  - device bitmap types
@@ -591,10 +594,10 @@ See L<Prima::Utils/query_drive_type>
 
 	dt::Left              - text is aligned to the left boundary
 	dt::Right             - text is aligned to the right boundary
-	dt::Center            - text is aligned horizontally in center
+	dt::Center            - text is aligned horizontally in the center
 	dt::Top               - text is aligned to the upper boundary
 	dt::Bottom            - text is aligned to the lower boundary
-	dt::VCenter           - text is aligned vertically in center
+	dt::VCenter           - text is aligned vertically in the center
 	dt::DrawMnemonic      - tilde-escapement and underlining is used
 	dt::DrawSingleChar    - sets tw::BreakSingle option to
 				Prima::Drawable::text_wrap call
@@ -609,7 +612,7 @@ See L<Prima::Utils/query_drive_type>
 	dt::UseExternalLeading- text lines positioned vertically with respect to
 				the font external leading
 	dt::UseClip           - assign ::clipRect property to the boundary rectangle
-	dt::QueryLinesDrawn   - calculates and returns number of lines drawn
+	dt::QueryLinesDrawn   - calculates and returns the number of lines drawn
 				( contrary to dt::QueryHeight )
 	dt::QueryHeight       - if set, calculates and returns vertical extension
 				of the lines drawn
@@ -767,7 +770,7 @@ See L<Prima::Widget/growMode>
 			horizontal axis
 	gm::YCenter	widget is kept in center on its owner's
 			vertical axis
-	gm::DontCare	widgets origin is maintained constant relative
+	gm::DontCare	widgets origin is constant relative
 			to the screen
 
 =item Derived or aliased constants
@@ -912,10 +915,10 @@ See L<Prima::Image/type>.
 
 See L<Prima::Image/conversion>.
 
-	ict::None            - no dithering, with static palette or palette optimized by source palette
-	ict::Posterization   - no dithering, with optimized palette by source pixels
+	ict::None            - no dithering, with static palette or palette optimized by the source palette
+	ict::Posterization   - no dithering, with palette optimized by the source pixels
 	ict::Ordered         - 8x8 ordered halftone dithering
-	ict::ErrorDiffusion  - error diffusion dithering with static palette
+	ict::ErrorDiffusion  - error diffusion dithering with a static palette
 	ict::Optimized       - error diffusion dithering with optimized palette
 
 Their values are combinations of C<ictp::> and C<ictd::> constants, see below.
@@ -951,22 +954,22 @@ See L<Prima::Image/stats>.
 	is::Mean     - mean value
 	is::Variance - variance
 	is::StdDev   - standard deviation
-	is::Sum      - sum of pixel values
-	is::Sum2     - sum of squares of pixel values
+	is::Sum      - the sum of pixel values
+	is::Sum2     - the sum of squares of pixel values
 
 =head2 ist:: - image scaling types
 
 	ist::None      - image stripped or padded with zeros
-	ist::Box       - image will be scaled using simple box transform
+	ist::Box       - image will be scaled using a simple box transform
 	ist::BoxX      - columns behave as ist::None, rows as ist::Box
 	ist::BoxY      - rows behave as in ist::None, columns as ist::Box
-	ist::AND       - shrunken pixels AND-end together (black on white)
-	ist::OR        - shrunken pixels OR-end together (white on black) 
+	ist::AND       - shrunken pixels AND-end together (black-on-white images)
+	ist::OR        - shrunken pixels OR-end together (white-on-black images)
 	ist::Triangle  - bilinear interpolation
-	ist::Quadratic - 2rd order (quadratic) B-Spline approximation of Gaussian
+	ist::Quadratic - 2rd order (quadratic) B-Spline approximation of the Gaussian
 	ist::Sinc      - sine function
 	ist::Hermite   - B-Spline interpolation
-	ist::Cubic     - 3rd order (cubic) B-Spline approximation of Gaussian
+	ist::Cubic     - 3rd order (cubic) B-Spline approximation of the Gaussian
 	ist::Gaussian  - Gaussian transform with gamma=0.5
 
 See L<Prima::Image/scaling>.

@@ -1,6 +1,6 @@
 =head1 NAME
 
-Prima::Printer - system printing services
+Prima::Printer - printing services
 
 =head1 SYNOPSIS
 
@@ -21,53 +21,52 @@ Prima::Printer - system printing services
 
 =head1 DESCRIPTION
 
-I<Prima::Printer> is a descendant of I<Prima::Drawable> class.
-It provides access to the system printing services, where
-available. If the system provides no graphics printing,
-the default PostScript (tm) interface module I<Prima::PS::Printer>
-is used instead.
+The I<Prima::Printer> class is a descendant of the I<Prima::Drawable> class.
+It provides access to the system printing services, where available. If the
+system provides no graphics printing, the default PostScript (tm) interface
+module I<Prima::PS::Printer> is used instead.
 
 =head1 Usage
 
-I<Prima::Printer> objects are never created directly. During the life
-of a program, there exists only one instance of a printer
-object, created automatically by I<Prima::Application>.
-I<Prima::Printer> object is created only when the system provides
-graphic printing capabilities - drawing and painting procedures
-on a graphic device.
-If there are no such API, I<Prima::Application> creates an
-instance of I<Prima::PS::Printer> instead, which emulates
-a graphic device, producing PostScript output.
-The discretion between I<Prima::Printer> and I<Prima::PS::Printer>
-is transparent for both the user and the programmer, unless
-printer device specific adjustments desired.
+I<Prima::Printer> objects are never created directly. During the life of a
+program, there exists only one instance of a printer object, created
+automatically by I<Prima::Application>. A I<Prima::Printer> object is created
+only when the system provides the graphic printing capabilities, ie drawing and
+painting procedures on a printer device.  If there are no such API,
+I<Prima::Application> creates an instance of the I<Prima::PS::Printer> class
+instead, which emulates a graphic device, and can produce PostScript and
+PDF output.  The difference between the I<Prima::Printer> and the
+I<Prima::PS::Printer> class is almost nonexistent for both the user and the
+programmer unless printer device-specific adjustments are needed.
 
-A printing session is started by C<begin_doc()>, which switches
-the object into the painting state. If finished by C<end_doc()>,
-the document is delivered to a printer device. Alternative finishing
-method, C<abort_doc()>, terminates the printing session with
-no information printed, unless the document is multi-paged
-and pages were sent to the printer via C<new_page()>.
+A printing session is started by calling the C<begin_doc()> method which
+switches the printer object into the painting state. If the session is finished by
+the C<end_doc()> call then the document is duly delivered to the selected
+printer device. The alternative finishing method, C<abort_doc()>, terminates
+the printing session with no information printed, unless the document is
+multi-paged and pages are already sent to the printer via the C<new_page()>
+method call.
 
-A printer object ( that means, both I<Prima::Printer> and I<Prima::PS::Printer> )
-provides selection of the printer mechanism. C<printers()> method
-returns array of hashes, each describing a printer device; C<get_default_printer()>
-returns a default printer string identifier. A printer device can be selected
-via the C<::printer> property.
+A printer object ( that means, derived from either I<Prima::Printer> or
+I<Prima::PS::Printer> ) provides a mechanism that allows the selection of the
+printer. The C<printers()> method returns an array of hashes, each describing a
+printer device. The C<get_default_printer()> method returns the default printer
+string identifier. The printer device can be selected by calling the
+C<::printer> property.
 
-The capabilities of the selected printer can be adjusted via C<setup_dialog()>
-method, that invokes a system-provided ( or, in case of I<Prima::PS::Printer>,
-toolkit-provided ) printer setup dialog, so the user can adjust settings of a
-printer device.
-It depends on the system, whether the setup changes only the instance settings, or
-the default behavior of a printer driver is affected for all programs.
+The capabilities of the selected printer can be adjusted via the
+C<setup_dialog()> method which invokes the system-provided ( or, in the case of
+I<Prima::PS::Printer>, toolkit-provided ) printer setup dialog so the user can
+adjust the settings of the printer device.  It depends on the system, whether
+the setup changes only the instance settings, or the default behavior of the
+printer driver affecting every program.
 
-Some printer capabilities can be queried by the C<::size()> property,
-that reports the dimension of the page, the C<::resolution()> property,
-that reports the DPI resolution selected by a printer driver and
-font list ( by C<fonts()> method ), available for usage.
+Some printer capabilities that can be queried include the C<::size()> property
+that reports the dimension of the page, the C<::resolution()> property that
+reports the DPI resolution selected by the printer driver, and the list of
+available fonts ( by the C<fonts()> method ).
 
-Typical code that prints the document looks like
+A typical code that prints the document looks like this:
 
    my $p = $::application-> get_printer;
    if ( $p-> begin_doc) {
@@ -77,8 +76,9 @@ Typical code that prints the document looks like
       print "failed:$@\n";
    }
 
-In addition, a standard package I<Prima::Dialog::PrintDialog> can be recommended
-so the user can select a printer device and adjust its setup interactively.
+In addition, the standard package I<Prima::Dialog::PrintDialog> can be
+recommended so the user can select a printer device and adjust its setup
+interactively.
 
 =head1 API
 
@@ -88,20 +88,21 @@ so the user can select a printer device and adjust its setup interactively.
 
 =item printer STRING
 
-Selects a printer device, specified by its STRING identifier.
-Can not select a device if a printing session is started.
+Selects the printer device specified by its STRING identifier.
+Cannot select a device if a printing session is started.
 
 =item resolution X, Y
 
-A read-only property; returns a DPI horizontal and vertical resolution,
-currently selected for a printer device. The user can change this,
-if the printer device supports several resolutions, inside C<setup_dialog()>.
+A read-only property; returns the horizontal and vertical resolutions in DPI
+currently selected for the printer device. The user can change this setting, if
+the printer device supports several resolutions, inside the call of the
+C<setup_dialog()> method.
 
 =item size WIDTH, HEIGHT
 
-A read-only property; returns dimensions of a printer device page.
-The user can change this, if the printer device supports several
-resolutions or page formats, inside C<setup_dialog()>.
+A read-only property; returns the dimensions of the printer device page.  The
+user can change this setting, if the printer device supports several
+resolutions or page formats, inside the call of the C<setup_dialog()> method.
 
 =back
 
@@ -111,34 +112,34 @@ resolutions or page formats, inside C<setup_dialog()>.
 
 =item abort_doc
 
-Stops the printing session, returns the object to the disabled painting state.
-Since the document can be passed to the system spooler, parts of it could have been sent
-to a printing device when C<abort_doc()> is called, so some information
-could still been printed.
+Stops the printing session returns the object to the disabled painting state.
+Since the document can be passed to the system spooler, parts of it could have
+been sent to a printing device when C<abort_doc()> is called, so some
+information could still have been printed.
 
 =item begin_doc DOCUMENT_NAME = ""
 
-Initiates the printing session, and triggers the object into the enabled painting
-state. The document is assigned DOCUMENT_NAME string identifier.
+Initiates the printing session and triggers the object into the enabled painting
+state. The document is assigned the DOCUMENT_NAME string identifier.
 
-Returns success flag; if failed, C<$@> contains the error.
+Returns the success flag; if failed, C<$@> contains the error.
 
 =item begin_paint
 
-Identical to C<begin_doc("")> call.
+Identical to the C<begin_doc("")> call.
 
 =item begin_paint_info
 
-Triggers the object into the information painting state. In this state,
-all graphic functions can be accessed, but no data is printed. Neither
-C<new_page()> and C<abort_doc()> methods work. The information
-mode is exited via C<end_paint_info()> method.
+Triggers the object into the information painting state. In this state, all
+graphic functions can be accessed, but no data is printed. Neither the
+C<new_page()> and C<abort_doc()> methods work. The information mode is exited
+via the C<end_paint_info()> method.
 
 =item end_doc
 
-Quits the printing session and delivers the document to a printer device.
-Does not report eventual errors, occurred during the spooling process -
-the system is expected to take care about such situations.
+Ends the printing session and delivers the document to the printer device.
+Does not report eventual errors that occurred during the spooling process -
+the system is expected to take care of such situations.
 
 =item end_paint
 
@@ -146,85 +147,87 @@ Identical to C<abort_doc()>.
 
 =item end_paint_info
 
-Quits the information painting mode, initiated by C<begin_paint_info()>
-and returns the object into the disabled painting state.
+Quits the information painting mode initiated by C<begin_paint_info()>
+and returns the object to the disabled painting state.
 
 =item font_encodings
 
-Returns array of encodings, represented by strings, that are recognized by the system
-and available in at least one font. Each system provides different
-sets of encoding strings; the font encodings are not portable.
+Returns an array of the encodings, represented by strings, that are recognized by the
+system and available in at least one font. Each system provides different sets
+of encoding strings; the font encodings are not portable.
 
 =item fonts NAME = '', ENCODING = ''
 
-Returns hash of font hashes ( see L<Prima::Drawable>, Fonts section )
-describing fonts of NAME font family and of ENCODING. If NAME is '' or C<undef>,
-returns one fonts hash for each of the font families that match the ENCODING
-string. If ENCODING is '' or C<undef>, no encoding match is performed.
-If ENCODING is not valid ( not present in C<font_encodings> result), it is
-treated as if it was '' or C<undef>.
+Returns a hash of font hashes ( see L<Prima::Drawable>, Fonts section )
+describing fonts from the NAME font family with the ENCODING encoding. If the
+NAME is '' or C<undef>, returns one font hash for each of the font families
+that match the ENCODING string. If ENCODING is '' or C<undef>, no encoding
+match is performed.  If the ENCODING is not valid ( not present in the
+C<font_encodings> result), it is treated as if it was '' or C<undef>.
 
-In the special case, when both NAME and ENCODING are '' or C<undef>,
-each font metric hash contains element C<encodings>, that points to
-array of the font encodings, available for the fonts of NAME font family.
+In the special case, when both NAME and ENCODING are '' or C<undef>, each font
+metric hash contains the element C<encodings>, which points to an array of the font
+encodings, available for the fonts of the NAME font family.
 
 =item new_page
 
 Finalizes the current page and starts a new blank page.
 
-Returns success flag; if failed, C<$@> contains the error.
+Returns the success flag; if failed, C<$@> contains the error.
 
 =item options [ OPTION, [ VALUE, [ ... ]]]
 
 Queries and sets printer-specific setup options, such as orientation, paper
-size, etc. If called without parameters, returns list of options the printer
-supports.  If called with one parameter, treats is as the option name and
-return the corresponding value. Otherwise, treats parameters as a list of
-key-value pairs, and sets the printer options. Returns number of options that were
-successfully set.
+size, etc. If called without parameters, returns the list of options the
+printer supports.  If called with one parameter, treats it as the option name
+and return the corresponding value. Otherwise, treats parameters as a list of
+key-value pairs, and changes the printer options. Returns the number of the
+options that were successfully set.
 
-The compatibility between options and values used by different OSes is low here.
-The only fully compatible options are C<Orientation>[C<Portrait|Landscape>],
-C<Color>[C<Color|Monochrome>], C<Copies>[C<integer>], and
+The compatibility between the options and the values used by different OSes is
+low.  The only fully compatible options are
+C<Orientation>[C<Portrait|Landscape>], C<Color>[C<Color|Monochrome>],
+C<Copies>[C<integer>], and
 C<PaperSize>[C<AI<integer>|BI<integer>|Executive|Folio|Ledger|Legal|Letter|Tabloid>].
-The other options are OS-dependent. For win32, consult Microsoft manual on
-DEVMODE structure L<http://msdn.microsoft.com/library/en-us/gdi/prntspol_8nle.asp>;
+The other options are OS-dependent. For win32, consult Microsoft manual on the
+DEVMODE structure
+L<https://learn.microsoft.com/en-us/windows/win32/api/wingdi/ns-wingdi-devmodew>
 for Prima's own PostScript printer, consult L<Prima::PS::Printer>.
 
 =item printers
 
-Returns array of hashes, where each entry describes a printer device.
+Returns an array of hashes where each entry describes a printer device.
 The hash consists of the following entries:
 
 =over
 
 =item name
 
-A printer device name
+The printer device's name
 
 =item device
 
-A physical device name, that the printer is connected to
+The physical device name, that the printer is connected to
 
 =item defaultPrinter
 
-A boolean flag, 1 if the printer is default, 0 otherwise.
+The boolean flag, is 1 if the printer is default, is 0 otherwise.
 
 =back
 
 =item setup_dialog
 
-Invokes the system-provided printer device setup dialog.
-In this setup, the user can adjust the capabilities of the printer,
-such as page setup, resolution, color, etc etc.
+Invokes the system-provided printer device setup dialog.  In this setup, the
+user can adjust the capabilities of the printer, such as page setup,
+resolution, color, etc etc.
 
 =item get_default_printer
 
-Returns a string, identifying a default printer device.
+Returns the string identifying the default printer device.
 
 =item get_handle
 
-Returns a system handle for a printer object.
+Returns the system handle for the printer object.
 
 =back
 

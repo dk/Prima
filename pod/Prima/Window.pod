@@ -19,158 +19,149 @@ Prima::Window - top-level window management
 
 =head1 DESCRIPTION
 
-Prima::Window is a descendant of Prima::Widget class.
-It deals with top-level windows, the windows that
-are specially treated by the system. Its major
-difference from Prima::Widget is that instances of
-Prima::Window can only be inferior by the
-screen, not the other windows, and that the system or window manager add
-decorations to these - usually menus, buttons and title
-bars. Prima::Window provides methods that communicate
-with the system and hint these decorations.
+The Prima::Window class is a descendant of the Prima::Widget class.  It
+represents the top-level windows that are treated specially by the system. The
+class's major difference from Prima::Widget is that instances of Prima::Window
+cannot reside inside of other windows and that the system or the window
+manager adds decorations to these - title bar, menus, and buttons.
+Prima::Window provides methods that communicate with the system and access
+these decorations.
 
 =head1 USAGE
 
-A typical program communicates with the user with aid
-of widgets, collected upon one or more top-level windows.
-Prima::Widget already has all functionality required for
-these child-parent operations, so Prima::Window is not
-special in respect of widget grouping and relationship.
-Its usage therefore is straightforward:
+A typical program communicates with the user with the help of various widgets
+collected under one or more top-level windows. The creation of a Prima::Window
+object is straightforward:
 
-   my $w = Prima::Window-> create(
+   my $w = Prima::Window-> new(
        size => [300,300],
        text => 'Startup window',
    );
 
-There are more about Prima::Window in areas, that it is
-specifically designed to - the system window management and
-the dialog execution.
-
 =head2 System window management
 
-As noted before, top-level windows are special for the system,
-not only in their 'look', but also in 'feel': the system adds
-specific functions to the windows, aiding the user to navigate through
-the desktop. The system often dictates the size and position for
-windows, and some times these rules are hard or even impossible to
-circumvent. This document will be long if it would venture to describe the features
-of different window management systems, and the task would be
-never accomplished - brand new window managers emerge every month,
-and the old change their behavior in an unpredictable way. The only
-golden rule is to never rely on the behavior of one window manager,
-and test programs with at least two.
+The top-level windows are special not only in their 'look', but also in 'feel':
+the system adds specific functions to the windows, aiding the user with the
+navigation through the desktop. The system often dictates the size and position
+of the newly created windows, and sometimes these rules are hard or even
+impossible to circumvent. This document would be quite long if it would venture
+off to describe the specificities of various window management systems, and it
+would never be complete - new window managers emerge every year, and the old
+ones unpredictable change their behavior. Therefore a word of advice: do not
+rely on the behavior of one window manager, test programs on at least two.
 
-The Prima toolkit provides simple access to buttons, title bar
-and borders of a window. Buttons and title bar are managed by
-the C<::borderIcons> property, and borders by the C<::borderStyle>
-property. These operate with set of predefined constants, C<bi::XXX>
-and C<bs::XXX>, correspondingly. The button constants can be combined with
-each other, but not all combinations may be granted by the system.
-The same is valid also for the border constant, except that they can
-not be combined - the value of C<::borderStyle> is one of the integer constants.
+The Prima toolkit provides simple access to the buttons, title bar, and borders
+of the window. The buttons and title bar are managed by the C<::borderIcons>
+property, and borders by the C<::borderStyle> property. These properties
+operate with a set of the predefined constants C<bi::XXX> and C<bs::XXX>,
+correspondingly. The button constants can be combined bitwise,
+but not all combinations may be realized by the system.  The same is valid also
+for the border constants, except that they cannot be combined; the value of the
+C<::borderStyle> property contains a single C<bs::XXX> constant.
 
-There are other hints that the toolkit can set for a window manager.
-The system can be supplied with an icon that a window is bound to; the icon
-dimensions are much different, and although can be requested via
-C<sv::XIcon> and C<sv::YIcon> system values, the C<::icon> property
-scales the image automatically to the closest system-recognizable
-dimension. The window icon is not shown by the toolkit, it is usually
-resides in the window decorations and sometimes on a task bar, along
-with the window's name. The system can be hinted to not reflect the window
-on the task bar, by setting the C<::taskListed> property to 0.
+There are other requests that the toolkit can ask from the window manager.  The
+system can be supplied with the icon that the window is shown with together.
+The system icon dimensions can differ from system to system, and although they
+can be requested via the C<sv::XIcon> and C<sv::YIcon> system values, the
+C<::icon> property scales the image automatically to the closest size the
+system can recognize.  The window icon is not shown by the toolkit itself, it
+usually resides in the window decorations and sometimes on the taskbar,
+along with the window's name. The system can be requested to not add the window
+to the taskbar, by setting the C<::taskListed> property to 0.
 
-Another issue is the window positioning. Usually, if no explicit
-position was given, the window is positioned automatically
-by the system. The same is valid for the size.  But some window
-managers bend it to the extreme - for example, default CDE
-setup force the user to set newly created windows' positions explicitly.
-However, there is at least one point of certainty.
-Typically, when the initial size and/or position of a top-level window
-are expected to be set by the system, the C<::originDontCare> and
-C<::sizeDontCare> properties can be set to 1 during window creation.
-If these set, the system is asked to size/position a window regarding
-its own windowing policy. The reverse is not always true, unfortunately.
-Either if these properties set to 0, or explicit size or positions are given,
-the system is hinted to use these values instead, but this does not
-always happen. Actually, this behavior is expected by the user and often does
-not get even noticed as something special. Therefore it is a good practice to test
-a top-level windowing code with several window managers.
+Another issue is the window positioning. Usually, if no explicit position is
+given, the window is positioned automatically by the system. The same is valid
+for the size.  But some window managers bend that to the extreme - for example, the
+default CDE setup forces the user to set positions of the newly created windows
+explicitly.  There is at least one point of certainty, however.  Typically, when
+the initial size and/or position of the top-level window are expected to be set
+by the system, the C<::originDontCare> and C<::sizeDontCare> properties can be
+set to 1 during the window creation.  If these are set, the system is requested
+to set the size and/or the position of the window according to its policy. The
+reverse is not always true, unfortunately.  When either of these properties is set
+to 0, or the explicit size or position is given, the system is requested to
+use these values instead, but this does not always succeed from the program's
+point of view. Such behavior however is expected from the user's perspective
+and often does not even get noticed as something special. Therefore it is a
+good practice to test top-level windowing code on several window managers.
 
-There are different policies about window positioning and sizing;
-some window managers behave best when the position is given to the window
-with the system-dependent decorations. It is hardly can be called a good
+Different policies define that define window positioning and sizing.
+Some window managers behave best when the position is given to the window
+including the system-dependent decorations. This hardly can be called a good
 policy, since it is not possible to calculate the derived window coordinates
-with certainty. This problem results in that it is impossible to
-be sure about window position and size before these are set explicitly.
-The only, not much efficient help the toolkit can provide is the property
-pair C<::frameOrigin> and C<::frameSize>, which along with C<::origin>
-and C<::size> reflect the position and size of a window, but taking into
-account the system-dependent decorations.
+with certainty. This leads to the fact that it can be impossible to know the
+exact size and position of the windows size before these are set explicitly.
+The only, not specially efficient help the toolkit can provide here, is the
+properties C<::frameOrigin> and C<::frameSize>, which along with the
+C<::origin> and C<::size> properties reflect the position and size of the
+window, but also taking into account the system-dependent decorations.
 
 =head2 Dialog execution
 
-Method of Prima::Window, C<execute()> brings a window
-in a modal state on top of other toolkit windows, and
+The C<execute> method switches the window
+into the modal state. That means that the window is requested to reside on top of the other windows from the same program. 
+The method
 returns after the window is dismissed in one or another way.
-This method is special as it is an implicit event loop,
-similar to
+It is special because it runs its own event loop, 
+similar to the
 
   run Prima;
 
-code. The event flow is not disrupted, but the windows and
-widgets that do not belong to the currently executed, the
-'modal' window group can not be activated. There can be many
-modal windows on top of each other, but only one is accessible.
-As an example a message box can be depicted, a window that prevents
-the user to work with the application windows until dismissed.
-There can be other message boxes on top of each other, preventing
-the windows below from operation as well.
-This scheme is called the 'exclusive' modality.
+code. The event flow is not disrupted, but the windows and widgets that do not
+belong to the currently executed, 'modal' window group can not be activated.
+There can be many modal windows on top of each other, but only one will be
+accessible for the user.  A typical message box window, that prevents other
+message boxes from being operated, is an example of this scheme.  This is also
+called the I<exclusive> modality.
 
-The toolkit also provides the shared modality scheme, where
-there can be several stacks of modal windows, not interfering
-with each other. Each window stack is distinct and contains its own windows.
-An example analogy is when several independent applications run with
-modal message boxes being activated. This scheme, however, can not be achieved
-with single execute()-like call without creating interlocking
-conditions. The shared model call, C<execute_shared()>,
-inserts the window into the shared modal stack, activates the window and returns immediately.
+The toolkit also provides the I<shared> modality scheme, where there can be
+several stacks of modal windows not interfering with each other. Each window
+stack contains its own windows.  An analogy, consider the situation when
+several independent applications run with their own modal message boxes being
+executed; the windows under the message boxes still are not accessible to the
+user, but the user can switch between the applications. This scheme, however,
+can not be programmed with a single execute()-like call without creating
+interlocking conditions. The shared model call, the C<execute_shared()> method,
+inserts the window into the shared modal stack, activates the window, and
+returns immediately.
 
-The both kinds of modal windows can coexist, but the exclusive
-windows prevents the shared from operation; while there are
-exclusive windows, the shared have same rights as the usual windows.
+Both kinds of modal windows can coexist in the same program, but the exclusive
+windows prevent the shared windows from being accessed by the user. While
+there are exclusive windows, the shared ones have the same rights as the normal
+windows.
 
-The stacking order for these two models is slightly different.  A window after
-execute() call is set on top of the last exclusive modal window, or, in other
-words, is added to the exclusive window stack. There can be only one exclusive
-window stack, but many shared window stacks; a window after execute_shared()
-call is added to a shared window stack, to the one the window's owner belongs
-to. The shared window stacks are rooted in so-called modal horizons, windows
-with boolean property C<::modalHorizon> set to C<true>. The default horizon is
+The stacking order for these two models is also slightly different.  The window
+after a call to the execute() method is sent to the top of the last exclusive
+modal window, or, in other words, is added to the exclusive window stack. There
+can be only one exclusive window stack, but many shared window stacks. The
+window after a call to the execute_shared() method is added to the shared
+window stack, to the one that the window's owner belongs to. The shared window
+stacks are located on so-called I<modal horizons>, the windows with the boolean
+property C<::modalHorizon> set to 1. The default modal horizon is
 C<::application>.
 
-A window in modal state can return to the normal (non-modal) state by calling
-C<end_modal()> method. The window is then hidden and disabled, and the windows
-below are accessible to the user. If the window was in the exclusive modal
-state, the execute() call is finished and returns the exit code, the value of
-C<::modalResult> property. There two shortcut methods that end modal state,
-setting C<::modalResult> to the basic 'ok' and 'not ok' code, correspondingly
-C<ok()> and C<cancel()> methods. Behavior of C<cancel()> is identical to when
+The window in any modal state can return to the normal non-modal state by
+calling the C<end_modal()> method. The window is then hidden and disabled, and
+the windows below it become accessible to the user. When the window's exclusive
+modal state is finished, its execute() method is finished as well; it returns
+the exit code, the same as the value of the C<::modalResult> property. 
+Two shortcut methods end the modal state and set the C<::modalResult>
+property to the basic 'ok' or 'not ok' code, correspondingly by the C<ok()> and
+C<cancel()> methods. The behavior of the C<cancel()> method is identical to when
 the user closes the modal window by clicking the system close button, pressing
-Escape key, or otherwise canceling the dialog execution. C<ok()> sets
-C<::modalResult> to C<mb::OK>, C<cancel()> to C<mb::Cancel>, correspondingly.
-There are more C<mb::XXX> constants, but these have no special meaning, any
-integer value can be passed. For example, C<Prima::MsgBox::message> method uses
-these constants so the message window can return up to four different C<mb>
-codes.
+the Escape key, or otherwise canceling the dialog execution. The C<ok()> method
+sets C<::modalResult> to C<mb::OK>, C<cancel()> to C<mb::Cancel>,
+correspondingly.  There are more C<mb::XXX> constants but these have no special
+meaning, any integer value can be passed. For example, the
+C<Prima::MsgBox::message> method uses these constants so the message window can
+return up to four different C<mb> codes.
 
 =head2 Menu
 
 A top-level window can be equipped with a menu bar. Its outlook
-is system-dependent, but can be controlled by the toolkit up to
-a certain level. The C<::menuItems> property, that manages the menu items
-of a C<::menu> object of L<Prima::Menu> class, arrange the layout
+is system-dependent but can be controlled by the toolkit up to
+a certain level. The C<::menuItems> property, which manages the menu items
+of a C<::menu> object of the L<Prima::Menu> class, arranges the layout
 of the menu. The syntax of the items-derived properties is described in
 L<Prima::Menu>, but it must be reiterated that menu items contain only
 hints, not requests for their exact representation. The same is valid for
@@ -180,41 +171,38 @@ Only one menu at a time can be displayed in a top-level window, although
 a window can be an owner for many menu objects. The key property is
 C<Prima::Menu::selected> - if a menu object is selected on a widget
 or a window object, it refers to the default menu actions, which, in
-case of Prima::Window is being displayed as menu bar.
+the case of Prima::Window is being displayed as a menu bar.
 
-NB: A window can be an owner for several menu objects and still do not
+Note: A window can be an owner for several menu objects and still not
 have a menu bar displayed, if no menu objects are marked as selected.
 
 =head2 Prima::Dialog
 
-Prima::Dialog, a descendant from Prima::Window, introduces no
-new functionality. It has its default values adjusted so
-the colors use more appropriate system colors, and hints
-the system that the outlook of a window is to be different,
-to resemble the system dialogs on systems where such are
-provided.
+The Prima::Dialog class, a descendant from Prima::Window, introduces no new
+functionality. It only has its default values adjusted so that the colors it
+uses are matching the appropriate system dialog colors. It also requests the
+system that the look of the dialog window is to be different, to resemble
+the system dialogs on systems where such are provided.
 
 =head2 Prima::MainWindow
 
-The class is a simple descendant of Prima::Window, which overloads
-C<on_destroy> notification and calls C<$application-E<gt>close> inside it. The
-purpose of declaration of a separate class for such a trifle difference is that
-many programs are designed under a paradigm where these is a main window, which
-is most 'important' to the user. As such the construct is used more often than
-any other, it is considered an optimization to write
+The class is a simple descendant of the Prima::Window class that overloads the
+C<Destroy> notification and calls the C<< $application->close >> inside it. The
+purpose of the declaration of a separate class for such a trifle difference is that
+many programs are designed under the paradigm where there exists the main window that
+is most important to the user. Since such a construct is used more often than
+any other, it is considered to be an optimization to write
 
-   Prima::MainWindow-> create( ... )
+   Prima::MainWindow->new( ... )
 
 rather than
 
-   Prima::Window-> create( ...,
+   Prima::Window->new( ...,
       mainWindow => 1,
       onDestroy  => sub { $::application-> close }
    )
 
-, although these lines are equivalent.
-
-Also, the C<$::main_window> is pointed to a newly created main window.
+Additionally, the C<$::main_window> scalar points to the newly created main window.
 
 See also C<mainWindow>.
 
@@ -226,42 +214,42 @@ See also C<mainWindow>.
 
 =item borderIcons INTEGER
 
-Hints the system about window's decorations, by
-selecting the combination of C<bi::XXX> constants.
-The constants are:
+Requests the system to provide decorations for the window, by
+selecting a combination of the C<bi::XXX> constants.
+These constants are:
 
-   bi::SystemMenu  - system menu button and/or close button
-                     ( usually with icon ) is shown
+   bi::SystemMenu  - the system menu button and/or close button
+                     ( usually with the icon )
    bi::Minimize    - minimize button
-   bi::Maximize    - maximize ( and eventual restore )
-   bi::TitleBar    - window title
+   bi::Maximize    - maximize/restore button
+   bi::TitleBar    - the window title
    bi::All         - all of the above
 
-Not all systems respect these hints, and many systems
-provide more navigating decoration controls than these.
+Not all systems respect these requests, and some systems provide more
+decoration controls, but these are not addressable by the toolkit.
 
 =item borderStyle STYLE
 
-Hints the system about window's border style, by selecting
-one of C<bs::XXX> constants. The constants are:
+Requests the system to set the window border style, by selecting
+one of the C<bs::XXX> constants. These constants are:
 
    bs::None      - no border
    bs::Single    - thin border
    bs::Dialog    - thick border
-   bs::Sizeable  - thick border with interactive resize capabilities
+   bs::Sizeable  - border that can be resized
 
-C<bs::Sizeable> is an unique window mode. If selected, the user
-can resize the window, not only by dragging the window borders with
-the mouse but by other system-dependent means. The other border styles
-disallow interactive resizing.
+C<bs::Sizeable> is a unique window mode. If selected, the user can resize the
+window, not only by dragging the window borders with the mouse but by other
+system-dependent means. The other border styles do not allow interactive
+resizing.
 
-Not all systems recognize all these hints, although many recognize
-interactive resizing flag.
+Not all systems recognize all of the requests, although all recognize the
+interactive resizing request.
 
 =item effects HASH or undef
 
 This generic property implements system-specific window effects, not necessarily portable. The format of the hash
-is also system-specific. The only portable behavior here is that setting the value to C<undef> cancels all effects.
+is also system-specific. The only portable behavior here is that setting the value to C<undef> cancels all the effects.
 
 Example:
 
@@ -272,60 +260,53 @@ Example:
        },
    });
 
-Previously this was the mechanism for setting the DWM blur on Windows 7 and 8, but as Windows 10 removed it,
-this capability was also removed, so as for now this is basically an empty call.
+Previously this mechanism was used for setting the DWM blur on Windows 7 and 8,
+but as Windows 10 removed it, this capability was also removed, so for now
+this is an empty call reserved for future use.
 
 =item frameHeight HEIGHT
 
-Maintains the height of a window, including
-the window decorations.
+Maintains the height of the window, including the window decorations.
 
 =item frameOrigin X_OFFSET, Y_OFFSET
 
-Maintains the left X and bottom Y boundaries of a window's
-decorations relative to the screen.
+Maintains the left X and bottom Y boundaries of the window's decorations
+relative to the screen.
 
 =item frameSize WIDTH, HEIGHT
 
-Maintains the width and height of a window, including
-the window decorations.
+Maintains the width and height of the window, including the window decorations.
 
 =item frameWidth WIDTH
 
-Maintains the width of a window, including
-the window decorations.
-
+Maintains the width of the window, including the window decorations.
 
 =item icon OBJECT
 
-Hints the system about an icon, associated with a window.
-If OBJECT is C<undef>, the system-default icon is assumed.
+Requests the system to associate the icon with the window.
+If OBJECT is set to C<undef>, removes the association.
 
 See also: C<ownerIcon>
 
 =item mainWindow BOOLEAN
 
-Tells the system that the window is the main window for the application.  When
-dialogs and modal windows are not anchored to any specific window, the main
-window is used. In this context, anchoring means that if, for example, a window
-spawns a dialog, and then is minimized or obscured, and then the user clicks on
-either window, both can be brought forward (also in correct Z-order) by the system
-window manager.
+Tells the system that the window is the main window for the application.  The
+X11 implementation uses this field to associate dialogs with the main
+application window.
 
 =item menu OBJECT
 
-Manages a Prima::Menu object associated with a window.
-Prima::Window can host many Prima::Menu objects,
-but only the one that is set in
-C<::menu> property will be seen as a menu bar.
+Manages the Prima::Menu object associated with the window.  Prima::Window can
+host many Prima::Menu objects, but only the one that is registered in the
+C<::menu> property is visualized as the menu bar.
 
 See also: C<Prima::Menu>, C<menuItems>
 
 =item menuColorIndex INDEX, COLOR
 
-Maintains eight color properties of a menu,
-associated with a window. INDEX must be one of C<ci::XXX> constants
-( see L<Prima::Widget>, I<colorIndex> section ).
+Manages eight color properties of a menu associated with the window. INDEX
+must be one of the C<ci::XXX> constants ( see L<Prima::Widget>, I<colorIndex>
+section ).
 
 See also: C<menuItems>, C<menuFont>, C<menu>
 
@@ -343,71 +324,70 @@ See also: C<menuItems>, C<menuColorIndex>, C<menuFont>, C<menu>
 
 =item menuDark3DColor COLOR
 
-Color for drawing dark shadings in menus.
+The color for drawing dark shades in menus.
 
 See also: C<menuItems>, C<menuColorIndex>, C<menuFont>, C<menu>
 
 =item menuDisabledColor COLOR
 
-Foreground color for disabled items in menus.
+Foreground color for the disabled items in menus.
 
 See also: C<menuItems>, C<menuColorIndex>, C<menuFont>, C<menu>
 
 =item menuDisabledBackColor COLOR
 
-Background color for disabled items in menus.
+Background color for the disabled items in menus.
 
 See also: C<menuItems>, C<menuColorIndex>, C<menuFont>, C<menu>
 
 =item menuFont %FONT
 
-Maintains the font of a menu, associated with a window.
+Manages the font of the menu
 
 See also: C<menuItems>, C<menuColorIndex>, C<menu>
 
 =item menuHiliteColor COLOR
 
-Foreground color for selected items in menus.
+Foreground color for the selected items in menus.
 
 See also: C<menuItems>, C<menuColorIndex>, C<menuFont>, C<menu>
 
 =item menuHiliteBackColor COLOR
 
-Background color for selected items in menus.
+Background color for the selected items in menus.
 
 See also: C<menuItems>, C<menuColorIndex>, C<menuFont>, C<menu>
 
 =item menuItems [ ITEM_LIST ]
 
-Manages items of a Prima::Menu object associated with a window.
-The ITEM_LIST format is same as C<Prima::AbstractMenu::items>
+Manages items of the Prima::Menu object that is associated with the window.
+The ITEM_LIST format is the same as in the C<Prima::AbstractMenu::items> property
 and is described in L<Prima::Menu>.
 
 See also: C<menu>, C<menuColorIndex>, C<menuFont>
 
 =item menuLight3DColor COLOR
 
-Color for drawing light shadings in menus.
+Color for drawing light shades in menus.
 
 See also: C<menuItems>, C<menuColorIndex>, C<menuFont>, C<menu>
 
 =item modalHorizon BOOLEAN
 
-Reflects if a window serves as root to the shared modal window stack.  A window
-with C<::modalHorizon> set to 1 in shared modal state groups its children
-windows in a window stack, separate from other shared modal stacks. The
-C<::modalHorizon> is therefore useful only when several shared modal window
-stacks are needed.
+Sets a flag that tells if the window serves as root to the shared modal window
+stack.  A window with C<::modalHorizon> set to 1 groups its children windows in
+a window stack, separate from other shared modal stacks. The C<::modalHorizon>
+is therefore useful only when several shared modal window stacks are needed.
 
 The property also serves as an additional grouping factor for widgets and
 windows. For example, default keyboard navigation by tab and arrow keys is
-limited to the windows and widgets of a single window stack.
+limited to the windows and widgets of the same window stack.
 
 =item modalResult INTEGER
 
-Maintains a custom integer value, returned by C<execute()>.
-Historically it is one of C<mb::XXX> constants, but any
-integer value can be used. The most useful C<mb::> constants are:
+Manages a custom integer value returned by the C<execute()> method.
+Historically it is one of the C<mb::XXX> constants, but any integer value can be
+used. The most useful C<mb::> constants are:
 
    mb::OK, mb::Ok
    mb::Cancel
@@ -418,49 +398,47 @@ integer value can be used. The most useful C<mb::> constants are:
    mb::Ignore
    mb::Help
 
-NB: These constants are defined so they can be bitwise-or'ed,
-and I<Prima::MsgBox> package uses this feature, where one
-of its functions parameters is a combination of C<mb::> constants.
+Note: These constants are defined so they can be or'ed bitwise, and the
+I<Prima::MsgBox> package uses this feature in one of its parameters that can be
+a combination of the C<mb::> constants.
 
 =item onTop BOOLEAN
 
-If set, the window is hinted to stay on top of all other windows.
+If set, the window is requested to stay on top of all other windows in the system.
 
 Default value: 0
 
 =item ownerIcon BOOLEAN
 
-If 1, the icon is synchronized with the owner's.
-Automatically set to 0 if C<::icon> property is explicitly set.
-Default value is 1, so assigning an icon to $::application
-spawns the icon to all windows.
+If 1, the icon is synchronized with the owner's.  Automatically set to 0 if the
+C<::icon> property is explicitly set.  The default value is 1, so assigning an
+icon to $::application automatically assigns it to all windows.
 
 =item taskListed BOOLEAN
 
-If set to 0, hints the system against
-reflecting existence of a window into a system task bar,
-or a top-level window list, or otherwise lower the window's
-value before the other windows. If 1, does not hint anything.
+If set to 0, requests that the system should not show the window in the
+system taskbar or the top-level window menu, if there is any.
+
+If 1, does not request anything.
 
 Default value: 1
 
 =item windowState STATE
 
-A three-state property, that governs the state of a window.
-STATE can be one of four C<ws::XXX> constants:
+The property that manages the state of the window.  STATE can be one of the four
+C<ws::XXX> constants:
 
    ws::Normal
    ws::Minimized
    ws::Maximized
    ws::Fullscreen
 
-There can be more or less, or other window states
-provided by the system, but these four were chosen as
-a 'least common denominator'.  The property can be changed
-either by explicit set-mode call or by the user. In either case,
-a C<WindowState> notification is triggered.
+There can be other window states provided by the system, but these four were
+chosen as a 'least common denominator'.  The property can be changed either by
+an explicit set-mode call or by the user. In either case, a C<WindowState>
+notification is triggered.
 
-The property has three convenience wrappers: C<maximize()>,
+The property has the corresponding convenience wrappers: C<maximize()>,
 C<minimize()>, C<restore()>, and C<fullscreen()>.
 
 See also: C<WindowState>
@@ -473,122 +451,114 @@ See also: C<WindowState>
 
 =item cancel
 
-A standard method to dismiss a modal window with C<mb::Cancel>
-result. The effect of calling this method is equal to when
-the user selects a 'close window' action with system-provided
-menu, button or other tool.
+A standard method to dismiss the modal window with the C<mb::Cancel> result.
+The effect of calling this method is equal to the action when the user closes
+the window with the system-provided menu, button, or some other command.
 
 See also: C<ok>, C<modalResult>, C<execute>, C<execute_shared>
 
-
 =item end_modal
 
-If a window is in modal state, the C<EndModal>
-notification is activated.
-Then the window is returned from the modal state,
-gets hidden and disabled.
-If the window was on top in the exclusive modal state,
-the last called C<execute()> function finishes.
-If the window was not on top in the exclusive modal state,
-the corresponding C<execute()> function finishes after
-all subsequent execute() calls are finished.
+Turns off the window modal state, sends the C<EndModal> notification, and hides and
+disables the window.  If the window is on top in the exclusive modal state,
+the last called C<execute()> method finishes. If the window was not on top in
+the exclusive modal state, the corresponding C<execute()> function finishes
+after all subsequent execute() calls are finished.
 
 =item execute INSERT_BEFORE = undef
 
-A window is turned to the exclusive modal state
-and is put on top of non-modal and shared-modal windows.
-By default, if INSERT_BEFORE object is undef, the window
-is also put on top of other exclusive-modal windows;
-if INSERT_BEFORE is one of the exclusive-modal windows
-the window is placed in queue before the INSERT_BEFORE window.
-The window is showed and enabled, if necessary, and
-C<Execute> notification is triggered.
+Switches the window to the exclusive modal state and puts it on top of all
+non-modal and shared-modal windows.  By default, if INSERT_BEFORE object is
+undef, the window is also put on top of other exclusive-modal windows; if
+INSERT_BEFORE is one of the exclusive-modal windows the window is placed in the
+queue before the INSERT_BEFORE window.  The window is made visible and enabled, if
+necessary, and the C<Execute> notification is triggered.
 
-The function is returned when a window is dismissed,
-or if the system-dependent 'exit'-event is triggered by the
-user ( the latter case falls through all execute() calls
-and terminates C<run Prima;> call, exiting gracefully).
+The function is returned after the window is dismissed, or if the
+system-dependent 'exit'-event is triggered by the user ( the latter case makes
+the execution fall through all of the running execute() calls and terminates
+the C<run Prima;> call, exiting gracefully).
 
 =item execute_shared INSERT_BEFORE = undef
 
-A window is turned to the shared modal state
-and is put on top of non-modal windows in the stack
-of its C<::modalHorizon>. A window with C<::modalHorizon>
-set to 1 starts its own stack, independent of all other
-window stacks.
+Switches the window to the shared modal state and put it on top of all
+non-modal windows that belong to the same modal horizon.  If the window has the
+C<::modalHorizon> property value set to 1, starts its own stack, independent
+of all other window stacks.
 
-By default, if INSERT_BEFORE object is undef, the window
-is also put on top of other shared-modal windows in its stack.
-If INSERT_BEFORE is one of the shared-modal windows in its stack,
-the window is placed in queue before the INSERT_BEFORE window.
+By default, if the INSERT_BEFORE object is undef, the window is also put on top of
+other shared-modal windows in the same stack.  If INSERT_BEFORE is one of the
+shared-modal windows in the stack, the window is placed in the queue before the
+INSERT_BEFORE window.
 
-The window is showed and enabled, if necessary, and
-C<Execute> notification is triggered.
+The window is made visible and enabled, if necessary, and the C<Execute>
+notification is triggered.
 
-The function is returned immediately.
+The function returns immediately.
 
 =item fullscreen
 
-Sets window in a fullscreen mode. A shortcut for C<windowState(ws::Fullscreen)>.
+Sets the window in the fullscreen mode. A shortcut for the
+C<windowState(ws::Fullscreen)> call.
 
 =item get_client_handle
 
-Returns a system handle for a system window that is inserted in top-level windows and
-covers all of its area. Is different from C<Window::get_handle> in that it returns the
-system handle of the top-level window itself. In other terms, window returned by
-this function is a child of the window returned by C<Window::get_handle>.
+Returns the system handle for the special client window that is inserted in the
+top-level window and covers all of its areas. It is different from the
+C<get_handle> method in that the latter returns the system handle of the
+top-level window itself. In other terms, the handle returned by this function
+is a child of the window returned by C<get_handle>.
 
 See also: C<get_handle>
 
 =item get_default_menu_font
 
-Returns the default font for a Prima::Menu class.
+Returns the default font for the Prima::Menu class.
 
 =item get_modal
 
-Returns one of three constants, reflecting the modal
-state of a window:
+Returns one of the three constants that reflect the modal
+state of the window:
 
    mt::None
    mt::Shared
    mt::Exclusive
 
-Value of C<mt::None> is 0, so result of get_modal() can be
-also treated as a boolean value, if only the fact of modality
-is needed to check.
+The value of C<mt::None> is 0, so the result of get_modal() can be also treated as
+a boolean value if one needs to check if the window is modal or not.
 
 =item get_modal_window MODALITY_TYPE = mt::Exclusive, NEXT = 1
 
-Returns a modal window, that is next to the given window in the
-modality chain. MODALITY_TYPE selects the chain, and can be either
-C<mt::Exclusive> or C<mt::Shared>. NEXT is a boolean flag, selecting
-the lookup direction; if it is 1, the 'upper' window is returned,
-if 0, the 'lower' one ( in a simple case when window A is made modal
-(executed) after modal window B, the A window is the 'upper' one ).
+Returns the modal window that is next to the given window in the modality
+chain. MODALITY_TYPE selects the chain, and can be either C<mt::Exclusive> or
+C<mt::Shared>. NEXT is the boolean flag selecting the lookup direction; if it
+is 1, the 'upper' window is returned, otherwise the 'lower' one ( in a simple
+case when the window A is made modal (executed) after the modal window B, the A
+window is the 'upper' one ).
 
-If a window has no immediate modal relations,  C<undef> is returned.
+If the window has no immediate modal siblings,  C<undef> is returned.
 
 =item maximize
 
-Maximizes window. A shortcut for C<windowState(ws::Maximized)>.
+Maximizes the window. A shortcut for C<windowState(ws::Maximized)>.
 
 =item minimize
 
-Minimizes window. A shortcut for C<windowState(ws::Minimized)>.
+Minimizes the window. A shortcut for C<windowState(ws::Minimized)>.
 
 =item ok
 
-A standard method to dismiss a modal window with C<mb::OK>
+The standard method to dismiss the modal window with the C<mb::OK>
 result. Typically the effect of calling this method is equal to when
-the user presses the enter key of a modal window, signaling that
+the user presses the enter key of on the modal window, signalling that
 the default action is to be taken.
 
 See also: C<cancel>, C<modalResult>, C<execute>, C<execute_shared>
 
 =item restore
 
-Restores window to normal state from
-minimized or maximized state. A shortcut for C<windowState(ws::Normal)>.
+Restores the window to a normal state from the minimized or maximized state. A
+shortcut for C<windowState(ws::Normal)>.
 
 =back
 
@@ -598,43 +568,40 @@ minimized or maximized state. A shortcut for C<windowState(ws::Normal)>.
 
 =item Activate
 
-Triggered when a window is activated by the user.
-Activation mark is usually resides on a window that
-contains keyboard focus, and is usually reflected by
-highlighted system decorations.
+Triggered when the window is activated by the user.  The active window is the
+one that has the keyboard focus; its decorations are usually highlighted by the
+system.
 
-The toolkit does not provide standalone activation
-functions; C<select()> call is used instead.
+The toolkit does not provide a standalone activation function, the C<select()>
+method is used for this instead.
 
 =item Deactivate
 
-Triggered when a window is deactivated by the user.
-Window is usually marked inactive, when it contains
-no keyboard focus.
+Triggered when the window is deactivated by the user.  The window is marked
+inactive when it has no keyboard focus.
 
-The toolkit does not provide standalone de-activation
-functions; C<deselect()> call is used instead.
+The toolkit does not provide a standalone deactivation function, the
+C<deselect()> method is used for this instead.
 
 =item EndModal
 
-Called before a window leaves modal state.
+Called before the window leaves the modal state.
 
 =item Execute
 
-Called after a window enters modal state.
+Called as soon as the window enters the modal state.
 
 =item SysHandle
 
-Same as in C<Widget>, but it addition to the Widget properties that may trigger
-the event, the following C<Window> properties can trigger it as well:
-L<taskListed>, L<borderIcons>, L<borderStyle>, L<onTop>
+Same as in the C<Prima::Widget> class, but in addition to the Widget properties
+that may trigger the event, the following C<Window> properties can trigger it
+as well: L<taskListed>, L<borderIcons>, L<borderStyle>, L<onTop>
 
 =item WindowState STATE
 
-Triggered when window state is changed, either by
-an explicit C<windowState()> call, or by the user.
-STATE is the new window state, one of three C<ws::XXX>
-constants.
+Triggered when the window state is changed, either by an explicit
+C<windowState()> call or by the user. STATE is the new window state, one of
+the four C<ws::XXX> constants.
 
 =back
 
@@ -642,10 +609,8 @@ constants.
 
 Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
 
-
 =head1 SEE ALSO
 
 L<Prima>, L<Prima::Object>, L<Prima::Drawable>,
 L<Prima::Widget>.
-
 

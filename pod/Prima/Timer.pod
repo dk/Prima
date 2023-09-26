@@ -15,17 +15,15 @@ Prima::Timer - programmable periodical events
 
 =head1 DESCRIPTION
 
-Prima::Timer arranges periodical notifications
-to be delivered in certain time intervals.
-The notifications are triggered by the system,
-and are seen as C<Tick> events. There can be
-many active Timer objects at one time, spawning events
-simultaneously.
+The Prima::Timer class arranges for the periodical notifications to be
+delivered in certain time intervals.  The notifications are triggered by the
+system and are seen as the C<Tick> events. There can be many active Timer
+objects at one time, spawning events simultaneously.
 
 =head1 USAGE
 
-Prima::Timer is a descendant of Prima::Component.
-Objects of Prima::Timer class are created in standard fashion:
+The Prima::Timer class is a descendant of the Prima::Component class.
+Objects of the Prima::Timer class are created in the standard fashion:
 
   my $t = Prima::Timer-> create(
      timeout => 1000,
@@ -35,18 +33,17 @@ Objects of Prima::Timer class are created in standard fashion:
 
 If no `owner` is given, $::application is assumed.
 
-Timer objects are created in inactive state; no events
-are spawned. To start spawning events, <start()> method
-must be explicitly called. Time interval value is assigned
-using the <::timeout> property in milliseconds.
+Timer objects are created in the inactive state; no events are spawned by
+default. To start spawning events, the C<start()> method must be explicitly
+called. The time interval value is assigned by calling the <::timeout>
+property.
 
-When the system generates timer event, no callback
-is called immediately, - an event is pushed into
-stack instead, to be delivered during next event loop.
-Therefore, timeout value is not held accurately, and events
-may take longer time to pass. More accurate timing scheme,
-as well as timing with precision less than a millisecond,
-is not supported by the toolkit.
+When the system generates a timer event, no callback is called immediately, -
+an event is pushed into the internal event stack instead, to be delivered
+during the next event loop.  Therefore it cannot be guaranteed that the onTick
+noitifications will be called precisely after a timeout. A more accurate timing
+scheme, as well as timing with a precision of less than a millisecond, is not
+supported by the toolkit.
 
 =head1 API
 
@@ -56,9 +53,9 @@ is not supported by the toolkit.
 
 =item timeout MILLISECONDS
 
-Manages time interval between C<Tick> events.
-In set-mode call, if the timer is in active state ( see C<get_active()>,
-the new timeout value is applied immediately.
+Manages time intervals between the C<Tick> events.  In the set-mode call, if
+the timer is in the active state already ( see C<get_active()>, the new timeout
+value is applied immediately.
 
 =back
 
@@ -68,24 +65,23 @@ the new timeout value is applied immediately.
 
 =item get_active
 
-Returns a boolean flag, whether object is in active
-state or not. In the active state C<Tick> events are
-spawned after C<::timeout> time intervals.
+Returns the boolean flag that reflects whether the object is in the active state or
+not. In the active state C<Tick> events are spawned after C<::timeout> time
+intervals.
 
 =item get_handle
 
-Returns a system-dependent handle of object
+Returns the system-dependent handle of the printer object
 
 =item start
 
-Sets object in active state. If succeed,
-or if the object is already in active state,
-returns 1. If the system was unable to create
-a system timer instance, 0 is returned.
+Sets the object in the active state. If succeeds or if the object is already in the
+active state, returns 1. If the system is unable to create a system timer
+instance, the value of 0 is returned.
 
 =item stop
 
-Sets object in inactive state.
+Sets object in the inactive state.
 
 =item toggle
 
@@ -99,8 +95,8 @@ Toggles the timer state
 
 =item Tick
 
-A system generated event, spawned every C<::timeout>
-milliseconds if object is in active state.
+The system-generated event spawned every C<::timeout> milliseconds if the object is
+in the active state.
 
 =back
 

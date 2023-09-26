@@ -4,37 +4,34 @@ Prima::internals - Prima internal architecture
 
 =head1 DESCRIPTION
 
-This documents elucidates the internal structures
-of the Prima toolkit, its loading considerations,
-object and class representation and C coding style.
+This document describes the internal structures of the Prima toolkit, its
+loading considerations, object and class representation, and C coding style.
 
 =head1 Bootstrap
 
 =head2 Initializing
 
-For a perl script, Prima is no more but an average module
-that uses DynaLoader. As 'use Prima' code gets executed, a bootstrap
-procedure boot_Prima() is called. This procedure initializes
-all internal structures and built-in Prima classes. It also
-initializes all system-dependent structures, calling
-window_subsystem_init(). After that point Prima module
-is ready to use. All wrapping code for built-in functionality
-that can be seen from perl is located into two modules -
-Prima::Const and Prima::Classes.
+From the point of view of a perl script, Prima is no more but an average module
+that uses DynaLoader.  As the C<use Prima> code gets executed, the bootstrap procedure
+boot_Prima() is called. This procedure initializes all internal structures and
+built-in Prima classes. It also initializes all system-dependent structures,
+calling window_subsystem_init(). After that point, the Prima module is ready to use.
+All wrapping code for built-in functionality that can be seen from perl is
+in two modules - Prima::Const and Prima::Classes.
 
 =head2 Constants
 
-Prima defines lot of constants for different purposes
-( e.g. colors, font styles etc). Prima does not
-follow perl naming conventions here, on the reason of simplicity.
-It is ( arguably ) easier to write cl::White rather than Prima::cl::White.
-As perl constants are functions to be called once ( that means that a constant's
-value is not defined until it used first ), Prima registers these functions
-during boot_Prima stage. As soon as perl code tries to get a constant's value,
-an AUTOLOAD function is called, which is banded inside Prima::Const.
-Constants are widely used both in C and perl code, and are defined in apricot.h
-in that way so perl constant definition comes along with C one.
-As an example file event constants set is described here.
+Prima defines a lot of constants for different purposes ( e.g. colors, font
+styles,0 etc). Prima does not follow perl naming conventions here, for the sake
+of simplicity.  It is ( arguably ) easier to write cl::White rather than
+Prima::cl::White.  As perl constants are functions to be called once ( that
+means that a constant's value is not defined until it is used first ), Prima
+registers these functions during the boot_Prima stage. As soon as perl code
+tries to get a constant's value, an AUTOLOAD function is called, which is
+banded inside Prima::Const.  Constants are widely used both in C and perl code
+and are defined in F<apricot.h> in such a way so that perl constant definitions
+come along with the C ones.  As an example file event constants set is
+described here.
 
  apricot.h:
    #define FE(const_name) CONSTANT(fe,const_name)
@@ -51,79 +48,77 @@ As an example file event constants set is described here.
  Const.pm:
    package fe; *AUTOLOAD = \&Prima::Const::AUTOLOAD;
 
-This code creates a structure of UV's ( unsigned integers ) and
-a register_fe_constants() function, which should be called at
-boot_Prima stage. This way feRead becomes C analog to
-fe::Read in perl.
+This code creates a structure filled with UVs ( unsigned integers ) and
+declares a register_fe_constants() function, which should be called at the
+boot_Prima stage. This way feRead becomes the C analog to the fe::Read in perl.
 
 =head1 Classes and methods
 
 =head2 Virtual method tables
 
-Prima implementation of classes uses virtual method tables, or VMTs, in order to
+Prima implementation of classes uses virtual method tables, or VMTs, to
 make the classes inheritable and their methods overridable. The VMTs are
 usual C structs, that contain pointers to functions.
-Set of these functions represents a class. This chapter is not about OO
+A set of these functions represents a class. This chapter is not about OO
 programming, you have to find a good book on it if you are not familiar with
 the OO concepts, but in short, because Prima is written in C, not in C++,
 it uses its own classes and objects implementation, so all object syntax
 is devised from scratch.
 
-Built-in classes already contain all information needed for method
-overloading, but when a new class is derived from existing one,
-new VMT is have to be created as well. The actual sub-classing
-is performed inside build_dynamic_vmt() and build_static_vmt().
-gimme_the_vmt() function creates new VMT instance on the fly and
-caches the result for every new class that is derived from Prima class.
-
+The built-in classes already contain all the information needed for method
+overloading, but when a new class is derived from an existing one, a new VMT
+has to be created as well. The actual sub-classing is performed inside
+build_dynamic_vmt() and build_static_vmt().  gimme_the_vmt() function creates a
+new VMT instance on the fly and caches the result for every new class that is
+derived from a Prima built-in class.
 
 =head2 C to Perl and Perl to C calling routines
 
-Majority of Prima methods is written in C using XS perl
-routines, which represent a natural ( from a perl programmer's view ) way
-of C to Perl communication.
-L<perlguts> manpage describes these functions and macros.
+The majority of Prima methods are written in C using XS perl routines, which
+represent a natural ( from a perl programmer's view ) way of C-to-Perl
+communication.  L<perlguts> manpage describes these functions and macros.
 
-NB - Do not mix XS calls to xs language ( L<perlxs> manpage) - the latter
+Note: Do not mix XS calls with the XS language ( L<perlxs> manpage) - the latter
 is a meta-language for simplification of coding tasks and is not used
-in Prima implementation.
+in the Prima implementation.
 
 It was decided not to code every function with XS calls, but instead
 use special wrapper functions ( also called "thunks") for every function
 that is called from within perl. Thunks are generated automatically
-by gencls tool ( L<prima-gencls> manpage ), and typical Prima method
+by the gencls tool ( L<prima-gencls> manpage ), and the typical Prima method
 consists of three functions, two of which are thunks.
 
-First function, say Class_init(char*), would initialize a class ( for example).
-It is written fully in C, so in order to be called from perl code
-a registration step must be taken for a second function,
-Class_init_FROMPERL(), that would look like
+The first function, say Class_init(char*), would initialize a class ( for
+example).  It is written fully in C, so to be called from perl code a
+registration step must be taken for the second function, Class_init_FROMPERL(),
+that would look like this:
 
    newXS( "Prima::Class::init", Class_init_FROMPERL, "Prima::Class");
 
-Class_init_FROMPERL() is a first thunk, that translates the parameters
-passed from perl to C and the result back from C function to perl.
+Class_init_FROMPERL() is the first thunk, that translates the parameters
+passed from perl to C and the result back from the C function to perl.
 This step is almost fully automatized, so one never bothers about writing
-XS code, the gencls utility creates the thunks code automatically.
+the XS code, the gencls utility creates the thunks code automatically.
 
-Many C methods are called from within Prima C code using VMTs, but
-it is possible to override these methods from perl code. The
-actions for such a situation when a function is called from C but is
-an overridden method therefore must be taken. On that occasion the third function
-Class_init_REDEFINED() is declared. Its task is a reverse from Class_init_FROMPERL() -
-it conveys all C parameters to perl and return values from a perl function
-back to C. This thunk is also generated automatically by gencls tool.
+Many C methods are called from within Prima C code using VMTs, but it is
+possible to override these methods from the perl code too. The actions for such
+a situation when a function is called from C but is an overridden method
+therefore must be taken. On that occasion, the third function
+Class_init_REDEFINED() is declared. Its task is a reverse from
+Class_init_FROMPERL() - it conveys all C parameters to perl and returns values
+from a perl function back to C. This thunk is also generated automatically by
+the gencls tool.
 
 As one can notice, only basic data types can be converted between C and perl,
-and at some point automated routines do not help. In such a situation
-data conversion code is written manually and is included into core C files.
-In the class declaration files these methods are prepended with 'public' or 'weird'
-modifiers, when methods with no special data handling needs use 'method' or
-'static' modifiers.
+and at some point, automated routines do not help. In such a situation data
+conversion code is written manually and is included in core C files.  In the
+class declaration files these methods are prepended with the 'public' or
+'weird' modifiers, while methods with no special data handling need to use the
+'method' or 'static' modifiers.
 
-NB - functions that are not allowed to be seen from perl have 'c_only' modifier,
-and therefore do not need thunk wrapping. These functions can nevertheless
-be overridden from C.
+Note: functions that are not allowed to be seen from perl should have the
+'c_only' modifier, and do not need the thunk wrapping. These functions can
+nevertheless be overridden from C.
 
 =head2 Built-in classes
 
@@ -148,38 +143,34 @@ Prima defines the following built-in classes: (in hierarchy order)
                         Application
                         Window
 
-These classes can be seen from perl with Prima:: prefix.
-Along with these, Utils class is defined. Its only
-difference is that it cannot be used as a prototype for an
-object, and used merely as a package that binds functions.
-Classes that are not intended to be an object prototype
-marked with 'package' prefix, when others are marked with 'object'
-(see prima-gencls manpage).
+These classes can be seen from perl with Prima:: prefix.  Along with these, the
+Utils class is defined in a special way. Its only difference is that it cannot
+be used as a prototype for an object, and used merely as a package that binds
+functions.  Classes that are not intended to be an object prototype are marked with
+the 'package' prefix while the other classes are marked with the 'object'
+prefix (see prima-gencls manpage).
 
 =head1 Objects
 
-This chapter deals only with Prima::Object descendants, pure
-perl objects are not of interest here, so the 'object' term is
-thereafter referenced to Prima::Object descendant object.
-Prima employs blessed hashes for its objects.
+This chapter deals only with Prima::Object descendants, pure perl objects are
+not of interest here, so the 'object' term is thereafter referenced to be the
+Prima::Object descendant object.  Prima employs blessed hashes as its objects.
 
 =head2 Creation
 
-All built-in object classes and their descendants can be used for
-creating objects with perl semantics. Perl objects are created
-by calling bless(), but it is not enough to create
-Prima objects. Every Prima::Object descendant class therefore is
-equipped with create() method, that allocates object instance
-and calls bless() itself. Parameters that come with create() call
-are formed into a hash and passed to init() method, that is also
-present on every object. Note the fact that although perl-coded init()
-returns the hash, it not seen in C code. This is a special
-consideration for the methods that have 'HV * profile' as a last
-parameter in their class declaration. The corresponding thunk
-copies the hash content back to perl stack, using parse_hv()
-and push_hv() functions.
+All built-in object classes and their descendants can be used for creating
+objects with perl semantics. Perl objects are created by calling bless(), but
+this is not enough to create Prima objects. Every Prima::Object descendant
+class therefore is equipped with the create() method, which allocates the
+object instance and calls bless() itself. Parameters that come to the create()
+call are formed into a hash and passed to the init() method, which is also
+present on every object. Note that although the perl-coded init() returns the
+hash, it is not seen in C code. This is a special consideration for the methods
+that have 'HV * profile' as a last parameter in their class declaration. The
+corresponding thunk copies the hash content back to the perl stack, using the
+parse_hv() and push_hv() functions.
 
-Objects can be created from perl by using following code example:
+Objects can be created from perl by using the following code example:
 
    $obj = Prima::SampleObject-> create(
        name  => "Sample",
@@ -208,8 +199,8 @@ named profile. C<pset_i> works with integers, C<pset_c> - with strings, etc.
 
 =head2 Destruction
 
-As well as create() method, every object class has destroy() method.
-Object can be destroyed either from perl
+As well as the create() method, every object class has the destroy() method.
+An object can be destroyed either from perl
 
    $obj-> destroy
 
@@ -224,55 +215,48 @@ creation. The code
 
    --SvREFCNT( SvRV( PAnyObject(object)-> mate));
 
-is required if the object is to be returned to perl.
-If that code is not called, the object still could be
-destroyed explicitly, but its reference would still live,
-resulting in memory leak problem.
+is required if the object is to be returned to perl.  If that code is not
+called, the object still could be destroyed explicitly, but its reference would
+still live, resulting in a memory leak problem.
 
-For user code it is sufficient to overload done() and/or cleanup()
-methods, or just onDestroy notifications. It is highly recommended
-to avoid overloading destroy method, since it can be called
-in re-entrant fashion. When overloading done(), be prepared that
-it may be called inside init(), and deal with the
-semi-initialized object.
+For the user code it is sufficient to overload done() and/or cleanup() methods,
+or just the onDestroy notification. It is highly recommended to avoid overloading
+the destroy() method since it can be called in a re-entrant fashion. When
+overloading done(), be prepared that it may be called inside init(), and deal
+with the semi-initialized object.
 
 =head2 Data instance
 
-All object data after their creation represent an object instance.
-All Prima objects are blessed hashes, and the hash key
-__CMATE__ holds a C pointer to a memory which is occupied
-by C data instance, or a "mate". It keeps all object variables
-and a pointer to VMT. Every object has its own copy of data instance,
-but the VMTs can be shared. In order to reach to C data instance
-gimme_the_mate() function is used. As a first parameter it accepts
-a scalar (SV*), which is expected to be a reference to a hash, and
-returns the C data instance if the scalar is a Prima object.
+All Prima objects are blessed hashes, and the hash key __CMATE__ holds a C
+pointer to a memory that is occupied by a C data instance, or a "mate". It
+keeps all object variables and a pointer to the VMT. Every object has its own
+copy of the data instance, but the VMTs can be shared. To reach the C data
+instance gimme_the_mate() function is used. As the first argument, it accepts a
+scalar (SV*), which is expected to be a reference to a hash, and returns the C
+data instance if the scalar is a Prima object.
 
 =head2 Object life stages
 
-It was decided to divide object life stage in several steps.
-Every stage is mirrored into PObject(self)-> stage integer variable,
-which can be one of csXXX constants.
-Currently it has six:
+There are several steps, or "stages", in every object's life cycle.  Every stage
+is mirrored into PObject(self)-> stage integer variable, which can be one of
+the following csXXX constants:
 
 =over
 
 =item csConstructing
 
-Initial stage, is set until create() is finished.
-Right after init() is completed, setup() method
-is called.
+The object is this initial stage until create() is finished.  Right after
+init() is completed, the setup() method is called.
 
 =item csNormal
 
-After create() is finished and before destroy() started.
-If an object is csNormal and csConstructing stage,
-Object_alive() result would be non-zero.
+After create() is finished and before destroy() starts.  If an object is in
+either csNormal or csConstructing stage, the result of the Object_alive()
+method is non-zero.
 
 =item csDestroying
 
-destroy() started. This stage includes calling of cleanup()
-and done() routines.
+The destroy() started. This stage runs the cleanup() and the done() methods.
 
 =item csFrozen
 
@@ -284,47 +268,45 @@ done() started
 
 =item csDead
 
-Destroy finished
+destroy() finished
 
 =back
-
 
 =head1 Coding techniques
 
 =head2 Accessing object data
 
-C coding has no specific conventions, except
-when a code is an object method. Object syntax
-for accessing object instance data is also fairly standard.
-For example, accessing component's field called 'name'
+C coding in Prima has no specific conventions, except when coding an object
+method.  The object syntax for accessing the object's data instance is though
+fairly straightforward.  For example, accessing the component field called 'name'
 can be done in several ways:
 
  ((PComponent) self)-> name; // classic C
  PComponent(self)-> name;    // using PComponent() macro from apricot.h
  var-> name;                 // using local var() macro
 
-Object code could to be called also in several ways:
+Object methods could be called in several ways:
 
  (((PComponent) self)-> self)-> get_name( self); // classic C
  CComponent(self)-> get_name( self);             // using CComponent() macro from apricot.h
  my-> get_name( self);                           // using local my() macro
 
-This calling is preferred, comparing to direct call
-of Component_get_name(), primarily because get_name() is
-a method and can be overridden from user code.
+The calling of methods via the object's VMTs is preferred, compared to the direct
+call of Component_get_name(), primarily because get_name() is a method that can
+be overridden in the user code.
 
 =head2 Calling perl code
 
-call_perl_indirect() function accepts object, its method name
-and parameters list with parameter format string. It has several
-wrappers for easier use, which are:
+The call_perl_indirect() function accepts an object, a name of the method to
+be called, an argument format string, and an argument list. It has several
+wrappers for the ease of use, which are:
 
    call_perl( Handle self, char * method, char * format, ...)
    sv_call_perl( SV * object, char * method, char * format, ...)
    cv_call_perl( SV * object, SV * code_reference, char * format, ...)
 
-each character of format string represents a parameters type,
-and characters can be:
+each character of the format string represents the type of the corresponding argument,
+using the following characters to encode types:
 
    'i' - integer
    's' - char *
@@ -334,26 +316,23 @@ and characters can be:
    'P' - Point
    'R' - Rect
 
-The format string can be prepended with '<' character, in which
-case SV * scalar ( always scalar, even if code returns nothing
-or array ) value is returned. The caller is responsible for
-freeing the return value.
+The format string can be prepended with the '<' character, in which case an SV
+* scalar ( always scalar, even if the code returns nothing or an rray ) value
+is returned. The caller is responsible for freeing the returned value.
 
 =head2 Exceptions
 
-As described in L<perlguts> manpage, G_EVAL flag is used
-in perl_call_sv() and perl_call_method() to indicate that
-an eventual exception should never be propagated automatically.
-The caller checks if the exception was taken place by
-evaluating
+As described in the L<perlguts> manpage, the G_EVAL flag is used in
+perl_call_sv() and perl_call_method() to indicate that an eventual exception
+should never be propagated automatically.  The caller checks if the exception
+was taken place by evaluating the
 
         SvTRUE( GvSV( errgv))
 
-statement. It is guaranteed to be false if there was no
-exception condition. But in some situations, namely,
-when no perl_call_* functions are called or error value
-is already assigned before calling code, there is a wrapping
-technique that keeps previous error message and looks like:
+statement. It is guaranteed to be false if there was raised no exception.
+In some situations though, namely, when no perl_call_* functions are called or an error
+value is already assigned before calling code, there is a wrapping technique
+that keeps the eventual previous error message. Such code may look like this:
 
     dG_EVAL_ARGS;                       // define arguments
     ....
@@ -368,24 +347,23 @@ technique that keeps previous error message and looks like:
     CLOSE_G_EVAL;                       // close brackets
     ...
 
-This technique provides workaround to a "false alarm" situation, if
-SvTRUE( GvSV( errgv)) is true before perl_call_method().
+This technique provides a workaround to a "false alarm" situation if
+SvTRUE( GvSV( errgv)) is already true before perl_call_method().
 
 =head2 Object protection
 
-After the object destroy stage is completed, it is possible
-that object's data instance is gone,
-and even simple stage check might cause segmentation fault.
-To avoid this, bracketing functions called C<protect_object()>
-and C<unprotect_object()> are used.
-protect_object() increments reference count to the object instance,
-thus delaying its freeing until decrementing unprotect_object() is called.
+After the object destroy stage is completed, it is possible that the object's data
+instance is gone, and even a simple stage check might cause a segmentation fault.
+To avoid this, bracketing functions called C<protect_object()> and
+C<unprotect_object()> are used.  protect_object() increments the reference count to
+the object instance, thus delaying its freeing until decrementing
+unprotect_object() is called.
 
-All C code that references to an object must check for its stage
-after every routine that switches to perl code, because the object might
-be destroyed inside the call. Typical code example would be like:
+All C code that references an object must check its stage after every routine
+that may potentially switch to perl code because the object might be destroyed
+inside the call. A typical code example would be like this:
 
-   function( Handle object) {
+   int handle_object(Handle object) {
         int stage;
         protect_object( object);
 
@@ -394,27 +372,27 @@ be destroyed inside the call. Typical code example would be like:
 
         stage = PObject(object)-> stage;
         unprotect_object( object);
-        if ( stage == csDead) return;
+        if ( stage != csNormal) return 0;
 
         // proceed with the object
+        ...
+        return 1;
    }
 
-
-Usual C code never checks for object stage before
-the call, because gimme_the_mate() function returns NULL
-if object's stage is csDead, and majority of Prima C code
-is prepended with this call, thus rejecting invalid references
-on early stage. If it is desired to get the
-C mate for objects that are in csDead stage, use C<gimme_the_real_mate()>
-function instead.
+Usually C code doesn't need to check the object stage before the call to perl
+is made because the gimme_the_mate() function returns NULL when the object's
+stage is csDead, and the majority of Prima C code is prepended with this call,
+thus rejecting invalid references on the early stage. If it is desired to get
+the C mate for objects that are in the csDead stage, use the
+C<gimme_the_real_mate()> function instead.
 
 =head2 init
 
 Object's method init() is responsible for setting all its initial properties to
-the object, but all code that is executed inside init must be aware that
-the object's stage is csConstructing. init() consists of two parts:
-calling of ancestor's init() and setting properties. Examples are
-many in both C and perl code, but in short it looks like:
+the given values, however, all code that is executed inside the init() must be
+aware that the object's stage is csConstructing. init() consists of two parts:
+calling of ancestor's init() and setting the properties. Examples are many in both
+C and perl code, but in short, it looks like this:
 
    void
    Class_init( Handle self, HV * profile)
@@ -424,18 +402,17 @@ many in both C and perl code, but in short it looks like:
       my-> set_name( pget_c( name));
    }
 
-pget_XX macros call croak() if the profile key is not
-present into profile, but the mechanism guarantees that
-all keys that are listed in profile_default() are conveyed to
-init(). For explicit checking of key presence pexists() macro
-is used, and pdelete() is used for key deletion, although is it not
-recommended to use pdelete() inside init().
+pget_XX macros call croak() if the profile key is not present in the profile, but
+the mechanism guarantees that all keys that are listed in profile_default() are
+conveyed to the init(). For explicit checking of key presence the pexists()
+macro is used, and the pdelete() macro is used for the key deletion, although
+is it not recommended to use pdelete() inside init().
 
 =head2 Object creation and returning
 
-As described is previous sections, there are some
-precautions to be taken into account when an object is created inside C code.
-A piece of real code from DeviceBitmap.c would serve as an example:
+As described in the previous sections, there are some precautions to be taken
+into account when an object is created inside C code.  A piece of real code
+from DeviceBitmap.c would serve as an example:
 
    static
    Handle xdup( Handle self, char * className)
@@ -471,10 +448,10 @@ A piece of real code from DeviceBitmap.c would serve as an example:
    }
 
 
-Note that all code that would use this xdup(), have to
-increase and decrease object's reference count if some perl
-functions are to be executed before returning object to perl,
-otherwise it might be destroyed before its time.
+Note that all code that would use this xdup() has to increase and decrease
+the object's reference count if some perl functions are to be executed before
+returning the object to perl, otherwise it might get destroyed in the middle
+of the execution:
 
        Handle x = xdup( self, "Prima::Image");
        ++SvREFCNT( SvRV( PAnyObject(x)-> mate)); // Code without these
@@ -487,7 +464,7 @@ otherwise it might be destroyed before its time.
 
 The newly created object returned from C would be destroyed
 due perl's garbage cleaning mechanism right away, unless the
-object value would be assigned to a scalar, for example.
+object value is assigned to a scalar, for example.
 
 Thus
 
@@ -496,48 +473,45 @@ Thus
 and
     Prima::Object-> create;
 
-have different results. But for some classes, namely Widget
-ant its descendants, and also for Timer, AbstractMenu, Printer
-and Clipboard the code above would have same result - the
-objects would not be killed. That is because these objects
-call Component_attach() during init-stage, automatically
-increasing their reference count. Component_attach() and
-its reverse Component_detach() account list of objects,
-attributed to each other. Object can be attached to multiple
-objects, but cannot be attached more than once to another object.
+have different results. But for some classes, namely Widget and its
+descendants, and also for Timer, AbstractMenu, Printer, and Clipboard the code
+above would have the same result - the objects would not be killed. That is because
+these objects call the Component_attach() method during the init-stage,
+automatically increasing their reference count. The Component_attach() and its
+reverse Component_detach() keep a list of objects that are attributed to each
+other.  An object can be attached to more than object at a time, but cannot be
+attached more than once to another object.
 
 =head2 Notifications
 
-All Prima::Component descendants are equipped with the mechanism
-that allows multiple user callbacks routines to be called on
-different events. This mechanism is used heavily in event-driven
-programming. Component_notify() is used to call user notifications,
-and its format string has same format as accepted by perl_call_indirect().
-The only difference that it always has to be prepended with '<s', -
-this way the call success flag is set, and first parameter has to
-be the name of the notification.
+All descendats of the Prima::Component class are equipped with a mechanism
+that allows user callback routines to be called when corresponding events
+occur.  A very similar mechanism is used typically everywhere in the
+event-driven programming.  Component_notify() is used to call the user
+notifications; its format string has the same format as accepted by
+perl_call_indirect().  The only difference is that it always has to be
+prepended with '<s', - this way the call success flag can be returned, and the
+first parameter must be the name of the notification.
 
     Component_notify( self, "<sH", "Paint", self);
     Component_notify( self, "<sPii", "MouseDown", self, point, int, int);
 
-Notifications mechanism accounts the reference list, similar
-to attach-detach mechanism, because all notifications can
-be attributed to different objects. The membership in this
-list does not affect the reference counting.
+The notification mechanism keeps another reference list, similar to the
+attach-detach mechanism so that notifications can be attributed to different
+objects. Objects entering the list don't get their reference counter changed.
 
-=head2 Multiple property setting
+=head2 Multi-property setting
 
-Prima::Object method set() is designed to assign
-several properties at one time. Sometimes it is
-more convenient to write
+Prima::Object method set() is designed to assign several properties at once.
+Sometimes it is more convenient to write
 
    $c-> set( index => 10, name  => "Sample" );
 
-than to invoke several methods one by one. set()
-performs this calling itself, but for performance reasons
+than to invoke several methods one by one. The set() method
+executes these calls itself, but for the performance reasons
 it is possible to overload this method and code special
-conditions for multiple assignment. As an example, Prima::Image
-type conversion code is exemplified:
+conditions for the mult-assignment. As an example, here's
+Prima::Image type conversion code using this technique:
 
    void
    Image_set( Handle self, HV * profile)
@@ -560,11 +534,11 @@ type conversion code is exemplified:
       inherited set ( self, profile);
    }
 
-If type conversion is performed along with palette change, some efficiency
-is gained by supplying both 'type' and 'palette' parameters at a time.
-Moreover, because ordering of the fields is not determined by default
-( although that be done by supplying '__ORDER__' hash key to set() }, it
-can easily be discovered that
+Here, if the type conversion is performed along with the palette change, some
+efficiency is gained by supplying both the 'type' and 'palette' parameters at
+once.  Moreover, because the ordering of the fields is not determined by
+default ( although that is done by supplying the '__ORDER__' hash key to set()
+}, it can easily be discovered that
 
     $image-> type( $a);
     $image-> palette( $b);
@@ -574,11 +548,11 @@ and
     $image-> palette( $b);
     $image-> type( $a);
 
-produce different results. Therefore it might be only solution to
+produce different results. Therefore the only solution here is to
 code Class_set() explicitly.
 
-If it is desired to specify exact order how atomic properties have to be called,
-__ORDER__ anonymous array have to be added to set() parameters.
+If it is desired to specify the exact order of how atomic properties have to be
+called, __ORDER__ anonymous array has to be added to the set() parameters.
 
    $image-> set(
       owner => $xxx,
@@ -599,8 +573,8 @@ Hash with all prima objects, where keys are their data instances
 
 =item application, Handle
 
-Pointer to an application. There can be only one Application
-instance at a time, or none at all.
+Pointer to the application. There can be only one Application instance at a
+time, or none at all.
 
 =back
 
@@ -610,7 +584,7 @@ instance at a time, or none at all.
 
 =item dG_EVAL_ARGS
 
-Defines variable for $@ value storage
+Defines a variable for $@ value storage
 
 =item OPEN_G_EVAL, CLOSE_G_EVAL
 
@@ -626,20 +600,20 @@ Caches pre-built VMT for further use
 
  Bool( void * vmt, char * ancestorName, int ancestorVmtSize)
 
-Creates a subclass from vmt and caches result under ancestorName key
+Creates a subclass from vmt and caches the result under ancestorName key
 
 =item gimme_the_vmt
 
  PVMT( const char *className);
 
-Returns VMT pointer associated with class by name.
+Returns the VMT pointer associated with class by name.
 
 =item gimme_the_mate
 
  Handle( SV * perlObject)
 
 Returns a C pointer to an object, if perlObject is a reference to a
-Prima object. returns NULL_HANDLE if object's stage is csDead
+Prima object. returns NULL_HANDLE if the object stage is csDead
 
 =item gimme_the_real_mate
 
@@ -691,28 +665,27 @@ and calls free() on each.
 
  void*( PHash self, const void *key, int keyLen);
 
-Returns pointer to a value, if found, nil otherwise
+Returns the pointer to a value, if found, NULL otherwise
 
 =item prima_hash_delete
 
  void*( PHash self, const void *key, int keyLen, Bool kill);
 
-Deletes hash key and returns associated value.
-if kill is true, calls free() on the value and returns nil.
-
+Deletes the hash key and returns the associated value.  If the kill argument is
+true, calls free() on the value and returns NULL.
 
 =item prima_hash_store
 
  void( PHash self, const void *key, int keyLen, void *val);
 
-Stores new value into hash. If the key is already present, old
+Stores a new value into hash. If the key is already present, the old
 value is overwritten.
 
-=item  prima_hash_count
+=item prima_hash_count
 
  int(PHash self)
 
-Returns number of keys in the hash
+Returns the number of keys in the hash
 
 =item prima_hash_first_that
 
@@ -720,11 +693,11 @@ Returns number of keys in the hash
 
 Enumerates all hash entries, calling action procedure on each.
 If the action procedure returns true, enumeration stops and the last processed
-value is returned. Otherwise nil is returned. action have to be function declared as
+value is returned. Otherwise NULL is returned. action has to be a function declared as
 
  Bool action_callback( void * value, int keyLen, void * key, void * params);
 
-params is a pointer to an arbitrary user data
+The params argument is a pointer to arbitrary user data
 
 =item kind_of
 
@@ -734,10 +707,9 @@ Returns true, if the object is an exemplar of class cls or its descendant
 
 =item PERL_CALL_METHOD, PERL_CALL_PV
 
-To be used instead of perl_call_method and perl_call_pv,
-described in perlguts manpage. These functions aliased to a code
-with the workaround of perl bug which emerges when
-G_EVAL flag is combined with G_SCALAR.
+To be used instead of perl_call_method and perl_call_pv, (see the L<perlguts>
+manpage). These functions should be used to code a workaround of the perl bug
+which emerges when the G_EVAL flag is combined with G_SCALAR.
 
 =item eval
 
@@ -749,59 +721,57 @@ Simplified perl_eval_pv() call.
 
  CV * ( SV * object, char *methodName, Bool cacheIt);
 
-Returns perl pointer to a method searched by a scalar and a name
-If cacheIt true, caches the hierarchy traverse result for a speedup.
-
+Returns a perl pointer to a method searched by the perl object and the name.
+If cacheIt is true, caches the result of the hierarchy traversal for speedup.
 
 =item  query_method
 
  CV * ( Handle object, char *methodName, Bool cacheIt);
 
-Returns perl pointer to a method searched by an object and a name
-If cacheIt true, caches the hierarchy traverse result for a speedup.
+Returns a perl pointer to a method searched by the C object and the name.
+If cacheIt is true, caches the hierarchy traverse result for a speedup.
 
 =item call_perl_indirect
 
  SV * ( Handle self, char *subName, const char *format, Bool cdecl,
         Bool coderef, va_list params);
 
-Core function for calling Prima methods. Is used by the following three
-functions, but is never called directly. Format is described in C<Calling perl code>
-section.
+The main core function for calling Prima methods. Is used by the following
+three functions, but is never called directly. The format is described in the
+C<Calling perl code> section.
 
 =item call_perl
 
  SV * ( Handle self, char *subName, const char *format, ...);
 
-Calls method of an object pointer by a Handle
+Calls the subName method on a C object
 
 =item sv_call_perl
 
  SV * ( SV * mate, char *subName, const char *format, ...);
 
-Calls method of an object pointed by a SV*
+Calls the subName method on a perl object
 
 =item cv_call_perl
 
  SV * ( SV * mate, Sv * coderef, const char *format, ...);
 
-Calls arbitrary perl code with mate as first parameter.
+Calls arbitrary perl code with a SV mate as the first parameter.
 Used in notifications mechanism.
 
 =item Object_create
 
  Handle( char * className, HV * profile);
 
-Creates an exemplar of className class with parameters
-in profile. Never returns NULL_HANDLE, throws an exception
-instead.
+Creates an exemplar of className class with parameters in the profile hash.
+Never returns NULL_HANDLE, throws an exception instead.
 
 =item create_object
 
  void*( const char *objClass, const char *format, ...);
 
-Convenience wrapper to Object_create. Uses format
-specification that is described in C<Calling perl code>.
+A convenience wrapper to Object_create. Uses the format specification that is
+described in the section C<Calling perl code> above.
 
 =item create_instance
 
@@ -813,31 +783,29 @@ Convenience call to C<Object_create> with parameters in hash 'profile'.
 
  void( Handle self);
 
-Destroys object. One of few Prima function that can be called in
-re-entrant fashion.
+Destroys an object. One of the few Prima functions that can be called in
+the re-entrant fashion.
 
 =item Object_alive
 
  void( Handle self);
 
-Returns non-zero is object is alive, 0 otherwise.
-In particular, current implementation returns 1 if
-object's stage is csNormal and 2 if it is csConstructing.
-Has virtually no use in C, only used in perl code.
+Returns non-zero if the object is alive, 0 otherwise.  In particular, returns 1
+if the object's stage is csNormal and 2 if it is csConstructing.  Has virtually no
+use in C, only used in perl code.
 
 =item protect_object
 
  void( Handle obj);
 
-restricts object pointer from deletion after Object_destroy().
-Can be called several times on an object.
-Increments Object. protectCount.
+Protects the object data from deletion after Object_destroy() is called.  Can
+be called several times on an object.  Increments Object.protectCount .
 
 =item unprotect_object
 
  void( Handle obj);
 
-Frees object pointer after Object. protectCount hits zero.
+Frees the objectdatapointer after Object.protectCount hits zero.
 Can be called several times on an object.
 
 =item parse_hv
@@ -850,7 +818,7 @@ Transfers arguments in perl stack to a newly created HV and returns it.
 
  void ( I32 ax, SV **sp, I32 items, SV **mark, int callerReturns, HV *hv);
 
-Puts all hv contents back to perl stack.
+Puts all hv contents back into perl stack.
 
 =item push_hv_for_REDEFINED
 
@@ -862,49 +830,48 @@ Puts hv content as arguments to perl code to be called
 
  int ( SV **sp, int count, HV *hv, int shouldBe);
 
-Reads result of executed perl code and stores them into hv.
+Reads the result of the executed perl code and stores it into the HV hash.
 
 =item pexist
 
  Bool(char*key)
 
-Return true if a key is present into hash 'profile'
+Returns true if a key is present in the hash 'profile'
 
 =item pdelete
 
  void(char*key)
 
-Deletes a key in hash 'profile'
+Deletes a key in the hash 'profile'
 
 =item pget_sv, pget_i, pget_f, pget_c, pget_H, pget_B
 
  TYPE(char*key)
 
-Returns value of ( SV*, int, float, char*, Handle or Bool)
-that is associated to a key in hash 'profile'. Calls croak()
-if the key is not present.
+Returns a value of one of the types supported (SV*, int, float, char*, Handle
+or Bool) that is associated with a key in the hash 'profile'. Calls croak() if
+the key is not present.
 
 =item pset_sv, pset_i, pset_f, pset_c, pset_H
 
  void( char*key, TYPE value)
 
-Assigns a value to a key in hash 'profile' and increments
+Assigns value to a key in hash 'profile' and increments
 reference count to a newly created scalar.
 
 =item pset_b
 
  void( char*key, void* data, int length)
 
-Assigns binary data to a key in hash 'profile' and increments
-reference count to a newly created scalar.
-
+Assigns binary data to a key in the hash 'profile' and increments the reference counter
+for the newly created scalar.
 
 =item pset_sv_noinc
 
  void(char* key, SV * sv)
 
-Assigns scalar value to a key  in hash 'profile' without
-reference count increment.
+Assigns a scalar value to a key  in the hash 'profile' without
+incrementing the reference counter.
 
 =item duplicate_string
 
@@ -924,18 +891,17 @@ Creates a list instance with a static List structure.
 
 Created list instance and returns newly allocated List structure.
 
-
 =item list_destroy
 
  void( PList self);
 
-Destroys list data.
+Destroys the list data.
 
 =item plist_destroy
 
  void ( PList self);
 
-Destroys list data and frees list instance.
+Destroys the list data and frees the list instance.
 
 =item list_add
 
@@ -948,46 +914,46 @@ on error.
 
  int ( PList self, Handle item, int pos);
 
-Inserts new item into a list at a given position, returns
+Inserts new item into a list at a given position; returns
 its position or -1 on error.
 
 =item list_at
 
  Handle ( PList self, int index);
 
-Returns items that is located at given index or NULL_HANDLE
+Returns the item that is located at a given index or NULL_HANDLE
 if the index is out of range.
 
 =item list_delete
 
  void( PList self, Handle item);
 
-Removes the item from list.
+Removes the item from the list.
 
 =item list_delete_at
 
  void( PList self, int index);
 
-Removes the item located at given index from a list.
+Removes the item located at a given index from a list.
 
 =item list_delete_all
 
  void ( PList self, Bool kill);
 
-Removes all items from the list. If kill is true,
-calls free() on every item before.
+Removes all items from the list. If the kill argument is true, calls free() on
+every item before removing them from the list.
 
 =item list_first_that
 
  int( PList self, void * action, void * params);
 
 Enumerates all list entries, calling action procedure on each.
-If action returns true, enumeration stops and the index is returned.
-Otherwise -1 is returned. action have to be a function declared as
+If the action returns true, the enumeration stops and the index is returned.
+Otherwise, -1 is returned. action has to be a function declared as
 
  Bool action_callback( Handle item, void * params);
 
-params is a pointer to an arbitrary user data
+where params is a pointer to an arbitrary user data
 
 =item list_index_of
 

@@ -2479,7 +2479,7 @@ Default value: 0,0,0,0
 
 =item clipCells INTEGER
 
-A three-state integer property, that governs the way clipping is applied
+A three-state integer property, that manages the way clipping is applied
 when cells are drawn. Depending on kind of graphic in cells, the clipping
 may be necessary, or unnecessary.
 
@@ -2618,7 +2618,7 @@ If C<constantCellHeight> is defined, the property is used as its alias.
 
 =item selection X1, Y1, X2, Y2
 
-If C<multiSelect> is 1, governs the extents of a rectangular area, that
+If C<multiSelect> is 1, manages the extents of a rectangular area, that
 contains selected cells. If no such area is present, selection
 is (-1,-1,-1,-1), and C<has_selection> returns 0 .
 

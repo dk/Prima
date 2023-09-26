@@ -543,7 +543,7 @@ char * err_msg( DWORD errId, char * buffer)
 char *
 err_msg_gplus( GpStatus errId, char * buffer)
 {
-	if ( buffer == nil) buffer = err_buf;
+	if ( buffer == NULL) buffer = err_buf;
 	switch(errId) {
 	case Ok                        : strcpy(buffer, "Ok");                               break;
 	case GenericError              : strcpy(buffer, "GDI+ generic error");               break;

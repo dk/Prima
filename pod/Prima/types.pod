@@ -4,42 +4,44 @@ Prima::types - builtin types
 
 =head1 DESCRIPTION
 
-Auxiliary second-citizen classes that are not usually created manually but used
-as results of Prima methods and accepted as inputs. These classes names can be
-distinguished that their name is started by a lower-case letter.
+This document describes the auxiliary second-citizen classes that are used as
+results of Prima methods and accepted as inputs. Objects that instantiate from
+these classes are usually never created manually. The names of some of these
+classes begin with a lower-case letter, to underscore their auxiliary nature.
 
 =head1 Prima::array
 
-Overloaded C array that can be used transparently as a normal perl array of
-numbers.  The reason C<Prima::array> exists is that Prima methods don't need to
-do expensive conversions between a perl array of scalars to C array of integers
-or floats.
+An overloaded C array that can be used transparently as a normal perl array.
+The array can only hold numbers.  The reason the C<Prima::array> class exists
+is so Prima methods won't need to do expensive conversions between a perl array
+of scalars to a C array of integers or floats.
 
 =over
 
 =item new LETTER = [idsS], BUF = undef
 
-Creates a new C array with type either int, double, short, and unsigned short.
-There are also methods C<new_int>, C<new_double>, C<new_short>, and C<new_ushort>
-that to the same.
+Creates a new C array with the type of either int, double, short, or unsigned
+short. There are also methods C<new_int>, C<new_double>, C<new_short>, and
+C<new_ushort> that do the same.
 
 BUF, a normal perl string, can be used to initialize the array, if any (and can
-be pre-populated with pack()). Otherwise an array is created as empty.
+be pre-populated with pack()). Otherwise, an array is created empty.
 
 =item is_array SCALAR
 
-Checks whether SCALAR is a C<Prima::array> object.
+Checks whether the SCALAR is a C<Prima::array> object.
 
 =item substr OFFSET, LENGTH, REPLACEMENT
 
-Emulates perl's C<substr> except operates not on character but C type level.
-Returns a new C<Prima::array> object.
+Emulates perl's C<substr> except operates not on characters but on the
+individual numeric entries of the array.  Returns a new C<Prima::array> object.
 
 =item append ARRAY
 
-Assuming two arrays have same type, appends the ARRAY's contents to own content.
+Assuming that two arrays have the same type, appends the ARRAY's contents to
+its content.
 
-=item clone 
+=item clone
 
 Clones the array.
 
@@ -54,7 +56,7 @@ An array of 6 doubles with some helper methods attached.
 =item A,B,C,D,X,Y
 
 Named accessory properties for the 6 members.
-The members can just as well be accessed directly with array syntax.
+The members can just as well be accessed directly with the array syntax.
 
 =item clone
 
@@ -62,12 +64,13 @@ Clones the matrix object
 
 =item identity
 
-Resets the matrix to identity
+Sets the matrix to C<Prima::matrix::identity>, or (1,0,0,1,0,0)
 
 =item inverse_transform @POINTS | $POINTS_ARRAY
 
-Applies inverse matrix tranformations to an array or arrayref of points,
-and returns in the same format (i e array for array, ref for ref).
+Applies the inverse matrix tranformations to an array or an arrayref of points
+and returns the result matrix in the same format (i e array for array, ref for
+ref).
 
 =item new [ @ARRAY ]
 
@@ -91,7 +94,7 @@ Shears the matrix
 
 =item set @ARRAY
 
-Assigns all 6 members at once
+Assigns all the 6 members at once
 
 =item translate DX,DY
 
@@ -99,8 +102,8 @@ Translates the matrix
 
 =item transform @POINTS | $POINTS_ARRAY
 
-Applies matrix tranformations to an array or arrayref of points,
-and returns in the same format (i e array for array, ref for ref).
+Applies matrix tranformations to an array or arrayref of points and returns
+the result matrix in the same format (i e array for array, ref for ref).
 
 =back
 
@@ -108,8 +111,8 @@ See also: L<Prima::Matrix>
 
 =head1 Prima::Matrix
 
-Same as C<Prima::matrix> but explicitly binds to drawable objects, so that
-all changes to the matrix are immediately reflected in the drawable.
+Same as C<Prima::matrix> but explicitly binds to drawable objects so that
+all changes to the matrix object are immediately reflected in the drawable.
 
 Features all the methods available to C<Prima::matrix> (except C<apply>), plus
 the ones described below.
@@ -118,7 +121,7 @@ the ones described below.
 
 =item new CANVAS
 
-Creates new instance
+Creates a new matrix object instance
 
 =item canvas DRAWABLE
 
@@ -130,7 +133,7 @@ Returns the current matrix
 
 =item reset
 
-Sets matrix to C<Prima::matrix::identity>, or (1,0,0,1,0,0)
+Sets the matrix to C<Prima::matrix::identity>, or (1,0,0,1,0,0)
 
 =item save, restore
 
@@ -140,7 +143,7 @@ Saves and restores the matrix content in the internal stack
 
 =head1 Prima::rect
 
-Represents rectangular object either as I<rectangle> ( X1,Y1,X2,Y2 ) or I<box> ( X,Y,WIDTH,HEIGHT ).
+Represents a rectangular object either as a I<rectangle> ( X1,Y1,X2,Y2 ) or a I<box> ( X,Y,WIDTH,HEIGHT ).
 
 =over
 
@@ -159,15 +162,15 @@ Enlarges the rectangle by N
 =item inclusive
 
 Rectangle itself is agnostic of its 2D presentation, but assuming the coordinates
-are inclusive-exclusive, C<inclusive> returns X1,Y1,X2,Y2 as inclusive-inclusive rectangle.
+are inclusive-exclusive, C<inclusive> returns X1,Y1,X2,Y2 as the inclusive-inclusive rectangle.
 
 =item intersect RECT
 
-Intersects with RECT and stores the result
+Intersects with the RECT rectangle and stores the result
 
 =item is_empty
 
-Returns true if rectangle's width and height are zero
+Returns true if the rectangle width and height are zero
 
 =item is_equal RECT
 
@@ -175,15 +178,15 @@ Returns true if both rectangles are equal
 
 =item new () | (WIDTH,HEIGHT) | (X1,Y1,X2,Y2)
 
-Creates new object with rectangle syntax
+Creates a new object assuming the rectangle syntax
 
 =item new_box X,Y,WIDTH,HEIGHT
 
-Creates new object with box syntax
+Creates new object assuming the box syntax
 
 =item origin
 
-Returns X,Y
+Returns X and Y
 
 =item shrink N
 
@@ -191,11 +194,11 @@ Shrinks the rectangle by N
 
 =item size
 
-Return WIDTH and HEIGHT
+Returns the WIDTH and HEIGHT of the rectangle
 
 =item union RECT
 
-Joins with RECT and stores the result
+Joins the rectangle with the RECT rectangle and stores the result
 
 =back
 

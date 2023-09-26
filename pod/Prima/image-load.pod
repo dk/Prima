@@ -1,33 +1,33 @@
 =head1 NAME
 
-Prima::image-load - Using image subsystem
+Prima::image-load - using the image subsystem
 
 =head1 DESCRIPTION
 
-Details on image subsystem - image loading, saving, and codec managements
+This document describes using the Prima image subsystem
+for loading and saving images
 
 =head1 Loading
 
 =head2 Simple loading
 
-Simplest case, loading a single image would look like:
+In the simplest case, loading a single image would look like this:
 
-        my $x = Prima::Image-> load( 'filename.duf');
+        my $x = Prima::Image-> load( 'filename.jpg');
         die "$@" unless $x;
 
-Image functions can work being either invoked from package,
-or from existing Prima::Image object, in latter case the caller
-object itself is changing. The code above could be also written as
+Image functions can be invoked either as package functions or as Prima::Image
+object methods. The code above could be also written as
 
-        my $x = Prima::Image-> create;
-        die "$@" unless $x-> load( 'filename.duf');
+        my $x = Prima::Image-> new;
+        die "$@" unless $x-> load( 'filename.jpg');
 
-In both cases $x contains image data upon success.
-Error is returned into $@ variable ( see perldoc perlvar for more info).
+In both cases, C<$x> contains loaded image data upon success.  If an error
+occurs, it is returned in the C<$@> variable ( see L<perlvar> ).
 
 =head2 Loading from stream
 
-C<Prima::Image> can also load image by reading from a stream:
+C<Prima::Image> can also load images by reading from a stream:
 
 	open FILE, 'a.jpeg' or die "Cannot open:$!";
 	binmode FILE;
@@ -36,46 +36,43 @@ C<Prima::Image> can also load image by reading from a stream:
 
 =head2 Multiframe loading
 
-Multiframe load call can be also issued in two ways:
+Multiframe load calls can be issued in two ways:
 
-
-        my @x = Prima::Image-> load( 'filename.duf', loadAll => 1);
+        my @x = Prima::Image-> load( 'filename.gif', loadAll => 1);
         die "$@" unless $x[-1];
 
-        my $x = Prima::Image-> create;
-        my @x = $x-> load( 'filename.duf', loadAll => 1);
+        my $x = Prima::Image-> new;
+        my @x = $x-> load( 'filename.gif', loadAll => 1);
         die "$@" unless $x[-1];
 
-In second case, the content of the first frame comes to $x and $x[0].
-Sufficient check for error is whether last item of a returned
-array is defined. This check works also if an empty array is returned.
-Only this last item can be an undefined value, others are guaranteed
-to be valid objects.
+In the second case, the content of the first frame is stored in C<$x> and
+C<$x[0]>.  To check if the error has occurred during the loading, inspect the
+last item of the returned array; it is undefined if the error indeed occurred.
+This check works also if an empty array is returned. Only this last item can be
+undefined, others are guaranteed to be valid objects.
 
-Multiframe syntax is expressed in a set of extra hash keys.
-These keys are:
+Prima can load more than one image from a file, assuming the image format
+allows that. The C<load> function recognizes such I<multiframe> semantics when
+certain extra hash keys are used.  These keys are:
 
 =over
 
 =item loadAll
 
-Request for loading all frames that can be read from a file.
-Example:
+Requests to load all frames that can be read from the file:
 
         loadAll => 1
 
 =item index
 
-If present, returns a single frame with index given.
-Example:
+If present, returns a single frame with the index given:
 
         index => 8
 
 =item map
 
-Contains an anonymous array of frame indices to load.
-Valid indices are above zero, negative ones can't be counted in a way
-perl array indices are. Example:
+Contains an anonymous array of the frame indices to load.
+The indices must be integers that are greater or equal to zero:
 
          map => [0, 10, 15..20]
 
@@ -83,10 +80,10 @@ perl array indices are. Example:
 
 =head2 Querying extra information
 
-By default Prima loads image data and palette only. For any other information
-that can be loaded, anonymous hash 'extras' can be defined. To notify a codec
-that this extra information is desired, loadExtras boolean value is used.
-Example:
+By default, Prima loads only image pixels and palette. For any other
+information that can be loaded, use the hash C<'extras'> bound to the image
+object. To notify the image loader that this extra information is expected, the
+C<loadExtras> boolean value is used:
 
         my $x = Prima::Image-> load( $f, loadExtras => 1);
         die "$@" unless $x;
@@ -95,51 +92,52 @@ Example:
         }
 
 The code above loads and prints extra information read from a file.
-Typical output, for example, from a gif codec based on libgif would look
-like:
+Typical output, for example, from a I<gif> codec based on the I<libgif> library would look
+like this:
 
     codecID : 1
     transparentColorIndex : 1
     comment : created by GIMP
     frames : 18
 
-'codecID' is a Prima-defined extra field, which is an index of the codec
-which have loaded the file. This field's value is useful for explicit
-indication of codec on the save request.
+C<codecID> is a Prima-defined integer field, an internal index of the codec
+which had previously loaded the file. This value is useful for the explicit
+selection of the codec to be used for saving an image.
 
-'frames' is also a Prima-defined extra field, with integer value set to
-a number of frames in the image. It might be set to -1,
-signaling that codec is incapable of quick reading of the frame count.
-If, however, it is necessary to get actual frame count, a 'wantFrames'
-profile boolean value should be set to 1 - then frames is guaranteed to
-be set to a 0 or positive value, but the request may take longer time, especially
-on a large file with sequential access. Real life example is a gif file
-with more than thousand frames. 'wantFrames' is useful in null load requests.
-
+C<frames> is also a Prima-defined field, with its integer value set to the
+number of frames in the image. It might be set to -1 signaling that the codec
+is incapable of quick reading of the frame count. If, however, it is necessary
+to get the actual frame count, the C<wantFrames> boolean value should be set to
+1 - then the C<frames> field is guaranteed to be set to a 0 or a positive
+value. Such a request may take longer though, especially on large files with
+sequential access. A real-life example is a gif file with more than a
+thousand frames. The C<wantFrames> flag is also useful in null load requests
+(see below).
 
 =head2 Multiprofile loading requests
 
-The parameters that are accepted by load, are divided into several
-categories - first, those that apply to all loading process and those
-who apply only to a particular frame. Those who are defined by Prima, are
-enumerated above - loadExtras, loadAll etc. Only loadExtras, noImageData,
-noIncomplete and iconUnmask are applicable to
-a frame, other govern the loading process. A codec may as well define its own
-parameters, however it is not possible to tell what parameter belongs to what
-group - this information is to be found in codec documentation;
+The parameters that are accepted by the C<load> function are divided into two
+groups - first, those that apply to the whole loading process, and then those
+that apply only to a particular frame. Some fields that were already mentioned
+(C<wantFrames> and C<loadAll>) belong to the first group because they affect the
+whole loading session. Some other parameters (C<loadExtras>, C<noImageData>,
+C<noIncomplete>, C<iconUnmask>) can be applied to each loaded frame,
+individually. A codec may as well define its own parameters, however, it is not
+possible to tell what parameter belongs to what group - this information is to
+be found in the codec documentation.
 
-The parameters that applicable to any frame, can be specified separately to
-every desirable frame in single call. For that purpose, parameter 'profiles'
-is defined. 'profiles' is expected to be an anonymous array of hashes, each
-hash where corresponds to a request number. Example:
+The parameters that apply to a frame, can be specified separately for
+every frame in a single call. For that purpose, the special parameter
+C<profiles> is defined. The C<profiles> value is expected to be an anonymous
+array of hashes, where each hash corresponds to a request number. For example:
 
         $x-> load( $f, loadAll => 1, profiles => [
              {loadExtras => 0},
              {loadExtras => 1},
         ]);
 
-First hash there applies to frame index 0, second - to frame index 1.
-Note that in code
+The first hash there applies to the frame index 0, second - to the frame index 1.
+Note that in the code below
 
         $x-> load( $f,
            map => [ 5, 10],
@@ -148,36 +146,38 @@ Note that in code
              {loadExtras => 1},
         ]);
 
-first hash applies to frame index 5, and second - to frame index 10.
+first hash applies to the frame index 5, and second - to the frame index 10.
 
 =head2 Null load requests
 
-If it is desired to peek into image, reading type and dimensions only, one
-should set 'noImageData' boolean value to 1. Using 'noImageData', empty
-objects with read type are returned, and with extras 'width' and 'height'
-set to image dimensions. Example:
+If it is desired to quickly peek into an image, reading only its pixel type and
+dimensions, one should set the C<noImageData> boolean value to 1. Using
+C<noImageData>, empty image objects are returned, that would have the C<type>
+property set to the image type (as the codec would translate it to the Prima
+image type), and with the extras C<width> and C<height> set to the image
+dimensions. Example:
 
         $x-> load( $f, noImageData => 1);
         die "$@" unless $x;
         print $x-> {extras}-> {width} , 'x' , $x-> {extras}-> {height}, 'x',
            $x-> type & im::BPP, "\n";
 
-Some information about image can be loaded even without frame loading - if the
-codec provides such a functionality. This is the only request that cannot be issued
-on a package:
+Some image information can be loaded even without frame loading - if the codec
+provides such a functionality. This is the only request that cannot be issued
+with the package syntax, an existing image object is required:
 
+	my $x = Prima::Image->new;
         $x-> load( $f, map => [], loadExtras => 1);
 
 Since no frames are required to load, an empty array is returned
-upon success and an array with one undefined value on failure.
+on success and an array with one undefined value on failure.
 
 =head2 Using Prima::Image descendants
 
-If Prima needs to create a storage object, it is by default
-Prima::Image, or a class name of an caller object, or a package
-the request was issued on. This behavior can be altered
-using parameter 'className', which defines the class to be used
-for the frame.
+If Prima needs to create a storage object, it uses by default either the class
+name of the caller object, or the package the request was issued on, or the
+C<Prima::Image> class.  This behavior can be altered using the parameter
+C<className>, which defines the class to be used for each frame:
 
         my @x = Prima::Image-> load( $f,
             map => [ 1..3],
@@ -188,48 +188,51 @@ for the frame.
                 {}
             ],
 
-In this example @x will be ( Icon, Image, Icon) upon success.
+In this example, C<@x> will contain (Icon, Image, Icon) upon success.
 
-When loading to an Icon object, the default toolkit action is
-to build the transparency mask based on image data. When it is
-not the desired behavior, e.g., there is no explicit knowledge
-of image, but the image may or may not contain transparency
-information, C<iconUnmask> boolean option can be used. When set
-to a C<true> value, and the object is C<Prima::Icon> descendant,
-C<Prima::Icon::autoMasking> is set to C<am::None> prior to the
-file loading. By default this options is turned off.
+When loading to an Icon object, the default toolkit action is to build the
+transparency mask based on the image data. When this is not desired, f.ex.,
+there is no explicit knowledge of the image to be loaded, while the image may
+or may not contain transparency information, the C<iconUnmask> boolean
+parameter can be used. When set to the C<true> value, and the object is a
+C<Prima::Icon> descendant, C<Prima::Icon::autoMasking> is set to C<am::None>
+before the file loading which effectively disables any attempt to generate the
+icon mask. By default, this option is turned off.
 
-=head2 Loading with progress indicator
+=head2 Loading with the progress indicator
 
-Some codecs (PNG,TIFF,JPEG) can notify the caller as they read image data.  For
-this purpose, C<Prima::Image> has two events, C<onHeaderReady> and
-C<onDataReady>. If either (or both) are present on image object that is issuing
-load call, and the codec supports progressive loading, these events are called.
-C<onHeaderReady> is called when image header data is acquired, and empty image
-with the dimensions and pixel type is allocated. C<onDataReady> is called
-whenever a part of image is ready and is loaded in the memory of the object;
-the position and dimensions of the loaded area is reported also. The format of
-the events is:
+Some codecs (PNG,TIFF,JPEG) can signal their progress as they read image data.
+For this purpose, the C<Prima::Image> class defines two events,
+C<onHeaderReady> and C<onDataReady>. If either (or both) are present on the
+image object issuing the C<load> call, and the codec supports progressive
+loading, then these events will be called. The C<onHeaderReady> event is
+called when the image header data is acquired, and an empty image with the
+required pixel dimensions and type is allocated. The C<onDataReady>
+notification is called whenever a part of the image is ready and is loaded in the
+memory of the object; the position and dimensions of the loaded area are
+reported also. The format of the events is as follows:
 
     onHeaderReady $OBJECT
     onDataReady   $OBJECT, $X, $Y, $WIDTH, $HEIGHT
 
-C<onHeaderReady> is called only once, but C<onDataReady> is called as soon as
-new image data is available. To reduce frequency of these calls, that otherwise
-would be issued on every scanline loaded, C<load> has parameter C<eventDelay>,
-a number of seconds, which limits event rate. The default C<eventDelay> is 0.1 .
+The C<onHeaderReady> event is called only once while C<onDataReady> is called
+as soon as new image data is available. To reduce the frequency of these calls,
+which otherwise would be issued after every scanline loaded, C<load> has the
+parameter C<eventDelay>, the minimum number of seconds that need to pass
+between two consecutive C<onDataReady> calls. The default C<eventDelay> is 0.1
+.
 
-The handling on C<onDataReady> must be performed with care. First, the image
-must be accessed read-only, which means no transformations with image size and
-type are allowed. Currently there is no protection for such actions ( because
-codec must perform these ), so a crash will most surely issue.
-Second, loading and saving of images is not in general reentrant, and although
-some codecs are reentrant, loading and saving images inside image events is
-not recommended.
+The handling of the C<onDataReady> event must be performed with care. First,
+the image must be accessed read-only, i e no transformations of any kind
+are allowed. Currently, there is no protection for such actions (
+because the codec must also perform these itself), so a crash will most surely
+issue.  Second, loading and saving of images is not in general reentrant, and
+although some codecs are reentrant, loading and saving images inside image
+events is not recommended.
 
-There are two techniques to display partial image as it loads. All of these
-share overloading of C<onHeaderReady> and C<onDataReady>. The simpler is to
-call C<put_image> from inside C<onDataReady>:
+There are two techniques to display the image progressively. Both of them
+require overloading the C<onHeaderReady> and C<onDataReady> callbacks. The
+simpler case is to call the C<put_image> method from inside C<onDataReady>:
 
 	$i = Prima::Image-> new(
 		onDataReady => sub {
@@ -237,10 +240,10 @@ call C<put_image> from inside C<onDataReady>:
 		},
 	);
 
-but that will most probably loads heavily underlying OS-dependent conversion of
-image data to native display bitmap data. A more smarter, but more complex
-solution is to copy loaded (and only loaded) bits to a preexisting device
-bitmap:
+but that will most probably load heavily underlying OS-dependent conversion of the
+image data to native display bitmap data. A smarter, but more complex
+solution is to copy loaded (and only loaded) bits to a preexisting
+bitmap or image:
 
 	$i = Prima::Image-> new(
 		onHeaderReady => sub {
@@ -255,241 +258,246 @@ bitmap:
 		},
 	);
 
-The latter technique is used by C<Prima::ImageViewer> when it is setup to monitor
-image loading progress. See L<Prima::ImageViewer/watch_load_progress> for details.
+The latter technique is used by the C<Prima::ImageViewer> widget class when it
+is ordered to monitor the image loading progress. See
+L<Prima::ImageViewer/watch_load_progress> for details.
 
 =head2 Truncated files
 
-By default, codecs are not specified whether they would fail on premature end
-of file or omit the error and return truncated image. C<noIncomplete> boolean
-flag tells that a codec must always fail if the image cannot be red in full. It
-is off by default. If indeed the codec detected that the file was incomplete,
-it sets C<truncated> error string in the C<extras> profile, if C<loadExtras>
-was requested.
+By default, codecs are not told whether they would fail on the premature end of
+the file or omit the error and return a truncated image. The C<noIncomplete>
+boolean parameter tells that a codec must always fail if the image cannot be
+read in full. It is off by default. If indeed the codec detects that the file
+is incomplete, it sets the C<truncated> field in the C<extras> profile, if
+C<loadExtras> was requested; the field is a string and contains the error
+message that occurred when the codec tried to load the truncated field.
 
 =head2 Inline files
 
-Using C<Prima::Image::base64> it is possible to convert images into an base64
-format, and embed the result directly into the source. Assuming an appropriate codec
-was compiled, the following would work:
+Using the C<Prima::Image::base64> module it is possible to convert images into
+the base64 format and embed the result directly into the source code. Assuming an
+appropriate codec was compiled in, the following would work:
 
 	my $icon = Prima::Icon->load_stream(<<~'ICON');
 		R0lGODdhIAAgAIAAAAAAAP///ywAAAAAIAAgAIAAAAD///8CT4SPqcvtD6OctNqLcwogcK91nEhq
 		3gim2Umm4+W2IBzX0fvl8jTr9SeZiU5E4a1XLHZ4yaal6XwFoSwMVUVzhoZSaQW6ZXjD5LL5jE6r
 		DQUAOw==
 		ICON
-
 	print $icon->save_stream;
 
 =head1 Saving
 
 =head2 Simple saving
 
-Typical saving code will be:
+The typical saving code is
 
-   die "$@" unless $x-> save( 'filename.duf');
+   $x-> save( 'filename.jpg') or die $@;
 
-Upon a single-frame invocation save returns 1 upon success an 0 on failure.
-Save requests also can be performed with package syntax:
+The function returns 1 on success and 0 on failure.
+Save requests also can be performed with the package syntax:
 
-   die "$@" unless Prima::Image-> save( 'filename.duf',
-       images => [ $x]);
+   die "$@" unless Prima::Image-> save( 'filename.jpg',
+       images => [$x]);
 
 =head2 Saving to a stream
 
-Saving to a stream requires explicit C<codecID> to be supplied. When an image
-is loaded with C<loadExtras>, this field is always present on the image object,
-and is an integer that selects image encoding format.
+Saving to a stream requires the explicit C<codecID> integer value to be
+supplied. When the image is loaded with C<loadExtras>, this field is always
+present on the image object and is the integer that selects the image file
+format.
 
-   my @png_id =
+   my ($png_id) =
       map  { $_-> {codecID} }
       grep { $_-> {fileShortType} =~ /^png$/i }
       @{ Prima::Image-> codecs };
-   die "No png codec installed" unless @png_id;
+   die "No png codec installed" unless $png_id;
 
-   open FILE, "> a.png" or die "Cannot save:$!";
+   open FILE, ">", "a.png" or die "Cannot save:$!";
    binmode FILE;
-   $image-> save( \*FILE, codecID => $png_id[0])
+   $image-> save( \*FILE, codecID => $png_id)
       or die "Cannot save:$@";
 
 =head2 Multiframe saving
 
-In multiframe invocation save returns number of successfully saved frames.
-File is erased though, if error occurred, even after some successfully
-written frames.
+When saving more than one image object into a single file the method returns
+the number of successfully saved frames.  The saved image file is erased
+though, if an error occurs, even after some successfully written frames.
 
     die "$@" if scalar(@images) > Prima::Image-> save( $f,
        images => \@images);
 
 =head2 Saving extras information
 
-All information, that is found in object hash reference 'extras', is
-assumed to be saved as an extra information. It is a codec's own business
-how it reacts on invalid and/or unacceptable information - but typical behavior is
-that keys that were not recognized by the codec just get ignored, and invalid values
-raise an error.
+All information that is found in the object hash reference C<extras>, is
+assumed to be saved in the image file too. It is a codec's own business how it
+reacts to invalid and/or unacceptable information - but a typical behavior is
+that keys that were not recognized by the codec get ignored, while invalid
+values raise an error.
 
        $x-> {extras}-> {comments} = 'Created by Prima';
        $x-> save( $f);
 
 =head2 Selecting a codec
 
-Extras field 'codecID', the same one that is defined after load requests,
-selects explicitly a codec for an image to handle. If the codec
-selected is incapable of saving an error is returned. Selecting a codec
-is only possible with the object-driven syntax, and this information
-is never extracted from objects but passed to 'images' array instead.
+The integer field C<codecID>, the same field that is defined after successful
+load requests, explicitly selects the codec for saving the image. If the codec
+is incapable of saving then an error is returned. Selecting a codec is only
+possible with the object-driven syntax, and this information is never extracted
+from the objects but is passed in the C<images> array instead.
 
        $x-> {extras}-> {codecID} = 1;
        $x-> save( $f);
 
-Actual correspondence between codecs and their indices is described latter.
+The actual relation between codecs and their indices is described below.
 
-NB - if codecID is not given, codec is selected by the file extension.
+Note: if C<codecID> is not specified, Prima tries to deduce the codec by the file
+extension.
 
 =head2 Type conversion
 
-Codecs usually are incapable of saving images in all formats, so Prima
-either converts an image to an appropriate format or signals an error.
-This behavior is governed by profile key 'autoConvert', which is 1 by
-default. 'autoConvert' can be present in image 'extras' structures.
-With autoConvert set it is guaranteed that image will be saved, but original image
-information may be lost. With autoConvert unset, no information will be lost,
-but Prima may signal an error. Therefore general-purpose save routines should
-be planned carefully. As an example the C<Prima::Dialog::ImageDialog::SaveImageDialog>
-code might be useful.
+Codecs usually are incapable of saving images in all possible pixel formats, so
+whenever Prima needs to save an image with an unsupported pixel type it either
+converts the image to an appropriate pixel format or signals an error.  This
+behavior is managed by the parameter C<autoConvert>, which is 1 by default.
+With the C<autoConvert> set, it is guaranteed that the image will be saved, but
+original image information may be lost. With the C<autoConvert> field set to 0,
+no information will be lost, but Prima may signal an error. Therefore
+general-purpose saving routines should be planned carefully. As an example, the
+C<Prima::Dialog::ImageDialog::SaveImageDialog> code might be useful.
 
-When the conversion takes place, Image property 'conversion' is used
-for selection of an error distribution algorithm, if down-sampling
+When the conversion takes place, the Image property C<conversion> is used
+for the selection of the error distribution algorithm if down-sampling
 is required.
 
 =head2 Appending frames to an existing file
 
 This functionality is under design, but the common outlines are already set.
-Profile key 'append' ( 0 by default ) triggers this behavior - if it is set,
+The parameter C<append> ( 0 by default ) triggers this behavior - if it is set,
 then an append attempt is made.
 
-=head1 Managing codecs
+=head1 Managing the codecs
 
-Prima provides single function, Prima::Image-> codecs, which returns an
-anonymous array of hashes, where every hash entry corresponds to a
-registered codec. 'codecID' parameter on load and save requests is actually
-an index in this array. Indexes for a codecs registered once never change,
-so it is safe to manipulate these numbers within single program run.
+Prima provides the C<< Prima::Image-> codecs >> function that returns an
+anonymous array of hashes where every hash entry corresponds to a registered
+codec. The C<codecID> parameter on load and save requests is the index in this
+array. Indexes for the codecs registered once never change, so it is safe to
+manipulate these numbers within a single run of the program
 
-Codec information that is contained in these hashes is divided into
-following parameters:
+Codec information that is contained in these hashes contains the
+following fields:
 
 =over
 
 =item codecID
 
-Unique integer value for a codec, same as index of the codec entry in
-results of C<< Prima::Image->codecs >>;
+A unique integer value for a codec, the same as the index of the codec entry in
+the result of the C<< Prima::Image->codecs >> method
 
 =item name
 
-codec full name, string
+The full codec name, string
 
 =item vendor
 
-codec vendor, string
+The codec vendor, string
 
 =item versionMajor and versionMinor
 
-usually underlying library versions, integers
+Usually underlying library versions, integers
 
 =item fileExtensions
 
-array of strings, with file extensions that are typical to a codec.
-example: ['tif', 'tiff']
+An array of strings, with file extensions that are typical to the codec.
+Example: ['tif', 'tiff']
 
 =item fileType
 
-Description of a type of a file, that codec is designed to work with.
-String.
+Description of the type of file that the codec is designed to work with.  A
+string.
 
 =item fileShortType
 
-Short description of a type of a file, that codec is designed to work with.
-( short means 3-4 characters ). String.
+Short description of the type of file that the codec is designed to work
+with ( short means 3-4 characters ). A string.
 
 =item featuresSupported
 
-Array of strings, with some features description that a codec supports -
-usually codecs implement only a part of file format specification, so it is
-always interesting to know, what part it is.
+An array of strings containing string description of the features that the
+codec supports - usually they implement only a part of file format
+specification, so it is always interesting to know, which part
 
 =item module and package
 
-Specify a perl module, usually inside Prima/Image directory into Prima distribution,
-and a package inside the module. The package contains some specific functions
-for work with codec-specific parameters. Current implementation defines
-only ::save_dialog() function, that returns a dialog that allows to change
-these parameters. See C<Prima::Dialog::ImageDialog::SaveImageDialog> for details.
-Strings, undefined if empty.
+Specifies the perl module, usually inside the F<Prima/Image> directory in the
+Prima distribution, and the package name inside the module. The package
+contains some specific functions for working with codec-specific parameters.
+The current implementation defines the only C<save_dialog> function that
+creates a dialog that allows to change these parameters. See
+C<Prima::Dialog::ImageDialog::SaveImageDialog> for details.  Strings or
+C<undef>.
 
 =item canLoad
 
-1 if a codec can load images, 0 if not
+1 if the codec can load images, 0 if not
 
 =item canLoadStream
 
-1 if a codec can load images from streams, 0 otherwise
+1 if the codec can load images from streams, 0 otherwise
 
 =item canLoadMultiple
 
-1 if a codec can handle multiframe load requests and load frames with
-index more than zero. 0 if not.
+1 if the codec can handle multiframe load requests and load frames with
+an index more than zero, 0 otherwise
 
 =item canSave
 
-1 if a codec can save images, 0 if not.
+1 if the codec can save images, 0 if not.
 
 =item canSaveStream
 
-1 if a codec can save images to streams, 0 otherwise
+1 if the codec can save images to streams, 0 otherwise
 
 =item canSaveMultiple
 
-Set if a codec can save more that one frame
+Is set if the codec can save more than one frame
 
 =item canAppend
 
-Set if a codec can append frames to an existing file
+Is set if the codec can append frames to an existing file
 
 =item types
 
-Array of integers - each is a combination of im:: flags, an image type,
-which a codec is capable of saving. First type in list is a default one;
-if image type that to be saved is not in that list, the image will be
+An array of integers - each is a combination of the C<im::XXX> flags, the image
+type, that the codec can save. The first type in the list is the default type;
+if the type of the image to be saved is not in that list, the image will be
 converted to this default type.
 
 =item loadInput
 
-Hash, where keys are those that are accepted by Prima::Image-> load,
-and values are default values for these keys.
+A hash, where the keys are those that are accepted by the C<< Prima::Image-> load >> method
+and the values are the default values for these keys.
 
 =item loadOutput
 
-Array of strings, each of those is a name of extra information entry
-in 'extras' hash.
+An array of strings, each is the name of an extra information entry
+in the C<extras> hash.
 
 =item saveInput
 
-Hash, where keys are those that are accepted by Prima::Image-> save,
-and values are default values for these keys.
+A hash, where the keys are those that are accepted by the C<< Prima::Image-> save >> method
+and the values are the default values for these keys.
 
 =item mime
 
-array of strings, with file extensions that are typical to a codec.
-example: ['image/xbm', 'image/x-bitmap']
+An array of strings, containing the mime identifiers specific to the image format.
+An example: ['image/xbm', 'image/x-bitmap']
 
 =back
 
 =head1 API
 
-This section describes parameters accepted and data returned by C<Prima::Image::load>
+This section describes the parameters accepted and the data returned by
+the C<Prima::Image::load> method
 
 =head2 Common
 
@@ -499,35 +507,36 @@ This section describes parameters accepted and data returned by C<Prima::Image::
 
 =item blending BOOLEAN = 1
 
-Affects how to treat alpha channel bits, if any.
+Affects how to treat the alpha channel bits, if present.
 
-If set, mixes the alpha channel with background color in case if loading to
-an image, or premultiplies color bits (either data or palette) with alpha, if
-loading to icon. Note that saving back the object will result in different
-image, but the object is ready to be displayed immediately.
+If set, mixes the alpha channel with the background color in case when loading to
+an image, or premultiplies color bits (either data or palette) with alpha, when
+loading to an icon. Note that saving the object will result in different
+image pixel values, but the object will be ready to be displayed immediately.
 
-If unset, color and eventual alpha bits, if loaded to an icon, will not be
-affected in any way. Note that saving back the object will result in the same
-image, but the object is not ready to be displayed immediately. See also:
+If unset, the color and eventual alpha bits, if loaded to an icon, will not be
+affected in any way. Note that saving the object will result in the same
+image, but the object will not be ready to be displayed immediately. See also:
 L<Prima::Image/premultiply_alpha>.
 
 =item className STRING
 
-When loading more than one image, this string is used to create
-instances of image containers. By default the calling class is
-used (i.e. C<Prima::Image> or C<Prima::Icon>).
+When loading more than one image, this string is used to create instances of
+image containers. By default, the calling class is used (i.e. C<Prima::Image> or
+C<Prima::Icon>).
 
 =item eventDelay INT
 
-Specifies C<onDataReady> event granularity in microseconds, if
-image codec is capable of triggering this event.
+Specifies C<onDataReady> event granularity in seconds, when the codec is
+capable of triggering this event.
 
-Default: 100
+Default: 0.1
 
 =item iconUnmask BOOL
 
-If set, C<Prima::Icon::autoMasking> is set to C<am::None> prior to the
-file loading.
+If set, C<Prima::Icon::autoMasking> is set to C<am::None> before the file
+loading which disables any attempt to deduce the mask pixels based on the data
+pixels.
 
 Default: false. Only actual for C<Prima::Icon> loading.
 
@@ -537,15 +546,9 @@ When loading from a multiframe file, selects the frame index to load.
 
 Default: 0
 
-=item map [INT]
-
-When loading from a multiframe file, selects set of frame indexes to load.
-
-Default: undef
-
 =item loadExtras BOOL
 
-If set, all available extra information will be stored in C<{extras}> hash
+If set, all available extra information will be stored in the C<extras> hash
 on the loaded object.
 
 Default: false
@@ -556,35 +559,41 @@ When loading from a multiframe file, selects that all frames are to be loaded
 
 Default: false
 
+=item map [INT]
+
+When loading from a multiframe file, selects the set of the frame indexes to load.
+
+Default: undef
+
 =item noImageData BOOL
 
-When set, neither image data is not loaded, nor image dimensions are changed
-(newly created images have size of 1x1). Instead, C<{extras}> contains C<width>
-and C<height> integers.
+If set, neither image data is loaded, nor image dimensions are changed (newly
+created images have a size of 1x1). Instead, the C<{extras}> hash contains
+C<width> and C<height> integers.
 
 Default: false
 
 =item noIncomplete BOOL
 
-Affects the action when image is incomplete, truncated, etc.
-If set, signals an error. Otherwise no error is signaled and whatever
-data could be recovered from the image are returned, and C<truncated> flag
-is set.
+Affects the action when the image is incomplete, truncated, etc.  If set,
+signals an error. Otherwise, no error is signaled and whatever data could be
+recovered from the image is returned. In the latter case, the C<truncated> field
+contains the error string.
 
 Default: false
 
 =item profiles [HASH]
 
-Array of hashes passed down to each frame in multiframe loads. Each
-frame load request will be passed an individual hash, a result of
-hash join of all profiles passed to C<Image::load> and the nth hash
-in the array.
+An array of hashes passed down to each frame in multiframe loading sessions.
+Each frame loading request will be provided with an individual hash, a result
+of the hash join of all profiles passed to C<Image::load> and the nth hash in
+the array.
 
 =item wantFrames BOOL
 
-Affects how the number of frames in a file is reported in C<frames> flag. If
-set, always scans the file for exact number. Otherwise it is up to the codec to
-do that.
+Affects how the number of frames in a file is reported in the C<frames> field.
+If set, Prima always scans the file for the exact number of frames. Otherwise,
+it is up to the codec to do that.
 
 Default: false
 
@@ -602,22 +611,22 @@ Indicates the internal codec ID used to load the image. Can be used for C<Image:
 
 =item frames INT
 
-If set to a positive integer, indicates number of frames in a file. Otherwise
-signals that there are frames, but codec needs an expensive scan to calculate
-the frames (and C<wantFrames> set).
+If set to a positive integer, indicates the number of frames in the file. Otherwise
+signals that there are frames, but the codec needs an expensive scan to calculate
+the number (and the C<wantFrames> parameter being set).
 
 =item height INT
 
-When C<noImageData> is in action, contains image height.
+When the C<noImageData> parameter is set, contains the image height.
 
 =item truncated BOOL
 
-When C<noIncomplete> is in action, is set if image was truncated.
-The value is the error string.
+When the C<noIncomplete> parameter is set, will be set if the image was
+truncated.  The value is the error string.
 
 =item width INT
 
-When C<noImageData> is in action, contains image width.
+When the C<noImageData> parameter is set, contains the image width.
 
 =back
 
@@ -627,15 +636,17 @@ When C<noImageData> is in action, contains image width.
 
 =item autoConvert BOOL
 
-Affects the action when image cannot be stored in file format in its existing pixel format.
-If set, the system tries to convert image into a pixel format understood by the selected
-codec. Fails otherwise.
+Affects the action when the image cannot be stored in a file in its existing
+pixel format. If set, the system tries to convert the image into one of the
+pixel formats supported by the selected codec. Fails otherwise.
 
 Default: true
 
 =item codecID INT
 
-Overrides codec selection based on filename extension.
+Disables the algorithm where the codec is selected based on the filename
+extension.  Uses the codec number C<codecID> instead. Note that when saving
+images into streams this option must always be present.
 
 Default: undef
 
@@ -643,33 +654,34 @@ Default: undef
 
 =head2 BMP codec
 
-BMP, the bitmap codec is not depended on external libraries and is always available.
+BMP, the bitmap codec is not dependent on external libraries and is always
+available.
 
 =over
 
 =item BitDepth INT
 
-Original bit depth, may differ from C<Image::bpp>.
+Original bit depth may differ from C<Image::bpp>.
 
 Not valid as a saving parameter.
 
 =item Compression STRING
 
-Bitmap compressing method.
+Bitmap compression method.
 
 Not valid as a saving parameter.
 
 =item HotSpotX, HotSpotY INT
 
-If loading from cursor file, contains pointer hotspot coordinates
+If loading from a cursor file, contains pointer hotspot coordinates
 
 =item ImportantColors INT
 
-Minimal number of colors needed to display the image
+The minimal number of colors is needed to display the image
 
 =item OS2 BOOL
 
-Set when loading OS/2 bitmap
+Is set when loading an OS/2 bitmap
 
 =item XResolution, YResolution INT
 
@@ -679,8 +691,8 @@ Image resolution in PPM
 
 =head2 X11 codec
 
-X11, the X Consortium data file codec may depend on external libraries, but is implement
-internally if these are not found, and is thus always available.
+X11, the X Consortium data file codec is implemented internally and is always
+available.
 
 =over
 
@@ -696,19 +708,19 @@ Contains pointer hotspot coordinates, if any
 
 =item extensions HASH
 
-Set of xpm-specific extension strings. Cannot be used for saving.
+A set of xpm-specific extension strings. Cannot be used for saving.
 
 =item hintsComment, colorsComment, pixelsComment STRING
 
-Contains comments to different sections
+Contains comments on different sections
 
 =item hotSpotX, hotSpotY INT
 
-Contains pointer hotspot coordinates
+Contains the pointer hotspot coordinates
 
 =item transparentColors [COLOR]
 
-Array or transparent colors. Cannot be used for saving.
+An array of transparent colors. Cannot be used for saving.
 
 =back
 
@@ -720,28 +732,30 @@ Array or transparent colors. Cannot be used for saving.
 
 =item exifTransform none|auto|wipe
 
-If set to C<auto> or C<wipe>, tries to detect whether there is are any exif
-tags hinting that the image has to be rotated and/or mirrored. If found, applies
-the transformation accordingly.
+If set to C<auto> or C<wipe>, tries to detect whether there are any exif tags
+hinting that the image has to be rotated and/or mirrored. If found, applies the
+transformation accordingly.
 
-When set to C<wipe>, in addition to that, removes the exif tags so that subsequent
-image save won't result in transformed images with exifs tags still present.
+When set to C<wipe>, in addition to that, removes the exif tags so that
+subsequent image save won't result in transformed images with exifs tags still
+present.
 
-This parameter requires C<loadExtras> flag set, because exif tags are stored in extra JPEG data.
+This parameter requires a C<loadExtras> parameter set because exif tags are stored in
+extra JPEG data.
 
 =back
 
-=head3 Load output and save input
+=head3 Output fields of the loader and input parameters for the saver
 
 =over
 
 =item appdata [STRING]
 
-Array of raw binary strings found in extra JPEG data.
+An array of raw binary strings found in extra JPEG data.
 
 =item comment STRING
 
-Any comment text found in file.
+Any comment text found in the file.
 
 =item progressive BOOL
 
@@ -769,13 +783,13 @@ Only used for saving.
 
 =item background COLOR
 
-When PNG file contains alpha channel, and C<alpha> is set to C<blend>,
+When a PNG file contains an alpha channel, and C<alpha> is set to C<blend>,
 this color is used to blend the background. If set to C<clInvalid>,
-default PNG library background color is used.
+the default PNG library background color is used.
 
 Default: clInvalid
 
-Not applicable for C<Prima::Icon>.
+Not applicable to C<Prima::Icon>.
 
 =item gamma REAL
 
@@ -803,16 +817,16 @@ Default: clInvalid, which means PNG library default
 
 =item blendMethod blend|no_blend|unknown
 
-Signals whether the new frame to be blended over
-the existing animation, or replace it.
+Signals whether the new frame is to be blended over
+the existing animation, or it should replace that.
 
 =item delayTime $milliseconds
 
-Delay time between frames
+Delay between frames
 
 =item default_frame BOOLEAN
 
-When set, means that the first image is a "default" frame, a special
+When set, means that the first image is the "default" frame, a special
 backward-compatibility image that is supposed to be excluded from the animation
 sequence, to be displayed only when all animation frames cannot be loaded
 for whatever reason.
@@ -820,17 +834,17 @@ for whatever reason.
 =item disposalMethod none|background|restore|unknown
 
 Signals whether the frame, before being replaced, is to be erased by the background
-color, previous frame, or none.
+color, or by the previous frame, or not touched at all.
 
 =item gamma REAL
 
-Gamma value found in file.
+Gamma value found in the file.
 
 Default: 0.45455
 
 =item hasAlpha BOOLEAN
 
-If set, image contains alpha channel
+If set, the image contains an alpha channel
 
 =item iccp_name, iccp_profile STRING
 
@@ -840,27 +854,27 @@ Default: C<unspecified> and C<"">.
 
 =item interlaced BOOL
 
-If set, PNG file is interlaced
+If set, the PNG file is interlaced
 
 Default: 0
 
 =item left INTEGER
 
-Frame horizontal offset from the screen
+The horizontal offset of the frame from the screen
 
 =item loopCount INTEGER
 
-How many times the animation sequence should run, or 0 for forever.
+How many times the animation sequence should run, or 0 for forever
 
 =item mng_datastream BOOL
 
-If set, file contains a MNG datastream
+If set, the file contains an MNG datastream
 
 Default: 0
 
 =item offset_x, offset_y INT
 
-Positive offset from the left edge of the screen to offset_x and the positive
+A positive offset from the left edge of the screen to offset_x and the positive
 offset from the left edge of the screen to offset_y
 
 Default: 0
@@ -873,7 +887,8 @@ Default: pixel
 
 =item render_intent none|saturation|perceptual|relative|absolute
 
-See PNG docs.
+See the PNG docs ( L<http://www.libpng.org/pub/png/spec/1.1/PNG-Chunks.html>,
+4.2.9. sRGB Standard RGB color space).
 
 Default: none
 
@@ -911,12 +926,13 @@ Default: C<{}>
 
 =item top INTEGER
 
-Frame vertical offset from the screen
+The vertical offset of the frame from the screen
 
 =item transparency_table [INT]
 
-When a paletted image contains transparent colors, returns array of palette indexes
-(C<transparency_table>) in 0-255 range, where each number is an alpha value.
+When a paletted image contains transparent colors, returns an array of palette
+indexes (C<transparency_table>) in the 0-255 range, where each number is an alpha
+value.
 
 Default value: empty array
 
@@ -928,7 +944,7 @@ Default value: clInvalid (i.e. none)
 
 =item transparent_color_index INT
 
-One transparent color value, as palette index for 8- or less- bit PNG images.
+One transparent color value, as the palette index for 8- or less-bit PNG images.
 
 Default value: -1 (i.e. none)
 
@@ -983,9 +999,9 @@ Bits used to represent a single sample, 1-64
 
 =item SamplesPerPixel INT
 
-Number of samples per pixel, 1-4. F.ex. most images have 1 sample.  Planar
-TIFFs may split low and high bytes in 2 samples.  RGB has 3 samples, YCbCr and
-RGBA has 4.
+Number of samples per pixel, 1-4. Most images have 1 sample. Planar TIFFs may
+split low and high bytes in 2 samples. RGB has 3 samples, and YCbCr and RGBA
+have 4.
 
 =item PlanarConfig contiguous|separate
 
@@ -1009,12 +1025,12 @@ If set, TIFF is tiled
 
 =item Faxpect BOOL
 
-When C<Fax> option set set to C<true>, and indeed the image was converted from 1 to 2 bits,
-this parameter will be set to signal this.
+When the C<Fax> option was set to C<true>, and indeed the image was converted
+from 1 to 2 bits, this parameter will be set to signal this.
 
 =item CompressionType STRING
 
-Compression algorithm used for reading TIFF. One of:
+The compression algorithm used for reading. One of:
 
   NONE
   CCITTRLE
@@ -1049,7 +1065,7 @@ Compression algorithm used for reading TIFF. One of:
 =item Compression STRING
 
 Same values as in C<CompressionType>. Different names are used
-to avoid implicit but impossible compression selection, because
+to avoid implicit but impossible compression selection because
 tibtiff can decompress many types, but compress only a few.
 
 =back
@@ -1111,7 +1127,7 @@ GIF comment text
 
 =item delayTime INT
 
-Delay in hundredth of a second between frames
+Delay in a hundredth of a second between frames
 
 Default: 1
 
@@ -1128,7 +1144,7 @@ Default: 0
 
 =item interlaced BOOL
 
-If set, GIF is interlaced
+If set, the GIF image is interlaced
 
 Default: 0
 
@@ -1140,7 +1156,7 @@ Default: 0
 
 =item loopCount INT
 
-How many times the GIF animation loops. 0 means indefinite.
+How many times do the GIF animation loops. 0 means indefinite.
 
 Default: 1
 
@@ -1164,7 +1180,7 @@ Default: 0,0,0,255,255,255
 
 =item transparentColorIndex INT
 
-Index of GIF transparent color
+Index of the GIF transparent color
 
 Default: 0
 
@@ -1184,12 +1200,12 @@ Default: 0
 
 =item background $ARGB_color
 
-Integer constant encoded as ARGB, hints the background to be used
+An integer constant encoded as 32-bit ARGB, hints the background color to be used
 
 =item blendMethod blend|no_blend|unknown
 
-Signals whether the new frame to be blended over
-the existing animation, or replace it.
+Signals whether the new animation frame is to be blended over
+the existing animation, or it should replace that.
 
 =item delayTime $milliseconds
 
@@ -1202,11 +1218,11 @@ color or not.
 
 =item hasAlpha BOOLEAN
 
-If set, image contains alpha channel
+If set, the image contains an alpha channel
 
 =item left INTEGER
 
-Frame horizontal offset from the screen
+The horizontal offset of the frame from the screen
 
 =item loopCount INTEGER
 
@@ -1218,17 +1234,17 @@ How many times the animation sequence should run, or 0 for forever.
 
 =item top INTEGER
 
-Frame vertical offset from the screen
+The vertical offset of the frame from the screen
 
 =back
 
 =head3 Save input
 
-WebP requires all images to have same dimensions.  Also, saving the webp
-loading result might fail because loaded frames might only contains parts to be
-superimposed on each other, while saving requires always full frames. To convert
-webp loaded frames to something that can be saved later more-or-less
-identically, use C<Prima::Image::webp::animation_to_frames> converter:
+WebP requires all images to have the same dimensions.  Also, saving the webp
+loading result might fail because loaded frames might only contain parts to be
+superimposed on each other while saving always requires full frames. To convert
+the loaded frames to something that can be saved later more-or-less
+identically, use the C<Prima::Image::webp::animation_to_frames> converter:
 
    use Prima qw(Image::webp);
    my @i = Prima::Icon->load('source.webp', loadAll => 1, loadExtras => 1) or die $@;
@@ -1239,7 +1255,7 @@ identically, use C<Prima::Image::webp::animation_to_frames> converter:
 
 =item background $ARGB_color
 
-Integer constant encoded as ARGB, hints the background to be used
+An integer constant encoded as 32-bit ARGB, hints the background to be used
 
 =item compression lossless (default)|lossy|mixed
 
@@ -1247,15 +1263,17 @@ Integer constant encoded as ARGB, hints the background to be used
 
 =item filter_strength INTEGER
 
-Setting between 0 and 100, 0 means off.
+The value is between 0 and 100, where 0 means off.
 
 =item kmax INTEGER
 
-Min distance between key frames. Default is 9 for lossless compression, and 3 for lossy
+Min distance between keyframes. The default is 9 for the lossless compression and 3
+for the lossy
 
 =item kmin INTEGER
 
-Max distance between key frames. Default is 17 for lossless compression, and 5 for lossy
+Max distance between keyframes. The default is 17 for the lossless compression and
+5 for the lossy
 
 =item loopCount 0
 
@@ -1267,7 +1285,7 @@ Compression method vs size, 0 (fast) to 6 (slow)
 
 =item minimize_size BOOLEAN
 
-Minimize output size (off by default)
+Minimize the output size (off by default)
 
 =item quality INTEGER
 
@@ -1295,7 +1313,7 @@ Number of depth images available for the frame
 
 =item ispe_height, ispe_width
 
-Original image size before tranformations (crop, rotation, etc) are applied
+Original image size before transformations (crop, rotation, etc) are applied
 
 =item is_primary
 
@@ -1305,11 +1323,11 @@ Set if this is the primary image
 
 =item premultiplied_alpha
 
-Set if alpha is premultiplied
+Is set if the values of the alpha channel are premultiplied
 
 =item thumbnails
 
-Array of hashes with keys I<type>, I<content_type>, and I<content>.
+An array of hashes with keys I<type>, I<content_type>, and I<content>.
 
 =item aux
 
@@ -1317,7 +1335,7 @@ Array of hashes with keys I<type>, I<content_type>, and I<content>.
 
 =item thumbnail_of INDEX
 
-Set it is thumbnail of the INDEXth toplevel frame
+Set if this frame is the thumbnail of the INDEXth top-level frame
 
 =back
 
@@ -1327,7 +1345,7 @@ Set it is thumbnail of the INDEXth toplevel frame
 
 =item quality
 
-0-100
+Integer, 0-100
 
 =item compression
 
@@ -1335,19 +1353,19 @@ HEIC,AV1,AVC
 
 =item is_primary
 
-0 gets to be a primary by default, but an be set explicitly
+The first frame (#0) gets to be the primary by default, but this can be changed explicitly.
 
 =item premultiplied_alpha
 
-True if alpha is premultiplied
+Trueset if the values of the alpha channel are premultiplied
 
 =item metadata
 
-Array of hashes with keys I<type>, I<content_type>, and I<content>.
+An array of hashes with keys I<type>, I<content_type>, and I<content>.
 
 =item thumbnail_of INDEX
 
-Sets this images as a thumbnail of the INDEXth toplevel frame
+Sets this image as the thumbnail of the INDEXth top-level frame
 
 =back
 

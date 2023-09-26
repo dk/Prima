@@ -1426,7 +1426,7 @@ Create-only property.
 
 =item dragMode SCALAR
 
-A three-state variable, which governs the visual feedback style when the user
+A three-state variable, which manages the visual feedback style when the user
 moves or resizes a window. If 1, the window is moved or resized simultaneously
 with the user mouse or keyboard actions.  If 0, a marquee rectangle is drawn,
 which is moved or resized as the user sends the commands; the window is
@@ -1495,7 +1495,7 @@ Default value: 0
 
 =item windowState STATE
 
-A three-state property, that governs the state of a window.
+A three-state property, that manages the state of a window.
 STATE can be one of three C<ws::XXX> constants:
 
 	ws::Normal

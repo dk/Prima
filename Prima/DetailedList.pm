@@ -466,7 +466,7 @@ sub autoWidth { 0;}
 
 =head1 NAME
 
-Prima::DetailedList - a multi-column list viewer with controlling
+Prima::DetailedList - a multi-column list viewer with a controlling
 header widget.
 
 =head1 SYNOPSIS

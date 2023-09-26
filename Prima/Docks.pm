@@ -2050,7 +2050,7 @@ not allow tiling, and can reshape the dock widget and rearrange
 the docked widgets if necessary.
 
 C<Prima::LinearWidgetDocker> is orientation-dependent; its main axis,
-governed by C<vertical> property, is used to align docked widgets in
+managed by C<vertical> property, is used to align docked widgets in
 'lines', which in turn are aligned by the opposite axis ( 'major' and 'minor' terms
 are used in the code for the axes ).
 

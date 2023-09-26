@@ -578,11 +578,11 @@ Default value: 1
 =item focusLink WIDGET
 
 Points to a widget or a widget name (has to be a sibling widget), which is
-explicitly focused when the user presses the combination of a hot key with the
+explicitly focused when the user presses the combination of a hotkey with the
 C<Alt> key.
 
 Prima::Label does not provide a separate property to access the
-hot key value, however it can be read from the C<{accel}> variable.
+hotkey value, however it can be read from the C<{accel}> variable.
 
 Default value: C<undef>.
 

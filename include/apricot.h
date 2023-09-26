@@ -579,7 +579,7 @@ ConstTable_##package Prima_Autoload_##package##_constants[] = {
 static SV* newSVstring( char *s); \
 XS(prima_autoload_##package##_constant) \
 { \
-	static PHash table = nil; \
+	static PHash table = NULL; \
 	dXSARGS; \
 	char *name; \
 	unsigned int i; \
@@ -1396,9 +1396,9 @@ prima_sv_bool(SV *sv);
 #define pexist( key) hv_exists( profile, # key, (I32) strlen( #key))
 #define pdelete( key) (void) hv_delete( profile, # key, (I32) strlen( #key), G_DISCARD)
 #define dPROFILE  SV ** temporary_prf_Sv
-#define pget_sv( key) ((( temporary_prf_Sv = hv_fetch( profile, # key, (I32) strlen( # key), 0)) == nil) ? \
+#define pget_sv( key) ((( temporary_prf_Sv = hv_fetch( profile, # key, (I32) strlen( # key), 0)) == NULL) ? \
 	croak( "Panic: bad profile key (``%s'') requested in ``%s'', line %d\n", # key, __FILE__, __LINE__ ), &PL_sv_undef : *temporary_prf_Sv)
-#define pget_sv_void( key) ((( temporary_prf_Sv = hv_fetch( profile, # key, (I32) strlen( # key), 0)) == nil) ? \
+#define pget_sv_void( key) ((( temporary_prf_Sv = hv_fetch( profile, # key, (I32) strlen( # key), 0)) == NULL) ? \
 	croak( "Panic: bad profile key (``%s'') requested in ``%s'', line %d\n", # key, __FILE__, __LINE__ ) : (void)NULL)
 #define pget_i( key)  ( pget_sv_void( key), SvIV( *temporary_prf_Sv))
 #define pget_f( key)  ( pget_sv_void( key), SvNV( *temporary_prf_Sv))
@@ -2135,7 +2135,7 @@ typedef struct {
 	/* pack */
 	Point          pad;            /* border padding */
 	Point          ipad;           /* size increase */
-	Handle         order;          /* if non-nil, BEFORE or AFTER a widget */
+	Handle         order;          /* if non-NULL, BEFORE or AFTER a widget */
 	/* place */
 	int x, y;
 	float relX, relY;
@@ -2552,9 +2552,9 @@ typedef struct _MenuItemReg {   /* Menu item registration record */
 	int    key;                  /* accelerator key, kbXXX */
 	int    id;                   /* unique id */
 	char * perlSub;              /* sub name */
-	Handle bitmap;               /* bitmap if not nil */
-	SV *   code;                 /* code if not nil */
-	SV *   options;              /* use options if not nil */
+	Handle bitmap;               /* bitmap if not NULL */
+	SV *   code;                 /* code if not NULL */
+	SV *   options;              /* use options if not NULL */
 	Handle icon;                 /* custom checked bitmap */
 	int    group;                /* radio group */
 	struct _MenuItemReg* down;   /* pointer to submenu */

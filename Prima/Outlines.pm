@@ -2297,7 +2297,7 @@ Width of an item in pixels.
 
 =back
 
-The indices above 3 should not be used, because eventual changes to the
+The indices above 3 should not be used because eventual changes to the
 implementation of the class may use these. It should be enough item 0 to store
 any value.
 

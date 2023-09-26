@@ -2763,7 +2763,7 @@ sub Timer_Tick { shift-> next_tick }
 
 =head1 NAME
 
-Prima::Sliders - sliding bars, spin buttons and input lines, dial widget etc.
+Prima::Sliders - sliding bars, spin buttons, dial widget, etc.
 
 =head1 DESCRIPTION
 
