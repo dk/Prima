@@ -323,6 +323,7 @@ Prima/Image/png.pm
 Prima/Image/tiff.fm
 Prima/Image/tiff.pm
 Prima/Image/TransparencyControl.pm
+Prima/Image/webp.fm
 Prima/Image/webp.pm
 Prima/ImageViewer.pm
 Prima/IniFile.pm
