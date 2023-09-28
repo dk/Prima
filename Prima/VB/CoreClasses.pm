@@ -287,6 +287,8 @@ sub caption_box
 	return $canvas-> get_text_width( $cap), $canvas-> font-> height;
 }
 
+sub prf_get_borderWidth { $_[0]->prf('borderWidth') // ((( $_[0]-> prf('skin') // $::application->skin // '') eq 'flat') ? 1 : 2) }
+
 sub on_paint
 {
 	my ( $self, $canvas) = @_;
