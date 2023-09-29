@@ -11,13 +11,13 @@ sub
 		profile => {
 			borderIcons => bi::SystemMenu | bi::TitleBar,
 			borderStyle => bs::Dialog,
+			centered => 1,
 			name => 'Form1',
-			origin => [ 528, 134],
-			originDontCare => 1,
+			origin => [ 2606, 415],
+			originDontCare => 0,
 			size => [ 300, 169],
 			sizeDontCare => 0,
 			text => 'WebP filter',
-			centered => 1,
 	}},
 	'Compression' => {
 		class   => 'Prima::ComboBox',
@@ -27,7 +27,7 @@ sub
 Mixed compression mode: optimize compression of the image 
 by picking either lossy or lossless compression for each frame heuristically
 ',
-			items => ['lossless', 'lossy', 'mixed'],
+			items => ['lossless', 'lossy', 'mixed', ],
 			name => 'Compression',
 			origin => [ 16, 112],
 			owner => 'Form1',
@@ -44,7 +44,7 @@ by picking either lossy or lossless compression for each frame heuristically
 			name => 'Label1',
 			origin => [ 16, 136],
 			owner => 'Form1',
-			size => [ 100, 19],
+			size => [ 146, 24],
 			text => '~Compression',
 	}},
 	'Quality' => {
@@ -55,7 +55,7 @@ by picking either lossy or lossless compression for each frame heuristically
 In case of lossless compression, a small factor enables faster compression speed, 
 but produces a larger file. Maximum compression is achieved by using a 
 value of 100. In case of lossy compression , a small factor produces a smaller file 
-with lower quality. Best quality is achieved by using a value of 100.
+with lower quality. Best quality is achieved by using a value of 100.
 ',
 			name => 'Quality',
 			origin => [ 180, 112],
@@ -72,8 +72,36 @@ with lower quality. Best quality is achieved by using a value of 100.
 			name => 'Label2',
 			origin => [ 180, 136],
 			owner => 'Form1',
-			size => [ 100, 19],
+			size => [ 100, 24],
 			text => '~Quality',
+	}},
+	'FilterStrength' => {
+		class   => 'Prima::SpinEdit',
+		module  => 'Prima::Sliders',
+		profile => {
+			hint => 'For lossy encoding only. 
+Specify the strength of the deblocking filter, between 0 (no filtering) and 100 (maximum filtering). 
+A value of 0 will turn off any filtering. 
+Higher value will increase the strength of the filtering process applied after decoding the picture. 
+The higher the value the smoother the picture will appear. 
+Typical values are usually in the range of 20 to 50.',
+			name => 'FilterStrength',
+			origin => [ 16, 60],
+			owner => 'Form1',
+			size => [ 146, 21],
+			value => 0,
+	}},
+	'Label4' => {
+		class   => 'Prima::Label',
+		module  => 'Prima::Label',
+		siblings => [qw(focusLink)],
+		profile => {
+			focusLink => 'FilterStrength',
+			name => 'Label4',
+			origin => [ 16, 84],
+			owner => 'Form1',
+			size => [ 146, 24],
+			text => '~Filter strength',
 	}},
 	'Method' => {
 		class   => 'Prima::SpinEdit',
@@ -87,9 +115,9 @@ Lower value can result in faster processing time at the expense
 of larger file size and lower compression quality.',
 			max => 6,
 			name => 'Method',
-			origin => [ 16, 72],
+			origin => [ 180, 60],
 			owner => 'Form1',
-			size => [ 100, 17],
+			size => [ 100, 21],
 			value => 3,
 	}},
 	'Label3' => {
@@ -99,38 +127,10 @@ of larger file size and lower compression quality.',
 		profile => {
 			focusLink => 'Method',
 			name => 'Label3',
-			origin => [ 16, 92],
+			origin => [ 180, 84],
 			owner => 'Form1',
-			size => [ 100, 19],
+			size => [ 100, 24],
 			text => '~Method',
-	}},
-	'FilterStrength' => {
-		class   => 'Prima::SpinEdit',
-		module  => 'Prima::Sliders',
-		profile => {
-			hint => 'For lossy encoding only. 
-Specify the strength of the deblocking filter, between 0 (no filtering) and 100 (maximum filtering). 
-A value of 0 will turn off any filtering. 
-Higher value will increase the strength of the filtering process applied after decoding the picture. 
-The higher the value the smoother the picture will appear. 
-Typical values are usually in the range of 20 to 50.',
-			name => 'FilterStrength',
-			origin => [ 180, 72],
-			owner => 'Form1',
-			size => [ 100, 18],
-			value => 0,
-	}},
-	'Label4' => {
-		class   => 'Prima::Label',
-		module  => 'Prima::Label',
-		siblings => [qw(focusLink)],
-		profile => {
-			focusLink => 'FilterStrength',
-			name => 'Label4',
-			origin => [ 180, 92],
-			owner => 'Form1',
-			size => [ 100, 19],
-			text => '~Filter strength',
 	}},
 	'OK' => {
 		class   => 'Prima::Button',
