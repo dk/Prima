@@ -686,6 +686,45 @@ sub List_Stringify
 
 sub set_style { $_[0]-> raise_ro('set_style')}
 
+package Prima::Dialog::FileDialog;
+
+sub menu
+{[
+	[ file => 'F~ile' => [
+		[ newfolder => '~New folder...' => 'F7', 'F7', sub {
+			my $self = shift;
+			my $dir = Prima::MsgBox::input_box(
+				'New folder',
+				'Create new folder:',
+				'New folder',
+				mb::OkCancel
+			);
+			return unless defined $dir;
+			$dir = $self-> directory . '/' . $dir;
+			if ( mkdir $dir ) {
+				$self->Dir->new_directory;
+				$self->Dir->path($dir);
+			} else {
+				Prima::MsgBox::message("Cannot create folder:$!");
+			}
+		} ],
+		[ changeto => '~Change to...' => 'Ctrl+L', '^L', sub {
+			my $self = shift;
+			my $dir = Prima::MsgBox::input_box(
+				'Change folder',
+				'Enter new folder path',
+				'',
+				mb::OkCancel
+			);
+			return unless defined $dir;
+			if ( -d $dir ) {
+				$self->directory($dir);
+			} else {
+				Prima::MsgBox::message("No such folder");
+			}
+		} ],
+	]],
+]}
 
 package Prima::Dialog::FileDialog;
 use Prima::MsgBox;
@@ -703,6 +742,7 @@ sub profile_default
 		centered    => 1,
 		visible     => 0,
 		borderStyle => bs::Sizeable,
+		menuItems   => Prima::Dialog::FileDialog->menu,
 
 		defaultExt  => '',
 		fileName    => '',
@@ -1549,6 +1589,7 @@ sub profile_default
 		centered    => 1,
 		visible     => 0,
 		text        => 'Change directory',
+		menuItems   => Prima::Dialog::FileDialog->menu,
 
 		directory   => '',
 		designScale => [7, 16],
