@@ -1740,7 +1740,7 @@ sub showDotDirs
 
 =head1 NAME
 
-Prima::Dialog::FileDialog - File system related widgets and dialogs.
+Prima::Dialog::FileDialog - File system-related widgets and dialogs.
 
 =head1 SYNOPSIS
 

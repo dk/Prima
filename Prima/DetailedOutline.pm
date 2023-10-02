@@ -326,7 +326,7 @@ sub autoRecalc {($#_)?$_[0]->set_auto_recalc ($_[1]):return $_[0]->{autoRecalc} 
 
 =head1 NAME
 
-Prima::DetailedOutline - a multi-column outline viewer with controlling
+Prima::DetailedOutline - multi-column outline viewer with controlling
 header widget.
 
 =head1 SYNOPSIS

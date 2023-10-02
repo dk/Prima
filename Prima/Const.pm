@@ -1320,16 +1320,16 @@ See also L<Prima::Application/get_system_value>
 	sv::DblClickDelay    - mouse double-click timeout in milliseconds
 	sv::ShapeExtension   - 1 if Prima::Widget::shape functionality is supported,
 	                       0 otherwise
-	sv::ColorPointer     - 1 if system accepts color pointer icons.
-	sv::CanUTF8_Input    - 1 if system can generate key codes in unicode
-	sv::CanUTF8_Output   - 1 if system can output utf8 text
-	sv::CompositeDisplay - 1 if system uses double-buffering and alpha composition for the desktop,
+	sv::ColorPointer     - 1 if the system accepts color pointer icons.
+	sv::CanUTF8_Input    - 1 if the system can generate key codes in unicode
+	sv::CanUTF8_Output   - 1 if the system can output utf8 text
+	sv::CompositeDisplay - 1 if the system uses double-buffering and alpha composition for the desktop,
 	                       0 if it doesn't, -1 if unknown
-	sv::LayeredWidgets   - 1 if system supports layering
-	sv::FixedPointerSize - 0 if system doesn't support arbitrary sized pointers and will resize custom icons to the system size
+	sv::LayeredWidgets   - 1 if the system supports layering
+	sv::FixedPointerSize - 0 if the system doesn't support arbitrarily sized pointers and will resize custom icons to the system size
 	sv::MenuCheckSize    - width and height of default menu check icon
 	sv::FriBidi          - 1 if Prima is compiled with libfribidi and full bidi unicode support is available
-	sv::Antialias        - 1 if system supports antialiasing and alpha layer for primitives
+	sv::Antialias        - 1 if the system supports antialiasing and alpha layer for primitives
 	sv::LibThai          - 1 if Prima is compiled with libthai
 
 =head2 ta::  - alignment constants

@@ -69,7 +69,7 @@ sub ScrollTimer_Tick
 
 =head1 NAME
 
-Prima::Widget::MouseScroller - auto repeating mouse events
+Prima::Widget::MouseScroller - auto-repeating mouse events
 
 =head1 DESCRIPTION
 

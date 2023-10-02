@@ -127,7 +127,6 @@ Prima - a Perl graphic toolkit
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/hello-world.gif">
 
-
 	use Prima qw(Application Buttons);
 
 	Prima::MainWindow->new(
@@ -145,12 +144,21 @@ See more screenshots at L<http://prima.eu.org/big-picture>.
 
 =head1 DESCRIPTION
 
-The toolkit is a combination of two basic sets of classes - core and external. The
-core classes are coded in C and form a baseline for every Prima object 
-written in Perl. The usage of C is possible together with the toolkit; however,
-its full power is revealed in the Perl domain. The external classes present 
-an easily expandable set of widgets, written entirely in Perl and communicating 
-with the system using Prima library calls.
+Prima is a classic 2D GUI toolkit that works under Windows and X11
+environments. The toolkit features a rich widget library, extensive 2D
+graphic support, PDF generation, modern Unicode text input and output, and
+supports a wide set of image formats.  Additionally, the RAD-style Visual
+Builder and POD viewer are included. The toolkit can interoperate with other
+popular event loop libraries.
+
+=head1 CLASS HIERARCHY
+
+The toolkit is built with a combination of two basic sets of classes - core and
+external. The core classes are coded in C and form a baseline for every Prima
+object written in Perl. The usage of C is possible together with the toolkit;
+however, its full power is revealed in the Perl domain. The external classes
+present an easily expandable set of widgets, written entirely in Perl and
+communicating with the system using Prima library calls.
 
 The core classes form a hierarchy, which is displayed below:
 
@@ -178,19 +186,18 @@ can be found below in L</SEE ALSO>.
 
 =head1 BASIC PROGRAM
 
-The very basic code shown in L<"SYNOPSIS"> is explained here. 
-The code creates a window with 'Hello,
-world' title and a centered button with the same text. The program
-terminates after the button is pressed.
+The very basic code shown in L<"SYNOPSIS"> is explained here.  The code creates
+a window with a 'Hello, world' title and a button with the same text.
+The program terminates after the button is pressed.
 
-A basic construct for a program written with Prima obviously requires 
+A basic construct for a program written with Prima requires 
 
 	use Prima;
 
-code; however, effective programming requires usage of the other
-modules, for example, C<Prima::Buttons>, which contains a set of
-button widgets. The C<Prima.pm> module can be
-invoked with a list of such modules, which makes the construction
+code; however, effective programming requires the usage of the other modules, for
+example, C<Prima::Buttons>, which contains various button widgets. The
+C<Prima.pm> module can be invoked together with a list of such modules, which makes the
+construction
 
 	use Prima;
 	use Prima::Application;
@@ -204,12 +211,12 @@ Another basic issue is the event loop, which is called by
 
 	run Prima;
 
-sentence and requires a C<Prima::Application> object to be created beforehand.
-Invoking the C<Prima::Application> standard module is one of the possible ways to 
-create an application object. The program usually terminates after the event loop
-is finished.
+code and requires a C<Prima::Application> object to be created beforehand.
+Invoking the C<Prima::Application> standard module is one of the possible ways
+to create an application object. The program usually terminates after the event
+loop is finished.
 
-The window is created by invoking 
+The main window is created by invoking
 
 	Prima::MainWindow->new();
 
@@ -217,11 +224,9 @@ or
 
 	Prima::MainWindow->create()
 
-code with additional parameters. Actually, all Prima objects are created by such a
-scheme. The class name is passed as the first parameter, and a custom set
-of parameters is passed afterwards. These parameters are usually 
-represented in a hash syntax, although actually passed as an array.
-The hash syntax is preferred for code readability:
+code with additional parameters. All Prima objects are created by the same
+scheme; the class name is passed as the first parameter, and a custom set
+of parameters is passed afterward:
 
 	$new_object = Class->new(
 		parameter => value,
@@ -230,10 +235,10 @@ The hash syntax is preferred for code readability:
 	);
 
 Here, parameters are the class property names, and they differ from class to
-class. Classes often have common properties, primarily due to the
-object inheritance.
+class. Classes often have common properties, primarily due to object
+inheritance.
 
-In the example, the following properties are set:
+In the example, the following properties are used:
 
 	Window::text
 	Window::size
@@ -241,20 +246,20 @@ In the example, the following properties are set:
 	Button::centered
 	Button::onClick
 
-Property values can be of any type, given that they are scalar. As depicted
-here, C<::text> property accepts a string, C<::size> - an anonymous array 
-of two integers, and C<onClick> - a sub.
+Property values can be of any scalar type. For example, the C<::text> property
+accepts a string, C<::size> - an anonymous array of two integers, and
+C<onClick> - a sub.
 
-onXxxx are special properties that form a class of I<events>, 
-which share the C<new>/C<create> syntax, and are additive when 
-the regular properties are substitutive (read more in L<Prima::Object>). 
-Events are called in the object context when a specific condition occurs. 
-The C<onClick> event here, for example, is called when the 
-user presses (or otherwise activates) the button.
+onXxxx are special properties that describe I<events> that can be used together
+with the C<new>/C<create> syntax, and are additive when the regular properties
+are substitutive (read more in L<Prima::Object>).  Events are called in the
+object context when a specific condition occurs.  The C<onClick> event here,
+for example, is called when the user presses (or otherwise activates) the
+button.
 
 =head1 API
 
-This section describes miscellaneous methods, registered in C<Prima::>
+This section describes miscellaneous methods, registered in the C<Prima::>
 namespace.
 
 =over
@@ -286,27 +291,26 @@ Parses Prima options from @ARGS, returns unparsed arguments.
 =head1 OPTIONS
 
 Prima applications do not have a portable set of arguments; it depends on the
-particular platform. Run  
+particular platform. Run
 
 	perl -e '$ARGV[0]=q(--help); require Prima'
 
-or any Prima program with C<--help> argument to get the list of supported
+or any Prima program with a C<--help> argument to get the list of supported
 arguments. Programmatically, setting and obtaining these options can be done
-by using C<Prima::options> routine.
+by using the C<Prima::options> routine.
 
-In cases where Prima argument parsing conflicts with application options, use
-L<Prima::noARGV> to disable automatic parsing; also see L<parse_argv>. 
-Alternatively, the construct 
+In cases where the Prima argument parsing conflicts with the application
+options, use L<Prima::noARGV> to disable the automatic parsing; also see
+L<parse_argv>.  Alternatively, the construct
 
-	BEGIN { local @ARGV; require Prima; } 
+	BEGIN { local @ARGV; require Prima; }
 
 will also do.
 
 =head1 SEE ALSO
 
-The toolkit documentation is divided by several
-subjects, and the information can
-be found in the following files:
+The toolkit documentation is divided into several sections; the individual
+manuals can be found in the following files:
 
 =over
 
@@ -350,7 +354,7 @@ L<Prima::Menu> - pull-down and pop-up menu objects
 
 L<Prima::Timer> - programmable periodical events 
 
-L<Prima::Application> - root of widget objects hierarchy 
+L<Prima::Application> - the root of widget objects hierarchy 
 
 L<Prima::Printer> - system printing services 
 
@@ -366,7 +370,7 @@ L<Prima::ComboBox> - combo box widget
 
 L<Prima::DetailedList> - multi-column list viewer with controlling header widget
 
-L<Prima::DetailedOutline> - a multi-column outline viewer with controlling header widget
+L<Prima::DetailedOutline> - multi-column outline viewer with controlling header widget
 
 L<Prima::DockManager> - advanced dockable widgets
 
@@ -420,7 +424,7 @@ L<Prima::Dialog::ColorDialog> - color selection facilities
 
 L<Prima::Dialog::FindDialog> - find and replace dialogs
 
-L<Prima::Dialog::FileDialog> - file system related widgets and dialogs
+L<Prima::Dialog::FileDialog> - file system-related widgets and dialogs
 
 L<Prima::Dialog::FontDialog> - font dialog
 
@@ -486,7 +490,7 @@ L<Prima::Widget::Link> - links embedded in widgets
 
 L<Prima::Widget::ListBoxUtils> - common paint routine for listboxes
 
-L<Prima::Widget::MouseScroller> - auto repeating mouse events
+L<Prima::Widget::MouseScroller> - auto-repeating mouse events
 
 L<Prima::Widget::Panel> - simple panel widget
 
@@ -550,9 +554,9 @@ L<Prima::sys::FS> - unicode-aware core file functions
 
 The Prima manual pages often provide information for more than one Prima class.
 To quickly find out the manual page of a desired class, as well as display the
-inheritance information, use the C<prima-class> command. The command can produce output in
-text and pod formats; the latter feature is used by the standard Prima documentation
-viewer C<podview> ( see File/Run/prima-class ).
+inheritance information, use the C<prima-class> command. The command can
+produce output in the text and pod formats; the latter feature is used by the
+standard Prima documentation viewer C<podview> ( see File/Run/prima-class ).
 
 =back
 
