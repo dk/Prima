@@ -10,6 +10,7 @@ sub new
 	bless {
 		canvas  => $canvas,
 		palette => [ cl::White, cl::Black ],
+		dither  => 0,
 		%opt
 	}, $class;
 }
@@ -20,8 +21,9 @@ sub clone
 	return ref($self)->new( undef, %$self, %opt );
 }
 
-sub canvas  { shift->{canvas} }
+sub canvas  { shift->{canvas}  }
 sub palette { shift->{palette} }
+sub dither  { shift->{dither}  }
 
 sub polyline_to_points
 {
@@ -119,29 +121,75 @@ sub calculate_single
 	$end_color   = $self-> map_color( $end_color);
 	my @start = cl::to_rgb($start_color);
 	my @end   = cl::to_rgb($end_color);
-	my @color = @start;
 	return $start_color, 1 if $breadth == 1;
 
 	my @delta = map { ( $end[$_] - $start[$_] ) / ($breadth - 1) } 0..2;
 
-	my $last_color = $start_color;
-	my $color      = $start_color;
+	my $last_color;
+	my $color;
+	if ( $self->{dither}) {
+		$color = $last_color = [ $start_color, $start_color, 0 ];
+	} else {
+		$color = $last_color = $start_color;
+	}
+
 	my $width      = 0;
 	my @ret;
+
 	for ( my $i = 0; $i < $breadth; $i++) {
 		my @c;
 		my $j = $function ? $function->( $offset + $i ) - $offset : $i;
-		for ( 0..2 ) {
-			$color[$_] = $start[$_] + $j * $delta[$_] for 0..2;
-			$c[$_] = int($color[$_] + .5);
-			$c[$_] = 0xff if $c[$_] > 0xff;
-			$c[$_] = 0    if $c[$_] < 0;
-		}
-		$color = ( $c[0] << 16 ) | ( $c[1] << 8 ) | $c[2];
-		if ( $last_color != $color ) {
-			push @ret, $last_color, $width;
-			$last_color = $color;
-			$width = 0;
+		if ( $self->{dither}) {
+			for ( 0..2 ) {
+				my $c = $start[$_] + $j * $delta[$_];
+				$c = 255 if $c > 255;
+				$c = 0   if $c < 0;
+				push @c, int( $c * 64 + .5 ) / 64;
+			}
+			my $color = \@c;
+			if ( join('.', @$last_color) ne join('.', @$color )) {
+				my ($c1, $c2, $fp);
+				if ( 3 == grep { $_ == int } @$last_color) {
+					$c1 = $c2 = ( $last_color->[0] << 16 ) | ( $last_color->[1] << 8 ) | $last_color->[2];
+					$fp = 0;
+				} else {
+					my ($d,@l,@r) = (0);
+					for ( @$last_color ) {
+						my $l = int($_);
+						my $r = $l + (($l != $_ && $_ < 255) ? 1 : 0);
+						push @l, $l;
+						push @r, $r;
+						$d += ($_ - $l) * ($_ - $l);
+					}
+					$fp = int(sqrt($d) / 1.732 * 64 );
+					$c1 = ( $l[0] << 16 ) | ( $l[1] << 8 ) | $l[2];
+					$c2 = ( $r[0] << 16 ) | ( $r[1] << 8 ) | $r[2];
+				}
+				my $new_stripe = 1;
+				if ( @ret ) {
+					my $p = $ret[-2];
+					if ( $p->[0] == $c1 && $p->[1] == $c2 && $p->[2] == $fp) {
+						$ret[-1] += $width;
+						$new_stripe = 0;
+					}
+				}
+				push @ret, [$c1, $c2, $fp], $width if $new_stripe;
+				$last_color = $color;
+				$width = 0;
+			}
+		} else {
+			for ( 0..2 ) {
+				my $c = $start[$_] + $j * $delta[$_];
+				$c[$_] = int($c + .5);
+				$c[$_] = 0xff if $c[$_] > 0xff;
+				$c[$_] = 0    if $c[$_] < 0;
+			}
+			$color = ( $c[0] << 16 ) | ( $c[1] << 8 ) | $c[2];
+			if ( $last_color != $color ) {
+				push @ret, $last_color, $width;
+				$last_color = $color;
+				$width = 0;
+			}
 		}
 
 		$width++;
@@ -164,6 +212,57 @@ sub calculate
 	return \@ret;
 }
 
+my @map_halftone8x8_64 = (
+	0, 47, 12, 59,  3, 50, 15, 62,
+	31, 16, 43, 28, 34, 19, 46, 31,
+	8, 55,  4, 51, 11, 58,  7, 54,
+	39, 24, 35, 20, 42, 27, 38, 23,
+	2, 49, 14, 61,  1, 48, 13, 60,
+	33, 18, 45, 30, 32, 17, 44, 29,
+	10, 57,  6, 53,  9, 56,  5, 52,
+	41, 26, 37, 22, 40, 25, 36, 21
+);
+
+sub fp
+{
+	my $fp = shift;
+	return fp::Solid unless $fp;
+
+	my @p;
+	for ( my $i = 0; $i < 64; $i += 8) {
+		push @p, 0;
+		$p[-1] |= $_ for map { 1 << $_ } grep { $map_halftone8x8_64[$i + $_] > $fp } 0..7;
+	}
+	return \@p;
+}
+
+sub init_brush
+{
+	my $self = shift;
+	return 0 unless $self->{canvas}->graphic_context_push;
+	if ( $self->{dither}) {
+		$self->{canvas}->rop2(rop::CopyPut);
+		$self->{canvas}->fillMode(fm::Winding);
+	} else {
+		$self->{canvas}->fillPattern(fp::Solid);
+	}
+	return 1;
+}
+
+sub apply_brush
+{
+	my ( $self, $stripe) = @_;
+	if ( $self->{dither}) {
+		$self->{canvas}->set(
+			color             => $stripe->[0],
+			backColor         => $stripe->[1],
+			fillPattern       => fp($stripe->[2]),
+		);
+	} else {
+		$self->{canvas}->color($stripe);
+	}
+}
+
 sub bar
 {
 	my ( $self, $x1, $y1, $x2, $y2, $vertical ) = @_;
@@ -184,9 +283,11 @@ sub bar
 	my ($ptr1,$ptr2) = $vertical ? (0,2) : (1,3);
 	my $max          = $bar[$ptr2];
 	my $canvas       = $self->canvas;
+	return unless $self->init_brush;
+
 	for ( my $i = 0; $i < @$stripes; $i+=2) {
 		$bar[$ptr2] = $bar[$ptr1] + $stripes->[$i+1] - 1;
-		$canvas->color( $stripes->[$i]);
+		$self->apply_brush($stripes->[$i]);
 		$canvas->bar( @bar );
 		$bar[$ptr1] = $bar[$ptr2] + 1;
 		last if $bar[$ptr1] > $max;
@@ -195,6 +296,7 @@ sub bar
 		$bar[$ptr2] = $max;
 		$canvas->bar(@bar);
 	}
+	$canvas->graphic_context_pop;
 }
 
 sub ellipse
@@ -208,11 +310,13 @@ sub ellipse
 	my $my = $dy / $diameter;
 	my $stripes = $self-> stripes( $diameter);
 	my $canvas  = $self->canvas;
+	return unless $self->init_brush;
 	for ( my $i = 0; $i < @$stripes; $i+=2) {
-		$canvas->color( $stripes->[$i]);
+		$self->apply_brush($stripes->[$i]);
 		$canvas->fill_ellipse( $x, $y, $mx * $diameter, $my * $diameter );
 		$diameter -= $stripes->[$i+1];
 	}
+	$canvas->graphic_context_pop;
 }
 
 sub sector
@@ -230,8 +334,9 @@ sub sector
 	my $stripes = $self-> stripes( $arclen );
 	my $accum = 0;
 	my $canvas = $self->canvas;
+	return unless $self->init_brush;
 	for ( my $i = 0; $i < @$stripes - 2; $i+=2) {
-		$canvas->color( $stripes->[$i]);
+		$self->apply_brush($stripes->[$i]);
 		my $d = $stripes->[$i+1] / $df;
 		if ( $accum + $d < $min_angle ) {
 			$accum += $d;
@@ -243,9 +348,10 @@ sub sector
 		$start += $d;
 	}
 	if ( @$stripes ) {
-		$canvas->color( $stripes->[-2]);
+		$self->apply_brush($stripes->[-2]);
 		$canvas->fill_sector( $x, $y, $dx, $dy, $start, $end);
 	}
+	$canvas->graphic_context_pop;
 }
 
 1;
@@ -258,13 +364,13 @@ Prima::Drawable::Gradient - gradient fills for primitives
 
 =head1 DESCRIPTION
 
-Prima offers primitive gradient services to draw gradually changing colors.
-A gradient is requested by setting of at least two colors and optionally
-a set of quadratic spline points that, when, projected, generate the transition curve
+Prima offers primitive gradient services to draw gradually changing colors.  A
+gradient is requested by setting at least two colors and optionally a set of
+quadratic spline points that, when projected, generate the transition curve
 between the colors.
 
 The module augments the C<Prima::Drawable> drawing functionality by
-adding C<new_gradient> function.
+adding the C<new_gradient> function.
 
 =head1 SYNOPSIS
 
@@ -292,37 +398,43 @@ Here are %OPTIONS understood in the gradient request:
 
 Creates a new gradient object with %OPTIONS replaced.
 
-=item widgetClass INTEGER
+=item dither BOOLEAN = 0
 
-Points to a widget class to resolve generic colors like C<cl::Back>,
-that may differ from widget class to widget class.
+When set, applies not only gradient colors but also different fill patterns
+to create an even smoother transition effect between adjacent colors.
+Works significantly slower.
 
 =item palette @COLORS
 
-Each color is a C<cl::> value. The gradient is calculated as polyline where
-each its vertex corresponds to a certain blend between two neighbouring colors
+Each color is a C<cl::> value. The gradient is calculated as a polyline where
+each of its vertex corresponds to a certain blend between two adjacent colors
 in the palette. F.ex. the simplest palette going from C<cl::White> to
-C<cl::Black> over a polyline C<0..1> (default), produces pure white color at
-the start and pure black color at the end, filling all available shades of gray
+C<cl::Black> over a polyline C<0..1> (default), produces a pure white color at
+the start and a pure black color at the end, filling all available shades of gray
 in between, and changing monotonically.
 
 =item poly @VERTICES
 
-Set of 2-integer polyline vertexes where the first integer is a coordinate (x,
-y, or whatever required by the drawing primitive) between 0 and 1, and the
+A set of 2-integer polyline vertexes where the first integer is a coordinate (x,
+y, or whatever is required by the drawing primitive) between 0 and 1, and the
 second is the color blend value between 0 and 1.
 
 Default: ((0,0),(1,1))
 
 =item spline \@VERTICES, %OPTIONS
 
-Serving same purpose as C<poly> but vertexes are projected first to a B-spline
-curve using L<render_spline> and C<%OPTIONS>. The resulting polyline is treated
-as C<poly>.
+Serving the same purpose as the C<poly> option but the vertexes are projected first
+to a B-spline curve using L<render_spline> and C<%OPTIONS>. The resulting
+polyline is treated as C<poly>.
 
 =item vertical BOOLEAN
 
-Only used in L<bar>, to set gradient direction.
+Only used in the L<bar> primitive, to set the gradient direction.
+
+=item widgetClass INTEGER
+
+Points to the widget class to resolve generic colors like C<cl::Back>
+that may differ between widget classes.
 
 =back
 
@@ -330,13 +442,17 @@ See also: L<bar>, L<stripes> .
 
 =item bar X1, Y1, X2, Y2, VERTICAL = 0
 
-Draws a filled rectangle within (X1,Y1) - (X2,Y2) extents
+Draws a filled rectangle with (X1,Y1) - (X2,Y2) extents
 
 Context used: fillPattern, rop, rop2
 
 =item colors BREADTH
 
-Returns a list of gradient colors for each step from 1 to BREADTH.
+Returns a list of gradient colors for each step from 1 to BREADTH.  When
+
+C<dither> is set, each color is an array of three items, - the two adjacent
+colors and an integer value between 0 and 63 that reflects the amount of
+blending needed between the colors.
 
 =item ellipse X, Y, DIAM_X, DIAM_Y
 
@@ -352,11 +468,11 @@ Context used: fillPattern, rop, rop2
 
 =item stripes BREADTH
 
-Returns an array consisting of integer pairs, where the first one is
-a color value, and the second is the breadth of the color strip.
-L<bar> uses this information to draw a gradient fill, where
-each color strip is drawn with its own color. Can be used for implementing
-other gradient-aware primitives (see F<examples/f_fill.pl> )
+Returns an array consisting of integer pairs, where the first one is a color
+value, and the second is the breadth of the color strip.  L<bar> uses this
+information to draw a gradient fill, where each color strip is drawn with its
+own color. Can be used for implementing other gradient-aware primitives (see
+F<examples/f_fill.pl> )
 
 =back
 

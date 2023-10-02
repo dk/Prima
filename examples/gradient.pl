@@ -27,6 +27,13 @@ my $splined = $panel-> insert( CheckBox =>
 	onClick => \&repaint,
 );
 
+my $dithered = $panel-> insert( CheckBox =>
+	pack   => { side => 'left', padx => 20 },
+	text   => '~Dither',
+	checked => 0,
+	onClick => \&repaint,
+);
+
 $panel-> insert( Button =>
 	text   => '~Reset',
 	pack   => { side => 'left', padx => 20 },
@@ -105,6 +112,7 @@ my $gradient = $w->insert( Widget =>
 		}
 		$canvas->new_gradient(
 			vertical => $v,
+			dither   => $dithered-> checked,
 			palette  => [map { $_-> value } @colors ],
 			offsets  => [ map { $_ / $b } @offsets, $b ],
 			( $splined->checked ? 'spline' : 'poly') => \@xpoints,
