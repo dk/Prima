@@ -34,6 +34,7 @@ sub profile_default
 		partial       => 10,
 		selectable    => 0,
 		step          => 1,
+		syncPaint     => 1,
 		tabStop       => 0,
 		value         => 0,
 		vertical      => 0,
