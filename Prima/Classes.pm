@@ -2089,6 +2089,27 @@ sub profile_default
 	return $def;
 }
 
+sub execute
+{
+	my ( $self, @p ) = @_;
+
+	my ($result, $stack, $got_exception) = (mb::Cancel, '', 0);
+	local $SIG{__DIE__} = sub {
+		$got_exception = 1;
+		$stack //= Carp::longmess();
+		die @_;
+	};
+	eval {
+		$result = $self->SUPER::execute(@p);
+		$got_exception = 0;
+	};
+	if ( $got_exception && $::application->alive ) {
+		my $error = $@;
+		die $error if $::application->notify('Die', "$@", $stack);
+	}
+	return $result;
+}
+
 package Prima::MainWindow;
 use vars qw(@ISA);
 @ISA = qw(Prima::Window);

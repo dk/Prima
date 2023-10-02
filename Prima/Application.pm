@@ -204,7 +204,6 @@ and if you want to treat all warnings as potentially fatal, like this:
       });
    };
 
-
 See also: L<Die>, L<Prima::MsgBox/signal_dialog>
 
 =back
@@ -232,9 +231,10 @@ allowing the user to choose the course of action -- to stop, to continue, etc.
 
 Is 0 by default.
 
-Note that the exception is only handled inside the C<Prima::run> call; if there
-is a call to f ex C<Prima::Dialog::execute> or a manual event loop run with
-C<yield>, the dialog will not be shown. One needs to explicitly call C<<
+Note that the exception is only handled inside the C<Prima::run> and
+C<Prima::Dialog::execute> calls; if there is a call to f ex
+C<Prima::Window::execute> or a manual event loop run with C<yield>, the signal
+dialog will not be shown. One needs to explicitly call C<<
 $::application->notify(Die => $@) >> and check the notification result to
 decide whether to propagate the exception or not.
 
