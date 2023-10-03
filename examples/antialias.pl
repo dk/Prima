@@ -39,7 +39,12 @@ $w = Prima::MainWindow->new(
 		$canvas-> new_path(antialias => 1)-> ellipse(100,100,100)->fill;
 		$canvas-> fillPattern(fp::Solid);
 		$canvas->lineWidth(5);
-		$canvas-> new_aa_surface(alpha => 128)-> polyline([ 0, 0, $canvas->size ]);
+		$canvas-> graphic_context(
+			backColor   => cl::Yellow,
+			rop2        => rop::CopyPut,
+			linePattern => lp::Dash,
+			sub { $canvas-> new_aa_surface(alpha => 128)-> polyline([ 0, 0, $canvas->size ]) },
+		);
 
 		if ( $canvas->can_draw_alpha ) {
 			$canvas->color(cl::Green);
