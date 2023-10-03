@@ -153,15 +153,16 @@ sub calculate_single
 					$c1 = $c2 = ( $last_color->[0] << 16 ) | ( $last_color->[1] << 8 ) | $last_color->[2];
 					$fp = 0;
 				} else {
-					my ($d,@l,@r) = (0);
+					my ($d1,$d2,@l,@r) = (0,0);
 					for ( @$last_color ) {
 						my $l = int($_);
 						my $r = $l + (($l != $_ && $_ < 255) ? 1 : 0);
 						push @l, $l;
 						push @r, $r;
-						$d += ($_ - $l) * ($_ - $l);
+						$d1 += ($_ - $l) * ($_ - $l);
+						$d2 += ($r - $l) * ($r - $l);
 					}
-					$fp = int(sqrt($d) / 1.732 * 64 );
+					$fp = int(sqrt($d1) / sqrt($d2) * 64 );
 					$c1 = ( $l[0] << 16 ) | ( $l[1] << 8 ) | $l[2];
 					$c2 = ( $r[0] << 16 ) | ( $r[1] << 8 ) | $r[2];
 				}
