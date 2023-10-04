@@ -1417,19 +1417,21 @@ sub _debug_commands
 
 __END__
 
+=pod
+
 =head1 NAME
 
 Prima::Drawable::Path - stroke and fill complex paths
 
 =head1 DESCRIPTION
 
-The module augments the C<Prima::Drawable> drawing and plotting functionality by
-implementing paths that allow arbitrary combination of polylines, splines, and arcs,
+The module augments the C<Prima::Drawable>'s drawing and plotting functionality by
+implementing paths that allow arbitrary combinations of polylines, splines, and arcs,
 to be used for drawing or clipping shapes.
 
 =head1 SYNOPSIS
 
-	# draws elliptic spiral
+	# draws an elliptic spiral
 	my ( $d1, $dx ) = ( 0.8, 0.05 );
 	$canvas-> new_path->
 		rotate(45)->
@@ -1459,49 +1461,52 @@ the previous primitive (or (0,0) if there's none).
 
 =item arc CENTER_X, CENTER_Y, DIAMETER_X, DIAMETER_Y, ANGLE_START, ANGLE_END, TILT = 0
 
-Adds elliptic arc to path centered around (CENTER_X,CENTER_Y).
+Adds an elliptic arc to the path. The arc is centered around the (CENTER_X,CENTER_Y) point.
 
-Important: if the intention is an immediate rendering, especially with 1-pixel
+Important: if the intention is an immediate rendering, especially with a 1-pixel
 line width, consider decreasing diameters by 1. This is because all arc
-calculations are made with floating point, where diameter is also given not in
-pixels but in geometrical coordinates, to allow for matrix transformations.
-Before rendering is performed, arcs are tranformed into spline vertices and
-then transformation matrix is applied, and by that time the notion of an arc
-diameter is lost to be successfully converted into pixel size minus one.
+calculations are made with the floating point precision, where the diameter is also
+given not in pixels but in geometrical coordinates, to allow for matrix
+transformations.  Before rendering is performed, arcs are transformed into
+spline vertices and then the transformation matrix is applied, and by that time the
+notion of an arc diameter is lost to be successfully converted into pixel size
+minus one.
+
+Read more about this in L<Prima::Drawable/Antialiasing and alpha> .
 
 =item close, open
 
-Closes the current shape and opens a new one
-close() is same as open() but makes sure the shape's first point is equal to its last point.
+Closes the current shape and opens a new one.  close() is the same as open() but
+makes sure the shape's first point is equal to its last point.
 
 =item circular_arc ANGLE_START, ANGLE_END
 
-Adds circular arc to the path. Note that adding transformations will effectively
-make it into elliptic arc, which is used internally by C<arc> and C<rarc>.
+Adds a circular arc to the path. Note that adding transformations will effectively
+make it into an elliptic arc, which is used internally by C<arc> and C<rarc>.
 
 =item chord CENTER_X, CENTER_Y, DIAMETER_X, DIAMETER_Y, ANGLE_START, ANGLE_END.
 
-Adds chord to the path. Is there only for compatibility with C<Prima::Drawable>.
+Adds a chord to the path. Is there only for compatibility with C<Prima::Drawable>.
 
 =item ellipse CENTER_X, CENTER_Y, DIAMETER_X, DIAMETER_Y = DIAMETER_X, TILT = 0
 
-Adds full ellipse to the path.
+Adds a full ellipse to the path.
 
 =item glyph INDEX, %OPTIONS
 
-Adds glyph outline to the path. C<%OPTIONS> are passed as is to
+Adds a glyph outline to the path. C<%OPTIONS> are passed as is to
 L<Prima::Drawable/renger_glyph>, except the C<fill> option.
 
-Note that filled glyphs require C<fillMode> without the C<fm::Overlay> bit set
-and the C<fill> option set to generate proper shapes with holes.
+Note that filled glyphs require C<fillMode> without the C<fm::Overlay> bit set,
+and also the C<fill> option set to generate proper shapes with holes.
 
 =item line, rline @POINTS
 
-Adds a polyline to path
+Adds a polyline to the path
 
 =item lines [X1, Y1, X2, Y2]..
 
-Adds set of multiple, unconnected lines to the path. Is there only for
+Adds a set of multiple, unconnected lines to the path. Is there only for
 compatibility with C<Prima::Drawable>.
 
 =item moveto, rmoveto X, Y
@@ -1510,36 +1515,44 @@ Stops plotting the current shape and moves the plotting position to X, Y.
 
 =item rarc DIAMETER_X, DIAMETER_Y, ANGLE_START, ANGLE_END, TILT = 0
 
-Adds elliptic arc to path so that the first point of the arc starts on the last
-point of the previous primitive, or (0,0) if there's none.
+Adds an elliptic arc to the path so that the first point of the arc starts on
+the last point of the previous primitive, or (0,0) if there's none.
 
 =item rectangle X1, Y1, X2, Y2
 
-Adds rectangle to the path. Is there only for compatibility with C<Prima::Drawable>.
+Adds a rectangle to the path. Is there only for compatibility with
+C<Prima::Drawable>.
 
 =item round_rect X1, Y1, X2, Y2, MAX_DIAMETER
 
-Adds round rectangle to the path.
+Adds a round rectangle to the path.
 
 =item sector CENTER_X, CENTER_Y, DIAMETER_X, DIAMETER_Y, ANGLE_START, ANGLE_END
 
-Adds sector to the path. Is there only for compatibility with C<Prima::Drawable>.
+Adds a sector to the path. Is there only for compatibility with C<Prima::Drawable>.
 
 =item spline, rspline $POINTS, %OPTIONS.
 
-Adds B-spline to path. See L<Prima::Drawable/spline> for C<%OPTIONS> descriptions.
+Adds a B-spline to the path. See L<Prima::Drawable/spline> for C<%OPTIONS> descriptions.
 
 =item text TEXT, %OPTIONS
 
-Adds C<TEXT> to the path. C<%OPTIONS> are same as in L<Prima::Drawable/render_glyph>, 
-except that C<unicode> is deduced automatically based on whether C<TEXT> has utf8 bit
-on or off; and an extra option C<cache> with a hash can be used to speed up the function
-with subsequent calls. C<baseline> option is same as L<Prima::Drawable/textOutBaseline>.
+Adds C<TEXT> to the path. C<%OPTIONS> are the same as in L<Prima::Drawable/render_glyph>, 
+except that C<unicode> is deduced automatically based on whether the C<TEXT> has utf8 bit
+on or off. An extra option C<cache> with a hash can be used to speed up the function
+with subsequent calls. The C<baseline> option is the same as L<Prima::Drawable/textOutBaseline>.
 
-Note that filled glyphs require C<fillMode> without the C<fm::Overlay> bit set
-and the C<fill> option set to generate proper shapes with holes.
+Note that filled glyphs require C<fillMode> without the C<fm::Overlay> bit set,
+and also the C<fill> option set to generate proper shapes with holes.
 
 =back
+
+=head2 Transformations
+
+Transformation calls change the current path properties (matrix etc) so that
+all subsequent calls would use them until a call to C<restore> is made. The
+C<save> and C<restore> methods implement the stacking mechanism so that local
+transformations can be made.
 
 =head2 Properties
 
@@ -1549,31 +1562,16 @@ and the C<fill> option set to generate proper shapes with holes.
 
 Provides access to the attached drawable object
 
-=back
-
-=head2 Transformations
-
-Transformation calls change the current path properties (matrix etc)
-so that all subsequent calls will use them until a call to C<restore>
-is used. C<save> and C<restore> implement a stacking mechanism, so that
-local transformations can be made.
-
-The final transformations calculate coordinates the new and the existing matrices:
-
-  P' = NewMatrix * P
-
-=over
-
 =item matrix A, B, C, D, Tx, Ty
 
-Applies transformation matrix to the path. The matrix, as used by the module,
-is formed as such:
+Applies a transformation matrix to the path. The matrix, as used by the module,
+is formed as follows:
 
   A  B  0
   C  D  0
   Tx Ty 1
 
-and when applied to 2D coordinates, is calculated as
+When applied to 2D coordinates, the transformed coordinates are calculated as
 
   X' = AX + CY + Tx
   Y' = BX + DY + Ty
@@ -1598,7 +1596,7 @@ Adds rotation to the current matrix
 
 =item save
 
-Duplicates the current matrix and graphic properties and pushes them to the stack.
+Saves the current matrix and graphic properties on the stack.
 
 =item shear X, Y = X
 
@@ -1616,34 +1614,34 @@ Default: depends on canvas antialiasing mode
 
 =item translate X, Y = X
 
-Adds offset to the current matrix
+Adds an offset to the current matrix
 
 =back
 
 =head2 Operations
 
-These methods perform actual path rendering, that was delayed until that, and will
-create an array of points that can be used for actual drawing.
+These methods perform path rendering and create an array of points that can be
+used for drawing
 
 =over
 
 =item clip %options
 
-Returns 1-bit image with clipping mask of the path. C<%options> can be used to
-pass C<fillMode> property that affects the result of the filled shape.
+Returns a 1-bit image with the clipping mask created from the path. C<%options> can be used to
+pass the C<fillMode> property that affects the result of the filled shape.
 
 =item contours
 
-Same as L<points> but further reduces lines into a 8-connected set of points,
+Same as L<points> but further reduces lines into a set of 8-connected points,
 suitable to be traced pixel-by-pixel.
 
 =item extents
 
-Returns 2 points that box the path.
+Returns two points that box the path.
 
 =item last_matrix
 
-Return CTM resulted after running all commands
+Returns the current transform matrix (CTM) after running all commands
 
 =item fill fillMode=undef
 
@@ -1652,27 +1650,28 @@ selected on the canvas.
 
 =item fill_stroke fillMode=undef
 
-Paints a filled shape over the path with back color. If C<fillMode> is set, it is used instead of the one
-selected on the canvas. Thereafter, draws a polyline over the path.
+Paints a filled shape over the path with the background color. If C<fillMode>
+is set, it is used instead of the one selected on the canvas. Thereafter, draws
+a polyline over the path.
 
-=item flatten PRESCALE 
+=item flatten PRESCALE
 
 Returns new objects where arcs are flattened into lines. The lines are
-rasterized with scaling factor that is as close as possible to the device
-pixels, to be suitable for direct send to the polyline() API call. If PRESCALE
+rasterized with a scaling factor that is as close as possible to the device
+pixels, to be suitable for a call to the polyline() method. If the PRESCALE
 factor is set, it is used instead to premultiply coordinates of arc anchor
 points used to render the lines.
 
 =item points
 
-Runs all accumulated commands, and returns rendered set of points, suitable
-for further calls to C<Prima::Drawable::polyline> and C<Prima::Drawable::fillpoly>.
+Runs all accumulated commands, returns rendered set of points suitable
+for the C<Prima::Drawable::polyline> and C<Prima::Drawable::fillpoly> methods.
 
 =item region MODE=fm::Winding|fm::Overlay, RGNOP=rgnop::Union
 
-Creates a region object from polygonal shape. If MODE is set, applies fill mode
-(see L<Prima::Drawable/fillMode> for more); if RGNOP is set, applies region set operation
-(see L<Prima::Region/combine>).
+Creates a region object from the path. If MODE is set, applies fill mode (see
+L<Prima::Drawable/fillMode> for more); if RGNOP is set, applies region set
+operation (see L<Prima::Region/combine>).
 
 =item stroke
 
@@ -1680,13 +1679,14 @@ Draws a polyline over the path
 
 =item widen %OPTIONS
 
-Expands path into a new path object containing outlines of the original path as
-if drawn with selected line properties. C<lineWidth>, C<lineEnd>, C<lineJoin>,
-C<linePattern> are read from C<%OPTIONS>, or from the attached canvas when
-available. Supports C<miterLimit> option with values from 0 to 20.
+Expands the path into a new path object containing outlines of the original
+path as if drawn with selected line properties. The values of C<lineWidth>,
+C<lineEnd>, C<lineJoin>, and C<linePattern> are read from C<%OPTIONS>, or from
+the attached canvas when available. Supports the C<miterLimit> option with
+values from 0 to 20.
 
 Note: if the intention is to immediately render lines, decrease lineWidth by 1
-(they are 1 pixel wider because paths are built around assumption that pixel size is 0,
+(they are 1 pixel wider because paths are built around the assumption that pixel size is 0,
 which makes them scalable).
 
 =back
@@ -1703,13 +1703,13 @@ as a macro.
 
 =item identity
 
-Returns identity matrix
+Returns the identity matrix
 
 =item matrix_apply @POINTS
 
-Applies current matrix to POINTS, returns the transformed points.
-If @POINTS is a list, returns list; if it is an array reference, returns
-array reference.
+Applies the CTM to POINTS, returns the transformed points.  If @POINTS is a
+list, returns the transformed points as a list; if it is an array reference,
+returns an array reference.
 
 =back
 

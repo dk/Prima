@@ -370,10 +370,9 @@ Prima::Drawable::Gradient - gradient fills for primitives
 
 =head1 DESCRIPTION
 
-Prima offers primitive gradient services to draw gradually changing colors.  A
-gradient is requested by setting at least two colors and optionally a set of
-quadratic spline points that, when projected, generate the transition curve
-between the colors.
+Prima offers simple gradient services to draw gradually changing colors.  A
+gradient is made by setting at least two colors and optionally a set of points
+that, when projected, generate the transition curve between the colors.
 
 The module augments the C<Prima::Drawable> drawing functionality by
 adding the C<new_gradient> function.
@@ -394,15 +393,15 @@ adding the C<new_gradient> function.
 
 =over
 
-=item new $CANVAS, %OPTIONS
-
-Here are %OPTIONS understood in the gradient request:
-
-=over
-
 =item clone %OPTIONS
 
 Creates a new gradient object with %OPTIONS replaced.
+
+=item new $CANVAS, %OPTIONS
+
+Creates a new gradient object. The following %OPTIONS are available:
+
+=over
 
 =item dither BOOLEAN = 0
 
@@ -413,15 +412,15 @@ Works significantly slower.
 =item palette @COLORS
 
 Each color is a C<cl::> value. The gradient is calculated as a polyline where
-each of its vertex corresponds to a certain blend between two adjacent colors
+each of its vertices corresponds to a certain blend between two adjacent colors
 in the palette. F.ex. the simplest palette going from C<cl::White> to
-C<cl::Black> over a polyline C<0..1> (default), produces a pure white color at
-the start and a pure black color at the end, filling all available shades of gray
-in between, and changing monotonically.
+C<cl::Black> over a transition line C<0..1> (default), produces a pure white color at
+the start and a pure black color at the end, with all available shades of gray
+in between.
 
 =item poly @VERTICES
 
-A set of 2-integer polyline vertexes where the first integer is a coordinate (x,
+A set of 2-integer polyline vertices where the first integer is a coordinate (x,
 y, or whatever is required by the drawing primitive) between 0 and 1, and the
 second is the color blend value between 0 and 1.
 
@@ -429,7 +428,7 @@ Default: ((0,0),(1,1))
 
 =item spline \@VERTICES, %OPTIONS
 
-Serving the same purpose as the C<poly> option but the vertexes are projected first
+Serving the same purpose as the C<poly> option but the vertices are projected first
 to a B-spline curve using L<render_spline> and C<%OPTIONS>. The resulting
 polyline is treated as C<poly>.
 
@@ -455,7 +454,6 @@ Context used: fillPattern, rop, rop2
 =item colors BREADTH
 
 Returns a list of gradient colors for each step from 1 to BREADTH.  When
-
 C<dither> is set, each color is an array of three items, - the two adjacent
 colors and an integer value between 0 and 63 that reflects the amount of
 blending needed between the colors.

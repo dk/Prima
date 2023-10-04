@@ -323,8 +323,8 @@ Prima::Drawable::Subcanvas - paint a hierarchy of widgets to any drawable
 
 =head1 DESCRIPTION
 
-Needed for painting a screenshot on an image, printer, etc.
-When loaded, it aytomatically adds two methods to any Drawable: L<paint_with_widgets> and L<screenshot>.
+Needed for painting a screenshot on an image, printer, etc.  Adds two methods
+to the C<Prima::Drawable> namespace: L<paint_with_widgets> and L<screenshot>.
 
 =head1 SYNOPSIS
 
@@ -339,13 +339,13 @@ When loaded, it aytomatically adds two methods to any Drawable: L<paint_with_wid
 
 =item paint_with_widgets $canvas, $x=0, $y=0
 
-Given a C<$canvas> is in paint mode, traverses all widgets as they are seen on
-screen, and paints them on the canvas with given C<$x,$y> offsets.
+Given a C<$canvas> is in the paint mode, traverses all widgets as they are seen on
+the screen, and paints them on the canvas with given C<$x,$y> offsets.
 
 =item screenshot $canvas, %opt
 
 Syntax sugar over the paint_with_widgets. Creates an image with the C<$self>'s, size,
-and calls C<paint_with_widgets> with it. Returns the screen shot.
+and calls C<paint_with_widgets> with it. Returns the screenshot.
 
 =back
 

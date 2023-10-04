@@ -6,86 +6,6 @@ use Prima qw(Drawable::TextBlock);
 use base qw(Prima::Drawable::TextBlock Exporter);
 our @EXPORT_OK = 'M';
 
-=head1 NAME
-
-Prima::Drawable::Markup - allow markup in widgets
-
-=head1 SYNOPSIS
-
-    use Prima qw(Application Buttons);
-    use Prima::Drawable::Markup q(M);
-    my $m = Prima::MainWindow->new;
-    $m-> insert( Button =>
-	text   => Prima::Drawable::Markup->new(markup => "B<Bold> bU<u>tton"),
-	hotKey => 'u',
-	pack   => {},
-    );
-    $m->insert( Button => pack => {}, text => M "I<Italic> button" );
-    $m->insert( Button => pack => {}, text => \ "Not an Q<I<italic>> button" );
-
-    run Prima;
-
-=for podview <img src="Prima/markup.gif">
-
-=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/markup.gif">
-
-=head1 DESCRIPTION
-
-C<Prima::Drawable::Markup> adds the ability to recognize POD-like markup to Prima
-widgets. Supported markup sequences are C<B> (bold text), C<I> (italic text),
-C<U> (underlined text), C<F> (change font), C<S> (change font size), C<C>
-(change foreground color), C<G> (change background color), C<M> (move pointer),
-C<W> (disable wrapping), and C<P> (picture).
-
-The C<F> sequence is used as follows: C<< F<n|text> >>, where C<n> is a
-0-based index into the C<fontPalette>.
-
-The C<S> sequence is used as follows: C<< S<n|text> >>, where C<n> is the
-number of points relative to the current font size. The font size may
-optionally be preceded by C<+> or C<->.
-
-The C<C> and C<G> sequences are used as follows: C<< C<c|text> >>, where
-C<c> is either: a color in any form accepted by Prima, including the C<cl>
-constants (C<Black> C<Blue> C<Green> C<Cyan> C<Red> C<Magenta> C<Brown>
-C<LightGray> C<DarkGray> C<LightBlue> C<LightGreen> C<LightCyan> C<LightRed>
-C<LightMagenta> C<Yellow> C<White> C<Gray>).  Or, a 0-based index into the
-C<colorPalette>. Also, C<default> can be used to set the color that the canvas
-originaly had. For C<G> a special value C<off> can be used to turn off background
-color and set it as transparent.
-
-The C<M> command has three parameters, comma-separated: X, Y, and flags.  X and
-Y are coordinates how much to move the current pointer. By default X and are in
-pixels, and do not extend block width. C<flags> is a set of characters, where
-each is:
-
-    m - set units to font height
-    p - set units to points
-    x - also extend the block width
-
-The text inside C<W> sequence will not be wrapped during C<text_wrap> calls.
-
-The text inside C<Q> sequence will not be treated as markup.
-
-The C<P> sequence is used as follows:C<< PE<lt>nE<gt> >>, where C<n> is a
-0-based index into the C<picturePalette>.
-
-The L<URL|text> sequence parsing is resulted into making 1) C<text> of color C<linkColor>,
-and 2) wrapping the text with C<OP_LINK> commands in the block, that do nothing by default
-but could be used by whoever uses the block. See L<Prima::Widget::Link> for more and L<Prima::Label>
-as an example.
-
-The methods C<text_out> and C<get_text_width> are affected by C<Prima::Drawable::Markup>.
-C<text_out> will write formatted text to the canvas, and C<get_text_width> will
-return the width of the formatted text.  B<NOTE>: These methods do not save state
-between calls, so your markup cannot span lines (since each line is drawn or
-measured with a separate call).
-
-The module can export a single method C<M> that is a shortcut over creation of a new markup
-object with default color, font, and image palettes. These can be accessed directly as
-C<@COLORS, @FONTS, @IMAGES> correspondingly.
-
-=cut
-
 our (@FONTS, @COLORS, @IMAGES);
 our $LINK_COLOR = cl::Green;
 
@@ -561,7 +481,85 @@ sub text_wrap
 	return [ @blocks, @other ];
 }
 
-=head1 PROPERTIES
+=head1 NAME
+
+Prima::Drawable::Markup - allow markup in widgets
+
+=head1 SYNOPSIS
+
+    use Prima qw(Application Buttons);
+    use Prima::Drawable::Markup q(M);
+    my $m = Prima::MainWindow->new;
+    $m-> insert( Button =>
+	text   => Prima::Drawable::Markup->new(markup => "B<Bold> bU<u>tton"),
+	hotKey => 'u',
+	pack   => {},
+    );
+    $m->insert( Button => pack => {}, text => M "I<Italic> button" );
+    $m->insert( Button => pack => {}, text => \ "Not an Q<I<italic>> button" );
+
+    run Prima;
+
+=for podview <img src="Prima/markup.gif">
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/markup.gif">
+
+=head1 DESCRIPTION
+
+C<Prima::Drawable::Markup> adds the ability to recognize POD-like markup to Prima
+widgets. Supported markup sequences are C<B> (bold text), C<I> (italic text),
+C<U> (underlined text), C<F> (change font), C<S> (change font size), C<C>
+(change foreground color), C<G> (change background color), C<M> (move pointer),
+C<W> (disable wrapping), and C<P> (picture).
+
+The C<F> sequence is used as follows: C<< F<n|text> >>, where C<n> is a 0-based
+index into the C<fontPalette>.
+
+The C<S> sequence is used as follows: C<< S<n|text> >>, where C<n> is the
+number of points relative to the current font size. The font size may
+optionally be preceded by C<+> or C<->.
+
+The C<C> and C<G> sequences are used as follows: C<< C<c|text> >>, where C<c>
+is either: a color in any form accepted by Prima, including the C<cl> constants
+(C<Black> C<Blue> C<Green> C<Cyan> C<Red> C<Magenta> C<Brown> C<LightGray>
+C<DarkGray> C<LightBlue> C<LightGreen> C<LightCyan> C<LightRed> C<LightMagenta>
+C<Yellow> C<White> C<Gray>).  Or, a 0-based index into the C<colorPalette>.
+Also, C<default> can be used to set the color that the canvas originally had.
+For C<G> a special value C<off> can be used to turn off the background color
+and set it as transparent.
+
+The C<M> command has three parameters, comma-separated: X, Y, and flags.  X and
+Y are coordinates of how much to move the current pointer. By default X and are in
+pixels, and do not extend block width. C<flags> is a set of characters, where
+each is:
+
+    m - set units to font height
+    p - set units to points
+    x - also extend the block width
+
+The text inside the C<W> sequence will not be wrapped during C<text_wrap> calls.
+
+The text inside the C<Q> sequence will not be treated as markup.
+
+The C<P> sequence is used as follows:C<< PE<lt>nE<gt> >>, where C<n> is a
+0-based index into the C<picturePalette>.
+
+The L<URL|text> sequence parsing results in making 1) C<text> of color
+C<linkColor>, and 2) wrapping the text with C<OP_LINK> commands in the block,
+that do nothing by default but could be used by whoever uses the block. See
+L<Prima::Widget::Link> for more and L<Prima::Label> as an example.
+
+The methods C<text_out> and C<get_text_width> are affected by
+C<Prima::Drawable::Markup>.  C<text_out> will write formatted text to the
+canvas, and C<get_text_width> will return the width of the formatted text.
+B<NOTE>: These methods do not save the state between calls, so your markup cannot
+span lines (since each line is drawn or measured with a separate call).
+
+The module can export a single method C<M> which is a shortcut over the creation of
+a new markup object with default color, font, and image palettes. These can be
+accessed directly as C<@COLORS, @FONTS, @IMAGES> correspondingly.
+
+=head1 API
 
 The following properties are used:
 
@@ -569,8 +567,8 @@ The following properties are used:
 
 =item colorPalette([@colorPalette])
 
-Gets or sets the color palette to be used for C<C> sequences within this widget.
-Each element of the array should be a C<cl::> constant.
+Gets or sets the color palette to be used for C<C> sequences within this
+widget.  Each element of the array should be a C<cl::> constant.
 
 =item fontPalette([@fontPalette])
 
@@ -579,8 +577,8 @@ Each element of the array should be a hashref suitable for setting a font.
 
 =item picturePalette([@picturePalette])
 
-Gets or sets the picture palette to be used for C<P> sequences within this widget.
-Each element of the array should be a C<Prima::Image> descendant.
+Gets or sets the picture palette to be used for C<P> sequences within this
+widget.  Each element of the array should be a C<Prima::Image> descendant.
 
 =back
 
@@ -597,7 +595,7 @@ You may redistribute and/or modify this module under the same terms as Perl itse
 
 =head1 AUTHOR
 
-This module based on work by Teo Sankaro, E<lt>teo_sankaro@hotmail.comE<gt>.
+This module is based on work by Teo Sankaro, E<lt>teo_sankaro@hotmail.comE<gt>.
 
 =cut
 

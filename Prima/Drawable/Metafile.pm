@@ -221,11 +221,11 @@ sub execute
 
 =head1 NAME
 
-Prima::Drawable::Metafile - graphic primitive recorder
+Prima::Drawable::Metafile - graphics recorder
 
 =head1 DESCRIPTION
 
-Metafiles can record graphic primitives and replay them later on another canvas.
+Metafiles can record graphic primitives and replay them later on another canvas
 
 =head1 SYNOPSIS
 
@@ -242,7 +242,7 @@ Metafiles can record graphic primitives and replay them later on another canvas.
 
 =item call $SUB::($self,$canvas,@ARGS), @ARGS
 
-C<$SUB> will be called when the metafile is executed, with the first two parameter
+C<$SUB> will be called when the metafile is executed, with the first two parameters
 the metafile and the target canvas, and C<@ARGS> thereafter.
 
 =item clear
@@ -252,11 +252,11 @@ Otherwise same as C<Drawable.clear>.
 
 =item execute CANVAS,X,Y
 
-Draws the content on a CANVAS with X,Y offset
+Draws the content on the CANVAS with X,Y offset
 
 =item size X,Y
 
-Sets metafile extensions; however the content is not clipped by it.
+Sets the metafile extensions; the content is not clipped by it.
 
 =back
 

@@ -406,10 +406,10 @@ Prima::Drawable::CurvedText - fit text to path
 
 =head1 DESCRIPTION
 
-The module registers single function C<curved_text_out> in C<Prima::Drawable>
-namespace. The function plots the line of text along the path, which given as a
-set of points. Various options regulate behavior of the function when glyphs
-collide with the path boundaries and each other.
+The module registers a single function C<curved_text_out> in the
+C<Prima::Drawable> namespace. The function plots a line of text along the path
+defined as a set of points. Various options regulate the behavior of the function
+when individual glyphs collide with either the path boundaries or each other.
 
 =head1 SYNOPSIS
 
@@ -426,44 +426,43 @@ collide with the path boundaries and each other.
 =head2 curved_text_out $TEXT, $POLYLINE, %OPTIONS
 
 C<$TEXT> is a line of text, no special treatment is given to tab and newline characters.
-The text is plotted over C<$POLYLINE> path that should be an array of coordinate
-numeric pairs, in the same format as C<Prima::Drawable::polyline> expects.
+The text is plotted over C<$POLYLINE> path that is an array of coordinate
+numeric pairs, in the same format as the C<Prima::Drawable::polyline> method expects.
 
-The text begins to plot by drawing the first glyphs at the first path point, unless
-specified otherwise with the C<offset> option. The glyph is plotted with the angle
-perpendicular to the path segment; therefore the path may contain floating point numbers if
-futher plotting angle accuracy is desired.
+The plotting begins by drawing the first glyph at the first point in the path
+unless specified otherwise with the C<offset> option. The glyph is plotted with
+the angle perpendicular to the first path segment; therefore the path may
+contain floating point numbers if better angle accuracy is desired.
 
-When text cannot be fit along a single segment, it is plotted along the next segment in the
-path. Depending on the C<bevel> boolean option, the next glyph is either simply drawn on
-the next segment with the angle corresponding to the tangent of that segment (value 0), or
+When the text cannot be fit along a segment it is plotted along the next segment in the
+path. Depending on the C<bevel> boolean option, the next glyph is either drawn on
+the next segment with the angle corresponding to the tangent of that segment (value 0) or
 is drawn with the normal text concatenation offset, with the angle averaged between
 tangents of the two segments it is plotted between (value 1). The default value of
-C<bevel> option is 1.
+the C<bevel> option is 1.
 
-The glyph positioning rules differ depending on C<collisions> integer option. If
-0 (default), the next glyph position always corresponds with the glyph width as
-projected to the path. That means, that glyphs will overlap when plotted inside
-segments forming an acute angle. Also, when plotting along a reflex angle, the
-glyphs will be visually more distant from each other that when plotted along
-the straight line.
+The glyph positioning rules differ depending on the C<collisions> integer
+option. If the option is set to 0 (default), the next glyph position always
+corresponds to the glyph width as projected to the path. This means that glyphs
+I<will> overlap when plotted inside segments forming an acute angle. Also, when
+plotting along a reflex angle, the glyphs will be visually more distant from
+each other than when plotted along a straight line.
 
-Simple collision detection can be turned on with setting C<collisions> to 1 so
-that no two neighbour glyphs may overlap. Also, the glyphs will be moved
-together to the minimal distance, when possible. With this option set the
-function will behave slower. If detection of not only neighbouring glyphs is
-required, C<collisions> value can be set to 2, in which case a glyph is
-guaranteedly will never overlap any other glyph.  This option may be needed
-when, for example, text is plotted inside an acute angle and upper parts of
-glyphs plotted along one segment will overlap with lower parts of glyphs
-plotted along the other one.  Setting C<collisions> to 2 will slow the function
-even more.
+Simple collision detection can be turned on by setting the C<collisions>
+option to 1 so that no two adjacent glyphs may overlap. The glyphs will be
+placed together with a minimal distance between them, when possible. With this
+option set, the function will behave slower. This detection works only for the
+adjacent glyphs; if the detection of all glyphs in the text is needed, the
+C<collisions> value 2 turns that on.  This option may be needed when, for
+example, the text is plotted inside an acute angle, and the upper parts of glyphs
+plotted along one segment will overlap the lower parts of glyphs plotted along
+the other one.  Setting C<collisions> to 2 will slow the function even more.
 
-The function internally creates an array of tuples where each contains text,
-plotting angle, and horisontal and vertical coordinates for the text to be
-plotted. In the array context the function returns this array. In the scalar
-context the function returns the success flag that is the result of last call
-to C<text_out>.
+The function internally creates an array of tuples where each contains the text
+string, plotting angle, and the X,Y coordinates for the text to be plotted. If
+called in the array context, the function returns this array. In the scalar
+context, the function returns the success flag that is the result of the last
+call to the C<text_out> function.
 
 Options:
 
@@ -471,22 +470,23 @@ Options:
 
 =item bevel BOOLEAN=true
 
-If set, glyphs between two adjoining segments will be plotted with bevelled angle.
-Otherwise glyphs will strictly follow the angles of the segments in the path.
+If set, the glyphs between two adjoining segments will be plotted with a beveled angle.
+Otherwise, the glyphs will strictly follow the tangents of the segments in the path.
 
 =item callback CODE($SELF, $POLYLINE, $CHUNKS)
 
-If set, the callback is called with C<$CHUNKS> after the calculations were made
+If set, the callback is called with C<$CHUNKS> after the calculations are made
 but before the text is plotted. C<$CHUNKS> is an array of tuples where each
-consists of text, angle, x and y coordinates for each text. The callback is
+consists of text, angle, and X,Y coordinates for each text. The callback is
 free to modify the array.
 
 =item collisions INTEGER=0
 
-If 0, collision detection is disabled, glyphs plotted along the path. If 1,
-no two neighbour glyphs may overlap, and no two neighbour glyph will be
-situated further away from each other than it is necessary. If 2, same
-functionality as with 1, and also two glyphs (in all text) will overlap.
+If 0, collision detection is disabled, and text glyphs are plotted strictly
+along the path. If 1, no two adjacent glyphs may overlap, and no two adjacent
+glyphs will be situated further away from each other than is necessary. If 2,
+the same functionality as with 1, and also no two glyphs in the whole text will
+overlap.
 
 =item nodraw BOOLEAN=false
 
@@ -494,13 +494,13 @@ If set, calculate glyph positions but do not draw them.
 
 =item offset INTEGER=0
 
-Sets offset from the beginning of the path where the first glyph is plotted.
-If offset is negative, it is calculated from the end of the path.
+Sets a pixel offset from the beginning of the path where the first glyph is
+plotted.  If the offset is negative, it is calculated from the end of the path.
 
 =item skiptail BOOLEAN=false
 
 If set, the remainder of the text that is left after the path is completely
-traversed, is not shown. Otherwise (default), the tail text is shown with the
+traversed is not shown. Otherwise (default), the tail text is shown with the
 angle used to plot the last glyph (if bevelling was requested) or the angle
 perpendicular to the last path segment (otherwise).
 
