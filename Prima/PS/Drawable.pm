@@ -459,7 +459,7 @@ sub set_font
 	my $explicit_width = delete $font-> {width};
 
 	my $div        = 72.27 / $self-> {resolution}-> [1];
-	my $by_height  = defined($font->{height});
+	my $by_height  = !( defined $font->{size} && !defined $font->{height});
 	$font = Prima::Drawable-> font_match( $font, $self-> {font});
 
 	$self-> glyph_canvas_set_font(%$font);
