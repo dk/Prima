@@ -306,15 +306,17 @@ sub profile_default
 
 1;
 
+=pod
+
 =head1 NAME
 
-Prima::sys::gtk::FileDialog - GTK file system dialogs.
+Prima::sys::gtk::FileDialog - GTK file system dialogs
 
 =head1 DESCRIPTION
 
-The module mimics Prima file dialog classes C<Prima::Dialog::OpenDialog> and
+The module mimics the Prima file dialog classes C<Prima::Dialog::OpenDialog> and
 C<Prima::Dialog::SaveDialog>, defined in L<Prima::Dialog::FileDialog>. The class names
-registered in the module are the same, but in C<Prima::sys::gtk> namespace.
+registered in the module are the same, but in the C<Prima::sys::gtk> namespace.
 
 =head1 AUTHOR
 

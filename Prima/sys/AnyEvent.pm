@@ -61,6 +61,10 @@ sub poll { $::application->yield }
 
 push @AnyEvent::REGISTRY, ["Prima", __PACKAGE__ ];
 
+1;
+
+=pod
+
 =head1 NAME
 
 Prima::sys::AnyEvent - AnyEvent bridge
@@ -91,5 +95,3 @@ Dmitry Karasik
 F<examples/socket_anyevent.pl>
 
 =cut
-
-1;

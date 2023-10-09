@@ -272,9 +272,9 @@ Since perl win32 unicode support for files is unexistent, Prima has its own
 parallel set of functions mimicking native functions, ie open, chdir etc. This
 means that files with names that cannot be converted to ANSI (ie
 user-preferred) codepage are not visible in perl, but the functions below
-mitigate that problem.
+mitigate this problem.
 
-This module exports the unicode-aware functions from C<Prima::Utils> to override
+The module exports the unicode-aware functions from C<Prima::Utils> to override
 the core functions. Read more in L<Prima::Utils/"Unicode-aware file system functions">.
 
 =head2 SYNOPSIS

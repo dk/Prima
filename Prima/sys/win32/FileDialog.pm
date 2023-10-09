@@ -268,15 +268,17 @@ sub profile_default
 
 1;
 
+=pod
+
 =head1 NAME
 
 Prima::sys::win32::FileDialog - Windows file system dialogs.
 
 =head1 DESCRIPTION
 
-The module mimics Prima file dialog classes C<Prima::Dialog::OpenDialog>
+The module mimics the Prima file dialog classes C<Prima::Dialog::OpenDialog>
 and C<Prima::Dialog::SaveDialog>, defined in L<Prima::Dialog::FileDialog>. The
-class names registered in the module are the same, but in C<Prima::sys::win32>
+class names registered in the module are the same, but in the C<Prima::sys::win32>
 namespace.
 
 =head1 AUTHOR

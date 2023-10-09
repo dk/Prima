@@ -20,6 +20,8 @@ sub ReadConsoleInput
 
 1;
 
+=pod
+
 =head1 NAME
 
 Prima::sys::win32 - Windows facilities
@@ -36,7 +38,8 @@ Miscellaneous semi-hackish calls to win32 API
 
 See https://learn.microsoft.com/en-us/windows/console/readconsoleinputex .
 
-Returns hash of a single input event if there are 1 or more, empty list otherwise.
+Returns a hash with information about a single input event if there are 1 or
+more, or an empty list otherwise.
 
 =back
 

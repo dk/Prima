@@ -32,25 +32,28 @@ FALLBACK:
 
 1;
 
+=pod
+
 =head1 NAME
 
 Prima::sys::XQuartz - MacOSX/XQuartz facilities
 
 =head1 DESCRIPTION
 
-XQuartz emulates X environment with certain limits, namely it cannot grab bits
-from the screen, and it hides top-level menu from screen coordinates accessible
-for X clients. For example, a Mac with 1024x768 resolution will only report
-f.ex. 1024x746 size to Prima.  If Prima is compiled with Cocoa library,
-C<get_fullscreen_image> method circumvents these limitations and returns shot
-of the whole screen.
+XQuartz emulates the X11 environment with certain limits, namely, it cannot grab bits
+from the screen, and it also hides the top-level menu from screen coordinates accessible
+for X11 clients. For example, a Mac with 1024x768 resolution will only report
+f.ex. 1024x746 size to Prima.  If Prima is compiled with the Cocoa library,
+the C<get_fullscreen_image> method circumvents these limitations and returns a shot
+of the whole screen, including the application menu.
 
-Note that the screen grabbing has to be allowed. To do that, Choose Apple menu,
-System Preferences, click Security & Privacy, then click Privacy.  Click on an
-icon on the left lower corner to allow changes.  Then, in the screen recording
-tab, add XQuartz to the list of allowed applications. Note that it might not
-work if you run your application from a (remote) ssh session - I couldn't find
-how to a how to enable screen grabbing for sshd.
+Note that screen grabbing has to be allowed by the user or the
+administrator. To do that, Choose the Apple menu, System Preferences, click
+Security & Privacy, then click Privacy.  Click on an icon on the left lower
+corner to allow changes.  Then, in the screen recording tab, add XQuartz to the
+list of allowed applications. Note that it might not work if you run your
+application from a (remote) ssh session - I couldn't find how to 
+enable screen grabbing for sshd.
 
 =head1 AUTHOR
 

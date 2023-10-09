@@ -61,8 +61,8 @@ Prima::sys::Test - GUI test tools
 
 =head1 DESCRIPTION
 
-The module contains a small set or tool used for testing of
-Prima-related code together with standard perl C<Test::> suite.
+The module contains a small set of tools used for testing of
+Prima-related code together with the standard perl C<Test::> suite.
 
 =head1 SYNOPSIS
 
@@ -79,11 +79,11 @@ Prima-related code together with standard perl C<Test::> suite.
 
 =item create_window %args
 
-Creates a standard simple Prima window, returns its handle
+Creates and returns a standard simple Prima window
 
 =item set_flag,get_flag,reset_flag
 
-These manipulate the state of an internal C<$flag> that stops event loop when set.
+These manipulate the state of the internal C<$flag> that stops the event loop when set.
 
 =item wait_flag
 
@@ -93,7 +93,7 @@ Waits for the flag to be raised in 500 msec, or returns false.
 
 =head2 no-X11 environment
 
-By default fires skip_all condition if running without X11 connection. If the test
+By default fires skip_all condition if running without an X11 connection. If the test
 can be ran without X11, use as:
 
 	use Prima::Test qw(noX11);
