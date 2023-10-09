@@ -1479,8 +1479,8 @@ Prima::PS::PDF -  PDF interface to Prima::Drawable
 =head1 DESCRIPTION
 
 Realizes the Prima library interface to PDF v1.4.
-The module is designed to be compliant with Prima::Drawable interface.
-All properties' behavior is as same as Prima::Drawable's, except those
+The module is designed to be compliant with the Prima::Drawable interface.
+All properties' behavior is as same as Prima::Drawable's except those
 described below.
 
 =head2 Inherited properties
@@ -1489,9 +1489,9 @@ described below.
 
 =item ::resolution
 
-Can be set while object is in normal stage - cannot be changed if document
-is opened. Applies to fillPattern realization and general pixel-to-point
-and vice versa calculations
+Can be set while the object is in the normal stage - cannot be changed if the
+document is opened. Applies to implementation of the fillPattern property and
+general pixel-to-point and vice versa calculations
 
 =back
 
@@ -1499,20 +1499,20 @@ and vice versa calculations
 
 =over
 
-=item ::grayscale
+=item grayscale
 
 could be 0 or 1
 
-=item ::pageSize
+=item pageSize
 
-physical page dimension, in points
+The physical page dimension, in points
 
-=item ::pageMargins
+=item pageMargins
 
-non-printable page area, an array of 4 integers:
-left, bottom, right and top margins in points.
+Non-printable page area, an array of 4 integers:
+left, bottom, right, and top margins in points.
 
-=item ::reversed
+=item reversed
 
 if 1, a 90 degrees rotated document layout is assumed
 
@@ -1528,15 +1528,16 @@ Helpers for translation from pixel to points and vice versa.
 
 =item spool
 
-Prima::PS::Drawable is not responsible for output of
-generated document, it just calls ::spool when document
-is closed through ::end_doc. By default just skips data.
-Prima::PS::Printer handles spooling logic.
+Prima::PS::PDF is not responsible for the output of the generated
+document, it only calls the C<::spool> method when the document is closed
+through an C<::end_doc> call. By default discards the data.  The
+C<Prima::PS::Printer> class handles the spooling logic.
 
 =item fonts
 
-Returns Prima::Application::fonts, however with C<iso10646-1> encoding only.
-That effectively allows only unicode output.
+Calls Prima::Application::fonts and returns its output filtered so that only
+the fonts that support the C<iso10646-1> encoding are present. This effectively
+allows only unicode output.
 
 =back
 

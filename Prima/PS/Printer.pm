@@ -1,46 +1,3 @@
-=pod
-
-=head1 NAME
-
-Prima::PS::Printer - PostScript interface to Prima::Printer
-
-=head1 SYNOPSIS
-
-use Prima;
-use Prima::PS::Printer;
-
-=head1 DESCRIPTION
-
-Realizes the Prima printer interface to PostScript level 2 document language
-through Prima::PS::PostScript module and PDF v1.4 through the Prima::PS::PDF
-module. Allows different user profiles to be created and managed with GUI setup
-dialog. The module is designed to be compliant with Prima::Printer interface.
-
-Also contains convenience classes (File, LPR, Pipe) for non-GUI use.
-
-=head1 SYNOPSIS
-
-	use Prima::PS::Printer;
-
-	my $x;
-	if ( $preview) {
-		$x = Prima::PS::Pipe-> new( command => 'gv $');
-	} elsif ( $print_in_file) {
-		$x = Prima::PS::File-> new( file => 'out.ps');
-	} elsif ( $print_on_device) {
-		$x = Prima::PS::LPR-> new( args => '-d colorprinter');
-	} elsif ( $print_pdf_file ) {
-		$x = Prima::PS::PDF::File-> new( file => 'out.pdf');
-	} else {
-		$x = Prima::PS::FileHandle-> new( handle => \*STDOUT );
-	}
-	$x-> begin_doc;
-	$x-> font-> size( 300);
-	$x-> text_out( "hello!", 100, 100);
-	$x-> end_doc;
-
-=cut
-
 use strict;
 use warnings;
 use Prima;
@@ -880,9 +837,51 @@ use base qw(Prima::PS::PDF::NonGUI Prima::PS::FileHandle::Common);
 
 =pod
 
+=head1 NAME
+
+Prima::PS::Printer - PostScript and PDF interfaces to Prima::Printer
+
+=head1 SYNOPSIS
+
+  use Prima qw(PS::Printer);
+
+=head1 DESCRIPTION
+
+Realizes the Prima printer interface to PostScript level 2 document language
+through the Prima::PS::PostScript module, and to PDF v1.4 through the
+Prima::PS::PDF module. Allows different user profiles to be created and managed
+with the standard setup dialog. The module is designed to be compliant with the
+Prima::Printer interface.
+
+Also contains convenience classes (File, LPR, Pipe) for non-GUI use.
+
+=head1 SYNOPSIS
+
+	use Prima::PS::Printer;
+
+	my $x;
+	if ( $preview) {
+		$x = Prima::PS::Pipe-> new( command => 'gv $');
+	} elsif ( $print_in_file) {
+		$x = Prima::PS::File-> new( file => 'out.ps');
+	} elsif ( $print_on_device) {
+		$x = Prima::PS::LPR-> new( args => '-d colorprinter');
+	} elsif ( $print_pdf_file ) {
+		$x = Prima::PS::PDF::File-> new( file => 'out.pdf');
+	} else {
+		$x = Prima::PS::FileHandle-> new( handle => \*STDOUT );
+	}
+	$x-> begin_doc;
+	$x-> font-> size( 300);
+	$x-> text_out( "hello!", 100, 100);
+	$x-> end_doc;
+
+=cut
+
+
 =head1 Printer options
 
-Below is the list of options supported by C<options> method:
+Below are the settigns supported by the C<options> method:
 
 =over
 
@@ -896,8 +895,7 @@ Dots per inch.
 
 =item PageSize STRING
 
-One of: C<AI<integer>, BI<integer>, Executive, Folio, Ledger, Legal, Letter, Tabloid,
-US Common #10 Envelope>.
+One of: C<< AI<integer>, BI<integer>, Executive, Folio, Ledger, Legal, Letter, Tabloid, US Common #10 Envelope >>.
 
 =item Copies INTEGER
 
@@ -913,8 +911,8 @@ One of : C<Portrait>, C<Landscape>.
 
 =item MediaType STRING
 
-An arbitrary string representing special attributes of the medium other
-than its size, color, and weight. This parameter can be used to identify special
+An arbitrary string that represents special attributes of the medium other than
+its size, color, and weight. This parameter can be used to identify special
 media such as envelopes, letterheads, or preprinted forms.
 
 (not applicable to PDF)
@@ -927,23 +925,23 @@ A string identifying the color of the medium.
 
 =item MediaWeight FLOAT
 
-The weight of the medium in grams per square meter. "Basis weight" or
-or null "ream weight" in pounds can be converted to grams per square meter by
-multiplying by 3.76; for example, 10-pound paper is approximately 37.6
-grams per square meter.
+The weight of the medium in grams per square meter. "Basis weight" or or null
+"ream weight" in pounds can be converted to grams per square meter by
+multiplying by 3.76; for example, 10-pound paper is approximately 37.6 grams
+per square meter.
 
 (not applicable to PDF)
 
 =item MediaClass STRING
 
-(Level 3) An arbitrary string representing attributes of the medium
-that may require special action by the output device, such as the selection
-of a color rendering dictionary. Devices should use the value of this
-parameter to trigger such media-related actions, reserving the MediaType
-parameter (above) for generic attributes requiring no device-specific action.
-The MediaClass entry in the output device dictionary defines the allowable
-values for this parameter on a given device; attempting to set it to an unsupported
-value will cause a configuration error.
+(Level 3) An arbitrary string representing attributes of the medium that may
+require special action by the output device, such as the selection of a color
+rendering dictionary. Devices should use the value of this parameter to trigger
+such media-related actions, reserving the MediaType parameter (above) for
+generic attributes requiring no device-specific action.  The MediaClass entry
+in the output device dictionary defines the allowable values for this parameter
+on a given device; attempting to set it to an unsupported value will cause a
+configuration error.
 
 (not applicable to PDF)
 
@@ -960,60 +958,60 @@ page is actually imaged on the inserted medium.
 
 =item LeadingEdge BOOLEAN
 
-(Level 3) A value specifying the edge of the input medium that will
-enter the printing engine or imager first and across which data will be imaged.
-Values reflect positions relative to a canonical page in portrait orientation
-(width smaller than height). When duplex printing is enabled, the canonical
-page orientation refers only to the front (recto) side of the medium.
+(Level 3) A value specifying the edge of the input medium that will enter the
+printing engine or imager first and across which data will be imaged.  Values
+reflect positions relative to a canonical page in portrait orientation (width
+smaller than height). When duplex printing is enabled, the canonical page
+orientation refers only to the front (recto) side of the medium.
 
 (not applicable to PDF)
 
 =item ManualFeed BOOLEAN
 
-Flag indicating whether the input medium is to be fed manually by a human
-operator (Yes) or automatically (No). A Yes value asserts that the
-human operator will manually feed media conforming to the specified attributes
-( MediaColor, MediaWeight, MediaType, MediaClass, and InsertSheet). Thus, those
-attributes are not used to select from available media sources in the normal way,
-although their values may be presented to the human operator as an aid in selecting
-the correct medium. On devices that offer more than one manual feeding mechanism,
-the attributes may select among them.
+A flag indicating whether the input medium is to be fed manually by a human
+operator (Yes) or automatically (No). A Yes value asserts that the human
+operator will manually feed media conforming to the specified attributes (
+MediaColor, MediaWeight, MediaType, MediaClass, and InsertSheet). Thus, those
+attributes are not used to select from available media sources in the normal
+way, although their values may be presented to the human operator as an aid in
+selecting the correct medium. On devices that offer more than one manual
+feeding mechanism, the attributes may select among them.
 
 (not applicable to PDF)
 
 =item TraySwitch BOOLEAN
 
-(Level 3)  A flag specifying whether the output device supports
-automatic switching of media sources. When the originally selected source
-runs out of medium, some devices with multiple media sources can switch
-automatically, without human intervention, to an alternate source with the
-same attributes (such as PageSize and MediaColor) as the original.
+(Level 3)  A flag specifying whether the output device supports automatic
+switching of media sources. When the originally selected source runs out of
+medium, some devices with multiple media sources can switch automatically,
+without human intervention, to an alternate source with the same attributes
+(such as PageSize and MediaColor) as the original.
 
 (not applicable to PDF)
 
 =item MediaPosition STRING
 
-(Level 3) The position number of the media source to be used.
-This parameter does not override the normal media selection process
-described in the text, but if specified it will be honored - provided it can
-satisfy the input media request in a manner consistent with normal media
-selection - even if the media source it specifies is not the best available
-match for the requested attributes.
+(Level 3) The position number of the media source to be used.  This parameter
+does not override the normal media selection process described in the text, but
+if specified it will be honored - provided it can satisfy the input media
+request in a manner consistent with normal media selection - even if the media
+source it specifies is not the best available match for the requested
+attributes.
 
 (not applicable to PDF)
 
 =item DeferredMediaSelection BOOLEAN
 
-(Level 3) A flag determining when to perform media selection.
-If Yes, media will be selected by an independent printing subsystem associated
-with the output device itself.
+(Level 3) A flag determining when to perform media selection.  If Yes, media
+will be selected by an independent printing subsystem associated with the
+output device itself.
 
 (not applicable to PDF)
 
 =item MatchAll BOOLEAN
 
-A flag specifying whether input media request should match to all
-non-null values - MediaColor, MediaWeight etc.
+A flag specifying whether input media request should match to all non-null
+values - MediaColor, MediaWeight etc.
 
 (not applicable to PDF)
 
