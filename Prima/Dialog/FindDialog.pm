@@ -242,20 +242,20 @@ sub profile_default
 
 =head1 NAME
 
-Prima::Dialog::FindDialog - wrapper module for Prima::Dialog::FindDialog and
-Prima::Dialog::ReplaceDialog to find and replace text.
+Prima::Dialog::FindDialog - the standard dialogs FindDialog and ReplaceDialog
+to find and replace text
 
 =head1 SYNOPSIS
 
 	use Prima qw(Dialog::FindDialog Application);
 
-	my $dlg = Prima::Dialog::FindDialog-> create( findStyle => 0);
+	my $dlg = Prima::Dialog::FindDialog-> new( findStyle => 0);
 	my $res = $dlg-> execute;
 	if ( $res == mb::Ok) {
 		print $dlg-> findText, " is to be found\n";
 	} elsif ( $res == mb::ChangeAll) {
 		print "all occurrences of ", $dlg-> findText,
-			" is to be replaced by ", $dlg-> replaceText;
+			" are to be replaced by ", $dlg-> replaceText;
 	}
 
 =for podview <img src="editdlg.gif">
@@ -264,24 +264,26 @@ Prima::Dialog::ReplaceDialog to find and replace text.
 
 =head1 DESCRIPTION
 
-The module provides two classes - Prima::Dialog::FindDialog and Prima::Dialog::ReplaceDialog;
-Prima::Dialog::ReplaceDialog is exactly same as Prima::Dialog::FindDialog except that
-its default L<findStyle> property value is set to 0. One can use a dialog-caching
-technique, arbitrating between L<findStyle> value 0 and 1, and use only one
-instance of Prima::Dialog::FindDialog.
+The module provides two classes Prima::Dialog::FindDialog and
+Prima::Dialog::ReplaceDialog.  The Prima::Dialog::ReplaceDialog class is the same
+as Prima::Dialog::FindDialog except that its default L<findStyle> property
+value is set to 0. One can cache and reuse the dialog object, changing its
+L<findStyle> value to 0 and 1, so that only one instance of
+Prima::Dialog::FindDialog is used in the program.
 
-The module does not provide the actual search algorithm; this must be implemented
-by the programmer. The toolkit currently include some facilitation to the problem -
-the part of algorithm for C<Prima::Edit> class is found in L<Prima::Edit/find>,
-and the another part - in F<examples/editor.pl> example program. L<Prima::HelpWindow>
-also uses the module, and realizes its own searching algorithm.
+The module does not provide the actual search algorithm; this must be
+implemented by the programmer. The toolkit includes some help - the part of
+the algorithm for the C<Prima::Edit> class is implemented in the C<Prima::Edit/find>
+method, and another part in the F<examples/editor.pl> example program. The
+L<Prima::HelpWindow> class also uses the module but implements its own
+searching algorithm.
 
 =head1 API
 
 =head2 Properties
 
-All the properties select the user-assigned values, except
-L<findStyle>.
+All the properties reflect values that the user can change interactively, -
+except L<findStyle>.
 
 =over
 
@@ -293,14 +295,14 @@ Default value: ''
 
 =item findStyle BOOLEAN
 
-If 1, the dialog provides only 'find text' interface. If 0,
-the dialog provides also 'replace text' interface.
+If 1, the dialog provides only the 'find text' interface. If 0, the dialog provides
+also the'replace text' interface.
 
 Default value: 1 for C<Prima::Dialog::FindDialog>, 0 for C<Prima::Dialog::ReplaceDialog>.
 
 =item options INTEGER
 
-Combination of C<fdo::> constants. For the detailed description see L<Prima::Edit/find>.
+A combination of the C<fdo::> constants. For the detailed description see L<Prima::Edit/find>.
 
 	fdo::MatchCase
 	fdo::WordsOnly
@@ -312,14 +314,14 @@ Default value: 0
 
 =item replaceText STRING
 
-Selects the text string that is to replace the found text.
+Selects the text string to replace the found text.
 
 Default value: ''
 
 =item scope
 
-One of C<fds::> constants. Represents the scope of the search: it can be started
-from the cursor position, of from the top or of the bottom of the text.
+One of the C<fds::> constants. Represents the scope of the search: it can be started
+from the cursor position, from the top of the text, or from the bottom.
 
 	fds::Cursor
 	fds::Top

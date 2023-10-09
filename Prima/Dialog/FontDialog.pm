@@ -464,8 +464,8 @@ Prima::Dialog::FontDialog - standard font dialog
 
 =head1 DESCRIPTION
 
-The dialog provides selection of font by name, style, size, and encoding.
-The font selected is returned by L<logFont> property.
+The dialog provides standard font selection by name, style, size, and encoding.
+The selected font is returned by the L<logFont> property.
 
 =head1 API
 
@@ -487,13 +487,13 @@ FONT format is fully compatible with C<Prima::Drawable::font>.
 
 =item sampleText STRING
 
-Sample line of text featuring current font selection.
+Sample line of text drawn with the currently selected font
 
 Default value: AaBbYyZz
 
 =item showHelp BOOLEAN
 
-Create-only property.
+A create-only property.
 
 Specifies if the help button is displayed in the dialog.
 
@@ -508,17 +508,16 @@ Default value: 0
 =item BeginDragFont
 
 Called when the user starts dragging a font from the font sample widget by
-left mouse button.
+the left mouse button.
 
-Default action reflects the status in the dialog title
+The default action reflects the dragging status in the dialog title
 
 =item EndDragFont $WIDGET
 
-Called when the user releases the mouse drag over a Prima widget.
-Default action applies currently selected font to $WIDGET.
+Called when the user releases the mouse button over a Prima widget.
+The default action applies the currently selected font to $WIDGET.
 
 =back
-
 
 =head1 AUTHOR
 

@@ -116,7 +116,7 @@ sub create_wheel
 	my ( $y1, $x1) = ($id,$id);
 	my  $d0 = $id / 2;
 
-	my $i = Prima::Image->create(
+	my $i = Prima::Image->new(
 		width  => $id,
 		height => $id,
 		type   => im::RGB,
@@ -137,7 +137,7 @@ sub create_wheel
 	$i-> scaling( ist::Gaussian ) if $::application->get_bpp > 8;
 	$i-> size( 256 * $pix, 256 * $pix);
 
-	my $xa = Prima::DeviceBitmap-> create(
+	my $xa = Prima::DeviceBitmap-> new(
 		width  => 256 * $pix,
 		height => 256 * $pix,
 		name   => 'ColorWheel',
@@ -169,7 +169,7 @@ sub create_wheel_shape
 	return unless $shapext;
 	my ($id, $pix) = @_;
 	my $imul = 256 * $pix / $id;
-	my $a = Prima::Image-> create(
+	my $a = Prima::Image-> new(
 		width => 256 * $pix,
 		height => 256 * $pix,
 		type => im::BW,
@@ -931,7 +931,7 @@ sub MoreBtn_Click
 	my ($combo,$self) = @_;
 	my $d;
 	$combo-> listVisible(0);
-	$d = Prima::Dialog::ColorDialog-> create(
+	$d = Prima::Dialog::ColorDialog-> new(
 		text      => 'Mixed color palette',
 		value     => $combo-> value,
 		grayscale => $combo->grayscale,
@@ -1043,7 +1043,7 @@ Prima::Dialog::ColorDialog - standard color selection facilities
 
 	use Prima qw(Dialog::ColorDialog Application);
 
-	my $p = Prima::Dialog::ColorDialog-> create(
+	my $p = Prima::Dialog::ColorDialog-> new(
 		quality => 1,
 	);
 	printf "color: %06x", $p-> value if $p-> execute == mb::OK;
@@ -1055,9 +1055,9 @@ Prima::Dialog::ColorDialog - standard color selection facilities
 =head1 DESCRIPTION
 
 The module contains two packages, C<Prima::Dialog::ColorDialog> and C<Prima::ColorComboBox>,
-used as standard tools for interactive color selection. C<Prima::ColorComboBox> is
-a modified combo widget, which provides selecting from predefined palette but also can
-invoke C<Prima::Dialog::ColorDialog> window.
+used as standard tools for the interactive color selection. C<Prima::ColorComboBox> is
+a modified combo widget that provides selecting colors from a predefined palette, but also can
+invoke a C<Prima::Dialog::ColorDialog> window.
 
 =head1 Prima::Dialog::ColorDialog
 
@@ -1067,17 +1067,17 @@ invoke C<Prima::Dialog::ColorDialog> window.
 
 =item grayscale BOOLEAN
 
-If set, allows only gray colors for selection
+If set, allows only gray colors
 
 =item quality BOOLEAN
 
-Used to increase visual quality of the dialog if run on paletted displays.
+The setting can increase the visual quality of the dialog if run on paletted displays.
 
 Default value: 0
 
 =item value COLOR
 
-Selects the color, represented by the color wheel and other dialog controls.
+Selects the color represented by the color wheel and other dialog controls.
 
 Default value: C<cl::White>
 
@@ -1089,7 +1089,7 @@ Default value: C<cl::White>
 
 =item hsv2rgb HUE, SATURATION, LUMINOSITY
 
-Converts color from HSV to RGB format and returns three integer values, red, green,
+Converts a color from HSV to RGB format and returns three 8-bit integer values, red, green,
 and blue components.
 
 =item rgb2hsv RED, GREEN, BLUE
@@ -1101,24 +1101,24 @@ and luminosity components.
 
 Maps X and Y coordinate values onto a color wheel with RADIUS in pixels.
 The code uses RADIUS = 119 for mouse position coordinate mapping.
-Returns three values, - hue, saturation and error flag. If error flag
-is set, the conversion has failed.
+Returns three values, - hue, saturation, and error flag. If the error flag
+is set, the conversion is failed.
 
 =item hs2xy HUE, SATURATION
 
-Maps hue and saturation onto 256-pixel wide color wheel, and
+Maps hue and saturation onto a 256-pixel wide color wheel, and
 returns X and Y coordinates of the corresponding point.
 
 =item create_wheel SHADES, BACK_COLOR
 
-Creates a color wheel with number of SHADES given,
-drawn on a BACK_COLOR background, and returns a C<Prima::DeviceBitmap> object.
+Creates a color wheel with the number of SHADES given,
+drawn on a BACK_COLOR background. Returns a C<Prima::DeviceBitmap> object.
 
 =item create_wheel_shape SHADES
 
-Creates a circular 1-bit mask, with radius derived from SHAPES.
-SHAPES must be same as passed to L<create_wheel>.
-Returns C<Prima::Image> object.
+Creates a circular 1-bit mask with a radius derived from SHAPES.
+SHAPES must be the same as passed to L<create_wheel>.
+Returns a C<Prima::Image> object.
 
 =back
 
@@ -1128,9 +1128,10 @@ Returns C<Prima::Image> object.
 
 =item BeginDragColor $PROPERTY
 
-Called when the user starts dragginh a color from the color wheel by with left
-mouse button and combination of Alt, Ctrl, and Shift keys. $PROPERTY is one
-of C<Prima::Widget> color properties, and depends on combination of keys:
+Called when the user starts dragging a color from the color wheel by the left
+mouse button and an optional combination of Alt, Ctrl, and Shift keys.
+$PROPERTY is one of the C<Prima::Widget> color properties, and depends on
+a combination of the following keys:
 
 	Alt              backColor
 	Ctrl             color
@@ -1139,17 +1140,17 @@ of C<Prima::Widget> color properties, and depends on combination of keys:
 	Ctrl+Alt         disabledColor
 	Ctrl+Alt+Shift   disabledBackColor
 
-Default action reflects the property to be changes in the dialog title
+The default action reflects the property to be changed in the dialog title
 
 =item Change
 
 The notification is called when the L<value> property is changed, either
-interactively or as a result of direct call.
+interactively or as a result of a direct call.
 
 =item EndDragColor $PROPERTY, $WIDGET
 
-Called when the user releases the mouse drag over a Prima widget.
-Default action sets C<< $WIDGET->$PROPERTY >> to the current color value.
+Called when the user releases the mouse button over a Prima widget.
+The default action sets C<< $WIDGET->$PROPERTY >> to the selected color value.
 
 =back
 
@@ -1159,11 +1160,11 @@ Default action sets C<< $WIDGET->$PROPERTY >> to the current color value.
 
 =item $colorWheel
 
-Contains cached result of L<create_wheel> call.
+Contains the cached result of the L<create_wheel> method.
 
 =item $colorWheelShape
 
-Contains cached result of L<create_wheel_shape> call.
+Contains the cached result of the L<create_wheel_shape> method.
 
 =back
 
@@ -1175,9 +1176,9 @@ Contains cached result of L<create_wheel_shape> call.
 
 =item Colorify INDEX, COLOR_PTR
 
-C<nt::Action> callback, designed to map combo palette index into a RGB color.
-INDEX is an integer from 0 to L<colors> - 1, COLOR_PTR is a reference to a
-result scalar, where the notification is expected to write the resulting color.
+C<nt::Action> callback, designed to map combo palette index into an RGB color.
+INDEX is an integer from 0 to L<colors> - 1, COLOR_PTR is a reference to the
+result scalar where the notification is expected to store the resulting color.
 
 =back
 
@@ -1187,15 +1188,15 @@ result scalar, where the notification is expected to write the resulting color.
 
 =item colors INTEGER
 
-Defines amount of colors in the fixed palette of the combo box.
+Defines the amount of colors in the fixed palette of the combo box.
 
 =item grayscale BOOLEAN
 
-If set, allows only gray colors for selection
+If set, allows only gray colors
 
 =item value COLOR
 
-Contains the color selection as 24-bit integer value.
+Contains the color selection as a 24-bit integer value.
 
 =back
 

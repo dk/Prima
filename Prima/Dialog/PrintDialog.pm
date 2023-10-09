@@ -178,17 +178,17 @@ Prima::Dialog::PrintDialog - standard printer setup dialog
 
 =head1 DESCRIPTION
 
-Provides a standard dialog that allows the user to select a printer
-and its options. The toolkit does not provide the in-depth management
-of the printer options; this can only be accessed by executing a printer-specific
-setup window, called by C<Prima::Printer::setup_dialog>. The class invokes
-this method when the user presses 'Properties' button. Otherwise, the class
-provides only selection of a printer from the printer list.
+Provides the standard dialog that allows the user to select the printer and its
+options. The toolkit does not provide the in-depth management of the printer
+options; this can only be accessed by executing the printer-specific setup
+window, called by the C<Prima::Printer::setup_dialog> method. The class invokes
+this method when the user presses the 'Properties' button. Otherwise the class
+provides only selection from the printer list.
 
-When the dialog finished successfully, the selected printer is set as the current
-by writing to C<Prima::Printer::printer> property. This technique allows direct use of
-the user-selected printer and its properties without prior knowledge of the
-selection process.
+When the dialog finishes successfully the selected printer is set as current by
+setting the C<Prima::Printer::printer> property. This technique allows direct
+use of the user-selected printer and its properties without prior knowledge of
+the selection process.
 
 =head1 SYNOPSIS
 

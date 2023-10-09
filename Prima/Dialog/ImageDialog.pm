@@ -523,22 +523,21 @@ EXIT:
 
 =head1 NAME
 
-Prima::Dialog::ImageDialog - file open and save dialogs.
+Prima::Dialog::ImageDialog - image file open and save dialogs
 
 =head1 DESCRIPTION
 
-The module provides dialogs specially adjusted for image
+The module provides standard dialogs specially adjusted for image
 loading and saving.
 
 =head1 Prima::Dialog::ImageOpenDialog
 
-Provides a preview feature, allowing the user to view the image file before
+Provides a preview widget, allowing the user to view the image file before
 loading, and the selection of a frame index for the multi-framed image files.
-Instead of C<execute> call, the L<load> method is used to invoke the dialog and
-returns the loaded image as a C<Prima::Image> object.  The loaded object by
-default contains C<{extras}> hash variable set, which contains extra
-information returned by the loader. See L<Prima::image-load> for more
-information.
+Instead of the C<execute> call, the L<load> method is used to invoke the dialog
+and returns the loaded image as a C<Prima::Image> object.  The loaded object
+contains the C<{extras}> hash with the file and image information filled by the
+loader. See L<Prima::image-load> for more information.
 
 =head2 SYNOPSIS
 
@@ -552,7 +551,7 @@ information.
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/Dialog/imagedlg.gif">
 
-=head2 Proprties
+=head2 Properties
 
 =over
 
@@ -573,19 +572,19 @@ Default value: 1
 
 Executes the dialog, and, if successful, loads the image file and frame
 selected by the user. Returns the loaded image as a C<Prima::Image> object.
-PROFILE is a hash, passed to C<Prima::Image::load> method. In particular, it
-can be used to disable the default loading of extra information in C<{extras}>
-variable, or to specify a non-default loading option.  For example,
-C<{extras}-E<gt>{className} = 'Prima::Icon'> would return the loaded image as
-an icon object. See L<Prima::image-load> for more.
+PROFILE is a hash, passed to the C<Prima::Image::load> method. In particular,
+it can be used to disable the default loading of extra information in the
+C<{extras}> hash variable or to specify a non-default loading option.  For
+example, C<< {extras}->{className} = 'Prima::Icon' >> would return the
+loaded image as an icon object. See L<Prima::image-load> for more.
 
-C<load> can report progressive image loading to the caller, and/or to an
+C<load> can report the progress of the image loading to the caller, and/or to an
 instance of C<Prima::ImageViewer>, if desired. If either (or both)
 C<onHeaderReady> and C<onDataReady> notifications are specified, these are
 called from the respective event handlers of the image being loaded ( see
 L<Prima::image-load/"Loading with progress indicator"> for details).  If
-profile key C<progressViewer> is supplied, its value is treated as a
-C<Prima::ImageViewer> instance, and it is used to display image loading
+the profile key C<progressViewer> is supplied, its value is treated as a
+C<Prima::ImageViewer> instance, and it is used to display the loading
 progress. See L<Prima::ImageViewer/watch_load_progress>.
 
 =back
@@ -606,20 +605,20 @@ See L<Prima::Image/DataReady>.
 
 =head1 Prima::Dialog::ImageSaveDialog
 
-Provides a save dialog where the user can select image format,
-the bit depth and other format-specific options. The format-specific
-options can be set if a dialog for the file format is provided.
-The standard toolkit dialogs reside under in C<Prima::Image> namespace,
-in F<Prima/Image> subdirectory. For example, C<Prima::Image::gif> provides
-the selection of transparency color, and C<Prima::Image::jpeg> the image
-quality control. If the image passed to the L<image> property contains
-C<{extras}> variable, the data are read and used as the default values.
-In particular, C<{extras}-E<gt>-{codecID}> field, responsible for the
-file format, if present, affects the default file format selection.
+Provides the standard image save dialog where the user can select the desired
+image format, the bit depth, and other format-specific options. The
+format-specific options can be set if a dialog for the file format is provided
+by the toolkit.  The standard toolkit dialogs reside under the C<Prima::Image>
+namespace, in the F<Prima/Image> subdirectory. For example,
+C<Prima::Image::gif> provides the selection of a transparent color, and
+C<Prima::Image::jpeg> provides the image quality control. If the image passed
+to the L<image> property contains the C<{extras}> hash variable, its data are used
+as the default values.  In particular, the C<< {extras}->{codecID} >> field,
+responsible for the file format, affects the default file format selection.
 
 =head2 SYNOPSIS
 
-	my $dlg = Prima::Dialog::ImageSaveDialog-> create;
+	my $dlg = Prima::Dialog::ImageSaveDialog-> new;
 	return unless $dlg-> save( $image );
 	print "saved as ", $dlg-> fileName, "\n";
 
@@ -629,9 +628,9 @@ file format, if present, affects the default file format selection.
 
 =item image IMAGE
 
-Selects the image to be saved. This property is to be used
-for the standard invocation of dialog, via C<execute>. It is not
-needed when the execution and saving is invoked via L<save> method.
+Selects the image to be saved. The property is to be used
+for the standard invocation of dialog, via the C<execute> method. It is not
+needed when the execution and saving are invoked via the L<save> method.
 
 =back
 
@@ -641,13 +640,13 @@ needed when the execution and saving is invoked via L<save> method.
 
 =item save IMAGE, %PROFILE
 
-Invokes the dialog, and, if the execution was successful, saves
-the IMAGE according to the user selection and PROFILE hash.
-PROFILE is not used for the default options, but is passed
-directly to C<Prima::Image::save> call, possibly overriding
-selection of the user.
-Returns 1 in case of success, 0 in case of error.
-If the error occurs, the user is notified before the method returns.
+Invokes the dialog, and, if the execution is successful, saves the IMAGE
+according to the user selection and PROFILE hash.  PROFILE is not used as a
+source of the default options, but is passed directly to the
+C<Prima::Image::save> call, possibly overriding the selection of the user.
+
+Returns 1 on success, 0 on error. If the error occurs, the
+user is notified before the method returns.
 
 =back
 

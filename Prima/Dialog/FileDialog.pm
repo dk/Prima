@@ -1740,11 +1740,11 @@ sub showDotDirs
 
 =head1 NAME
 
-Prima::Dialog::FileDialog - File system-related widgets and dialogs.
+Prima::Dialog::FileDialog - File system-related widgets and dialogs
 
 =head1 SYNOPSIS
 
-# open a file
+	# open file
 	use Prima qw(Application Dialog::FileDialog);
 
 	my $open = Prima::Dialog::OpenDialog-> new(
@@ -1755,7 +1755,7 @@ Prima::Dialog::FileDialog - File system-related widgets and dialogs.
 	);
 	print $open-> fileName, " is to be opened\n" if $open-> execute;
 
-	# save a file
+	# save file
 	my $save = Prima::Dialog::SaveDialog-> new(
 		fileName => $open-> fileName,
 	);
@@ -1771,15 +1771,13 @@ Prima::Dialog::FileDialog - File system-related widgets and dialogs.
 
 =head1 DESCRIPTION
 
-The module contains widgets for file and drive selection,
-and also standard open file, save file, and change directory
-dialogs.
+The module contains standard open file, save file, and change directory
+dialogs; plus special widgets for file and drive selection that are used in the
+dialogs
 
 =head1 Prima::DirectoryListBox
 
-A directory listing list box. Shows the list of
-subdirectories and upper directories, hierarchy-mapped,
-with the folder images and outlines.
+A directory list box. Shows the list of subdirectories.
 
 =head2 Properties
 
@@ -1787,46 +1785,43 @@ with the folder images and outlines.
 
 =item closedGlyphs INTEGER
 
-Number of horizontal equal-width images, contained in L<closedIcon>
+The number of horizontal equal-width images, contained in the L<closedIcon>
 property.
 
 Default value: 1
 
 =item closedIcon ICON
 
-Provides an icon representation
-for the directories, contained in the current directory.
+Provides the icon
+for the directories contained in the current directory.
 
 =item indent INTEGER
 
-A positive integer number of pixels, used for offset of
+A positive integer number of pixels, the offset of
 the hierarchy outline.
 
 Default value: 12
 
 =item openedGlyphs INTEGER
 
-Number of horizontal equal-width images, contained in L<openedIcon>
+The number of horizontal equal-width images, contained in the L<openedIcon>
 property.
 
 Default value: 1
 
 =item openedIcon OBJECT
 
-Provides an icon representation
-for the directories, contained in the directories above the current
-directory.
+Provides the icon for the directories contained above the current directory.
 
 =item path STRING
 
-Runtime-only property. Selects a file system path.
+Runtime-only property. Selects the file path.
 
 =item showDotDirs BOOLEAN
 
-Selects if the directories with the first dot character
-are shown the view. The treatment of the dot-prefixed names
-as hidden is traditional to unix, and is of doubtful use under
-win32.
+Selects if the directories with the first dot character are shown. The
+dot-prefixed files are traditionally hidden in unix, so under Windows, this
+property is not useful.
 
 Default value: 1
 
@@ -1836,18 +1831,16 @@ Default value: 1
 
 =over
 
-=item files [ FILE_TYPE ]
+=item files FILE_TYPE
 
-If FILE_TYPE value is not specified, the list of all files in the
-current directory is returned. If FILE_TYPE is given, only the files
-of the types are returned. The FILE_TYPE is a string, one of those
-returned by C<Prima::Utils::getdir> ( see L<Prima::Utils/getdir>.
+Returns the list of files filtered by FILE_TYPE.  The FILE_TYPE is a string,
+one of those returned by C<Prima::Utils::getdir> ( see L<Prima::Utils/getdir>.
 
 =back
 
 =head1 Prima::DriveComboBox
 
-Provides drive selection combo-box for non-unix systems.
+Drive selector combo-box for non-unix systems
 
 =head2 Properties
 
@@ -1859,9 +1852,9 @@ Create-only property.
 
 Default value: 'A:'
 
-DRIVE_LETTER can be set to other value to start the drive enumeration from.
+DRIVE_LETTER can be set to another value to start the drive enumeration.
 Some OSes can probe eventual diskette drives inside the drive enumeration
-routines, so it might be reasonable to set DRIVE_LETTER to C<C:> string
+routines, so it might be reasonable to set DRIVE_LETTER to the C<C:> string
 for responsiveness increase.
 
 =item drive DRIVE_LETTER
@@ -1874,12 +1867,12 @@ Default value: 'C:'
 
 =head1 Prima::Dialog::FileDialog
 
-Provides a standard file dialog, allowing to navigate by the
-file system and select one or many files. The class can
-operate in two modes - 'open' and 'save'; these modes are
-set by L<Prima::Dialog::OpenDialog> and L<Prima::Dialog::SaveDialog>.
-Some properties behave differently depending on the mode,
-which is stored in L<openMode> property.
+Provides the standard file dialog where the user can navigate in the file
+system and select one or many files. The class can operate in two modes -
+'open' and 'save'; these modes are triggered internally by
+L<Prima::Dialog::OpenDialog> and L<Prima::Dialog::SaveDialog>.  Some properties
+behave differently depending on the mode that is stored in the L<openMode>
+property.
 
 =head2 Properties
 
@@ -1887,7 +1880,7 @@ which is stored in L<openMode> property.
 
 =item createPrompt BOOLEAN
 
-If 1, and a file selected is nonexistent, asks the user
+If 1, and the selected file is nonexistent, asks the user
 if the file is to be created.
 
 Only actual when L<openMode> is 1.
@@ -1903,7 +1896,7 @@ Default value: ''
 
 =item directory STRING
 
-Selects the currently selected directory.
+Selects the currently selected directory
 
 =item fileMustExist BOOLEAN
 
@@ -1914,23 +1907,22 @@ Default value: 1
 
 =item fileName STRING, ...
 
-For single-file selection, assigns the selected file name,
-For multiple-file selection, on get-call returns list of the selected
-files; on set-call, accepts a single string, where the file names
-are separated by the space character. The eventual space characters
-must be quoted.
+For the single-file selection, assigns the selected file name.  For the
+multiple-file selection, on get-calls returns a list of the selected files; on
+set-calls accepts a single string where the file names are separated by the
+space character. The eventual space characters must be quoted.
 
 =item filter ARRAY
 
-Contains array of arrays of string pairs, where each pair describes
+Contains an array of arrays of string pairs, where each pair describes
 a file type. The first scalar in the pair is the description of
 the type; the second is a file mask.
 
-Default value: [[ 'All files' => '*']]
+Default value: C<< [[ 'All files' => '*']] >>
 
 =item filterIndex INTEGER
 
-Selects the index in L<filter> array of the currently selected file type.
+Selects the index in the L<filter> array, which is the currently selected file type.
 
 =item multiSelect BOOLEAN
 
@@ -1948,7 +1940,7 @@ Only actual when L<openMode> is 0.
 
 =item noTestFileCreate BOOLEAN
 
-If 0, tests if a file selected can be created.
+If 0, tests if a file that the user selected can be created.
 
 Default value: 0
 
@@ -1956,7 +1948,7 @@ Only actual when L<openMode> is 0.
 
 =item overwritePrompt BOOLEAN
 
-If 1, asks the user if the file selected is to be overwrittten.
+If 1, asks the user if the file selected is to be overwritten.
 
 Default value: 1
 
@@ -1971,7 +1963,7 @@ mode.
 
 =item pathMustExist BOOLEAN
 
-If 1, ensures that the path, types by the user, exists before
+If 1, ensures that the path typed by the user exists before
 closing the dialog.
 
 Default value: 1
@@ -1979,15 +1971,15 @@ Default value: 1
 =item showDotFiles BOOLEAN
 
 Selects if the directories with the first dot character
-are shown the files view.
+are shown.
 
 Default value: 0
 
 =item showHelp BOOLEAN
 
-Create-only property. If 1, 'Help' button is inserted in the dialog.
+A create-only property. If 1, the 'Help' button is inserted in the dialog.
 
-Default value: 1
+Default value: 0
 
 =item sorted BOOLEAN
 
@@ -1997,13 +1989,13 @@ Default value : 1
 
 =item system BOOLEAN
 
-Create-only property. If set to 1, C<Prima::Dialog::FileDialog> returns
-instance of C<Prima::sys::XXX::FileDialog> system-specific file dialog,
+A create-only property. If set to 1, C<Prima::Dialog::FileDialog> returns
+an instance of the C<Prima::sys::XXX::FileDialog> system-specific file dialog,
 if available for the I<XXX> platform.
 
-C<system> knows only how to map C<FileDialog>, C<OpenDialog>, and C<SaveDialog>
-classes onto the system-specific file dialog classes; the inherited classes
-are not affected.
+The C<system> property knows only how to map the C<FileDialog>, C<OpenDialog>, and
+C<SaveDialog> classes onto the system-specific file dialog classes; the
+inherited classes are not affected and cannot be replaced by the system dialog.
 
 =back
 
@@ -2019,11 +2011,11 @@ Re-reads the currently selected directory.
 
 =head1 Prima::Dialog::OpenDialog
 
-Descendant of L<Prima::Dialog::FileDialog>, tuned for open-dialog functionality.
+A descendant of L<Prima::Dialog::FileDialog> tuned for open-dialog functionality.
 
 =head1 Prima::Dialog::SaveDialog
 
-Descendant of L<Prima::Dialog::FileDialog>, tuned for save-dialog functionality.
+A descendant of L<Prima::Dialog::FileDialog> tuned for save-dialog functionality.
 
 =head1 Prima::Dialog::ChDirDialog
 
@@ -2040,15 +2032,15 @@ Selects the directory
 =item showDotDirs
 
 Selects if the directories with the first dot character
-are shown the view.
+are shown
 
 Default value: 0
 
 =item showHelp
 
-Create-only property. If 1, 'Help' button is inserted in the dialog.
+Create-only property. If 1, the 'Help' button is inserted in the dialog.
 
-Default value: 1
+Default value: 0
 
 =back
 
