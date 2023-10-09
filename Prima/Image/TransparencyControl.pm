@@ -293,17 +293,17 @@ sub OK_Click
 
 =head1 NAME
 
-Prima::Image::TransparencyControl - standard dialog
-for transparent color index selection.
+Prima::Image::TransparencyControl - standard dialog for selecting transparent
+color when saving an image to a file.
 
 =head1 DESCRIPTION
 
-The module contains two classes - C<Prima::Image::BasicTransparencyDialog>
-and C<Prima::Image::TransparencyControl>. The former provides a dialog,
-used by image codec-specific save options dialogs to select a transparent
-color index when saving an image to a file. C<Prima::Image::TransparencyControl>
-is a widget class that displays the image palette and allow color rather than
-index selection.
+The module contains two classes - C<Prima::Image::BasicTransparencyDialog> and
+C<Prima::Image::TransparencyControl>. The former provides the dialog used by
+image codec-specific save options dialogs to select a transparent color index
+when saving an image to a file. C<Prima::Image::TransparencyControl> is the
+widget class that displays the image palette and allows color rather than index
+selection.
 
 =for podview <img src="transparency.gif">
 
@@ -317,12 +317,12 @@ index selection.
 
 =item index INTEGER
 
-Selects the palette index.
+Selects the palette index
 
 =item image IMAGE
 
-Selects image which palette is displayed, and the color
-index can be selected from.
+Selects the image, reads its palette, and displays it in such a manner that
+only a color that is found in the palette can be selected by the user.
 
 =back
 
@@ -332,7 +332,7 @@ index can be selected from.
 
 =item Change
 
-Triggered when the user changes C<index> property.
+Triggered when the user changes the C<index> property.
 
 =back
 
@@ -344,11 +344,11 @@ Triggered when the user changes C<index> property.
 
 =item transparent BOOLEAN
 
-If 1, the transparent selection widgets are enabled, and the
-user can select the palette index. If 0, the widgets are
-disabled; the image file is saved with no transparent color index.
+If 1, the transparent color widgets are enabled, and the user can select the
+transparent color index in the image palette. If 0, the widgets are disabled;
+the image file is saved with no transparent color index.
 
-The property can be toggled interactively by a checkbox.
+The property can also be toggled interactively by a checkbox.
 
 =back
 

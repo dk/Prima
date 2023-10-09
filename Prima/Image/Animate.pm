@@ -558,21 +558,21 @@ The module provides high-level access to GIF, APNG, and WebP animation sequences
 =head2 new $CLASS, %OPTIONS
 
 Creates an empty animation container. If C<$OPTIONS{images}> is given, it is
-expected to be an array of images, best if loaded from gif files with
-C<loadExtras> and C<iconUnmask> parameters set ( see L<Prima::image-load> for
+expected to be an array of images, best if loaded from files with
+the C<loadExtras> and C<iconUnmask> parameters set ( see L<Prima::image-load> for
 details).
 
 =head2 detect_animation $HASH
 
-Checks C<{extras} hash> obtained from a image loaded with C<loadExtras> flag set,
-to detect whether the image is an animation, and if loading all of its frame is
-supported by the module. Returns file format name on success, undef otherwise.
+Checks the C<{extras} hash> obtained from an image loaded with the
+C<loadExtras> flag set to detect whether the image is an animation or not, and
+if loading of all of its frame is supported by the module. Returns the file
+format name on success, undef otherwise.
 
 =head2 load $SOURCE, %OPTIONS
 
-Loads GIF or WebP animation sequence from file or stream C<$SOURCE>. Options
-are the same as understood by C<Prima::Image::load>, and are passed
-down to it.
+Loads a GIF, APNG, or WebP animation sequence from C<$SOURCE> which is either a
+file or a stream. Options are the same as used by the C<Prima::Image::load> method.
 
 =head2 add $IMAGE
 
@@ -580,36 +580,37 @@ Appends an image frame to the container.
 
 =head2 bgColor
 
-Return the background color specified by the sequence as the preferred
-background color to use when there is no specific background to superimpose the
-animation to.
+Returns the background color specified by the sequence as the preferred
+color to use when there is no specific background to superimpose the
+animation on.
 
 =head2 current
 
-Return index of the current frame
+Returns the index of the current frame
 
 =head2 draw $CANVAS, $X, $Y
 
-Draws the current composite frame on C<$CANVAS> at the given coordinates.
+Draws the current composite frame on C<$CANVAS> at the given coordinates
 
 =head2 draw_background $CANVAS, $X, $Y
 
-Fills the background on C<$CANVAS> at the given coordinates if file provides that.
-Returns whether the canvas was tainted or not.
+Fills the background on C<$CANVAS> at the given coordinates if the file
+provides the color to fill.  Returns a boolean value whether the canvas was
+drawn on or not.
 
 =head2 height
 
-Returns height of the composite frame.
+Returns the height of the composite frame
 
 =head2 icon
 
-Creates and returns an icon object off the current composite frame.
+Returns a new icon object created from the current composite frame
 
 =head2 image
 
-Creates and returns an image object off the current composite frame.  The
+Returns a new image object created from the current composite frame The
 transparent pixels on the image are replaced with the preferred background
-color.
+color
 
 =head2 is_stopped
 
@@ -619,46 +620,46 @@ call C<reset>.
 
 =head2 length
 
-Returns total animation length (without repeats) in seconds.
+Returns the total animation length (without repeats) in seconds.
 
 =head2 loopCount [ INTEGER ]
 
-Sets and returns number of loops left, undef for indefinite.
+Sets and returns the number of loops left, undef for indefinite.
 
 =head2 next
 
 Advances one animation frame. The step triggers changes to the internally kept
-icon image that create effect of transparency, if needed.  The method returns a
-hash, where the following fields are initialized:
+buffer image that creates the effect of transparency if needed. The method
+returns a hash, where the following fields are initialized:
 
 =over
 
 =item left, bottom, right, top
 
-Coordinates of the changed area since the last frame was updated.
+Coordinates of the changed area since the last frame was updated
 
 =item delay
 
-Time in seconds how long the frame is expected to be displayed.
+Time in seconds how long the frame is expected to be displayed
 
 =back
 
 =head2 reset
 
-Resets the animation sequence. This call is necessary either when image sequence was altered,
-or when sequence display restart is needed.
+Resets the animation sequence. This call is necessary either when the image
+sequence was altered, or when the sequence display restart is needed.
 
 =head2 size
 
-Returns width and height of the composite frame.
+Returns the width and height of the composite frame
 
 =head2 total
 
-Return number fo frames
+Return the number of frames
 
 =head2 width
 
-Returns width of the composite frame.
+Returns the width of the composite frame
 
 =head1 SEE ALSO
 

@@ -284,16 +284,16 @@ sub save_dialog
 
 =head1 NAME
 
-Prima::Image::heif
+Prima::Image::heif - standard HEIF image save dialog
 
 =head1 DESCRIPTION
 
-HEIF image save dialog
+Provides the standard dialog with save options for HEIF images
 
 =head1 INSTALLATION
 
 libheif so far could be built from the sources, and its dependencies as well,
-as major distros are not yet providing its binaries. For windows you can grab
+as major distros do not yet provide the binaries. For Windows, you can grab
 the distro from
 L<http://prima.eu.org/download/libheif-1.12.0-win64.zip>.
 

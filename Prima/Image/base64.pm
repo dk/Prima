@@ -86,11 +86,12 @@ sub save
 
 =head1 NAME
 
-Prima::Image::base64 - hard-coded image files
+Prima::Image::base64 - hardcoded image files
 
 =head1 DESCRIPTION
 
-Handles base64-encoded data streams to load images directly from source code.
+Loads and saves images from and to base64-encoded data streams.
+This allows loading images directly from the source code.
 
 =head1 SYNOPSIS
 
@@ -117,10 +118,11 @@ Same as C<load_image> but returns a C<Prima::Icon> instance.
 
 =item save IMAGE_OR_ICON, %OPTIONS
 
-Saves image into a datastream and return it encoded in base64.
-Unless C<$OPTIONS{codecID}> or C<$image->{extras}->{codecID}> is set, tries to find the best codec for the job.
+Saves an image to a datastream and encodes it in base64.  Unless the
+C<$OPTIONS{codecID}> or C<$image->{extras}->{codecID}> field is set, tries to
+deduce the best codec for the job.
 
-Returns encoded content on success, or C<undef, ERROR_STRING> on failure.
+Returns the encoded content on success, or C<undef, ERROR_STRING> on failure.
 
 =back
 

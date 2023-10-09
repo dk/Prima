@@ -520,7 +520,7 @@ L<Prima::EventHook> - event filtering
 
 L<Prima::Image::Animate> - animate gif and webp files
 
-L<Prima::Image::base64> - hard-coded image files
+L<Prima::Image::base64> - hardcoded image files
 
 L<Prima::IniFile> - support of Windows-like initialization files
 
