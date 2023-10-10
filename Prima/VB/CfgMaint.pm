@@ -181,74 +181,75 @@ sub add_module
 
 =head1 NAME
 
-Prima::VB::CfgMaint - maintains visual builder widget palette configuration.
+Prima::VB::CfgMaint - configures the widget palette in the Visual Builder
 
 =head1 DESCRIPTION
 
-The module is used by the Visual Builder and C<prima-cfgmaint> programs, to maintain
-the Visual Builder widget palette. The installed widgets are displayed
-in main panel of the Visual Builder, and can be maintained by C<prima-cfgmaint>.
+The module is used by the Visual Builder and C<prima-cfgmaint> programs, to
+configure the Visual Builder widget palette. The installed widgets are
+displayed in the main panel of the Visual Builder and can be maintained by the
+C<prima-cfgmaint> program.
 
 =head1 USAGE
 
-The Visual Builder widget palette configuration is contained in two files - the system-wide
-C<Prima::VB::Config> and the user C<~/.prima/vbconfig>. The user config file take the precedence
-when loaded by the Visual Builder. The module can select either configuration
-by assigning C<$systemWide> boolean property.
+The widget palette configuration is contained in two files - the system-wide
+C<Prima::VB::Config> and the user C<~/.prima/vbconfig>. The user config file
+takes precedence when loaded by the Visual Builder. The module can select
+either configuration by assigning the C<$systemWide> boolean property.
 
-The widgets are grouped in pages, which are accessible by names.
+The widgets are grouped in pages which are accessible by their names.
 
-New widgets can be added to the palette by calling C<add_module> method,
+New widgets can be added to the palette by calling the C<add_module> method
 which accepts a perl module file as its first parameter. The module must
 conform to the VB-loadable format.
 
 =head1 FORMAT
 
-This section describes format of a module with VB-loadable widgets.
+This section describes the format of a module with VB-loadable widgets.
 
-The module must define a package with same name as the module.
-In the package, C<class> sub must be declared, that returns an array
-or paired scalars, where each first item in a pair corresponds to the
-widget class and the second to a hash, that contains the class loading information,
-and must contain the following keys:
+The module must define a package with the same name as the module.  In the package,
+the C<class> sub must be declared, that returns an array or paired scalars, where
+each first item in the pair corresponds to the widget class and the second to
+the hash which contains the class loading information, and must contain the
+following keys:
 
 =over
 
 =item class STRING
 
-Name of the VB-representation class, which represents the original
-widget class in the Visual Builder. This is usually a lightweight
-class, which does not contain all functionality of the original
-class, but is capable of visually reflecting changes to the class properties.
+Name of the package which represents the original widget class in the Visual
+Builder. This is usually a lightweight package that does not contain all
+the functionality of the original class but is capable of visually reflecting
+changes to the most useful class properties.
 
 =item icon PATH
 
-Sets an image file, where the class icon is contained.
-PATH provides an extended syntax for indicating a frame index, if the image file
-is multiframed: the frame index is appended to the path name
-with C<:> character prefix, for example: C<"NewWidget::icons.gif:2">.
+Sets the image file with the class icon.  PATH provides an extended syntax for
+indicating a frame index if the image file is multiframed: the frame index is
+appended to the path name with the C<:> character prefix, for example:
+C<"NewWidget::icons.gif:2">.
 
 =item module STRING
 
-Sets the module name, that contains C<class>.
+Sets the module name that contains C<class>.
 
 =item page STRING
 
-Sets the default palette page where the widget is to be put.
+Sets the default palette page where the widget is to be stored.
 The current implementation of the Visual Builder provides four
 pages: C<General,Additional,Sliders,Abstract>. If the page
-is not present, new page is automatically created when the
-widget class is registered.
+is not present, a new page is automatically created when the
+widget class is registered there.
 
 =item RTModule STRING
 
-Sets the module name, that contains the original class.
+Sets the module name that contains the original widget class.
 
 =back
 
-The reader is urged to explore F<Prima::VB::examples::Widgety> file,
-which contains an example class C<Prima::SampleWidget>, its
-VB-representation, and a property C<lineRoundStyle> definition example.
+The reader is urged to explore F<Prima::VB::examples::Widgety> file which
+contains an example class C<Prima::SampleWidget>, its VB-representation, and an
+example property C<lineRoundStyle>.
 
 =head1 API
 
@@ -258,29 +259,30 @@ VB-representation, and a property C<lineRoundStyle> definition example.
 
 =item add_module FILE
 
-Reads FILE module and loads all VB-loadable widgets from it.
+Reads the FILE module and loads all VB-loadable widgets from it.
 
 =item classes
 
-Returns string declaration of all registered classes in format
-of C<classes> registration procedure ( see L</FORMAT> ).
+Returns declaration of all registered classes as a string
+( see L</FORMAT> ).
 
 =item open_cfg
 
-Loads class and pages information from either a system-wide or a user configuration file.
-If succeeds, the information is stored in C<@pages> and C<%classes> variables (
-the old information is lost ) and returns 1. If fails, returns 0 and string with the error
-explanation; C<@pages> and C<%classes> content is undefined.
+Loads class and pages information from either the system-wide or the user
+configuration file.  If succeeds, the information is stored in the C<@pages>
+and C<%classes> variables ( the old information is lost ) and returns 1. If
+fails, returns 0 and a string with the error explanation; C<@pages> and
+C<%classes> content is undefined.
 
 =item pages
 
-Returns array of page names
+Returns an array of page names
 
 =item read_cfg
 
-Reads information from both system-wide and user configuration files,
+Reads information from both the system-wide and user configuration files
 and merges the information. If succeeds, returns 1. If fails, returns 0
-and string with the error explanation.
+and a string with the error explanation.
 
 =item reset_cfg
 
@@ -288,9 +290,10 @@ Erases all information about pages and classes.
 
 =item write_cfg
 
-Writes either the system-wide or the user configuration file.
-If C<$backup> flag is set to 1, the old file renamed with C<.bak> extension.
-If succeeds, returns 1. If fails, returns 0 and string with the error explanation.
+Writes either the system-wide or the user configuration file.  If the
+C<$backup> flag is set to 1, the old file is renamed to a C<.bak> file.  If
+succeeds, returns 1. If fails, returns 0 and a string with the error
+explanation.
 
 =back
 

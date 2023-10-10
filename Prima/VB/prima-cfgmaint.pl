@@ -232,15 +232,15 @@ cfgmaint [ -rbxop ] command object [ parameters ]
 
 =head1 DESCRIPTION
 
-Maintains widget palette configuration for the Visual Builder.
-It can be stored in the system-wide and the local user config files.
+Maintains configuration of the widget palette in the Visual Builder.
+The widget palette can be stored in the system-wide and local user config files.
 C<cfgmaint> allows adding, renaming, moving, and deleting the
 classes and pages in the Visual Builder widget palette.
 
 =head1 USAGE
 
-C<cfgmaint> is invoked with C<command> and C<object> arguments,
-where C<command> defines the action to be taken, and C<object> -
+C<cfgmaint> is invoked with the C<command> and C<object> arguments
+where the C<command> defines the action to be taken and C<object>
 the object to be handled.
 
 =head2 Options
@@ -253,7 +253,7 @@ Write configuration to the system-wide config file
 
 =item -b
 
-Read configuration from both system-wide and user config files
+Read configuration from both the system-wide and user config files
 
 =item -x
 
@@ -265,9 +265,8 @@ Read-only mode
 
 =item -p
 
-Execute C<use Prima;> code before start. This option
-might be necessary when adding a module that relies on the toolkit
-but does not invoke the code itself.
+Execute C<use Prima;> code before start. This option might be necessary when
+adding a module that relies on the toolkit but does not invoke the code itself.
 
 =back
 
@@ -277,7 +276,7 @@ but does not invoke the code itself.
 
 =item m
 
-Selects a module. Valid for add, list, and remove commands.
+Selects a module. Valid for the add, list, and remove commands.
 
 =item p
 
@@ -285,7 +284,7 @@ Selects a page. Valid for all commands.
 
 =item w
 
-Selects a widget. Valid for list, remove, rename, and move commands.
+Selects a widget. Valid for the list, remove, rename, and move commands.
 
 =back
 
@@ -304,21 +303,21 @@ Removes an object.
 
 =item l
 
-Prints object name. In case object is a widget, prints all
+Prints the object name. In case the object is a widget, prints all
 registered widgets. If the string is specified as an additional
-parameter, it is treated as a page name and only widgets from
+parameter, it is treated as a page name, and only widgets from
 the page are printed.
 
 =item r
 
-Renames an object to a new name, which is passed as additional parameter.
+Renames the object to a new name, which is passed as an additional parameter.
 Can be either a widget or a page.
 
 =item m
 
-If C<object> is a widget, relocates one or more widgets to a new page.
-If C<object> is a page, moves the page before the page specified as an additional parameter,
-or to the end if no additional page specified.
+If the C<object> is a widget, relocates one or more widgets to a new page.
+If the C<object> is a page, moves the page before the page specified as an additional parameter,
+or to the end if no additional page is specified.
 
 =back
 
@@ -328,7 +327,7 @@ Add a new module to the system-wide configuration:
 
 	cfgmaint -r a m CPAN/Prima/VB/New/MyCtrls.pm
 
-List widgets, present in both config files:
+List widgets that are present in both config files:
 
 	cfgmaint -b l w
 
@@ -347,7 +346,6 @@ Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
 =head1 SEE ALSO
 
 L<VB>, L<Prima::VB::CfgMaint>
-
 
 =cut
 

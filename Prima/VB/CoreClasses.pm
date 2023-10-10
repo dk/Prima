@@ -2464,3 +2464,22 @@ sub prf_columns { $_[0]-> prf_cells( $_[0]-> prf('cells')); }
 sub prf_rows    { $_[0]-> prf_cells( $_[0]-> prf('cells')); }
 
 1;
+
+=head1 NAME
+
+Prima::VB::CoreClasses - Visual Builder extended widgets and types
+
+=head1 DESCRIPTION
+
+The package provides the proxy classes that cover the majority of the
+widget classes shipped with the toolkit
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<VB>, L<Prima::VB::Classes>
+
+=cut

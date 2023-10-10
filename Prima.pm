@@ -464,7 +464,7 @@ L<Prima::VB::VBLoader> - Visual Builder file loader
 
 L<prima-cfgmaint> - configuration tool for Visual Builder
 
-L<Prima::VB::CfgMaint> - maintains visual builder widget palette configuration
+L<Prima::VB::CfgMaint> - configures the widget palette in the Visual Builder
 
 =item PostScript printer interface
 
