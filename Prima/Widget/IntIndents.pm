@@ -33,15 +33,17 @@ sub get_active_area
 
 1;
 
+=pod
+
 =head1 NAME
 
 Prima::Widget::IntIndents - indenting support
 
 =head1 DESCRIPTION
 
-Provides the common functionality for the widgets that delegate part of their
-surface to the border elements. A list box can be of an example, where its
-scroll bars and 3-d borders are such elements.
+Provides common functionality for the widgets that delegate part of their
+surface to border elements. For example, scroll bars and borders in a list box
+are such elements.
 
 =head1 Properties
 
@@ -49,12 +51,12 @@ scroll bars and 3-d borders are such elements.
 
 =item indents ARRAY
 
-Contains four integers, specifying the breadth of decoration elements for
-each side. The first integer is width of the left element, the second - height
-of the lower element, the third - width of the right element, the fourth - height
-of the upper element.
+Contains four integers specifying the breadth of decoration elements for each
+side. The first integer is the width of the left element, the second is the height
+of the lower element, the third is the width of the right element, and the fourth is
+the height of the upper element.
 
-The property can accept and return the array either as a four scalars, or as
+The property can accept and return the array either as four scalars, or as
 an anonymous array of four scalars.
 
 =back
@@ -66,10 +68,10 @@ an anonymous array of four scalars.
 =item get_active_area [ TYPE = 0, WIDTH, HEIGHT ]
 
 Calculates and returns the extension of the area without the border elements,
-or the active area.
-The extension are related to the current size of a widget, however, can be
+or the I<active area>.
+The extension is related to the current size of a widget, however, can be
 overridden by specifying WIDTH and HEIGHT. TYPE is an integer, indicating
-the type of calculation:
+the requested type of calculation:
 
 =over
 

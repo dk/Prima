@@ -135,6 +135,8 @@ sub undoLimit
 
 1;
 
+=pod
+
 =head1 NAME
 
 Prima::Widget::UndoActions - undo and redo the content of editable widgets
@@ -145,7 +147,20 @@ Generic helpers that implement stored actions for undo/redo.
 
 =head1 SYNOPSIS
 
+	package MyUndoableWidget;
+	use base qw(Prima::Widget Prima::Widget::UndoActions);
 
+	sub on_mousedown
+	{
+		if ( $button == mb::Left ) {
+			$self->begin_undo_group;
+			$self->push_undo_action(text => $self->text);
+			$self->text($self->text . '.');
+			$self->end_undo_group;
+		} else {
+			$self->undo; # will call $self->text( old text )
+		}
+	}
 
 =head1 Properties
 
@@ -153,7 +168,7 @@ Generic helpers that implement stored actions for undo/redo.
 
 =item undoLimit INTEGER
 
-Sets limit on number of stored atomic undo operations. If 0,
+Sets the limit on the number of atomic undo operations. If 0,
 undo is disabled.
 
 =back
@@ -164,17 +179,18 @@ undo is disabled.
 
 =item begin_undo_group
 
-Opens bracket for group of actions, undone as single operation.
+Opens a bracket for a group of actions that can be undone as a single operation.
 The bracket is closed by calling C<end_undo_group>.
 
 =item can_undo, can_redo
 
-Return boolean flags whether undo or redo could be done.
-Useful for graying a menu f ex.
+Return a boolean flag that reflects if the undo or redo actions could be done.
+Useful for graying a menu, f ex.
 
 =item end_undo_group
 
-Closes bracket for group of actions, opened by C<begin_undo_group>.
+Closes the bracket for a group of actions, that was previously opened by
+C<begin_undo_group>.
 
 =item init_undo
 
@@ -182,27 +198,27 @@ Should be called once, inside init()
 
 =item has_undo_action ACTION
 
-Checks whether there is any ACTION in the undo list.
+Checks whether there are any undo-able ACTIONs in the undo list.
 
 =item push_grouped_undo_action ACTION, @PARAMS
 
 Stores a single undo action where ACTION is a method to be called inside
-undo/redo, if any.  Each action is added to the last undo group, and will be
+undo/redo, if any.  Each action is added to the last undo group and will be
 removed/replayed together with the other actions in the group.
 
 =item push_undo_action ACTION, @PARAMS
 
-Stores a single undo action where ACTION is a method to be called inside
+Stores a single undo action where ACTION is the method to be called inside
 undo/redo, if any.  Each action is a single undo/redo operation.
 
 =item redo
 
-Re-applies changes, formerly rolled back by C<undo>.
+Re-applies changes, previously rolled back by C<undo>.
 
 =item undo
 
-Rolls back changes into internal array, which size cannot extend C<undoLimit>
-value. In case C<undoLimit> is 0, no undo actions can be made.
+Rolls back changes into an internal array. The array size cannot extend the
+C<undoLimit> value. In case C<undoLimit> is 0 no undo actions can be made.
 
 =back
 

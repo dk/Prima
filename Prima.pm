@@ -494,7 +494,7 @@ L<Prima::Widget::MouseScroller> - auto-repeating mouse events
 
 L<Prima::Widget::Panel> - simple panel widget
 
-L<Prima::Widget::RubberBand> - draw rubberbands
+L<Prima::Widget::RubberBand> - dynamic rubberbands
 
 L<Prima::Widget::ScrollWidget> - scrollable generic document widget
 

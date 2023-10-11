@@ -354,7 +354,7 @@ sub List_Leave {} # don't mix up with the explicit focus by .on_show
 
 =head1 NAME
 
-Prima::Widget::Date - date picker widget
+Prima::Widget::Date - standard date picker widget
 
 =head1 SYNOPSIS
 
@@ -373,7 +373,7 @@ Prima::Widget::Date - date picker widget
 
 =head1 DESCRIPTION
 
-Standard date picker
+Standard date picker widget, derived from the C<Prima::InputLine> class.
 
 =head1 API
 
@@ -383,19 +383,20 @@ Standard date picker
 
 =item date2str DATE
 
-Converts DATE to string representation according to the current C<format> string
+Converts the DATE to a string representation according to the current C<format> string
 
 =item default_format
 
-Returns a string to be used in C<format>, where the string is constructed in such a way
-to reflect regional date formatting preferences.
+Returns a string to be used in C<format> where the string is constructed
+to reflect the formatting of the regional date preferences.
 
 See also: C<man 3 strftime, %x> .
 
 =item str2date STRING
 
-Tries to extract date from STRING assuming it is constructed according to the current C<format> string.
-Doesn't fail but values that could not be extracted are assigned to today's day/month/year instead.
+Tries to extract the date from the STRING, assuming it is constructed according
+to the current C<format> string.  Doesn't fail but values that could not be
+extracted are assigned to today's day/month/year instead.
 
 =item today
 
@@ -403,8 +404,8 @@ Returns today's date in widgets [D,M,Y] format
 
 =item validate_date D, M, Y
 
-Checks whether D, M, Y values are valid and within understood range; adjusts the values if not.
-Returns the final values.
+Checks if D, M, Y form a valid date, and adjusts the values if not.  Returns
+the corrected values.
 
 =back
 
@@ -414,21 +415,21 @@ Returns the final values.
 
 =item date DAY, MONTH, YEAR | [ DAY, MONTH, YEAR ]
 
-Accepts three integers / arrayref with three integers in format of C<localtime>.
+Accepts three integers / arrayref with three integers in the format of C<localtime>.
 DAY can be from 1 to 31, MONTH from 0 to 11, YEAR from 0 to 199.
 
 Default value: today's date.
 
 =item day INTEGER
 
-Selects the day in month.
+Selects the day of the month.
 
 =item format STRING
 
-The format string is used when converting date to its visual interpretation,
-also with regional preferences, like YYYY-MM-DD or DD/MM/YY. The syntax of the
-format is exctly this, it recognizes fixed patterns YYYY, YY, MM, and DD,
-replacing them with the date values.
+The format string is used when converting the date to its visual interpretation,
+also with regional preferences, f ex YYYY-MM-DD or DD/MM/YY. The syntax of the
+format is verbatim as this, i e it recognizes fixed patterns YYYY, YY, MM, and
+DD, replacing them with the date values.
 
 =item month
 

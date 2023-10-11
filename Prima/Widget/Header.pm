@@ -586,6 +586,8 @@ sub pressed
 
 1;
 
+=pod
+
 =head1 NAME
 
 Prima::Widget::Header - multi-column header widget
@@ -594,7 +596,7 @@ Prima::Widget::Header - multi-column header widget
 
 The widget class provides functionality of several button-like
 caption tabs, that can be moved and resized by the user.
-The class was implemented with a view to serve as a table header
+The class was implemented to serve as a table header
 for list and grid widgets.
 
 =head1 API
@@ -605,36 +607,35 @@ for list and grid widgets.
 
 =item Click INDEX
 
-Called when the user clicks on the tab, positioned at INDEX.
+Called when the user clicks on the tab positioned at INDEX.
 
 =item DrawItem CANVAS, INDEX, X1, Y1, X2, Y2, TEXT_BASELINE
 
-A callback used to draw the tabs. CANVAS is the output object;
-INDEX is the index of a tab.
-X1,Y2,X2,Y2 are the coordinates of the boundaries of the tab rectangle;
-TEXT_BASELINE is a pre-calculated vertical position for eventual
-centered text output.
+A callback to draw the tabs. CANVAS is the output object; INDEX is the index of
+a tab.  X1,Y2,X2,Y2 are the coordinates of the boundaries of the tab rectangle;
+TEXT_BASELINE is a pre-calculated vertical position for eventual centered text
+output.
 
 =item MeasureItem INDEX, RESULT
 
-Stores in scalar, referenced by RESULT, the width or height ( depending
-on L<vertical> property value ) of the tab in pixels.
+Stores in scalar referenced by RESULT the width or height ( depending
+on the L<vertical> property value ) of the INDEXth tab, in pixels.
 
 =item MoveItem OLD_INDEX, NEW_INDEX
 
 Called when the user moves a tab from its old location, specified by OLD_INDEX,
-to the NEW_INDEX position. By the time of call, all internal structures are
+to the NEW_INDEX position. By the time of the call, all internal structures are
 updated.
 
 =item SizeItem INDEX, OLD_EXTENT, NEW_EXTENT
 
-Called when the user resizes a tab in INDEX position. OLD_EXTENT and NEW_EXTENT
-are either width or height of the tab, depending on L<vertical> property value.
+Called when the user resizes a tab in the INDEXth position. OLD_EXTENT and NEW_EXTENT
+are either the width or height of the tab, depending on the L<vertical> property value.
 
 =item SizeItems
 
-Called when more than one tab has changed its extent. This might happen as a result
-of user action, as well as an effect of set-calling to some properties.
+Called when more than one tab changes its extent. This might happen as a result
+of both user and programmatic actions.
 
 =back
 
@@ -650,14 +651,14 @@ Default value: 1
 
 =item dragable BOOLEAN
 
-Selects if the user is allowed to move of the tabs.
+Selects if the user is allowed to move the tabs.
 
 Default value: 1
 
 =item items ARRAY
 
-Array of scalars, representing the internal data of the tabs.
-By default the scalars are treated as text strings.
+An array of scalars representing the internal data of the tabs.
+By default, the scalars are treated as text strings.
 
 =item minTabWidth INTEGER
 
@@ -667,7 +668,7 @@ Default value: 2
 
 =item offset INTEGER
 
-An offset on the major axis ( depends on L<vertical> property value )
+An offset on the major axis ( depends on the L<vertical> property value )
 that the widget is drawn with. Used for the conjunction with list widgets
 ( see L<Prima::DetailedList> ), when the list is horizontally or
 vertically scrolled.
@@ -690,8 +691,8 @@ Default value: 1
 =item vertical BOOLEAN
 
 If 1, the tabs are aligned vertically;
-the L<offset>, L<widths> property and extent parameters of the callback
-notification assume heights of the tabs.
+the L<offset>, L<widths> property, and extent parameters of the callback
+notification assume the heights of the tabs.
 
 If 0, the tabs are aligned horizontally, and the extent properties
 and parameters assume tab widths.
@@ -709,12 +710,12 @@ The extents are widths ( C<vertical> is 0 ) or heights ( C<vertical> is 1 ).
 
 =item tab2offset INDEX
 
-Returns offset of the INDEXth tab ( without regard to L<offset> property value ).
+Returns the offset of the INDEXth tab ( without regard to the L<offset> property value ).
 
 =item tab2rect INDEX
 
-Returns four integers, representing the rectangle area, occupied by
-the INDEXth tab ( without regard to L<offset> property value ).
+Returns four integers representing the rectangle area occupied by
+the INDEXth tab ( without regard to the L<offset> property value ).
 
 =back
 

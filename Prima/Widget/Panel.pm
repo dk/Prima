@@ -155,9 +155,9 @@ sub raise        {($#_)?$_[0]-> set_raise($_[1]):return $_[0]-> {raise}}
 
 Prima::Widget::Panel - simple panel widget
 
-Provides a simple panel widget, capable of displaying a single line
+Provides a simple panel widget capable of displaying a single line
 of centered text on a custom background. Probably this functionality
-is better to be merged into C<Prima::Label>'s.
+is better to be merged with C<Prima::Label>.
 
 =head1 Properties
 
@@ -171,24 +171,24 @@ Default value: 1
 
 =item image OBJECT
 
-Selects image to be drawn as a tiled background.
-If C<undef>, the background is drawn with the background color.
+Selects the image to be drawn as a tiled background.
+If C<undef> the background is drawn with the background color.
 
 =item imageFile PATH
 
-Set the image FILE to be loaded and displayed. Is rarely used since does not return
-a loading success flag.
+Sets the image FILE to be loaded and displayed. Is rarely used since does not
+return the success flag.
 
 =item raise BOOLEAN
 
-Style of 3d-shade border around the widget.
+The style of the 3d-shade border around the widget.
 If 1, the widget is 'risen'; if 0 it is 'sunken'.
 
 Default value: 1
 
 =item zoom INTEGER
 
-Selects zoom level for image display.
+Selects the zoom level for the image display.
 The acceptable value range is between 1 and 10.
 
 Default value: 1

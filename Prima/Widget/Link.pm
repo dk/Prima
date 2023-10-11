@@ -306,17 +306,20 @@ sub reset_positions_markup
 
 1;
 
+=pod
+
 =head1 NAME
 
 Prima::Widget::Link - routines for interactive links
 
 =head1 DESCRIPTION
 
-The class can be used in widgets that need to feature links, i e a highlighted
-rectangle, usually of text. When the user moves mouse or click on a link,
-depending on the link type, various action can be executed. A "tooltip" link
-type can display a hint with (rich) text, and a "hyperlink" link can open a
-browser or pod viewer. The programmer can also customize these actions.
+The class can be used in widgets that need to feature I<links>, i e highlighted
+rectangles, usually with a line of text. When the user moves the mouse or clicks on
+a link, depending on the link type, various actions can be executed. A
+"tooltip" link can display a hint with (rich) text, and a "hyperlink" link can
+open a browser or a pod viewer. The programmer can also customize these
+actions.
 
 =head1 SYNOPSIS
 
@@ -346,27 +349,28 @@ browser or pod viewer. The programmer can also customize these actions.
 
 =head1 Link types
 
-Link types can be set with the I<url> syntax. There are four recognized link types that behave differently.
+Link types can be set with the I<url> syntax. Four recognized link
+types behave differently
 
 =head2 Tooltips
 
-These are not really links in the strict sense, as clicking on them doesn't cause any action,
-however when the user hovers mouse over a tooltip, the module loads the pod content from the url,
-and displays it as a hint.
+These are not links in the strict sense, as clicking on them doesn't
+cause any action, however when the user hovers the mouse over a tooltip, the module
+loads the pod content from the URL and displays it as a hint.
 
-The idea behind this feature is to collect all tootip cards in a pod section, and referencing them
-in a text like in the example code in L<SYNOPSIS> above.
+The idea behind this feature is to collect all tooltip cards in a pod section and reference them
+in the text like in the example code in L<SYNOPSIS> above.
 
 Syntax: C<< LE<lt>tip://FILEPATH_OR_MODULE/SECTIONE<gt> >> or
 C<< LE<lt>tip://FILEPATH_OR_MODULEE<gt> >> where C<FILEPATH_OR_MODULE> can refer either to
 a file (path with slashes/backslashes) or a perl module (with C<::>s ).
 
-Tooltip text, when selected, is underscored by a dashed line, vs all other link types that
-draw solid line.
+The tooltip text, when selected, is underscored by a dashed line, vs all other link types that
+use a solid line.
 
 =head2 Pod sections
 
-These links both diplay a pod section preview, like the toolkip, but also open a pod viewer
+These links display a pod section preview like the tooltip but also open a pod viewer
 with the referred section when clicked on. 
 
 Syntax: C<< LE<lt>pod://FILEPATH_OR_MODULE/SECTIONE<gt> >> or
@@ -379,28 +383,32 @@ Links with schemes C<ftp://>, C<http://>, and C<https://> open a browser when cl
 
 =head2 Custom links
 
-All other urls, not matched by either scheme above, are expected to be handled programmatically.
-The preview, if any is handled by the C<LinkPreview> event, and click by C<Link> event.
+All other URLs, not matched by either scheme above, are expected to be handled
+programmatically.  The preview, if any, should be handled by the C<LinkPreview>
+event, and the mouse click by the C<Link> event.
 
 See L<Events> below.
 
 =head1 Usage
 
 Since C<Prima::Widget::Link> is not a widget by itself but a collection of routines in a class,
-an object of such class should be instantiated programmatically and attached to a widget
-that needs to display links, an I<owner> widget.
+an object of such class should be instantiated programmatically and attached to an I<owner> widget
+that needs to display links.
 
-The owner needs to call mouse and paint methods from inside its C<on_mousedown> etc relevant events.
-The owner might also want to overload link events, see below.
+The owner widget needs to call the mouse and paint methods from inside its
+C<on_mousedown> etc relevant events.  The owner widget class might also want to
+overload link events, see below how.
 
 =head1 Markup
 
-L<Prima::Drawable::Markup> understands the C<< LE<lt>..|..E<gt> >> command, which is, unlike perlpod, is formatted
-with its arguments reversed, to stay consistent with the other markup commands (i e it is C<< LE<lt>http://google.com|searchE<gt> >>,
+L<Prima::Drawable::Markup> understands the C<< LE<lt>..|..E<gt> >> command,
+which, unlike perlpod, is formatted with its arguments reversed, to stay
+consistent with the other markup commands
+(i e it is C<< LE<lt>http://google.com|searchE<gt> >>,
 not C<< LE<lt>search|http://google.comE<gt> >> .
 
-The simple way to incorporate rich text in both widget and link handler is to
-use C<Prima::Drawable::Markup> to handle the markup parsing, and use the
+The simple way to incorporate rich text in both the widget and link handler is to
+use C<Prima::Drawable::Markup> to handle the markup parsing and use the
 resulting object from the same class both for widget drawing and for the link
 reactions. One just needs to add C< markup => $markup_object > to C<
 Prima::Widget::Link->new() >.
@@ -413,7 +421,7 @@ Prima::Widget::Link->new() >.
 
 =item rectangles
 
-Contains array of rectangles in arbitrary coordinates that could be used to map screen coordinates to a url.
+Contains an array of rectangles in arbitrary coordinates that could be used to map screen coordinates to a URL.
 Filled automatically.
 
 =item references
@@ -428,10 +436,10 @@ An array of URLs
 
 =item add_positions_from_blocks LINK_ID, BLOCKS, %DEFAULTS
 
-To be used when the link object is not bound to a markup object and link
-rectangle recalculation is needed due to formatting change, f ex widget size,
-font size etc. C<%DEFAULTS> is sent internally to C<tb::block_walk> that might
-need eventual default parameters.
+Used when the link object is not bound to any markup object but recalculation
+of the visual rectangle that the link occupies is needed due to change in
+formatting, f ex after a change in widget size, font size, etc. C<%DEFAULTS> is
+sent internally to C<tb::block_walk> which may need eventual default parameters.
 
 Scans BLOCKS and add monotonically increasing LINK_ID to new
 link rectangles. Return new LINK_ID.
@@ -442,8 +450,8 @@ Clears the content of C<rectangles>
 
 =item id2rectangles ID
 
-Returns rectangles mapped to a link id. There can be more than 1 rectangle bound
-to a single link ID since link text could be, f ex, wrapped.
+Returns rectangles mapped to a link ID. There can be more than 1 rectangle bound
+to a single link ID since link text could be f ex wrapped.
 
 =item open_podview URL
 
@@ -455,34 +463,35 @@ Opens a web browser with the URL
 
 =item reset_positions_markup BLOCKS, %DEFAULTS
 
-To be used when the link object is bound to a markup object and link rectangle recalculation
-is needed due to formatting change, f ex widget size, font size etc. C<%DEFAULTS> is sent
-internally to C<tb::block_walk> that might need eventual default parameters.
+Used when the link object is bound to a markup object and recalculation of the
+visual rectangle that the link occupies is needed due to change in formatting,
+f ex after a change in widget size, font size, etc. C<%DEFAULTS> is sent
+internally to C<tb::block_walk> which may need eventual default parameters.
 
 =back
 
 =head2 Events
 
-All events are send to the owner, not to the link object itself, however the
-C<SELF> parameter is sent and contains the link object.
+All events are sent to the owner, not to the link object itself, however, the
+C<SELF> parameter which contains the link object is always the first parameter
 
 =over
 
 =item Link SELF, URL, BUTTON, MOD
 
-Send to the owner, if any, from within C<on_mousedown> event, to indicate that
-a link as pressed on.
+Sent to the owner, if any, from within the C<on_mousedown> event to indicate that
+the link was pressed on.
 
 =item LinkPreview SELF, URL_REF
 
-Send to the owner, if any, from within C<on_mousemove> event.
-The owner might want to fill URL_REF with (rich) text that will be displayed as 
-a link preview
+Sent to the owner, if any, from within the C<on_mousemove> event.  The owner
+may want to fill URL_REF with (rich) text that will be displayed as a link
+preview
 
 =item LinkAdjustRect SELF, RECT_REF
 
-Since the owner might implement a scrollable view, or any other view that has a
-coordinate system that is no necessary consistent with the rectangles stored in
+Since the owner may implement a scrollable view or any other view that has a
+coordinate system that is not necessarily consistent with the rectangles stored in
 the link object, this event will be called when a link rectangle needs to be
 mapped to the owner coordinates.
 

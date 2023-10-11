@@ -306,34 +306,32 @@ Prima::Widget::GroupScroller - optional automatic scroll bars
 
 =head1 DESCRIPTION
 
-The class is used for widgets that contain optional scroll bars, and provides means for
-their maintenance. The class is the descendant of L<Prima::IntIndents>, and adjusts
-the L<indents> property when scrollbars are shown or hidden, or L<borderWidth> is changed.
+The class is used for widgets that contain optional scroll bars and provides means for
+their management. The class is the descendant of L<Prima::IntIndents> and adjusts
+its L<indents> property when scrollbars are shown, hidden, or L<borderWidth> is changed.
 
-The class does not provide range selection for the scrollbars; the descentant classes
+The class does not provide range selection for the scrollbars; the descendant classes
 must implement that.
 
-The descendant classes must follow the guidelines:
+The descendant classes must follow the following guidelines:
 
 =over
 
 =item *
 
-A class must provide C<borderWidth>, C<hScroll>, and C<vScroll> property keys in profile_default() .
-A class may provide C<autoHScroll> and C<autoVScroll> property keys in profile_default() .
+A class may provide C<borderWidth>, C<hScroll>, C<vScroll>, C<autoHScroll>, and
+C<autoVScroll> property keys in profile_default() .
 
 =item *
 
-A class' init() method must set C<{borderWidth}>, C<{hScroll}>, and C<{vScroll}>
-variables to 0 before the initialization, call C<setup_indents> method,
-and then assign the properties from the object profile.
+A class' init() method must call the C<setup_indents> method
 
-If a class provides C<autoHScroll> and C<autoVScroll> properties, these must be set to
+If a class overrides the C<autoHScroll> and C<autoVScroll> properties, these must be set to
 0 before the initialization.
 
 =item *
 
-If a class needs to overload one of C<borderWidth>, C<hScroll>, C<vScroll>,
+If a class needs to overload one of the C<borderWidth>, C<hScroll>, C<vScroll>,
 C<autoHScroll>, and C<autoVScroll> properties,
 it is mandatory to call the inherited properties.
 
@@ -391,9 +389,9 @@ depending on the widget layout.
 
 =item borderWidth INTEGER
 
-Width of 3d-shade border around the widget.
+Width of the border around the widget.
 
-Recommended default value: 2
+Depends on the C<skin> property.
 
 =item hScroll BOOLEAN
 
@@ -407,11 +405,11 @@ points to it.
 
 =item scrollBarClass STRING = Prima::ScrollBar
 
-Create-only property that allows to change scrollbar class
+A create-only property that allows to change the scrollbar class
 
 =item hScrollBarProfile, vScrollBarProfile HASH
 
-Create-only property that allows to change scrollbar parameters when it is being created
+Create-only properties that allows to adjust the scrollbar parameters when the scrollbars are created
 
 =back
 
@@ -421,18 +419,18 @@ Create-only property that allows to change scrollbar parameters when it is being
 
 =item setup_indents
 
-The method is never called directly; it should be called whenever widget
-layout is changed so that indents are affected. The method is a request
-to recalculate indents, depending on the widget layout.
+The method is never called directly; it should be called whenever the widget
+layout is changed so that its indents are affected. The method is a request
+to recalculate indents, depending on the new widget layout.
 
 The method is not reentrant; to receive this callback and update the widget
-layout, that in turn can result in more C<setup_indents> calls, overload
+layout that in turn can result in more C<setup_indents> calls, overload
 C<reset_indents> .
 
 =item reset_indents
 
-Called after C<setup_indents> is called and internal widget layout is updated,
-to give a chance to follow-up the layout changes.
+Called after C<setup_indents> updates the internal widget layout, to give a
+chance to follow up the layout changes. Does not do anything by default.
 
 =back
 

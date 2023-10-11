@@ -58,13 +58,15 @@ sub handle_bidi_input
 
 1;
 
+=pod
+
 =head1 NAME
 
 Prima::Widget::BidiInput - heuristics for i18n input
 
 =head1 DESCRIPTION
 
-Provides the common functionality for the bidirectional input to be used in
+Provides common functionality for the bidirectional input to be used in
 editable widgets
 
 =head1 Methods
@@ -73,7 +75,7 @@ editable widgets
 
 =item handle_bidi_input %OPTIONS
 
-Given C<action> and C<text> in C<%OPTIONS>, returns new text and suggested new cursor position.
+Given C<action> and C<text> in C<%OPTIONS>, returns new text and a suggested cursor position.
 
 The following options are understood:
 
@@ -85,7 +87,7 @@ One of: backspace, delete, cut, insert, overtype
 
 =item at INTEGER
 
-Current cursor position in clusters
+Current cursor position, calculated in clusters
 
 =item glyphs Prima::Drawable::Glyphs object
 
@@ -93,15 +95,15 @@ Shaped text
 
 =item n_clusters INTEGER
 
-Amount of clusters in the text
+The number of clusters in the text
 
 =item rtl BOOLEAN
 
-Is widget or currently selected method is RTL (right-to-left)
+Set to 1 if the default input direction is RTL (right-to-left)
 
 =item text STRING
 
-A text to edit
+The text to edit
 
 =back
 

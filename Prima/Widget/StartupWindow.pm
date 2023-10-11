@@ -55,11 +55,11 @@ Prima::Widget::StartupWindow - a simplistic startup banner window
 
 =head1 DESCRIPTION
 
-The module, when imported by C<use> call, creates a temporary window
-which appears with 'loading...' text while the modules required by
+The module, when imported by the C<use> call, creates a temporary window
+which appears with the 'loading...' text while the modules required by
 a program are loading. The window parameters can be modified by
-passing custom parameters after C<use Prima::Widget::StartupWindow> statement,
-which are passed to C<Prima::Window> class as creation parameters.
+passing custom parameters after the C<use Prima::Widget::StartupWindow> statement,
+that are passed to the C<Prima::Window> class as creation parameters.
 The window is discarded by explicit unimporting of the module
 ( see L<"SYNOPSIS">  ).
 

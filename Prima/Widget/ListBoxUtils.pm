@@ -37,7 +37,7 @@ Prima::Widget::ListBoxUtils - common paint routine for listboxes
 
 =head1 DESCRIPTION
 
-To be used by list-like widgets
+Used internally by list-like widgets
 
 =head1 AUTHOR
 

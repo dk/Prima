@@ -282,7 +282,7 @@ sub insertMode { $#_ ? shift->SUPER::insertMode(0) : shift->SUPER::insertMode }
 
 =head1 NAME
 
-Prima::Widget::Time - time inputline
+Prima::Widget::Time - standard time input widget
 
 =head1 SYNOPSIS
 
@@ -301,7 +301,7 @@ Prima::Widget::Time - time inputline
 
 =head1 DESCRIPTION
 
-Standard time inputline
+Standard time input widget derived from the C<Prima::InputLine> class.
 
 =head1 API
 
@@ -311,24 +311,25 @@ Standard time inputline
 
 =item time2str TIME
 
-Converts TIME to string representation according to the current C<format> string
+Converts the TIME to a string representation according to the current C<format> string
 
 =item default_format
 
-Returns a string to be used in C<format>, where the string is constructed in such a way
-to reflect regional time formatting preferences.
+Returns a string to be used in C<format> where the string is constructed 
+to reflect the formatting of the regional time preferences.
 
 See also: C<man 3 strftime, %X> .
 
 =item str2time STRING
 
-Tries to extract time from STRING assuming it is constructed according to the current C<format> string.
-Doesn't fail but values that could not be extracted are assigned to current second/minute/hour instead.
+Tries to extract time from STRING, assuming it is constructed according to the
+current C<format> string.  Doesn't fail but values that could not be extracted
+are assigned to the current second/minute/hour instead.
 
 =item validate_time S, M, H
 
-Checks whether S, M, H values are valid and within understood range; adjusts the values if not.
-Returns the final values.
+Checks whether S, M, H form a valid point in time, adjusts the values if not.
+Returns the corrected values.
 
 =back
 
@@ -338,9 +339,9 @@ Returns the final values.
 
 =item format STRING
 
-The format string is used when converting time to its visual interpretation,
-also with regional preferences, like hh:mm:ss or hh:mm:AA . The syntax of the
-format is exctly this, it recognizes fixed patterns hh, mm, ss, aa, and AA,
+The format string is used when converting the time to its visual interpretation,
+also with regional preferences, f ex hh:mm:ss or hh:mm:AA . The syntax of the
+format is verbatim as this, i e it recognizes fixed patterns hh, mm, ss, aa, and AA,
 replacing them with the time values.
 
 (C<aa> is for <am / pm>, C<AA> is for <AM / PM>).
@@ -359,8 +360,8 @@ Selects the second
 
 =item time SEC, MIN, HOUR | [ SEC, MIN, HOUR ]
 
-Accepts three integers / arrayref with three integers in format of C<localtime>.
-SEC and MIN can be from 0 to 59, HOUR from 0 to 23.
+Accepts three integers / arrayref with three integers in the format of C<localtime>.
+SEC and MIN can be from 0 to 59, and HOUR from 0 to 23.
 
 Default value: today's time.
 

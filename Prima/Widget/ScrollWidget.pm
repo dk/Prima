@@ -415,21 +415,24 @@ sub geomSize
 
 =head1 NAME
 
-Prima::Widget::ScrollWidget - scrollable generic document widget.
+Prima::Widget::ScrollWidget - scrollable generic document widget
 
 =head1 DESCRIPTION
 
-C<Prima::Widget::ScrollWidget> is a simple class that declares two pairs of properties,
-I<delta> and I<limit> for vertical and horizontal axes, which define a
-a virtual document. I<limit> is the document dimension, and I<delta> is
-the current offset.
+C<Prima::Widget::ScrollWidget> is a simple class that declares two pairs of
+properties, I<delta> and I<limit> for vertical and horizontal axes, which
+define the extensions of a virtual document. I<limit> is the document
+dimension, and I<delta> is the current offset.
 
-C<Prima::Widget::ScrollWidget> is a descendant of C<Prima::Widget::GroupScroller>, and, as well as its
-ascendant, provides same user navigation by two scrollbars. The scrollbars' C<partial>
-and C<whole> properties are maintained if the document or widget extensions change.
+C<Prima::Widget::ScrollWidget> is a descendant of
+C<Prima::Widget::GroupScroller>, and as well as its ascendant, provides the
+same user navigation by two scrollbars. The scrollbars' C<partial> and C<whole>
+properties are automatically updated when the document or widget extensions
+change.
 
-C<Prima::Widget::ScrollGroup> in addition provides capability to host other widgets inside, and
-scroll them. Useful for widget group panels that cannot. fit in window
+C<Prima::Widget::ScrollGroup> provides the capability of hosting other widgets
+inside, and also scrolling them. Useful for widget group panels that cannot fit
+in a window
 
 =head1 Prima::Widget::ScrollWidget
 
@@ -439,27 +442,27 @@ scroll them. Useful for widget group panels that cannot. fit in window
 
 =item deltas X, Y
 
-Selects horizontal and vertical document offsets.
+Selects the horizontal and vertical document offsets.
 
 =item deltaX INTEGER
 
-Selects horizontal document offset.
+Selects the horizontal document offset.
 
 =item deltaY INTEGER
 
-Selects vertical document offset.
+Selects the vertical document offset.
 
 =item limits X, Y
 
-Selects horizontal and vertical document extensions.
+Selects the horizontal and vertical document extensions.
 
 =item limitX INTEGER
 
-Selects horizontal document extension.
+Selects the horizontal document extension.
 
 =item limitY INTEGER
 
-Selects vertical document extension.
+Selects the vertical document extension.
 
 =back
 
@@ -482,23 +485,23 @@ action calls C<Widget::scroll> .
 
 =item client
 
-Return a parent widget to insert other widgets to. The client size is fixed,
-and is panned through the slave widget when scrolling. The client is unaffected by
-eventual automated pack/place/growMode size alteration the parent or slave might have.
+Returns the parent widget to insert other widgets. The client size is fixed
+and is panned through the slave widget when scrolling. The client is unaffected
+by the eventual automated pack/place/growMode size alteration the parent or slave
+might be subjected to.
 
 =item clientClass
 
-C<clientClass> widget is inserted in the C<slave> widget.
+A C<clientClass> widget is inserted in the C<slave> widget.
 
 =item slave
 
-Returns the slave widget. The slave widget designated the area desired to be
-scrollable, and is just a normal widget that is allowed to be resized, moved,
-etc.
+Returns the slave widget. The slave widget covers the scrollable area and is
+otherwise just a normal C<Prima::Widget> object that can be resized, moved, etc.
 
 =item slaveClass
 
-C<slaveClass> widget is inserted directly in the scroll group widget.
+A C<slaveClass> widget is inserted directly in the scroll group widget.
 
 =back
 
@@ -509,6 +512,5 @@ Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
 =head1 SEE ALSO
 
 L<Prima>, L<Prima::ImageViewer>, L<Prima::ScrollBar>, F<examples/e.pl>.
-
 
 =cut

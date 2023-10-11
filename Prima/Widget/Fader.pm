@@ -266,13 +266,15 @@ sub fader_set_blended_color
 
 1;
 
+=pod
+
 =head1 NAME
 
-Prima::Widget::Fader
+Prima::Widget::Fader - fading- in/out functions
 
 =head1 DESCRIPTION
 
-Fading- in/out functions
+The role implements fading effects in widgets
 
 =head1 SYNOPSIS
 
@@ -316,12 +318,12 @@ Initiates a fade-out transition, calls repaint on each step.
 =item fader_current_value
 
 Returns the current fader value in the range from 0 to 1.
-Returns C<undef> if there is no current fading transition running
+Returns C<undef> if there is no current fading transition in effect
 
 =item fader_prelight_color $COLOR [, $MULTIPLIER ]
 
 Given a base C<$COLOR>, increases (or decreases) its brightness according to
-C<fader_current_value>, and an eventual C<$MULTIPLIER> that is expected to be in
+C<fader_current_value> and an eventual C<$MULTIPLIER> that is expected to be in
 the range from 0 to 1.
 
 =back
@@ -332,12 +334,12 @@ the range from 0 to 1.
 
 =item FadeIn $ENDS_OK
 
-Called when C<fader_in_mouse_enter> is finished the fading, the C<$ENDS_OK> flag
+Called when C<fader_in_mouse_enter> finishes the fading, the C<$ENDS_OK> flag
 is set to 0 if the process was overridden by another fader call, 1 otherwise.
 
 =item FadeOut $ENDS_OK
 
-Called when C<fader_out_mouse_leave> is finished the fading, the C<$ENDS_OK> flag
+Called when C<fader_out_mouse_leave> finishes the fading, the C<$ENDS_OK> flag
 is set to 0 if the process was overridden by another fader call, 1 otherwise.
 
 =item FadeRepaint

@@ -292,21 +292,21 @@ sub rubberband
 
 =head1 NAME
 
-Prima::Widget::RubberBand - draw rubberbands
+Prima::Widget::RubberBand - dynamic rubberbands
 
 =head1 DESCRIPTION
 
-The motivation for this module was that I was tired to see corrupted screens on
+The motivation for this module was that I was tired of seeing corrupted screens on
 Windows 7 when dragging rubberbands in Prima code. Even though MS somewhere
 warned of not doing any specific hacks to circumvent the bug, I decided to give
 it a go anyway.
 
 This module thus is a C<Prima::Widget/rect_focus> with a safeguard. The only
 thing it can do is to draw a static rubberband - but also remember the last
-coordinates drawn, so cleaning comes for free.
+coordinates drawn, so cleaning and animation come for free.
 
 The idea is that a rubberband object is meant to be a short-lived one: as soon
-as it get instantiated it draws itself on the screen. When it is destroyed, the
+as it gets instantiated it draws itself on the screen. When it is destroyed, the
 rubberband is erased too.
 
 =head1 SYNOPSIS
@@ -323,7 +323,7 @@ rubberband is erased too.
 		);
 	}
 
-	Prima::MainWindow-> create(
+	Prima::MainWindow-> new(
 		onMouseDown => sub {
 			my ( $self, $btn, $mod, $x, $y) = @_;
 			$self-> {anchor} = [$self-> client_to_screen( $x, $y)];
@@ -349,7 +349,7 @@ rubberband is erased too.
 
 =item new %properties
 
-Creates a new RubberBand instance. See description of properties below.
+Creates a new RubberBand instance. See the description of its properties below.
 
 =back
 
@@ -359,7 +359,7 @@ Creates a new RubberBand instance. See description of properties below.
 
 =item breadth INTEGER = 1
 
-Defines rubberband breadth, in pixels.
+Defines the rubberband breadth in pixels.
 
 =item canvas = $::application
 
@@ -367,13 +367,13 @@ Sets the painting surface, and also the widget (it must be a widget) used for dr
 
 =item clipRect X1, Y1, X2, Y2
 
-Defines the clipping rectangle, in inclusive-inclusive coordinates. If set to [-1,-1,-1,-1],
-means no clipping is done.
+Defines the clipping rectangle in inclusive-inclusive coordinates. If set to [-1,-1,-1,-1],
+means no clipping is needed.
 
 =item rect X1, Y1, X2, Y2
 
-Defines the band geometry, in inclusive-inclusive coordinates. The band is drawn so that its body
-is always inside these coordinates, no matter what breadth is.
+Defines the band geometry in inclusive-inclusive coordinates. The band is drawn so that its body
+is always inside these coordinates, no matter what the breadth is.
 
 =back
 
@@ -383,11 +383,11 @@ is always inside these coordinates, no matter what breadth is.
 
 =item hide
 
-Hides the band, if drawn
+Hides the band
 
 =item has_clip_rect
 
-Checks whether clipRect contains an actual clippring rectangle or it is empty.
+Checks whether clipRect contains an actual clipping rectangle or it is empty.
 
 =item set %profile
 
@@ -395,25 +395,25 @@ Applies all properties
 
 =item left, right, top, bottom, width, height, origin, size
 
-Same shortcuts as in C<Prima::Widget>, but read-only.
+The same shortcuts as in C<Prima::Widget>, but read-only.
 
 =item show
 
-Show the band, if invisible
+Shows the band
 
 =back
 
 =head1 Prima::Widget interface
 
-The module adds a single method to C<Prima::Widget> namespace, C<rubberband>
+The module adds a single method to the C<Prima::Widget> namespace, C<rubberband>
 (see example of use in the synopsis).
 
 =over
 
 =item rubberband(%profile)
 
-Instantiates a C<Prima::RubberBand> with C<%profile>, also sets C<canvas> to C<$self>
-unless C<canvas> is set explicitly.
+Instantiates a C<Prima::RubberBand> object with C<%profile>, also sets C<canvas> to C<$self>
+( unless C<canvas> is set explicitly ).
 
 =item rubberband()
 
@@ -446,7 +446,7 @@ to the primary anyhow, for that very reason... if you try to access the
 DirectDraw primary, for instance, the DWM will turn off until the accessing
 application exits)"
 
-This quote seems to explain the effect why screen sometimes gets badly
+This quote seems to explain the effect of why the screen sometimes gets badly
 corrupted when using a normal xor rubberband. UCE ( Update Compatibility
 Evaluator ?? ) seems to be hacky enough to recognize some situations, but not
 all.
