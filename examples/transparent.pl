@@ -2,7 +2,7 @@
 
 =head1 NAME
 
-examples/transparent.pl - Prima toolkit example
+examples/transparent.pl - emulated transparency example
 
 =head1 FEATURES
 
@@ -11,7 +11,7 @@ Test the certain events: for example, when two transparent
 widgets are located one upon another, when a graphic content changed
 under a transparent widget, etc.
 
-Note that the $tt widget is not transparent but uses shape extension.
+Note that the $tt widget is not transparent but has a non-rectangular shape
 
 =cut
 

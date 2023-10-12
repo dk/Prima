@@ -6,7 +6,7 @@ examples/label.pl - Prima label widget
 
 =head1 FEATURES
 
-Demonstrates the basic usage of a Prima toolkit and L<Prima::Label> class
+Demonstrates the basic usage of the L<Prima::Label> class
 capabilites, in particular text wrapping and links.
 
 =head1 Misc

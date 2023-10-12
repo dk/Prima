@@ -4,6 +4,10 @@
 
 examples/windowstate.pl - test maximization etc
 
+=head1 FEATURES
+
+Switches the windows between minimized, maximized, etc states
+
 =cut
 
 use strict;

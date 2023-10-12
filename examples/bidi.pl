@@ -1,3 +1,16 @@
+=pod
+
+=head1 NAME
+
+examples/bidi.pl - bidirectional unicode input and output
+
+=head1 FEATURES
+
+Demonstrates use of Prima LTR/RTL text output.
+Note how the text selection is non-contiguous in the inputline with mixed input.
+
+=cut
+
 use strict;
 use warnings;
 use utf8;

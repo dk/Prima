@@ -8,7 +8,7 @@ examples/buttons2.pl - Prima button widgets
 
 Demonstrates the variety of built-in buttons functionality.
 Note the "Bits for toolbar" button, which copies and
-pastes its image into the clipboard.
+pastes its image in the clipboard.
 
 =cut
 

@@ -1,3 +1,13 @@
+=head1 NAME
+
+examples/ps_fonts.pl - enumerate and print all fonts
+
+=head1 SEE ALSO
+
+Genereate a PostScript or a PDF document with all available fonts
+
+=cut
+
 use strict;
 use warnings;
 use Prima;

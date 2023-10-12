@@ -6,9 +6,9 @@ examples/cv.pl - Standard color dialog
 
 =head1 FEATURES
 
-Demonstrates usage of a standard color dialog.
+Demonstrates usage of the standard color dialog.
 Note the left-button drag effect from the color wheel with
-compbinations of Shift,Alt,and Control.
+combinations of Shift,Alt,and Control keys.
 
 =cut
 

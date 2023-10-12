@@ -1,3 +1,15 @@
+=pod
+
+=head1 NAME
+
+examples/canvas.pl - custom canvas widget
+
+=head1 FEATURES
+
+An attempt to build a widget similar to Tk::Canvas
+
+=cut
+
 use strict;
 use warnings;
 

@@ -4,7 +4,9 @@ examples/3d.pl - raycasting demo
 
 =head1 SEE ALSO
 
-This example is a simplified port of L<https://www.playfuljs.com/a-first-person-engine-in-265-lines> by Hunter Loftis
+This example is a simplified port of
+L<https://www.playfuljs.com/a-first-person-engine-in-265-lines> 
+by Hunter Loftis
 
 =cut
 

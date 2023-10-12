@@ -7,11 +7,13 @@ use Prima::Utils;
 
 =head1 NAME
 
-examples/pitch.pl - A sound example
+examples/pitch.pl - sound example
 
 =head1 FEATURES
 
-Tests the implementation of apc_beep_tone() function.
+Tests the implementation of apc_beep_tone() function.  Note that the function
+is almost unsupported anywhere and probably shouldn't be a part of the GUI API at
+all.
 
 =cut
 

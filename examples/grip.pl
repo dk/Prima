@@ -2,20 +2,20 @@
 
 =head1 NAME
 
-examples/grip.pl - Screen and widget grabbing example
+examples/grip.pl - screen and widget grabbing example
 
 =head1 FEATURES
 
 Provided two standalone tests.
 
-The "grip test" copies a graphic content of a widget onto a monochrome
-bitmap, thus testing the widget representation on a monochrome display.
-This test is useful together with a L<launch> example, that allows execution
+The "grip test" copies the graphic content of the widget in a monochrome
+bitmap, testing the widget representation on a monochrome display.
+This test is useful together with the L<launch> example, that allows execution
 of several Prima examples in one task space.
 
-The "grab test" copies the selected region of a screen.
-Tests the correct implementation of apc_application_get_bitmap() function,
-especially on paletted displays.
+The "grab test" copies the selected region of a screen.  Tests the correct
+implementation of the apc_application_get_bitmap() function, especially on the
+paletted displays.
 
 =cut
 

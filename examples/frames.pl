@@ -1,3 +1,15 @@
+=pod
+
+=head1 NAME
+
+examples/frames.pl - dynamic subwindow panels
+
+=head1 FEATURES
+
+Demonstrates C<Prima::FrameSet> API
+
+=cut
+
 use strict;
 use warnings;
 use Prima qw(Buttons FrameSet Application);

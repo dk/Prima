@@ -2,17 +2,15 @@
 
 =head1 NAME
 
-examples/eyes.pl - An eyes program clone
+examples/eyes.pl - an port of the I<xeyes> program
 
 =head1 FEATURES
 
-A well-known eyes written in Prima toolkit.
-Demostrates the usage of a shape-extension and a
-determination of its support on a system.
+A well-known xeyes program re-written in Prima toolkit.  Demostrates the usage
+of non-rectangular widget shapes and how to check if the system supports it.
 
-Note the menu hide feature - it's activation (^M)
-tests a correct implementation of a Prima
-shape-extension interface.
+Note the 'hide menu' feature - it's activation (^M) tests a correct
+implementation of Prima shape-extension interface.
 
 =cut
 

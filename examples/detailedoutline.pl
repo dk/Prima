@@ -1,3 +1,15 @@
+=pod
+
+=head1 NAME
+
+examples/detailedoutline.pl - detailed outline
+
+=head1 FEATURES
+
+Demonstrates C<Prima::DetailedOutline> API.
+
+=cut
+
 use strict;
 use warnings;
 use Prima qw(Application DetailedOutline);

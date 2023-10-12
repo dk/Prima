@@ -6,7 +6,7 @@ examples/edit.pl - An input line
 
 =head1 FEATURES
 
-Demonstrates use of a standard L<Prima::InputLine> widget
+Demonstrates use of the standard L<Prima::InputLine> widget
 
 =cut
 

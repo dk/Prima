@@ -1,3 +1,19 @@
+=pod
+
+=head1 NAME
+
+examples/dragdrop.pl - a DND example
+
+=head1 FEATURES
+
+Demonstrates dragging and dropping, that both work withing the same program
+as well as between the demo and other programs. Note how the C/M/L buttons
+select the possible type of available data transfer, and how the keyboard
+Ctrl/Shift modifiers can do the same interactively. Also not how Prima can
+work with DND formats that it doesn't support.
+
+=cut
+
 use strict;
 use warnings;
 use FindBin qw($Bin);

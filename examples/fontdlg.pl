@@ -8,20 +8,20 @@ examples/fontdlg.pl - An alternate font selection window
 
 =head1 FEATURES
 
-Demonstrates Prima font API and its usage.
+Demonstrates Prima font API
 
 Note the inability to set a font with a particular size and width factor in one
-call ( in $re_sample sub ). A font size and width is accepted, however.
+call ( in the $re_sample sub ). A font height and width together are accepted, however.
 
 Tests the Prima font interface implementation. A constant pain here is the
-correspondence of a font metrics before and after the font load.  X is known
-for the problem, that can not be solved easily and without certain compromises.
-See L<prima-gp-problems> manpage for details.
+correspondence of font metrics before and after the font load.  X11 is
+particularly known for the problem where bitmap fonts don't match, and this
+problem can not be solved easily and without certain compromises.  See
+L<prima-gp-problems> manpage for details.
 
-Note the left-mouse drag effect from a font screen widget.
+Note the left-mouse drag effect from the font widget.
 
 =cut
-
 
 use strict;
 use warnings;

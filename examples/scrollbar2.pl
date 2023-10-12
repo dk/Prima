@@ -2,11 +2,10 @@
 
 =head1 NAME
 
-examples/scrollbar2.pl - Prima scrollbar widget
+examples/scrollbar2.pl - scrollbar widget
 
 =head1 FEATURES
 
-A Prima toolkit demonstration example.
 Tests the L<Prima::Scrollbar> widget and dynamic
 change of its parameters.
 

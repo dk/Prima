@@ -6,13 +6,11 @@ examples/buttons.pl - Prima button widgets
 
 =head1 FEATURES
 
-Demonstrates basic use of Prima toolkit, in particular
-creation of built-in push-buttons and radio-buttons. L<Prima::Buttons>
-
-A customized button creation with subclassing is exemplified.
+Demonstrates basic use of Prima toolkit:
+creation of built-in push-buttons, radio-buttons, and
+a customized subclassed button
 
 =cut
-
 
 use strict;
 use warnings;

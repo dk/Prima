@@ -6,22 +6,21 @@ examples/dock.pl - Docking widgets
 
 =head1 FEATURES
 
-This is the demonstration of Prima::Dock and Prima::DockManager
-modules. The window created is docking client, and it's able
-to accept toolbars and panels, and toolbars in turn accept buttons.
-buttons are very samplish; there are two panels, Edit and Banner,
-that are docked in different ways.
-Note the following unevident features:
+A demo of the Prima::Dock and Prima::DockManager modules. The window is a
+docking client that is able to accept toolbars and panels as docked widdgets,
+and the toolbars in turn are able to accept buttons. Buttons are very
+primitive; there are two panels, Edit and Banner, that are docked using
+different mechanisms.  Note the following unevident features:
 
 =over 4
 
-=item popup on the border of the window ( and the Customize command there)
+=item popup on the border of the window (and the Customize command there)
 
 =item dragging of buttons on the window and the extreior
 
-=item dragging panels and toolbar to the exterior
+=item dragging panels and toolbar outside the window
 
-=item storing of the geometry in the ~/.demo_dock file
+=item storing and loading of the geometry in the ~/.demo_dock file
 
 =back
 

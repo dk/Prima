@@ -2,13 +2,13 @@
 
 =head1 NAME
 
-examples/mdi.pl - A MDI ( multiple-document interface ) example
+examples/mdi.pl - MDI ( multiple-document interface ) example
 
 =head1 FEATURES
 
-Outlines usage of Prima::MDI module.
-Note the MDI window are not subject for a window-manager
-decorations and do not conform to the system user interaction scheme.
+Demonstrates usage of the Prima::MDI module.  Note the MDI windows are not
+subject for window-manager decorations and do not conform to the system user
+interaction policy.
 
 =cut
 

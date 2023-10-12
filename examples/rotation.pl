@@ -2,7 +2,7 @@
 
 =head1 NAME
 
-examples/rotation.pl - Prima toolkit example
+examples/rotation.pl - custom drawing example
 
 =head1 FEATURES
 

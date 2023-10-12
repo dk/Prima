@@ -2,15 +2,13 @@
 
 =head1 NAME
 
-examples/spline.pl - A spline demo
+examples/spline.pl - spline rendering demo
 
 =head1 FEATURES
 
 Demonstrates parabolic splines as graphic primitives.
-The points arount the filled shapes are spline vertexes,
+The points arount the filled shapes are the spline vertexes
 which are dragable by the mouse.
-
-Using L<Prima::Drawable::CurvedText>.
 
 =cut
 

@@ -2,13 +2,13 @@
 
 =head1 NAME
 
-examples/tiger.pl - draw eps file
+examples/tiger.pl - draw an eps file
 
 =head1 FEATURES
 
 Demonstrates capabilities of C<Prima::Drawable::Path> - curves, lines, and
 matrix transformations, similar to those in the PostScript language. The PS
-interpreter is very dumb and minimal, to parse F<tiger.eps> file only.
+interpreter is very dumb and minimal, to parse the F<tiger.eps> file only.
 
 =cut
 

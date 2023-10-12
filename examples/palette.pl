@@ -2,19 +2,19 @@
 
 =head1 NAME
 
-examples/palette.pl - A palette functionality test
+examples/palette.pl - palette functionality test
 
 =head1 FEATURES
 
 Test the Prima palette functionality on paletted
 displays. True-color displays are of no interest here.
 
-In theory, if a Prima::Widget::palette() is initialized,
-the widget is expected to produce as much solid colors
-from this palette as possible.
+In theory, if Prima::Widget::palette() is initialized,
+the widget is expected to produce as many solid colors
+from the palette as possible.
 
-Note the $useImages that can be set to 1 to test
-multiple images representation on a single widget.
+Note the $useImages that can be set to 1 to test multiple images representation
+on a single widget with the given palette.
 
 =cut
 

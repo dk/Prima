@@ -2,11 +2,11 @@
 
 =head1 NAME
 
-examples/periodic.pl - A periodic table of elements
+examples/periodic.pl - a periodic table of elements
 
 =head1 FEATURES
 
-Demonstrates usage of grid widget
+Demonstrates usage of the grid widget
 
 =cut
 

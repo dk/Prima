@@ -2,12 +2,11 @@
 
 =head1 NAME
 
-examples/outline.pl - Prima outline widget
+examples/outline.pl - outline widget
 
 =head1 FEATURES
 
-Demonstrates the basic Prima toolkit usage
-and L<Prima::Outlines> class.
+Demonstrates the L<Prima::Outlines> widget
 
 =cut
 

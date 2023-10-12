@@ -2,12 +2,12 @@
 
 =head1 NAME
 
-examples/drivecombo.pl - File tree widgets
+examples/drivecombo.pl - file tree widgets
 
 =head1 FEATURES
 
-Use of standard file-listbox and drive-combo box ( the latter
-is idle under *nix )
+Use of standard file-listbox and drive-combo box (the latter though is useless under
+unix)
 
 =cut
 

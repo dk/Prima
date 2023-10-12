@@ -1,3 +1,16 @@
+=pod
+
+=head1 NAME
+
+examples/rubberband.pl - rubberband demo
+
+=head1 FEATURES
+
+Demonstrates use of C<Prima::Widget::RubberBand>
+
+=cut
+
+
 use strict;
 use warnings;
 use Prima qw(Application Widget::RubberBand);

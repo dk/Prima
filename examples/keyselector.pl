@@ -2,15 +2,15 @@
 
 =head1 NAME
 
-examples/keyselector.pl - Interactive key selection and storage
+examples/keyselector.pl - interactive key selection and storage
 
 =head1 FEATURES
 
-Contains an example how to use standard key selection and conversion
+Contains an example how to use the standard key selection and conversion
 features of Prima::KeySelector. A typical program with interactively
-configurable keys reflects the changes of key assignments in menu
-hot-keys and initialization file. In the example, changes are stored
-in ~/.prima/keyselector INI-file.
+configurable key shortcuts reflects the changes in the menu hot-keys and in the
+initialization file. In the example, changes are stored in ~/.prima/keyselector
+INI-file.
 
 =cut
 

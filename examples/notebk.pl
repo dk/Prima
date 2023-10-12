@@ -2,12 +2,11 @@
 
 =head1 NAME
 
-examples/notebk.pl - Prima notebook widget
+examples/notebk.pl - notebook widget
 
 =head1 FEATURES
 
-Demonstrates the basic Prima toolkit usage and
-L<Prima::TabbedNotebook> standard class.
+Demonstrates the L<Prima::TabbedNotebook> standard widget
 
 =cut
 

@@ -2,11 +2,11 @@
 
 =head1 NAME
 
-examples/sheet.pl - Prima DetailedList widget example
+examples/sheet.pl - the DetailedList widget example
 
 =head1 FEATURES
 
-Demonstrates the usage of L<Prima::DetailedList> class.
+Demonstrates the usage of the L<Prima::DetailedList> class.
 Note the header-driven actions: column sort ( vertical, with click ) and
 rearrangement ( horizontal, with drag ).
 

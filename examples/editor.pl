@@ -2,12 +2,12 @@
 
 =head1 NAME
 
-examples/editor.pl - A basic text editor
+examples/editor.pl - basic text editor
 
 =head1 FEATURES
 
-Demonstrates usage of L<Prima::Edit> class,
-and, in lesser extent, of standard find/replace dialogs.
+Demonstrates usage of the L<Prima::Edit> class and the standard find/replace
+dialogs.
 
 =cut
 

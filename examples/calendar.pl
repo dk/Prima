@@ -7,7 +7,7 @@ examples/calendar.pl - Standard calendar widget
 =head1 FEATURES
 
 Demonstrates usage of L<Prima::Calendar>.
-Note the special check of C<useLocale> success.
+Note the check of C<useLocale> success status.
 
 =cut
 

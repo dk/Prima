@@ -2,16 +2,23 @@
 
 =head1 NAME
 
-examples/menu.pl - A menu usage example
+examples/menu.pl - menu example
 
 =head1 FEATURES
 
-Demonstrates the usage of Prima menu API:
+Demonstrates the usage of the menu API:
 
-- one-call ( large array ) menu set
-- text and image menu item manipulations
+=over
 
-Note the "Edit/Kill menu" realisation.
+=item one-call ( large array ) menu set
+
+=item text and image menu item manipulations
+
+=item menu images on a layered window
+
+=back
+
+Check out the implementation of "Edit/Kill menu"
 
 =cut
 

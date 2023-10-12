@@ -1,3 +1,15 @@
+=pod
+
+=head1 NAME
+
+examples/spinner.pl - standard spinner widget
+
+=head1 FEATURES
+
+Demonstrates use of various spinner styles provided by the C<Prima::Spinner> API.
+
+=cut
+
 use strict;
 use warnings;
 use Prima qw(Application Buttons Spinner Sliders);

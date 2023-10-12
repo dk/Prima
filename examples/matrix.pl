@@ -2,12 +2,12 @@
 
 =head1 NAME
 
-examples/matrix.pl - A matrix screen-saver
+examples/matrix.pl - matrix screen-saver
 
 =head1 FEATURES
 
-Tests the paletted DeviceBitmap implementation
-and large font output performance.
+Tests implementation of the paletted DeviceBitmap
+and performance of large fonts
 
 =cut
 

@@ -2,15 +2,15 @@
 
 =head1 NAME
 
-examples/scrollbar.pl - A Prima toolkit example
+examples/scrollbar.pl - scrollbar example
 
 =head1 FEATURES
 
-Tests correct representation of a color created by a combination
-of R,G and B components. The Prima::Widget::sizeMin and Prima::Widget::sizeMax
-implementation is tested - the Area widget changes its height on a mouse click,
-up to the left button and down to the right button.
-Note how Area widget maintains its maximum size when the window gets maximized.
+Tests correct representation of colors created by combinations of R,G, and B
+components. The Prima::Widget::sizeMin and Prima::Widget::sizeMax
+implementation is tested too - the Area widget changes its height on a mouse
+click.  Note how the Area widget maintains its maximum size when the window
+gets maximized.
 
 =cut
 

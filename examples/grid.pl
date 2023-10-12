@@ -2,13 +2,13 @@
 
 =head1 NAME
 
-examples/grid.pl - Prima grid widget example
+examples/grid.pl - grid widget example
 
 =head1 FEATURES
 
 Demonstrates the usage of grid widgets - Prima::AbstractGrid and
 its text-oriented descendant, Prima::Grid. To switch between
-these, toggle $abstract_grid flag.
+these, toggle the C<$abstract_grid> flag.
 
 =cut
 

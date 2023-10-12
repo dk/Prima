@@ -2,20 +2,31 @@
 
 =head1 NAME
 
-examples/keys.pl - A key dump example
+examples/keys.pl - keyboard API example
 
 =head1 FEATURES
 
-Tests the correct implementation of keyboard event subsystem.
+Tests the correct implementation of the keyboard event subsystem.
 The following features are tested:
 
-- Direct flow of keyboard event
-- Correspondence of a syntetic key name to the real name
-- key_event() functionality
-- Key event propagation. Not that if it is disabled ( a clear_event() is called )
-	no system-bound event ( like menus etc. ) are expected to be initiated.
-- Diaglyphs type ( f.ex. dieresis + 'e' )
-- Alternative keyboard layout ( a Euro sign )
+=over
+
+=item Direct flow of keyboard event
+
+=item Correspondence of a syntetic key name to the real name
+
+=item key_event() functionality
+
+=item Key event propagation
+
+Note that if it is disabled ( a clear_event() is called )
+no system event ( like menus etc. ) are expected to be initiated.
+
+=item Diaglyphs ( f.ex. dieresis + 'e' )
+
+=item Alternative keyboard layout ( a Euro sign )
+
+=back
 
 =cut
 

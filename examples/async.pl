@@ -2,7 +2,11 @@
 
 =head1 NAME
 
-examples/async.pl - example of using asynchonous communication with a process
+examples/async.pl - example of using asynchonous communication with another process
+
+=head1 RANT
+
+Windows non-blocking I/O API is hell
 
 =cut
 

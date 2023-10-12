@@ -1,3 +1,15 @@
+=pod
+
+=head1 NAME
+
+examples/gradient.pl - gradients demo
+
+=head1 FEATURES
+
+Demonstrates use of C<Prima::Drawable::new_gradient>
+
+=cut
+
 use strict;
 use warnings;
 use subs qw(reset);

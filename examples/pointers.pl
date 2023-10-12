@@ -2,11 +2,11 @@
 
 =head1 NAME
 
-examples/pointers.pl - Prima mouse pointer example
+examples/pointers.pl - mouse pointer example
 
 =head1 FEATURES
 
-Demonstrates the usage of Prima mouse pointer functionality.
+Demonstrates the usage of the mouse pointer functionality.
 Note the custom pointer creation and its dynamic change ( the "User" button ).
 
 =cut

@@ -2,11 +2,11 @@
 
 =head1 NAME
 
-examples/helloworld.pl - A "hello world" program
+examples/helloworld.pl - a "hello world" program
 
 =head1 FEATURES
 
-A very basic Prima toolkit usage is demonstrated
+A very basic Prima demo
 
 =cut
 

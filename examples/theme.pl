@@ -6,12 +6,12 @@ use Prima qw(Application Themes ScrollBar Buttons InputLine ExtLists Notebooks W
 
 =head1 NAME
 
-examples/theme.pl - Theme selector
+examples/theme.pl - theme selector
 
 =head1 FEATURES
 
-Demonstrates usage of L<Prima::Themes>, stores selected theme
-in rc file. Other programs can use the selection by running
+Demonstrates the usage of L<Prima::Themes>, stores selected theme
+in a file. Other programs can reuse the selection by running
 
 perl -MPrima::Themes program
 

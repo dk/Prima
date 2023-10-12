@@ -2,17 +2,16 @@
 
 =head1 NAME
 
-examples/ps_setup.pl - A prima PostScript printer output setup program.
+examples/ps_setup.pl - PostScript/PDF printer setup
 
 =head1 FEATURES
 
-Prints a PS document after setup dialog is finished.
+Prints a PS/PDF document after the setup dialog is finished.
 
-Whereas Prima::PS modules can be used on any platform,
-they serve as an only remedy on *nix systems when printing
-via Prima is desired. The Prima::PS interface can load user
-preferences from $HOME/.prima/printer file. This file is
-maintained by the PostScript output setup dialog.
+Whereas Prima::PS modules can be used on any platform, they serve as an only
+printing API on unix systems.  The Prima::PS interface can load user
+preferences from $HOME/.prima/printer file. This file is maintained by the
+standard printer setup dialog.
 
 =cut
 

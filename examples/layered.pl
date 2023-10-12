@@ -1,3 +1,16 @@
+=pod
+
+=head1 NAME
+
+examples/layered.pl - alpha channel demo
+
+=head1 FEATURES
+
+Tests various aspects of alpha-blending in both layered and non-layered
+widgets. Note how the button features a little hole on the left to the 'Quit' text
+
+=cut
+
 use strict;
 use warnings;
 use Prima qw(Application Buttons);

@@ -2,25 +2,27 @@
 
 =head1 NAME
 
-examples/iv.pl - A image viewer program
+examples/iv.pl - an image viewer program
 
 =head1 FEATURES
 
-Demonstrates usage of Prima image subsystem, in particular:
+Demonstrates usage of the image subsystem, in particular:
 
 =over 4
 
 =item *
 
-Standard open dialog. Note it's behavior with the multi-frame images.
+Standard image open dialog. Note its behavior with the multi-frame images, namely
+the possibility to select and load a single frame.
 
 =item *
 
-Standard save dialog. Note the graphic filters usage.
+Standard image save dialog. Note the usage of the graphic filters and the ability
+to save images in base64-encoded format for hardcoded storage.
 
 =item *
 
-Image conversion routines.
+Image conversion routines
 
 =item *
 
@@ -28,11 +30,11 @@ Standard L<Prima::ImageViewer> class.
 
 =back
 
-Test the correct implementation of the internal image paint routines,
+Tests the correct implementation of the internal image paint routines,
 in particular on the paletted displays and the representation of 1-bit
 images/icons with non-BW palette.
 
-Note the mouse wheel interaction.
+Note the mouse wheel scrolling.
 
 =cut
 

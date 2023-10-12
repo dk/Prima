@@ -1,6 +1,20 @@
 # XXX textoutbaseline=0 rotated
 # XXX document that block is expected to run text on textOutBaseline(1)
 # XXX document that block_wrap can workbreak only
+
+=pod
+
+=head1 NAME
+
+examples/merkup.pl - merkup in widgets
+
+=head1 FEATURES
+
+Demonstrates use of Prima markup in all various contexts
+
+=cut
+
+
 use strict;
 use warnings;
 use Prima qw(Application Buttons Edit Notebooks Label DetailedList Outlines MsgBox);

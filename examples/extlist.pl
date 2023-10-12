@@ -2,13 +2,11 @@
 
 =head1 NAME
 
-examples/extlist.pl - Prima check-list widget
+examples/extlist.pl - check-list widget
 
 =head1 FEATURES
 
-Demonstrates basic usage of a Prima toolkit and
-its standard CheckList class.
-
+Demonstrates basic usage of the CheckList class.
 
 =cut
 

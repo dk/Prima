@@ -2,14 +2,13 @@
 
 =head1 NAME
 
-examples/print.pl - A printing example
+examples/print.pl - printing example
 
 =head1 FEATURES
 
-Demonstrates the usage of Prima printing interface.
-A particular incoherence between *nix and win32 systems
-in their printing system is particularly solved by a implicit
-Prima::PS modules set usage.
+Demonstrates the usage of the Prima printing interface.  On Win32 the system
+printers are available, while on unix the PS/PDF-based printers which are
+provided by the toolkit.
 
 =cut
 

@@ -2,14 +2,15 @@
 
 =head1 NAME
 
-examples/launch.pl - A Prima example launcher
+examples/launch.pl - a Prima example launcher
 
 =head1 FEATURES
 
-Uses to execute several Prima examples in one task space.
-Many examples inflict the view af a user-selected widget, but
-lack existence of the appropriate one. The launcher helps
-such experiments. See cv.pl or fontdlg.pl in particular.
+Can execute several Prima examples in one program.  A couple of Prima examples
+can interact with other widget, f ex by changing their font or color (see cv.pl
+or fontdlg.pl).  The launcher can run these examples together with examples
+with another set of widgets, so that these experimental changes can be tested
+on these widgets as well.
 
 =cut
 

@@ -1,3 +1,17 @@
+=pod
+
+=head1 NAME
+
+examples/clock.pl - xclock port
+
+=head1 FEATURES
+
+Demonstrates alpha drawing, and the standard widgets
+C<Prima::Widget::Date> and C<Prima::Widget::Time>
+
+=cut
+
+
 use strict;
 use warnings;
 use Prima qw(Application Widget::Date Drawable::Path Widget::Time);

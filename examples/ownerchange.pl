@@ -2,14 +2,13 @@
 
 =head1 NAME
 
-examples/ownerchange.pl - A recreate functionality example.
+examples/ownerchange.pl - implicit re-creation of widgets
 
 =head1 FEATURES
 
-Widgets that change owner dynamically often gets
-recreated internally - one system window gets
-destroyed and another created then. Test the correct
-implementation of Prima owner change functionality.
+Widgets that dynamically change owners are re-created internally - a system
+window gets destroyed and another created thereafter. The example tests the
+correct implementation of the owner-changing functionality
 
 =cut
 

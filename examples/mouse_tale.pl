@@ -2,7 +2,7 @@
 
 =head1 NAME
 
-examples/mouse_tale.pl - The mouse tale from Alice In Wonderland
+examples/mouse_tale.pl - mouse tale from Alice In Wonderland
 
 =head1 FEATURES
 

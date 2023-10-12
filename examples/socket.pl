@@ -2,12 +2,12 @@
 
 =head1 NAME
 
-examples/socket.pl - Downloads a html file from a given URL and strips it to text.
+examples/socket.pl - downloads a html file from a given URL
 
 =head1 FEATURES
 
 Tests the functionality of Prima::File and its
-events - onRead, onWrite and onException. ( The latter is not exemplified )
+events, onRead and onWrite.
 
 Note that the toolkit interface is alive during the download.
 

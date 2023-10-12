@@ -1,3 +1,15 @@
+=pod
+
+=head1 NAME
+
+examples/lineplot.pl - line plotting API
+
+=head1 FEATURES
+
+Demonstrates Prima line joins, patterns, endings etc.
+
+=cut
+
 use strict;
 use warnings;
 use Prima qw(Application MsgBox);

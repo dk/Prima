@@ -2,11 +2,11 @@
 
 =head1 NAME
 
-examples/macro.pl - A macro recording program
+examples/macro.pl - macro recording
 
 =head1 FEATURES
 
-Demonstration and test of mouse_event() function usage.
+Demonstration and test of the mouse_event() function 
 
 =cut
 

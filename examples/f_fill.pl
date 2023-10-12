@@ -2,14 +2,13 @@
 
 =head1 NAME
 
-examples/f_fill.pl - A gradient fill example
+examples/f_fill.pl - gradient fill example
 
 =head1 FEATURES
 
-Demonstrates the usage of graphic context regions.
-Note that the $i region is not created, but is assigned
-on every onPaint. Tests whether image object is able
-to hold a cached region copy.
+Demonstrates the usage of graphic context regions.  Note that the C<$i> region
+is not created, but is assigned on every onPaint. This tests whether the image
+object is able to hold a cached copy of the region.
 
 =cut
 

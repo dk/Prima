@@ -2,16 +2,12 @@
 
 =head1 NAME
 
-examples/pbrush.pl - A minimalistic graphic editor window
+examples/pbrush.pl - minimalistic graphic editor window
 
 =head1 FEATURES
 
-Outlines features required for a graphic editor window -
-color selection, and, mainly, non-standart L<Prima::ImageViewer>
-usage.
-
-Using L<Prima::Classes>, L<Prima::Widget::ScrollWidget>, L<Prima::Application>,
-L<Prima::Dialog::ColorDialog>, L<Prima::ImageViewer>.
+Outlines features required for a graphic editor - color selection and
+non-standart L<Prima::ImageViewer> usage.
 
 =cut
 
