@@ -23,7 +23,7 @@ __END__
 
 =head1 NAME
 
-Prima::Application - the root of widget objects hierarchy
+Prima::Application - the root of the widget hierarchy
 
 =head1 DESCRIPTION
 
@@ -39,13 +39,13 @@ object. There can be only one instance of the Prima::Application class at a time
 
 =head1 USAGE
 
-Prima::Application class and its only instance are treated specially
-throughout the toolkit. The object instance is contained in the
+Prima::Application class and its only instance are treated is a special way
+in the toolkit's paradigm. Its only object instance is stored in the
 
 	$::application
 
 scalar, defined in I<Prima.pm> module.  The application instance must be
-created whenever widget, window, or event loop functionality is needed.
+created whenever a widget, window, or event loop functionality is needed.
 Usually the
 
 	use Prima::Application;
@@ -54,10 +54,10 @@ or
 
 	use Prima qw(Application);
 
-code is enough, but I<$::application> can also be assigned explicitly. The
+code is enough, but I<$::application> can also be created and assigned explicitly. The
 'use' syntax has an advantage as more resistant to eventual changes in the toolkit
-design. It can also be used in conjunction with custom parameters hash, like
-the general new() syntax:
+design. It can also be used in conjunction with custom parameters hash like
+the new() syntax:
 
 	use Prima::Application name => 'Test application', icon => $icon;
 
@@ -68,8 +68,8 @@ is generally explained in L<"API">.
 =head2 Inherited functionality
 
 Prima::Application is a descendant of Prima::Widget but does not conform
-strictly ( in thethe  OO sense ) to any of the built-in classes. It has methods from
-both Prima::Widget and Prima::Window, and the methods inherited from the
+strictly ( in the OO sense ) to any of the built-in classes. It has methods from
+both Prima::Widget and Prima::Window, also, the methods inherited from the
 Prima::Widget class may work quite differently.  For example, the C<::origin>
 property from Prima::Widget is also implemented in Prima::Application, but
 always returns (0,0), an expected but not much usable result.  The C<::size>
@@ -85,7 +85,7 @@ Prima::Application is a wrapper to a set of unrelated functions that do not
 belong to other classes.  A notable example, the painting functionality that is
 inherited from the Prima::Drawable class, allows drawing on the screen,
 possibly overwriting the graphic information created by the other programs.
-Although it is a subject to the begin_paint()/end_paint() brackets, this
+Although it is still a subject to the begin_paint()/end_paint() brackets, this
 functionality does not belong to a single object and is considered global.
 
 =over
@@ -121,7 +121,7 @@ the C<::hintClass> create-only property.
 The result of the L<get_printer> method points to an automatically created printer
 object, responsible for the system printing. Depending on the operating
 system, it is either Prima::Printer, if the system provides GUI printing
-capabilities, or generic Prima::PS::Printer, the PostScript document interface.
+capabilities, or generic Prima::PS::Printer, the PostScript/PDF document interface.
 
 See L<Prima::Printer> for details.
 
@@ -130,7 +130,7 @@ See L<Prima::Printer> for details.
 C<$::application> hosts a set of Prima::Clipboard objects created automatically to
 reflect the system-provided clipboard IPC functionality. Their number depends
 on the system, - under the X11 environment, there are three clipboard objects, and
-only one under Win32.
+one under Win32.
 
 There are no specific methods to access these clipboard objects, except bring()
 ( or the indirect name call ); the clipboard objects are named after the
@@ -160,31 +160,32 @@ C<close_help()> closes the window.
 =item System-dependent information
 
 A complex program will need eventually more information than the toolkit
-provides. Or, knowing the toolkit boundaries in some platforms, the program
-changes its behavior accordingly. Both these topics are facilitated by extra
+provides. Knowing the toolkit boundaries in some platforms, the program
+may change its behavior accordingly. Both these topics are facilitated by extra
 system information returned by Prima::Application methods.  The
 C<get_system_value> method returns a system-defined value for each of the
 C<sv::XXX> constants, so the program can read the system-specific information.
-As well as the C<get_system_info> method that returns the short description of
-the system, it is a portable call. On the contrary, the C<sys_action> method is
-a wrapper to system-dependent functionality that is called in a non-portable
-way. This method is rarely used within the toolkit, its usage is discouraged,
-primarily because its options do not serve the toolkit design, its syntax is
-subject to changes, and cannot be relied upon.
+Another method C<get_system_info> returns the short description of
+the system that augments perl's C< $^O > variable.
+
+The C<sys_action> method is a wrapper to system-dependent functionality that is
+called in a non-portable way. This method is rarely used in the toolkit,
+its usage is discouraged, primarily because its options do not serve the
+toolkit design, its syntax is subject to changes, and cannot be relied upon.
 
 =item Exceptions and signals
 
 By default Prima doesn't track exceptions caused by C<die>, C<warn>, and signals.
 Currently, it is possible to enable a GUI dialog tracking the C<die> exceptions,
-by either operating the boolean C<guiException> property or using
+by either operating the boolean C<guiException> property or using the
 
    use Prima qw(sys::GUIException)
 
 syntax.
 
-If you need to track signals or warnings you may do so just by using standard perl
-practices. It is though not advisable to call Prima interactive methods directly inside
-signal handlers but use a minimal code instead. F.ex. code that
+If you need to track signals or warnings you may do so by using standard perl
+practices. It is though not advisable to call Prima interactive methods
+directly inside signal handlers but use a minimal code instead. F.ex. code that
 would ask whether the user wants to quit would look like this:
 
    use Prima qw(Utils MsgBox);
@@ -276,8 +277,8 @@ affect the help subsystem until a call to C<close_help> is made.
 Specifies the perl module loaded indirectly when a help viewing call is made
 via the C<open_help> method.  Used when the C<::helpClass> property is
 overridden and the new class is contained in a third-party module.  Run-time
-changes to the property do not affect the help subsystem until a call to C<close_help>
-is made.
+changes to the property do not affect the help subsystem until a call to
+C<close_help> is made.
 
 =item hintClass STRING
 
@@ -319,9 +320,9 @@ A read-only property. Used as the lowest-level modal horizon.  Always returns
 
 =item palette [ @PALETTE ]
 
-Used only within the paint and information modes.  Selects solid colors in the system
-palette, as many as possible.  PALETTE is an array of 8-bit integer triplets, where
-each is a red, green, and blue component.
+Used only within the paint and information modes.  Selects solid colors in the
+system palette, as many as possible.  PALETTE is an array of 8-bit integer
+triplets, where each is a red, green, and blue component.
 
 =item printerClass STRING
 
@@ -334,9 +335,9 @@ system-dependent, but is either C<Prima::Printer> or C<Prima::PS::Printer>.
 
 Create-only property.
 
-Specifies the perl module loaded indirectly before the printer object of
-the C<::printerClass> class is created.  Used when the C<::printerClass> property is
-overridden and the new class is contained in a third-party module.
+Specifies the perl module loaded indirectly before the printer object of the
+C<::printerClass> class is created.  Used when the C<::printerClass> property
+is overridden and the new class is contained in a third-party module.
 
 =item pointerVisible BOOLEAN
 
@@ -353,22 +354,21 @@ Returns two integers, the width and height of the screen.
 =item showHint BOOLEAN
 
 If 1, the toolkit is allowed to show the hint label over a widget. If 0, the
-display of the hint is forbidden. In addition to the functionality of the C<::showHint>
-property in Prima::Widget, Prima::Application::showHint is another layer of
-hint visibility control - if it is 0, all hint actions are disabled,
-disregarding C<::showHint> value in the widgets.
+display of the hint is forbidden. In addition to the functionality of the
+C<::showHint> property in Prima::Widget, Prima::Application::showHint is
+another layer of hint visibility control - if it is 0, all hint actions are
+disabled, disregarding C<::showHint> value in the widgets.
 
 =item skin SCALAR
 
-The same as L<Prima::Widget/skin>, but is mentioned here because
-it is possible to change the whole application skin by changing this property,
-f ex like this:
+The same as L<Prima::Widget/skin>, but is mentioned here because it is possible
+to change the whole application skin by changing this property, f ex like this:
 
    use Prima::Application skin => 'flat';
 
 =item textDirection BOOLEAN
 
-Contains the preferred text direction initially calculated from the preferred
+Contains the preferred text direction initially deduced from the preferred
 interface language.  If 0 ( default ), the preferred text direction is
 left-to-right (LTR), otherwise right-to-left (RTL), f.ex. for Arabic and Hebrew
 languages.
@@ -385,8 +385,9 @@ displays) or too low (on ancient monitors).
 
 By default, it acquires the system display resolution and sets the scaling
 factor so that when the DPI is 96 it is 1.0, 192 it is 2.0, etc. The increase
-step is 0.25, so that bitmaps may look not that distorted. However, when the
-value is manually set the step is not enforced and any value can be accepted.
+step is 0.25, so that bitmaps may look not that distorted when scaled. However,
+when the value is manually set the step is not enforced and any value can be
+accepted.
 
 See also: L<Prima/Stress>.
 
@@ -442,9 +443,9 @@ is about to sleep waiting for more.
 =item PasteImage $CLIPBOARD, $$IMAGE_REF
 
 The notification queries C<$CLIPBOARD> for image content and stores in
-C<$$IMAGE_REF>. The default action is that the C<'Image'> format is queried.  On unix,
-encoded formats C<'image/bmp'>, C<'image/png'> etc are queried if the default
-C<'Image'> is not found.
+C<$$IMAGE_REF>. The default action is that the C<'Image'> format is queried.
+On unix, encoded formats C<'image/bmp'>, C<'image/png'> etc are queried if the
+default C<'Image'> is not found.
 
 The C<PasteImage> mechanism can read images from the clipboard in the GTK
 environment.
@@ -453,11 +454,11 @@ environment.
 
 The notification queries C<$CLIPBOARD> for text content and stores it in the
 C<$$TEXT_REF> scalar. Its default action is that only the C<'Text'> format is
-queried if C<wantUnicodeInput> is unset. Otherwise, the C<'UTF8'> format is queried
-first.
+queried if C<wantUnicodeInput> is unset. Otherwise, the C<'UTF8'> format is
+queried first.
 
 The C<PasteText> mechanism is devised to ease defining text unicode/ascii
-conversion between clipboard and standard widgets, in a standardized way.
+conversion between clipboard and standard widgets, in a unified way.
 
 =back
 
@@ -467,8 +468,8 @@ conversion between clipboard and standard widgets, in a standardized way.
 
 =item add_startup_notification @CALLBACK
 
-CALLBACK is an array of anonymous subs, which are all executed when
-the Prima::Application object is created. If the application object is already
+CALLBACK is an array of anonymous subs, which are all executed when the
+Prima::Application object is created. If the application object is already
 created during the call, CALLBACKs are called immediately.
 
 Useful for initialization of add-on packages.
@@ -512,24 +513,24 @@ sets of encoding strings; the font encodings are not portable.
 =item fonts NAME = '', ENCODING = ''
 
 Returns a hash of font hashes ( see L<Prima::Drawable/Fonts> ) describing fonts
-of NAME font family and of ENCODING text encoding. If NAME is '' or C<undef>, returns one
-font hash for each of the font families that match the ENCODING string. If
-ENCODING is '' or C<undef>, no encoding match is performed.  If ENCODING is not
-valid ( not present in the C<font_encodings> result), it is treated as if it was ''
-or C<undef>.
+of NAME font family and of ENCODING text encoding. If NAME is '' or C<undef>,
+returns one font hash for each of the font families that match the ENCODING
+string. If ENCODING is '' or C<undef>, no encoding match is performed.  If
+ENCODING is not valid ( not present in the C<font_encodings> result), it is
+treated as if it was '' or C<undef>.
 
 In the special case when both NAME and ENCODING are '' or C<undef>, each font
-metric hash contains the element C<encodings>, which points to an array of the font
-encodings, available for the fonts of the NAME font family.
+metric hash contains the element C<encodings>, which points to an array of the
+font encodings, available for the fonts of the NAME font family.
 
 =item get_active_window
 
-Returns the object reference to the currently active window, if any, that belongs to
-the program. If no such window exists, C<undef> is returned.
+Returns the object reference to the currently active window, if any, that
+belongs to the program. If no such window exists, C<undef> is returned.
 
 The exact definition of 'active window' is system-dependent, but it is
-generally believed that an active window is the one that has a keyboard focus on
-one of its children widgets.
+generally believed that an active window is the one that has a keyboard focus
+on one of its children widgets.
 
 =item get_caption_font
 
@@ -538,8 +539,8 @@ The method can be called with a class string instead of an object instance.
 
 =item get_default_cursor_width
 
-Returns the width of the system cursor in pixels.  The method can be called with a
-class string instead of an object instance.
+Returns the width of the system cursor in pixels.  The method can be called
+with a class string instead of an object instance.
 
 =item get_default_font
 
@@ -562,13 +563,13 @@ See also: C<Widget/Drag and drop>, C<Clipboard/is_dnd>.
 =item get_default_window_borders BORDER_STYLE = bs::Sizeable
 
 Returns width and height of standard system window border decorations for one
-of the C<bs::XXX> constants.  The method can be called with a class string instead
-of an object instance.
+of the C<bs::XXX> constants.  The method can be called with a class string
+instead of an object instance.
 
 =item get_focused_widget
 
-Returns object reference to the currently focused widget, if any, that belongs to
-the program. If no such widget exists, C<undef> is returned.
+Returns object reference to the currently focused widget, if any, that belongs
+to the program. If no such widget exists, C<undef> is returned.
 
 =item get_fullscreen_image
 
@@ -576,14 +577,14 @@ Syntax sugar for grabbing the whole screen as in
 
    $::application->get_image( 0, 0, $::application->size)
 
-(MacOSX/XQuartzi note: get_image() does not grab all screen bits, but
+(MacOSX/XQuartz note: get_image() does not grab all screen bits, but
 C<get_fullscreen_image> does if Prima is compiled with the Cocoa library).
 
 =item get_hint_widget
 
 Returns the hint label widget, attached automatically to the Prima::Application
-object during startup. The widget is of the C<::hintClass> class, Prima::HintWidget
-by default.
+object during startup. The widget is of the C<::hintClass> class,
+Prima::HintWidget by default.
 
 =item get_image X_OFFSET, Y_OFFSET, WIDTH, HEIGHT
 
@@ -594,8 +595,8 @@ the offsets are outside the screen boundaries, or WIDTH and HEIGHT are zero or
 negative, C<undef> is returned.
 
 Note: When running on MacOSX under XQuartz, the latter does not give access to
-the whole screen, so the function will not be able to grab the top-level menu bar.
-This problem is addressed in the C<get_fullscreen_image> method.
+the whole screen, so the function will not be able to grab the top-level menu
+bar.  This problem is addressed in the C<get_fullscreen_image> method.
 
 =item get_indents
 
@@ -619,9 +620,9 @@ called with a class string instead of an object instance.
 Returns the modal window that resides on an end of the modality chain.
 MODALITY_TYPE selects the chain, and can be either C<mt::Exclusive> or
 C<mt::Shared>. TOPMOST is a boolean flag selecting the lookup direction: if it
-is 1, the 'topmost' window is returned, if 0, the 'lower-most' one ( in a simple
-case when window A is made modal (executed) after modal window B, the A window
-is the 'topmost' one ).
+is 1, the 'topmost' window is returned, if 0, the 'lower-most' one ( in a
+simple case when window A is made modal (executed) after modal window B, the A
+window is the 'topmost' one ).
 
 If the chain is empty C<undef> is returned. In case the chain consists of just
 one window, the TOPMOST value is irrelevant.
@@ -637,9 +638,9 @@ Returns two integer values of two system-specific scrolling timeouts. The first
 is the initial timeout that is applied when the user drags the mouse from a
 scrollable widget ( a text field, for example ), and the widget is about to
 scroll, but the actual scroll is performed after the timeout has expired. The
-second value is the repetitive timeout, - if the dragging condition did not change,
-the scrolling performs automatically after this timeout. The timeout values are
-in milliseconds.
+second value is the repetitive timeout, - if the dragging condition did not
+change, the scrolling performs automatically after this timeout. The timeout
+values are in milliseconds.
 
 =item get_system_info
 
@@ -751,9 +752,9 @@ The method can be called with a class string instead of an object instance.
 =item get_widget_from_handle HANDLE
 
 HANDLE is an integer value of a toolkit widget handle as used in the underlying
-GUI level, for example, it is a HWND value on win32. It is usually passed to the
-program by other IPC means, so it returns the associated widget.  If no widget
-is associated with HANDLE, C<undef> is returned.
+GUI level, for example, it is a HWND value on win32. It is usually passed to
+the program by other IPC means, so that the method can return the associated
+widget.  If no widget is associated with HANDLE, C<undef> is returned.
 
 =item get_widget_from_point X_OFFSET, Y_OFFSET
 
@@ -777,8 +778,8 @@ restored with C<unlock()>.
 
 =item load_font FONTNAME
 
-Registers a font resource in the system-specific format. The resource is freed after the
-program ends.
+Registers a font resource in the system-specific format. The resource is freed
+after the program ends.
 
 Notes for win32: To add a font whose information comes from several resource
 files, point FONTNAME to a string with the file names separated by a C<|> - for
@@ -790,14 +791,13 @@ Returns the number of the font resources added.
 
 =item open_help TOPIC
 
-Opens the help viewer window with TOPIC string in
-the link POD format ( see L<perlpod> ) - the string is treated
-as "manpage/section", where 'manpage' is the file with POD
-content and 'section' is the topic inside the manpage.
+Opens the help viewer window with TOPIC string in the link POD format ( see
+L<perlpod> ) - the string is treated as "manpage/section", where 'manpage' is
+the file with POD content and 'section' is the topic inside the manpage.
 
 Alternatively can handle the syntax in the form of C< file://path|section >
-where C<path> is the file with the pod content and C<section> is an optional pod
-section within the file.
+where C<path> is the file with the pod content and C<section> is an optional
+pod section within the file.
 
 =item stop
 
@@ -812,9 +812,9 @@ C<XSync(false)> on X11, and is a no-op otherwise.
 
 CALL is an arbitrary string of the system service name and the parameters to
 it.  This functionality is non-portable, and its usage should be avoided.  The
-system services provided are not documented and are subject to change. The actual
-services can be looked at in the toolkit source code under the I<apc_system_action>
-tag.
+system services provided are not documented and are subject to change. The
+actual services can be looked at in the toolkit source code under the
+I<apc_system_action> tag.
 
 =item unlock
 
@@ -823,16 +823,16 @@ Unlocks the graphic output for all widgets, previously locked with C<lock()>.
 =item yield $wait_for_event=0
 
 An event dispatcher, called from within the event loop.
-If the event loop can be schematized, then in
+If the event loop can be schematized, then in this code
 
 	while ( application not closed ) {
 		yield
 	}
 
-the draft, yield() is the only function called repeatedly within the event loop.
-The yield(0) call shouldn't be used to organize event loops, but it can be employed
-to process stacked system events explicitly, to increase the responsiveness of a
-program, for example, inside a long calculation cycle.
+yield() is the only function called repeatedly inside the
+loop.  The yield(0) call shouldn't be used to organize event loops, but it can
+be employed to process stacked system events explicitly, to increase the
+responsiveness of a program, for example, inside a long calculation cycle.
 
 yield(1) though is adapted exactly for external implementation of event loops;
 it does the same as yield(0), but if there are no events it sleeps

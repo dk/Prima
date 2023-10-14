@@ -322,17 +322,17 @@ L<Prima::tutorial> - introductory tutorial
 
 L<Prima::Object> - basic object concepts, properties, events
 
-L<Prima::Classes> - binder module for the core classes 
+L<Prima::Classes> - binder module for the core classes
 
-L<Prima::Drawable> - 2-D graphic interface 
+L<Prima::Drawable> - 2-D graphic interface
 
 L<Prima::Region> - generic shape for clipping and hit testing
 
-L<Prima::Image>  - bitmap routines 
+L<Prima::Image>  - bitmap routines
 
 L<Prima::image-load> - image subsystem and file operations
 
-L<Prima::Widget> - window management 
+L<Prima::Widget> - window management
 
 =over 2
 
@@ -352,21 +352,21 @@ L<Prima::Clipboard> - GUI interprocess data exchange
 
 L<Prima::Menu> - pull-down and pop-up menu objects
 
-L<Prima::Timer> - programmable periodical events 
+L<Prima::Timer> - programmable periodical events
 
-L<Prima::Application> - the root of widget objects hierarchy 
+L<Prima::Application> - the root of widget objects hierarchy
 
-L<Prima::Printer> - system printing services 
+L<Prima::Printer> - system printing services
 
 L<Prima::File> - asynchronous stream I/O
 
 =item Widget library
 
-L<Prima::Buttons> - buttons and button grouping widgets 
+L<Prima::Buttons> - buttons, checkboxes, radios
 
-L<Prima::Calendar> - calendar widget 
+L<Prima::Calendar> - calendar widget
 
-L<Prima::ComboBox> - combo box widget 
+L<Prima::ComboBox> - combo box widget
 
 L<Prima::DetailedList> - multi-column list viewer with controlling header widget
 
@@ -565,7 +565,7 @@ standard Prima documentation viewer C<podview> ( see File/Run/prima-class ).
 Copyright 1997-2003 The Protein Laboratory, University of Copenhagen. All
 rights reserved.
 
-Copyright 2004-2023 Dmitry Karasik. All rights reserved. 
+Copyright 2004-2023 Dmitry Karasik. All rights reserved.
 
 This program is distributed under the BSD License.
 
