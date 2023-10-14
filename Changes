@@ -4,6 +4,7 @@ Revision history for Perl module Prima
  - Add Prima::Image::webp filter dialog
  - Add DeviceBitmap.maskPixel
  - Add menus to file dialogs
+ - Remove obsolete RadioGroup and CheckBoxGroup - use GroupBox instead
 
 1.70 2023-09-03
  - Use fading effects in widgets

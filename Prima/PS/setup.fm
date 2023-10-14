@@ -186,7 +186,7 @@ $x-> HelpBtn-> notify(\'Click\') if
 			value => 300,
 	}},
 	'Orientation' => {
-		class   => 'Prima::RadioGroup',
+		class   => 'Prima::GroupBox',
 		module  => 'Prima::Buttons',
 		profile => {
 			growMode => gm::GrowHiX,
@@ -303,7 +303,7 @@ palette => [ 0,0,0,0,0,128,0,128,0,0,128,128,128,0,0,128,0,128,128,128,0,128,128
 			text => '~Landscape',
 	}},
 	'Color' => {
-		class   => 'Prima::RadioGroup',
+		class   => 'Prima::GroupBox',
 		module  => 'Prima::Buttons',
 		profile => {
 			growMode => gm::GrowHiX,
@@ -694,7 +694,7 @@ $self-> enabled( 0) if
 			text => 'Unix ~line printer (LP)',
 	}},
 	'Spool' => {
-		class   => 'Prima::RadioGroup',
+		class   => 'Prima::GroupBox',
 		module  => 'Prima::Buttons',
 		profile => {
 			growMode => gm::GrowHiX,

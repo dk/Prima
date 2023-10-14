@@ -3,9 +3,7 @@
 #   CheckBox
 #   Radio
 #   SpeedButton
-#   RadioGroup ( obsolete )
 #   GroupBox
-#   CheckBoxGroup ( obsolete )
 #
 #   AbstractButton
 #   Cluster
@@ -1483,16 +1481,13 @@ sub value
 	}
 }
 
-package Prima::RadioGroup;    use vars qw(@ISA); @ISA=qw(Prima::GroupBox);
-package Prima::CheckBoxGroup; use vars qw(@ISA); @ISA=qw(Prima::GroupBox);
-
 1;
 
 =pod
 
 =head1 NAME
 
-Prima::Buttons - button widgets and grouping widgets.
+Prima::Buttons - buttons, checkboxes, radios
 
 =head1 SYNOPSIS
 
@@ -1517,24 +1512,21 @@ Prima::Buttons - button widgets and grouping widgets.
 
 =head1 DESCRIPTION
 
-Prima::Buttons provides two separate sets of classes:
-the button widgets and the grouping widgets. The button widgets
-include push buttons, check-boxes and radio buttons.
-The grouping widgets are designed for usage as containers for the
-check-boxes and radio buttons, however, any widget can be inserted
-in a grouping widget.
+Prima::Buttons provides two separate sets of classes: the button widgets and
+the grouping widgets. The button widgets include push buttons, check-boxes, and
+radio buttons.  The grouping widgets are designed for usage as containers for
+the check-boxes and radio buttons, however, any widget can be inserted in a
+grouping widget.
 
 The module provides the following classes:
 
-	*Prima::AbstractButton ( derived from Prima::Widget and Prima::MouseScroller )
+	*Prima::AbstractButton
 		Prima::Button
 			Prima::SpeedButton
 		*Prima::Cluster
 			Prima::CheckBox
 			Prima::Radio
-	Prima::GroupBox ( derived from Prima::Widget )
-		Prima::RadioGroup       ( obsolete )
-		Prima::CheckBoxGroup    ( obsolete )
+	Prima::GroupBox
 
 Note: C<*> - marked classes are abstract.
 
@@ -1979,14 +1971,6 @@ C<checked> state of a child check-box button. The indexing is
 based on the index in the widget list, returned by C<Prima::Widget::widgets> method.
 
 =back
-
-=head1 Prima::RadioGroup
-
-This class is obsolete and is same as C<Prima::GroupBox>.
-
-=head1 Prima::CheckBoxGroup
-
-This class is obsolete and is same as C<Prima::GroupBox>.
 
 =head1 BUGS
 

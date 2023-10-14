@@ -798,7 +798,7 @@ $csl-> insert( Button =>
 	onClick => sub { $_[0]-> owner-> value(0); },
 );
 
-my $rg = $w-> insert( RadioGroup =>
+my $rg = $w-> insert( GroupBox =>
 	origin      => [ 25, 525],
 	size        => [ 445, 58],
 	name        => 'Pitch',
@@ -825,7 +825,7 @@ $rg-> insert( Radio =>
 	onClick =>  sub { $fpitch = fp::Variable; &$re_sample; },
 );
 
-my $rg2 = $w-> insert( RadioGroup =>
+my $rg2 = $w-> insert( GroupBox =>
 	origin      => [ 25, 460],
 	size        => [ 445, 58],
 	name        => 'Vector',

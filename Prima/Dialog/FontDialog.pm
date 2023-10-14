@@ -60,7 +60,7 @@ sub init
 	$self-> {fixedOnly}  = $profile{fixedOnly};
 	$self-> {sampleText} = $profile{sampleText};
 
-	my $gr = $self-> insert( CheckBoxGroup =>
+	my $gr = $self-> insert( GroupBox =>
 		origin => [ 10, 10],
 		size   => [ 150, 150],
 		name   => 'Style',

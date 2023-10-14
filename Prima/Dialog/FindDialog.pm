@@ -64,7 +64,7 @@ sub init
 		name      => 'ReplaceLabel',
 	);
 
-	my $o = $self-> insert( CheckBoxGroup =>
+	my $o = $self-> insert( GroupBox =>
 		name    => 'Options',
 		origin  => [ 10, 26],
 		size    => [ 100, 68],
@@ -109,7 +109,7 @@ sub init
 
 	$o-> value( $profile{options});
 
-	$o = $self-> insert( RadioGroup =>
+	$o = $self-> insert( GroupBox =>
 		name    => 'Scope',
 		origin  => [ 117, 48],
 		size    => [ 100, 46],
