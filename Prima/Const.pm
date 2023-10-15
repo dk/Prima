@@ -313,18 +313,18 @@ Prima::Const - predefined constants
 
 =head1 DESCRIPTION
 
-C<Prima::Const> and L<Prima::Classes> is a minimal set of perl modules needed for
+C<Prima::Const> and L<Prima::Classes> for a minimal set of perl modules needed for
 the toolkit. Since the module provides bindings for the core constants, it is required
 to be included in every Prima-related module and program.
 
-The constants are assembled under the top-level package names, with no C<Prima::>
+The constants are collected under the top-level package names, with no C<Prima::>
 prefix. This violates the perl guidelines about package naming, however, it was
-considered way too inconvenient to prefix every constant with C<Prima::> string.
+considered way too inconvenient to prefix every constant with a C<Prima::> string.
 
-This document provides description of all core-coded constants. The constants
-are also described in the articles together with the corresponding methods and
-properties. For example, C<nt> constants are also described in L<Prima::Object/Flow>
-article.
+This document describes all constants defined in the core. The constants are
+also described in the articles together with the corresponding methods and
+properties. For example, the C<nt> constants are also described in the
+L<Prima::Object/Flow> article.
 
 =head1 API
 
@@ -544,7 +544,7 @@ See L<Prima::Widget/pointerType>
 
 =head2 dbt::  - device bitmap types
 
-        dbt::Bitmap                 monochrome 1 bit bitmap
+        dbt::Bitmap                 monochrome 1-bit bitmap
         dbt::Pixmap                 bitmap compatible with display format
         dbt::Layered                bitmap compatible with display format with alpha channel
 
@@ -568,13 +568,13 @@ Returns a C<cr::> constant corresponding to the C<ACTION>
 
 =item to_one_action ACTIONS
 
-Selects a best single action from combination of allowed C<ACTIONS>
+Selects the best single action from a combination of allowed C<ACTIONS>
 
 =item keymod ACTION
 
-Returns a C<km::> keyboard modifier constant the C<ACTION> will be expected to
-start on if the user presses that modifier during a DND session. Returns 0 for
-C<dnd::Copy> that is the standard action to be performed without any modifiers.
+Returns a C<km::> keyboard modifier constant that would initiate C<ACTION> 
+if the user presses it during a DND session. Returns 0 for
+C<dnd::Copy> which is the standard action to be performed without any modifiers.
 
 =back
 
@@ -679,22 +679,22 @@ See L<Prima::Drawable/fillPattern>
 
 =item builtin $FILL_PATTERN
 
-Given a result from C<Drawable::fillPattern>, a 8x8 array of integers, checks whether the array matches
+Given a result from C<Drawable::fillPattern>, an 8x8 array of integers, checks whether the array matches
 one of the builtin C<fp::> constants, and returns one if found. Returns undef otherwise.
 
 =item is_empty $FILL_PATTERN
 
-Given a result from C<Drawable::fillPattern>, a 8x8 array of integers, checks whether the array consists
-strictly of zeros, or not.
+Given a result from C<Drawable::fillPattern>, an 8x8 array of integers, checks if the array is
+all zeros
 
 =item is_solid $FILL_PATTERN
 
-Given a result from C<Drawable::fillPattern>, a 8x8 array of integers, checks whether the array consists
-strictly of ones, or not.
+Given a result from C<Drawable::fillPattern>, an 8x8 array of integers, checks if the array is
+all ones (ie 0xff)
 
 =item patterns
 
-Returns set of string-encoded fill patterns that correspond to builtin C<fp::> constants.
+Returns a set of string-encoded fill patterns that correspond to the builtin C<fp::> constants.
 These are not suitable for use in C<Drawable::fillPatterns>.
 
 =back
@@ -759,16 +759,16 @@ See L<Prima::Widget/growMode>
 =item Basic constants
 
 	gm::GrowLoX	widget's left side is kept in constant
-			distance from owner's right side
+			distance from the owner's right side
 	gm::GrowLoY	widget's bottom side is kept in constant
-			distance from owner's top side
+			distance from the owner's top side
 	gm::GrowHiX	widget's right side is kept in constant
-			distance from owner's right side
+			distance from the owner's right side
 	gm::GrowHiY	widget's top side is kept in constant
-			distance from owner's top side
-	gm::XCenter	widget is kept in center on its owner's
+			distance from the owner's top side
+	gm::XCenter	widget is kept in the center on its owner's
 			horizontal axis
-	gm::YCenter	widget is kept in center on its owner's
+	gm::YCenter	widget is kept in the center on its owner's
 			vertical axis
 	gm::DontCare	widgets origin is constant relative
 			to the screen
@@ -919,13 +919,13 @@ See L<Prima::Image/conversion>.
 	ict::Posterization   - no dithering, with palette optimized by the source pixels
 	ict::Ordered         - 8x8 ordered halftone dithering
 	ict::ErrorDiffusion  - error diffusion dithering with a static palette
-	ict::Optimized       - error diffusion dithering with optimized palette
+	ict::Optimized       - error diffusion dithering with an optimized palette
 
 Their values are combinations of C<ictp::> and C<ictd::> constants, see below.
 
 =head2 ictd:: - image conversion types, dithering
 
-These constants select color correction (dithering) algorithm when downsampling
+These constants select the color correction (dithering) algorithm when downsampling
 an image
 
 	ictd::None            - no dithering, pure colors only
@@ -937,13 +937,13 @@ an image
 These constants select how the target palette is made up when downsampling an image.
 
 	ictp::Unoptimized  - use whatever color mapping method is fastest,
-	                     image quality can be severely compromized
+	                     image quality can be severely compromised
 	ictp::Cubic        - use static cubic palette; a bit slower,
 	                     guaranteed mediocre quality
 	ictp::Optimized    - collect available colors in the image;
-	                     slowest, gives best results
+	                     slowest, gives the best results
 
-Not all combination of ictp and ictd constants are valid
+Not all combinations of ictp and ictd constants are valid
 
 =head2 is::  - image statistics indices
 
@@ -960,13 +960,13 @@ See L<Prima::Image/stats>.
 =head2 ist:: - image scaling types
 
 	ist::None      - image stripped or padded with zeros
-	ist::Box       - image will be scaled using a simple box transform
+	ist::Box       - the image will be scaled using a simple box transform
 	ist::BoxX      - columns behave as ist::None, rows as ist::Box
 	ist::BoxY      - rows behave as in ist::None, columns as ist::Box
 	ist::AND       - shrunken pixels AND-end together (black-on-white images)
 	ist::OR        - shrunken pixels OR-end together (white-on-black images)
 	ist::Triangle  - bilinear interpolation
-	ist::Quadratic - 2rd order (quadratic) B-Spline approximation of the Gaussian
+	ist::Quadratic - 2nd order (quadratic) B-Spline approximation of the Gaussian
 	ist::Sinc      - sine function
 	ist::Hermite   - B-Spline interpolation
 	ist::Cubic     - 3rd order (cubic) B-Spline approximation of the Gaussian
@@ -1124,16 +1124,16 @@ See also L<Prima::Window/modalResult>, L<Prima::Button/modalResult>.
 	ps::Enabled     - can both draw and get/set graphical properties on an object
 	ps::Information - can only get/set graphical properties on an object
 
-For brevity, ps::Disabled is equal to 0 so this allows for simple boolean testing whether one can
+For brevity, ps::Disabled is equal to 0 so this allows for simple boolean testing if one can
 get/set graphical properties on an object.
 
 See L<Drawable/get_paint_state>.
 
 =head2 rgn:: - result of Prima::Region.rect_inside
 
-	rgn::Inside
-	rgn::Outside    - rectangle is fully outside the region
-	rgn::Partially
+	rgn::Inside     - the rectangle is fully inside the region
+	rgn::Outside    - the rectangle is fully outside the region
+	rgn::Partially  - the rectangle overlaps the region but is not fully inside
 
 =head2 rgnop:: - Prima::Region.combine set operations
 
@@ -1182,7 +1182,7 @@ See L<Prima::Drawable/Raster operations>
         rop::DstAtop     # = dst srcA + src ( 1 - dstA )
 
         rop::Blend       # src + dst (1 - srcA)
-	                 # same as rop::SrcOver but assumes premultiplied source
+	                 # same as rop::SrcOver but assumes the premultiplied source
 
         rop::PorterDuffMask - masks out all bits but the constants above
 
@@ -1220,15 +1220,15 @@ ROP functions
 
 =item alpha ROP, SRC_ALPHA = undef, DST_ALPHA = undef
 
-Combines one of the alpha-supporting ROPs ( Porter-Duff snd Photoshop
-operators) with
-source and destination alpha, if defined, and returns new ROP constant. This is useful
-when blending with constant alpha is required with/over images that don't have their own
-alpha channel. Or as an additional alpha channel when using icons.
+Combines one of the alpha-supporting ROPs ( Porter-Duff and Photoshop
+operators) with source and destination alpha, if defined, and returns a new ROP
+constant. This is useful when blending with constant alpha is required
+with/over images that don't have their own alpha channel. Or as an additional
+alpha channel when using icons.
 
 =item blend ALPHA
 
-Creates a ROP that would effecively execute alpha blending of the source image
+Creates a ROP that would effectively execute alpha blending of the source image
 over the destination image with ALPHA value.
 
 =back
@@ -1288,16 +1288,16 @@ C<Widget::scroll> returns one of these.
 
 See also L<Prima::Application/get_system_value>
 
-	sv::YMenu            - height of menu bar in top-level windows
-	sv::YTitleBar        - height of title bar in top-level windows
+	sv::YMenu            - the height of the menu bar in top-level windows
+	sv::YTitleBar        - the height of the title bar in top-level windows
 	sv::XIcon            - width and height of main icon dimensions,
 	sv::YIcon              acceptable by the system
 	sv::XSmallIcon       - width and height of alternate icon dimensions,
 	sv::YSmallIcon         acceptable by the system
 	sv::XPointer         - width and height of mouse pointer icon
 	sv::YPointer           acceptable by the system
-	sv::XScrollbar       - width of the default vertical scrollbar
-	sv::YScrollbar       - height of the default horizontal scrollbar
+	sv::XScrollbar       - the width of the default vertical scrollbar
+	sv::YScrollbar       - the height of the default horizontal scrollbar
 	sv::XCursor          - width of the system cursor
 	sv::AutoScrollFirst  - the initial and the repetitive
 	sv::AutoScrollNext     scroll timeouts
@@ -1346,7 +1346,7 @@ Used in: L<Prima::InputLine>, L<Prima::ImageViewer>, L<Prima::Label>.
 
 =head2 to::  - text output constants
 
-These constants are used in various text and glyph related functions, 
+These constants are used in various text- and glyph-related functions
 and form a somewhat vague group of bit values that may or may not be used together
 depending on the function
 
@@ -1368,9 +1368,9 @@ See L<Prima::Drawable/text_wrap>
 
 	tw::CalcMnemonic          - calculates tilde underline position
 	tw::CollapseTilde         - removes escaping tilde from text
-	tw::CalcTabs              - wraps text with respect to tab expansion
+	tw::CalcTabs              - wraps the text with respect to tab expansion
 	tw::ExpandTabs            - expands tab characters
-	tw::BreakSingle           - determines if text is broken to single
+	tw::BreakSingle           - determines if the text is broken into single
 	                            characters when text cannot be fit
 	tw::NewLineBreak          - breaks line on newline characters
 	tw::SpaceBreak            - breaks line on space or tab characters
@@ -1379,7 +1379,7 @@ See L<Prima::Drawable/text_wrap>
 	                            text chunks
 	tw::WordBreak             - defines if text break by width goes by the
 	                            characters or by the words
-	tw::ReturnFirstLineLength - returns length of the first wrapped line
+	tw::ReturnFirstLineLength - returns the length of the first wrapped line
 	tw::Default               - tw::NewLineBreak | tw::CalcTabs | tw::ExpandTabs |
 	                            tw::ReturnLines | tw::WordBreak
 

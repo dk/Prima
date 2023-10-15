@@ -542,10 +542,10 @@ Prima::Calendar - standard calendar widget
 
 =head1 DESCRIPTION
 
-Provides interactive selection of date between 1900 and 2099 years.
-The main property, L<date>, is a three-integer array, day, month, and year,
+Provides interactive selection for dates between the years 1900 and 2099.
+The main property, L<date>, is a three-integer array of day, month, and year,
 in the format of perl localtime ( see L<perlfunc/localtime> ) -
-day can be in range from 1 to 31,month from 0 to 11, year from 0 to 199.
+day's range is between 1 and 31, month's 0 to 11, year's from 0 to 199.
 
 =head1 API
 
@@ -565,30 +565,30 @@ Called when the L<date> property is changed.
 
 =item date DAY, MONTH, YEAR
 
-Accepts three integers in format of C<localtime>.
+Accepts three integers in the format of C<localtime>.
 DAY can be from 1 to 31, MONTH from 0 to 11, YEAR from 0 to 199.
 
 Default value: today's date.
 
 =item day INTEGER
 
-Selects the day in month.
+Selects the day in the month.
 
 =item firstDayOfWeek INTEGER
 
-Selects the first day of week, an integer between 0 and 6,
-where 0 is Sunday is the first day, 1 is Monday etc.
+Selects the first day of the week, an integer between 0 and 6,
+where 0 is Sunday as the first day, 1 is Monday, etc.
 
 Default value: 0
 
 =item month
 
-Selects the month.
+Selects the month
 
 =item useLocale BOOLEAN
 
 If 1, the locale-specific names of months and days of week are used.
-These are read by calling C<POSIX::strftime>. If invocation of POSIX module
+These are read by calling C<POSIX::strftime>. If an invocation of the POSIX module
 fails, the property is automatically assigned to 0.
 
 If 0, the English names of months and days of week are used.
@@ -609,34 +609,34 @@ Selects the year.
 
 =item can_use_locale
 
-Returns boolean value, whether the locale information can be retrieved
-by calling C<strftime>.
+Returns a boolean value, whether the locale information can be retrieved
+by calling C<strftime> or not.
 
 =item month2str MONTH
 
-Returns MONTH name according to L<useLocale> value.
+Returns the MONTH name according to the L<useLocale> value.
 
 =item make_months
 
-Returns array of 12 month names according to L<useLocale> value.
+Returns an array of the 12 month names according to the L<useLocale> value.
 
 =item day_of_week DAY, MONTH, YEAR, [ USE_FIRST_DAY_OF_WEEK = 1 ]
 
-Returns integer value, from 0 to 6, of the day of week on
-DAY, MONTH, YEAR date. If boolean USE_FIRST_DAY_OF_WEEK is set,
-the value of C<firstDayOfWeek> property is taken into the account,
-so 0 is a Sunday shifted forward by C<firstDayOfWeek> days.
+Returns an integer value between 0 and 6, the day of week on DAY, MONTH, YEAR
+date. If boolean USE_FIRST_DAY_OF_WEEK is set, the value of the
+C<firstDayOfWeek> property is taken into account, so f ex the result of 0 means
+that this is a Sunday shifted forward by C<firstDayOfWeek> days.
 
-The switch from Julian to Gregorian calendar is ignored.
+The switch from the Julian to the Gregorian calendar is ignored.
 
 =item date_as_string [ DAY, MONTH, YEAR ]
 
 Returns string representation of date on DAY, MONTH, YEAR according
-to L<useLocale> property value.
+to the L<useLocale> property value.
 
 =item date_from_time SEC, MIN, HOUR, M_DAY, MONTH, YEAR, ...
 
-Copies L<date> from C<localtime> or C<gmtime> result. This helper method
+Copies L<date> from C<localtime> or C<gmtime> results. This helper method
 allows the following syntax:
 
 	$calendar-> date_from_time( localtime( time));

@@ -767,22 +767,22 @@ Prima::ComboBox - standard combo box widget
 
 =head1 DESCRIPTION
 
-Provides a combo box widget which consists of an input line, list box of possible
-selections and eventual drop-down button. The combo box can be either in form
-with a drop-down selection list, that is shown by the command of the user,
-or in form when the selection list is always visible.
+Provides a combo box widget that consists of an input line, a list box of
+possible selections, and an eventual drop-down button. The combo box can be
+either in the form of a drop-down list that can be shown and hidden or in a
+form where the selection list is always visible.
 
-The combo box is a grouping widget, and contains neither painting nor user-input
-code. All such functionality is delegated into the children widgets: input line, list
-box and button. C<Prima::ComboBox> exports a fixed list of methods and properties from
-namespaces of L<Prima::InputLine> and L<Prima::ListBox>. Since, however, it is
-possible to tweak the C<Prima::ComboBox> ( using its L<editClass> and L<listClass>
-create-only properties ) so the input line and list box would be other classes,
-it is not necessarily that all default functionality would work.
-The list of exported names is stored in package variables %listProps, %editProps
-and %listDynas. These also described in L<Exported names> section.
+The combo box is a grouping widget and contains neither painting nor
+user input code by itself. All such functionality is delegated to the children
+widgets: input line, list box, and drop button. C<Prima::ComboBox> exports a
+fixed list of methods and properties from the namespaces of L<Prima::InputLine> and
+L<Prima::ListBox>. It is possible to tweak the C<Prima::ComboBox> ( using its
+L<editClass> and L<listClass> create-only properties ) so the input line and
+list box widgets can be instantiated from other classes.  The list of exported
+names is stored in package variables %listProps, %editProps, and %listDynas.
+These are also described in the L<Exported names> section.
 
-The module defines C<cs::> package for the constants used by L<style> property.
+The module defines the C<cs::> package for the constants used by the L<style> property.
 
 =head1 API
 
@@ -793,13 +793,13 @@ The module defines C<cs::> package for the constants used by L<style> property.
 =item autoHeight BOOLEAN
 
 If 1, adjusts the height of the widget automatically when its font changes.
-Only when style is not C<cs::Simple>.
+Only for styles not equal to C<cs::Simple>.
 
 Default value: 1
 
 =item buttonClass STRING
 
-Assigns a drop-down button class.
+Assigns the drop-down button class.
 
 Create-only property.
 
@@ -807,13 +807,13 @@ Default value: C<Prima::Widget>
 
 =item buttonDelegations ARRAY
 
-Assigns a drop-down button list of delegated notifications.
+Assigns the list of delegated notifications to the drop-down button.
 
 Create-only property.
 
 =item buttonProfile HASH
 
-Assigns hash of properties, passed to the drop-down button during the creation.
+Assigns a hash of properties passed to the drop-down button during the creation.
 
 Create-only property.
 
@@ -826,7 +826,7 @@ Default value: 0
 
 =item editClass STRING
 
-Assigns an input line class.
+Assigns the input line class.
 
 Create-only property.
 
@@ -834,27 +834,27 @@ Default value: C<Prima::InputLine>
 
 =item editProfile HASH
 
-Assigns hash of properties, passed to the input line during the creation.
+Assigns a hash of properties passed to the input line during the creation.
 
 Create-only property.
 
 =item editDelegations ARRAY
 
-Assigns an input line list of delegated notifications.
+Assigns the list of delegated notifications to the input line.
 
 Create-only property.
 
 =item editHeight INTEGER
 
-Selects height of an input line.
+Selects the height of the input line.
 
 =item items ARRAY
 
-Mapped onto the list widget's C<items> property. See L<Prima::Lists> for details.
+Proxy of the list widget's C<items> property. See L<Prima::Lists> for details.
 
 =item listClass STRING
 
-Assigns a listbox class.
+Assigns the list box class.
 
 Create-only property.
 
@@ -862,63 +862,63 @@ Default value: C<Prima::ListBox>
 
 =item listHeight INTEGER
 
-Selects height of the listbox widget.
+Selects the height of the list box widget.
 
 Default value: 100
 
 =item listVisible BOOLEAN
 
-Sets whether the listbox is visible or not. Not writable
-when L<style> is C<cs::Simple>.
+Sets whether the list box is visible or not. Not writable
+when the C<style> is C<cs::Simple>.
 
 =item listProfile HASH
 
-Assigns hash of properties, passed to the listbox during the creation.
+Assigns a hash of properties passed to the list box during the creation.
 
 Create-only property.
 
 =item listDelegations ARRAY
 
-Assigns a selection listbox list of delegated notifications.
+Assigns the list of delegated notifications to the list box.
 
 Create-only property.
 
 =item literal BOOLEAN
 
-Selects whether the combo box user input routine assume that
-the listbox contains literal strings, that can be fetched via
-C<get_item_text> ( see L<Prima::Lists> ). As an example when
-this property is set to 0 is C<Prima::ColorComboBox> from L<Prima::ComboBox> package.
+Selects whether the combo box user input routine should assume that the list box
+contains literal strings, that can be fetched via C<get_item_text> ( see
+L<Prima::Lists> ). An example when this property is set to 0 is
+C<Prima::ColorComboBox> from the L<Prima::ComboBox> package.
 
 Default value: 1
 
 =item style INTEGER
 
-Selected one of three styles:
+Selects one of three styles of the combo box:
 
 =over
 
 =item cs::Simple
 
-The listbox is always visible, and the drop-down button is not.
+The list box is always visible, but the drop-down button is not.
 
 =item cs::DropDown
 
-The listbox is not visible, but the drop-down button is. When the
-use presses the drop-down button, the listbox is shown; when the list-box
+The list box is not visible, but the drop-down button is. When the
+user presses the drop-down button, the list box is shown; when the list-box
 is defocused, it gets hidden.
 
 =item cs::DropDownList
 
-Same as C<cs::DropDown>, but the user is restricted in the selection:
-the input line can only accept user input that is contained in listbox.
-If L<literal> set to 1, the auto completion feature is provided.
+Same as C<cs::DropDown> but the user is restricted in selection:
+the input line can only accept user input that is present in the list box.
+If L<literal> is set to 1, the auto-completion feature is provided.
 
 =back
 
 =item text STRING
 
-Mapped onto the edit widget's C<text> property.
+Alias of the input line's C<text> property.
 
 =back
 
@@ -928,14 +928,13 @@ Mapped onto the edit widget's C<text> property.
 
 =item Change
 
-Triggered with ComboBox value is changed.
+Triggered the value is changed.
 
 =item List events
 
 ComboBox forwards C<SelectItem> and C<DrawItem> events from the list box, and
 these are executed in the List's context (therefore $self there is not
-ComboBox, but the ComboBox->List). If you use C<SelectItem> you probably need
-C<Change> instead.
+ComboBox, but the ComboBox->List).
 
 See more in L<Prima::Lists>.
 

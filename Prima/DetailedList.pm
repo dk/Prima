@@ -466,8 +466,8 @@ sub autoWidth { 0;}
 
 =head1 NAME
 
-Prima::DetailedList - a multi-column list viewer with a controlling
-header widget.
+Prima::DetailedList - multi-column list viewer with controlling
+header widget
 
 =head1 SYNOPSIS
 
@@ -491,16 +491,16 @@ use Prima::DetailedList;
 
 =head1 DESCRIPTION
 
-Prima::DetailedList is a descendant of Prima::ListViewer, and as such provides
-a certain level of abstraction. It overloads format of L<items> in order to
+Prima::DetailedList is a descendant of Prima::ListViewer and as such also provides
+a certain level of abstraction. It overloads the format of L<items> in order to
 support multi-column ( 2D ) cell span. It also inserts L<Prima::Widget::Header> widget
-on top of the list, so the user can interactively move, resize and sort the content
-of the list. The sorting mechanism is realized inside the package; it is
+on top of the list so that the user can interactively move, resize, and sort the content
+of the list. The sorting mechanism is also realized inside the package; it can be
 activated by the mouse click on a header tab.
 
-Since the class inherits Prima::ListViewer, some functionality, like 'item search by
-key', or C<get_item_text> method can not operate on 2D lists. Therefore, L<mainColumn>
-property is introduced, that selects the column representing all the data.
+Since the class inherits from Prima::ListViewer, some functionality, like 'item search by
+key', or C<get_item_text> method can not operate on 2D lists. Therefore, the L<mainColumn>
+property is introduced, that selects the column representing the textual data.
 
 =head1 API
 
@@ -510,17 +510,17 @@ property is introduced, that selects the column representing all the data.
 
 =item Sort COLUMN, DIRECTION
 
-Called inside L<sort> method, to facilitate custom algorithms of sorting.
-If the callback procedure is willing to sort by COLUMN index, then it must
-call C<clear_event>, to signal the event flow stop. The DIRECTION is a boolean
-flag, specifying whether the sorting must be performed is ascending ( 1 ) or
-descending ( 0 ) order.
+Called inside the L<sort> method to facilitate custom sorting algorithms.  If
+the callback procedure is willing to sort by COLUMN index, then it must call
+C<clear_event> to signal that the event flow must stop. The DIRECTION is a
+boolean flag, specifying whether the sorting must be performed in ascending ( 1
+) or descending ( 0 ) order.
 
 The callback procedure must operate on the internal storage of C<{items}>,
 which is an array of arrays of scalars.
 
-The default action is the literal sorting algorithm, where precedence is
-arbitrated by C<cmp> operator ( see L<perlop/"Equality Operators"> ) .
+The default action is the literal sorting algorithm where the precedence is
+arbitrated by the C<cmp> operator ( see L<perlop/"Equality Operators"> ) .
 
 =back
 
@@ -530,19 +530,20 @@ arbitrated by C<cmp> operator ( see L<perlop/"Equality Operators"> ) .
 
 =item aligns ARRAY
 
-Array of C<ta::> align constants, where each defined the column alignment.
-Where an item in the array is undef, it means that the value of the C<align> property must be used.
+An array of the C<ta::> align constants where each defines the column
+alignment.  If an item in the array is undef, it means that the value of the
+C<align> property must be used.
 
 =item columns INTEGER
 
-Governs the number of columns in L<items>. If set-called, and the new number
+Manages the number of columns in L<items>. If set-called, and the new number
 is different from the old number, both L<items> and L<headers> are restructured.
 
 Default value: 0
 
 =item headerClass
 
-Assigns a header class.
+Assigns the header class.
 
 Create-only property.
 
@@ -550,31 +551,31 @@ Default value: C<Prima::Widget::Header>
 
 =item headerProfile HASH
 
-Assigns hash of properties, passed to the header widget during the creation.
+Assigns a hash of properties passed to the header widget during the creation.
 
 Create-only property.
 
 =item headerDelegations ARRAY
 
-Assigns a header widget list of delegated notifications.
+Assigns list of delegated notifications to the header widget.
 
 Create-only property.
 
 =item headers ARRAY
 
-Array of strings, passed to the header widget as column titles.
+An array of strings passed to the header widget as column titles.
 
 =item items ARRAY
 
-Array of arrays of scalars, of arbitrary kind. The default
+An array of arrays of scalars of any kind. The default
 behavior, however, assumes that the scalars are strings.
 The data direction is from left to right and from top to bottom.
 
 =item mainColumn INTEGER
 
-Selects the column, responsible for representation of all the data.
-As the user clicks the header tab, C<mainColumn> is automatically
-changed to the corresponding column.
+Selects the column responsible for textual representation of all the data. When
+the user clicks a header tab C<mainColumn> is automatically changed to the
+corresponding column.
 
 Default value: 0
 
@@ -589,12 +590,11 @@ Default value: 0
 Sorts items by the COLUMN index in ascending order. If COLUMN is not specified,
 sorts by the last specified column, or by #0 if it is the first C<sort> invocation.
 
-If COLUMN was specified, and the last specified column equals to COLUMN,
+If the COLUMN was specified, and the last specified column equals to COLUMN,
 the sort direction is reversed.
 
-The method does not perform sorting itself, but invokes L<Sort> notification,
-so the sorting algorithms can be overloaded, or be applied differently to
-the columns.
+The method does not perform sorting itself, but calls the L<Sort> notification,
+so that the sorting algorithms can be customized.
 
 =back
 

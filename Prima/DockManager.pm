@@ -761,7 +761,7 @@ sub windowState
 {
 	my ( $self, $ws) = @_;
 	if ( $ws == ws::Minimized) {
-	for ( @{$self->{panels}}, @{$self-> {toolbars}}) {
+		for ( @{$self->{panels}}, @{$self-> {toolbars}}) {
 			next if $_-> dock;
 			my $e = $_-> externalDocker;
 			next unless $e;
@@ -1014,31 +1014,30 @@ Prima::DockManager - advanced dockable widgets
 =head1 DESCRIPTION
 
 C<Prima::DockManager> contains classes that implement additional
-functionality within the dockable widgets paradigm.
+functionality in the dockable widgets paradigm.
 
 The module introduces two new dockable widget classes:
-C<Prima::DockManager::Panelbar>, a general purpose
-dockable container for variable-sized widgets; and C<Prima::DockManager::Toolbar>,
-a dockable container for fixed-size command widgets, mostly push buttons.
-The command widgets, nested in a toolbar, can also be docked.
+C<Prima::DockManager::Panelbar>, a general-purpose dockable container for
+variable-sized widgets; and C<Prima::DockManager::Toolbar>, a dockable
+container for fixed-size command widgets, mostly push buttons.  The command
+widgets nested in a toolbar can also be docked.
 
-C<Prima::DockManager> class is an application-oriented class in a way
-that ( mostly ) the only instance of it is needed in the program. It
-is derived from C<Prima::Component> and therefore is never visualized.
-The class instance is stored in C<instance> property of all module classes
-to serve as a docking hierarchy root. Through the document, I<instance>
-term is referred to C<Prima::DockManager> class instance.
+The C<Prima::DockManager> class is application-oriented in a way that a
+single of it is needed. It is derived from C<Prima::Component> and therefore is
+never visualized.  The class instance is stored in the C<instance> property in all
+module classes to serve as a docking hierarchy root. Through the document,
+the I<instance> term means the C<Prima::DockManager> class instance.
 
 The module by itself is not enough to make a docking-aware application work
-effectively. The reader is urged to look at F<examples/dock.pl>
+effectively. The reader is urged to look at the F<examples/dock.pl>
 example code, which demonstrates the usage and capabilities of
 the module.
 
 =head1 Prima::DockManager::Toolbar
 
-A toolbar widget class. The toolbar has a dual nature; it can dock
-and accept docking widgets simultaneously. In the scope of C<Prima::DockManager>,
-the toolbar hosts command widget, mostly push buttons.
+A toolbar widget class. The toolbar has a dual nature; it can both dock itself
+and accept dockable widgets. As a dock, toolbars can host command widgets, mostly
+push buttons.
 
 The toolbar consists of two widgets. The external dockable widget is
 implemented in C<Prima::DockManager::Toolbar>, and the internal dock
@@ -1050,13 +1049,13 @@ in C<Prima::DockManager::ToolbarDocker> classes.
 
 =item autoClose BOOLEAN
 
-Selects the behavior of a toolbar when all of its command widgets are
-undocked. If 1, the toolbar is automatically destroyed. If 0
+Selects the behavior of the toolbar when all of its command widgets are
+undocked. If 1 (default), the toolbar is automatically destroyed. If 0
 it calls C<visible(0)>.
 
 =item childDocker WIDGET
 
-Pointer to C<Prima::DockManager::ToolbarDocker> instance.
+Pointer to the C<Prima::DockManager::ToolbarDocker> instance.
 
 See also C<Prima::DockManager::ToolbarDocker::parentDocker>.
 
@@ -1068,10 +1067,9 @@ C<Prima::DockManager> instance, the docking hierarchy root.
 
 =head1 Prima::DockManager::ToolbarDocker
 
-Internal class, implements a dock widget for command widgets,
-while serves as a client in a dockable toolbar, which is
-a C<Prima::LinearDockerShuttle> descendant. When its size is
-changed due an eventual rearrange of its docked widgets, also resizes
+An internal class, implements the dock widget for command widgets, and a client
+in a dockable toolbar, a C<Prima::LinearDockerShuttle> descendant. When its
+size is changed due to an eventual rearrangement of its docked widgets, also resizes
 the toolbar.
 
 =head2 Properties
@@ -1080,12 +1078,12 @@ the toolbar.
 
 =item instance INSTANCE
 
-C<Prima::DockManager> instance, the docking hierarchy root.
+The C<Prima::DockManager> instance, the docking hierarchy root.
 
 =item parentDocker WIDGET
 
-Pointer to C<Prima::DockManager::Toolbar> instance. When in
-the docked state, C<parentDocker> value is always equals to C<owner>.
+Pointer to a C<Prima::DockManager::Toolbar> instance. When in
+the docked state, the C<parentDocker> value is always equal to C<owner>.
 
 See also C<Prima::DockManager::Toolbar::childDocker>.
 
@@ -1102,19 +1100,20 @@ and returns its extensions.
 
 =item update_size
 
-Called when size is changed to resizes the owner widget. If it is in the docked
-state, the size change might result in change of position or docking state.
+Called when the size is changed to resize the owner widget. If the toolbar is
+docked, the change might result in a change of its position or docking
+state.
 
 =back
 
 =head1 Prima::DockManager::Panelbar
 
 The class is derived from C<Prima::LinearDockerShuttle>, and
-is different only in that C<instance> property is introduced,
+is different only in that the C<instance> property is introduced,
 and the external shuttle can be resized interactively.
 
 The class is to be used as a simple host to sizeable widgets.
-The user can dispose of the panel bar by clicking close button
+The user can dispose of the panel bar by clicking the close button
 on the external shuttle.
 
 =head2 Properties
@@ -1123,52 +1122,46 @@ on the external shuttle.
 
 =item instance INSTANCE
 
-C<Prima::DockManager> instance, the docking hierarchy root.
+The C<Prima::DockManager> instance, the docking hierarchy root.
 
 =back
 
 =head1 Prima::DockManager
 
-A binder class, contains set of functions that groups
-toolbars, panels, and command widgets together under the docking
-hierarchy.
+A binder class, contains a set of functions that groups toolbars, panels, and
+command widgets together under the docking hierarchy.
 
-The manager servers several purposes.
-First, it is a command state holder: the command
-widgets, mostly buttons, usually are in enabled or disabled state in different
-life stages of a program. The manager maintains the enabled/disabled state
-by assigning each command an unique scalar value ( farther and in the
-code referred as I<CLSID> ). The toolbars can be created with set of
-command widgets, referred via these CLSIDs. The same is valid for
-the panels - although they do not host command widgets, the widgets that
-they do host can also be created indirectly via CLSID identifier.
-In addition to CLSID, the commands can be grouped by sections.
+The manager serves several purposes.  First, it is a command state holder: the
+command widgets, mostly buttons, usually are in an enabled or disabled state in
+different life stages of a program. The manager maintains the enabled/disabled
+state by assigning each command a unique scalar value, or a I<CLSID>.
+The toolbars can be created using a set of command widgets, using these
+CLSIDs. The same is valid for the panels - although they do not host command
+widgets, the widgets that they do host can also be created indirectly via CLSID
+identifier.  In addition to CLSIDs, the commands can be grouped by sections.
 Both CLSID and group descriptor scalars are defined by the programmer.
 
-Second, C<create_manager> method presents a standard configuration
-widget, that allows rearranging of normally non-dockable command widgets,
-by presenting a full set of available commands to the user as icons.
-Dragging the icons to toolbars, dock widgets or merely outside the
-configuration widget automatically creates the corresponding command widget.
-The notable moment here is that the command widgets are not required
-to know anything about dragging and docking; any C<Prima::Widget>
-descendant can be used as a command widget.
+Second, the C<create_manager> method presents the standard launchpad interface
+that allows the rearranging of normally non-dockable command widgets, by presenting
+a full set of available commands to the user as icons.  Dragging the icons to
+toolbars, dock widgets, or merely outside the configuration widget
+automatically creates the corresponding command widget.  The notable moment
+here is that the command widgets are not required to know anything about
+dragging and docking; any C<Prima::Widget> descendant can be used as a command
+widget.
 
-Third, it helps maintaining the toolbars and panels visibility
-when the main window is hidden or restored. C<windowState> method
+Third, it helps maintain the toolbars' and panels' visibility
+when the main window is hidden or restored. The C<windowState> method
 hides or shows the toolbars and panels effectively.
 
-Fourth, it serves as a docking hierarchy root. All docking sessions
-begin from C<Prima::DockManager> object, which although does not provide
-docking capabilities itself ( it is C<Prima::Component> descendant ),
-redirects the docking requests to the lower-level dock widgets.
+Fourth, it serves as a docking hierarchy root. All docking sessions start their
+protocol interactions at a C<Prima::DockManager> object, which although does
+not provide docking capabilities itself ( it is a C<Prima::Component> descendant
+), redirects the docking requests to the children dock widgets.
 
-Fifth, it provides number of helper methods and notifications,
-and enforces use or C<fingerprint> property by all dockable widgets.
-This property has default value of C<0xFFFF> ( defined in C<Prima::Docks> ).
-The module contains the fingerprint C<dmfp::XXX> constants with value greater than this,
-so the toolbars and panels are not docked to a dock widget with the default
-configuration. The base constant set is:
+Finally, it provides several helper methods and notifications
+and enforces the use of the C<fingerprint> property by all dockable widgets.
+The module defines the following fingerprint C<dmfp::XXX> constants:
 
 	fdmp::Tools      ( 0x0F000) - dock the command widgets
 	fdmp::Toolbar    ( 0x10000) - dock the toolbars
@@ -1183,25 +1176,23 @@ example.
 
 =item commands HASH
 
-A hash of boolean values, with keys of CLSID scalars.
-If value is 1, the command is available. If 0, the command
-is disabled. Changes to this property are reflected in the
-visible command widgets, which are enabled or disabled
-immediately. Also, C<CommandChange> notification is triggered.
+A hash of boolean values with keys of CLSID scalars, where if the value is 1,
+the command is available and is disabled otherwise. Changes to this property
+are reflected in the visible command widgets, which are enabled or disabled
+immediately. Also, the C<CommandChange> notification is triggered.
 
 =item fingerprint INTEGER
 
 The property is read-only, and always returns C<0xFFFFFFFF>,
-to allow landing for all dockable widgets. In case when a finer
+to allow landing to all dockable widgets. In case a finer
 granulation is needed, the default C<fingerprint> values of
 toolbars and panels can be reset.
 
 =item interactiveDrag BOOLEAN
 
-If 1, the command widgets can be interactively dragged,
-created and destroyed. This property is usually operated together
-with C<create_manager> widget. If 0, the command widgets
-cannot be dragged.
+If 1, the command widgets can be interactively dragged, created, and destroyed.
+This property is usually operated together with the C<create_manager> launchpad
+widget. If 0, the command widgets cannot be dragged.
 
 Default value: 0
 
@@ -1221,31 +1212,29 @@ the toolbars and panels attached to:
 
 =item auto_toolbar_name
 
-Returns an unique name for an automatically created
+Returns a unique name for an automatically created
 toolbar, like C<Toolbar1>, C<Toolbar2> etc.
 
 =item commands_enable BOOLEAN, @CLSIDs
 
-Enabled or disables commands from CLSIDs array.
-The changes are reflected in the visible command widgets, which
-are enabled or disabled immediately.
-Also, C<CommandChange> notification is triggered.
+Enables or disables commands from CLSIDs array.  The changes are reflected in
+the visible command widgets, which are enabled or disabled immediately.  Also,
+the C<CommandChange> notification is triggered.
 
 =item create_manager OWNER, %PROFILE
 
-Inserts two widgets into OWNER with PROFILE parameters:
-a listbox with command section groups, displayed as items, that usually correspond to
-the predefined toolbar names, and a notebook that displays the
-command icons. The notebook pages are interactively selected by the listbox
-navigation.
+Inserts two widgets into OWNER with PROFILE parameters: a list box with command
+section groups, displayed as items, that usually correspond to the predefined
+toolbar names, and a notebook that displays the command icons. The notebook
+pages can be interactively selected by the list box navigation.
 
-The icons, dragged from the notebook, behave as dockable widgets:
-they can be landed upon a toolbar, or any other dock widget, given
-it matches the C<fingerprint> ( by default C<dmfp::LaunchPad|dmfp::Toolbar|dmfp::Tools>).
-C<dmfp::LaunchPad> constant allows the recycling; if a widget is dragged
-back onto the notebook, it is destroyed.
+The icons dragged from the notebook, behave as dockable widgets: they can be
+landed on a toolbar, or any other dock widget, given it matches the
+C<fingerprint> ( by default C<dmfp::LaunchPad|dmfp::Toolbar|dmfp::Tools>).
+C<dmfp::LaunchPad> constant allows the recycling; if a widget is dragged back
+onto the notebook, it is destroyed.
 
-Returns two widgets, the listbox and the notebook.
+Returns the two widgets created, the list box and the notebook.
 
 PROFILE recognizes the following keys:
 
@@ -1254,44 +1243,44 @@ PROFILE recognizes the following keys:
 =item origin X, Y
 
 Position where the widgets are to be inserted.
-Default value is 0,0.
+The default value is 0,0.
 
 =item size X, Y
 
-Size of the widget insertion area. By default
-the widgets occupy all OWNER interior.
+Size of the widget insertion area. By default,
+the widgets occupy all OWNER interiors.
 
 =item listboxProfile PROFILE
 
-Custom parameters, passed to the listbox.
+Custom parameters passed to the list box.
 
 =item dockerProfile PROFILE
 
-Custom parameteres, passed to the notebook.
+Custom parameters passed to the notebook.
 
 =back
 
 =item create_panel CLSID, %PROFILE
 
-Creates a dockable panel of a previously registered CLSID
-by C<register_panel>. PROFILE recognizes the following keys:
+Spawns a dockable panel from a previously registered CLSID.
+PROFILE recognizes the following keys:
 
 =over
 
 =item profile HASH
 
-Hash of parameters, passed to C<create()> of the panel widget class.
-Before passing it is merged with the set of parameters, registered
-by C<register_panel>. The C<profile> hash takes the precedence.
+A hash of parameters passed to the C<new()> method of the panel widget class.
+Before passing it is merged with the set of parameters registered
+by C<register_panel>. The C<profile> hash takes precedence.
 
 =item dockerProfile HASH
 
-Constains extra options, passed to C<Prima::DockManager::Panelbar>
-widget. Before the usage it is merged with the set of parameters,
+Contains extra options passed to the C<Prima::DockManager::Panelbar>
+widget. Before passing it is merged with the set of parameters
 registered by C<register_panel>.
 
-NB: The C<dock> key here contains a reference to a desired dock widget.
-If C<dock> set to C<undef>, the panel is created in the non-docked state.
+Note: The C<dock> key contains a reference to the desired dock widget.
+If C<dock> is set to C<undef>, the panel is created in the non-docked state.
 
 =back
 
@@ -1301,31 +1290,30 @@ Example:
 		dockerProfile => { dock => $main_window }},
 		profile       => { backColor => cl::Green });
 
-
 =item create_tool OWNER, CLSID, X1, Y1, X2, Y2
 
-Inserts a command widget, previously registered with CLSID by C<register_tool>, into
-OWNER widget with X1 - Y2 coordinates. For automatic maintenance of
-enable/disable state of command widgets OWNER is expected to be a
-toolbar. If it is not, the maintenance must be performed separately,
-for example, by C<CommandChange> event.
+Inserts a command widget, previously registered with a CLSID by
+C<register_tool>, into OWNER widget at X1 - Y2 coordinates. For automatic
+maintenance of enabled/disabled states of command widgets, OWNER is expected to
+be a toolbar. If it is not, the maintenance must be performed separately, for
+example, by reacting to the C<CommandChange> event.
 
 =item create_toolbar %PROFILE
 
-Creates a new toolbar of C<Prima::DockManager::Toolbar> class.
+Creates a new toolbar of the C<Prima::DockManager::Toolbar> class.
 The following PROFILE options are recognized:
 
 =over
 
 =item autoClose BOOLEAN
 
-Sets C<autoClose> property of the toolbar.
+Manages the C<autoClose> property of the toolbar.
 
-Default value is 1 if C<name> options is set, 0 otherwise.
+The default value is 1 if the C<name> option is set, and 0 otherwise.
 
 =item dock DOCK
 
-Contain a reference to a desired DOCK widget. If C<undef>,
+Contains a reference to the desired DOCK widget. If C<undef>,
 the toolbar is created in the non-docked state.
 
 =item dockerProfile HASH
@@ -1333,32 +1321,32 @@ the toolbar is created in the non-docked state.
 Parameters passed to C<Prima::DockManager::Toolbar> as
 creation properties.
 
-NB: The C<dock> key here contains a reference to a desired dock widget.
-If C<dock> set to C<undef>, the panel is created in the non-docked state.
+Note: The C<dock> key contains a reference to the desired dock widget.
+If C<dock> is set to C<undef>, the panel is created in the non-docked state.
 
 =item rect X1, Y1, X2, Y2
 
-Selects rectangle of the C<Prima::DockManager::ToolbarDocker> instance
-in the dock widget ( if docked ) or the screen ( if non-docked ) coordinates.
+Manages geometry of the C<Prima::DockManager::ToolbarDocker> instance in
+the dock widget ( if docked ) or the screen ( if non-docked ) coordinates.
 
 =item toolbarProfile HASH
 
 Parameters passed to C<Prima::DockManager::ToolbarDocker> as
-creation properties.
+properties.
 
 =item vertical BOOLEAN
 
-Sets C<vertical> property of the toolbar.
+Sets the C<vertical> property of the toolbar.
 
 =item visible BOOLEAN
 
-Selects visibility state of the toolbar.
+Selects the visibility state of the toolbar.
 
 =back
 
 =item get_class CLSID
 
-Returns class record hash, registered under CLSID, or C<undef>
+Returns a class record hash, registered under a CLSID, or C<undef>
 if the class is not registered. The hash format contains
 the following keys:
 
@@ -1370,7 +1358,8 @@ Widget class
 
 =item profile HASH
 
-Creation parameters passed to C<create> when the widget is created.
+Creation parameters passed to C<new> when the corresponding widget is
+instantiated.
 
 =item tool BOOLEAN
 
@@ -1389,19 +1378,19 @@ Saved coordinates of the widget
 
 =item panel_by_id CLSID
 
-Return reference to a panel widget represented by CLSID scalar,
-or C<undef> if none found.
+Returns reference to the panel widget represented by CLSID scalar,
+or C<undef> if none is found.
 
 =item panel_menuitems CALLBACK
 
 A helper function; maps all panel names into a structure, ready to
-feed into C<Prima::AbstractMenu::items> property ( see L<Prima::Menu> ).
-The action member of the menu item record is set to CALLBACK scalar.
+feed into the C<Prima::AbstractMenu::items> property ( see L<Prima::Menu> ).
+The action member of the menu item record is set to the CALLBACK scalar.
 
 =item panel_visible CLSID, BOOLEAN
 
-Sets the visibility of a panel, referred by CLSID scalar.
-If VISIBLE is 0, a panel is destroyed; if 1, new panel instance
+Sets the visibility of a panel referred to by the CLSID scalar.
+If VISIBLE is 0, the panel is destroyed; if 1, a new panel instance
 is created.
 
 =item panels
@@ -1411,16 +1400,16 @@ Returns all visible panel widgets in an array.
 =item predefined_panels CLSID, DOCK, [ CLSID, DOCK, ... ]
 
 Accepts pairs of scalars, where each first item is a panel CLSID
-and second is the default dock widget. Checks for panel visibility,
+and the second is the default dock widget. Checks for the panel visibility
 and creates the panels that are not visible.
 
-The method is useful in program startup, when some panels
+The method is useful in a program startup, when some panels
 have to be visible from the beginning.
 
 =item predefined_toolbars @PROFILES
 
-Accepts array of hashes, where each array item describes a toolbar and
-a default set of command widgets. Checks for toolbar visibility,
+Accepts an array of hashes where each array item describes a toolbar and
+a default set of command widgets. Checks for the toolbar visibility
 and creates the toolbars that are not visible.
 
 The method recognizes the following PROFILES options:
@@ -1433,12 +1422,12 @@ The default dock widget.
 
 =item list ARRAY
 
-Array of CLSIDs corresponding to the command widgets to be inserted
+An array of CLSIDs corresponding to the command widgets to be inserted
 into the toolbar.
 
 =item name STRING
 
-Selects toolbar name.
+Selects the toolbar name.
 
 =item origin X, Y
 
@@ -1453,7 +1442,7 @@ have to be visible from the beginning.
 =item register_panel CLSID, PROFILE
 
 Registers a panel client class and set of parameters to be associated with
-CLSID scalar. PROFILE must contain the following keys:
+a CLSID scalar. PROFILE must contain the following keys:
 
 =over
 
@@ -1463,22 +1452,22 @@ Client widget class
 
 =item text STRING
 
-String, displayed in the panel title bar
+A string of text displayed in the panel title bar
 
 =item dockerProfile HASH
 
-Hash of parameters, passed to C<Prima::DockManager::Panelbar>.
+A hash of parameters passed to C<Prima::DockManager::Panelbar>.
 
 =item profile
 
-Hash of parameters, passed to the client widget.
+A hash of parameters passed to the client widget.
 
 =back
 
 =item register_tool CLSID, PROFILE
 
 Registers a control widget class and set of parameters to be associated with
-CLSID scalar. PROFILE must be set the following keys:
+a CLSID scalar. PROFILE must contain the following keys:
 
 =over
 
@@ -1488,19 +1477,19 @@ Client widget class
 
 =item profile HASH
 
-Hash of parameters, passed to the control widget.
+A hash of parameters passed to the control widget.
 
 =back
 
 =item toolbar_by_name NAME
 
-Returns a pointer to a toolbar of NAME, or C<undef> if none found.
+Returns a reference to the toolbar of NAME, or C<undef> if none is found.
 
 =item toolbar_menuitems CALLBACK
 
 A helper function; maps all toolbar names into a structure, ready to
-feed into C<Prima::AbstractMenu::items> property ( see L<Prima::Menu> ).
-The action member of the menu item record is set to CALLBACK scalar.
+feed into the C<Prima::AbstractMenu::items> property ( see L<Prima::Menu> ).
+The action member of the menu item record is set to the CALLBACK scalar.
 
 =item toolbar_visible TOOLBAR, BOOLEAN
 
@@ -1515,7 +1504,7 @@ Returns all toolbar widgets in an array.
 
 Mimics interface of C<Prima::Window::windowState>, and maintains
 visibility of toolbars and panels. If the parameter is C<ws::Minimized>,
-the toolbars and panels are hidden. On any other parameter these are shown.
+the toolbars and panels are hidden. On any other parameter, these are shown.
 
 To be used inside a callback code of a main window, that has the toolbars
 and panels attached to:
@@ -1530,14 +1519,14 @@ and panels attached to:
 
 =item Command CLSID
 
-A generic event, triggered by a command widget when the user activates
+A generic event triggered by a command widget when the user activates
 it. It can also be called by other means.
 
 CLSID is the widget identifier.
 
 =item CommandChange
 
-Called when C<commands> property changes or C<commands_enable> method is invoked.
+Called when the C<commands> property changes or the C<commands_enable> method is invoked.
 
 =item PanelChange
 
@@ -1545,13 +1534,13 @@ Triggered when a panel is created or destroyed by the user.
 
 =item ToolbarChange
 
-Triggered when a toolbar is created, shown, hidden, or destroyed  by the user.
+Triggered when a toolbar is created, shown, gets hidden, or destroyed by the user.
 
 =back
 
 =head1 Prima::DockManager::S::SpeedButton
 
-The package simplifies creation of C<Prima::SpeedButton> command widgets.
+The package simplifies the creation of C<Prima::SpeedButton> command widgets.
 
 =head2 Methods
 
@@ -1559,15 +1548,17 @@ The package simplifies creation of C<Prima::SpeedButton> command widgets.
 
 =item class IMAGE, CLSID, %PROFILE
 
-Builds a hash with parameters, ready to feed C<Prima::DockManager::register_tool>
-for registering a C<Prima::SpeedButton> class instance with PROFILE parameters.
+Builds a hash with parameters, ready to feed to
+C<Prima::DockManager::register_tool> for registering a combination of the
+C<Prima::SpeedButton> class and the PROFILE parameters.
 
-IMAGE is a path to a image file, loaded and stored in the registration hash.
-IMAGE provides an extended syntax for indicating a frame index, if the image file is multiframed: the frame index is appended to the path name
-with C<:> character prefix.
+IMAGE is the path to an image file, loaded and stored in the registration hash.
+IMAGE provides an extended syntax for selecting the frame index if the image file
+is multiframed: the frame index is appended to the path name with the C<:>
+character prefix.
 
-CLSID scalar is not used; it is returned so the method result can
-directly be passed into C<register_tool> method.
+CLSID scalar is not used but is returned so the method result can
+directly be passed into the C<register_tool> method.
 
 Returns two scalars: CLSID and the registration hash.
 

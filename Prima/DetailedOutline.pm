@@ -372,9 +372,10 @@ and Prima::DetailedList.
 
 =head1 API
 
-This class inherits all the properties, methods, and events of Prima::OutlineViewer
-(primary ancestor) and Prima::DetailedList (secondary ancestor).  One new property
-is introduced, and one property is different enough to warrant mention.
+This class inherits all the properties, methods, and events of
+Prima::OutlineViewer (primary ancestor) and Prima::DetailedList (secondary
+ancestor).  One new property C<autoRecalc> is introduced, and the C<items>
+property is different enough to warrant the mention.
 
 =head2 Methods
 
@@ -384,7 +385,7 @@ is introduced, and one property is different enough to warrant mention.
 
 Each item is represented by an arrayref with either one or two elements.  The
 first element is the item data, an arrayref of text strings to display.  The
-second element, if present, is an arrayref of child items.
+second element, if present, is an arrayref of children.
 
 When using the node functionality inherited from Prima::OutlineViewer, the
 item data (that is, the arrayref of text strings) is the first element of the

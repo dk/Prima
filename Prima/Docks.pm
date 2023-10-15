@@ -1,14 +1,3 @@
-# contains:
-#	AbstractDocker::Interface
-#		SimpleWidgetDocker
-#		ClientWidgetDocker
-#		LinearWidgetDocker
-#		FourPartDocker
-#	ExternalDockerShuttle
-#	InternalDockerShuttle
-#		LinearDockerShuttle
-#		SingleLinearWidgetDocker
-
 package Prima::Docks;
 
 use Prima;
@@ -1741,44 +1730,43 @@ Prima::Docks - dockable widgets
 
 =head1 DESCRIPTION
 
-The module contains a set of classes and an implementation of dockable widgets
-interface. The interface assumes two parties, the dockable widget
+The module contains a set of classes and an implementation of the dockable widgets
+interface. The interface assumes two parties, the dockable widget,
 and the dock widget; the generic methods for the dock widget class are contained in
-C<Prima::AbstractDocker::Interface> package.
+the C<Prima::AbstractDocker::Interface> package.
 
 =head1 USAGE
 
-A dockable widget is required to take particular steps before
-it can dock to a dock widget. It needs to talk to the dock and
-find out if it is allowed to land, or if the dock contains lower-level dock widgets
-that might suit better for docking. If there's more than one dock
-widget in the program, the dockable widget can select between the targets; this is
-especially actual when a dockable widget is dragged by mouse and
-the arbitration is performed on geometrical distance basis.
+A dockable widget is required to take particular steps before it may land on a
+dock widget. It needs to talk to the dock and find out if it is allowed to
+land, or if the dock contains children dock widgets that might suit better for
+the docking. If there's more than one dock widget in the program, the dockable
+widget can select between the targets; this is especially actual when a
+dockable widget is dragged by the mouse and the landing arbitration is based
+on geometrical distance.
 
-The interface implies that there exists at least one tree-like hierarchy of dock widgets,
-linked up to a root dock widget. The hierarchy is not required to follow
-parent-child relationships, although this is the default behavior.
-All dockable widgets are expected to know explicitly what hierarchy tree they
-wish to dock to. C<Prima::InternalDockerShuttle> introduces C<dockingRoot> property
+The interface implies that there exists at least one tree-like hierarchy of
+dock widgets, linked up to a root dock widget. The hierarchy is not required to
+follow parent-child relationships although this is the default behavior.  All
+dockable widgets are expected to know explicitly what hierarchy tree they wish
+to dock to. C<Prima::InternalDockerShuttle> introduces the C<dockingRoot> property
 for this purpose.
 
-The conversation between parties starts when a dockable widget
-calls C<open_session> method of the dock. The dockable widget passes
-set of parameters signaling if the widget is ready to change its size
-in case the dock widget requires so, and how. C<open_session> method can either refuse
-or accept the widget.
-In case of the positive answer from C<open_session>, the dockable widget
-calls C<query> method, which either returns a new rectangle, or another dock widget.
-In the latter case, the caller can enumerate all available dock widgets by
-repetitive calls to C<next_docker> method. The session is closed by C<close_session>
-call; after that, the widget is allowed to dock by setting its C<owner>
-to the dock widget, the C<rect> property to the negotiated position and size, and
-calling C<dock> method.
+The conversation between parties starts when a dockable widget calls the
+C<open_session> method of the dock. The dockable widget passes a set of
+parameters signaling if the widget is ready to change its size in case the dock
+widget requires so, and how. The C<open_session> method can either refuse or accept
+the widget.  In case of the positive answer from C<open_session>, the dockable
+widget calls the C<query> method, which either returns a new rectangle or
+another dock widget.  In the latter case, the caller can enumerate all
+available dock widgets by repetitive calls to the C<next_docker> method. The
+session is closed by a C<close_session> call; after that, the widget is allowed
+to land by setting its C<owner> to the dock widget, the C<rect> property to the
+negotiated position and size, and finally calling the C<dock> method.
 
-C<open_session>/C<close_session> brackets are used to cache all necessary
-calculations once, making C<query> call as light as possible. This design allows
-a dockable widget, when dragged, repeatedly ask all reachable docks in an
+The C<open_session>/C<close_session> brackets cache all necessary
+calculations once, making the C<query> call as light as possible. This design allows
+a dockable widget when dragged, to repeatedly ask all reachable docks in an
 optimized way. The docking sessions are kept open until the drag
 session is finished.
 
@@ -1808,77 +1796,74 @@ The conversation can be schematized in the following code:
 	$dock-> close_session( $session_id);
 
 Since even the simplified code is quite cumbersome, direct calls to
-C<open_session> are rare. Instead, C<Prima::InternalDockerShuttle>
-implements C<find_docking> method which performs the arbitration automatically
-and returns the appropriate dock widget.
+C<open_session> are rare. Instead, C<Prima::InternalDockerShuttle> implements
+the C<find_docking> method which performs the arbitration automatically and
+returns the appropriate dock widget.
 
-C<Prima::InternalDockerShuttle> is a class that implements dockable
-widget functionality. It also employs a top-level window-like wrapper widget
-for the dockable widget when it is not docked.
-By default, C<Prima::ExternalDockerShuttle> is used as the wrapper widget class.
+C<Prima::InternalDockerShuttle> is the class that implements the dockable
+widget functionality. It also provides a top-level window-like wrapper widget
+for the dockable widget that hosts the widget automatically if it is not
+docked.  By default, C<Prima::ExternalDockerShuttle> is used as the wrapper
+widget class.
 
-It is not required, however, to use neither C<Prima::InternalDockerShuttle>
-nor C<Prima::AbstractDocker::Interface> to implement a dockable widget;
-the only requirements to one is to respect C<open_session>/C<close_session>
+It is not required, however, to use either C<Prima::InternalDockerShuttle>
+or C<Prima::AbstractDocker::Interface> to implement a dockable widget;
+the only requirement is to respect the C<open_session>/C<close_session>
 protocol.
 
-C<Prima::InternalDockerShuttle> initiates a class hierarchy of dockable widgets.
-Its descendants are C<Prima::LinearWidgetDocker> and, in turn, C<Prima::SingleLinearWidgetDocker>.
-C<Prima::SimpleWidgetDocker> and C<Prima::LinearWidgetDocker>, derived from
-C<Prima::AbstractDocker::Interface>, begin hierarchy of dock widgets.
-The full hierarchy is as follows:
+The full hierarchy of widgets participating in the mechanism is as follows:
 
 	Prima::AbstractDocker::Interface
 		Prima::SimpleWidgetDocker
-		Prima::ClientWidgetDocker
+			Prima::ClientWidgetDocker
 		Prima::LinearWidgetDocker
+			Prima::SingleLinearWidgetDocker
 		Prima::FourPartDocker
 
 	Prima::InternalDockerShuttle
 		Prima::LinearDockerShuttle
-		Prima::SingleLinearWidgetDocker
 
 	Prima::ExternalDockerShuttle
 
 All docker widget classes are derived from C<Prima::AbstractDocker::Interface>.
 Depending on the specialization, they employ more or less sophisticated schemes
-for arranging dockable widgets inside. The most complicated scheme is implemented
-in C<Prima::LinearWidgetDocker>; it does not allow children overlapping and is
-able to rearrange with children and resize itself when a widget is docked or undocked.
+for arranging dockable widgets inside themselves. The most complicated scheme
+is implemented in C<Prima::LinearWidgetDocker>; it does not allow children to
+overlap, can rearrange the children, and resize itself when a widget is
+docked or undocked.
 
 The package provides only basic functionality. Module C<Prima::DockManager>
-provides common dockable controls, - toolbars, panels, speed buttons etc.
-based on C<Prima::Docks> module. See L<Prima::DockManager>.
+provides common dockable controls, - toolbars, panels, speed buttons, etc.
+based on the C<Prima::Docks> module. See L<Prima::DockManager>.
 
 =head1 Prima::AbstractDocker::Interface
 
 Implements generic functionality of a docket widget. The class is
 not derived from C<Prima::Widget>; is used as a secondary ascendant class
-for dock widget classes.
+for the dock widget classes.
 
 =head2 Properties
 
-Since the class is not C<Prima::Object> descendant, it provides
-only run-time implementation of its properties. It is up to the
-descendant object whether the properties are recognized on the creation stage
-or not.
+Since the class is not a C<Prima::Object> descendant, it provides only run-time
+implementation of its properties. It is up to the descendant object whether the
+properties are recognized during the creation stage or not.
 
 =over
 
 =item fingerprint INTEGER
 
-A custom bit mask, to be used by docking widgets to reject inappropriate
-dock widgets on early stage. The C<fingerprint> property is not part
-of the protocol, and is not required to be present in a dockable widget implementation.
+A custom bit mask used by docking widgets to reject inappropriate dock widgets
+at an early stage. The C<fingerprint> property is not a part of the protocol
+and is not required to be present in the implementation of a dockable widget.
 
 Default value: C<0x0000FFFF>
 
 =item dockup DOCK_WIDGET
 
-Selects the upper link in dock widgets hierarchy tree. The upper
-link is required to be a dock widget, but is not required to be
-a direct or an indirect parent. In this case, however, the maintenance
-of the link must be implemented separately, for example:
+Selects the upper link in the dock widgets hierarchy tree. The upper link is
+required to be a dock widget but is not required to be a direct or an indirect
+parent. In this case, however, the maintenance of the link must be implemented
+separately, for example:
 
 	$self-> dockup( $upper_dock_not_parent );
 
@@ -1900,12 +1885,12 @@ of the link must be implemented separately, for example:
 
 =item add_subdocker SUBDOCK
 
-Appends SUBDOCK to the list of lower-level docker widgets. The items of the list are
-returned by C<next_docker> method.
+Appends SUBDOCK to the list of children docker widgets. The items of the list are
+returned by the C<next_docker> method.
 
 =item check_session SESSION
 
-Debugging procedure; checks SESSION hash, warns if its members are
+A debugging procedure. Checks SESSION hash, and warns if its members are
 invalid or incomplete. Returns 1 if no fatal errors were encountered;
 0 otherwise.
 
@@ -1915,10 +1900,10 @@ Closes docking SESSION and frees the associated resources.
 
 =item dock WIDGET
 
-Called after WIDGET is successfully finished negotiation with
-the dock widget and changed its C<owner> property. The method
-adapts the dock widget layout and lists WIDGET into list of
-docked widgets. The method does not change C<owner> property of WIDGET.
+Called after WIDGET successfully finished negotiations with the dock widget and
+changed its C<owner> property. The method adapts the dock widget layout and
+lists the WIDGET into the list of docked widgets. The method does not change
+the C<owner> property of the WIDGET.
 
 The method must not be called directly.
 
@@ -1929,22 +1914,22 @@ and calling C<rearrange>.
 
 =item docklings
 
-Returns array of docked widgets.
+Returns an array of docked widgets
 
 =item next_docker SESSION, [ X, Y ]
 
-Enumerates lower-level docker widgets within SESSION; returns
+Enumerates children docker widgets inside the SESSION; returns
 one docker widget at a time. After the last widget returns
 C<undef>.
 
-The enumeration pointer is reset by C<query> call.
+The enumeration pointer is reset by the C<query> call.
 
-X and Y are coordinates of the point of interest.
+X and Y are the coordinates of the point of interest.
 
 =item open_session PROFILE
 
-Opens docking session with parameters stored in PROFILE
-and returns session ID scalar in case of success, or C<undef> otherwise.
+Opens a new docking session with parameters stored in the PROFILE hash.
+Returns a session ID scalar in case of success, or C<undef> otherwise.
 The following keys must be set in PROFILE:
 
 =over
@@ -1952,52 +1937,51 @@ The following keys must be set in PROFILE:
 =item position ARRAY
 
 Contains two integer coordinates of the desired position of
-a widget in (X,Y) format in screen coordinate system.
+a widget in (X,Y) format in the screen coordinate system.
 
 =item self WIDGET
 
-Widget that is about to dock.
+The widget that is about to dock.
 
 =item sizeable ARRAY
 
 Contains two boolean flags, representing if the widget can be resized
 to an arbitrary size, horizontally and vertically. The arbitrary resize
-option used as last resort if C<sizes> key does not contain the desired
+option is used as a last resort if the C<sizes> key does not contain the desired
 size.
 
 =item sizeMin ARRAY
 
-Two integers; minimal size that the widget can accept.
+Two integers; the minimal size that the widget can accept.
 
 =item sizes ARRAY
 
-Contains arrays of points in (X,Y) format; each point represents an
-acceptable size of the widget. If C<sizeable> flags are set to 0,
-and none of C<sizes> can be accepted by the dock widget, C<open_session>
+Contains an array of points in the (X,Y) format; each point represents an
+acceptable widget size. If both of the C<sizeable> flags are set to 0
+and none of the C<sizes> can be accepted by the dock widget, C<open_session>
 fails.
 
 =back
 
 =item query SESSION [ X1, Y1, X2, Y2 ]
 
-Checks if a dockable widget can be landed into the dock.
+Checks if a dockable widget can be landed on the dock.
 If it can, returns a rectangle that the widget must be set to.
 If coordinates ( X1 .. Y2 ) are specified, returns the
 rectangle closest to these. If C<sizes> or C<sizeable>
-keys of C<open_session> profile were set, the returned size
+keys of the C<open_session> profile were set, the returned size
 might be different from the current docking widget size.
 
-Once the caller finds the result appropriate, it is allowed to change
-its owner to the dock; after that, it must change its origin and size correspondingly
-to the result, and then call C<dock>.
+Once the caller finds the result appropriate, it is allowed to reparent under
+the dock; after that, it must change its origin and size correspondingly to the
+result, and then call C<dock>.
 
-If the dock cannot accept the widget, but contains lower-lever
-dock widgets, returns the first lower-lever widget. The caller
-can use subsequent calls to C<next_docker> to enumerate all
-lower-level dock widgets. A call to C<query>
-resets the internal enumeration pointer.
+If the dock cannot accept the widget but contains children dock widgets,
+returns the first child widget. The caller can use subsequent calls to
+C<next_docker> to enumerate all the children docks. A call to C<query> resets
+the internal enumeration pointer.
 
-If the widget cannot be landed, an empty array is returned.
+If the widget may not be landed, an empty array is returned.
 
 =item rearrange
 
@@ -2010,24 +1994,24 @@ but usually C<rearrange> is faster.
 
 =item redock_widget WIDGET
 
-Effectively re-docks the docked WIDGET. If WIDGET has C<redock>
+Effectively re-docks the docked WIDGET. If WIDGET has a C<redock>
 method in its namespace, it is called instead.
 
 =item remove_subdocker SUBDOCK
 
-Removes SUBDOCK from the list of lower-level docker widgets.
+Removes SUBDOCK from the list of children docker widgets.
 See also L<add_subdocker>.
 
 =item replace FROM, TO
 
-Assigns widget TO same owner and rectangle as FROM. The FROM widget
+Assigns the widget TO the same owner and size as FROM. The FROM widget
 must be a docked widget.
 
 =item undock WIDGET
 
-Removes WIDGET from list of docked widgets. The layout of the dock widget
-can be changed after execution of this method. The method does not
-change C<owner> property of WIDGET.
+Removes WIDGET from the list of docked widgets. The layout of the dock widget
+can be changed after the execution of this method. The method does not change
+the C<owner> property of WIDGET.
 
 The method must not be called directly.
 
@@ -2035,24 +2019,23 @@ The method must not be called directly.
 
 =head1 Prima::SimpleWidgetDocker
 
-A simple dock widget; accepts any widget that geometrically fits into.
+A simple dock widget; accepts any widget that geometrically fits into it.
 Allows overlapping of the docked widgets.
 
 =head1 Prima::ClientWidgetDocker
 
-A simple dock widget; accepts any widget that can be fit to cover all
+A simple dock widget; accepts any widget that can cover all
 dock's interior.
 
 =head1 Prima::LinearWidgetDocker
 
-A toolbar-like docking widget class. The implementation does
-not allow tiling, and can reshape the dock widget and rearrange
-the docked widgets if necessary.
+A toolbar-like docking widget class. The implementation does not allow tiling
+but can reshape the dock widget and rearrange the docked widgets if necessary.
 
-C<Prima::LinearWidgetDocker> is orientation-dependent; its main axis,
-managed by C<vertical> property, is used to align docked widgets in
-'lines', which in turn are aligned by the opposite axis ( 'major' and 'minor' terms
-are used in the code for the axes ).
+C<Prima::LinearWidgetDocker> is orientation-dependent; its main axis, managed
+by the C<vertical> property, aligns the docked widgets in 'lines', which in
+turn are aligned by the opposite axis ( 'major' and 'minor' terms are used in
+the code for the axes ).
 
 =head2 Properties
 
@@ -2060,8 +2043,8 @@ are used in the code for the axes ).
 
 =item growable INTEGER
 
-A combination of C<grow::XXX> constants, that describes how
-the dock widget can be resized. The constants are divided in two
+A combination of the C<grow::XXX> constants that describes how
+the dock widget can be resized. The constants are divided into two
 sets, direct and indirect, or, C<vertical> property independent and
 dependent.
 
@@ -2072,10 +2055,10 @@ The first set contains explicitly named constants:
 	grow::Right      grow::ForwardRight      grow::BackRight
 	grow::Up         grow::ForwardUp         grow::BackUp
 
-that select if the widget can be grown to the direction shown.
+that select if the widget can grow in the direction shown.
 These do not change meaning when C<vertical> changes, though they do
 change the dock widget behavior. The second set does not affect
-dock widget behavior when C<vertical> changes, however the names
+dock widget behavior when C<vertical> changes, however, the names
 are not that illustrative:
 
 	grow::MajorLess  grow::ForwardMajorLess  grow::BackMajorLess
@@ -2083,7 +2066,7 @@ are not that illustrative:
 	grow::MinorLess  grow::ForwardMinorLess  grow::BackMinorLess
 	grow::MinorMore  grow::ForwardMinorMore  grow::BackMinorMore
 
-C<Forward> and C<Back> prefixes select if the dock widget can be
+The C<Forward> and C<Back> prefixes select if the dock widget can be
 respectively expanded or shrunk in the given direction. C<Less> and
 C<More> are equivalent to C<Left> and C<Right> when C<vertical> is 0,
 and to C<Up> and C<Down> otherwise.
@@ -2095,11 +2078,11 @@ Default value: 0
 =item hasPocket BOOLEAN
 
 A boolean flag, affects the possibility of a docked widget to reside
-outside the dock widget inferior. If 1, a docked wigdet is allowed
+outside the dock widget inferior. If 1, a docked widget is allowed
 to stay docked ( or dock into a position ) further on the major axis
-( to the right when C<vertical> is 0, up otherwise ), as if there's
+( to the right when C<vertical> is 0, up otherwise ) as if there's
 a 'pocket'. If 0, a widget is neither allowed to dock outside the
-inferior, nor is allowed to stay docked ( and is undocked automatically )
+inferior nor is allowed to stay docked ( and is undocked automatically )
 when the dock widget shrinks so that the docked widget cannot stay in
 the dock boundaries.
 
@@ -2120,13 +2103,13 @@ Default value: 0
 
 =item Dock
 
-Called when C<dock> is successfully finished.
+Called when the C<dock> method is successfully finished.
 
 =item DockError WIDGET
 
-Called when C<dock> is unsuccessfully finished. This only
-happens if WIDGET does not follow the docking protocol, and inserts
-itself into a non-approved area.
+Called when the C<dock> method is unsuccessfully finished. This only happens if WIDGET
+does not follow the docking protocol, and inserts itself into a non-approved
+area.
 
 =item Undock
 
@@ -2136,15 +2119,17 @@ Called when C<undock> is finished.
 
 =head1 Prima::SingleLinearWidgetDocker
 
-Descendant of C<Prima::LinearWidgetDocker>. In addition
-to the constraints, introduced by the ascendant class,
-C<Prima::SingleLinearWidgetDocker> allows only one line ( or row,
-depending on C<vertical> property value ) of docked widgets.
+Descendant of C<Prima::LinearWidgetDocker>. In addition to the constraints
+introduced by the ascendant class, C<Prima::SingleLinearWidgetDocker> allows
+only one row ( or column, depending on the C<vertical> property value ) of docked
+widgets.
 
 =head1 Prima::FourPartDocker
 
-Implementation of a docking widget, with its four sides
-acting as 'rubber' docking areas.
+Implementation of a docking widget that hosts four children docker widgets on
+its sides and one in the center.  All of the children docks can grow and shrink
+automatically so that the whole setup has an effect as if the dock borders are
+dynamic.
 
 =head2 Properties
 
@@ -2152,109 +2137,109 @@ acting as 'rubber' docking areas.
 
 =item indents ARRAY
 
-Contains four integers, specifying the breadth of offset for
-each side. The first integer is width of the left side, the second - height
-of the bottom side, the third - width of the right side, the fourth - height
+Contains four integers specifying the breadth of offset for
+each side. The first integer is the width of the left side, the second - the height
+of the bottom side, the third is the width of the right side, and the fourth - height
 of the top side.
 
 =item dockerClassLeft STRING
 
-Assigns class of left-side dock window.
+Assigns the class of the left-side dock window.
 
 Default value: C<Prima::LinearWidgetDocker>.
 Create-only property.
 
 =item dockerClassRight STRING
 
-Assigns class of right-side dock window.
+Assigns the class of the right-side dock window.
 
 Default value: C<Prima::LinearWidgetDocker>.
 Create-only property.
 
 =item dockerClassTop STRING
 
-Assigns class of top-side dock window.
+Assigns the class of the top-side dock window.
 
 Default value: C<Prima::LinearWidgetDocker>.
 Create-only property.
 
 =item dockerClassBottom STRING
 
-Assigns class of bottom-side dock window.
+Assigns the class of the bottom-side dock window.
 
 Default value: C<Prima::LinearWidgetDocker>.
 Create-only property.
 
 =item dockerClassClient STRING
 
-Assigns class of center dock window.
+Assigns the class of the center dock window.
 
 Default value: C<Prima::ClientWidgetDocker>.
 Create-only property.
 
 =item dockerProfileLeft HASH
 
-Assigns hash of properties, passed to the left-side dock widget during the creation.
+Assigns a hash of properties, passed to the left-side dock widget during the creation.
 
 Create-only property.
 
 =item dockerProfileRight HASH
 
-Assigns hash of properties, passed to the right-side dock widget during the creation.
+Assigns a hash of properties, passed to the right-side dock widget during the creation.
 
 Create-only property.
 
 =item dockerProfileTop HASH
 
-Assigns hash of properties, passed to the top-side dock widget during the creation.
+Assigns a hash of properties, passed to the top-side dock widget during the creation.
 
 Create-only property.
 
 =item dockerProfileBottom HASH
 
-Assigns hash of properties, passed to the bottom-side dock widget during the creation.
+Assigns a hash of properties, passed to the bottom-side dock widget during the creation.
 
 Create-only property.
 
 =item dockerProfileClient HASH
 
-Assigns hash of properties, passed to the center dock widget during the creation.
+Assigns a hash of properties, passed to the center dock widget during the creation.
 
 Create-only property.
 
 =item dockerDelegationsLeft ARRAY
 
-Assigns the left-side dock list of delegated notifications.
+Assigns delegated notifications of the left-side dock.
 
 Create-only property.
 
 =item dockerDelegationsRight ARRAY
 
-Assigns the right-side dock list of delegated notifications.
+Assigns delegated notifications of the right-side dock.
 
 Create-only property.
 
 =item dockerDelegationsTop ARRAY
 
-Assigns the top-side dock list of delegated notifications.
+Assigns delegated notifications of the top-side dock.
 
 Create-only property.
 
 =item dockerDelegationsBottom ARRAY
 
-Assigns the bottom-side dock list of delegated notifications.
+Assigns delegated notifications of the bottom-side dock.
 
 Create-only property.
 
 =item dockerDelegationsClient ARRAY
 
-Assigns the center dock list of delegated notifications.
+Assigns delegated notifications of the bottom-side dock.
 
 Create-only property.
 
 =item dockerCommonProfile HASH
 
-Assigns hash of properties, passed to all five dock widgets during the creation.
+Assigns a hash of properties, passed to all the five dock widgets during the creation.
 
 Create-only property.
 
@@ -2262,15 +2247,17 @@ Create-only property.
 
 =head1 Prima::InternalDockerShuttle
 
-The class provides a container, or a 'shuttle', for a client widget, while is docked to
-an C<Prima::AbstractDocker::Interface> descendant instance. The functionality includes
-communicating with dock widgets, the user interface for dragging and interactive dock selection,
-and a client widget container for non-docked state. The latter is implemented by
-reparenting of the client widget to an external shuttle widget, selected by C<externalDockerClass>
-property. Both user interfaces for the docked and the non-docked shuttle states are minimal.
+The class provides a container, or a 'shuttle', for a client widget, while is
+docked to a C<Prima::AbstractDocker::Interface> descendant instance. The
+functionality includes communicating with dock widgets, the user interface for
+dragging and interactive dock selection, and a client widget container for the
+non-docked state. The latter is implemented by reparenting the client widget
+to an external shuttle widget, selected by the C<externalDockerClass> property.
+Both user interfaces for the docked and the non-docked shuttle states are
+minimal.
 
-The class implements dockable widget functionality, served by C<Prima::AbstractDocker::Interface>,
-while itself it is derived from C<Prima::Widget> only.
+The class implements dockable widget functionality, served by
+C<Prima::AbstractDocker::Interface>, and is derived from C<Prima::Widget>.
 
 See also: L</Prima::ExternalDockerShuttle>.
 
@@ -2281,7 +2268,7 @@ See also: L</Prima::ExternalDockerShuttle>.
 =item client WIDGET
 
 Provides access to the client widget, which always resides either in
-the internal or the external shuttle. By default there is no client,
+the internal or the external shuttle. By default, there is no client,
 and any widget capable of changing its parent can be set as one.
 After a widget is assigned as a client, its C<owner> and C<clipOwner>
 properties must not be used.
@@ -2297,7 +2284,7 @@ Default value: C<undef>
 
 =item dockingRoot WIDGET
 
-Selects the root of dock widgets hierarchy.
+Selects the root of the dock widgets hierarchy.
 If C<undef>, the shuttle can only exist in the non-docked state.
 
 Default value: C<undef>
@@ -2306,23 +2293,23 @@ See L</USAGE> for reference.
 
 =item externalDockerClass STRING
 
-Assigns class of external shuttle widget.
+Assigns the class of the external shuttle widget.
 
 Default value: C<Prima::ExternalDockerShuttle>
 
 =item externalDockerModule STRING
 
-Assigns module that contains the external shuttle widget class.
+Assigns the module that contains the external shuttle widget class.
 
 Default value: C<Prima::MDI> ( C<Prima::ExternalDockerShuttle> is derived from C<Prima::MDI> ).
 
 =item externalDockerProfile HASH
 
-Assigns hash of properties, passed to the external shuttle widget during the creation.
+Assigns a hash of properties, passed to the external shuttle widget during the creation.
 
 =item fingerprint INTEGER
 
-A custom bit mask, used to reject inappropriate dock widgets on early stage.
+A custom bit mask used to reject inappropriate dock widgets at an early stage.
 
 Default value: C<0x0000FFFF>
 
@@ -2335,10 +2322,10 @@ Default value: C<5,5,5,5>.
 
 =item snapDistance INTEGER
 
-A maximum offset, in pixels, between the actual shuttle coordinates and the coordinates
-proposed by the dock widget, where the shuttle is allowed to land.
-In other words, it is the distance between the dock and the shuttle when the latter
-'snaps' to the dock during the dragging session.
+A maximum offset, in pixels, between the actual shuttle coordinates and the
+coordinates proposed by the dock widget, where the shuttle is allowed to land.
+In other words, it is the distance between the dock and the shuttle when the
+latter 'snaps' to the dock during the dragging session.
 
 Default value: 10
 
@@ -2362,9 +2349,8 @@ Default value: 0
 
 =item client2frame X1, Y1, X2, Y2
 
-Returns a rectangle that the shuttle would occupy if
-its client rectangle is assigned to X1, Y1, X2, Y2
-rectangle.
+Returns the rectangle that the shuttle would occupy if its client rectangle is
+assigned to X1, Y1, X2, Y2 .
 
 =item dock_back
 
@@ -2372,53 +2358,50 @@ Docks to the recent dock widget, if it is still available.
 
 =item drag STATE, RECT, ANCHOR_X, ANCHOR_Y
 
-Initiates or aborts the dragging session, depending on STATE boolean
+Initiates or aborts the dragging session, depending on the STATE boolean
 flag.
 
 If it is 1, RECT is an array with the coordinates of the shuttle rectangle
-before the drag has started; ANCHOR_X and ANCHOR_Y are coordinates of the
-aperture point where the mouse event occurred that has initiated the drag.
+before the session has started; ANCHOR_X and ANCHOR_Y are coordinates of the
+aperture point where the mouse event occurred that has initiated the session.
 Depending on how the drag session ended, the shuttle can be relocated to
 another dock, undocked, or left intact. Also, C<Dock>, C<Undock>, or
 C<FailDock> notifications can be triggered.
 
-If STATE is 0, RECT, ANCHOR_X ,and ANCHOR_Y parameters are not used.
+If the STATE is 0, RECT, ANCHOR_X ,and ANCHOR_Y parameters are not used.
 
 =item find_docking DOCK, [ POSITION ]
 
-Opens a session with DOCK, unless it is already opened,
-and negotiates about the possibility of landing (
-at particular POSITION, if this parameter is present ).
+Opens a session with DOCK, unless it is already opened, and negotiates about
+the possibility of landing ( at the POSITION if this parameter is
+present ).
 
-C<find_docking> caches the dock widget sessions, and provides a
-possibility to select different parameters passed to C<open_session>
-for different dock widgets. To achieve this, C<GetCaps> request
-notification is triggered, which fills the parameters. The default
-action sets C<sizeable> options according to C<x_sizeable>
-and C<y_sizeable> properties.
+C<find_docking> caches the dock widget sessions and provides a possibility to
+select different parameters passed to C<open_session> for different dock
+widgets. To achieve this, the C<GetCaps> request notification is triggered,
+which is expected to fill the parameters. The default action sets the C<sizeable>
+option according to the C<x_sizeable> and C<y_sizeable> properties.
 
-In case an appropriate landing area is found, C<Landing>
+In case an appropriate landing area is found, the C<Landing>
 notification is triggered with the proposed dock widget
-and the target rectangle. The area can be rejected on this stage
-if C<Landing> returns negative answer.
+and the target rectangle. The area can be rejected at this stage
+if C<Landing> returns a negative answer.
 
 On success, returns a dock widget found and the target rectangle;
-the widget is never docked though. On failure returns an empty array.
+the widget is not docked though. On failure returns an empty array.
 
-This method is used by the dragging routine to provide a visual feedback to
-the user, to indicate that a shuttle may or may not land in a particular
-area.
+This method is used by the mouse dragging routine to provide visual feedback to
+the user, to indicate that a shuttle may or may not land in a particular area.
 
 =item frame2client X1, Y1, X2, Y2
 
-Returns a rectangle that the client would occupy if
-the shuttle rectangle is assigned to X1, Y1, X2, Y2
-rectangle.
+Returns the rectangle that the client would occupy if the shuttle rectangle is
+assigned to X1, Y1, X2, Y2 .
 
 =item redock
 
-If docked, undocks form the dock widget and docks back.
-If not docked, does not perform anything.
+Undocks from the dock widget and immediately tries to land back.
+If not docked, does not do anything.
 
 =back
 
@@ -2428,53 +2411,52 @@ If not docked, does not perform anything.
 
 =item Dock
 
-Called when shuttle is docked.
+Called when the shuttle was docked.
 
 =item EDSClose
 
-Triggered when the user presses close button or otherwise activates the
-C<close> function of the EDS ( external docker shuttle ). To cancel
-the closing, C<clear_event> must be called inside the event handler.
+Triggered when the user presses the close button or otherwise activates the
+C<close> function of the EDS ( external docker shuttle ) pseudo-window. To
+cancel the window closing C<clear_event> must be called inside the event handler.
 
 =item FailDock X, Y
 
-Called after the dragging session in the non-docked stage is finished,
+Called after the dragging session in the non-docked stage was finished
 but did not result in docking. X and Y are the coordinates
 of the new external shuttle position.
 
 =item GetCaps DOCK, PROFILE
 
-Called before the shuttle opens a docking session with DOCK
+Called before the shuttle opens a docking session with the DOCK
 widget. PROFILE is a hash reference, which is to be filled
 inside the event handler. After that PROFILE is passed
-to C<open_session> call.
+to an C<open_session> call.
 
-The default action sets C<sizeable> options according to C<x_sizeable>
+The default action sets the C<sizeable> option according to the C<x_sizeable>
 and C<y_sizeable> properties.
 
 =item Landing DOCK, X1, Y1, X2, Y2
 
-Called inside the docking session, after an appropriate dock
-widget is selected and the landing area is defined as
-X1, Y1, X2, Y2. To reject the landing on either DOCK or
-area, C<clear_event> must be called.
+Called inside the docking session, after an appropriate dock widget is selected
+and the landing area is defined as X1, Y1, X2, Y2. To reject the landing on
+either DOCK or area, C<clear_event> must be called.
 
 =item Undock
 
-Called when shuttle is switched to the non-docked state.
+Called when the shuttle is switched to the non-docked state.
 
 =back
 
 =head1 Prima::ExternalDockerShuttle
 
-A shuttle class, used to host a client of C<Prima::InternalDockerShuttle>
-widget when it is in the non-docked state. The class represents an
-emulation of a top-level window, which can be moved, resized ( this
-feature is not on by default though ), and closed.
+A shuttle class, hosts a client of the C<Prima::InternalDockerShuttle> widget when
+it is in the non-docked state. The widget is a pseudo-window with some minimal
+decorations that can be moved, resized ( this feature is not on by default
+though ), and closed.
 
-C<Prima::ExternalDockerShuttle> is inherited from C<Prima::MDI> class, and
-its window emulating functionality is a subset of its ascendant.
-See also L<Prima::MDI>.
+C<Prima::ExternalDockerShuttle> is inherited from the C<Prima::MDI> class, and
+its window-emulating functionality is a subset of its ascendant.  See also
+L<Prima::MDI>.
 
 =head2 Properties
 
@@ -2482,7 +2464,7 @@ See also L<Prima::MDI>.
 
 =item shuttle WIDGET
 
-Contains reference to the dockable WIDGET
+Contains the reference to the dockable WIDGET
 
 =back
 
@@ -2490,8 +2472,7 @@ Contains reference to the dockable WIDGET
 
 A simple descendant of C<Prima::InternalDockerShuttle>, used
 for toolbars. Introduces orientation and draws a tiny header along
-the minor shuttle axis. All its properties concern only
-the way the shuttle draws itself.
+the minor shuttle axis. 
 
 =head2 Properties
 
@@ -2499,14 +2480,14 @@ the way the shuttle draws itself.
 
 =item headerBreadth INTEGER
 
-Breadth of the header in pixels.
+The breadth of the header in pixels.
 
 Default value: 8
 
 =item indent INTEGER
 
-Provides a wrapper to C<indents> property; besides the
-space for the header, all indents are assigned to C<indent>
+A wrapper to the C<indents> property; besides the
+space for the header, all indents are assigned to the C<indent>
 property value.
 
 =item vertical BOOLEAN

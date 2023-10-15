@@ -2653,8 +2653,8 @@ Prima::Classes - binder module for the built-in classes.
 
 =head1 DESCRIPTION
 
-C<Prima::Classes> and L<Prima::Const> is a minimal set of perl modules needed for
-the toolkit. Since the module provides bindings for the core classes, it is required
+C<Prima::Classes> and L<Prima::Const> form a minimal set of perl modules needed for
+the toolkit to run. Since the module provides bindings for the core classes, it is required
 to be included in every Prima-related module and program.
 
 =head1 AUTHOR
