@@ -445,7 +445,7 @@ compress_region( PRegionRec region)
 	) {
 		if (
 			curr->x == prev->x &&
-			curr->y == prev->y + 1 &&
+			curr->y == prev->y + prev->height &&
 			curr->width == prev->width
 		) {
 			prev->height += curr->height;
