@@ -1512,11 +1512,9 @@ Prima::Buttons - buttons, checkboxes, radios
 
 =head1 DESCRIPTION
 
-Prima::Buttons provides two separate sets of classes: the button widgets and
-the grouping widgets. The button widgets include push buttons, check-boxes, and
-radio buttons.  The grouping widgets are designed for usage as containers for
-the check-boxes and radio buttons, however, any widget can be inserted in a
-grouping widget.
+Prima::Buttons provides button widgets that include push buttons, check-boxes,
+and radio buttons. It also provides the C<Prima::GroupBox> class used as
+a container for the checkboxes and radio buttons.
 
 The module provides the following classes:
 
@@ -1549,14 +1547,14 @@ Note: C<*> - marked classes are abstract.
 
 =head1 Prima::AbstractButton
 
-Prima::AbstractButton realizes common functionality of buttons.
-It provides reaction on mouse and keyboard events, and calls
-L<Click> notification when the user activates the button. The
-mouse activation is performed either by mouse double click or
-successive mouse down and mouse up events within the button
-boundaries. The keyboard activation is performed on the following conditions:
-
+Prima::AbstractButton realizes the common functionality of buttons.  It provides
+a reaction to mouse and keyboard events and calls the L<Click> notification when
+the user activates the button. The activation can be done by:
 =over
+
+=item *
+
+Mouse click
 
 =item *
 
@@ -1564,15 +1562,14 @@ The spacebar key is pressed
 
 =item *
 
-C<{default}> ( see L<default> property ) boolean variable is
-set and enter key is pressed. This condition holds even if the button is out of focus.
+C<{default}> ( see L<default> property ) boolean variable is set and the Enter
+key is pressed. This works even if the button is out of focus.
 
 =item *
 
 C<{accel}> character variable is assigned and the corresponding character key
-is pressed. C<{accel}> variable is extracted automatically from the text string
-passed to L<text> property.
-This condition holds even if the button is out of focus.
+is pressed. The C<{accel}> variable is extracted automatically from the text string
+passed to the L<text> property.  This works even if the button is out of focus.
 
 =back
 
@@ -1586,7 +1583,7 @@ Abstract callback event.
 
 =item Click
 
-Called whenever the user presses the button.
+Called whenever the user activates the button.
 
 =back
 
@@ -1596,21 +1593,22 @@ Called whenever the user presses the button.
 
 =item hotKey CHAR
 
-A key (defined by CHAR) that the button will react to if pressed, if the button has the focus
-The combination ALT + Key works always if the button has the focus or not
+A key (defined by CHAR) that the button will react to if pressed if the button
+has the focus. The combination ALT + Key works always whether the button has the
+focus or not
 
 =item pressed BOOLEAN
 
-Represents the state of button widget, whether it is pressed or not.
+Manages the pressed state of the button
 
 Default value: 0
 
 =item text STRING
 
-The text that is drawn in the button. If STRING contains ~ ( tilde ) character,
-the following character is treated as a hotkey, and the character is
-underlined. If the user presses the corresponding character key then
-L<Click> event is called. This is true even when the button is out of focus.
+The text that is drawn in the button. If STRING contains the C<~> ( tilde )
+character, the following character is treated as a hotkey, and the character is
+underlined. If the user presses the corresponding character key then the
+L<Click> event is called. This works even if the button is out of focus.
 
 =back
 
@@ -1620,28 +1618,30 @@ L<Click> event is called. This is true even when the button is out of focus.
 
 =item draw_veil CANVAS, X1, Y1, X2, Y2
 
-Draws a rectangular veil shape over CANVAS in given boundaries.
+Draws a rectangular veil shape over the CANVAS in given boundaries.
 This is the default method of drawing the button in the disabled state.
 
 =item draw_caption CANVAS, X, Y
 
-Draws single line of text, stored in L<text> property on CANVAS at X, Y
-coordinates. Performs underlining of eventual tilde-escaped character, and
-draws the text with dimmed colors if the button is disabled. If the button
-is focused, draws a dotted line around the text.
+Draws a single line of text stored in the L<text> property on the CANVAS at the
+X, Y coordinates. Underlines an eventual tilde-escaped character and draws the
+text with dimmed colors if the button is disabled. If the button is focused,
+draws a dotted rectangle around the text.
 
 =item caption_box [ CANVAS = self ]
 
-Calculates geometrical extensions of text string, stored in L<text> property in pixels.
-Returns two integers, the width and the height of the string for the font selected on CANVAS.
-If CANVAS is undefined, the widget itself is used as a graphic device.
+Calculates geometrical extensions of the string stored in the L<text> property, in
+pixels.  Returns two integers, the width and the height of the string for the
+font currently selected on the CANVAS.
+
+If CANVAS is undefined, the widget's font is used for the calculations instead.
 
 =back
 
 =head1 Prima::Button
 
-A push button class, that extends Prima::AbstractButton functionality by allowing
-an image to be drawn together with the text.
+Push button widget, extends the Prima::AbstractButton functionality by
+allowing an image to be drawn together with text.
 
 =head2 Properties
 
@@ -1656,16 +1656,16 @@ Default value: 1
 
 =item autoRepeat BOOLEAN
 
-If set, the button behaves like a keyboard button - after the first
-L<Click> event, a timeout is set, after which is expired and the button
-still pressed, L<Click> event is repeatedly called until the button is
-released. Useful for emulating the marginal scroll-bar buttons.
+If set, the widget behaves like a keyboard button - after the first L<Click>
+event, a timeout is set, after which if the button is still pressed, the
+L<Click> event is repeatedly fired.  Can be useful f ex for emulating
+scroll-bar arrow buttons.
 
 Default value: 0
 
 =item autoShaping BOOLEAN
 
-If 1, the button C<shape> is autmatically update when the button size and/or
+If 1, the button C<shape> is automatically updated when the button size and/or
 font are updated, if the current skin can make use of non-rectangular shapes.
 Generally is unneeded unless the owner of the button has a different back color
 or features some custom painting.
@@ -1683,13 +1683,13 @@ Default value: 1
 
 =item borderWidth INTEGER
 
-Width of 3d-shade border around the button.
+Width of the border around the button.
 
-Default value: 2
+Default value: depends on the skin
 
 =item checkable BOOLEAN
 
-Selects if the button toggles L<checked> state when the user
+Selects if the button toggles the L<checked> state when the user
 presses it.
 
 Default value: 0
@@ -1697,29 +1697,29 @@ Default value: 0
 =item checked BOOLEAN
 
 Selects whether the button is checked or not. Only actual
-when L<checkable> property is set. See also L<holdGlyph>.
+when the L<checkable> property is set. See also L<holdGlyph>.
 
 Default value: 0
 
 =item default BOOLEAN
 
-Defines if the button should react when the user presses the enter button.
-If set, the button is drawn with the black border, indicating that it executes
-the 'default' action. Useful for OK-buttons in dialogs.
+Defines if the button should react when the user presses the enter button.  If
+set, the button is drawn with a black border, indicating that it executes the
+'default' action. Useful for OK-buttons in dialogs.
 
 Default value: 0
 
 =item defaultGlyph INTEGER | IMAGE | METAFILE
 
-Selects index of the default sub-image.
+Selects the index of the default sub-image.
 
 Default value: 0
 
 =item disabledGlyph INTEGER | IMAGE | METAFILE
 
-Selects index of the sub-image for the disabled button state.
-If C<image> does not contain such sub-image, the C<defaultGlyph>
-sub-image is drawn, and is dimmed over with L<draw_veil> method.
+Selects the index of the sub-image for the disabled button state.
+If C<image> does not contain such a sub-image, the C<defaultGlyph>
+sub-image is drawn and is dimmed over using the L<draw_veil> method.
 
 Default value: 1
 
@@ -1733,16 +1733,16 @@ Default value: 0
 
 =item glyphs INTEGER
 
-If a button is to be drawn with the image, it can be passed in the L<image>
+If a button is to be drawn with an image, it can be passed in the L<image>
 property. If, however, the button must be drawn with several different images,
-there are no several image-holding properties. Instead, the L<image> object
-can be logically split vertically into several equal sub-images. This allows
-the button resource to contain all button states into one image file.
-The C<glyphs> property assigns how many such sub-images the image object contains.
+there are no several image-holding properties. Instead, the L<image> object can
+be logically split vertically into several equal sub-images. This allows the
+image resource to contain all button states in a single image file.  The
+C<glyphs> property assigns how many such sub-images the image object contains.
 
-The sub-image indices can be assigned for rendition of the different states.
+The sub-image indices can be assigned to reflect the different button states.
 These indices are selected by the following integer properties: L<defaultGlyph>,
-L<hiliteGlyph>, L<disabledGlyph>, L<pressedGlyph>, L<holdGlyph>.
+L<hiliteGlyph>, L<disabledGlyph>, L<pressedGlyph>, and L<holdGlyph>.
 
 Default value: 1
 
@@ -1752,54 +1752,54 @@ Read-only property, return 1 if the button is highlighted, 0 otherwise.
 
 =item hiliteGlyph INTEGER | IMAGE | METAFILER
 
-Selects index of the sub-image for the state when the mouse pointer is
-over the button. This image is used only when L<flat> property is set.
-If C<image> does not contain such sub-image, the C<defaultGlyph> sub-image is drawn.
+Selects the index of the sub-image for the state when the mouse pointer is
+hovering over the button. This image is used only when the L<flat> property is set.
+If C<image> does not contain such a sub-image, the C<defaultGlyph> sub-image is drawn.
 
 Default value: 0
 
 =item holdGlyph INTEGE | IMAGE | METAFILER
 
-Selects index of the sub-image for the state when the button is L<checked>.
-This image is used only when L<checkable> property is set.
-If C<image> does not contain such sub-image, the C<defaultGlyph> sub-image is drawn.
+Selects the index of the sub-image for the state when the button is L<checked>.
+This image is used only when the L<checkable> property is set.
+If C<image> does not contain such a sub-image, the C<defaultGlyph> sub-image is drawn.
 
 Default value: 3
 
 =item image OBJECT
 
-If set, the image object is drawn next with the button text, over or left to it
-( see L<vertical> property ). If OBJECT contains several sub-images, then the
-corresponding sub-image is drawn for each button state. See L<glyphs> property.
+If set, the image object is drawn next with the button text, on the top or on the left 
+( see the L<vertical> property ). If the OBJECT contains several sub-images, then the
+corresponding sub-image is drawn for each button state. See the L<glyphs> property.
 
-Can also be a C<Prima::Drawable::Metafile> object, however, C<imageScale> factor
+Can also be a C<Prima::Drawable::Metafile> object, however, the C<imageScale> factor
 wouldn't work on it.
 
 Default value: undef
 
 =item imageFile FILENAME
 
-Alternative to image selection by loading an image from the file.
-During the creation state, if set together with L<image> property, is superseded
+An alternative to image selection that loads an image from the file.
+During the creation state, if set together with the L<image> property, is superseded
 by the latter.
 
-To allow easy multiframe image access, FILENAME string is checked if it contains
-a number after a colon in the string end. Such, C<imageFile('image.gif:3')> call
-would load the fourth frame in C<image.gif> file.
+To allow easy multiframe image access, the FILENAME string is checked if it contains
+a number after the colon in the string end. Such as, C<imageFile('image.gif:3')>
+loads the fourth frame from C<image.gif> .
 
 =item imageScale SCALE
 
-Contains zoom factor for the L<image>.
+Manages the zoom factor for the L<image>.
 
 Default value: 1
 
 =item modalResult INTEGER
 
-Contains a custom integer value, preferably one of C<mb::XXX> constants.
-If a button with non-zero C<modalResult> is owned by a currently executing
-modal window, and is pressed, its C<modalResult> value is copied to the C<modalResult>
-property of the owner window, and the latter is closed.
-This scheme is helpful for the dialog design:
+Contains a custom integer value, preferably one of C<mb::XXX> constants.  If a
+button with non-zero C<modalResult> is owned by a currently executing modal
+window, and is pressed, its C<modalResult> value is copied to the
+C<modalResult> property of the owner window, and the latter is closed.  This
+scheme is helpful for the following dialog design:
 
 	$dialog-> insert( 'Prima::Button', modalResult => mb::OK,
 		text => '~Ok', default => 1);
@@ -1807,7 +1807,7 @@ This scheme is helpful for the dialog design:
 		text => 'Cancel);
 	return if $dialog-> execute != mb::OK.
 
-The toolkit defines the following constants for C<modalResult> use:
+The toolkit defines the following default constants for C<modalResult> use:
 
 	mb::OK or mb::Ok
 	mb::Cancel
@@ -1824,9 +1824,9 @@ Default value: 0
 
 =item smoothScaling BOOL
 
-Tries to represent the image as smooth as possible. When the system doesn't support ARGB layering,
-icon objects smooth scaling will be restricted to integer-scaling only (i.e. 2x, 3x etc) because
-smooth color plane will not match pixelated mask plane, and because box-scaling
+Tries to paint the image as smoothly as possible. When the system doesn't support ARGB layering,
+smooth scaling of icons will be restricted to integer-scaling only (i.e. 2x, 3x, etc) because
+the smoothed color plane will not match pixelated mask plane, and because box-scaling
 with non-integer zooms looks ugly.
 
 Default value: true
@@ -1835,8 +1835,8 @@ See also: L<Prima::Image/ui_scale> .
 
 =item pressedGlyph INTEGER | IMAGE | METAFILE
 
-Selects index of the sub-image for the pressed state of the button.
-If C<image> does not contain such sub-image, the C<defaultGlyph> sub-image is drawn.
+Selects the index of the sub-image for the pressed state of the button.
+If C<image> does not contain such a sub-image, the C<defaultGlyph> sub-image is drawn.
 
 =item transparent BOOLEAN
 
@@ -1844,16 +1844,16 @@ See L<Prima::Widget/transparent>. If set, the background is not painted.
 
 =item vertical BOOLEAN
 
-Determines the position of image next to the text string. If 1,
+Determines the position of the image next to the text string. If 1,
 the image is drawn above the text; left to the text if 0.
-In a special case when L<text> is an empty string, image is centered.
+In a special case when L<text> is an empty string, the image is centered.
 
 =back
 
 =head1 Prima::SpeedButton
 
 A convenience class, same as L<Prima::Button> but with default
-square shape and text property set to an empty string.
+squared shape and text property set to an empty string.
 
 =head1 Prima::Cluster
 
@@ -1869,13 +1869,14 @@ set to 1, to prevent usage of background color from C<wc::Button> palette.
 =item auto BOOLEAN
 
 If set, the button is automatically checked when the button is in focus. This
-functionality allows arrow key walking by the radio buttons without pressing
-spacebar key. It is also has a drawback, that if a radio button gets focused
-without user intervention, or indirectly, it also gets checked, so that behavior
-might cause confusion. The said can be exemplified when an unchecked radio button
-in a notebook widget gets active by turning the notebook page.
+functionality allows the use of arrow keys for navigating the radio buttons
+without pressing the spacebar key. It also has a drawback, if a radio
+button gets focused without user intervention, or indirectly, it also gets
+checked, so that behavior might confuse. The said can be exemplified
+when an unchecked radio button in a notebook widget becomes active by turning the
+notebook page.
 
-Although this property is present on the L<Prima::CheckBox>, it is not used in there.
+Although this property is present in the L<Prima::CheckBox> class, it is not used in there.
 
 =back
 
@@ -1899,11 +1900,12 @@ Reverts the C<checked> state of the button and returns the new state.
 
 =head1 Prima::Radio
 
-Represents a standard radio button, that can be either in checked, or in unchecked state.
-When checked, delivers L<RadioClick> event to the owner ( if the latter provides one ).
+Represents the standard radio button that can be checked or unchecked.
+When checked, delivers the L<RadioClick> event to the owner if the latter provides one.
 
-The button uses the standard toolkit images with C<sbmp::RadioXXX> indices.
-If the images can not be loaded, the button is drawn with the graphic primitives.
+The button uses the standard toolkit images with C<sbmp::RadioXXX> indices when
+using the classic skin.  If the images can not be loaded, the button is drawn
+with the graphic primitives.
 
 =head2 Events
 
@@ -1911,29 +1913,29 @@ If the images can not be loaded, the button is drawn with the graphic primitives
 
 =item Check
 
-Called when a button is checked.
+Called when the button was checked.
 
 =back
 
 =head1 Prima::CheckBox
 
-Represents a standard check box button, that can be either in checked, or in unchecked state.
+Represents the standard check box button, that can be checked or unchecked.
 
-The button uses the standard toolkit images with C<sbmp::CheckBoxXXX> indices.
-If the images can not be loaded, the button is drawn with graphic primitives.
+The button uses the standard toolkit images with C<sbmp::CheckBoxXXX> indices
+when using the classic skin.  If the images can not be loaded, the button is
+drawn with graphic primitives.
 
 =head1 Prima::GroupBox
 
-The class to be used as a container of radio and check-box buttons.
-It can, however, contain any other widgets.
+A container for radio and checkbox buttons (but can contain any widgets).
 
-The widget draws a 3d-shaded box on its boundaries and a text string in its
-upper left corner. Uses C<transparent> property to determine if it needs to
-paint its background.
+The widget draws a rectangular box and a title string.  Uses the C<transparent>
+property to determine if it needs to paint its background.
 
-The class does not provide a method to calculate the extension of the inner rectangle.
-However, it can be safely assumed that all offsets except the upper are 5 pixels.
-The upper offset is dependent on a font, and constitutes the half of the font height.
+The class does not provide a method to calculate the extension of the inner
+rectangle.  However, it can be safely assumed that all offsets except the upper
+are 5 pixels.  The upper offset is dependent on a font and constitutes 
+half of the font height.
 
 =head2 Events
 
@@ -1941,12 +1943,12 @@ The upper offset is dependent on a font, and constitutes the half of the font he
 
 =item RadioClick BUTTON
 
-Called whenever one of children radio buttons is checked. BUTTON
+Called whenever one of the children radio buttons is checked. BUTTON
 parameter contains the newly checked button.
 
 The default action of the class is that all checked buttons,
-except BUTTON, are unchecked. Since the flow type of C<RadioClick> event
-is C<nt::PrivateFirst>, C<on_radioclick> method must be directly overloaded
+except BUTTON, are unchecked. Since the flow type of the C<RadioClick> event
+is C<nt::PrivateFirst>, the C<on_radioclick> method must be directly overloaded
 to disable this functionality.
 
 =back
@@ -1961,31 +1963,26 @@ If set (default), draws a border along the widget boundaries
 
 =item index INTEGER
 
-Checks the child radio button with C<index>. The indexing is
-based on the index in the widget list, returned by C<Prima::Widget::widgets> method.
+Checks the child radio button with C<index>. The indexing is based on the index
+in the widget list, returned by the C<Prima::Widget::widgets> method.
 
 =item value BITFIELD
 
-BITFIELD is an unsigned integer, where each bit corresponds to the
-C<checked> state of a child check-box button. The indexing is
-based on the index in the widget list, returned by C<Prima::Widget::widgets> method.
+BITFIELD is an unsigned integer, where each bit corresponds to the C<checked>
+state of a child check-box button. The indexing is based on the index in the
+widget list, returned by the C<Prima::Widget::widgets> method.
 
 =back
 
 =head1 BUGS
-
-The push button is not capable of drawing anything other than single line of text and
-single image. If an extended functionality is needed, instead of fully rewriting
-the painting procedure, it might be reasonable to overload C<put_image_indirect>
-method of C<Prima::Button>, and perform custom output there.
 
 Tilde escaping in C<text> is not realized, but is planned to. There currently is no way
 to avoid tilde underscoring.
 
 Radio buttons can get unexpectedly checked when used in notebooks. See L<auto>.
 
-C<Prima::GroupBox::value> parameter is an integer, which size is architecture-dependent.
-Shift towards a vector is considered a good idea.
+The C<Prima::GroupBox::value> parameter is an integer, which size is architecture-dependent.
+Shifting towards a vector is considered a good idea.
 
 =head1 AUTHOR
 
