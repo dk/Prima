@@ -527,17 +527,19 @@ sub paint_flat
 			}
 		}
 		$canvas-> antialias(1);
-		my $dw;
+		my ($dw, $d);
 		if ( $canvas-> antialias ) {
 			$dw = $self->font->height;
+			$d = 0;
 		} else {
 			$dw = 0;
+			$d  = -1;
 			$lw = int($lw + .5);
 		}
 		$canvas-> lineWidth( $lw );
 		$canvas->
 			new_path->
-			round_rect( 0 + $lw/2, 0 + $lw/2, $w - $lw/2 - 1, $h - $lw/2 - 1, $dw)->
+			round_rect( $d + $lw/2, $d + $lw/2, $d + $w - $lw/2, $d + $h - $lw/2, $dw)->
 			fill_stroke;
 	}) unless $self-> transparent;
 }
@@ -547,7 +549,7 @@ sub update_shape
 	my $self = shift;
 	my @sz = $self->size;
 	my $shape = $self-> new_path-> round_rect(
-		-1.5, -1.5, $sz[0]+.5, $sz[1]+.5,
+		-.5, -.5, $sz[0]-.5, $sz[1]-.5,
 		$self-> font-> height
 	)-> region;
 	$self->shape($shape);

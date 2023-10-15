@@ -20,11 +20,9 @@ my $j = Prima::Image->new(
 	height => 100,
 	type => im::Byte,
 );
-$j->begin_paint;
 $j->backColor(cl::Clear);
 $j->clear;
 $j->new_gradient(palette => [cl::Black, cl::White])->ellipse(50, 50, 100, 100);
-$j->end_paint;
 $j->type(im::Byte);
 
 sub icon
@@ -35,14 +33,12 @@ sub icon
 		height => 100,
 		type => im::RGB,
 	);
-	$i->begin_paint;
 	$i->backColor(cl::Clear);
 	$i->clear;
 	$i->new_gradient(
 		palette => [cl::Black, $color],
 		spline  => [0.2,0.8],
 	)-> ellipse( 50, 50, 100, 100 );
-	$i->end_paint;
 
 	my $k = Prima::Icon->new;
 	$k->combine($i, $j);
@@ -64,13 +60,6 @@ my ( $r, $g, $b ) = map { icon($_) } (cl::LightRed, cl::LightGreen, cl::LightBlu
 
 my $angle = 0;
 my $pi = 3.14159;
-
-my $i = Prima::Region-> new( box => [ 0, 0,
-	96 * $::application-> font-> width  / 7,  # poor man's calculations of
-	36 * $::application-> font-> height / 16, # button size
-]);
-
-$i-> combine( Prima::Drawable->new_path->ellipse( 10, 10, 10 )->region, rgnop::Diff);
 
 my $w = Prima::MainWindow->new(
 	layered  => 1,
@@ -116,7 +105,7 @@ die "Cannot create a layered window, exiting\n" unless $w->is_surface_layered;
 
 my $btn = $w-> insert( Button =>
 	origin  => [10,10],
-	shape   => $i,
+	autoShaping => 1,
 	text    => '~Quit',
 	onClick => sub { $::application-> close },
 );
