@@ -1617,6 +1617,8 @@ to handle right-to-left text, f.ex. Arabic or Hebrew.
 Consider fixing your installation.
 
 BIDI
+	$END .= "Get fribidi binary from http://prima.eu.org/download/libfribidi-1.0.10-win64.zip\n"
+		if $Win32 and not $cygwin;
 }
 
 sub setup_harfbuzz
@@ -1993,7 +1995,7 @@ sub setup_codecs
 			printlog "yes";
 			if ($codec eq 'webp') {
 				my @addlib;
-				for my $lib2 ('webpdemux', 'webmux') {
+				for my $lib2 ('webpdemux', 'webpmux') {
 					if ( defined find_lib($lib2,join('', @inc), '', @codec_libpath)) {
 						push @addlib, $lib2 unless $libs{$lib2};
 					} else {
@@ -2028,7 +2030,6 @@ sub setup_codecs
 		}
 	}
 
-
 	# check supported versions
 	if ( grep {/webp/} @ACTIVE_CODECS) {
 		$webp_version //= compile_and_run(<<'VER');
@@ -2042,7 +2043,7 @@ VER
 		if (( $webp_version // 0) < 1537 ) { # 0.6.1
 			printlog "** Warning: webp version ".
 				((defined($webp_version) ?
-					"is too low, 0.6.1 at least is needed" :
+					"is too low ($webp_version), 0.6.1 at least is needed" :
 					"cannot be determined")).
 				", skipping\n";
 			@ACTIVE_CODECS = grep { !/webp/ } @ACTIVE_CODECS;
@@ -2135,6 +2136,9 @@ NOCODECS
 		$END .= <<LIBHEIF if $Win32 and not $cygwin and grep {/heif/} @warn_codecs;
 Get libheif binary from http://prima.eu.org/download/libheif-1.12.0-win64.zip
 LIBHEIF
+		$END .= <<LIBWEBP if $Win32 and not $cygwin and grep {/webp/} @warn_codecs;
+Get libwebp binary from http://prima.eu.org/download/libwebp-1.0.2-win64.zip
+LIBWEBP
 	}
 	push @ACTIVE_CODECS, @builtin_codecs;
 }
