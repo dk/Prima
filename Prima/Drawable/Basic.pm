@@ -408,7 +408,7 @@ sub stroke_imgaa_primitive
 	return 0 unless $aa->can_aa;
 
 	my $path = $self->new_path;
-	$path->set_matrix( $self-> matrix );
+	$path->matrix( $self-> matrix );
 	$path->$request(@_);
 	$path = $path->widen(
 		linePattern => ( $lp eq lp::Null) ? lp::Solid : $lp
