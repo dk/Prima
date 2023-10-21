@@ -579,7 +579,7 @@ sub unwatch_load_progress
 
 =head1 NAME
 
-Prima::ImageViewer - standard image, icon, and bitmap viewer class.
+Prima::ImageViewer - image, icon, and bitmap viewer
 
 =head2 SYNOPSIS
 
@@ -596,8 +596,9 @@ Prima::ImageViewer - standard image, icon, and bitmap viewer class.
 
 =head1 DESCRIPTION
 
-The module contains C<Prima::ImageViewer> class, which provides
-image displaying functionality, including different zoom levels.
+The module contains the C<Prima::ImageViewer> class which provides image-displaying
+functionality. The widget can display images, icons, and bitmaps, and allows
+zooming.
 
 C<Prima::ImageViewer> is a descendant of C<Prima::Widget::ScrollWidget>
 and inherits its document scrolling behavior and programming interface.
@@ -628,13 +629,13 @@ given the C<zoomPrecision>. Scrollbars are turned off if C<autoZoom> is set to 1
 
 =item image OBJECT
 
-Selects the image object to be displayed. OBJECT can be
-an instance of C<Prima::Image>, C<Prima::Icon>, or C<Prima::DeviceBitmap> class.
+Selects the image object to be displayed. OBJECT can be an instance of
+the C<Prima::Image>, C<Prima::Icon>, or C<Prima::DeviceBitmap> classes.
 
 =item imageFile FILE
 
-Set the image FILE to be loaded and displayed. Is rarely used since does not return
-a loading success flag.
+Sets the image FILE to be loaded and displayed. Is rarely used since does not
+return a success flag.
 
 =item scaling ist::XX
 
@@ -652,7 +653,7 @@ keyboard navigation become disabled.
 
 =item quality BOOLEAN
 
-A boolean flag, selecting if the palette of C<image> is to be
+A boolean flag, selects if the palette of C<image> is to be
 copied into the widget palette, providing higher visual
 quality on paletted displays. See also L<Prima::Widget/palette>.
 
@@ -668,16 +669,16 @@ One of the following C<ta::XXX> constants:
 
 Selects the vertical image alignment.
 
-NB: C<ta::Middle> value is not equal to C<ta::Center>'s, however
-the both constants produce equal effect here.
+Note: The C<ta::Middle> value is not equal to C<ta::Center>'s, however,
+both constants produce an equal effect here.
 
 Default value: C<ta::Bottom>
 
 =item zoom FLOAT
 
-Selects zoom level for image display. The acceptable value range is between
+Selects the image zoom level. The acceptable value range is between
 0.01 and 100. The zoom value is rounded to the closest value divisible by
-1/C<zoomPrecision>. For example, is C<zoomPrecision> is 100, the zoom values
+1/C<zoomPrecision>. For example, if C<zoomPrecision> is 100, the zoom values
 will be rounded to the precision of hundredth - to fiftieth and twentieth
 fractional values - .02, .04, .05, .06, .08, and 0.1 . When C<zoomPrecision>
 is 1000, the precision is one thousandth, and so on.
@@ -686,48 +687,51 @@ Default value: 1
 
 =item zoomPrecision INTEGER
 
-Zoom precision of C<zoom> property. Minimal acceptable value is 10, where zoom
-will be rounded to 0.2, 0.4, 0.5, 0.6, 0.8 and 1.0 .
+Zoom precision of the C<zoom> property. The minimal acceptable value is 10, where the zoom
+factor will be rounded to 0.2, 0.4, 0.5, 0.6, 0.8, and 1.0 .
 
-The reason behind this arithmetics is that when an image of an arbitrary zoom factor
-is requested to be displayed, the image sometimes must be drawn from
-a fraction image pixel - for example, 10x zoomed image shifted 3 pixels left, must be
-displayed so the first image pixel from the left occupies 7 screen pixels, and
-the next ones - 10 screen pixels.  That means, that the correct image display
-routine must ask the system to draw the image at offset -3 screen pixels, where
-the first image pixel column would correspond to that offset.
+The reason behind this arithmetics is that when an image of an arbitrary zoom
+factor is requested to be displayed, the image sometimes must be drawn from a
+fractional image pixel. In an example that only involves integer pixels, a 10x
+zoomed image shifted 3 pixels left must be displayed so that the first image
+pixel from the left occupies 7 screen pixels, and the next ones - 10 screen
+pixels.  That means that the correct image display routine must ask the system
+to draw the image at the offset of -3 screen pixels, where the first image
+pixel column would correspond to that offset.
 
 When the zoom factor is fractional, the picture is getting more complex. For
-example, with zoom factor 12.345, and zero screen offset, the first image pixel
-begins at the 12th screen pixel, the next one - at the 25th ( because of the
-roundoff ), then the 37th etc etc. If the image is 2000x2000 pixels wide, and
-is asked to be drawn so that it appears shifted 499 screen image pixels left,
-it needs to be drawn from the 499/12.345=40.42122th image pixel. Is might seem
-that indeed it would be enough to ask the system to begin drawing from image
-pixel 40, and offset int(0.42122*12.345)=5 screen pixels to the left, however,
-that procedure will not account for the correct fixed point roundoff that
-accumulates as system scales the image. For zoom factor 12.345 this roundoff
-sequence is, as we seen before, (12,25,37,49,62,74,86,99,111,123) for the first
-10 pixels displayed, that occupy (12,13,12,12,13,12,12,13,12,12) screen pixels
-correspondingly.  For the pixels starting at 499, the sequence is
+example, with the zoom factor of 12.345 and zero screen offset, the first
+image pixel begins at the 12th screen pixel, the next one - at the 25th (
+because of the roundoff ), then the 37th, etc etc. If the image is 2000x2000
+pixels wide and is asked to be drawn so that it appears shifted 499 screen
+image pixels left, it needs to be drawn from the 499/12.345=40.42122th image
+pixel. It might seem that indeed it would be enough to ask the system to begin
+drawing from image pixel 40, and offset int(0.42122*12.345)=5 screen pixels to
+the left, however, that procedure will not account for the correct fixed point
+roundoff that accumulates as the system scales the image. For the zoom factor
+of 12.345 this roundoff sequence is, as we have seen before,
+(12,25,37,49,62,74,86,99,111,123) for the first 10 pixels displayed, that
+occupy (12,13,12,12,13,12,12,13,12,12) screen pixels correspondingly.  For the
+pixels starting at 499, the sequence is
 (506,519,531,543,556,568,580,593,605,617) offsets or
 (13,12,12,13,13,12,12,13,12,12) widths -- note the two subsequent 13s there.
 This sequence begins to repeat itself after 200 iterations
-(12.345*200=2469.000), which means that in order to achieve correct display
+(12.345*200=2469.000), which means that to achieve correct display
 results, the image must be asked to be displayed from as far as image pixel 0
 if image's first pixel on the screen is between 0 and 199 ( or for screen
 pixels 0-2468), then from image pixel 200 for offsets 200-399, ( screen pixels
 2469-4937), and so on.
 
-Since the system internally allocates memory for image scaling, that means that up
-to 2*200*min(window_width,image_width)*bytes_per_pixel unneccessary bytes will
-be allocated for each image drawing call (2 because the calculations are valid
-for both the vertical and horizontal strips), and this can lead to slowdown or
-even request failure when image or window dimensions are large. The proposed
-solution is to roundoff accepted zoom factors, so these offsets are kept small
-- for example, N.25 zoom factors require only max 1/.25=4 extra pixels. When
-C<zoomPrecision> value is 100, zoom factors are rounded to 0.X2, 0.X4, 0.X5,
-0.X6, 0.X8, 0.X0, thus requiring max 50 extra pixels.
+Since the system internally allocates memory for image scaling, that means that
+up to 2*200*min(window_width,image_width)*bytes_per_pixel unnecessary bytes
+will be allocated for each image drawing call (2 because the calculations are
+valid for both the vertical and horizontal strips), and this can lead to
+a slowdown or even request failure when image or window dimensions are large. The
+proposed solution is to round off the accepted zoom factors so that these
+offsets are kept small.  For example, the N.25 zoom factors require only max
+1/.25=4 extra pixels. When the C<zoomPrecision> value is set to 100, the zoom
+factors are rounded to 0.X2, 0.X4, 0.X5, 0.X6, 0.X8, and 0.X0, thus requiring
+max 50 extra pixels.
 
 NB. If, despite the efforts, the property gets in the way, increase it to
 1000 or even 10000, but note that this may lead to problems.
@@ -743,8 +747,8 @@ Default value: 100
 =item on_paint SELF, CANVAS
 
 The C<Paint> notification handler is mentioned here for the specific case
-of its return value, that is the return value of internal C<put_image> call.
-For those who might be interested in C<put_image> failures, that mostly occur
+of its return value, that is the return value of the internal C<put_image> call.
+For those who might be interested in C<put_image> failures, which mostly occur
 when trying to draw an image that is too big, the following code might be
 useful:
 
@@ -756,48 +760,49 @@ useful:
 
 =item screen2point X, Y, [ X, Y, ... ]
 
-Performs translation of integer pairs integers as (X,Y)-points from widget coordinates
-to pixel offset in image coordinates. Takes in account zoom level,
-image alignments, and offsets. Returns array of same length as the input.
+Performs translation of integer pairs as (X,Y)-points from the widget
+coordinates to pixel offsets in the image coordinate system. Takes into account
+zoom level, image alignments, and offsets. Returns an array of the same length as
+the input.
 
 Useful for determining correspondence, for example, of a mouse event
-to a image point.
+to an image point.
 
 The reverse function is C<point2screen>.
 
 =item point2screen   X, Y, [ X, Y, ... ]
 
 Performs translation of integer pairs as (X,Y)-points from image pixel offset
-to widget image coordinates. Takes in account zoom level,
-image alignments, and offsets. Returns array of same length as the input.
+to widget image coordinates. Takes into account zoom level, image alignments, and
+offsets. Returns an array of the same length as the input.
 
-Useful for determining a screen location of an image point.
+Useful for determining the screen location of an image point.
 
 The reverse function is C<screen2point>.
 
 =item watch_load_progress IMAGE
 
-When called, image viewer watches as IMAGE is being loaded ( see L<Prima::Image/load> )
-and displays the progress. As soon as IMAGE begins to load, it replaces the existing C<image>
-property. Example:
+When called, the image viewer begins to track the progress of the IMAGE being
+loaded ( see L<Prima::Image/load> ) and incrementally displays the loading
+picture. As soon as IMAGE begins to load, it replaces the existing the C<image>
+property value. Example:
 
     $i = Prima::Image-> new;
     $viewer-> watch_load_progress( $i);
     $i-> load('huge.jpg');
     $viewer-> unwatch_load_progress;
 
-Similar functionality is present in L<Prima::Dialog::ImageDialog>.
+A similar functionality is present in L<Prima::Dialog::ImageDialog>.
 
 =item unwatch_load_progress CLEAR_IMAGE=1
 
-Stops monitoring of image loading progress. If CLEAR_IMAGE is 0, the leftovers of the
-incremental loading stay intact in C<image> propery. Otherwise, C<image> is set to C<undef>.
+Stops monitoring the image loading progress. If CLEAR_IMAGE is 0, the leftovers of the
+incremental loading stay intact in C<image> property. Otherwise, C<image> is set to C<undef>.
 
 =item zoom_round ZOOM
 
-Rounds the zoom factor to C<zoomPrecision> precision, returns
-the rounded zoom value. The algorithm is the same as used internally
-in C<zoom> property.
+Rounds the zoom factor to C<zoomPrecision> precision, returns the rounded zoom
+value. The algorithm is the same as used internally in the C<zoom> property.
 
 =back
 

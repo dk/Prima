@@ -232,14 +232,14 @@ Prima::ExtLists - extended functionality for list boxes
 =head1 DESCRIPTION
 
 The module is intended to be a collection of list boxes with
-particular enhancements. Currently the only package is contained
-is C<Prima::CheckList> class.
+particular enhancements. Currently, the only package defined here
+is the C<Prima::CheckList> class.
 
 =head1 Prima::CheckList
 
-Provides a list box, where each item is equipped with a check box.
+Provides a list box class where each item is equipped with a check box.
 The check box state can interactively be toggled by the enter key;
-also the list box reacts differently by click and double click.
+also the list box reacts differently to click and double click.
 
 =head2 Properties
 
@@ -248,13 +248,13 @@ also the list box reacts differently by click and double click.
 =item button INDEX, STATE
 
 Runtime only. Sets INDEXth button STATE to 0 or 1.
-If STATE is -1, the button state is toggled.
+If the STATE is -1 the button state is toggled.
 
 Returns the new state of the button.
 
 =item vector VEC
 
-VEC is a vector scalar, where each bit corresponds to the check state
+VEC is a vector scalar where each bit corresponds to the checked state
 of each list box item.
 
 See also: L<perlfunc/vec>.

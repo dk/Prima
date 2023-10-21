@@ -2939,7 +2939,7 @@ sub wordWrap        {($#_)?($_[0]-> set_word_wrap(    $_[1]))               :ret
 
 =head1 NAME
 
-Prima::Edit - standard text editing widget
+Prima::Edit - standard text editor
 
 =head1 SYNOPSIS
 
@@ -2957,59 +2957,59 @@ Prima::Edit - standard text editing widget
 =head1 DESCRIPTION
 
 The class provides text editing capabilities, three types of selection, text wrapping,
-syntax highlighting, auto indenting, undo and redo function, search and replace methods.
+syntax highlighting, auto indenting, undo and redo function, and search and replace methods.
 
-The module declares C<bt::> package, that contains integer constants for selection block type,
-used by L<blockType> property.
+The module declares the C<bt::> package that contains integer constants for the selection of block type,
+used by the L<blockType> property.
 
 =head1 USAGE
 
-The text is stored line-wise in C<{lines}> array; to access it use L<get_line> method.
-To access the text chunk-wise, use L<get_chunk> method.
+The text is stored line-wise in the C<{lines}> array; to access it use the
+L<get_line> method.
 
-All keyboard events, except the character input and tab key handling, are
-processed by the accelerator table ( see L<Prima::Menu> ). The default
-C<accelItems> table defines names, keyboard combinations, and the corresponding
-actions to the class functions. The class does not provide functionality to change
-these mappings. To do so, consult L<Prima::Menu/Prima::AccelTable>.
+All keyboard events except the character input and tab keys are processed by
+the accelerator table ( see L<Prima::Menu> ). The default C<accelItems> table
+defines names, keyboard combinations, and the corresponding actions to the
+class functions. The class does not provide functionality to change these
+mappings. To do so, consult L<Prima::Menu/Prima::AccelTable>.
 
 =head2 Coordinates
 
-The class addresses the text space by (X,Y)-coordinates, where X is visual
-cluster offset and Y is line number. The addressing can be 'visual' and
-'logical', - in logical case Y is number of line of text. The difference can
-be observed if L<wordWrap> property is set to 1, when a single text string can
-be shown as several sub-strings, called I<chunks>.
+The class addresses the text space by (X,Y)-coordinates, where X is the visual
+cluster offset and Y is the line number. The addressing coordinate system can be
+I<visual>, I<physical>, or I<logical>. See below.
 
-Cluster shaping and word wrapping can play a role here. Consider f.ex. text
-"offset is zero", that for the sake of the example can wrapped by width and
-displayed as two lines, "offset" and "is zero". Here, the font substitutes "ff"
-text with a single ligature glyph. Here, for example, coord("f") will be (0,1)
-in all coordinates, but coord("z") is different:
+Cluster shaping and word wrapping can play a role here. Consider f.ex. a text
+string "offset is zero", that for the sake of the example can wrapped by width
+and displayed as two lines, "offset" and "is zero". Here, the font substitutes
+"ff" text with a single ligature glyph. Here, for example, coord("f") will be
+(0,1) in all coordinates, but coord("z") is not:
 
 =over
 
 =item Physical
 
-X coordinate is a character offset from character line number Y.  These
-coordinates are identical with and without C<wordWrap> flag.  This coordinate is
-used for direct text manipulation.
+The X coordinate is a character offset from character line number Y.  These
+coordinates are identical with and without the C<wordWrap> flag.  This
+coordinate is used for direct text manipulation.
 
 Example: coord("z") is (0,10);
 
 =item Visual
 
-X coordinate is a glyph cluster offset from character line number Y. These
-coordinates are identical with and without C<wordWrap> flag. This coordinate is
-used for cursor and selection API.
+The X coordinate is a glyph cluster offset from the character line number Y. These
+coordinates are identical with and without the C<wordWrap> flag. This
+coordinate is used for cursor and selection API.
 
 Example: coord("z") is (0,9);
 
 =item Logical
 
-Y coordinates is a wrapped line index. C<chunkMap> internal array is addresses
-in logical coordinates. X coordinate is a glyph cluster offset from the line start.
-This coordinate is used mostly internally.
+The Y coordinate is the wrapped line index. The C<chunkMap> internal array
+contains addresses in the logical coordinates. The X coordinate is a glyph
+cluster offset from the line start.  This coordinate is used mostly internally.
+
+To access the text chunk-wise, use the L<get_chunk> method. 
 
 Example: coord("z") is (1,3);
 
@@ -3043,7 +3043,7 @@ Default value: 1
 
 =item blockType INTEGER
 
-Defines type of selection block. Can be one of the following constants:
+Defines the type of selection block. Can be one of the following constants:
 
 =over
 
@@ -3059,7 +3059,7 @@ See also: L<cursor_shift_key>
 
 =item bt::Vertical
 
-Rectangular block, where all selected lines are of same offsets and lengths.
+Rectangular block, where all selected lines are of the same offsets and lengths.
 
 Default key: Alt+B
 
@@ -3077,15 +3077,15 @@ See also: L<mark_horizontal>
 
 =item cursor X, Y
 
-Selects visual position of the cursor
+Selects the visual position of the cursor
 
 =item cursorX X
 
-Selects visual horizontal position of the cursor
+Selects the visual horizontal position of the cursor
 
 =item cursorY Y
 
-Selects visual vertical position of the cursor
+Selects the visual vertical position of the cursor
 
 =item cursorWrap BOOLEAN
 
@@ -3096,7 +3096,7 @@ See also: L<cursor_left>, L<cursor_right>, L<word_left>, L<word_right>.
 
 =item insertMode BOOLEAN
 
-Set the typing mode - if 1, the typed text is inserted, if 0, the text overwrites
+Set the typing mode - if 1, the typed text is inserted, if 0, the new text overwrites
 the old text. When C<insertMode> is 0, the cursor shape is thick and covers the whole
 character; when 1, it is of the default cursor width.
 
@@ -3116,40 +3116,42 @@ Selects the color for highlighting the double-quoted strings
 
 =item hiliteIDs ARRAY
 
-Array of scalar pairs, that define words to be highlighted.
-The first item in the pair is an array of words; the second item is
+An array of scalar pairs that define words to be highlighted.
+The first item in the pair is an array of words, and the second item is
 a color value.
 
 =item hiliteChars ARRAY
 
-Array of scalar pairs, that define characters to be highlighted.
-The first item in the pair is a string of characters; the second item is
+An array of scalar pairs that define characters to be highlighted.
+The first item in the pair is a string of characters, and the second item is
 a color value.
 
 =item hiliteREs ARRAY
 
-Array of scalar pairs, that define character patterns to be highlighted.
-The first item in the pair is a perl regular expression; the second item is
+An array of scalar pairs that define character patterns to be highlighted.
+The first item in the pair is a perl regular expression, and the second item is
 a color value.
 
-Note: these are tricky. Generally, they assume that whatever is captured in (),
-is highlighted, and that capturing parentheses match from the first character
-onwards.  So for simple matches like C< (\d+) > (digits) or C< (#.*) > this
-works fine. Things become more interesting if you need to check text after, or
-especially before the capture.  For this you need to make sure that whatever
-text is matched by a regexp, need not move C<pos> pointer as the regexes are
-looped over with C<\G> anchor prepended (i.e. starting each time from the
-position the previous regex left off), and with C</gc> flags (advancing C< pos
-> to the match length). Advancing the C<pos> will skip color highlighting on text after the
-capture but before end of the match - so you'll need look-ahead assertions, C< (?=pattern) >
-and C< (?!pattern) > (see L<perlre/"Lookaround Assertions"> ).
+Note: these are tricky. Generally, these assume that whatever is captured in
+C<()>, is highlighted, and that capturing parentheses match from the first
+character onwards.  So for simple matches like C< (\d+) > (digits) or C< (#.*)
+> this works fine. Things become more interesting if you need to check text
+after, or especially before the capture.  For this, you need to make sure that
+whatever text is matched by a regexp, it must not move the C<pos> pointer as
+the regexes are internally concatenated with the C<\G> anchor before the actual
+matching takes place  (i.e. starting each time from the position the previous
+regex left off), and use C</gc> flags (advancing C<pos> to the match length).
+Advancing the C<pos> will nullify color highlighting on the text after the
+capture but before the end of the match - so you'll need look-ahead assertions
+for this type of match, C<(?=pattern) > and C<(?!pattern)> (see
+L<perlre/"Lookaround Assertions"> ).
 
-For example, we have a string C< ABC123abc >, and we want to match 123 followed by abc.
-This won't work
+For example, we have a string C<ABC123abc>, and we want to match I<123> followed by I<abc>.
+This won't work:
 
 	hiliteREs => [
 		'(123)abc',cl::LightRed,
-		'(abc)', cl::LightGreen 
+		'(abc)', cl::LightGreen
 	]
 
 while this will:
@@ -3162,7 +3164,7 @@ while this will:
 If you need to look behind, the corresponding assertions C< (?<=pattern) > and
 C< (?<!pattern) > could be used, but these are even more restrictive in that
 they only support fixed-width looks-behinds (NB: C< \K > won't work because of
-C< \G > either). That way, if we want to match 123 that follow ABC, this won't
+C< \G > either). That way, if we want to match 123 that follows ABC, this won't
 work:
 
 	hiliteREs =>  [
@@ -3186,8 +3188,8 @@ unset the value of L<blockType> is used.
 
 =item markers ARRAY
 
-Array of arrays with integer pairs, X and Y, where each represents
-a visual coordinates in text. Used as anchor storage for fast navigation.
+An array of arrays with integer pairs, X and Y, where each represents
+visual coordinates in text. Used as anchor storage for fast navigation.
 
 See also: L<add_marker>, L<delete_marker>
 
@@ -3213,8 +3215,8 @@ If 1, no user input is accepted. Manipulations with text are allowed though.
 
 =item selection X1, Y1, X2, Y2
 
-Accepts two pair of visual coordinates, (X1,Y1) the beginning and (X2,Y2) the end
-of new selection, and sets the block according to L<blockType> property.
+Accepts two pairs of visual coordinates, (X1,Y1) the beginning and (X2,Y2) the end
+of the new selection, and sets the block according to the L<blockType> property.
 
 The selection is null if X1 equals to X2 and Y1 equals to Y2.
 L<has_selection> method returns 1 if the selection is non-null.
@@ -3229,11 +3231,11 @@ Manages the selection end. See L<selection>, X2 and Y2.
 
 =item syntaxHilite BOOLEAN
 
-Governs the syntax highlighting.
+Manages the syntax highlighting.
 
 =item tabIndent INTEGER
 
-Maps tab ( \t ) key to C<tabIndent> amount of space characters.
+Maps the tab ( \t ) key to a C<tabIndent> number of space characters.
 
 =item text TEXT
 
@@ -3249,17 +3251,17 @@ If set, indicates RTL text input.
 =item textLigation BOOLEAN
 
 If set, text may be rendered at better quality with ligation and kerning,
-however that comes with a price that some ligatures may be indivisible and form
-clusters (f.ex. I<ff> or I<ffi> ligatures). Cursor cannot go inside of such
-clusters, and thus one can only select them, delete as whole, or press
+however, that comes with a price that some ligatures may be indivisible and form
+clusters (f.ex. I<ff> or I<ffi> ligatures). The cursor cannot be positioned inside of 
+a cluster, and thus one can only select them, delete them as a whole, or press
 Del/Backspace on the cluster's edge.
 
 =item textRef TEXT_PTR
 
 Provides access to all the text data. The lines are separated by
-the new line ( \n ) character. TEXT_PTR is a pointer to text string.
+the new line ( \n ) character. TEXT_PTR is a pointer to a text string.
 
-The property is more efficient than L<text> with the large text,
+The property is more efficient than L<text> with large text
 because the copying of the text scalar to the stack is eliminated.
 
 See also: L<text>.
@@ -3270,44 +3272,42 @@ Selects the first line of the text drawn.
 
 =item undoLimit INTEGER
 
-Sets limit on number of stored atomic undo operations. If 0,
+Sets limit on the number of stored atomic undo operations. If 0,
 undo is disabled.
 
 Default value: 1000
 
 =item wantTabs BOOLEAN
 
-Selects the way the tab ( \t ) character is recognized in the user input.
-If 1, it is recognized by the Tab key; however, this disallows the toolkit
-widget tab-driven navigation. If 0, the tab character can be entered by
-pressing Ctrl+Tab key combination.
+Selects the way the tab ( \t ) character is recognized in the user input.  If
+1, it is recognized as the verbatim Tab key with an ascii value of 0x09; however,
+this disallows the toolkit widget tab-driven navigation. If 0, the tab
+character can be entered by pressing the Ctrl+Tab key combination.
 
 Default value: 0
 
 =item wantReturns BOOLEAN
 
 Selects the way the new line ( \n ) character is recognized in the user input.
-If 1, it is recognized by the Enter key; however, this disallows the toolkit
-default button activation. If 0, the new line character can be entered by
-pressing Ctrl+Enter key combination.
+If 1, it is recognized as the verbatim CR key producing newline character(s);
+however, this disallows the default button activation in the toolkit. If 0, the
+new line character can be entered by pressing the Ctrl+Enter key combination.
 
 Default value: 1
 
-
 =item wordDelimiters STRING
 
-Contains string of character that are used for locating a word break.
+Contains a string of characters that are used for locating a word break.
 Default STRING value consists of punctuation marks, space and tab characters,
-and C<\xff> character.
+and the C<\xff> character.
 
 See also: L<word_left>, L<word_right>
 
-
 =item wordWrap BOOLEAN
 
-Selects whether the long lines are wrapped, or can be positioned outside the horizontal
-widget inferior borders. If 1, L<syntaxHilite> is not used. A line of text can be represented
-by more than one line of screen text ( chunk ) . To access the text chunk-wise, use L<get_chunk>
+Selects whether the long lines are wrapped, or can be positioned outside the
+horizontal widget borders. A line of text can be represented by more than one
+line of screen text ( chunk ) . To access the text chunk-wise, use the L<get_chunk>
 method.
 
 =back
@@ -3318,12 +3318,12 @@ method.
 
 =item add_marker X, Y
 
-Adds visual coordinated X,Y to the L<markers> property.
+Adds visual coordinates X,Y to the L<markers> property.
 
 =item back_char [ REPEAT = 1 ]
 
-Removes REPEAT times a character left to the cursor. If the cursor is on 0 x-position,
-removes the new-line character and concatenates the lines.
+Removes REPEAT times a character left to the cursor. If the cursor is on 0 X-position,
+removes the new-line character and concatenates the two lines.
 
 Default key: Backspace
 
@@ -3335,7 +3335,7 @@ Default key: Alt+U
 
 =item change_locked
 
-Returns 1 if the logical locking is on, 0 if it is off.
+Returns 1 if the logical locking is on, and 0 if it is off.
 
 See also L<lock_change>.
 
@@ -3354,13 +3354,13 @@ Default key: Alt+C
 
 =item cursor_cend
 
-Moves cursor to the bottom line
+Moves cursor to the last line
 
 Default key: Ctrl+End
 
 =item cursor_chome
 
-Moves cursor to the top line
+Moves cursor to the first line
 
 Default key: Ctrl+Home
 
@@ -3444,7 +3444,7 @@ Default key: Alt+D
 
 =item delete_char [ REPEAT = 1 ]
 
-Delete REPEAT characters from the cursor position
+Deletes REPEAT characters from the cursor position
 
 Default key: Delete
 
@@ -3464,11 +3464,11 @@ Removes CHUNKS ( or lines, if L<wordWrap> is 0 ) of text at CHUNK_ID
 
 =item delete_marker INDEX
 
-Removes marker INDEX in L<markers> list.
+Removes marker INDEX in the L<markers> list.
 
 =item delete_to_end
 
-Removes text to the end of the chunk.
+Removes the text to the end of the chunk.
 
 Default key: Ctrl+E
 
@@ -3480,7 +3480,7 @@ Removes TEXT_LENGTH characters at X,Y physical coordinates
 
 Paints the syntax-highlighted chunk taken from LINE_ID line index, at
 X, Y. COLOR is used if the syntax highlighting information contains C<cl::Fore>
-as color reference.
+as a color reference.
 
 =item end_block
 
@@ -3488,14 +3488,14 @@ Stops the block selection session.
 
 =item find SEARCH_STRING, [ X = 0, Y = 0, REPLACE_LINE = '', OPTIONS ]
 
-Tries to find ( and, if REPLACE_LINE is defined, to replace with it )
-SEARCH_STRING from (X,Y) physical coordinates. OPTIONS is an integer
-that consists of the C<fdo::> constants; the same constants are used
-in L<Prima::Dialog::FindDialog>, which provides graphic interface to the find and replace
-facilities of L<Prima::Edit>.
+Tries to find ( and, if REPLACE_LINE is defined, to replace with )
+SEARCH_STRING starting from (X,Y) physical coordinates. OPTIONS is an integer
+that is a combination of the C<fdo::> constants; the same constants are used in
+L<Prima::Dialog::FindDialog>, which provides a graphic interface to the find and
+replace facilities of this class.
 
 Returns X1, Y, X2, NEW_STRING where X1.Y-X2.Y are physical coordinates of
-the found string, and NEW_STRING is the replaced version (if any)
+the string found, and NEW_STRING is the replaced version (if any)
 
 =over
 
@@ -3513,7 +3513,7 @@ If set, SEARCH_STRING is a regular expression.
 
 =item fdo::BackwardSearch
 
-If set, the search direction is backwards.
+If set, the search direction is backward.
 
 =item fdo::ReplacePrompt
 
@@ -3525,49 +3525,49 @@ See also: F<examples/editor.pl>
 
 =item get_chunk CHUNK_ID
 
-Returns chunk of text, located at CHUNK_ID.
-Returns empty string if chunk is nonexistent.
+Returns the chunk of text, located at CHUNK_ID.
+Returns an empty string if the chunk is nonexistent.
 
 =item get_chunk_cluster_length CHUNK_ID
 
-Return length of a chunk in clusters
+Return the length of a chunk in clusters
 
 =item get_chunk_dimension CHUNK_ID
 
-Finds the line number the CHUNK_ID belongs to, return first chunk of that line and
-how many chunks the line occupies.
+Finds the line number the CHUNK_ID belongs to, and returns the first chunk of that line and
+how many chunks the line consists of.
 
 =item get_chunk_width TEXT, FROM, LENGTH, [ RETURN_TEXT_PTR ]
 
 Returns the width in pixels of C<substr( TEXT, FROM, LENGTH)>.  If FROM is
-larger than length of TEXT, TEXT is padded with space characters. Tab character
-in TEXT replaced to L<tabIndent> times space character. If RETURN_TEXT_PTR
+larger than the length of TEXT, TEXT is padded with the space characters. Tab character
+in TEXT replaced to L<tabIndent> times space character. If the RETURN_TEXT_PTR
 pointer is specified, the converted TEXT is stored there.
 
 =item get_line INDEX
 
-Returns line of text, located at INDEX.
-Returns empty string if line is nonexistent.
+Returns the line of text located at INDEX.
+Returns an empty string if the line is nonexistent.
 
 =item get_line_cluster_length LINE_ID
 
-Return length of a line in clusters
+Return the length of the line in clusters
 
 =item get_line_dimension INDEX
 
-Returns two integers, representing the line at INDEX in L<wordWrap> mode:
-the first value is the corresponding chunk index, the second is how many
-chunks represent the line.
+Returns two integers representing the line at INDEX in the L<wordWrap> mode:
+the first value is the corresponding chunk index, and the second is how many
+chunks are contained in the line.
 
 See also: L<physical_to_logical>.
 
 =item get_selected_text
 
-Return the text currently selected.
+Return the currently selected text.
 
 =item has_selection
 
-Returns boolean value, indicating if the selection block is active.
+Returns a boolean value, indicating if the selection block is active.
 
 =item insert_empty_line LINE_ID, [ REPEAT = 1 ]
 
@@ -3585,42 +3585,42 @@ the selection block is canceled and the newly inserted text is selected.
 =item lock_change BOOLEAN
 
 Increments ( 1 ) or decrements ( 0 ) lock count. Used to defer change notification
-in multi-change calls. When internal lock count hits zero, C<Change> notification is called.
+in multi-change calls. When the internal lock count hits zero, the C<Change> notification is called.
 
 =item physical_to_logical X, Y
 
-Maps visual X,Y coordinates to the logical and returns the integer pair.
-Returns same values when L<wordWrap> is 0.
+Maps visual X,Y coordinates to the logical coordinate system.
+Returns the same values when L<wordWrap> is 0.
 
 =item logical_to_visual X, Y
 
-Maps logical X,Y coordinates to the visual and returns the integer pair.
+Maps logical X,Y coordinates to the visual coordinate system.
 
-Returns same values when L<wordWrap> is 0.
+Returns the same values when L<wordWrap> is 0.
 
 =item visual_to_physical X, Y
 
 Maps visual X,Y coordinates to the physical text offset relative to the Y line
 
-Returns same X when the line does not contain any right-to-left characters or
+Returns the same X when the line does not contain any right-to-left (RTL) characters or
 complex glyphs.
 
 =item physical_to_visual X, Y
 
 Maps test offset X from line Y to the visual X coordinate.
 
-Returns same X when the line does not contain any right-to-left characters or
+Returns the same X when the line does not contain any right-to-left (RTL) characters or
 complex glyphs.
 
 =item mark_horizontal
 
-Starts block marking session with C<bt::Horizontal> block type.
+Starts block marking session with the C<bt::Horizontal> block type.
 
 Default key: Alt+L
 
 =item mark_vertical
 
-Starts block marking session with C<bt::Vertical> block type.
+Starts block marking session with the C<bt::Vertical> block type.
 
 Default key: Alt+B
 
@@ -3633,7 +3633,7 @@ Default key: Alt+O
 
 =item paste
 
-Copies text from the clipboard and inserts it in the cursor position.
+Copies text from the clipboard and inserts it at the cursor position.
 
 Default key: Shift+Insert
 
@@ -3644,11 +3644,11 @@ The deferred operations are those performed by L<offset> and L<topLine>.
 
 =item set_line LINE_ID, TEXT, [ OPERATION, FROM, LENGTH ]
 
-Changes line at LINE_ID to new TEXT. Hint scalars OPERATION, FROM and LENGTH
-used to maintain selection and marking data. OPERATION is an arbitrary string,
+Changes line at LINE_ID to new TEXT. Hint scalars OPERATION, FROM, and LENGTH
+are used to maintain selection and marking data. OPERATION is an arbitrary string,
 the ones that are recognized are C<'overtype'>, C<'add'>, and C<'delete'>.
-FROM and LENGTH define the range of the change; FROM is a cluster offset and
-LENGTH is a length of changed text.
+FROM and LENGTH define the range of the change; FROM is the cluster offset and
+LENGTH is the length of the changed text.
 
 =item split_line
 
@@ -3662,21 +3662,21 @@ Selects all text
 
 =item start_block [ BLOCK_TYPE ]
 
-Begins the block selection session. The block type if BLOCK_TYPE, if it is
-specified, or L<blockType> property value otherwise.
+Begins the block selection session. The block type is BLOCK_TYPE, if it is
+specified, or the value of the L<blockType> property is otherwise.
 
 =item update_block
 
-Adjusts the selection inside the block session, extending of shrinking it to
+Adjusts the selection inside the block session, extending or shrinking it to
 the current cursor position.
 
 =item word_left [ REPEAT = 1 ]
 
-Moves cursor REPEAT words to the left.
+Moves the cursor REPEAT words to the left.
 
 =item word_right [ REPEAT = 1 ]
 
-Moves cursor REPEAT words to the right.
+Moves the cursor REPEAT words to the right.
 
 =back
 

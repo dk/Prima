@@ -116,27 +116,25 @@ Prima::EventHook - event filtering
 
 =head1 DESCRIPTION
 
-Prima dispatches events by calling notifications registered
-on one or more objects interested in the events. Also, one
-event hook can be installed that would receive all events occurred on
-all objects. C<Prima::EventHook> provides multiplex access to
-the core event hook and introduces set of dispatching rules so
-the user hook subs receive only a defined subset of events.
-
-The filtering criteria are event names and object hierarchy.
+The toolkit dispatches notifications by calling subroutines registered on one
+or more objects. Also, the core part of the toolkit allows a single event hook
+callback to be installed that would receive all events occurring on all objects.
+C<Prima::EventHook> provides multiplexed access to the core event hook and
+introduces a set of dispatching rules so that the user hooks can receive only a
+subset of events.
 
 =head1 API
 
 =head2 install SUB, %RULES
 
-Installs SUB into hook list using hash of RULES.
+Installs SUB using a hash of RULES.
 
-The SUB is called with variable list of parameters, formed so first passed
-parameters from C<'param'> key ( see below ), then event source object, then
-event name, and finally parameters to the event. SUB must return an integer,
-either 0 or 1, to block or pass the event, respectively.  If 1 is returned,
-other hook subs are called; if 0 is returned, the event is efficiently blocked
-and no hooks are further called.
+The SUB is called with a variable list of parameters, formed so that first come
+parameters from the C<'param'> key ( see below ), then the event source object,
+then the event name, and finally the parameters to the event. The SUB must return
+an integer, either 0 or 1, to block or pass the event, respectively.  If 1 is
+returned, other hook subs are called; if 0 is returned, the event is
+efficiently blocked and no hooks are called further.
 
 Rules can contain the following keys:
 
@@ -144,10 +142,10 @@ Rules can contain the following keys:
 
 =item event
 
-Event is either a string, an array of strings, or C<undef> value.  In the latter
-case it is equal to C<'*'> string, which selects all events to be passed in the
-SUB. A string is either name of an event, or one of pre-defined event groups,
-declared in C<%groups> package hash. The group names are:
+An event is either a string, an array of strings, or an C<undef> value.  In the latter
+case, it is equal to a C<'*'> string which selects all events to be passed to the
+SUB. A string is either the name of an event or one of the pre-defined event groups,
+declared in the C<%groups> package hash. The group names are:
 
 	ability
 	focus
@@ -158,44 +156,43 @@ declared in C<%groups> package hash. The group names are:
 	objects
 	visibility
 
-These contain respective events. See source for detailed description.
+These contain the respective events. See the source for a detailed description.
 
-In case C<'event'> key is an array of strings, each of the strings is
-also name of either an event or a group. In this case, if C<'*'> string
+In case the C<'event'> key is an array of strings, each of the strings is
+also the name of either an event or a group. In this case, if the C<'*'> string
 or event duplicate names are present in the list, SUB is called several
-times which is obviously inefficient.
+times.
 
 =item object
 
-A Prima object, or an array of Prima objects, or undef; the latter case
+A Prima object, or an array of Prima objects, or undef; in the latter case
 matches all objects. If an object is defined, the SUB is called
-if event source is same as the object.
+if the event source is the same as the object.
 
 =item children
 
-If 1, SUB is called using same rules as described in C<'object'>, but also if
+If 1, SUB is called using the same rules as described in C<'object'>, but also if
 the event source is a child of the object. Thus, selecting C<undef> as a filter
 object and setting C<'children'> to 0 is almost the same as selecting
-C<$::application>, which is the root of Prima object hierarchy, as filter
+C<$::application>, which is the root of the Prima object hierarchy, as a filter
 object with C<'children'> set to 1.
 
-Setting together object to C<undef> and children to 1 is inefficient.
+Setting C<object> to C<undef> and children to 1 is inefficient.
 
 =item param
 
 A scalar or array of scalars passed as first parameters to SUB
-whenever it is called.
 
 =back
 
 =head2 deinstall SUB
 
-Removes the hook sub for the hook list.
+Removes the hook sub
 
 =head1 NOTES
 
-C<Prima::EventHook> by default automatically starts and stops Prima event hook
-mechanism when appropriate. If it is not desired, for example for your own
+C<Prima::EventHook> by default automatically starts and stops the Prima event
+hook mechanism when appropriate. If it is not desired, for example for your own
 event hook management, set C<$auto_hook> to 0.
 
 =head1 AUTHOR

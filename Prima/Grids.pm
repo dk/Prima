@@ -2392,53 +2392,51 @@ Prima::Grids - grid widgets
 
 =head1 DESCRIPTION
 
-The module provides classes for several abstraction layers
-of grid representation. The classes hierarchy is as follows:
+The module provides classes for several abstraction layers for the representation
+of grid widgets. The class hierarchy is as follows:
 
 	AbstractGridViewer
 		AbstractGrid
 		GridViewer
 			Grid
 
-The root class, C<Prima::AbstractGridViewer>, provides common
-interface, while by itself it is not directly usable.
-The main differences between classes
-are centered around the way the cell data are stored. The simplest
-organization of a text-only cell, provided by C<Prima::Grid>,
-stores data as a two-dimensional array of text scalars. More elaborated storage
-and representation types are not realized, and the programmer is urged
-to use the more abstract classes to derive own mechanisms.
-To organize an item storage, different from C<Prima::Grid>, it is
-usually enough to overload either the C<Stringify>, C<Measure>,
-and C<DrawCell> events, or their method counterparts: C<get_cell_text>,
-C<columnWidth>, C<rowHeight>, and C<draw_items>.
+The root class, C<Prima::AbstractGridViewer>, provides a common interface, while
+by itself it is not directly usable.  The main difference between classes is in
+the way the cell data are stored. The simplest organization of a text-only
+cell, provided by C<Prima::Grid>, stores data as a two-dimensional array of
+text scalars. More elaborated storage and representation types are not
+realized, and the programmer is urged to use the more abstract classes to
+derive their own mechanisms.  To organize an item storage different from
+C<Prima::Grid> it is usually enough to overload either the C<Stringify>,
+C<Measure>, and C<DrawCell> events, or their method counterparts:
+C<get_cell_text>, C<columnWidth>, C<rowHeight>, and C<draw_items>.
 
-The grid widget is designed to contain cells of variable extents, of two types, normal and
-indent. The indent rows and columns are displayed in grid margins, and their
-cell are drawn with distinguished colors.
-An example use for a bottom indent row is a sum row in a spreadsheet application;
-the top indent row can be used for displaying columns' headers. The normal cells
-can be selected by the user, scrolled, and selected. The cell selection
-can only contain rectangular areas, and therefore is operated with
-two integer pairs with the beginning and the end of the selection.
+The grid widget is designed to contain cells of variable extents, of two types,
+normal and indent. The indent rows and columns are displayed near to the widget
+borders, and their cells are drawn with distinguished colors.  An example usage
+for a bottom indent row is a sum row in a spreadsheet application; the top
+indent row can be used for displaying columns' headers. The normal cells can be
+selected by the user, scrolled, and selected. The cell selection can only
+contain rectangular areas and therefore is operated with two integer pairs
+at the beginning and the end of the selection.
 
-The widget operates in two visual scrolling modes; when the space allows,
-the scrollbars affect the leftmost and the topmost cell. When the widget is
-not large enough to accommodate at least one cell and all indent cells, the layout
-is scrolled pixel-wise. These modes are named 'cell' and 'pixel', after the scrolling
-units.
+The widget operates in two visual scrolling modes; when the space allows, the
+scrollbars affect the leftmost and the topmost cell. When the widget is not
+large enough to accommodate at least one cell and all indent cells, the layout
+is scrolled pixel-wise. These modes are named 'cell' and 'pixel', after the
+scrolling units.
 
-The widget allows the interactive changing of cell widths and heights by dragging
-the grid lines between the cells.
+The widget allows the interactive changing of cell widths and heights by
+dragging the grid lines between the cells.
 
 =head1 Prima::AbstractGridViewer
 
 C<Prima::AbstractGridViewer>, the base for all grid widgets in the module,
-provides interface to generic grid browsing functionality,
-plus functionality for text-oriented grids. The class is not usable directly.
+provides the interface to generic grid browsing functionality, plus some
+functionality for text-oriented grids. The class is not usable directly.
 
 C<Prima::AbstractGridViewer> is a descendant of C<Prima::Widget::GroupScroller>,
-and some properties are not described here. 
+and some of its properties are not described here.
 
 =head2 Properties
 
@@ -2446,49 +2444,47 @@ and some properties are not described here.
 
 =item allowChangeCellHeight BOOLEAN
 
-If 1, the user is allowed to change vertical extents of cells by dragging the
-horizontal grid lines. Prerequisites to the options are:
-the lines must be set visible via C<drawHGrid> property, C<constantCellHeight>
-property set to 0, and the changes to the vertical extents can be recorded
-via C<SetExtent> notification.
+If 1, the user is allowed to change the vertical extents of cells by dragging the
+horizontal grid lines. The prerequisites are: the lines must be set visible via
+the C<drawHGrid> property, the C<constantCellHeight> property set to 0, and the changes
+to the vertical extents can be recorded via the C<SetExtent> notification.
 
 Default value: 0
 
 =item allowChangeCellWidth BOOLEAN
 
-If 1, the user is allowed to change horizontal extents of cells by dragging the
-horizontal grid lines. Prerequisites to the options are:
-the lines must be set visible via C<drawVGrid> property, C<constantCellWidth>
-property set to 0, and the changes to the horizontal extents can be recorded
-via C<SetExtent> notification.
+If 1, the user is allowed to change the horizontal extents of cells by dragging the
+horizontal grid lines. The prerequisites are: the lines must be set visible via
+the C<drawVGrid> property, the C<constantCellWidth> property set to 0, and the changes
+to the horizontal extents can be recorded via the C<SetExtent> notification.
 
 Default value: 0
 
 =item cellIndents X1, Y1, X2, Y2
 
-Marks the marginal rows and columns as 'indent' cells. The indent cells
-are drawn with another color pair ( see L<indentCellColor>, L<indentCellBackColor> ),
-cannot be selected and scrolled. X1 and X2 correspond to amount of indent columns,
-and Y1 and Y2, - to the indent rows.
+Marks the marginal rows and columns as 'indent' cells. The indent cells are
+drawn with another color pair ( see L<indentCellColor>, L<indentCellBackColor>
+), and cannot be selected and scrolled. X1 and X2 correspond to the number of the
+indent columns, and Y1 and Y2 to the number of the indent rows.
 
 C<leftCell> and C<topCell> do not count the indent cells as the leftmost or topmost
-visible cell; in other words, X1 and Y1 are minimal values for C<leftCell> and C<topCell>
+visible cells; in other words, X1 and Y1 are minimal values for C<leftCell> and C<topCell>
 properties.
 
 Default value: 0,0,0,0
 
 =item clipCells INTEGER
 
-A three-state integer property, that manages the way clipping is applied
-when cells are drawn. Depending on kind of graphic in cells, the clipping
+A three-state integer property that manages the way clipping is applied
+when cells are drawn. Depending on the kind of graphic in cells, the clipping
 may be necessary, or unnecessary.
 
 If the value is 1, the clipping is applied for every column drawn, as the
-default drawing routines proceed column-wise. If the value is 2, the clipping
-as applied for every cell. This setting reduces the drawing speed significantly.
+default drawing routines proceeds column-wise. If the value is 2, the clipping
+is applied for every cell. This setting reduces the drawing speed significantly.
 If the value is 0, no clipping is applied.
 
-This property is destined for custom-drawn grid widgets, when it is the
+This property is destined for custom-drawn grid widgets when it is the
 developer's task to decide what kind of clipping suits better. Text grid
 widgets, C<Prima::AbstractGrid> and C<Prima::Grid>, are safe with C<clipCells>
 set to 1.
@@ -2497,19 +2493,18 @@ Default value: 1
 
 =item columns INTEGER
 
-Sets number of columns, including the indent columns. The number of
+Sets the number of columns, including the indent columns. The number of
 columns must be larger than the number of indent columns.
 
 Default value: 0.
 
 =item columnWidth COLUMN [ WIDTH ]
 
-A run-time property, selects width of a column. To acquire or set
-the width, C<Measure> and C<SetExtent> notifications can be invoked.
-Result of C<Measure> may be cached internally using C<cache_geometry_requests>
-method.
+A run-time property, selects the width of a column. To acquire or set the width,
+C<Measure> and C<SetExtent> notifications can be invoked. The result of C<Measure>
+may be cached internally using the C<cache_geometry_requests> method.
 
-The width does not include widths of eventual vertical grid lines.
+The width does not include the widths of eventual vertical grid lines.
 
 If C<constantCellWidth> is defined, the property is used as its alias.
 
@@ -2555,36 +2550,35 @@ Selects coordinates or the focused cell.
 
 =item gridColor COLOR
 
-Selects the color of grid lines.
+Selects the color of the grid lines.
 
 Default value: C<cl::Black> .
 
 =item gridGravity INTEGER
 
-The property selects the breadth of area around the grid lines, that
-reacts on grid-dragging mouse events. The minimal value, 0, marks
-only grid lines as the drag area, but makes the dragging operation inconvenient
-for the user.
-Larger values make the dragging more convenient, but increase the chance that
-the user will not be able to select too narrow cells with the mouse.
+The property selects the breadth of the area around the grid lines that react to
+the grid-dragging mouse events. The minimal value of 0, marks only grid lines
+themselves as the dragging areas but makes the operation inconvenient for the
+user.  Larger values make the dragging more convenient, but increase the chance
+that the user will not be able to select too narrow cells with the mouse.
 
 Default value: 3
 
 =item indentCellBackColor COLOR
 
-Selects the background color of indent cells.
+Selects the background color of the indent cells.
 
 Default value: C<cl::Gray> .
 
 =item indentCellColor
 
-Selects the foreground color of indent cells.
+Selects the foreground color of the indent cells.
 
 Default value: C<cl::Gray> .
 
 =item leftCell INTEGER
 
-Selects index of the leftmost visible normal cell.
+Selects the index of the leftmost visible normal cell.
 
 =item multiSelect BOOLEAN
 
@@ -2596,33 +2590,32 @@ Default value: 0
 
 =item rows INTEGER
 
-Sets number of rows, including the indent rows. The number of
-rows must be larger than the number of indent rows.
+Sets the number of rows, including the indent rows. The number of
+rows must be larger than the number of the indent rows.
 
 Default value: 0.
 
 =item topCell
 
-Selects index of the topmost visible normal cell.
+Selects the index of the topmost visible normal cell.
 
 =item rowHeight INTEGER
 
-A run-time property, selects height of a row. To acquire or set
-the height, C<Measure> and C<SetExtent> notifications can be invoked.
-Result of C<Measure> may be cached internally using C<cache_geometry_requests>
-method.
+A run-time property, selects the height of a row. To acquire or set the height,
+C<Measure> and C<SetExtent> notifications can be invoked. The result of C<Measure>
+may be cached internally using the C<cache_geometry_requests> method.
 
-The height does not include widths of eventual horizontal grid lines.
+The height does not include the heights of eventual horizontal grid lines.
 
 If C<constantCellHeight> is defined, the property is used as its alias.
 
 =item selection X1, Y1, X2, Y2
 
-If C<multiSelect> is 1, manages the extents of a rectangular area, that
-contains selected cells. If no such area is present, selection
+If C<multiSelect> is 1, manages the extent of a rectangular area that
+contains selected cells. If no such area is present, the selection
 is (-1,-1,-1,-1), and C<has_selection> returns 0 .
 
-If C<multiSelect> is 0, in get-mode returns the focused cell, and discards
+If C<multiSelect> is 0, in get-mode returns the focused cell, and ignores
 the parameters in the set-mode.
 
 =back
@@ -2633,22 +2626,23 @@ the parameters in the set-mode.
 
 =item cache_geometry_requests CACHE
 
-If CACHE is 1, starts caching results of C<Measure> notification, thus lighting the
-subsequent C<columnWidth> and C<rowHeight> calls; if CACHE is 0, flushes the cache.
+If CACHE is 1, starts caching results of the C<Measure> notification, thus
+making the subsequent C<columnWidth> and C<rowHeight> calls lighter. If CACHE
+is 0, flushes the cache.
 
-If a significant geometry change was during the caching, the cache is not updated, so it is the
-caller's responsibility to flush the cache.
+If a significant geometry change happens during the caching, the cache is not
+updated automatically, so it is the caller's responsibility to flush the cache.
 
 =item deselect_all
 
-Nullifies the selection, if C<multiSelect> is 1.
+Removes the selection if C<multiSelect> is 1.
 
 =item draw_cells CANVAS, COLUMNS, ROWS, AREA
 
-A bulk draw routine, called from C<onPaint> to draw cells.
-AREA is an array of four integers with inclusive-inclusive
+A bulk draw routine, called from C<onPaint> to draw individual cells.
+AREA is an array of four integers in inclusive-inclusive
 coordinates of the widget inferior without borders and scrollbars
-( result of C<get_active_area(2)> call; see L<Prima::Widget::IntIndents/get_active_area> ).
+( the result of C<get_active_area(2)> call; see L<Prima::Widget::IntIndents/get_active_area> ).
 
 COLUMNS and ROWS are structures that reflect the columns and rows of the cells
 to be drawn. Each item in these corresponds to a column or row, and is an
@@ -2662,34 +2656,34 @@ array with the following layout:
 	5: real cell start
 	6: real cell end
 
-The coordinates are in inclusive-inclusive coordinate system, and
-do not include eventual grid space, nor gaps between indent and
+The coordinates are in the inclusive-inclusive coordinate system and
+do not include eventual grid space, nor gaps between the indent and
 normal cells. By default, internal arrays C<{colsDraw}> and
 C<{rowsDraw}> are passed as COLUMNS and ROWS parameters.
 
-In C<Prima::AbstractGrid> and C<Prima::Grid> classes <draw_cells> is overloaded to
+In the C<Prima::AbstractGrid> and C<Prima::Grid> classes <draw_cells> is overloaded to
 transfer the call to C<std_draw_text_cells>, the text-oriented optimized routine.
 
 =item draw_text_cells SCREEN_RECTANGLES, CELL_RECTANGLES, CELL_INDECES, FONT_HEIGHT
 
-A bulk routine for drawing text cells, called from C<std_draw_text_cells> .
+A bulk routine for drawing text cells, is called from C<std_draw_text_cells> .
 
 SCREEN_RECTANGLES and CELL_RECTANGLES are arrays, where each item is a rectangle
-with exterior of a cell. SCREEN_RECTANGLES contains rectangles that cover the
-cell visible area; CELL_RECTANGLES contains rectangles that span the cell extents
+with an exterior of a cell. SCREEN_RECTANGLES contains rectangles that cover the
+visible area of the cell; CELL_RECTANGLES contains rectangles that span the cell extent
 disregarding its eventual partial visibility. For example, a 100-pixel cell with
-only its left half visible, would contain corresponding arrays [150,150,200,250]
+only its left half visible would contain corresponding arrays [150,150,200,250]
 in SCREEN_RECTANGLES, and [150,150,250,250] in CELL_RECTANGLES.
 
 CELL_INDECES contains arrays of the cell coordinates; each array item is an array of
-integer pair where item 0 is column, and item 1 is row of the cell.
+integer pairs where item 0 is the column, and item 1 is the row of the cell.
 
-FONT_HEIGHT is a current font height value, cached since C<draw_text_cells> is
-often used for text operations and may require vertical text justification.
+FONT_HEIGHT is the current font height value, as C<draw_text_cells> is
+mostly used for text operations and may require vertical text justification.
 
 =item get_cell_area [ WIDTH, HEIGHT ]
 
-Returns screen area in inclusive-inclusive pixel coordinates, that is used
+Returns screen area in the inclusive-inclusive pixel coordinates. The area is used
 to display normal cells. The extensions are related to the current size of a widget,
 however, can be overridden by specifying WIDTH and HEIGHT.
 
@@ -2697,42 +2691,41 @@ however, can be overridden by specifying WIDTH and HEIGHT.
 
 Returns two C<ta::> constants for horizontal and vertical cell text alignment.
 Since the class does not assume the item storage organization,
-the values are queried via C<GetAlignment> notification.
+the values are queried via the C<GetAlignment> notification.
 
 =item get_cell_text COLUMN, ROW
 
-Returns text string assigned to cell in COLUMN and ROW.
+Returns the text string assigned to the cell in COLUMN and ROW.
 Since the class does not assume the item storage organization,
-the text is queried via C<Stringify> notification.
+the text is queried via the C<Stringify> notification.
 
 =item get_range VERTICAL, INDEX
 
-Returns a pair of integers, minimal and maximal breadth of INDEXth column
+Returns a pair of integers, the minimal and maximal breadth of INDEXth column
 or row in pixels. If VERTICAL is 1, the rows are queried; if 0, the columns.
 
-The method calls C<GetRange> notification.
+The method calls the C<GetRange> notification.
 
 =item get_screen_cell_info COLUMN, ROW
 
-Returns information about a cell in COLUMN and ROW, if it is currently visible.
-The returned parameters are indexed by C<gsci::XXX> constants,
-and explained below:
+Returns information about the cell in COLUMN and ROW, if it is currently visible.
+The returned parameters are indexed by the C<gsci::XXX> constants:
 
-	gsci::COL_INDEX - visual column number where the cell displayed
-	gsci::ROW_INDEX - visual row number where the cell displayed
+	gsci::COL_INDEX - visual column number where the cell is displayed
+	gsci::ROW_INDEX - visual row number where the cell is displayed
 	gsci::V_FULL    - cell is fully visible
 
-	gsci::V_LEFT    - inclusive-inclusive rectangle of the visible
-	gsci::V_BOTTOM    part of the cell. These four indices are grouped
-	gsci::V_RIGHT     under list constant, gsci::V_RECT.
+	gsci::V_LEFT    - an inclusive-inclusive rectangle of the visible
+	gsci::V_BOTTOM      part of the cell. These four indices are grouped
+	gsci::V_RIGHT       under list constant, gsci::V_RECT.
 	gsci::V_TOP
 
-	gsci::LEFT      - inclusive-inclusive rectangle of the cell, as if
-	gsci::BOTTOM      it is fully visible. These four indices are grouped
-	gsci::RIGHT       under list constant, gsci::RECT. If gsci::V_FULL
-	gsci::TOP         is 1, these values are identical to these in gsci::V_RECT.
+	gsci::LEFT      - an inclusive-inclusive rectangle of the cell, as if
+	gsci::BOTTOM        it is fully visible. These four indices are grouped
+	gsci::RIGHT         under list constant, gsci::RECT. If gsci::V_FULL
+	gsci::TOP           is 1, these values are identical to those in gsci::V_RECT.
 
-If the cell is not visible, returns empty array.
+If the cell is not visible, returns an empty array.
 
 =item has_selection
 
@@ -2740,17 +2733,17 @@ Returns a boolean value, indicating whether the grid contains a selection (1) or
 
 =item point2cell X, Y, [ OMIT_GRID = 0 ]
 
-Return information about point X, Y in widget coordinates. The method
-returns two integers, CX and CY, with cell coordinates, and
-eventual HINTS hash, with more information about pixe localtion. If OMIT_GRID is set to 1
-and the pixel belongs to a grid, the pixels is treated a part of adjacent cell.
-The call syntax:
+Returns information about the point X, Y in widget coordinates. The method
+returns two integers CX and CY with cell coordinates and an eventual HINTS hash
+that contains more information about the pixel location. If OMIT_GRID is set to
+1 but the pixel belongs to the grid, the pixels are treated as part of an
+adjacent cell.  The call syntax is:
 
-	( $CX, $CY, %HINTS) = $self->point2cell( $X, $Y);
+	($CX, $CY, %HINTS) = $self->point2cell( $X, $Y);
 
-If the pixel lies within cell boundaries by either coordinate, CX and/or CY
-are correspondingly set to cell column and/or row. When the pixel is outside
-cell space, CX and/or CY are set to -1.
+If the pixel lies within the cell boundaries by either coordinate, CX and/or CY
+are correspondingly set to that cell column and/or row. When the pixel is outside
+the cell space, CX and/or CY are set to -1.
 
 HINTS may contain the following values:
 
@@ -2758,14 +2751,14 @@ HINTS may contain the following values:
 
 =item C<x> and C<y>
 
-If 0, the coordinate lies within boundaries of a cell.
+If 0, the coordinate lies within the boundaries of a cell.
 
-If -1, the coordinate is on the left/top to the cell body.
+If -1, the coordinate is on the left/top of the cell body.
 
-If +1, the coordinate is on the right/bottom to the cell body, but within
+If +1, the coordinate is on the right/bottom of the cell body, but within
 the widget.
 
-If +2, the coordinate is on the right/bottom to the cell body, but outside
+If +2, the coordinate is on the right/bottom of the cell body, but outside
 the widget.
 
 =item C<x_type> and C<y_type>
@@ -2774,26 +2767,26 @@ Present when C<x> or C<y> values are 0.
 
 If 0, the cell is a normal cell.
 
-If -1, the cell is left/top indent cell.
+If -1, the cell is a left or a top indent cell.
 
-If +1, the cell is right/bottom indent cell.
+If +1, the cell is a right or a bottom indent cell.
 
 =item C<x_grid> and C<y_grid>
 
-If 1, the point is over a grid line. This case can only happen when OMIT_GRID is 0.
+If 1, the point is at a grid line. This case can only happen when OMIT_GRID is 0.
 If C<allowChangeCellHeight> and/or C<allowChangeCellWidth> are set, treats also
-C<gridGravity>-broad pixels strips on both sides of the line as the grid area.
+C<gridGravity>-broad pixels strips on both sides of the line as the grid.
 
-Also values of C<x_left>/C<x_right> or C<y_bottom>/C<y_top> might be set.
+Also, values of C<x_left>/C<x_right> or C<y_bottom>/C<y_top> might be set.
 
 =item C<x_left>/C<x_right> and C<y_bottom>/C<y_top>
 
-Present together with C<x_grid> or C<y_grid>. Select indices of
-cells adjacent to the grid line.
+Present together with C<x_grid> or C<y_grid>. Contain the indices of
+the cells adjacent to the grid line.
 
 =item C<x_gap> and C<y_gap>
 
-If 1, the point is within a gap between the last normal cell and the first
+If 1, the point is inside a gap between the last normal cell and the first
 right/bottom indent cell.
 
 =item C<normal>
@@ -2806,17 +2799,17 @@ If 1, the point lies within the boundaries of an indent cell.
 
 =item C<grid>
 
-If 1, the point is over a grid line.
+If 1, the point is at a grid line.
 
 =item C<exterior>
 
-If 1, the point is in inoperable area or outside the widget boundaries.
+If 1, the point is in an inoperable area or outside the widget boundaries.
 
 =back
 
 =item redraw_cell X, Y
 
-Repaints cell with coordinates X and Y.
+Repaints the cell with coordinates X and Y.
 
 =item reset
 
@@ -2824,18 +2817,18 @@ Recalculates internal geometry variables.
 
 =item select_all
 
-Marks all cells as selected, if C<multiSelect> is 1.
+Marks all cells as selected if C<multiSelect> is 1.
 
 =item std_draw_text_cells CANVAS, COLUMNS, ROWS, AREA
 
 An optimized bulk routine for text-oriented grid widgets. The optimization
-is achieved under assumption that each cell is drawn with two colors only,
-so the color switching can be reduced.
+is achieved under the assumption that each cell is drawn with two colors only
+so that the color switching can be reduced.
 
-The routine itself paints the cells background, and calls C<draw_text_cells>
-to draw text and/or otherwise draw the cell content.
+The routine itself paints the cells' background and then calls C<draw_text_cells>
+to draw the cells' content.
 
-For explanation of COLUMNS, ROWS, and AREA parameters see L<draw_cells> .
+For the explanation of COLUMNS, ROWS, and AREA parameters see L<draw_cells> .
 
 =back
 
@@ -2847,30 +2840,30 @@ For explanation of COLUMNS, ROWS, and AREA parameters see L<draw_cells> .
 
 Called when a cell with COLUMN and ROW coordinates is to be drawn on CANVAS.
 SCREEN_RECT is a cell rectangle in widget coordinates,
-where the item is to be drawn. CELL_RECT is same as SCREEN_RECT, but calculated
+where the item is to be drawn. CELL_RECT is the same as SCREEN_RECT but calculated
 as if the cell is fully visible.
 
-SELECTED, FOCUSED, and PRELIGHT are boolean flagss, if the cell must be drawn
+SELECTED, FOCUSED, and PRELIGHT are boolean flags, if the cell must be drawn
 correspondingly in selected, focused, and pre-lighted states.
 
 =item GetAlignment COLUMN, ROW, HORIZONTAL_ALIGN_REF, VERTICAL_ALIGN_REF
 
-Puts two text alignment C<ta::> constants, assigned to cell with COLUMN and ROW coordinates,
+Stores two text alignment C<ta::> constants, assigned to the cell with COLUMN and ROW coordinates,
 into HORIZONTAL_ALIGN_REF and VERTICAL_ALIGN_REF scalar references.
 
 =item GetRange VERTICAL, INDEX, MIN, MAX
 
-Puts minimal and maximal breadth of INDEXth column ( VERTICAL = 0 ) or row ( VERTICAL = 1)
-in corresponding MIN and MAX scalar references.
+Stores minimal and maximal breadth of INDEXth column ( VERTICAL = 0 ) or row ( VERTICAL = 1)
+in the corresponding MIN and MAX scalar references.
 
 =item Measure VERTICAL, INDEX, BREADTH
 
-Puts breadth in pixels of INDEXth column ( VERTICAL = 0 ) or row ( VERTICAL = 1)
+Stores breadth in pixels of the INDEXth column ( VERTICAL = 0 ) or row ( VERTICAL = 1)
 into BREADTH scalar reference.
 
 This notification by default may be called from within
-C<begin_paint_info/end_paint_info> brackets. To disable this feature
-set internal flag C<{NoBulkPaintInfo}> to 1.
+the C<begin_paint_info/end_paint_info> brackets. To disable this feature
+set the internal flag C<{NoBulkPaintInfo}> to 1.
 
 =item SelectCell COLUMN, ROW
 
@@ -2878,32 +2871,32 @@ Called when a cell with COLUMN and ROW coordinates is focused.
 
 =item SetExtent VERTICAL, INDEX, BREADTH
 
-Reports breadth in pixels of INDEXth column ( VERTICAL = 0 ) or row ( VERTICAL = 1),
-as a response to C<columnWidth> and C<rowHeight> calls.
+Reports breadth in pixels of the INDEXth column ( VERTICAL = 0 ) or row ( VERTICAL = 1),
+as a response to the C<columnWidth> and C<rowHeight> calls.
 
 =item Stringify COLUMN, ROW, TEXT_REF
 
-Puts text string, assigned to cell with COLUMN and ROW coordinates, into TEXT_REF
+Stores the text string, assigned to the cell with COLUMN and ROW coordinates, into the TEXT_REF
 scalar reference.
 
 =back
 
 =head1 Prima::AbstractGrid
 
-Exactly the same as its ascendant, C<Prima::AbstractGridViewer>,
-except that it does not propagate C<DrawItem> message,
-assuming that the items must be drawn as text.
+The same as its ascendant, C<Prima::AbstractGridViewer>, except that it
+does not propagate the C<DrawItem> message, assuming that the items must be drawn
+as text.
 
 =head1 Prima::GridViewer
 
-The class implements cells data and geometry storage mechanism, but leaves
-the cell data format to the programmer. The cells are accessible via
-C<cells> property and several other helper routines.
+The class implements cell data and geometry storage mechanisms but leaves
+the data format to the programmer. The cells are accessible via
+the C<cells> property and several other helper routines.
 
 The cell data are stored in an array, where each item corresponds to a row,
-and contains array of scalars, where each corresponds to a column. All
+and contains an array of scalars, where each corresponds to a column. All
 data managing routines, that accept two-dimensional arrays, assume that
-the columns arrays are of the same widths.
+the column arrays are of the same width.
 
 For example, C<[[1,2,3]]]> is a valid one-row, three-column structure, and
 C<[[1,2],[2,3],[3,4]]> is a valid three-row, two-column structure.
@@ -2926,7 +2919,7 @@ Default value: 1
 
 =item cell COLUMN, ROW, [ DATA ]
 
-Run-time property. Selects the data in cell with COLUMN and ROW coordinates.
+Run-time property. Selects the data in the cell with COLUMN and ROW coordinates.
 
 =item cells [ ARRAY ]
 
@@ -2935,11 +2928,11 @@ rectangular array or scalars.
 
 =item columns INDEX
 
-A read-only property; returns number of columns.
+A read-only property; returns the number of columns.
 
 =item rows INDEX
 
-A read-only property; returns number of rows.
+A read-only property; returns the number of rows.
 
 =back
 
@@ -2949,19 +2942,19 @@ A read-only property; returns number of rows.
 
 =item add_column CELLS
 
-Inserts one-dimensional array of scalars to the end of columns.
+Inserts a one-dimensional array of scalars to the end of columns.
 
 =item add_columns CELLS
 
-Inserts two-dimensional array of scalars to the end of columns.
+Inserts a two-dimensional array of scalars to the end of columns.
 
 =item add_row CELLS
 
-Inserts one-dimensional array of scalars to the end of rows.
+Inserts a one-dimensional array of scalars to the end of rows.
 
 =item add_rows CELLS
 
-Inserts two-dimensional array of scalars to the end of rows.
+Inserts a two-dimensional array of scalars to the end of rows.
 
 =item delete_columns OFFSET, LENGTH
 
@@ -2975,31 +2968,31 @@ are accepted.
 
 =item insert_column OFFSET, CELLS
 
-Inserts one-dimensional array of scalars as column OFFSET.
+Inserts a one-dimensional array of scalars as column OFFSET.
 Negative values are accepted.
 
 =item insert_columns OFFSET, CELLS
 
-Inserts two-dimensional array of scalars in column OFFSET.
+Inserts a two-dimensional array of scalars in column OFFSET.
 Negative values are accepted.
 
 =item insert_row
 
-Inserts one-dimensional array of scalars as row OFFSET.
+Inserts a one-dimensional array of scalars as row OFFSET.
 Negative values are accepted.
 
 =item insert_rows
 
-Inserts two-dimensional array of scalars in row OFFSET.
+Inserts a two-dimensional array of scalars in row OFFSET.
 Negative values are accepted.
 
 =back
 
 =head1 Prima::Grid
 
-Descendant of C<Prima::GridViewer>, declares format of cells
-as a single text string. Incorporating all functionality of
-its ascendants, provides a standard text grid widget.
+Descendant of C<Prima::GridViewer>, declares format of cell data as a single
+text string.  Provides the standard text grid widget that has all the
+functionality of its ascendants.
 
 =head2 Methods
 
@@ -3009,13 +3002,13 @@ its ascendants, provides a standard text grid widget.
 
 Returns two C<ta::> constants for horizontal and vertical cell text alignment.
 Since the item storage organization is implemented, does
-so without calling C<GetAlignment> notification.
+so without calling the C<GetAlignment> notification.
 
 =item get_cell_text COLUMN, ROW
 
-Returns text string assigned to cell in COLUMN and ROW.
+Returns text string assigned to the cell in COLUMN and ROW.
 Since the item storage organization is implemented, does
-so without calling C<Stringify> notification.
+so without calling the C<Stringify> notification.
 
 =back
 

@@ -376,17 +376,17 @@ L<Prima::DockManager> - advanced dockable widgets
 
 L<Prima::Docks> - dockable widgets
 
-L<Prima::Edit> - text editor widget
+L<Prima::Edit> - text editor
 
 L<Prima::ExtLists> - listbox with checkboxes
 
-L<Prima::FrameSet> - frameset widget class
+L<Prima::FrameSet> - frameset widget
 
 L<Prima::Grids> - grid widgets
 
-L<Prima::HelpViewer> - the built-in POD file browser
+L<Prima::HelpViewer> - the built-in POD browser
 
-L<Prima::ImageViewer> - bitmap viewer
+L<Prima::ImageViewer> - image viewer
 
 L<Prima::InputLine> - input line widget
 

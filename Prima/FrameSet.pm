@@ -914,7 +914,7 @@ sub insert_to_frame
 
 =head1 NAME
 
-Prima::FrameSet - standard frameset widget
+Prima::FrameSet - frameset widget
 
 =head1 SYNOPSIS
 
@@ -941,15 +941,12 @@ Prima::FrameSet - standard frameset widget
 
 =head1 DESCRIPTION
 
-Provides standard means of framesets manipulations. It includes sharing of
-common workspace among several widget groups; redistribution of space, occupied
-by frames; isolation of different frames from each other.
+Provides the standard frameset widget. The frameset divides its surface among
+groups of children and allows interactive change of the surface by dragging
+the frame bars with the mouse.
 
-This module defines C<fra::> and C<frr::> packages for constants, used by L<arrangement>
-and L<resizeMethod> properties, respectively.
-
-Two additional auxiliary packages are defined within this module: L<Prima::FrameSet::Frame>
-and L<Prima::FrameSet::Slider>.
+This module defines the C<fra::> and C<frr::> constants used by the
+L<arrangement> and L<resizeMethod> properties, respectively.
 
 =head1 AUTHOR
 

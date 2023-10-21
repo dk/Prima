@@ -1045,23 +1045,22 @@ __END__
 
 =head1 NAME
 
-Prima::HelpViewer - the built-in pod file browser
+Prima::HelpViewer - the built-in POD browser
 
 =head1 USAGE
 
-The module presents two packages, C<Prima::HelpViewer>
-and C<Prima::PodViewWindow>. Their sole purpose is to serve as a mediator
-between C<Prima::PodView> package, the toolkit help interface and the user.
-C<Prima::PodViewWindow> includes all the user functionality, including ( but
-not limited to :) text search, color and font setup, printing etc.
-C<Prima::HelpViewer> provides two methods - C<open> and C<close>, used by
-C<Prima::Application> for help viewer invocation.
+The module presents two packages, C<Prima::HelpViewer> and
+C<Prima::PodViewWindow>. Their purpose is to serve as a mediator between the
+C<Prima::PodView> package, the toolkit help interface, and the user.
+C<Prima::PodViewWindow> includes all the user functionality needed, including
+text search, color and font setup, printing, etc.  C<Prima::HelpViewer> provides
+two methods - C<open> and C<close>, used by C<Prima::Application> for
+invocation of the help viewer .
 
 =head1 Help
 
-The browser can be used to view and print POD
-( plain old documentation ) files. See the command overview below for more
-detailed description:
+The browser can be used to view and print POD ( plain old documentation )
+files. See the command overview below for a more detailed description
 
 =over
 
@@ -1071,13 +1070,12 @@ detailed description:
 
 =item Open
 
-Presents a file selection dialog, when the user can select
-a file to browse in the viewer. The file must contain POD content,
-otherwise a warning is displayed.
+Presents a file selection dialog, when the user can select a file to browse.
+The file must contain POD content, otherwise, a warning is displayed.
 
 =item Goto
 
-Asks for a manpage, that is searched in PATH and the installation
+Asks for a manpage, that is searched in PATH and the perl installation
 directories.
 
 =item New window
@@ -1092,20 +1090,19 @@ Commands in this group call external processes
 
 =item prima-class
 
-prima-class is Prima utility for displaying the widget class hierachies.
-The command asks for Prima class to display the hierachy information
-for.
+prima-class is the utility for displaying the widget class hierarchies.
+The command asks for the Prima class to display the hierarchy information.
 
 =back
 
 =item Print
 
-Provides a dialog, when the user can select the appropriate
+Provides a dialog where the user can select the appropriate
 printer device and its options.
 
 Prints the current topic to the selected printer.
 
-If L<Full text view> menu item is checked, prints the whole manpage.
+If the L<Full text view> menu item is checked, prints the whole manpage.
 
 =item Close window
 
@@ -1132,18 +1129,17 @@ Decreases the currently selected font by 2 points.
 =item Full text view
 
 If checked, the whole manpage is displayed. Otherwise,
-its content is presented as a set of topic, and only one
+its content is presented as a set of topics, and only a single
 topic is displayed.
 
 =item Find
 
-Presents a find dialog, where the user can
-select the text to search and the search options -
-the search direction, scope, and others.
+Presents a text find dialog where the user can type the text to search, and
+select the search options - the search direction, scope, etc.
 
 =item Find again
 
-Starts search for the text, entered in the last find dialog,
+Starts search for the text, entered in the last text find dialog,
 with the same search options.
 
 =item Fast find
@@ -1160,21 +1156,21 @@ performed parallel to the input.
 
 =item Backward
 
-Same as L<Forward> option, except that the serach direction is backwards.
+Same as the L<Forward> option, except that the search direction is backward.
 
 =item Repeat forward
 
-Repeat the search in the same direction as the initial search was being invoked.
+Repeats the search in the same direction as the initial search
 
 =item Repeat backward
 
-Repeat the search in the reverse direction as the initial search was being invoked.
+Repeat the search in the reverse direction from the initial search
 
 =back
 
 =item Setup
 
-Presents a setup dialog, where the user can select appropriate fonts and colors.
+Presents a setup dialog where the user can select appropriate fonts and colors.
 
 =back
 
@@ -1184,24 +1180,24 @@ Presents a setup dialog, where the user can select appropriate fonts and colors.
 
 =item Back
 
-Displays the previously visited manpage ( or topic )
+Displays the previously visited manpage or topic
 
 =item Forward
 
-Displays the previously visited manpage ( or topic ),
-that was left via L<Back> command.
+Displays the previously visited manpage or topic
+that was left via the L<Back> command.
 
 =item Up
 
-Displays the upper level topic within a manpage.
+Displays the upper-level topic within the manpage
 
 =item Previous
 
-Moves to the previous topic within a manpage.
+Moves to the previous topic within the manpage
 
 =item Next
 
-Moves to the next topic within a manpage.
+Moves to the next topic within the manpage
 
 =back
 
@@ -1228,6 +1224,5 @@ Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
 =head1 COPYRIGHT
 
 This program is distributed under the BSD License.
-
 
 =cut
