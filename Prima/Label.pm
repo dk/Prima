@@ -512,12 +512,12 @@ Prima::Label - static text widget
 
 =head1 DESCRIPTION
 
-The class is designed for display of text, and assumes no user interaction. The
+The class is designed for the display of text and provides no user interaction. The
 text output capabilities include wrapping, horizontal and vertical alignment,
-and automatic widget resizing to match text extension. If text contains a
+and automatic widget resizing to match text extensions. If the text contains a
 tilde-escaped ( hot ) character, the label can explicitly focus the specified
-widget upon press of the character key, what feature is useful for dialog
-design.
+widget upon pressing of the character key; this feature is useful for the design of
+dialogs.
 
 Labels can display rich text with links. See L<Prima::Drawable::Markup> for
 more.
@@ -578,35 +578,35 @@ Default value: 1
 =item focusLink WIDGET
 
 Points to a widget or a widget name (has to be a sibling widget), which is
-explicitly focused when the user presses the combination of a hotkey with the
+explicitly focused when the user presses the combination of the hotkey with the
 C<Alt> key.
 
-Prima::Label does not provide a separate property to access the
-hotkey value, however it can be read from the C<{accel}> variable.
+Prima::Label does not provide a separate property to access the hotkey value
+from the tilde-escaped string, however, it can be read from the C<{accel}>
+variable.
 
 Default value: C<undef>.
 
 =item hotKey CHAR
 
-A key (defined by CHAR) that the label will react to if pressed, if the label has the focus
-The combination ALT + Key works always if the label has the focus or not
+A key (defined by CHAR) that the label will react to if pressed if the label has the focus
+The combination ALT + Key works always whether the label has the focus or not
 
 =item linkColor COLOR
 
-The color that is used to draw link texts.
+The color of text in links.
 
-Default value is taken from L<Prima::Widget::Link>, and is currently hardcoded as green.
+The default value is taken from L<Prima::Widget::Link> and is currently hardcoded as green.
 So far there is no support for the system link color.
 
 =item showAccelChar BOOLEAN
 
-If 0, the tilde ( ~ ) character is collapsed from the text,
-and the hot character is underlined. When the user presses combination
-of the escaped character with the C<Alt> key, the C<focusLink>
-widget is explicitly focused.
+If 0, the tilde ( ~ ) character is collapsed from the text, and the hot
+character is underlined. When the user presses the combination of the escaped
+character with the C<Alt> key, the C<focusLink> widget is explicitly focused.
 
-If 1, the text is showed as is, and no hot character is underlined.
-Key combinations with C<Alt> key are not recognized. See also: C<hotKey>.
+If 1, the text is shown as is, and no hot character is underlined.
+Key combinations with the C<Alt> key are not recognized. See also: C<hotKey>.
 
 Default value: 0
 
@@ -621,16 +621,16 @@ Default value: 1
 
 =item textJustify $BOOL | { letter => 0, word => 0, kashida => 0, min_kashida => 0 } | %VALUES
 
-If set, justifies wrapped text according to the option passwd in the hash
+If set, justifies wrapped text according to the option passed in the hash
 ( see L<Prima::Drawable::Glyphs/arabic_justify> and L<Prima::Drawable::Glyphs/interspace_justify> ).
 Can accept three forms:
 
-If anonymous hash is used, overwrites all the currently defined options.
+If an anonymous hash is used, overwrites all the currently defined options.
 
 If C<$BOOL> is used, treated as a shortcut for C<< { letter => $BOOL, word => $BOOL, kashida => $BOOL } >>;
-consequent get-calls return full hash, not the C<$BOOL>.
+consequent get-calls return a full hash, not the C<$BOOL> value.
 
-If C<%VALUES> form is used, overwrites only values found in C<%VALUES>.
+If the C<%VALUES> form is used, overwrites only values found in C<%VALUES>.
 
 Only actual when C<wordWrap> is set.
 
@@ -640,14 +640,11 @@ If set, indicates RTL text direction.
 
 =item wordWrap BOOLEAN
 
-If 1, the text is wrapped if it can not be horizontally fit in the
-widget interior.
-
 If 0, the text is not wrapped unless new line characters are present
 in the text.
 
-New line characters signal line wrapping with no respect to C<wordWrap>
-property value.
+If 1, the text is wrapped if it can not be fit horizontally in the
+widget interior. The text is also wrapped over new lines.
 
 Default value: 0
 
@@ -661,8 +658,8 @@ One of the following C<ta::XXX> constants:
 
 Selects the vertical text alignment.
 
-NB: C<ta::Middle> value is not equal to C<ta::Center>'s, however
-the both constants produce equal effect here.
+Note: the C<ta::Middle> value is not equal to C<ta::Center>'s, however,
+both constants produce an equal effect here.
 
 Default value: C<ta::Top>
 

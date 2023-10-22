@@ -1993,12 +1993,12 @@ sub draw_items
 
 =head1 NAME
 
-Prima::Lists - user-selectable item list widgets
+Prima::Lists - list widgets
 
 =head1 DESCRIPTION
 
-The module provides classes for several abstraction layers
-of item representation. The hierarchy of classes is as follows:
+The module provides several listbox classes that differ in the way items in the
+list widget are associated with data. The hierarchy of classes is as follows:
 
 	AbstractListViewer
 		AbstractListBox
@@ -2006,28 +2006,27 @@ of item representation. The hierarchy of classes is as follows:
 			ProtectedListBox
 			ListBox
 
-The root class, C<Prima::AbstractListViewer>, provides common
-interface, while by itself it is not directly usable.
-The main differences between classes
-are centered around the way the item list is stored. The simplest
-organization of a text-only item list, provided by C<Prima::ListBox>,
-stores an array of text scalars in a widget. More elaborated storage
-and representation types are not realized, and the programmer is urged
-to use the more abstract classes to derive own mechanisms.
-For example, for a list of items that contain text strings and icons
-see L<Prima::Dialog::FileDialog/"Prima::DirectoryListBox">.
-To organize an item storage, different from C<Prima::ListBox>, it is
-usually enough to overload either the C<Stringify>, C<MeasureItem>,
-and C<DrawItem> events, or their method counterparts: C<get_item_text>,
-C<get_item_width>, and C<draw_items>.
+The root class C<Prima::AbstractListViewer> provides a common interface that is
+though not usable directly.  The main differences between classes are centered
+around the way the items are stored. The simplest organization of a text-only
+item list, provided by C<Prima::ListBox>, stores an array of text scalars in a
+widget. More elaborated storage and representation types are not realized, and
+the programmer is urged to use the more abstract classes to derive their own
+mechanisms.  For example, for a list of items that contain text strings and
+icons see L<Prima::Dialog::FileDialog/"Prima::DirectoryListBox">.  To organize
+an item storage different from C<Prima::ListBox> it is usually enough to
+overload either the C<Stringify>, C<MeasureItem>, and C<DrawItem> events, or
+their method counterparts: C<get_item_text>, C<get_item_width>, and
+C<draw_items>.
 
 =head1 Prima::AbstractListViewer
 
-C<Prima::AbstractListViewer> is a descendant of C<Prima::Widget::GroupScroller>,
-and some properties are not described here.
+C<Prima::AbstractListViewer> is a descendant of
+C<Prima::Widget::GroupScroller>, and some of its properties are not described
+here.
 
-The class provides interface to generic list browsing functionality,
-plus functionality for text-oriented lists. The class is not usable directly.
+The class provides an interface to generic list browsing functionality, plus
+functionality for text-oriented lists. The class is not usable directly.
 
 =head2 Properties
 
@@ -2035,23 +2034,23 @@ plus functionality for text-oriented lists. The class is not usable directly.
 
 =item autoHeight BOOLEAN
 
-If 1, the item height is changed automatically
-when the widget font is changed; this is useful for text items.
-If 0, item height is not changed; this is useful for non-text items.
+If 1, the item height is changed automatically when the widget font is changed;
+this is useful for text items.  If 0, the item height is not changed; this is
+useful for non-text items.
 
 Default value: 1
 
 =item count INTEGER
 
-An integer property, destined to reflect number of items in the list.
-Since it is tied to the item storage organization, and hence,
-to possibility of changing the number of items, this property
-is often declared as read-only in descendants of C<Prima::AbstractListViewer>.
+An integer property, used to access the number of items in the list.  Since it
+is tied to the item storage organization, and hence the possibility of changing
+the number of items, this property is often declared as read-only in
+descendants of C<Prima::AbstractListViewer>.
 
 =item dragable BOOLEAN
 
-If 1, allows the items to be dragged interactively by pressing control key
-together with left mouse button. If 0, item dragging is disabled.
+If 1, allows the items to be dragged interactively by pressing the Control key
+together with the left mouse button. If 0, item dragging is disabled.
 
 Default value: 1
 
@@ -2064,53 +2063,51 @@ Default value: 1
 
 =item extendedSelect BOOLEAN
 
-Regards the way the user selects multiple items and is only actual
-when C<multiSelect> is 1. If 0, the user must click each item
-in order to mark as selected. If 1, the user can drag mouse
-or use C<Shift> key plus arrow keys to perform range selection;
-the C<Control> key can be used to select individual items.
+Manages the way the user selects multiple items that is only actual when
+C<multiSelect> is 1. If 0, the user must click each item to mark it as
+selected. If 1, the user can drag the mouse or use the Shift key plus arrow
+keys to perform range selection; the Control key can be used to select
+individual items.
 
 Default value: 0
 
 =item focusedItem INDEX
 
-Selects the focused item index. If -1, no item is focused.
-It is mostly a run-time property, however, it can be set
-during the widget creation stage given that the item list is
-accessible on this stage as well.
+Selects the focused item index. If -1, no item is focused.  It is mostly a
+run-time property, however, it can be set during the widget creation stage
+given that the item list is accessible at this stage as well.
 
 Default value: -1
 
 =item gridColor COLOR
 
-Color, used for drawing vertical divider lines for multi-column
-list widgets. The list classes support also the indirect way
-of setting the grid color, as well as widget does, via
-the C<colorIndex> property. To achieve this, C<ci::Grid> constant
-is declared ( for more detail see L<Prima::Widget/colorIndex> ).
+Color used for drawing vertical divider lines for multi-column list widgets.
+The list classes support also the indirect way of setting the grid color, as
+well as the widget does, via the C<colorIndex> property. To achieve this,
+the C<ci::Grid> constant is declared ( for more detail see
+L<Prima::Widget/colorIndex> ).
 
 Default value: C<cl::Black>.
 
 =item integralHeight BOOLEAN
 
-If 1, only the items that fit vertically in the widget interiors
-are drawn. If 0, the items that are partially visible are drawn also.
+If 1, only the items that fit vertically in the widget interiors are drawn. If
+0, the partially visible items are drawn also.
 
 Default value: 0
 
 =item integralWidth BOOLEAN
 
-If 1, only the items that fit horizontally in the widget interiors
-are drawn. If 0, the items that are partially visible are drawn also.
-Actual only in multi-column mode.
+If 1, only the items that fit horizontally in the widget interiors are drawn.
+If 0, the partially visible items are drawn also.  Actual only in
+the multi-column mode.
 
 Default value: 0
-
 
 =item itemHeight INTEGER
 
 Selects the height of the items in pixels. Since the list classes do
-not support items with different dimensions, changes to this property
+not support items with variable heights, changes to this property
 affect all items.
 
 Default value: default font height
@@ -2118,7 +2115,7 @@ Default value: default font height
 =item itemWidth INTEGER
 
 Selects the width of the items in pixels. Since the list classes do
-not support items with different dimensions, changes to this property
+not support items with variable widths, changes to this property
 affect all items.
 
 Default value: default widget width
@@ -2127,16 +2124,16 @@ Default value: default widget width
 
 If 0, the user can only select one item, and it is reported by
 the C<focusedItem> property. If 1, the user can select more than one item.
-In this case, C<focusedItem>'th item is not necessarily selected.
-To access selected item list, use C<selectedItems> property.
+In this case, the C<focusedItem>'th item is not necessarily selected.
+To access the selected item list use the C<selectedItems> property.
 
 Default value: 0
 
 =item multiColumn BOOLEAN
 
-If 0, the items are arrayed vertically in one column, and the main scroll bar
-is vertical. If 1, the items are arrayed in several columns, C<itemWidth>
-pixels wide each. In this case, the main scroll bar is horizontal.
+If 0, the items are arranged vertically in a single column and the main scroll
+bar is vertical. If 1, the items are arranged in several columns, each
+C<itemWidth> pixels wide. In this case, the main scroll bar is horizontal.
 
 =item offset INTEGER
 
@@ -2148,7 +2145,7 @@ Selects the first item drawn.
 
 =item selectedCount INTEGER
 
-A read-only property. Returns number of selected items.
+A read-only property. Returns the number of selected items.
 
 =item selectedItems ARRAY
 
@@ -2156,7 +2153,7 @@ ARRAY is an array of integer indices of selected items.
 
 =item vertical BOOLEAN
 
-Sets general direction of items in multi-column mode. If 1, items increase
+Sets the general direction of items in multi-column mode. If 1, items increase
 down-to-right. Otherwise, right-to-down.
 
 Doesn't have any effect in single-column mode.
@@ -2171,124 +2168,121 @@ Default value: 1.
 =item add_selection ARRAY, FLAG
 
 Sets item indices from ARRAY in selected
-or deselected state, depending on FLAG value, correspondingly 1 or 0.
+or deselected state, depending on the FLAG value, correspondingly 1 or 0.
 
-Only for multi-select mode.
+Only for the multi-select mode.
 
 =item deselect_all
 
-Removes selection from all items.
+Clears the selection
 
-Only for multi-select mode.
+Only for the multi-select mode.
 
 =item draw_items CANVAS, ITEM_DRAW_DATA
 
-Called from within C<Paint> notification to draw items. The default behavior is
-to call C<DrawItem> notification for every item in ITEM_DRAW_DATA array.
-ITEM_DRAW_DATA is an array or arrays, where each array consists of parameters,
-passed to C<DrawItem> notification.
+Called from within the C<Paint> notification to draw items. The default
+behavior is to call the C<DrawItem> notification for every item in the
+ITEM_DRAW_DATA array.  ITEM_DRAW_DATA is an array or arrays, where each array
+consists of parameters passed to the C<DrawItem> notification.
 
-This method is overridden in some descendant classes, to increase the speed of
-drawing routine. For example, C<std_draw_text_items> is the optimized routine
-for drawing unified text-based items. It is used in C<Prima::ListBox> class.
+This method is overridden in some descendant classes to increase the speed of
+drawing. For example, C<std_draw_text_items> is the optimized routine for
+drawing text-based items. It is used in the C<Prima::ListBox> class.
 
-See L<DrawItem> for parameters description.
+See L<DrawItem> for the description of the parameters.
 
 =item draw_text_items CANVAS, FIRST, LAST, STEP, X, Y, OFFSET, CLIP_RECT
 
-Called by C<std_draw_text_items> to draw sequence of text items with
-indices from FIRST to LAST, by STEP, on CANVAS, starting at point X, Y, and
-incrementing the vertical position with OFFSET. CLIP_RECT is a reference
-to array of four integers with inclusive-inclusive coordinates of the active
-clipping rectangle.
+Called by C<std_draw_text_items> to draw a sequence of text items with indices
+from FIRST to LAST, by STEP, on CANVAS, starting at point X, Y, and
+incrementing the vertical position with OFFSET. CLIP_RECT is a reference to an
+array of four integers given in the inclusive-inclusive coordinates that
+represent the active clipping rectangle.
 
 Note that OFFSET must be an integer, otherwise bad effects will be observed
 when text is drawn below Y=0
 
 =item get_item_text INDEX
 
-Returns text string assigned to INDEXth item.
+Returns the text string assigned to the INDEXth item.
 Since the class does not assume the item storage organization,
-the text is queried via C<Stringify> notification.
+the text is queried via the C<Stringify> notification.
 
 =item get_item_width INDEX
 
-Returns width in pixels of INDEXth item.
+Returns width in pixels of the INDEXth item.
 Since the class does not assume the item storage organization,
-the value is queried via C<MeasureItem> notification.
+the value is queried via the C<MeasureItem> notification.
 
 =item is_selected INDEX
 
-Returns 1 if INDEXth item is selected, 0 if it is not.
+Returns 1 if the INDEXth item is selected, 0 otherwise.
 
 =item item2rect INDEX, [ WIDTH, HEIGHT ]
 
-Calculates and returns four integers with rectangle coordinates
-of INDEXth item within the widget. WIDTH and HEIGHT are optional
-parameters with pre-fetched dimension of the widget; if not set,
-the dimensions are queried by calling C<size> property. If set, however,
-the C<size> property is not called, thus some speed-up can be achieved.
+Calculates and returns four integers with rectangle coordinates of the INDEXth
+item. WIDTH and HEIGHT are optional parameters with pre-fetched dimensions of
+the widget; if not set, the dimensions are queried by calling the C<size>
+property. If set, however, the C<size> property is not called, thus some
+speed-up can be achieved.
 
 =item point2item X, Y
 
-Returns the index of an item that contains point (X,Y). If the point
+Returns the index of an item that contains the point at (X,Y). If the point
 belongs to the item outside the widget's interior, returns the index
 of the first item outside the widget's interior in the direction of the point.
 
 =item redraw_items INDICES
 
-Redraws all items in INDICES array.
+Redraws all items in the INDICES array.
 
 =item select_all
 
 Selects all items.
 
-Only for multi-select mode.
+Only for the multi-select mode.
 
 =item set_item_selected INDEX, FLAG
 
-Sets selection flag of INDEXth item.
+Sets the selection flag on the INDEXth item.
 If FLAG is 1, the item is selected. If 0, it is deselected.
 
-Only for multi-select mode.
+Only for the multi-select mode.
 
 =item select_item INDEX
 
-Selects INDEXth item.
+Selects the INDEXth item.
 
-Only for multi-select mode.
+Only for the multi-select mode.
 
 =item std_draw_text_items CANVAS, ITEM_DRAW_DATA
 
-An optimized method, draws unified text-based items.
-It is fully compatible to C<draw_items> interface,
-and is used in C<Prima::ListBox> class.
+An optimized method, draws text-based items. It is fully compatible with the
+C<draw_items> interface and is used in the C<Prima::ListBox> class.
 
-The optimization is derived from the assumption that items
-maintain common background and foreground colors, that differ
-in selected and non-selected states only. The routine groups
-drawing requests for selected and non-selected items, and
-draws items with reduced number of calls to C<color> property.
-While the background is drawn by the routine itself, the foreground
-( usually text ) is delegated to the C<draw_text_items> method, so
-the text positioning and eventual decorations would not require
-full rewrite of code.
+The optimization is derived from the assumption that items maintain common
+background and foreground colors, that only differ in the selected and
+non-selected states. The routine groups drawing requests for selected and
+non-selected items, and then draws items with a reduced number of calls to the
+C<color> property.  While the background is drawn by the routine itself, the
+foreground ( usually text ) is delegated to the C<draw_text_items> method, so
+that the text positioning and eventual decorations would be easier to implement.
 
-ITEM_DRAW_DATA is an array of arrays of scalars, where each array
-contains parameters of C<DrawItem> notification.
-See L<DrawItem> for parameters description.
+ITEM_DRAW_DATA is an array of arrays of scalars, where each array contains
+parameters of the C<DrawItem> notification.  See L<DrawItem> for the 
+description of the parameters.
 
 =item toggle_item INDEX
 
-Toggles selection of INDEXth item.
+Toggles selection of the INDEXth item.
 
-Only for multi-select mode.
+Only for the multi-select mode.
 
 =item unselect_item INDEX
 
-Deselects INDEXth item.
+Deselects the INDEXth item.
 
-Only for multi-select mode.
+Only for the multi-select mode.
 
 =back
 
@@ -2298,57 +2292,57 @@ Only for multi-select mode.
 
 =item Click
 
-Called when the user presses return key or double-clicks on
+Called when the user presses the return key or double-clicks on
 an item. The index of the item is stored in C<focusedItem>.
 
 =item DragItem OLD_INDEX, NEW_INDEX
 
 Called when the user finishes the drag of an item
 from OLD_INDEX to NEW_INDEX position. The default action
-rearranges the item list in accord with the dragging action.
+rearranges the item list according to the dragging action.
 
 =item DrawItem CANVAS, INDEX, X1, Y1, X2, Y2, SELECTED, FOCUSED, PRELIGHT, COLUMN
 
-Called when an INDEXth item is to be drawn on CANVAS.
-X1, Y1, X2, Y2 designate the item rectangle in widget coordinates,
-where the item is to be drawn. SELECTED, FOCUSED, and PRELIGHT are boolean
-flags, if the item must be drawn correspondingly in selected and
-focused states, with or without the prelight effect.
+Called when the INDEXth item is to be drawn on CANVAS.  X1, Y1, X2, Y2 define
+the item rectangle in widget coordinates where the item is to be drawn.
+SELECTED, FOCUSED, and PRELIGHT are boolean flags, if the item must be drawn
+correspondingly in selected and focused states, with or without the prelight
+effect.
 
 =item MeasureItem INDEX, REF
 
-Puts width in pixels of INDEXth item into REF
+Stores width in pixels of the INDEXth item into the REF
 scalar reference. This notification must be called
-from within C<begin_paint_info/end_paint_info> block.
+from within the C<begin_paint_info/end_paint_info> block.
 
 =item SelectItem INDEX, FLAG
 
-Called when the item changed its selection state.
+Called when an item changes its selection state.
 INDEX is the index of the item, FLAG is its new selection
 state: 1 if it is selected, 0 if it is not.
 
 =item Stringify INDEX, TEXT_REF
 
-Puts text string, assigned to INDEXth item into TEXT_REF
+Stores the text string associated with the INDEXth item into TEXT_REF
 scalar reference.
 
 =back
 
 =head1 Prima::AbstractListBox
 
-Exactly the same as its ascendant, C<Prima::AbstractListViewer>,
-except that it does not propagate C<DrawItem> message,
-assuming that the items must be drawn as text.
+The same as its ascendant C<Prima::AbstractListViewer> except that it does not
+the propagate C<DrawItem> message, assuming that all items must be drawn as
+text strings.
 
 =head1 Prima::ListViewer
 
-The class implements items storage mechanism, but leaves
-the items format to the programmer. The items are accessible via
+The class implements an item storage mechanism but leaves the definition of
+the format of the item to the programmer. The items are accessible via the
 C<items> property and several other helper routines.
 
-The class also defines the user navigation, by accepting character
+The class also defines user navigation by accepting character
 keyboard input and jumping to the items that have text assigned
-with the first letter that match the input.
+with the first letter that matches the input.
 
 C<Prima::ListViewer> is derived from C<Prima::AbstractListViewer>.
 
@@ -2358,18 +2352,18 @@ C<Prima::ListViewer> is derived from C<Prima::AbstractListViewer>.
 
 =item autoWidth BOOLEAN
 
-Selects if the gross item width must be recalculated automatically
-when either the font changes or item list is changed.
+Selects if the item width must be recalculated automatically
+when either the font or item list is changed.
 
 Default value: 1
 
 =item count INTEGER
 
-A read-only property; returns number of items.
+A read-only property; returns the number of items.
 
 =item items ARRAY
 
-Accesses the storage array of items. The format of items is not
+Accesses the storage array of the items. The format of items is not
 defined, it is merely treated as one scalar per index.
 
 =back
@@ -2380,64 +2374,62 @@ defined, it is merely treated as one scalar per index.
 
 =item add_items ITEMS
 
-Appends array of ITEMS to the end of the list.
+Appends an array of ITEMS to the end of the item list.
 
 =item calibrate
 
-Recalculates all item widths and adjusts C<itemWidth> if
+Recalculates all item widths. Adjusts C<itemWidth> if
 C<autoWidth> is set.
 
 =item delete_items INDICES
 
-Deletes items from the list. INDICES can be either an array,
+Deletes items from the list. INDICES can be either an array
 or a reference to an array of item indices.
 
 =item get_item_width INDEX
 
-Returns width in pixels of INDEXth item from internal cache.
+Returns the width in pixels of the INDEXth item from the internal cache.
 
 =item get_items INDICES
 
-Returns array of items. INDICES can be either an array, or a reference to an
+Returns an array of items. INDICES can be either an array or a reference to an
 array of item indices.  Depending on the caller context, the results are
-different: in array context the item list is returned; in scalar - only the
-first item from the list. The semantic of the last call is naturally usable
-only for single item retrieval.
+different: in the array context the item list is returned; in scalar - only the
+first item from the list.
 
 =item insert_items OFFSET, ITEMS
 
-Inserts array of items at OFFSET index in the list.  Offset must be a valid
-index; to insert items at the end of the list use C<add_items> method.
+Inserts an array of items at the OFFSET index in the list.  Offset must be a valid
+index; to insert items at the end of the list use the C<add_items> method.
 
-ITEMS can be either an array, or a reference to an array of items.
+ITEMS can be either an array or a reference to an array of items.
 
 =item replace_items OFFSET, ITEMS
 
-Replaces existing items at OFFSET index in the list.  Offset must be a valid
-index.
+Replaces existing items at the OFFSET index in the list. The offset must be a
+valid index.
 
-ITEMS can be either an array, or a reference to an array of items.
+ITEMS can be either an array or a reference to an array of items.
 
 =back
 
 =head1 Prima::ProtectedListBox
 
-A semi-demonstrational class, derived from C<Prima::ListViewer>,
-that applies certain protection for every item drawing session.
-Assuming that several item drawing routines can be assembled in one
-widget, C<Prima::ProtectedListBox> provides a safety layer between
-these, so, for example, one drawing routine that selects a font
-or a color and does not care to restore the old value back,
-does not affect the outlook of the other items.
+A semi-demonstrational class derived from C<Prima::ListViewer>, implements
+certain protections for every item during drawing.  Assuming that several item
+drawing algorithms can be used in the same widget, C<Prima::ProtectedListBox>
+provides a safety layer between these. If an algorithm selects a font or a
+color and does not restore the old value, this does not affect the outlook of
+other items.
 
-This functionality is implementing by overloading C<draw_items>
+This functionality is implemented by overloading the C<draw_items>
 method and also all graphic properties.
 
 =head1 Prima::ListBox
 
-Descendant of C<Prima::ListViewer>, declares format of items
-as a single text string. Incorporating all of functionality of
-its predecessors, provides a standard listbox widget.
+Descendant of C<Prima::ListViewer>, declares that an item must be a single
+text string. Incorporating all the functionality of its predecessors, provides
+the standard workhorse listbox widget.
 
 =head2 Synopsis
 
@@ -2455,9 +2447,9 @@ its predecessors, provides a standard listbox widget.
 
 =item get_item_text INDEX
 
-Returns text string assigned to INDEXth item.
+Returns the text string associated with the INDEXth item.
 Since the item storage organization is implemented, does
-so without calling C<Stringify> notification.
+so without calling the C<Stringify> notification.
 
 =back
 

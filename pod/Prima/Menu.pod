@@ -158,7 +158,7 @@ Note: there is the C<Prima::KeySelector::describe> function which converts an
 integer key value to a string in the human-readable format, perfectly usable as
 accelerator text.
 
-=item hotkey
+=item Hotkey
 
 An integer value, is a combination of either a C<kb::XXX> constant or a character
 index with the modifier key values ( C<km::XXX> constant ).  This format is

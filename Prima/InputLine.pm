@@ -1214,7 +1214,7 @@ sub blink
 
 =head1 NAME
 
-Prima::InputLine - standard input line widget
+Prima::InputLine - input line widget
 
 =head2 SYNOPSIS
 
@@ -1228,10 +1228,9 @@ Prima::InputLine - standard input line widget
 
 =head1 DESCRIPTION
 
-The class provides basic functionality of an input line,
-including hidden input, read-only state, selection, and
-clipboard operations. The input line text data is
-contained in L<text> property.
+The class provides the basic functionality of an input line, including hidden
+input, read-only state, selection, and clipboard operations. The input line
+text data is stored in the L<text> property.
 
 =head1 API
 
@@ -1242,12 +1241,12 @@ contained in L<text> property.
 =item Change
 
 The notification is called when the L<text> property is changed, either
-interactively or as a result of direct call.
+interactively or as a result of a direct call.
 
 =item Validate TEXT_REF
 
 The notification is called right before the L<text> property is changed, either
-interactively or as a result of direct call. The custom code has a chance to
+interactively or as a result of a direct call. The custom code has a chance to
 validate the text and/or provide some sort of interactive feedback.
 
 See also: L</blink>
@@ -1282,24 +1281,22 @@ Default value: 1
 
 =item autoTab BOOLEAN
 
-If 1, the keyboard C<kb::Left> and C<kb::Right> commands, if received
-when the cursor is at the beginning or at the end of text, and cannot be
-mover farther, not processed. The result of this is that the default handler
-moves focus to a neighbor widget, in a way as if the Tab key
-was pressed.
+If 1, ignores the keyboard C<kb::Left> and C<kb::Right> commands, when these
+are received when the cursor is at the beginning or the end of text and
+cannot be moved farther. The result of this is that the default handler moves
+focus to a neighbor widget, in a way as if the Tab key was pressed.
 
 Default value: 0
 
 =item borderWidth INTEGER
 
-Width of 3d-shade border around the widget.
+Width of the border around the widget.
 
-Default value: 2
+Default value: depends on the skin
 
 =item charOffset INTEGER
 
-charOffset gets the current position of the cursor
-charOffset N sets the cursor at position N
+Managets the current position of the cursor
 
 =item firstChar
 
@@ -1307,9 +1304,9 @@ Selects the first visible cluster of text
 
 =item insertMode BOOLEAN
 
-Governs the typing mode - if 1, the typed text is inserted, if 0, the text overwrites
-the old text. When C<insertMode> is 0, the cursor shape is thick and covers the whole
-character; when 1, it is of default width.
+Manages the typing mode - if 1, the typed text is inserted, if 0, the text overwrites
+the old text. When C<insertMode> is 0 the cursor shape is thick and covers the whole
+character; when 1, it is of the default width.
 
 Default toggle key: Insert
 
@@ -1338,11 +1335,11 @@ clusters. A case with no selection is when START equals END.
 
 =item selStart INTEGER
 
-Selects the start of text selection.
+Selects the start of the text selection.
 
 =item selEnd INTEGER
 
-Selects the end of text selection.
+Selects the end of the text selection.
 
 =item textDirection BOOLEAN
 
@@ -1351,17 +1348,17 @@ If set, indicates RTL text input.
 =item textLigation BOOLEAN
 
 If set, text may be rendered at better quality with ligation and kerning,
-however that comes with a price that some ligatures may be indivisible and form
-clusters (f.ex. I<ff> or I<ffi> ligatures). Cursor cannot go inside of such
-clusters, and thus one can only select them, delete as whole, or press
+however, that comes with a price that some ligatures may be indivisible and form
+clusters (f.ex. I<ff> or I<ffi> ligatures). The cursor cannot go inside such
+clusters, and thus one can only select them, delete them as a whole, or press
 Del/Backspace on the cluster's edge.
 
 Toggle during runtime with Ctrl+Shift+L.
 
 =item wordDelimiters STRING
 
-Contains string of character that are used for locating a word break.
-Default STRING value consists of punctuation marks, space and tab characters,
+Contains the string of characters that are used for locating a word break.
+Default STRING value consists of punctuation marks, space, tab,
 and C<\xff> character.
 
 =item writeOnly BOOLEAN
@@ -1379,9 +1376,9 @@ Default value: 0
 
 =item blink %options
 
-Produces a short blink by setting background to red color.
-Can be used to signal invalid input, f ex from C<on_validate>.
-C<%options> allows C<backColor> and C<color> entries.
+Produces a short blink by setting the background to red color.
+Can be used to signal an invalid input, f ex from C<on_validate>.
+C<%options> allows the C<backColor> and C<color> entries.
 
 =item copy
 
@@ -1416,17 +1413,18 @@ Selects all text
 =head2 Bi-directional input and output
 
 When working on bidirectional texts, or text represented by complex script
-shaping, methods C<firstChar>, C<charOffset>, C<selection> etc cannot be used
-to calculate text offsets f.ex. via C<substr>. Note that these values are in
-clusters, not in characters (see L<Prima::Drawable::Glyphs> for the
-description>. Also, selection ranges of bidi text become not straighforward.
-Use the following methods whenever text manipulations are needed:
+shaping, values returned from the methods C<firstChar>, C<charOffset>,
+C<selection>, etc cannot be used to calculate text offsets f.ex. via C<substr>.
+Note that these values are in clusters, not in characters (see
+L<Prima::Drawable::Glyphs> for the description>. Also, the selection ranges of
+bidi text become not straightforward.  Use the following methods whenever text
+manipulations are needed:
 
 =over
 
 =item char_at OFFSET
 
-Returns character at OFFSET
+Returns character at cluster OFFSET
 
 =item selection_strpos
 

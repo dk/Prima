@@ -396,7 +396,7 @@ L<Prima::Menus> - menu widgets
 
 L<Prima::Label> - static text widget
 
-L<Prima::Lists> - user-selectable item list widgets
+L<Prima::Lists> - list widgets
 
 L<Prima::MDI> - top-level windows emulation classes
 
@@ -414,9 +414,9 @@ L<Prima::Spinner> - spinner animation
 
 L<Prima::TextView> - rich text browser widget
 
-L<Prima::Widget::Date> - standard date picker widget
+L<Prima::Widget::Date> - date picker widget
 
-L<Prima::Widget::Time> - standard time input widget
+L<Prima::Widget::Time> - time input widget
 
 =item Standard dialogs
 

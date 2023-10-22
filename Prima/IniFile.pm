@@ -524,12 +524,11 @@ Prima::IniFile - support of Windows-like initialization files
 
 =head1 DESCRIPTION
 
-The module contains a class, that provides mapping of text initialization file to
-a two-level hash structure. The first level
-is called sections, which groups the second level hashes, called items.
-Sections must have unique keys. The items hashes values are arrays of
-text strings. The methods, operated on these arrays are L<get_values>,
-L<set_values>, L<add_values> and L<replace_values>.
+The module provides mapping of a text initialization file to a two-level hash
+structure. The first level is I<sections>, which groups the second level
+hashes, I<items>.  Sections must have unique keys. The values of the I<items> hashes are
+arrays of text strings. The methods that operate on these arrays are
+L<get_values>, L<set_values>, L<add_values>, and L<replace_values>.
 
 =head1 SYNOPSIS
 
@@ -583,33 +582,33 @@ Cleans all internal data in the object, including the name of the file.
 
 =item create PROFILE
 
-Creates an instance of the class. The PROFILE is treated partly as
-an array, partly as a hash. If PROFILE consists of a single item,
-the item is treated as a filename. Otherwise, PROFILE is treated as a hash,
-where the following keys are allowed:
+Creates an instance of the class. The PROFILE is treated partly as an array,
+and partly as a hash. If PROFILE consists of a single item, the item is treated as
+a filename. Otherwise, PROFILE is treated as a hash, where the following keys
+are allowed:
 
 =over
 
 =item file FILENAME
 
-Selects name of file.
+Selects the name of the file.
 
 =item default %VALUES
 
-Selects the initial values for the file, where VALUES is a two-level
-hash of sections and items. It is passed to L<read>, where it is merged
-with the file data.
+Selects the initial values for the file, where VALUES is a two-level hash of
+sections and items. It is passed to L<read>, where it is merged with the file
+data.
 
 =back
 
 =item get_values SECTION, ITEM
 
-Returns array of values for ITEM in SECTION. If called in scalar context,
-and there is more than one value, the first value in list is returned.
+Returns an array of values for ITEM in SECTION. If called in scalar context
+and there is more than one value, the first value in the list is returned.
 
 =item items SECTION [ HINTS ]
 
-Returns items in SECTION. HINTS parameters is used to tell if a multiple-valued
+Returns items in SECTION. HINTS parameters are used to tell if a multiple-valued
 item must be returned as several items of the same name;
 HINTS can be supplied in the following forms:
 
@@ -622,25 +621,24 @@ Same as L<create>.
 
 =item nvalues SECTION, ITEM
 
-Returns number of values in ITEM in SECTION.
+Returns the number of values in ITEM in SECTION.
 
 =item read FILENAME, %PROFILE
 
-Flushes the old content and opens new file. FILENAME is a text string,
-PROFILE is a two-level hash of default values for the new file. PROFILE is
-merged with the data from file, and the latter keep the precedence.
-Does not return any success values but, warns if any error
-is occurred.
+Flushes the old content and opens a new file. FILENAME is a text string, PROFILE
+is a two-level hash of default values for the new file. PROFILE is merged with
+the data from the file, and the latter keeps the precedence.  Does not return
+any success values but warns if any error is occurred.
 
 =item replace_values SECTION, ITEM, @VALUES
 
-Removes all values form ITEM in SECTION and assigns it to the new
+Removes all values from ITEM in SECTION and assigns it to the new
 list of VALUES.
 
 =item section SECTION
 
 Returns a tied hash for SECTION. All its read and write operations are reflected
-in the caller object, which allows the following syntax:
+in the caller object which allows the following syntax:
 
 	my $section = $inifile-> section( 'Sample section');
 	$section-> {Item1} = 'Value1';
@@ -651,18 +649,19 @@ which is identical to
 
 =item sections
 
-Returns array of section names.
+Returns an array of section names.
 
 =item set_values SECTION, ITEM, @VALUES
 
-Assigns VALUES to ITEM in SECTION. If number of new values are equal or greater
-than the number of the old, the method is same as L<replace_values>. Otherwise,
+Assigns VALUES to ITEM in SECTION. If the number of new values is equal to or greater
+than the number of the old, the method is the same as L<replace_values>. Otherwise,
 the values with indices higher than the number of new values are not touched.
 
 =item write
 
-Rewrites the file with the object content. The object keeps an internal modification flag
-under name C<{changed}>; in case it is C<undef>, no actual write is performed.
+Rewrites the file with the object content. The object keeps an internal
+modification flag C<{changed}>; in case it is C<undef>, no actual write is
+performed.
 
 =back
 
