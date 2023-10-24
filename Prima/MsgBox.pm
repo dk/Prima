@@ -288,14 +288,12 @@ Prima::MsgBox - standard message and input dialog boxes
 
 =head1 DESCRIPTION
 
-The module contains two methods, C<message_box> and C<input_box>,
-that invoke correspondingly the standard message and one line text input
-dialog boxes.
+The module contains methods that start standard simple message dialogs
 
 =head1 SYNOPSIS
 
 	use Prima qw(Application);
-	use Prima::MsgBox qq(input_box message);
+	use Prima::MsgBox qw(input_box message);
 
 	my $text = input_box( 'Sample input box', 'Enter text:', '') // '(none)';
 	message( \ "You have entered: 'B<Q<< $text >>>'", mb::Ok);
@@ -310,38 +308,39 @@ dialog boxes.
 
 =item input_box TITLE, LABEL, INPUT_STRING, [ BUTTONS = mb::OkCancel, %PROFILES ]
 
-Invokes standard dialog box, that contains an input line, a text label, and
-buttons used for ending dialog session. The dialog box uses TITLE string to
-display as the window title, LABEL text to draw next to the input line, and
+Invokes a standard dialog box, that contains an input line, a text label, and
+buttons that end the dialog session. The dialog box uses the TITLE string to
+display as the window title, the LABEL text to draw next to the input line, and
 INPUT_STRING, which is the text present in the input box. Depending on the
-value of BUTTONS integer parameter, which can be a combination of the button
+value of the BUTTONS integer parameter, which can be a combination of the 
 C<mb::XXX> constants, different combinations of push buttons can be displayed
 in the dialog.
 
-PROFILE parameter is a hash, that contains customization parameters for the
-buttons and the input line. To access input line C<inputLine> hash key is used.
-See L<Buttons and profiles> for more information on BUTTONS and PROFILES.
+The PROFILE parameter is a hash, that contains customization parameters for the
+buttons and the input line. To access the input line parameters the
+C<inputLine> hash key is used.  See L<Buttons and profiles> for more
+information on BUTTONS and PROFILES.
 
-Returns different results depending on the caller context.  In array context,
-returns two values: the result of C<Prima::Dialog::execute>, which is either
-C<mb::Cancel> or one of C<mb::XXX> constants of the dialog buttons; and the
-text entered. The input text is not restored to its original value if the
-dialog was cancelled. In scalar context returns the text entered, if the dialog
-was ended with C<mb::OK> or C<mb::Yes> result, or C<undef> otherwise.
+Returns different results depending on the call context.  In the array
+context returns two values: the result of C<Prima::Dialog::execute> which is
+either C<mb::Cancel> or one of the C<mb::XXX> constants of the dialog buttons;
+and the text entered. The input text is not restored to its original value if
+the dialog is canceled. In the scalar context returns the text entered, if the
+dialog ended with C<mb::OK> or C<mb::Yes> result, or C<undef> otherwise.
 
 =item message TEXT, [ OPTIONS = mb::Ok | mb::Error, %PROFILES ]
 
-Same as C<message_box> call, with application name passed as the title string.
+Same as the C<message_box> call, with the application name passed as the title string.
 
 =item message_box TITLE, TEXT, [ OPTIONS = mb::Ok | mb::Error, %PROFILES ]
 
-Invokes standard dialog box, that contains a text label, a predefined icon, and
-buttons used for ending dialog session. The dialog box uses TITLE string to
-display as the window title, TEXT to display as a main message. Value of
-OPTIONS integer parameter is combined from two different sets of C<mb::XXX>
-constants. The first set is the buttons constants, - C<mb::OK>, C<mb::Yes> etc.
-See L<Buttons and profiles> for the explanations. The second set consists of
-the following message type constants:
+Invokes the standard dialog box that contains a text label, a predefined icon, and
+buttons to end the dialog session. The dialog box uses the TITLE string to
+display as the window title, and the TEXT to display as the main message. The value of
+the OPTIONS integer parameter is combined from two different sets of C<mb::XXX>
+constants. The first set is the button constants C<mb::OK>, C<mb::Yes>, etc.
+See L<Buttons and profiles> for the details. The second set consists of
+the following constants:
 
 	mb::Error
 	mb::Warning
@@ -352,20 +351,20 @@ While there can be several constants of the first set, only one constant from
 the second set can be selected.  Depending on the message type constant, one of
 the predefined icons is displayed and one of the system sounds is played; if no
 message type constant is selected, no icon is displayed and no sound is
-emitted.  In case if no sound is desired, a special constant C<mb::NoSound> can
+emitted.  In case no sound is desired, a special constant C<mb::NoSound> can
 be used.
 
-PROFILE parameter is a hash, that contains customization parameters for the
-buttons.  See L<Buttons and profiles> for the explanations.
+The PROFILE parameter is a hash that contains customization parameters for the
+buttons.  See L<Buttons and profiles> for the details.
 
-Returns the result of C<Prima::Dialog::execute>, which is either C<mb::Cancel>
+Returns the result of C<Prima::Dialog::execute> which is either C<mb::Cancel>
 or one of C<mb::XXX> constants of the specified dialog buttons.
 
 =item signal_dialog $TITLE, $ERROR, $STACK_TRACE
 
-Standard minimalistic exception dialog shown by default when
+The standard minimalistic exception dialog shown by default when
 C<Prima::Application.guiException> is 1 and an exception is thrown.  Could be
-reused for other purposes, by supplying title, error message, and stack trace.
+reused for other purposes, by supplying a title, error message, and stack trace.
 If the stack trace is not defined, the corresponding button is not shown.
 
 =back
@@ -384,8 +383,8 @@ to the following C<mb::XXX> constants:
 	mb::Ignore
 	mb::Help
 
-To provide more flexibility, PROFILES hash parameter can be used.  In this
-hash, predefined keys can be used to tell the dialog methods about certain
+To provide more flexibility, the PROFILES hash parameter can be used.  In this
+hash, the following predefined keys tell the dialog methods about certain
 customizations:
 
 =over
@@ -393,27 +392,26 @@ customizations:
 =item defButton INTEGER
 
 Selects the default button in the dialog, i.e. the button that reacts on the
-return key. Its value must be equal to the C<mb::> constant of the desired
-button. If this option is not set, the leftmost button is selected as the
-default.
+return key. Its value must be to an C<mb::> constant of the desired button. If
+this option is not set, the leftmost button is selected as the default.
 
 =item helpTopic TOPIC
 
-Used to select the help TOPIC, invoked in the help viewer window if C<mb::Help>
-button is pressed by the user.  If this option is not set, L<Prima> is
+Selects the help TOPIC invoked in the help viewer window if the C<mb::Help>
+button is pressed by the user. If this option is not set, L<Prima> is
 displayed.
 
 =item inputLine HASH
 
 Only for C<input_box>.
 
-Contains a profile hash, passed to the input line as creation parameters.
+Contains the profile hash passed to the input line as creation parameters.
 
 =item buttons HASH
 
 To modify a button, an integer key with the corresponding C<mb::XXX> constant
-can be set with the hash reference under C<buttons> key.  The hash is a
-profile, passed to the button as creation parameters. For example, to change
+can be set with the hash reference under the C<buttons> key. The hash is the
+profile passed to the button as creation parameters. For example, to change
 the text and behavior of a button, the following construct can be used:
 
 	Prima::MsgBox::message( 'Hello', mb::OkCancel,
@@ -433,19 +431,18 @@ to 0.
 
 If set, the dialog owner is set to WINDOW, otherwise to C<$::main_window>.
 Necessary to maintain window stack order under some window managers, to disallow
-windows to be brought over the message box.
+other windows to be brought over the message box.
 
 =item wordWrap BOOLEAN=undef
 
-message_box can can display the message in two modes. In C<wordWrap = 1> where
-the text is expected to be relatively short, plus minus, several lines, where
+C<message_box> can display the message in two modes. In C<wordWrap = 1> where
+the text is expected to be relatively short, plus or minus several lines,
 the user can resize the dialog if for some reason the text is too big.  In
 C<wordWrap = 0> mode there is added a scroller, so that even if the text indeed
-is too big to get on the screen event with the maximized dialog.
+is too big, even when the dialog is maximized.
 
-By default the function analyzes the message text and decides which of the two
-modes is suited best. The explicit override is possible with this
-flag.
+By default, the function analyzes the message text and decides which of the two
+modes is suited best. An explicit override is possible with this flag.
 
 =back
 

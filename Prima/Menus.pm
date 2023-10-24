@@ -1441,9 +1441,8 @@ Prima::Menus - menu widgets
 
 =head1 DESCRIPTION
 
-This module contains classes that can create menu widgets used as
-normal widget, without special consideration about system-depended
-menus.
+This module contains classes that can create menu widgets used as regular
+widgets, without any special considerations about system-depended menus.
 
 =head1 SYNOPSIS
 

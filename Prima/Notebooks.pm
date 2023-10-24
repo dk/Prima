@@ -1743,10 +1743,11 @@ Prima::Notebooks - multipage widgets
 
 =head1 DESCRIPTION
 
-The module contains several widgets useful for organizing multipage ( notebook )
-containers. C<Prima::Notebook> provides basic functionality of a widget container.
-C<Prima::TabSet> is a page selector control, and C<Prima::TabbedNotebook> combines
-these two into a ready-to-use multipage control with interactive navigation.
+The module contains several widgets useful for organizing multipage containers,
+I<notebooks>. C<Prima::Notebook> provides the basic functionality of such a widget
+container.  C<Prima::TabSet> is a page selector control, and
+C<Prima::TabbedNotebook> combines these two into a ready-to-use multipage
+control with interactive navigation.
 
 =head1 SYNOPSIS
 
@@ -1771,23 +1772,23 @@ these two into a ready-to-use multipage control with interactive navigation.
 
 =head2 Properties
 
-Provides basic widget container functionality. Acts as merely
-a grouping widget, hiding and showing the children widgets when
-C<pageIndex> property is changed.
+Provides basic widget container functionality. Acts as a merely
+grouping widget, hiding and showing the children widgets when
+the C<pageIndex> property is changed.
 
 =over
 
 =item defaultInsertPage INTEGER
 
-Selects the page where widgets, attached by C<insert>
-call are assigned to. If set to C<undef>, the default
+Selects the page where widgets attached the by C<insert>
+call are assigned. If set to C<undef>, the default
 page is the current page.
 
 Default value: C<undef>.
 
 =item pageCount INTEGER
 
-Selects number of pages. If the number of pages is reduced,
+Selects the number of pages. If the number of pages is reduced,
 the widgets that belong to the rejected pages are removed
 from the notebook's storage.
 
@@ -1804,9 +1805,9 @@ from 0 to C<pageCount - 1>.
 
 =item attach_to_page INDEX, @WIDGETS
 
-Attaches list of WIDGETS to INDEXth page. The widgets are not
+Attaches WIDGETS to INDEXth page. The widgets not
 necessarily must be children of the notebook widget. If the
-page is not current, the widgets get hidden and disabled;
+INDEXth page is not current, the widgets get hidden and disabled;
 otherwise their state is not changed.
 
 =item contains_widget WIDGET
@@ -1817,7 +1818,7 @@ widget list index. Otherwise returns an empty list.
 
 =item delete_page [ INDEX = -1, REMOVE_CHILDREN = 1 ]
 
-Deletes INDEXth page, and detaches the widgets associated with
+Deletes the INDEXth page, and detaches the widgets associated with
 it. If REMOVE_CHILDREN is 1, the detached widgets are
 destroyed.
 
@@ -1831,24 +1832,23 @@ Detaches WIDGET from the widget list.
 
 =item insert CLASS, %PROFILE [[ CLASS, %PROFILE], ... ]
 
-Creates one or more widgets with C<owner> property set to the
+Creates one or more widgets with the C<owner> property set to the
 caller widget, and returns the list of references to the newly
-created widgets.
+created objects.
 
 See L<Prima::Widget/insert> for details.
 
 =item insert_page [ INDEX = -1 ]
 
-Inserts a new empty page at INDEX. Valid range
-is from 0 to C<pageCount>; setting INDEX equal
-to C<pageCount> is equivalent to appending a page
-to the end of the page list.
+Inserts a new empty page at INDEX. The valid range is from 0 to C<pageCount>;
+setting INDEX equal to C<pageCount> is equivalent to appending a page to the
+end of the page list.
 
 =item insert_to_page INDEX, CLASS, %PROFILE, [[ CLASS, %PROFILE], ... ]
 
-Inserts one ore more widgets to INDEXth page. The semantics
+Inserts one or more widgets to the INDEXth page. The semantics
 of setting CLASS and PROFILE, as well as the return values
-are fully equivalent to C<insert> method.
+are fully equivalent to the C<insert> method.
 
 See L<Prima::Widget/insert> for details.
 
@@ -1857,34 +1857,33 @@ See L<Prima::Widget/insert> for details.
 Inserts one or more widgets to the notebook widget, but does not
 add widgets to the widget list, so the widgets are not flipped
 together with pages. Useful for setting omnipresent ( or
-transparent ) widgets, visible on all pages.
+I<transparent> ) widgets, visible on all pages.
 
 The semantics of setting CLASS and PROFILE, as well as
-the return values are fully equivalent to C<insert> method.
+the return values are fully equivalent to the C<insert> method.
 
 See L<Prima::Widget/insert> for details.
 
 =item move_widget WIDGET, INDEX
 
-Moves WIDGET from its old page to INDEXth page.
+Moves WIDGET to the INDEXth page.
 
 =item widget_get WIDGET, PROPERTY
 
-Returns PROPERTY value of WIDGET. If PROPERTY is
-affected by the page flipping mechanism, the internal
-flag value is returned instead.
+Returns PROPERTY value of WIDGET. If PROPERTY is affected by the page flipping
+mechanism, the internal flag value is returned instead.
 
 =item widget_set WIDGET, %PROFILE
 
-Calls C<set> on WIDGET with PROFILE and
-updates the internal C<visible>, C<enabled>, C<current>, and C<geometry> properties
-if these are present in PROFILE.
+Calls C<set> on WIDGET with PROFILE and updates the internal C<visible>,
+C<enabled>, C<current>, and C<geometry> properties if these are present in
+PROFILE.
 
 See L<Prima::Object/set>.
 
 =item widgets_from_page INDEX
 
-Returns list of widgets, associated with INDEXth page.
+Returns list of widgets associated with the INDEXth page.
 
 =back
 
@@ -1894,11 +1893,10 @@ Returns list of widgets, associated with INDEXth page.
 
 =item Change OLD_PAGE_INDEX, NEW_PAGE_INDEX
 
-Called when C<pageIndex> value is changed from
-OLD_PAGE_INDEX to NEW_PAGE_INDEX. Current implementation
-invokes this notification while the notebook widget
-is in locked state, so no redraw requests are honored during
-the notification execution.
+Called when the C<pageIndex> value is changed from OLD_PAGE_INDEX to
+NEW_PAGE_INDEX. Current implementation invokes this notification while the
+notebook widget is in the locked state so no redraw requests are honored during
+the execution of the notification.
 
 =back
 
@@ -1909,16 +1907,16 @@ C<::visible> and C<::enable> properties, there is a problem when
 a widget associated with a non-active page must be explicitly hidden
 or disabled. As a result, such a widget would become visible and enabled anyway.
 This happens because Prima API does not cache property requests. For example,
-after execution of the following code
+after the execution of the following code
 
 	$notebook-> pageIndex(1);
 	my $widget = $notebook-> insert_to_page( 0, ... );
 	$widget-> visible(0);
 	$notebook-> pageIndex(0);
 
-C<$widget> will still be visible. As a workaround, C<widget_set> method
+C<$widget> will still become visible. As a workaround, the C<widget_set> method
 can be suggested, to be called together with the explicit state calls.
-Changing
+Changing the
 
 	$widget-> visible(0);
 
@@ -1930,7 +1928,7 @@ solves the problem, but introduces an inconsistency in API.
 
 =head1 Prima::TabSet
 
-C<Prima::TabSet> class implements functionality of an interactive
+The C<Prima::TabSet> class implements the functionality of an interactive
 page switcher. A widget is presented as a set of horizontal
 bookmark-styled tabs with text identifiers.
 
@@ -1958,28 +1956,28 @@ Selects the first ( leftmost ) visible tab.
 =item focusedTab INTEGER
 
 Selects the currently focused tab. This property value is almost
-always equals to C<tabIndex>, except when the widget is navigated
-by arrow keys, and tab selection does not occur until the user
+always equal to C<tabIndex> except when the widget is navigated
+by arrow keys, and the tab selection does not occur until the user
 presses the return key.
 
 =item topMost BOOLEAN
 
 Selects the way the widget is oriented. If 1, the widget is drawn
 as if it resides on top of another widget. If 0, it is drawn as
-if it is at bottom.
+if it is at the bottom.
 
 Default value: 1
 
 =item tabIndex INDEX
 
-Selects the INDEXth tab. When changed, C<Change> notification
+Selects the INDEXth tab. When changed, the C<Change> notification
 is triggered.
 
 =item tabs ARRAY
 
-Anonymous array of text scalars. Each scalar corresponds to
-a tab and is displayed correspondingly. The class supports
-single-line text strings only; newline characters are not respected.
+An array of text scalars. Each scalar corresponds to a tab and is displayed
+correspondingly. The class supports single-line text strings only; newline
+characters are not respected.
 
 =back
 
@@ -1989,12 +1987,12 @@ single-line text strings only; newline characters are not respected.
 
 =item get_item_width INDEX
 
-Returns width in pixels of INDEXth tab.
+Returns width in pixels of the INDEXth tab.
 
 =item tab2firstTab INDEX
 
-Returns the index of a tab, that will be drawn leftmost if
-INDEXth tab is to be displayed.
+Returns the index of the tab that will be drawn leftmost if
+the INDEXth tab is to be displayed.
 
 =item insert_tab TEXT, [ POSITION = -1 ]
 
@@ -2002,7 +2000,7 @@ Inserts a new tab text at the given position, which is at the end by default
 
 =item delete_tab POSITION
 
-Removes a tab from the given position
+Removes the tab from the given position
 
 =back
 
@@ -2012,17 +2010,21 @@ Removes a tab from the given position
 
 =item Change
 
-Triggered when C<tabIndex> property is changed.
+Triggered when the C<tabIndex> property is changed.
 
 =item DrawTab CANVAS, INDEX, COLOR_SET, POLYGON1, POLYGON2
 
-Called when INDEXth tab is to be drawn on CANVAS. COLOR_SET is an array
-reference, and consists of the four cached color values: foreground, background,
-dark 3d color, and light 3d color. POLYGON1 and POLYGON2 are array references,
-and contain four points as integer pairs in (X,Y)-coordinates. POLYGON1
-keeps coordinates of the larger polygon of a tab, while POLYGON2 of the smaller. Text is
-displayed inside the larger polygon:
+Called when the INDEXth tab is to be drawn on CANVAS. COLOR_SET is an array
+reference that consists of four cached color values: foreground, background,
+dark 3d color, and light 3d color. POLYGON1 and POLYGON2 are array references
+that contain four points as integer pairs in (X,Y)-coordinates.  POLYGON1 keeps
+the coordinates of the larger polygon of a tab, while POLYGON2 of the smaller.
+Text is displayed inside the larger polygon:
 
+=for podview <img src="drawtab.gif" cut=1>
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/drawtab.gif">
+<!--
 
    POLYGON1
 
@@ -2038,28 +2040,33 @@ displayed inside the larger polygon:
        o................o
    [6,7]o..............o[4,5]
 
-Depending on C<topMost> property value, POLYGON1 and POLYGON2 change
+=for html -->
+
+=for podview </cut>
+
+Depending on the C<topMost> property value, POLYGON1 and POLYGON2 change
 their mutual vertical orientation.
 
-The notification is always called from within C<begin_paint/end_paint> block.
+The notification is always called from within the C<begin_paint/end_paint> block.
 
 =item MeasureTab INDEX, REF
 
-Puts width of INDEXth tab in pixels into REF scalar value.
-This notification must be called from within C<begin_paint_info/end_paint_info>
+Stores the width of the INDEXth tab in pixels into the REF scalar value.
+This notification must be called from within the C<begin_paint_info/end_paint_info>
 block.
 
 =back
 
 =head1 Prima::TabbedNotebook
 
-The class combines functionality of C<Prima::TabSet> and C<Prima::Notebook>,
+The class combines the functionality of C<Prima::TabSet> and C<Prima::Notebook>,
 providing the interactive multipage widget functionality. The page indexing
-scheme is two-leveled: the first level is equivalent to the C<Prima::TabSet> -
-provided tab scheme. Each first-level tab, in turn, contains one or more second-level
-pages, which can be switched using native C<Prima::TabbedNotebook> controls.
+scheme has two levels: the first level is equivalent to the tabs provided by
+C<Prima::TabSet>.  Each first-level tab, in turn, may contain one or more
+second-level pages, which can be switched using native C<Prima::TabbedNotebook>
+controls.
 
-First-level tab is often referred as I<tab>, and second-level as I<page>.
+The first-level tabs are referred to as I<tabs>, and the second-level as I<pages>.
 
 =head2 Properties
 
@@ -2070,7 +2077,7 @@ described in L<Prima::TabSet>: C<colored>, C<colorset>
 
 =item defaultInsertPage INTEGER
 
-Selects the page where widgets, attached by C<insert>
+Selects the page where widgets attached by the C<insert>
 call are assigned to. If set to C<undef>, the default
 page is the current page.
 
@@ -2086,13 +2093,13 @@ Default value: C<Prima::Notebook>
 
 =item notebookProfile HASH
 
-Assigns hash of properties, passed to the notebook widget during the creation.
+Assigns a hash of properties passed to the notebook widget during the creation.
 
 Create-only property.
 
 =item notebookDelegations ARRAY
 
-Assigns list of delegated notifications to the notebook widget.
+Assigns a list of delegated notifications to the notebook widget.
 
 Create-only property.
 
@@ -2118,7 +2125,7 @@ Default value: tno::Top
 
 Selects the INDEXth page or a tabset widget ( the second-level tab ).
 When this property is triggered, C<tabIndex> can change its value,
-and C<Change> notification is triggered.
+and the C<Change> notification is triggered.
 
 =item style INTEGER
 
@@ -2142,19 +2149,19 @@ Default value: tns::Standard
 
 =item tabIndex INTEGER
 
-Selects the INDEXth tab on a tabset widget using the first-level tab numeration.
+Selects the INDEXth tab on the tabset widget using the first-level tab numeration.
 
 =item tabs ARRAY
 
-Governs number and names of notebook pages. ARRAY is an anonymous array
-of text scalars, where each corresponds to a single first-level tab
-and a single notebook page, with the following exception. To define second-level
-tabs, the same text string must be repeated as many times as many second-level
-tabs are desired. For example, the code
+Manages the number and names of notebook pages. ARRAY is an anonymous array of text
+scalars where each corresponds to a single first-level tab and a single
+notebook page, however, with a single exception. To define second-level tabs,
+the same text string must be repeated as many times as many second-level tabs
+are needed. For example, the code
 
 	$nb-> tabs('1st', ('2nd') x 3);
 
-results in creation of a notebook of four pages and two first-level
+results in the creation of a notebook of four pages and two first-level
 tabs. The tab C<'2nd'> contains three second-level pages.
 
 The property implicitly operates the underlying notebook's C<pageCount> property.
@@ -2171,13 +2178,13 @@ Default value: C<Prima::TabSet>
 
 =item tabsetProfile HASH
 
-Assigns hash of properties, passed to the tab set widget during the creation.
+Assigns a hash of properties passed to the tab set widget during the creation.
 
 Create-only property.
 
 =item tabsetDelegations ARRAY
 
-Assigns list of delegated notifications to the tab set widget.
+Assigns a list of delegated notifications to the tab set widget.
 
 Create-only property.
 
@@ -2195,22 +2202,22 @@ C<widgets_from_page>.
 
 =item tab2page INDEX
 
-Returns second-level tab index, that corresponds to the INDEXth first-level tab.
+Returns the second-level tab index that corresponds to the INDEXth first-level tab.
 
 =item page2tab INDEX
 
-Returns first-level tab index, that corresponds to the INDEXth second-level
+Returns the first-level tab index that corresponds to the INDEXth second-level
 tab.
 
 =item insert_page TEXT, [ POSITION = -1 ]
 
 Inserts a new page with text at the given position, which is at the end by default.
-If TEXT is same as the existing tab left or right from POSITION, the page is joined
-the existing tab; otherwise a new tab is created.
+If the TEXT is the same as the existing tab left or right from POSITION, the page is joined
+to the existing tab as a page; otherwise, a new tab is created.
 
 =item delete_page POSITION
 
-Removes a page from the given position.
+Removes the page from the given position.
 
 =back
 
@@ -2220,7 +2227,7 @@ Removes a page from the given position.
 
 =item Change OLD_PAGE_INDEX, NEW_PAGE_INDEX
 
-Triggered when C<pageIndex> property is changes it s value from OLD_PAGE_INDEX
+Triggered when the C<pageIndex> property changes its value from OLD_PAGE_INDEX
 to NEW_PAGE_INDEX.
 
 =back

@@ -398,7 +398,7 @@ L<Prima::Label> - static text widget
 
 L<Prima::Lists> - list widgets
 
-L<Prima::MDI> - top-level windows emulation classes
+L<Prima::MDI> - top-level window emulation
 
 L<Prima::Notebooks> - multipage widgets
 
