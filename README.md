@@ -25,8 +25,8 @@ Example
 
 More screenshots at http://prima.eu.org/big-picture/
 
-Prerequisites
-=============
+Installation
+============
 
 Debian/Ubuntu
 -------------
@@ -36,14 +36,15 @@ Debian/Ubuntu
 
 FreeBSD
 -------
+
   pkg install gtk3 fribidi harfbuzz libxpm libthai pkgconf tiff webp giflib libheif
 
 OpenSUSE
 --------
 
-  zypper install gtk3-devel giflib-devel libjpeg-devel libtiff-devel 
+  zypper install gtk3-devel giflib-devel libjpeg-devel libtiff-devel
       libXpm-devel libXrandr-devel libXcomposite-devel libXcursor-devel
-      libfribidi-devel libwebp-devel libharfbuzz-devel libthai-devel 
+      libfribidi-devel libwebp-devel libharfbuzz-devel libthai-devel
       libheif-devel
 
 
@@ -66,31 +67,29 @@ Cygwin
    apt-cyg install libgtk3.0-devel libfribidi-devel libgif-devel libjpeg-devel libtiff-devel libXpm-devel
         libwebp-devel libharfbuzz-devel libthai-devel libheif-devel
 
-Graphic libraries
+Win32-Strawberry
+----------------
+
+v5.32 had the necessary libraries included, but v5.38 doesn't.
+Install these:
+
+   - http://prima.eu.org/download/libfribidi-1.0.10-win64.zip
+   - http://prima.eu.org/download/libthai-0.1.29-win64.zip
+   - http://prima.eu.org/download/libheif-1.12.0-win64.zip
+   - http://prima.eu.org/download/libwebp-1.0.2-win64.zip
+
+Win32-ActiveState
 -----------------
 
-Prima can use several graphic libraries to handle image files.  Compiling Prima
-with at least one library, preferably for GIF files is strongly recommended,
-because internal library images are stored in GIFs. Support for the following
-libraries can be compiled in on all platforms:
+ActiveState currently doesn't support local compilations.
+Official answer here: https://community.activestate.com/t/how-to-install-gcc-and-or-mingw/10993/2 .
+Consider migrating to Strawberry Perl.
 
-   - libXpm
-   - libpng
-   - libjpeg
-   - libgif
-   - libtiff
-   - libwebp,libwebpdemux,libwebpmux
-   - libheif
+Win32-other
+-----------
 
-(libheif is not widespread yet. See Prima/Image/heif.pm for details)
-
-Win32
------
-
-Modern Strawberry perl come with all of these libraries already, so nothing
-specific needs to be done. However for the older distributions, or ActiveState,
-or custom builds, CPAN contains binary distributions that can be installed just
-for this purpose:
+For the older distributions or custom Perl builds, CPAN contains binary
+distributions that can be installed just for this purpose:
 
  - http://search.cpan.org/~karasik/Prima-codecs-win32/
  - http://search.cpan.org/~karasik/Prima-codecs-win64/
@@ -130,6 +129,27 @@ or linux-homebrew's (not tested)
 
   brew install dk/libthai/libthai
 
+Optional dependencies
+=====================
+
+Graphic libraries
+-----------------
+
+Prima can use several graphic libraries to handle image files.  Compiling Prima
+with at least one library, preferably for GIF files is strongly recommended,
+because internal library images are stored in GIFs. Support for the following
+libraries can be compiled in on all platforms:
+
+   - libXpm
+   - libpng
+   - libjpeg
+   - libgif
+   - libtiff
+   - libwebp,libwebpdemux,libwebpmux
+   - libheif
+
+(libheif is not widespread yet. See Prima/Image/heif.pm for details)
+
 Bidirectional input and complex scripts
 ---------------------------------------
 
@@ -142,7 +162,16 @@ rather primitive.
 - Thai language doesn't use spaces between the words in a sentence. To wrap
 thai texts properly Prima can be compiled with the libthai library. No special
 treatment of thai text is needed programmatically, text wrapper does everything
-under the hood. Get the libthai for strawberry at http://prima.eu.org/download/libthai-0.1.29-win64.zip
+under the hood.
+
+GTK3/GTK2
+---------
+
+It is recommended to build Prima with GTK3/GTK2 on X11 installations,
+because in that case Prima will use standard GTK fonts, colors, and file dialogs.
+By default Prima tries to build with it, but if you don't want it, run
+
+    perl Makefile.PL WITH_GTK2=0 WITH_GTK3=0
 
 Source distribution installation
 ================================
@@ -170,15 +199,6 @@ See PREREQUISITES section.
 If some of the required libraries or include files can not be found,
 INC=-I/some/include and LIBS=-L/some/lib semantics should be used to tell
 Makefile.PL about these. Check ExtUtils::MakeMaker for more.
-
-GTK3/GTK2
----------
-
-It is recommended to build Prima with GTK3/GTK2 on X11 installations,
-because in that case Prima will use standard GTK fonts, colors, and file dialogs.
-By default Prima tries to build with it, but if you don't want it, run
-
-    perl Makefile.PL WITH_GTK2=0 WITH_GTK3=0
 
 Binary distribution installation
 ================================
