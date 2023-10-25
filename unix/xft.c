@@ -2484,6 +2484,9 @@ prima_xft_text_shaper( Handle self, PTextShapeRec r, uint32_t * map8)
 	uint32_t *text;
 	XftFont *font = X(self)->font->xft_base;
 
+	if ( !X(self)-> font-> xft)
+		return prima_text_shaper_core_text(self, r);
+
         for ( 
 		i = 0, glyphs = r->glyphs, text = r->text;
 		i < r->len; 
@@ -2537,6 +2540,9 @@ prima_xft_text_shaper_harfbuzz( Handle self, PTextShapeRec r)
 	hb_font_t *font;
 	hb_glyph_info_t *glyph_info;
 	hb_glyph_position_t *glyph_pos;
+
+	if ( !X(self)-> font-> xft)
+		return prima_text_shaper_core_text(self, r);
 
 	if ( !( face = XftLockFace( XX->font->xft))) /*XXX*/
 		return -1;

@@ -1575,6 +1575,9 @@ prima_xft_mapper_query_ranges(PFont font, int * count, unsigned int * flags);
 
 #endif
 
+extern Bool
+prima_text_shaper_core_text( Handle self, PTextShapeRec r);
+
 extern void
 prima_xim_init(void);
 

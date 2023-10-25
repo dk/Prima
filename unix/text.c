@@ -552,11 +552,16 @@ EXIT:
 }
 
 Bool
-text_shaper_core_text( Handle self, PTextShapeRec r)
+prima_text_shaper_core_text( Handle self, PTextShapeRec r)
 {
         int i;
 	uint16_t *glyphs;
 	uint32_t *text;
+
+#ifdef USE_XFT
+	if ( X(self)-> font-> xft)
+		return prima_xft_text_shaper_bytes(self, r);
+#endif
 
         for ( i = 0, glyphs = r->glyphs, text = r->text; i < r->len; i++) {
                 uint32_t c = *(text++);
@@ -598,7 +603,7 @@ apc_gp_get_text_shaper( Handle self, int * type)
 	}
 #endif
 	*type = tsNone;
-	return text_shaper_core_text;
+	return prima_text_shaper_core_text;
 }
 
 PFontABC
