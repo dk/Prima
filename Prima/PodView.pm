@@ -2049,50 +2049,50 @@ Prima::PodView - POD browser widget
 
 =head1 DESCRIPTION
 
-Prima::PodView contains a formatter ( in terms of L<perlpod> ) and viewer of
-POD content. It heavily employs its ascendant class L<Prima::TextView>,
-and is in turn base for the toolkit's default help viewer L<Prima::HelpViewer>.
+Prima::PodView contains a formatter ( in terms of L<perlpod> ) and a viewer of
+the POD content. It heavily employs its ascendant class L<Prima::TextView>, and
+is in turn the base class for the toolkit's default help viewer L<Prima::HelpViewer>.
 
 =head1 USAGE
 
-The package consists of the several logically separated parts. These include
-file locating and loading, formatting and navigation.
+The package consists of several logically separated parts. These include
+file locating and loading, formatting, and navigation.
 
 =head2 Content methods
 
 The basic access to the content is not bound to the file system. The POD
 content can be supplied without any file to the viewer. Indeed, the file
-loading routine C<load_file> is a mere wrapper to the content loading
+loading routine C<load_file> is a mere wrapper to the following content-loading
 functions:
 
 =over
 
 =item open_read %OPTIONS
 
-Clears the current content and enters the reading mode. In this mode
-the content can be appended by calling L<read> that pushes the raw POD
-content to the parser.
+Clears the current content and enters the reading mode. In this mode, the
+content can be appended by repeatedly calling the C<read> method that pushes
+the raw POD content to the parser.
 
 =item read TEXT
 
-Supplies TEXT string to the parser. Manages basic indentation,
-but the main formatting is performed inside L<add> and L<add_formatted>
+Supplies the TEXT string to the parser. Parses basic indentation,
+but the main formatting is performed inside L<add> and L<add_formatted>.
 
-Must be called only within open_read/close_read brackets
+Must be called only within the open_read/close_read brackets
 
 =item add TEXT, STYLE, INDENT
 
-Formats TEXT string of a given STYLE ( one of C<STYLE_XXX> constants) with
-INDENT space.
+Formats the TEXT string of a given STYLE ( one of the C<STYLE_XXX> constants) with
+the INDENT space.
 
-Must be called only within open_read/close_read brackets.
+Must be called only within the open_read/close_read brackets.
 
 =item add_formatted FORMAT, TEXT
 
-Adds a pre-formatted TEXT with a given FORMAT, supplied by C<=begin> or C<=for>
-POD directives. Prima::PodView understands 'text' and 'podview' FORMATs;
-the latter format is for Prima::PodView itself and contains small number
-of commands, aimed at inclusion of images into the document.
+Adds a pre-formatted TEXT with a given FORMAT, supplied by the C<=begin> or
+C<=for> POD directives. Prima::PodView understands 'text' and 'podview'
+FORMATs; the latter format is for Prima::PodView itself and contains a small
+number of commands for rendering images in documents.
 
 The 'podview' commands are:
 
@@ -2112,18 +2112,18 @@ Example:
 
 	=for podview </cut>
 
-The E<lt>cut<gt> clause skips all POD input until cancelled.
+The E<lt>cut<gt> clause skips all POD input until canceled.
 It is used in conjunction with the following command, L<img>, to allow
-a POD manpage provide both graphic ('podview', 'html', etc ) and text ( 'text' )
+a POD manpage to provide both graphic ('podview', 'html', etc ) and text ( 'text' )
 content.
 
 =item img [src="SRC"] [width="WIDTH"] [height="HEIGHT"] [cut="CUT"] [frame="FRAME"]
 
-An image inclusion command, where src is a relative or an absolute path to
-an image file. In case if scaling is required, C<width> and C<height> options
-can be set. When the image is a multiframe image, the frame index can be
-set by C<frame> option. Special C<cut> option, if set to a true value, activates the
-L<cut> behavior if ( and only if ) the image load operation was unsuccessful.
+An image inclusion command, where I<src> is a relative or an absolute path to
+an image file. In case scaling is required, C<width> and C<height> options
+can be set. If the image is a multiframe image, the frame index can be
+set by the C<frame> option. A special C<cut> option, if set to a true value, activates the
+L<cut> behavior if ( and only if ) the image load operation is unsuccessful.
 This makes possible simultaneous use of 'podview' and 'text' :
 
 	=for podview <img src="graphic.gif" cut=1 >
@@ -2140,19 +2140,18 @@ This makes possible simultaneous use of 'podview' and 'text' :
 	=for podview </cut>
 
 In the example above 'graphic.gif' will be shown if it can be found and loaded,
-otherwise the poor-man-drawings would be selected.
+otherwise, the poor-man drawings will be selected.
 
-If "src" is omitted, image is retrieved from C<images> array, from the index C<frame>.
+If C<src> is omitted, the image is retrieved from the C<images> array, from the index C<frame>.
 
-It is also possible to embed images in the pod, by using special C<src> tag and base64-encoded
-images. The format should preferrably be GIF, as this is Prima default format, or BMP for
-very small images, as it is supported without third party libraries:
+It is also possible to embed images in the pod, by using a special C<src> tag for base64-encoded
+images. The format should preferably be GIF, as this is Prima default format, or BMP for
+very small images, as it is supported without third-party libraries:
 
 	=for podview <img src="data:base64">
 	R0lGODdhAQABAIAAAAAAAAAAACwAAAAAAQABAIAAAAAAAAACAkQBADs=
 
 =back
-
 
 =item close_read
 
@@ -2163,14 +2162,14 @@ Returns C<undef> if there is no POD context, 1 otherwise.
 
 =head2 Rendering
 
-The rendering is started by C<format> call, which returns ( almost ) immediately,
+The rendering is started by the C<format> call which returns almost immediately,
 initiating the mechanism of delayed rendering, which is often time-consuming.
 C<format>'s only parameter KEEP_OFFSET is a boolean flag, which, if set to 1,
 remembers the current location on a page, and when the rendered text approaches
 the location, scrolls the document automatically.
 
-The rendering is based an a document model, generated by open_read/close_read session.
-The model is a set of same text blocks defined by L<Prima::TextView>, except
+The rendering is based on a document model, generated by the open_read/close_read session.
+The model is a set of the same text blocks defined by L<Prima::TextView>, except
 that the header length is only three integers:
 
 	M_INDENT       - the block X-axis indent
@@ -2179,30 +2178,30 @@ that the header length is only three integers:
 	                 variable ( 0 ) and fixed ( 1 ).
 
 The actual rendering is performed in C<format_chunks>, where model blocks are
-transformed to the full text blocks, wrapped and pushed into TextView-provided
+transformed into text blocks, wrapped, and pushed into the TextView-provided
 storage. In parallel, links and the corresponding event rectangles are calculated
-on this stage.
+at this stage.
 
 =head2 Topics
 
 Prima::PodView provides the C<::topicView> property, which manages whether
-the man page is viewed by topics or as a whole. When it is viewed as topics,
-C<{modelRange}> array selects the model blocks that include the topic.
-Thus, having a single model loaded, text blocks change dynamically.
+the man page is viewed by topics or as a whole. When a page is in the single topic mode,
+the C<{modelRange}> array selects the model blocks that include the topic to be displayed.
+That way the model stays the same while text blocks inside the widget can be changed.
 
-Topics contained in C<{topics}> array, each is an array with indices of C<T_XXX>
-constants:
+Topics reside in the C<{topics}> array, where each is an array with the
+following indices of the C<T_XXX> constants:
 
-	T_MODEL_START - beginning of topic
-	T_MODEL_END   - length of a topic
+	T_MODEL_START - start of topic
+	T_MODEL_END   - end of a topic
 	T_DESCRIPTION - topic name
 	T_STYLE       - STYLE_XXX constant
 	T_ITEM_DEPTH  - depth of =item recursion
-	T_LINK_OFFSET - offset in links array, started in the topic
+	T_LINK_OFFSET - offset in the links array
 
 =head2 Styles
 
-C<::styles> property provides access to the styles, applied to different pod
+The C<::styles> property provides access to the styles, applied to different pod
 text parts. These styles are:
 
 	STYLE_CODE     - style for C<>
@@ -2216,10 +2215,10 @@ text parts. These styles are:
 	STYLE_VERBATIM - style for pre-formatted text
 
 Each style is a hash with the following keys: C<fontId>, C<fontSize>, C<fontStyle>,
-C<color>, C<backColor>, fully analogous to the tb::BLK_DATA_XXX options.
+C<color>, and C<backColor>, fully analogous to the tb::BLK_DATA_XXX options.
 This functionality provides another layer of accessibility to the pod formatter.
 
-In addition to styles, Prima::PodView defined C<colormap> entries for
+In addition to styles, Prima::PodView defines C<colormap> entries for
 C<STYLE_LINK> , C<STYLE_CODE>, and C<STYLE_VERBATIM>:
 
 	COLOR_LINK_FOREGROUND
@@ -2231,13 +2230,13 @@ The default colors in the styles are mapped into these entries.
 
 =head2 Link and navigation methods
 
-Prima::PodView provides a hand-icon mouse pointer highlight for the link
-entries and as an interactive part, the link documents or topics are loaded
-when the user presses the mouse button on the link. L<Prima::Widget::Link> is
-used for the link mechanics implementation.
+Prima::PodView provides the hand-icon mouse pointer that highlights links.
+Also, the link documents or topics are loaded in the widget when the user
+presses the mouse button on the link. L<Prima::Widget::Link> is used for the
+implementation of the link mechanics.
 
-If the page is loaded successfully, depending on C<::topicView> property value,
-either C<select_topic> or C<select_text_offset> method is called.
+If the page is loaded successfully, depending on the C<::topicView> property value,
+either the C<select_topic> or C<select_text_offset> method is called.
 
 The family of file and link access functions consists of the following methods:
 
@@ -2245,33 +2244,35 @@ The family of file and link access functions consists of the following methods:
 
 =item load_file MANPAGE
 
-Loads a manpage, if it can be found in the PATH or perl installation directories.
+Loads the manpage if it can be found in the PATH or perl installation directories.
 If unsuccessful, displays an error.
 
 =item load_link LINK
 
-LINK is a text in format of L<perlpod> C<LE<lt>E<gt>> link: "manpage/section".
+LINK is a text in the format of L<perlpod> C<LE<lt>E<gt>> link: "manpage/section".
 Loads the manpage, if necessary, and selects the section.
 
 =item load_bookmark BOOKMARK
 
-Loads a bookmark string, prepared by L<make_bookmark> function.
+Loads the bookmark string prepared by the L<make_bookmark> function.
 Used internally.
 
 =item load_content CONTENT
 
-Loads content into the viewer. Returns C<undef> is there is no POD
+Loads content into the viewer. Returns C<undef> if there is no POD
 context, 1 otherwise.
 
 =item make_bookmark [ WHERE ]
 
-Combines the information about the currently viewing manpage, topic and text offset
-into a storable string. WHERE, an optional string parameter, can be either omitted,
-in such case the current settings are used, or be one of 'up', 'next' or 'prev' strings.
+Combines the information about the currently viewing page source, topic, and
+text offset, into a storable string. WHERE, an optional string parameter, can
+be either omitted, in such case the current settings are used, or be one of the
+'up', 'next', or 'prev' strings.
 
 The 'up' string returns a bookmark to the upper level of the manpage.
 
-The 'next' and 'prev' return a bookmark to the next or the previous topics in a manpage.
+The 'next' and 'prev' return a bookmark to the next or the previous topics in the
+manpage.
 
 If the location cannot be stored or defined, C<undef> is returned.
 
@@ -2283,13 +2284,13 @@ If the location cannot be stored or defined, C<undef> is returned.
 
 =item Bookmark BOOKMARK
 
-When a new topic is navigated to by the user, this event is triggered with the
-current topic to have it eventually stored in bookmarks or history.
+When a new topic is navigated by the user, this event is triggered with the
+current topic to have it eventually stored in the bookmarks or user history.
 
 =item Link LINK_REF, BUTTON, MOD, X, Y
 
 When the user clicks on a link, this event is called with the link address,
-mouse button, modificator keys, and coordinates.
+mouse button, modification keys, and coordinates.
 
 =item NewPage
 

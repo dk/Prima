@@ -837,21 +837,21 @@ sub whole        {($#_)?$_[0]-> set_proportion($_[0]-> {'partial'},$_[1]): retur
 
 1;
 
+=pod
+
 =head1 NAME
 
-Prima::ScrollBar - standard scroll bars class
+Prima::ScrollBar - scroll bars
 
 =head1 DESCRIPTION
 
-The class C<Prima::ScrollBar> implements both vertical and horizontal
-scrollbars in I<Prima>. This is a purely Perl class without any
-C-implemented parts except those inherited from C<Prima::Widget>.
+C<Prima::ScrollBar> implements standard vertical and horizontal scrollbars
 
 =head1 SYNOPSIS
 
 	use Prima::ScrollBar;
 
-	my $sb = Prima::ScrollBar-> create( owner => $group, %rest_of_profile);
+	my $sb = Prima::ScrollBar->new( owner => $group, %rest_of_profile);
 	my $sb = $group-> insert( 'ScrollBar', %rest_of_profile);
 
 	my $isAutoTrack = $sb-> autoTrack;
@@ -894,23 +894,21 @@ C-implemented parts except those inherited from C<Prima::Widget>.
 
 =item autoTrack BOOLEAN
 
-Tells the widget if it should send
-C<Change> notification during mouse tracking events.
-Generally it should only be set to 0 on very slow computers.
+Tells the widget if it should send the C<Change> notification during mouse
+tracking events.  Generally, it should only be set to 0 on very slow computers.
 
-Default value is 1 (logical true).
+The default value: 1
 
 =item growMode INTEGER
 
-Default value is gm::GrowHiX, i.e. the scrollbar will try
-to maintain the constant distance from its right edge to its
-owner's right edge as the owner changes its size.
-This is useful for horizontal scrollbars.
+The default value is C<gm::GrowHiX>, i.e. the scrollbar will try to maintain
+the constant distance from its right edge to its owner's right edge as the
+owner changes its size.  This is useful for horizontal scrollbars.
 
 =item height INTEGER
 
-Default value is $Prima::ScrollBar::stdMetrics[1], which is an operating
-system dependent value determined with a call to
+The default value is $Prima::ScrollBar::stdMetrics[1], which is an operating
+system-dependent value determined with a call to
 C<Prima::Application-E<gt> get_default_scrollbar_metrics>.  The height is
 affected because by default the horizontal C<ScrollBar> will be
 created.
@@ -919,54 +917,54 @@ created.
 
 Sets the upper limit for C<value>.
 
-Default value: 100.
+The default value: 100.
 
 =item min INTEGER
 
 Sets the lower limit for C<value>.
 
-Default value: 0
+The default value: 0
 
 =item minThumbSize INTEGER
 
 A minimal thumb breadth in pixels. The thumb cannot have
-main dimension lesser than this.
+a main dimension lesser than this.
 
-Default value: 21
+The default value: 21
 
 =item pageStep INTEGER
 
-This determines the increment/decrement to
-C<value> during "page"-related operations, for example clicking the mouse
-on the strip outside the thumb, or pressing C<PgDn> or C<PgUp>.
+This determines the increment/decrement to C<value> during the operations that
+suppose to scroll by pages, for example clicking the mouse on the strip outside
+the thumb, or pressing C<PgDn> or C<PgUp>.
 
-Default value: 10
+The default value: 10
 
 =item partial INTEGER
 
-This tells the scrollbar how many of imaginary
+This tells the scrollbar how many imaginary
 units the thumb should occupy. See C<whole> below.
 
-Default value: 10
+The default value: 10
 
 =item selectable BOOLEAN
 
-Default value is 0 (logical false).  If set to 1 the widget receives keyboard
-focus; when in focus, the thumb is blinking.
+The default value is 0.  If set to 1 the widget receives keyboard
+focus; when in focus, the thumb bar is blinking.
 
 =item step INTEGER
 
 This determines the minimal increment/decrement to C<value> during
 mouse/keyboard interaction.
 
-Default value is 1.
+The default value is 1
 
 =item value INTEGER
 
 A basic scrollbar property; reflects the imaginary position between C<min> and
 C<max>, which corresponds directly to the position of the thumb.
 
-Default value is 0.
+The default value is 0
 
 =item vertical BOOLEAN
 
@@ -974,18 +972,17 @@ Determines the main scrollbar style.  Set this to 1 when the scrollbar style is
 vertical, 0 - horizontal. The property can be changed at run-time, so the
 scrollbars can morph from horizontal to vertical and vice versa.
 
-Default value is 0 (logical false).
+The default value is 0
 
 =item whole INTEGER
 
-This tells the scrollbar how many of imaginary units correspond to the whole
+This tells the scrollbar how many imaginary units correspond to the whole
 length of the scrollbar.  This value has nothing in common with C<min> and
-C<max>.  You may think of the combination of C<partial> and C<whole> as of the
+C<max>.  You may think of the combination of C<partial> and C<whole> as the
 proportion between the visible size of something (document, for example) and
-the whole size of that "something".  Useful to struggle against infamous "bird"
-size of Windows scrollbar thumbs.
+the whole size of that "something".
 
-Default value is 100.
+The default value is 100.
 
 =back
 
@@ -995,8 +992,8 @@ Default value is 100.
 
 =item get_default_size
 
-Returns two integers, the default platform dependant width
-of a vertical scrollbar and height of a horizontal scrollbar.
+Returns two integers, the default platform-dependant width
+of a vertical scrollbar and the height of a horizontal scrollbar.
 
 =back
 
@@ -1006,16 +1003,15 @@ of a vertical scrollbar and height of a horizontal scrollbar.
 
 =item Change
 
-The C<Change> notification is sent whenever the thumb position of scrollbar is
-changed, subject to a certain limitations when C<autoTrack> is 0. The
-notification conforms the general I<Prima> rule: it is sent when appropriate,
-regardless to whether this was a result of user interaction, or a side effect
-of some method programmer has called.
+The C<Change> notification is sent whenever the thumb position of the scrollbar is
+changed, subject to certain limitations when C<autoTrack> is 0. The
+notification is sent when appropriate, regardless of whether due to the user
+interaction or a side effect of some method the programmer has called.
 
 =item Track
 
-If C<autoTrack> is 0, called when the user changes the thumb position by the
-mouse instead of C<Change>.
+If C<autoTrack> is 0, called when the user changes the thumb position with the
+mouse.
 
 =back
 
@@ -1025,7 +1021,7 @@ mouse instead of C<Change>.
 	use Prima::Application name => 'ScrollBar test';
 	use Prima::ScrollBar;
 
-	my $w = Prima::Window-> create(
+	my $w = Prima::Window->new(
 		text => 'ScrollBar test',
 		size => [300,200]);
 
@@ -1041,7 +1037,7 @@ mouse instead of C<Change>.
 
 =head1 SEE ALSO
 
-L<Prima>, L<Prima::Widget>, F<examples/rtc.pl>, F<examples/scrolbar.pl>
+L<Prima>, L<Prima::Widget>, F<examples/scrollbar.pl>, F<examples/scrollbar2.pl>
 
 =head1 AUTHORS
 
