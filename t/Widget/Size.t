@@ -43,9 +43,11 @@ $window-> size( 200, 200);
 @w = $window-> get_virtual_size;
 $window-> restore;
 is_deeply( \@w, [200,200], "in maximized state" );
+$window->destroy;
 
 ####################################
 
+$window = create_window;
 my @sz1 = $window-> size;
 my $ww = $window-> insert( Widget =>
                            size => [ -2, -2],
