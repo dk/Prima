@@ -2763,13 +2763,12 @@ sub Timer_Tick { shift-> next_tick }
 
 =head1 NAME
 
-Prima::Sliders - sliding bars, spin buttons, dial widget, etc.
+Prima::Sliders - sliding bars, spin buttons, dial widgets, etc
 
 =head1 DESCRIPTION
 
-The module is a set of widget classes, with one
-common property; - all of these provide input and / or output of an integer value.
-This property unites the following set of class hierarchies:
+The module contains a set of unrelated widget classes that provide input and/or
+output of an integer value. That is the only thing common in these classes, which are:
 
 	Prima::AbstractSpinButton
 		Prima::SpinButton
@@ -2786,10 +2785,10 @@ This property unites the following set of class hierarchies:
 
 =head1 Prima::AbstractSpinButton
 
-Provides a generic interface to spin-button class functionality, which includes
-range definition properties and events. Neither C<Prima::AbstractSpinButton>, nor
+Provides a generic interface to the spin-button class functionality that includes
+events and range definition properties. Neither C<Prima::AbstractSpinButton> nor
 its descendants store the integer value. These provide a mere possibility for
-the user to send incrementing or decrementing commands.
+the user to send the incrementing and decrementing commands.
 
 The class is not usable directly.
 
@@ -2799,9 +2798,9 @@ The class is not usable directly.
 
 =item state INTEGER
 
-Internal state, reflects widget modal state, for example,
-is set to non-zero when the user performs a mouse drag action. The exact meaning of C<state>
-is defined in the descendant classes.
+The property manages a common internal state that doesn't have an exact
+meaning, as it is only defined in the descendant classes.  For example, the
+state can be set to non-zero when the user performs a mouse drag action.
 
 =back
 
@@ -2811,9 +2810,9 @@ is defined in the descendant classes.
 
 =item Increment DELTA
 
-Called when the user presses a part of a widget that is responsible for
-incrementing or decrementing commands. DELTA is an integer value,
-indicating how the associated value must be modified.
+Called when the user presses a part of the widget that is responsible for
+incrementing or decrementing commands. DELTA is an integer value
+that indicates how the associated value must be modified.
 
 =item TrackEnd
 
@@ -2827,10 +2826,10 @@ Called when the user finished the mouse transaction.
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/spinbutton.gif">
 
-A rectangular spin button, consists of three parts, divided horizontally.
-The upper and the lower parts are push-buttons associated with singular
-increment and decrement commands. The middle part, when dragged by mouse,
-fires C<Increment> events with delta value, based on a vertical position
+A rectangular spin button that consists of three parts, divided horizontally.
+The upper and the lower parts are push buttons associated with singular
+increment and decrement commands. The middle part, when dragged by the mouse,
+fires the C<Increment> events with delta value, based on the vertical position
 of the mouse pointer.
 
 =head1 Prima::AltSpinButton
@@ -2839,9 +2838,9 @@ of the mouse pointer.
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/altspinbutton.gif">
 
-A rectangular spin button, consists of two push-buttons, associated
-with singular increment and decrement command. Comparing to C<Prima::SpinButton>,
-the class is less functional but has more stylish look.
+A rectangular spin button that consists of two push-buttons, associated with
+singular increment and decrement commands. Compared to C<Prima::SpinButton>,
+the class is a bit less functional but has a more stylish look.
 
 =head1 Prima::SpinEdit
 
@@ -2849,11 +2848,10 @@ the class is less functional but has more stylish look.
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/spinedit.gif">
 
-The class is a numerical input line, paired with a spin button.
-The input line value can be change three ways - either as a direct
-traditional keyboard input, or as spin button actions, or as mouse
-wheel response. The class provides value storage and range
-selection properties.
+The widget contains a numerical input line and a spin button.  The input line
+value can be changed in three ways - either as a direct traditional keyboard
+input, as a result of the spin button actions, or as the mouse wheel response.
+The class provides properties for value storage and range selection.
 
 =head2 Properties
 
@@ -2867,10 +2865,10 @@ Default value: false
 
 =item circulate BOOLEAN
 
-Selects the value modification rule when the increment or decrement
-action hits the range. If 1, the value is changed to the opposite limit
-value ( for example, if value is 100 in range 2-100, and the user
-clicks on 'increment' button, the value is changed to 2 ).
+Selects the value modification rule when the increment or decrement action hits
+a range limit. If 1, the value is changed to the opposite limit value ( for
+example, if the value is 100 in the range 2-100, and the user clicks on the 'increment'
+button, the value is changed to 2 ).
 
 If 0, the value does not change.
 
@@ -2878,23 +2876,23 @@ Default value: 0
 
 =item editClass STRING
 
-Assigns an input line class.
+Assigns the input line class.
 
-Create-only property.
+A create-only property.
 
 Default value: C<Prima::InputLine>
 
 =item editDelegations ARRAY
 
-Assigns the input line list of delegated notifications.
+Assigns the input line list of the notifications.
 
-Create-only property.
+A create-only property.
 
 =item editProfile HASH
 
-Assigns hash of properties, passed to the input line during the creation.
+Assigns a hash of properties passed to the input line during the creation.
 
-Create-only property.
+A create-only property.
 
 =item max INTEGER
 
@@ -2910,41 +2908,42 @@ Default value: 0
 
 =item pageStep INTEGER
 
-Determines the multiplication factor for incrementing/decrementing
+Determines the multiplication factor for incrementing and decrementing
 actions of the mouse wheel.
 
 Default value: 10
 
 =item spinClass STRING
 
-Assigns a spin-button class.
+Assigns the spin-button class.
 
-Create-only property.
+A create-only property.
 
 Default value: C<Prima::AltSpinButton>
 
 =item spinProfile ARRAY
 
-Assigns the spin-button list of delegated notifications.
+Assigns the spin-button list of the delegated notifications.
 
-Create-only property.
+A create-only property.
 
 =item spinDelegations HASH
 
-Assigns hash of properties, passed to the spin-button during the creation.
+Assigns a hash of properties passed to the spin-button during the creation.
 
-Create-only property.
+A create-only property.
 
 =item step INTEGER
 
-Determines the multiplication factor for incrementing/decrementing
+Determines the multiplication factor for incrementing and decrementing
 actions of the spin-button.
 
 Default value: 1
 
 =item value INTEGER
 
-Selects integer value in range from C<min> to C<max>, reflected in the input line.
+Selects the integer value in the range from C<min> to C<max>. The value is
+reflected in the input line.
 
 Default value: 0.
 
@@ -2985,7 +2984,7 @@ Useful as a progress indicator.
 
 =item indent INTEGER
 
-Selects width of a border around the widget.
+Selects the width of the border around the widget.
 
 Default value: 1
 
@@ -3003,19 +3002,19 @@ Default value: 0
 
 =item relief INTEGER
 
-Selects the style of a border around the widget. Can be one of the
+Selects the style of the border around the widget. Can be one of the
 following C<gr::XXX> constants:
 
 	gr::Sink    - 3d sunken look
 	gr::Border  - uniform black border
-	gr::Raise   - 3d risen look
+	gr::Raise   - 3d raised look
 
 Default value: C<gr::Sink>.
 
 =item threshold INTEGER
 
 Selects the threshold value used to determine if the changes to C<value>
-are reflected immediately or deferred until the value is changed more
+are reflected immediately or are deferred until the value is changed more
 significantly. When 0, all calls to C<value> result in an immediate
 repaint request.
 
@@ -3023,15 +3022,15 @@ Default value: 0
 
 =item value INTEGER
 
-Selects integer value between C<min> and C<max>, reflected in the progress bar and
+Selects the integer value between C<min> and C<max>, reflected in the progress bar and
 eventual text.
 
 Default value: 0.
 
 =item vertical BOOLEAN
 
-If 1, the widget is drawn vertically, and the progress bar moves from bottom to top.
-If 0, the widget is drawn horizontally, and the progress bar moves from left to right.
+If 1, the widget is drawn vertically and the progress bar moves from bottom to top.
+If 0, the widget is drawn horizontally and the progress bar moves from left to right.
 
 Default value: 0
 
@@ -3053,8 +3052,8 @@ Simultaneously sets both C<min> and C<max> values.
 
 =item Stringify VALUE, REF
 
-Converts integer VALUE into a string format and puts into REF scalar reference.
-Default stringifying conversion is identical to C<sprintf("%2d%%")> one.
+Converts the integer VALUE into a string format and stores it in the REF scalar reference.
+Default stringifying conversion is identical to a call to C<sprintf("%2d%%")>.
 
 =back
 
@@ -3084,8 +3083,8 @@ Default value: 0
 
 =item value INTEGER
 
-Selects integer value between C<min> and C<max>, reflected in the progress bar and
-eventual text.
+Selects the integer value between C<min> and C<max>, reflected in the progress bar and
+an eventual text.
 
 Default value: 0.
 
@@ -3103,9 +3102,9 @@ Simultaneously sets both C<min> and C<max> values.
 
 =head1 Prima::AbstractSlider
 
-The class provides basic functionality of a sliding bar, equipped with
-tick marks. Tick marks are supposed to be drawn alongside the main sliding axis or
-circle and provide visual feedback for the user.
+The class provides the basic functionality of a sliding bar, equipped with I<tick
+marks>. The tick marks are supposed to be drawn alongside the main sliding axis
+or the dialing circle, and provide visual feedback for the user.
 
 The class is not usable directly.
 
@@ -3115,19 +3114,20 @@ The class is not usable directly.
 
 =item autoTrack BOOLEAN
 
-A boolean flag, selects the way notifications execute when the user mouse-drags
-the sliding bar. If 1, C<Change> notification is executed as soon as C<value>
-is changed. If 0, C<Change> is deferred until the user finished the mouse drag;
-instead, C<Track> notification is executed when the bar is moved.
+A boolean flag, selects the way notifications are executed when the user
+mouse-drags the sliding bar. If 1, the C<Change> notification is executed as
+soon as C<value> is changed. If 0, C<Change> is deferred until the user
+finishes the mouse drag; instead, the C<Track> notification is executed when the
+bar is moved.
 
-This property can be used when the action, called on C<Change> performs very
-slow, so the eventual fast mouse interactions would not thrash down the program.
+This property can be used when the C<Change> notification handler performs very
+slowly, so the eventual fast mouse interactions would not thrash down the program.
 
 Default value: 1
 
 =item increment INTEGER
 
-A step range value, used in C<scheme> for marking the key ticks.
+A step range value used in C<scheme> for marking the key ticks.
 See L<scheme> for details.
 
 Default value: 10
@@ -3146,28 +3146,28 @@ Default value: 0
 
 =item readOnly BOOLEAN
 
-If 1, the use cannot change the value by moving the bar or otherwise.
+If 1, the user cannot change the value by moving the bar or otherwise.
 
 Default value: 0
 
 =item ticks ARRAY
 
-Selects the tick marks representation along the sliding axis or circle.
-ARRAY consists of hashes, each for one tick. The hash must contain
-at least C<value> key, with integer value. The two additional keys,
-C<height> and C<text>, select the height of a tick mark in pixels
-and the text drawn near the mark, correspondingly.
+Selects the tick marks representation along the sliding axis or the dialing
+circle.  ARRAY consists of hashes, each for one tick. The hash must contain at
+least a C<value> key with an integer value. The two additional keys C<height> and
+C<text>, select the height of a tick mark in pixels, and the text is drawn near
+the mark, correspondingly.
 
 If ARRAY is C<undef>, no ticks are drawn.
 
 =item scheme INTEGER
 
-C<scheme> is a property, that creates a set of tick marks
-using one of the predefined scale designs, selected by C<ss::XXX> constants.
-Each constant produces different scale; some make use of C<increment> integer
-property, which selects a step by which the additional
-text marks are drawn. As an example, C<ss::Thermometer> design with
-default C<min>, C<max>, and C<increment> values would look like that:
+C<scheme> is a property that creates a set of tick marks using one of the
+predefined scale designs selected by the C<ss::XXX> constants.  Each constant
+produces a different scale; some make use of the C<increment> integer property that
+selects a step that is used to place additional text marks.  As an example, the
+C<ss::Thermometer> design with the default C<min>, C<max>, and C<increment>
+values would look like this:
 
 	0   10   20        100
 	|    |    |          |
@@ -3180,26 +3180,26 @@ The module defines the following constants:
 	ss::StdMinMax      - 2 ticks at the ends of the bar
 	ss::Thermometer    - 10 minor ticks per increment, longer text ticks
 
-When C<tick> property is set, C<scheme> is reset to C<undef>.
+When the C<tick> property is explicitly set, C<scheme> is reset to C<undef>.
 
 =item snap BOOLEAN
 
-If 1, C<value> cannot accept values that are not on the tick scale.
-When set such a value, it is rounded to the closest tick mark.
-If 0, C<value> can accept any integer value in range from C<min> to C<max>.
+If 1, C<value> cannot accept values that are not on the tick scale.  When such
+a value is attempted to be set, it is rounded to the closest tick mark.  If 0,
+C<value> can accept any integer value in the range from C<min> to C<max>.
 
 Default value: 0
 
 =item step INTEGER
 
-Integer delta for singular increment / decrement commands and
-a threshold for C<value> when C<snap> value is 0.
+An integer delta for singular increment and decrement commands, and
+also a threshold for C<value> when the C<snap> value is 0.
 
 Default value: 1
 
 =item value INTEGER
 
-Selects integer value between C<min> and C<max> and the corresponding sliding bar
+Selects an integer value between C<min> and C<max> and the corresponding sliding bar
 position.
 
 Default value: 0.
@@ -3212,13 +3212,13 @@ Default value: 0.
 
 =item Change
 
-Called when C<value> value is changed, with one exception:
-if the user moves the sliding bar while C<autoTrack> is 0, C<Track>
+Called when the C<value> value is changed, with one exception:
+if the user moves the sliding bar while C<autoTrack> is 0, the C<Track>
 notification is called instead.
 
 =item Track
 
-Called when the user moves the sliding bar while C<autoTrack> value is 0;
+Called when the user moves the sliding bar while the C<autoTrack> value is 0;
 this notification is a substitute to C<Change>.
 
 =back
@@ -3237,33 +3237,33 @@ Presents a linear sliding bar, movable along a linear shaft.
 
 =item borderWidth INTEGER
 
-In horizontal mode, sets extra margin space between the slider line and
-the widget boundaries. Can be used for fine tuning of displaying text
-labels from <ticks()>, where the default spacing (0) or spacing procedure
-(drop overlapping labels) is not enough.
+In horizontal mode, sets extra margin space between the slider line and the
+widget boundaries. Can be used for fine-tuning text labels from C<ticks()>,
+where the default spacing (0) or spacing procedure (drop overlapping labels)
+does not produce decent results.
 
 =item ribbonStrip BOOLEAN
 
-If 1, the parts of shaft are painted with different colors, to increase
-visual feedback. If 0, the shaft is painted with single default background color.
+If 1, the parts of the shaft are painted with different colors to increase
+visual feedback. If 0, the shaft is painted with the single default background color.
 
 Default value: 0
 
 =item shaftBreadth INTEGER
 
-Breadth of the shaft in pixels.
+The breadth of the shaft in pixels.
 
 Default value: 6
 
 =item tickAlign INTEGER
 
-One of C<tka::XXX> constants, that correspond to the situation of tick marks:
+One of the C<tka::XXX> constants that correspond to the position of the tick marks:
 
-	tka::Normal        - ticks are drawn on the left or on the top of the shaft
+	tka::Normal        - ticks are drawn on the left or the top of the shaft
 	tka::Alternative   - ticks are drawn on the right or at the bottom of the shaft
 	tka::Dual          - ticks are drawn both ways
 
-The ticks orientation ( left or top, right or bottom ) is dependant on C<vertical>
+The ticks' orientation ( left or top, right or bottom ) is dependent on the C<vertical>
 property value.
 
 Default value: C<tka::Normal>
@@ -3314,8 +3314,8 @@ Offset in pixels along the shaft axis.
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/circularslider.gif">
 
-Presents a slider widget with the dial and two increment / decrement buttons.
-The tick marks are drawn around the perimeter of the dial; current value
+Presents a slider widget with a dialing circle and two increment/decrement buttons.
+The tick marks are drawn around the perimeter of the dial; the current value
 is displayed in the center of the dial.
 
 =head2 Properties
@@ -3346,23 +3346,23 @@ Default value: 0
 
 =item offset2data VALUE
 
-Converts integer value in range from C<min> to C<max> into
-the corresponding angle, and return two real values:
+Converts integer value in the range from C<min> to C<max> into
+the corresponding angle, and returns two floating-point values:
 cosine and sine of the angle.
 
 =item offset2pt X, Y, VALUE, RADIUS
 
-Converts integer value in range from C<min> to C<max> into the
+Converts integer value in the range from C<min> to C<max> into the
 point coordinates, with the RADIUS and dial center coordinates
 X and Y. Return the calculated point coordinates
-as two integers in (X,Y) format.
+as two integers in the (X,Y) format.
 
 =item xy2val X, Y
 
-Converts widget coordinates X and Y into value in range from C<min>
-to C<max>, and return two scalars: the value and the boolean flag,
+Converts widget coordinates X and Y into value in the range from C<min>
+to C<max> and returns two scalars: the value and the boolean flag,
 which is set to 1 if the (X,Y) point is inside the dial circle,
-and 0 otherwise.
+and to 0 otherwise.
 
 =back
 
@@ -3372,10 +3372,10 @@ and 0 otherwise.
 
 =item Stringify VALUE, REF
 
-Converts integer VALUE into a string format and puts into REF scalar reference.
+Converts integer VALUE into a string format and stores it in the REF scalar reference.
 The resulting string is displayed in the center of the dial.
 
-Default conversion routine simply copies VALUE to REF as is.
+The default conversion routine simply copies VALUE to REF as is.
 
 =back
 

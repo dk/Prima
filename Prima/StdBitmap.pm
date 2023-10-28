@@ -73,19 +73,20 @@ sub image{ return load_std_bmp( index => shift, file => $sysimage, icon => 0, @_
 
 =head1 NAME
 
-Prima::StdBitmap - shared access to the standard toolkit bitmaps
+Prima::StdBitmap - shared access to the standard bitmaps
 
 =head1 DESCRIPTION
 
-The toolkit contains F<sysimage.gif> image library, which consists of
-a predefined set of images, used in several toolkit modules. To provide
-a unified access to the images this module can be used. The images are
-assigned a C<sbmp::> constant, which is used as an index on a load
-request. If loaded successfully, images are cached and the successive
-requests return the cached values.
+The toolkit provides the F<sysimage.gif> file that contains the standard Prima
+image library and consists of a predefined set of images used by different
+modules. To provide unified access to the images inside the file, this
+module's API can be used. Every image is assigned to a C<sbmp::> constant that
+is used as an index for an image loading request. If an image is loaded
+successfully, the result is cached and the successive requests use the cached
+image.
 
-The images can be loaded as C<Prima::Image> and C<Prima::Icon> instances.
-To discriminate, two methods are used, correspondingly C<image> and C<icon>.
+The images can be loaded as C<Prima::Image> and C<Prima::Icon> instances,
+by two methods, correspondingly C<image> and C<icon>.
 
 =head1 SYNOPSIS
 
@@ -100,32 +101,32 @@ To discriminate, two methods are used, correspondingly C<image> and C<icon>.
 
 =item icon INDEX
 
-Loads INDEXth image frame and returns C<Prima::Icon> instance.
+Loads the INDEXth image frame and returns a C<Prima::Icon> instance.
 
 =item image INDEX
 
-Loads INDEXth image frame and returns C<Prima::Image> instance.
+Loads the INDEXth image frame and returns a C<Prima::Image> instance.
 
 =item load_std_bmp %OPTIONS
 
-Loads C<index>th image frame from C<file> and returns it as either a C<Prima::Image> or
-as a C<Prima::Icon> instance, depending on value of boolean C<icon> flag. If
-C<copy> boolean flag is unset, the cached images loaded previously
-can be used. If this flag is set, the cached value is never used, and the
-created image is not stored in the cache. Since the module's intended use
-is to provide shared and read-only access to the image library, C<copy>
-set to 1 can be used to return non-shared images.
+Loads the C<index>th image frame from C<file> and returns it as either a
+C<Prima::Image> or a C<Prima::Icon> instance, depending on the value of the
+boolean C<icon> flag. If the C<copy> boolean flag is unset, a cached image can
+be used. If this flag is set, a cached image is never used and the created
+image is neither stored in the cache. Since the module's intended use is to
+provide shared and read-only access to the image library, C<copy> set to 1 can
+be used to return non-shareable images.
 
-The loader automatically scales images if system dpi suggests so. If layering
-is supported, the icon scaling will use that. To disable these optimizations
-use C<< raw => 1 >> (to disable all) construct, or C<< argb => 0 >> ( to
-disable ARGB icons ).
+The loader automatically scales images if the system dpi suggests so. If
+layering is supported, the icon scaling will use that as well. To disable these
+optimizations use the C<< raw => 1 >> flag to disable all optimizations, and
+C<< argb => 0 >> to disable producing ARGB icons.
 
 =back
 
 =head2 Constants
 
-An index value passed to the methods must be one of C<sbmp::> constants:
+An index value passed to the methods must be one of the C<sbmp::> constants:
 
 	sbmp::Logo
 	sbmp::CheckBoxChecked
@@ -168,16 +169,16 @@ An index value passed to the methods must be one of C<sbmp::> constants:
 
 =head2 Scalars
 
-C<$sysimage> scalar is initialized to the file name to be used
-as a source of standard image frames by default. It is possible
-to alter this scalar at run-time, which causes all subsequent
-image frame request to be redirected to the new file.
+The C<$sysimage> scalar is initialized to the file name to be used as a source
+of standard images. It is possible to alter this scalar at run-time, which
+causes all subsequent image frame requests to be redirected to the new file.
 
-=head2 Scaling
+=head2 Scaling and ARGB-shading
 
-Note: the module scales the images automatically with the resolution.
-Therefore it is advisable to use the module's function after Application object
-is loaded.
+The loading routine scales and visually enhances the images automatically
+according to the system settings that are reported by the C<Prima::Application>
+class.  It is therefore advisable to load images after the Application object
+is created.
 
 =head1 AUTHOR
 

@@ -235,30 +235,31 @@ __END__
 
 =head1 NAME
 
-Prima::Spinner - Show a spinner animation
+Prima::Spinner - spinner animation widget
 
 =head1 SYNOPSIS
 
   use Prima qw(Application Buttons Spinner);
 
   my $mw = Prima::MainWindow->new(
-		size => [200, 400],
-		text => 'Button Example');
+	size      => [200, 400],
+	text      => 'Button Example'
+  );
 
   my $spinner = $mw->insert('Spinner',
-	style => 'drops',
-	size => [200,400],
-	growMode => gm::Center
+	style     => 'drops',
+	size      => [200,400],
+	growMode  => gm::Center
   );
 
   my $button = $mw->insert(
 	'Button',
-	text => 'Start/Stop',
+	text      => 'Start/Stop',
 	checkable => 1,
-	checked => 1,
-	origin => [0,0],
-	onClick => sub { $spinner->toggle },
-	growMode => gm::XCenter
+	checked   => 1,
+	origin    => [0,0],
+	onClick   => sub { $spinner->toggle },
+	growMode  => gm::XCenter
   );
 
   run Prima;
@@ -269,13 +270,11 @@ Prima::Spinner - Show a spinner animation
 
 =head1 DESCRIPTION
 
-Prima::Spinner provides a simple spinning animation with two designs and the
-opportunity to specify the colors of the spinning animation. This is useful to
-show an indeterminate progress of a running process.
+Prima::Spinner provides a simple spinning animation in three different designs
+and the opportunity to specify the colors of the spinning animation. This is
+useful to show the progress of a running process.
 
 =head1 USAGE
-
-You can determine the following properties:
 
 =head2 Properties
 
@@ -283,26 +282,23 @@ You can determine the following properties:
 
 =item active [BOOLEAN]
 
-If now parameter is passed, by this method you can get the active state of the
-spinning widget. '1' means that the spinner is running, '0' that it is stopped.
-With C<active(1)> you can start the spinner animation, with C<active(0)> you
-can stop it.
+Manages whether the spinning animation is active or not.
 
 =item color COLOR
 
 Inherited from L<Prima::Widget>. C<color> manages the basic foreground color.
-Concrete for the spinner widget this means the background color of the circle
-or the color of the active drops.
+For the spinner widget, this means the background color of the circle
+or the color of the drops.
 
 =item hiliteColor COLOR
 
-Inherited from L<Prima::Widget>. The color used to draw alternate foreground
-areas with high contrast. For the spinner widget this means the color of the
-arc. Only for I<circle> style.
+Inherited from L<Prima::Widget>. The color is used to draw alternate foreground
+areas with high contrast. For the spinner widget, this defines the color of the
+arc. Only for the I<circle> style.
 
 =item showPercent BOOLEAN
 
-If set, displays completion percent as text. Only for I<circle> style.
+If set, displays completion percent as text. Only for the I<circle> style.
 
 =item start
 
@@ -314,11 +310,13 @@ Same as C< active(0) >
 
 =item style STRING
 
-C<style> can be 'drops', 'circle' or 'spiral'. C<'drops'> shows drops that switches consecutively the color. With C<'circle'> an arc moving around a circle is shown. C<'spiral'> shows a spinning spiral. The default is 'drops'.
+C<style> can be 'drops', 'circle' or 'spiral'. C<drops> shows drops with fading
+colors. The C<circle> style features an arc moving around a circle. C<spiral>
+shows a spinning spiral. The default is 'drops'.
 
 =item value INT
 
-Integer between 0 and 100, showing completion perentage. Only for I<circle> style.
+An integer value between 0 and 100, shows completion percentage. Only for the I<circle> style.
 
 =item toggle
 
@@ -333,14 +331,5 @@ L<Prima>. L<Prima::Widget>, F<examples/spinner.pl>
 =head1 AUTHOR
 
 Maximilian Lika
-
-=head1 COPYRIGHT AND LICENSE
-
-Copyright (C) 2017 by Maximilian Lika
-
-This library is free software; you can redistribute it and/or modify
-it under the same terms as Perl itself, either Perl version 5.22.2 or,
-at your option, any later version of Perl 5 you may have available.
-
 
 =cut

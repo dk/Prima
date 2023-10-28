@@ -74,21 +74,21 @@ Prima::Stress - stress test module
 =head1 DESCRIPTION
 
 The module is intended for use in test purposes, to check the functionality of
-a program or a module under particular conditions that
-might be overlooked during the design. Currently, the only stress factor implemented
-is change of the default font size, which is set to different value every time
-the module is invoked.
+a program or a module under particular conditions that might be overlooked
+during the design. Currently, the stress factors implemented are the default
+font size, default scrollbar sizes, and the UI-scaling factor, which are set to
+different random values every time the module is invoked.
 
-To use the module functionality it is enough to include a typical
+To use the module it is enough to include a typical
 
 	use Prima::Stress;
 
-code, or, if the program is invoked by calling perl, by using
+code, or, if the program is invoked by calling perl, by using the
 
 	perl -MPrima::Stress program
 
-syntax. The module does not provide any methods, however one may address individual aspects
-of UI defaults.
+syntax. The module does not provide any methods, however, one may address
+individual aspects of the UI defaults.
 
 =head1 API
 
@@ -106,8 +106,16 @@ This syntax changes the default font size to 18 points.
 
 This syntax changes the display resolution to 192 pixels per inch.
 
+=head2 Scrollbar sizes
+
+   use Prima::Stress q(src=40);
+   perl -MPrima::Stress=src=40 program
+
+This syntax changes the default width of vertical scrollbars, and the default
+height of horizontal scrollbars to 40 pixels
+
 =head1 AUTHOR
 
-Dmitry Karasik E<lt>dmitry@karasik.eu.orgkE<gt>,
+Dmitry Karasik E<lt>dmitry@karasik.eu.orgE<gt>,
 
 =cut

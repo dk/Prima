@@ -408,9 +408,9 @@ L<Prima::PodView> - POD browser widget
 
 L<Prima::ScrollBar> - scroll bars
 
-L<Prima::Sliders> - sliding bars, spin buttons, dial widget etc.
+L<Prima::Sliders> - sliding bars, spin buttons, dial widgets, etc.
 
-L<Prima::Spinner> - spinner animation
+L<Prima::Spinner> - spinner animation widget
 
 L<Prima::TextView> - rich text browser widget
 
@@ -524,7 +524,7 @@ L<Prima::Image::base64> - hardcoded image files
 
 L<Prima::IniFile> - support of Windows-like initialization files
 
-L<Prima::StdBitmap> - shared access to the standard toolkit bitmaps
+L<Prima::StdBitmap> - shared access to the standard bitmaps
 
 L<Prima::Stress> - stress test module
 
