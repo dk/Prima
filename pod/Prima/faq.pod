@@ -63,8 +63,7 @@ very welcome.
 =head2 Where can I download Prima?
 
 L<http://www.prima.eu.org> contains links to source and binary download
-resources, instructions on how to subscribe to the Prima mailing list,
-documentation, and some other useful info.
+resources, and some other useful info.
 
 =head2 What is better, source or binary?
 
