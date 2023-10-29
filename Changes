@@ -5,6 +5,7 @@ Revision history for Perl module Prima
  - Add DeviceBitmap.maskPixel
  - Add menus to file dialogs
  - Remove obsolete RadioGroup and CheckBoxGroup - use GroupBox instead
+ - Proofread all documentation through Grammarly
 
 1.70 2023-09-03
  - Use fading effects in widgets

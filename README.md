@@ -317,3 +317,11 @@ Credits
  - Max Maischein
  - Reinier Maliepaard
 
+Thanks to
+=========
+
+ - SourceForge for hosting
+ - Github for hosting and CI
+ - Grammarly for free proofreading service
+ - Perltesters for the CI
+
