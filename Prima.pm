@@ -530,7 +530,7 @@ L<Prima::Stress> - stress test module
 
 L<Prima::Themes> - widget themes manager
 
-L<Prima::Tie> - tie widget properties to scalars or arrays
+L<Prima::Tie> - tie widget properties to scalars and arrays
 
 L<Prima::types> - builtin types
 

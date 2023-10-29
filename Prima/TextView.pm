@@ -1342,94 +1342,103 @@ Prima::TextView - rich text browser widget
 
 =head1 DESCRIPTION
 
-Prima::TextView accepts blocks of formatted text, and provides
-basic functionality - scrolling and user selection. The text strings
-are stored as one large text chunk, available by the C<::text> and C<::textRef> properties.
-A block of a formatted text is an array with fixed-length header and
-the following instructions.
+Prima::TextView accepts blocks of formatted text and provides basic
+functionality for text scrolling and user selection. The text strings are
+stored as one large text chunk accessible with the C<::text> and C<::textRef>
+properties.  A block of formatted text is an array with a fixed-length header
+and following commands. Each command is formed as an opcode followed by a fixed
+number of arguments. The block header contains the text offset, which text
+commands implicitly add to when addressing text strings by the offsets in their
+arguments.
 
-A special package C<tb::> provides the block constants and simple functions
-for text block access.
+The package C<tb::> provides the block constants and simple functions
+for creating and accessing blocks, opcodes, and commands.
 
 =head2 Capabilities
 
-Prima::TextView is mainly the text block functions and helpers. It provides
-function for wrapping text block, calculating block dimensions, drawing
-and converting coordinates from (X,Y) to a block position. Prima::TextView
-is centered around the text functionality, and although any custom graphic of
+Prima::TextView is mostly about text block functions and helpers. It provides
+functions for wrapping text blocks, calculating block dimensions, and drawing and
+converting coordinates from (X,Y) to a block position. The class functionality
+is focused on the text functionality, and although any custom graphic of
 arbitrary complexity can be embedded in a text block, the internal coordinate
-system is used ( TEXT_OFFSET, BLOCK ), where TEXT_OFFSET is a text offset from
+system is ( TEXT_OFFSET, BLOCK ) , where TEXT_OFFSET is the text offset from
 the beginning of a block and BLOCK is an index of a block.
 
-The functionality does not imply any text layout - this is up to the class
-descendants, they must provide they own layout policy. The only policy
-Prima::TextView requires is that blocks' BLK_TEXT_OFFSET field must be
-strictly increasing, and the block text chunks must not overlap. The text gaps
-are allowed though.
+The functionality does not imply any particular text layout - this is up to the
+class descendants, they must provide their own layout policy. The only policy
+Prima::TextView requires is that the blocks' BLK_TEXT_OFFSET field must be strictly
+increasing, and the block text chunks must not overlap. The text gaps are
+allowed though.
 
-A text block basic drawing function includes change of color, backColor and font,
-and the painting of text strings. Other types of graphics can be achieved by
-supplying custom code.
+A text block basic drawing function handles the commands changing of color,
+backColor, and font, and the painting of text strings. Other types of graphics
+can be achieved by supplying custom code.
 
 =over
 
 =item block_draw CANVAS, BLOCK, X, Y
 
-The C<block_draw> draws BLOCK onto CANVAS in screen coordinates (X,Y). It can
-be used not only inside begin_paint/end_paint brackets; CANVAS can be an
+The C<block_draw> method draws BLOCK on the CANVAS in screen coordinates (X,Y).
+It may be used not only inside begin_paint/end_paint brackets; CANVAS can be an
 arbitrary C<Prima::Drawable> descendant.
 
 =item block_walk BLOCK, %OPTIONS
 
-Cycles through block opcodes, calls supplied callbacks on each.
+Cycles through the block opcodes, calls the relevant callbacks on each.
+The callbacks can be supplied in %OPTIONS.
 
 =back
 
 =head2 Coordinate system methods
 
-Prima::TextView employs two its own coordinate systems:
-(X,Y)-document and (TEXT_OFFSET,BLOCK)-block.
+Prima::TextView employs two own coordinate systems: I<document-based> (X,Y) and
+I<block-based> (TEXT_OFFSET,BLOCK). Each block's text offset is also referred to as
+I<big text offset> vs I<small text offset> that is used by individual commands; the
+small text offset always is added to the block's big text offset to address the
+string in the widget's text scalar.
 
-The document coordinate system is isometric and measured in pixels. Its origin is located
-into the imaginary point of the beginning of the document ( not of the first block! ),
-in the upper-left pixel. X increases to the right, Y increases down.
-The block header values BLK_X and BLK_Y are in document coordinates, and
-the widget's pane extents ( regulated by C<::paneSize>, C<::paneWidth> and
-C<::paneHeight> properties ) are also in document coordinates.
+The document coordinate system is isometric and measured in pixels. Its origin
+is located in the imaginary point of the beginning of the document ( not in
+the first block! ), in the upper-left pixel. X increases to the right, and Y
+increases down.  The block header values BLK_X and BLK_Y use document
+coordinates, and the widget's pane extents ( regulated the by C<::paneSize>,
+C<::paneWidth> and C<::paneHeight> properties ) are also in the document
+coordinates.
 
-The block coordinate system in an-isometric - its second axis, BLOCK, is an index
-of a text block in the widget's blocks storage, C<$self-E<gt>{blocks}>, and
-its first axis, TEXT_OFFSET is a text offset from the beginning of the block.
+The block coordinate system is anisometric - its second axis BLOCK, is an index
+of a text block in the widget's blocks storage, C<< $self->{blocks} >>, and
+its first axis TEXT_OFFSET is a text offset from the beginning of the block.
 
-Below different coordinate system converters are described
+Below are described different coordinate system converters:
 
 =over
 
 =item screen2point, point2screen X, Y
 
-C<screen2point> accepts (X,Y) in the screen coordinates ( O is a lower left
-widget corner ), returns (X,Y) in document coordinates ( O is upper left corner
-of a document ).  C<point2screen> does the reverse.
+C<screen2point> accepts (X,Y) in the screen coordinates ( O is the lower left
+widget corner ) and returns (X,Y) in document coordinates ( O is the upper left
+corner of the document ).  C<point2screen> does the reverse transformation.
 
 =item xy2info X, Y
 
-Accepts (X,Y) is document coordinates, returns (TEXT_OFFSET,BLOCK) coordinates,
-where TEXT_OFFSET is text offset from the beginning of a block ( not related
-to the big text chunk ) , and BLOCK is an index of a block.
+Accepts (X,Y) is document coordinates, returns (TEXT_OFFSET,BLOCK) coordinates
+where TEXT_OFFSET is the text offset from the beginning of a block ( not
+of the whole text! ) , and BLOCK is an index of a block.
 
 =item info2xy TEXT_OFFSET, BLOCK
 
-Accepts (TEXT_OFFSET,BLOCK) coordinates, and returns (X,Y) in document coordinates
+Accepts (TEXT_OFFSET,BLOCK) coordinates and returns (X,Y) in document coordinates
 of a block.
 
 =item text2xoffset TEXT_OFFSET, BLOCK
 
-Returns X coordinate where TEXT_OFFSET begins in a BLOCK index.
+Returns the X coordinate where TEXT_OFFSET begins in a block. BLOCK is the
+index of the latter.
 
 =item info2text_offset
 
 Accepts (TEXT_OFFSET,BLOCK) coordinates and returns the text offset
-with regard to the big text chunk.
+from the beginning of the whole text.
 
 =item text_offset2info TEXT_OFFSET
 
@@ -1437,48 +1446,47 @@ Accepts big text offset and returns (TEXT_OFFSET,BLOCK) coordinates
 
 =item text_offset2block TEXT_OFFSET
 
-Accepts big text offset and returns BLOCK coordinate.
+Accepts big text offset and returns the BLOCK coordinate.
 
 =back
 
 =head2 Text selection
 
 The text selection is performed automatically when the user selects a text
-region with a mouse. The selection is stored in (TEXT_OFFSET,BLOCK)
-coordinate pair, and is accessible via the C<::selection> property.
-If its value is assigned to (-1,-1,-1,-1) this indicates that there is
-no selection. For convenience the C<has_selection> method is introduced.
+region with the mouse. The selection is stored in (TEXT_OFFSET,BLOCK)
+coordinate pair and is accessible via the C<::selection> property.
+If its value is assigned to (-1,-1,-1,-1) then this indicates that there is
+no selection. For convenience, the C<has_selection> method is introduced.
 
 Also, C<get_selected_text> returns the text within the selection
 (or undef with no selection ), and C<copy> copies automatically
 the selected text into the clipboard. The latter action is bound to
-C<Ctrl+Insert> key combination.
+the C<Ctrl+Insert> key combination.
 
 A block with TEXT_OFFSET set to -1 will be treated as not containing any text,
 and therefore will not be able to get selected.
 
 =head2 Event rectangles
 
-Partly as an option for future development, partly as a hack a
-concept of 'event rectangles' was introduced. Currently, C<{contents}>
-private variable points to an array of objects, equipped with
-C<on_mousedown>, C<on_mousemove>, and C<on_mouseup> methods. These
-are called within the widget's mouse events, so the overloaded classes
-can define the interactive content without overloading the actual
-mouse events ( which is although easy but is dependent on Prima::TextView
-own mouse reactions ).
+Partly as an option for future development, partly as a hack a concept of
+I<event rectangles> was introduced. Currently, the C<{contents}> private
+variable points to an array of objects equipped with the C<on_mousedown>,
+C<on_mousemove>, and C<on_mouseup> methods. These are called by the widget
+mouse events so that the overloaded classes can define the interactive content
+without overloading the actual mouse events ( which is although easy but is
+dependent on the implementation of Prima::TextView's mouse handlers ).
 
-As an example L<Prima::PodView> uses the event rectangles to catch
-the mouse events over the document links. Theoretically, every 'content'
-is to be bound with a separate logical layer; when the concept was designed,
-a html-browser was in mind, so such layers can be thought as
-( in the html world ) links, image maps, layers, external widgets.
+As an example, L<Prima::PodView> uses the event rectangles to catch the mouse
+events over the document links. Theoretically, every 'content' can be bound
+with a separate logical layer; the concept was designed with an HTML browser in
+mind, so such layers can be thought of as links, image maps, layers, external
+widgets, etc in the HTML world.
 
-Currently, C<Prima::TextView::EventRectangles> class is provided
-for such usage. Its property C<::rectangles> contains an array of
-rectangles, and the C<contains> method returns an integer value, whether
-the passed coordinates are inside one of its rectangles or not; in the first
-case it is the rectangle index.
+Currently, the C<Prima::TextView::EventRectangles> class is provided for such
+usage. Its property C<::rectangles> contains an array of rectangles, and the
+C<contains> method returns an integer value, whether the passed coordinates are
+inside one of its rectangles or not; in the first case it is the rectangle
+index.
 
 =head1 AUTHOR
 

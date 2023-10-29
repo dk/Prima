@@ -789,7 +789,6 @@ See L<Prima::Widget/growMode>
 See L<Prima::Application/get_system_info>
 
 	gui::Default
-	gui::PM
 	gui::Windows
 	gui::XLib
 	gui::GTK

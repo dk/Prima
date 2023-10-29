@@ -257,15 +257,15 @@ sub TIESCALAR { bless [ $_[1], 'value' ], $_[0] }
 
 =head1 NAME
 
-Prima::Tie - tie widget properties to scalars or arrays.
+Prima::Tie - tie widget properties to scalars and arrays
 
 =head1 DESCRIPTION
 
-Prima::Tie contains two abstract classes, C<Prima::Tie::Array> and
-C<Prima::Tie::Scalar>, which tie an array or a scalar to a widget's arbitrary
+Prima::Tie contains two abstract classes C<Prima::Tie::Array> and
+C<Prima::Tie::Scalar> which tie an array or a scalar to a widget's arbitrary
 array or scalar property.  Also, it contains classes C<Prima::Tie::items>,
-C<Prima::Tie::text>, and C<Prima::Tie::value>, which tie a variable to a widget's I<items>, I<text>,
-and I<value> property respectively.
+C<Prima::Tie::text>, and C<Prima::Tie::value>, which tie a variable to a
+widget's I<items>, I<text>, and I<value> properties respectively.
 
 =head1 SYNOPSIS
 
@@ -281,8 +281,8 @@ and I<value> property respectively.
 
 =head1 USAGE
 
-These classes provide immediate access to a widget's array and scalar property,
-in particular to popular properties as I<items> and I<text>. It is considerably simpler to say
+These classes provide immediate access to a widget's array and scalar properties,
+in particular to popular properties I<items> and I<text>. It is considerably simpler to say
 
 	splice(@items,3,1,'new item');
 
@@ -292,25 +292,25 @@ than to say
 	splice(@i,3,1,'new item');
 	$widget->items(\@i);
 
-You can work directly with the text or items rather than at a remove.  Furthermore, if the
-only reason you keep an object around after creation is to access its text or items, you no
-no longer need to do so:
+That way, you can work directly with the text or items. Furthermore, if the
+only reason you keep an object around after creation is to access its text or
+items, you no longer need to do so:
 
-	tie @some_array, 'Prima::Tie::items', Prima::ListBox->create(@args);
+	tie @some_array, 'Prima::Tie::items', Prima::ListBox->new(@args);
 
 As opposed to:
 
-	my $widget = Prima::ListBox->create(@args);
+	my $widget = Prima::ListBox->new(@args);
 	tie @some_array, 'Prima::Tie::items', $widget;
 
-C<Prima::Tie::items> requires C<::items> property to be available on the widget.
+C<Prima::Tie::items> requires the C<::items> property to be available on the widget.
 Also, it takes advantage of additional C<get_items>, C<add_items>, and the like
-if available.
+methods if available.
 
 =head2 Prima::Tie::items
 
 The class is applicable to C<Prima::ListViewer>, C<Prima::ListBox>,
-C<Prima::Widget::Header>, and their descendants, and in limited fashion to
+C<Prima::Widget::Header>, and their descendants, and in a limited fashion to
 C<Prima::OutlineViewer> and its descendants C<Prima::StringOutline> and
 C<Prima::Outline>.
 

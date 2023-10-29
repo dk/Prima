@@ -154,11 +154,11 @@ sub post
 
 =head1 NAME
 
-Prima::Utils - miscellanneous routines
+Prima::Utils - miscellaneous routines
 
 =head1 DESCRIPTION
 
-The module contains miscellaneous helper routines.
+The module contains miscellaneous helper routines
 
 =head1 API
 
@@ -167,13 +167,13 @@ The module contains miscellaneous helper routines.
 =item alarm $TIMEOUT, $SUB, @PARAMS
 
 Calls SUB with PARAMS after TIMEOUT milliseconds.
-Return 0 on failure, and the active timer on success.
+Returns 0 on failure, and the active timer on success.
 The timer can be stopped to disarm the alarm.
 
 =item beep [ FLAGS = mb::Error ]
 
 Invokes the system-depended sound and/or visual bell,
-corresponding to one of following constants:
+corresponding to one of the following constants:
 
 	mb::Error
 	mb::Warning
@@ -182,18 +182,17 @@ corresponding to one of following constants:
 
 =item get_gui
 
-Returns one of C<gui::XXX> constants, reflecting the graphic
+Returns one of the C<gui::XXX> constants that report the graphic
 user interface used in the system:
 
 	gui::Default
-	gui::PM
 	gui::Windows
 	gui::XLib
 	gui::GTK
 
 =item get_os
 
-Returns one of C<apc::XXX> constants, reflecting the platfrom.
+Returns one of the C<apc::XXX> constants that report the system platform.
 Currently, the list of the supported platforms is:
 
 	apc::Win32
@@ -201,8 +200,8 @@ Currently, the list of the supported platforms is:
 
 =item find_image PATH
 
-Converts PATH from perl module notation into a file path, and
-searches for the file in C<@INC> paths set. If a file is
+Converts PATH from a perl module notation into a file path and
+searches for the file in the C<@INC> paths set. If the file is
 found, its full filename is returned; otherwise C<undef> is
 returned.
 
@@ -212,25 +211,26 @@ Returns last system error, if any
 
 =item nearest_i NUMBERS
 
-Performs C< floor($_ + .5) > operation over NUMBERS which can be an array or an arrayref.
-Returns converted integers that in either an array or an arrayref, depending on the calling syntax.
+Performs C< floor($_ + .5) > operation over NUMBERS which can be an array or an
+arrayref.  Returns converted integers in either an array or an arrayref form,
+depending on the calling syntax.
 
 =item nearest_d NUMBERS
 
 Performs C< floor($_ * 1e15 + .5) / 1e15 > operation over NUMBERS which can be
-an array or an arrayref.  Returns converted NVs that in either an array or an
-arrayref, depending on the calling syntax.  Used to protect against perl
+an array or an arrayref.  Returns converted NVs in either an array or an
+arrayref form, depending on the calling syntax.  Used to protect against perl
 configurations that calculate C<sin>, C<cos> etc with only 15 significant
-digits in the mantissa.
+digits in the mantissa. This function prevents the accumulation of error in these
+configurations.
 
 =item path [ FILE ]
 
-If called with no parameters, returns path to a directory,
-usually F<~/.prima>, that can be used to contain the user settings
-of a toolkit module or a program. If FILE is specified, appends
-it to the path and returns the full file name. In the latter case
-the path is automatically created by C<File::Path::mkpath> unless it
-already exists.
+If called with no parameters, returns the path to a directory, usually F<~/.prima>,
+that can be used to store the user settings of a toolkit module or a program.
+If FILE is specified, appends it to the path and returns the full file name. In
+the latter case, the path is automatically created by C<File::Path::mkpath>
+unless it already exists.
 
 =item post $SUB, @PARAMS
 
@@ -238,16 +238,16 @@ Postpones a call to SUB with PARAMS until the next event loop tick.
 
 =item query_drives_map [ FIRST_DRIVE = "A:" ]
 
-Returns anonymous array to drive letters, used by the system.  FIRST_DRIVE can
-be set to other value to start enumeration from.  Win32 can probe removable
-drives there, so to increase responsiveness of the function it might be
+Returns an anonymous array to drive letters used by the system.  FIRST_DRIVE can
+be set to another value to start enumeration from.  Win32 can probe removable
+drives there, so to increase the responsiveness of the function it might be
 reasonable to call it with FIRST_DRIVE set to C<C:> .
 
-If the system supports no drive letters, empty array reference is returned ( unix ).
+If the system supports no drive letters, an empty array reference is returned ( unix ).
 
 =item query_drive_type DRIVE
 
-Returns one of C<dt::XXX> constants, describing the type of drive,
+Returns one of the C<dt::XXX> constants that describe the type of a drive,
 where DRIVE is a 1-character string. If there is no such drive, or
 the system supports no drive letters ( unix ), C<dt::None> is returned.
 
@@ -269,6 +269,8 @@ compatibility, while the rest of the toolkit operates in milliseconds.
 
 Issues a tone of FREQUENCY in Hz with DURATION in milliseconds.
 
+Obsoleted as modern systems stopped supporting APIs for primitive sound generation.
+
 =item username
 
 Returns the login name of the user.
@@ -276,63 +278,64 @@ Sometimes is preferred to the perl-provided C<getlogin> ( see L<perlfunc/getlogi
 
 =item xcolor COLOR
 
-Accepts COLOR string on one of the three formats:
+Accepts COLOR string in one of the three formats:
 
 	#rgb
 	#rrggbb
 	#rrrgggbbb
 
-and returns 24-bit RGB integer value.
+and returns a 24-bit RGB integer value
 
 =item wait CONDITION [, TIMEOUT ]
 
 Waits for a condition for max TIMEOUT milliseconds, or forever if TIMEOUT is undefined.
 
-Returns undef on failure, 0 on TIMEOUT, 1 on successful CONDITION.
+Returns undef on failure, 0 on TIMEOUT, 1 on a successful CONDITION.
 
 CONDITION is either a scalar reference, or a sub to be polled, where their values
-are treated as 0 as a signal to continue the wait, and 1 as a stop signal.
+are treated as 0 as a signal to continue the waiting, and 1 as a stop signal.
 
 =back
 
 =head1 Unicode-aware filesystem functions
 
-Since perl win32 unicode support for files is unexistent, Prima has its own
+Since perl's win32 unicode support for files is unexistent, Prima has its own
 parallel set of functions mimicking native functions, ie C<open>, C<chdir> etc.
 This means that files with names that cannot be converted to ANSI (ie
 user-preferred) codepage are not visible in perl, but the functions below
 mitigate that problem.
 
-The following fine points need to be understood prior to using these functions though:
+The following fine points need to be understood before using these functions:
 
 =over
 
 =item *
 
-Prima makes a distinction whether scalars have their utf8 bit set or not
-throughout the whole toolking. For example, text output in both unix and
+Prima makes a distinction between whether scalars have their utf8 bit set or not
+throughout the whole toolkit. For example, text output in both unix and
 windows is different depending on the bit, treating non-utf8-bit text as
-locale-specific, and utf8-bit text as unicode. The same model is applied for
-the file systems.
+locale-specific, and utf8-bit text as unicode. The same model is applied to
+file names.
 
 =item *
 
 Perl implementation for native Win32 creates virtual environments for each
-thread, keeping current directory, environment variables, etc. This means that
-under Win32 calling C<Prima::Utils::chdir> will NOT automatically make
-C<CORE::chdir> assume that value, even if the path is convertable to ANSI. Keep
-that in mind when mixing Prima and core functions.  (To add more confusion,
-under the unix these two chdirs are identical when the path is fully
-convertable).
+thread and may keep more than one instance of the current directory, environment
+variables, etc. This means that under Win32, calling C<Prima::Utils::chdir>
+will NOT automatically make C<CORE::chdir> assume that value, even if the path
+is convertible to ANSI. Keep that in mind when mixing Prima and core functions.
+To add more confusion, under the unix, these two chdir calls are identical when the
+path is fully convertible.
 
 =item *
 
-Under unix, reading entries from environment or file system is opportunistic:
-if is a valid utf8, then it is a utf8 string. Mostly because .UTF-8 locale are
-default and standard everywhere. Prima ignores C< $ENV{LANG} > here. This is a
-bit problematic on Perls under 5.22 as these don't provide means to check for
-utf8 string validity, so everything will be slapped a utf8 bit on here --
-Beware.
+Under unix, reading entries from the environment or the file system is
+opportunistic: if a text string (file name, environment entry) is a valid utf8
+string, then it is treated and reported as one. Mostly because the .UTF-8
+locales are default and found everywhere. Note that Prima ignores C< $ENV{LANG}
+> here. This is a bit problematic on Perls under 5.22 as these don't provide
+> means to check for the utf8 string validity, so every string will be slapped
+> a utf8 bit on here -- beware.
 
 =item *
 
@@ -350,7 +353,7 @@ Same as C<POSIX::access>.
 
 =item chdir DIR
 
-Same as C<CORE::chdir> but disregards thread local environment on Win32.
+Same as C<CORE::chdir> but disregards the thread-local environment on Win32.
 
 =item chmod PATH, MODE
 
@@ -366,9 +369,8 @@ Same as C<Cwd::getcwd>
 
 =item getdir PATH
 
-Reads content of PATH directory and
-returns array of string pairs, where the first item is a file
-name, and the second is a file type.
+Reads the content of the PATH directory and and returns array of string pairs where
+the first item is a file name and the second is a file type.
 
 The file type is a string, one of the following:
 
@@ -382,7 +384,7 @@ The file type is a string, one of the following:
 	"wht"  - whiteout
 
 This function was implemented for faster directory reading,
-to avoid successive call of C<stat> for every file.
+to avoid successive calls of C<stat> for every file.
 
 Also, getdir is consistently inclined to treat filenames in utf8,
 disregarding both perl unicode settings and the locale.
@@ -390,7 +392,7 @@ disregarding both perl unicode settings and the locale.
 =item getenv NAME
 
 Reads directly from environment, possibly bypassing C< %ENV >, and disregarding
-thread local environment on Win32.
+thread-local environment on Win32.
 
 =item link OLDNAME, NEWNAME
 
@@ -424,7 +426,7 @@ Same as C<CORE::rmdir>
 =item setenv NAME, VAL
 
 Directly sets environment variable, possibly bypassing C< %ENV >, depending on
-how perl is built.  Also disregards thread local environment on Win32.
+how perl is built. Also disregards the thread-local environment on Win32.
 
 Note that effective synchronization between this call and C< %ENV > is not
 always possible, since Win32 perl implementation simply does not allow that.
@@ -433,8 +435,9 @@ don't have their utf8 bit set, otherwise perl will warn about wide characters.
 
 =item stat PATH
 
-Same as C<CORE::stat>, except where there is sub-second time resolution provided,
-returns atime/mtime/ctime entries as floats, same as C<Time::HiRes::stat>.
+Same as C<CORE::stat>, except on systems that provide sub-second time
+resolution, in which case returns the atime/mtime/ctime entries as floats, the
+same as C<Time::HiRes::stat> does.
 
 =item sv2local TEXT, FAIL_IF_CANNOT = 1
 
@@ -448,8 +451,9 @@ Same as C<CORE::unlink>.
 
 =item utime ATIME, MTIME, PATH
 
-Same as C<CORE::utime>, except where there is sub-second time resolution provided,
-accepts atime/mtime/ctime entries as floats, same as C<Time::HiRes::utime>.
+Same as C<CORE::utime>, except on systems that provide sub-second time
+resolution, in which case returns the atime/mtime/ctime entries as floats, the
+same as C<Time::HiRes::utime> does.
 
 =back
 
