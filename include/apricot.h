@@ -1582,8 +1582,6 @@ END_TABLE(apc,UV)
 START_TABLE(gui,UV)
 #define guiDefault              0
 GUI(Default)
-#define guiPM                   1
-GUI(PM)
 #define guiWindows              2
 GUI(Windows)
 #define guiXLib                 3
