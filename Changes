@@ -1,6 +1,6 @@
 Revision history for Perl module Prima
 
-1.71 20XX-XX-XX
+1.71 2023-10-29
  - Add Prima::Image::webp filter dialog
  - Add DeviceBitmap.maskPixel
  - Add menus to file dialogs
