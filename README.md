@@ -1,7 +1,7 @@
 Description
 ===========
 
-PRIMA is a general purpose extensible graphical user interface toolkit with a
+PRIMA is a general-purpose extensible graphical user interface toolkit with a
 rich set of standard widgets and an emphasis on 2D image processing tasks. A
 Perl program using PRIMA looks and behaves identically on X11 and Win32.
 
@@ -51,7 +51,7 @@ OpenSUSE
 Solaris
 -------
 
-Download and install Oracle Developer Studio as perl there is compiled with cc, not gcc.
+Download and install Oracle Developer Studio as the vendor-provided perl is compiled with cc, not gcc
 
 Cygwin
 ------
@@ -70,7 +70,7 @@ Cygwin
 Win32-Strawberry
 ----------------
 
-v5.32 had the necessary libraries included, but v5.38 doesn't.
+v5.32 had the necessary libraries included, but v5.38 hasn't.
 Install these:
 
    - http://prima.eu.org/download/libfribidi-1.0.10-win64.zip
@@ -82,7 +82,7 @@ Win32-ActiveState
 -----------------
 
 ActiveState currently doesn't support local compilations.
-Official answer here: https://community.activestate.com/t/how-to-install-gcc-and-or-mingw/10993/2 .
+The official answer is here: https://community.activestate.com/t/how-to-install-gcc-and-or-mingw/10993/2 .
 Consider migrating to Strawberry Perl.
 
 Win32-other
@@ -94,8 +94,8 @@ distributions that can be installed just for this purpose:
  - http://search.cpan.org/~karasik/Prima-codecs-win32/
  - http://search.cpan.org/~karasik/Prima-codecs-win64/
 
-it should work for all MSVC and GCC compilers and for native,
-cygwin, and mingw/strawberry perl runtimes.
+it should work for all MSVC and GCC compilers and
+native, cygwin, and mingw/strawberry perl runtimes.
 
 MacOSX
 ------
@@ -115,7 +115,7 @@ You'll need homebrew, XQuartz, and a set of extra libraries.
   brew install libiconv libxcomposite libxrandr libxcursor libxft fribidi fontconfig
      freetype giflib gtk+3 harfbuzz jpeg libpng libtiff webp libxpm libheif
 
-Note: if Prima crashes in libxft, do this: remove libxft and install custom built xorg libraries, either very minimal
+Note: if Prima crashes in libxft, do this: remove libxft and install custom-built xorg libraries, either very minimal
 
   brew install dk/x11/xorg-macros dk/x11/libxft
 
@@ -138,7 +138,7 @@ Graphic libraries
 Prima can use several graphic libraries to handle image files.  Compiling Prima
 with at least one library, preferably for GIF files is strongly recommended,
 because internal library images are stored in GIFs. Support for the following
-libraries can be compiled in on all platforms:
+libraries can be compiled on all platforms:
 
    - libXpm
    - libpng
@@ -154,22 +154,22 @@ Bidirectional input and complex scripts
 ---------------------------------------
 
 - To support bi-directional unicode text input and output you'll need the
-fribidi library.  Additionally for unix builds you'll need harfbuzz library
+fribidi library.  Additionally for unix builds you'll need the harfbuzz library
 for output of complex scripts and font ligature support. Prima can compile and
 work fine without these libraries, but the support of the features will be
 rather primitive.
 
-- Thai language doesn't use spaces between the words in a sentence. To wrap
-thai texts properly Prima can be compiled with the libthai library. No special
-treatment of thai text is needed programmatically, text wrapper does everything
+- The Thai language doesn't use spaces between the words in a sentence. To wrap
+Thai texts properly Prima can be compiled with the libthai library. No special
+treatment of Thai text is needed programmatically, the text wrapper does everything
 under the hood.
 
 GTK3/GTK2
 ---------
 
-It is recommended to build Prima with GTK3/GTK2 on X11 installations,
-because in that case Prima will use standard GTK fonts, colors, and file dialogs.
-By default Prima tries to build with it, but if you don't want it, run
+It is recommended to build Prima with GTK3/GTK2 on X11 installations
+because in that case, Prima will use standard GTK fonts, colors, and file dialogs.
+By default, Prima tries to build with it, but if you don't want it, run
 
     perl Makefile.PL WITH_GTK2=0 WITH_GTK3=0
 
@@ -194,7 +194,7 @@ If make fails with message
     ** No image codecs found
 
 that means you don't have image libraries that Prima supports in your path.
-See PREREQUISITES section.
+See the Installation section.
 
 If some of the required libraries or include files can not be found,
 INC=-I/some/include and LIBS=-L/some/lib semantics should be used to tell
@@ -203,7 +203,7 @@ Makefile.PL about these. Check ExtUtils::MakeMaker for more.
 Binary distribution installation
 ================================
 
-Available only for MSWin32. Please use installation from source for
+Available only for MSWin32. Please use the installation from the source for
 the other platforms.
 
 To install the toolkit from the binary distribution run
@@ -218,7 +218,7 @@ Usage examples
 
 Try running the toolkit examples, by default installed in
 INSTALLSITEARCH/Prima/examples directory ( find it by running perl
--V:installsitearch ). All examples and programs included into the distribution
+-V:installsitearch ). All examples and programs included in the distribution
 can be run either by their name or with perl as argument - for example,
 ..../helloworld or perl ..../helloworld .  ( perl ..../helloworld.bat for win32 )
 
@@ -230,7 +230,7 @@ and ends with
 
     run Prima;
 
-, the event loop. Start from the following code:
+, the event loop. Start with the following code:
 
     use Prima qw(Application Buttons);
 
@@ -245,13 +245,13 @@ and ends with
  
     run Prima;
 
-Or, alternatively, start the VB program, the toolkit visual builder.
+Alternatively, start the VB program, the toolkit visual builder.
 
 More information
 ================
 
-The toolkit contains set of POD files describing its features, and the
-programming interfaces.  Run 'podview Prima' or 'perldoc Prima' command to
+The toolkit contains a set of POD files describing its features and the
+programming interfaces.  Run the 'podview Prima' or 'perldoc Prima' commands to
 start with the main manual page.
 
 Visit http://www.prima.eu.org/ for the recent versions of the toolkit. You can
