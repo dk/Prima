@@ -31,6 +31,9 @@ typedef struct _ImgIORequest {
 #define IMG_EVENTS_HEADER_READY 1
 #define IMG_EVENTS_DATA_READY   2
 
+struct ImgCodec;
+struct ImgCodecVMT;
+
 typedef struct _ImgLoadFileInstance {
 	/* instance data, filled by core */
 	char          * fileName;
@@ -68,6 +71,18 @@ typedef struct _ImgLoadFileInstance {
 	int           * frameMap;
 	Bool            stop;
 	char          * errbuf;         /* $! value */
+	HV            * cached_defaults;
+	HV            * cached_commons;
+	struct ImgCodec * codec;
+	AV            * profiles;
+	int             profiles_len;
+	ImgIORequest    sioreq;
+	char *          baseClassName;
+	Bool            incrementalLoad;
+	int             current_frame;
+	int             last_frame;
+	Bool            eof_is_not_an_error;
+	int             codecID;
 
 	/* scanline event progress */
 	unsigned int    eventDelay;     /* in milliseconds */
@@ -127,9 +142,6 @@ typedef struct _ImgCodecInfo {
 	char ** mime;              /* image/duf, x-image/duff */
 } ImgCodecInfo, *PImgCodecInfo;
 
-struct ImgCodec;
-struct ImgCodecVMT;
-
 typedef struct ImgCodecVMT *PImgCodecVMT;
 typedef struct ImgCodec    *PImgCodec;
 
@@ -168,6 +180,12 @@ extern Bool  apc_img_register( PImgCodecVMT codec, void * initParam);
 extern int   apc_img_frame_count( char * fileName, Bool is_utf8, PImgIORequest ioreq);
 extern PList apc_img_load( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq, HV * profile, char * error);
 extern int   apc_img_save( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq, HV * profile, char * error);
+
+extern PImgLoadFileInstance
+             apc_img_open_load( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq,  HV * profile, char * error);
+extern Handle
+             apc_img_load_next_frame( Handle target, PImgLoadFileInstance fi, char * error );
+extern void  apc_img_close_load( PImgLoadFileInstance fi );
 
 extern void  apc_img_codecs( PList result);
 extern HV *  apc_img_info2hash( PImgCodec c);
