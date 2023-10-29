@@ -1552,6 +1552,7 @@ Note: C<*> - marked classes are abstract.
 Prima::AbstractButton realizes the common functionality of buttons.  It provides
 a reaction to mouse and keyboard events and calls the L<Click> notification when
 the user activates the button. The activation can be done by:
+
 =over
 
 =item *
