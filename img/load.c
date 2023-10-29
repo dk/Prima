@@ -185,6 +185,122 @@ static ImgIORequest std_ioreq = {
 	(void*) ferror
 };
 
+static int
+img_open_file( PImgLoadFileInstance fi, char * fileName, Bool is_utf8, PImgIORequest ioreq)
+{
+	int load_mask;
+	if ( ioreq == NULL) {
+		memcpy( &fi->sioreq, &std_ioreq, sizeof( fi->sioreq));
+		if (( fi->sioreq.handle = prima_open_file( fileName, is_utf8, "rb")) == NULL)
+			return -1;
+		fi->req = &fi->sioreq;
+		fi->req_is_stdio = true;
+		load_mask = IMG_LOAD_FROM_FILE;
+	} else {
+		fi->req = ioreq;
+		fi->req_is_stdio = false;
+		load_mask = IMG_LOAD_FROM_STREAM;
+	}
+	fi-> fileName = fileName;
+	fi-> is_utf8  = is_utf8;
+	return load_mask;
+}
+
+static Bool
+img_find_codec( PImgLoadFileInstance fi, int load_mask)
+{
+	int i;
+	Bool * loadmap;
+	PImgCodec c = NULL;
+	Bool err = false;
+
+#define out(x){ err = true;\
+	strlcpy( fi->errbuf, x, 256);\
+	goto EXIT_NOW;}
+
+	if ( !( loadmap = ( Bool *) malloc( sizeof( Bool) * imgCodecs. count)))
+		out("Not enough memory");
+
+	memset( loadmap, 0, sizeof( Bool) * imgCodecs. count);
+	for ( i = 0; i < imgCodecs. count; i++) {
+		c = ( PImgCodec ) ( imgCodecs. items[ i]);
+		if ( !c-> instance)
+			c-> instance = c-> vmt-> init( &c->info, c-> initParam);
+		if ( !c-> instance) { /* failed to initialize, retry next time */
+			loadmap[ i] = true;
+			continue;
+		}
+	}
+	c = NULL;
+
+	/* finding by extension first */
+	if ( fi-> fileName) {
+		int fileNameLen = strlen( fi-> fileName);
+		for ( i = 0; i < imgCodecs. count; i++) {
+			int j = 0, found = false;
+			if ( loadmap[ i]) continue;
+			c = ( PImgCodec ) ( imgCodecs. items[ i]);
+			while ( c-> info-> fileExtensions[ j]) {
+				char * ext = c-> info-> fileExtensions[ j];
+				int extLen = strlen( ext);
+				if ( extLen < fileNameLen && stricmp( fi->fileName + fileNameLen - extLen, ext) == 0) {
+					found = true;
+					break;
+				}
+				j++;
+			}
+			if ( found) {
+				loadmap[ i] = true;
+
+				if ( !( c-> info-> IOFlags & load_mask)) {
+					c = NULL;
+					continue;
+				}
+				if (( fi-> instance = c-> vmt-> open_load( c, fi)) != NULL) {
+					fi-> codecID = i;
+					break;
+				}
+
+				if ( fi-> stop) {
+					err = true;
+					free( loadmap);
+					goto EXIT_NOW;
+				}
+			}
+			c = NULL;
+		}
+	}
+
+	/* use first suitable codec */
+	if ( c == NULL) {
+		for ( i = 0; i < imgCodecs. count; i++) {
+			if ( loadmap[ i]) continue;
+			c = ( PImgCodec ) ( imgCodecs. items[ i]);
+			if ( !( c-> info-> IOFlags & load_mask)) {
+					c = NULL;
+					continue;
+			}
+			if (( fi-> instance = c-> vmt-> open_load( c, fi)) != NULL) {
+				fi-> codecID = i;
+				break;
+			}
+			if ( fi-> stop) {
+				err = true;
+				free( loadmap);
+				goto EXIT_NOW;
+			}
+			c = NULL;
+		}
+	}
+	free( loadmap);
+	if ( !c) out("No appropriate codec found");
+
+#undef out
+EXIT_NOW:
+	fi->codec = c;
+	return !err;
+}
+
 PImgLoadFileInstance
 apc_img_open_load( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq,  HV * profile, char * error)
 {
@@ -211,29 +327,17 @@ apc_img_open_load( Handle self, char * fileName, Bool is_utf8, PImgIORequest ior
 	}
 
 	memset( fi, 0, sizeof( ImgLoadFileInstance));
-	fi-> baseClassName = "Prima::Image";
 
 	fi-> errbuf = error ? error : dummy_error_buf;
 	fi-> errbuf[0] = 0;
 
-	/* open file */
-	if ( ioreq == NULL) {
-		memcpy( &fi->sioreq, &std_ioreq, sizeof( fi->sioreq));
-		if (( fi->sioreq.handle = prima_open_file( fileName, is_utf8, "rb")) == NULL)
-			out( strerror( errno));
-		fi->req = &fi->sioreq;
-		fi->req_is_stdio = true;
-		load_mask = IMG_LOAD_FROM_FILE;
-	} else {
-		fi->req = ioreq;
-		fi->req_is_stdio = false;
-		load_mask = IMG_LOAD_FROM_STREAM;
-	}
-	fi-> fileName = fileName;
-	fi-> is_utf8  = is_utf8;
-	fi-> stop = false;
-	fi-> last_frame = -2;
-	fi-> codecID = -1;
+	if (( load_mask = img_open_file( fi, fileName, is_utf8, ioreq)) < 0)
+		out(strerror(errno));
+
+	fi-> baseClassName = "Prima::Image";
+	fi-> stop          = false;
+	fi-> last_frame    = -2;
+	fi-> codecID       = -1;
 
 	/* assigning user file profile */
 	if ( pexist( index)) {
@@ -316,91 +420,14 @@ apc_img_open_load( Handle self, char * fileName, Bool is_utf8, PImgIORequest ior
 	}
 
 	/* all other properties to be parsed by codec */
-	fi-> extras = profile;
-
+	fi-> extras         = profile;
 	fi-> fileProperties = newHV();
-	fi-> frameCount = -1;
+	fi-> frameCount     = -1;
 
-	/* finding codec */
-	{
-		Bool * loadmap = ( Bool *) malloc( sizeof( Bool) * imgCodecs. count);
-
-		if ( !loadmap)
-			out("Not enough memory");
-		memset( loadmap, 0, sizeof( Bool) * imgCodecs. count);
-		for ( i = 0; i < imgCodecs. count; i++) {
-			c = ( PImgCodec ) ( imgCodecs. items[ i]);
-			if ( !c-> instance)
-				c-> instance = c-> vmt-> init( &c->info, c-> initParam);
-			if ( !c-> instance) { /* failed to initialize, retry next time */
-				loadmap[ i] = true;
-				continue;
-			}
-		}
-		c = NULL;
-
-		/* finding by extension first */
-		if ( fileName) {
-			int fileNameLen = strlen( fileName);
-			for ( i = 0; i < imgCodecs. count; i++) {
-				int j = 0, found = false;
-				if ( loadmap[ i]) continue;
-				c = ( PImgCodec ) ( imgCodecs. items[ i]);
-				while ( c-> info-> fileExtensions[ j]) {
-					char * ext = c-> info-> fileExtensions[ j];
-					int extLen = strlen( ext);
-					if ( extLen < fileNameLen && stricmp( fileName + fileNameLen - extLen, ext) == 0) {
-						found = true;
-						break;
-					}
-					j++;
-				}
-				if ( found) {
-					loadmap[ i] = true;
-
-					if ( !( c-> info-> IOFlags & load_mask)) {
-						c = NULL;
-						continue;
-					}
-					if (( fi-> instance = c-> vmt-> open_load( c, fi)) != NULL) {
-						fi-> codecID = i;
-						break;
-					}
-
-					if ( fi-> stop) {
-						err = true;
-						free( loadmap);
-						goto EXIT_NOW;
-					}
-				}
-				c = NULL;
-			}
-		}
-
-		/* use first suitable codec */
-		if ( c == NULL) {
-			for ( i = 0; i < imgCodecs. count; i++) {
-				if ( loadmap[ i]) continue;
-				c = ( PImgCodec ) ( imgCodecs. items[ i]);
-				if ( !( c-> info-> IOFlags & load_mask)) {
-						c = NULL;
-						continue;
-				}
-				if (( fi-> instance = c-> vmt-> open_load( c, fi)) != NULL) {
-					fi-> codecID = i;
-					break;
-				}
-				if ( fi-> stop) {
-					err = true;
-					free( loadmap);
-					goto EXIT_NOW;
-				}
-				c = NULL;
-			}
-		}
-		free( loadmap);
-		if ( !c) out("No appropriate codec found");
-	}
+	/* find codec */
+	if (( err = !img_find_codec( fi, load_mask)))
+		goto EXIT_NOW;
+	c = fi->codec;
 
 	if ( fi-> loadAll) {
 		if ( fi-> frameCount >= 0) {
@@ -424,6 +451,7 @@ apc_img_open_load( Handle self, char * fileName, Bool is_utf8, PImgIORequest ior
 		apc_img_profile_add( fi-> cached_commons, profile, fi-> cached_defaults);
 	}
 
+
 	if ( fi-> loadExtras && c-> info-> fileType)
 		(void) hv_store( fi-> fileProperties, "codecID", 7, newSViv( fi-> codecID), 0);
 
@@ -434,7 +462,6 @@ apc_img_open_load( Handle self, char * fileName, Bool is_utf8, PImgIORequest ior
 		if ( fi-> loadExtras ) 
 			(void) hv_store( fi-> fileProperties, "frames", 6, newSViv( fi-> frameCount), 0);
 	}
-	fi-> codec = c;
 
 	/* returning info for null load request  */
 	if ( self && fi->loadExtras && fi->frameMapSize == 0) {
@@ -690,7 +717,6 @@ apc_img_close_load( PImgLoadFileInstance fi )
 	free(fi);
 }
 
-
 PList
 apc_img_load( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq,  HV * profile, char * error)
 {
@@ -728,28 +754,15 @@ apc_img_frame_count( char * fileName, Bool is_utf8, PImgIORequest ioreq )
 	ImgLoadFileInstance fi;
 	int i, frameMap, ret = 0;
 	char error[256];
-	ImgIORequest sioreq;
 	int load_mask;
 
 	CHK;
 	memset( &fi, 0, sizeof( fi));
-	/* open file */
-	if ( ioreq == NULL) {
-		memcpy( &sioreq, &std_ioreq, sizeof( sioreq));
-		if (( sioreq. handle = prima_open_file( fileName, is_utf8, "rb")) == NULL)
-			goto EXIT_NOW;
-		fi. req = &sioreq;
-		fi. req_is_stdio = true;
-		load_mask = IMG_LOAD_FROM_FILE;
-	} else {
-		fi. req = ioreq;
-		fi. req_is_stdio = false;
-		load_mask = IMG_LOAD_FROM_STREAM;
-	}
+
+	if (( load_mask = img_open_file( &fi, fileName, is_utf8, ioreq)) < 0)
+		goto EXIT_NOW;
 
 	/* assigning request */
-	fi. fileName = fileName;
-	fi. is_utf8  = is_utf8;
 	fi. frameMapSize   = frameMap = 0;
 	fi. frameMap       = &frameMap;
 	fi. loadExtras     = true;
@@ -763,83 +776,12 @@ apc_img_frame_count( char * fileName, Bool is_utf8, PImgIORequest ioreq )
 	fi. errbuf     = error;
 	fi. stop       = false;
 
-	/* finding codec */
-	{
-		Bool * loadmap = ( Bool*) malloc( sizeof( Bool) * imgCodecs. count);
-
-		if ( !loadmap)
-			return 0;
-		memset( loadmap, 0, sizeof( Bool) * imgCodecs. count);
-		for ( i = 0; i < imgCodecs. count; i++) {
-			c = ( PImgCodec ) ( imgCodecs. items[ i]);
-			if ( !c-> instance)
-				c-> instance = c-> vmt-> init( &c->info, c-> initParam);
-			if ( !c-> instance) { /* failed to initialize, retry next time */
-				loadmap[ i] = true;
-				continue;
-			}
-		}
-
-		c = NULL;
-
-		/* finding by extension first */
-		if ( fileName) {
-			int fileNameLen = strlen( fileName);
-			for ( i = 0; i < imgCodecs. count; i++) {
-				int j = 0, found = false;
-				if ( loadmap[ i]) continue;
-				c = ( PImgCodec ) ( imgCodecs. items[ i]);
-				while ( c-> info-> fileExtensions[ j]) {
-					char * ext = c-> info-> fileExtensions[ j];
-					int extLen = strlen( ext);
-					if ( extLen < fileNameLen && stricmp( fileName + fileNameLen - extLen, ext) == 0) {
-						found = true;
-						break;
-					}
-					j++;
-				}
-				if ( found) {
-					loadmap[ i] = true;
-
-					if ( !( c-> info-> IOFlags & load_mask)) {
-						c = NULL;
-						continue;
-					}
-					if (( fi. instance = c-> vmt-> open_load( c, &fi)) != NULL)
-						break;
-
-					if ( fi. stop) {
-						free( loadmap);
-						goto EXIT_NOW;
-					}
-				}
-				c = NULL;
-			}
-		}
-
-		if ( c == NULL) {
-			for ( i = 0; i < imgCodecs. count; i++) {
-				if ( loadmap[ i]) continue;
-				c = ( PImgCodec ) ( imgCodecs. items[ i]);
-				if ( !( c-> info-> IOFlags & load_mask)) {
-						c = NULL;
-						continue;
-				}
-				if (( fi. instance = c-> vmt-> open_load( c, &fi)) != NULL)
-					break;
-				if ( fi. stop) {
-					free( loadmap);
-					goto EXIT_NOW;
-				}
-				c = NULL;
-			}
-		}
-		free( loadmap);
-		if ( !c) goto EXIT_NOW;
-	}
+	/* find codec */
+	if ( !img_find_codec( &fi, load_mask))
+		goto EXIT_NOW;
+	c = fi. codec;
 
 	/* can tell now? */
-
 	if ( fi. frameCount >= 0) {
 		c-> vmt-> close_load( c, &fi);
 		ret = fi. frameCount;
