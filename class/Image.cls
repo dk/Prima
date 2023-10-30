@@ -17,6 +17,7 @@ object Prima::Image( Prima::Drawable)
 	PRegionRec     regionData;
 	int            updateLock;
 	int            extraROP;
+	void          *loading_session;
 
 	property Bool   antialias;
 	property Rect   clipRect;

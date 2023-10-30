@@ -79,52 +79,102 @@ img_perlio_error( void * f)
 
 XS( Image_load_FROMPERL)
 {
+	dPROFILE;
 	dXSARGS;
 	Handle self;
 	SV * sv;
 	HV *profile;
 	char *fn;
-	PList ret;
+	PList ret = NULL;
 	Bool err = false, is_utf8;
 	FileStream f = NULL;
 	ImgIORequest ioreq, *pioreq;
 	char error[256];
+	Bool open_load = false, load_next_frame = false, close_load = false;
 
 	if (( items < 2) || (( items % 2) != 0))
 		croak("Invalid usage of Prima::Image::load");
 
 	self = gimme_the_mate( ST( 0));
-
 	sv   = ST(1);
+	profile = parse_hv( ax, sp, items, mark, 2, "Image::load");
+
+	if ( pexist(session) && pget_B(session)) {
+		if ( !self )
+			croak("Cannot start loading session without an object");
+		if ( var-> loading_session ) {
+			if ( SvOK(sv))
+				croak("Another loading session is in progress");
+			else
+				load_next_frame = true;
+		} else
+			open_load = true;
+	}
+
 	if ( SvROK(sv) && SvTYPE( SvRV( sv)) == SVt_PVGV)
 		f = IoIFP(sv_2io(ST(1)));
 
-	if ( f != NULL) {
-		pioreq        = &ioreq;
-		ioreq. handle = f;
-		ioreq. read   = img_perlio_read;
-		ioreq. write  = img_perlio_write;
-		ioreq. seek   = img_perlio_seek;
-		ioreq. tell   = img_perlio_tell;
-		ioreq. flush  = img_perlio_flush;
-		ioreq. error  = img_perlio_error;
-		fn            = NULL;
-		is_utf8       = false;
-	} else {
-		fn            = ( char *) SvPV_nolen( ST( 1));
-		is_utf8       = prima_is_utf8_sv(ST(1));
-		pioreq        = NULL;
-	}
-
-	profile = parse_hv( ax, sp, items, mark, 2, "Image::load");
 	if ( !pexist( className))
 		pset_c( className, self ? my-> className : ( char*) SvPV_nolen( ST( 0)));
 	pset_i( eventMask, self ? var-> eventMask2 : 0);
-	ret = apc_img_load( self, fn, is_utf8, pioreq, profile, error);
+
+	if ( load_next_frame ) {
+		Handle obj;
+		PImgLoadFileInstance fi = (PImgLoadFileInstance) var-> loading_session;
+		if ( !( ret = plist_create(1,1)))
+			croak("Not enough memory");
+		obj = apc_img_load_next_frame( NULL_HANDLE, fi, profile, error);
+		if ( obj == NULL_HANDLE ) {
+			if (!fi->eof_is_not_an_error) {
+				list_add( ret, NULL_HANDLE );
+				err = true;
+			}
+			close_load = true;
+		} else
+			list_add( ret, obj );
+	} else {
+		if ( f != NULL) {
+			pioreq        = &ioreq;
+			ioreq. handle = f;
+			ioreq. read   = img_perlio_read;
+			ioreq. write  = img_perlio_write;
+			ioreq. seek   = img_perlio_seek;
+			ioreq. tell   = img_perlio_tell;
+			ioreq. flush  = img_perlio_flush;
+			ioreq. error  = img_perlio_error;
+			fn            = NULL;
+			is_utf8       = false;
+		} else {
+			fn            = ( char *) SvPV_nolen( ST( 1));
+			is_utf8       = prima_is_utf8_sv(ST(1));
+			pioreq        = NULL;
+		}
+
+		if ( open_load ) {
+			PImgLoadFileInstance fi;
+			fi = apc_img_open_load( NULL_HANDLE, fn, is_utf8, pioreq, profile, error);
+			if ( fi ) {
+				if ( fi-> loadExtras ) {
+					HV * extras = newHV();
+					SV * sv = newRV_noinc(( SV *) extras);
+					apc_img_profile_add( extras, fi->fileProperties,  fi->fileProperties);
+					(void) hv_store(( HV* )SvRV(var->mate), "extras", 6, newSVsv(sv), 0);
+					sv_free( sv);
+				}
+				var-> loading_session = (void*) fi;
+			} else
+				err = true;
+		} else
+			ret = apc_img_load( self, fn, is_utf8, pioreq, profile, error);
+	}
+
 	sv_free(( SV *) profile);
 	SPAGAIN;
 	SP -= items;
-	if ( ret) {
+
+	if ( open_load && var-> loading_session ) {
+		XPUSHs( newSViv(1) );
+	} else if ( ret) {
 		int i;
 		for ( i = 0; i < ret-> count; i++) {
 			PAnyObject o = ( PAnyObject) ret-> items[i];
@@ -141,6 +191,11 @@ XS( Image_load_FROMPERL)
 	} else {
 		XPUSHs( &PL_sv_undef);
 		err = true;
+	}
+
+	if ( close_load ) {
+		apc_img_close_load(( PImgLoadFileInstance) var-> loading_session );
+		var-> loading_session = NULL;
 	}
 
 	/* This code breaks exception propagation chain

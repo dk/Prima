@@ -301,6 +301,7 @@ EXIT_NOW:
 	return !err;
 }
 
+
 PImgLoadFileInstance
 apc_img_open_load( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq,  HV * profile, char * error)
 {
@@ -334,7 +335,7 @@ apc_img_open_load( Handle self, char * fileName, Bool is_utf8, PImgIORequest ior
 	if (( load_mask = img_open_file( fi, fileName, is_utf8, ioreq)) < 0)
 		out(strerror(errno));
 
-	fi-> baseClassName = "Prima::Image";
+	fi-> baseClassName = duplicate_string("Prima::Image");
 	fi-> stop          = false;
 	fi-> last_frame    = -2;
 	fi-> codecID       = -1;
@@ -411,7 +412,7 @@ apc_img_open_load( Handle self, char * fileName, Bool is_utf8, PImgIORequest ior
 
 	if ( pexist( className)) {
 		PVMT vmt;
-		fi->baseClassName = pget_c( className);
+		fi->baseClassName = duplicate_string( pget_c( className) );
 		vmt = gimme_the_vmt( fi->baseClassName);
 		while ( vmt && vmt != (PVMT)CImage)
 			vmt = vmt-> base;
@@ -486,8 +487,26 @@ EXIT_NOW:;
 	#undef outd
 }
 
+static void
+apply_profile( PImgLoadFileInstance fi, HV *profile)
+{
+	dPROFILE;
+	PImgCodec c = fi->codec;
+	apc_img_profile_add( fi->profile, fi->cached_commons, fi->cached_commons);
+	c-> vmt-> load_check_in( c, fi->profile, profile);
+	apc_img_profile_add( fi->profile, profile, fi->cached_defaults);
+	if ( pexist( loadExtras))
+		fi->loadExtras  = pget_B( loadExtras);
+	if ( pexist( noImageData))
+		fi->noImageData = pget_B( noImageData);
+	if ( pexist( iconUnmask))
+		fi->iconUnmask = pget_B( iconUnmask);
+	if ( pexist( blending))
+		fi->blending = pget_B( blending);
+}
+
 Handle
-apc_img_load_next_frame( Handle target, PImgLoadFileInstance fi, char * error )
+apc_img_load_next_frame( Handle target, PImgLoadFileInstance fi, HV * profile, char * error )
 {
 #define out(x){ err = true;\
 	strlcpy( fi->errbuf, x, 256);\
@@ -503,7 +522,7 @@ apc_img_load_next_frame( Handle target, PImgLoadFileInstance fi, char * error )
 	char * className = fi->baseClassName;
 	HV *save_profile = NULL;
 	HV *firstObjectExtras = NULL;
-	Bool save[5];
+	Bool save[5], update_frame_count = fi->frameCount < 0;
 
 	fi->errbuf = error ? error : dummy_error_buf;
 	fi->errbuf[0] = 0;
@@ -548,21 +567,13 @@ apc_img_load_next_frame( Handle target, PImgLoadFileInstance fi, char * error )
 			else
 				outd("Not a hash passed to 'profiles[%d]' property", fi->current_frame);
 			fi->profile = newHV();
-			apc_img_profile_add( fi->profile, fi->cached_commons, fi->cached_commons);
-			c-> vmt-> load_check_in( c, fi->profile, hv);
-			apc_img_profile_add( fi->profile, hv, fi->cached_defaults);
-			{
-				HV * profile = hv;
-				if ( pexist( loadExtras))
-					fi->loadExtras  = pget_B( loadExtras);
-				if ( pexist( noImageData))
-					fi->noImageData = pget_B( noImageData);
-				if ( pexist( iconUnmask))
-					fi->iconUnmask = pget_B( iconUnmask);
-				if ( pexist( blending))
-					fi->blending = pget_B( blending);
-			}
+			apply_profile(fi, hv);
 		}
+	}
+	if ( profile ) {
+		if ( fi-> profile != save_profile )
+			fi->profile = newHV();
+		apply_profile(fi, profile);
 	}
 
 	fi->jointFrame = ( fi->frame == fi->last_frame + 1);
@@ -619,8 +630,12 @@ apc_img_load_next_frame( Handle target, PImgLoadFileInstance fi, char * error )
 		goto EXIT_NOW;
 	}
 
-	if ( fi-> loadExtras && fi-> wasTruncated)
-		(void) hv_store( fi-> frameProperties, "truncated", 9, newSVpv( fi->errbuf, 0 ), 0);
+	if ( fi-> loadExtras) {
+		if (fi-> wasTruncated)
+			(void) hv_store( fi-> frameProperties, "truncated", 9, newSVpv( fi->errbuf, 0 ), 0);
+		if (update_frame_count && fi->frameCount >= 0) /* codec finally updated the number of frames */
+			(void) hv_store( fi-> frameProperties, "frames", 6, newSViv( fi->frameCount), 0);
+	}
 
 	/* checking for grayscale */
 	{
@@ -703,6 +718,8 @@ void
 apc_img_close_load( PImgLoadFileInstance fi )
 {
 	PImgCodec c = fi->codec;
+	if ( fi-> baseClassName )
+		free( fi-> baseClassName );
 	if ( fi->instance )
 		c-> vmt-> close_load( c, fi);
 	if ( fi-> cached_defaults)
@@ -733,7 +750,7 @@ apc_img_load( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq,  
 
 	while ( 1 ) {
 		Handle img;
-		img = apc_img_load_next_frame( self, fi, error );
+		img = apc_img_load_next_frame( self, fi, NULL, error );
 		if ( img == NULL_HANDLE ) {
 			if ( !fi->eof_is_not_an_error )
 				list_add( ret, NULL_HANDLE );

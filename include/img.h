@@ -184,7 +184,7 @@ extern int   apc_img_save( Handle self, char * fileName, Bool is_utf8, PImgIOReq
 extern PImgLoadFileInstance
              apc_img_open_load( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq,  HV * profile, char * error);
 extern Handle
-             apc_img_load_next_frame( Handle target, PImgLoadFileInstance fi, char * error );
+             apc_img_load_next_frame( Handle target, PImgLoadFileInstance fi, HV * profile, char * error );
 extern void  apc_img_close_load( PImgLoadFileInstance fi );
 
 extern void  apc_img_codecs( PList result);
