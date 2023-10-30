@@ -1194,7 +1194,7 @@ Default: 0
 
 =head2 WebP codec
 
-=head3 Load input
+=head3 Load output
 
 =over
 

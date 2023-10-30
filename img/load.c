@@ -406,6 +406,7 @@ apc_img_open_load( Handle self, char * fileName, Bool is_utf8, PImgIORequest ior
 		if ( SvOK( sv) && SvROK( sv) && SvTYPE( SvRV( sv)) == SVt_PVAV) {
 			fi-> profiles = ( AV *) SvRV( sv);
 			fi-> profiles_len = av_len( fi->profiles);
+			SvREFCNT_inc((SV*) fi->profiles);
 		} else
 			out("Not an array passed to 'profiles' property");
 	}
@@ -691,6 +692,7 @@ apc_img_load_next_frame( Handle target, PImgLoadFileInstance fi, HV * profile, c
 	}
 
 	sv_free(( SV *) fi-> frameProperties);
+	fi-> frameProperties = NULL;
 	if ( firstObjectExtras)
 		(void) hv_store( firstObjectExtras, "frames", 6, newSViv( fi->frameCount), 0);
 	fi->current_frame++;
@@ -718,6 +720,8 @@ void
 apc_img_close_load( PImgLoadFileInstance fi )
 {
 	PImgCodec c = fi->codec;
+	if ( fi->profiles)
+		SvREFCNT_dec((SV*) fi->profiles);
 	if ( fi-> baseClassName )
 		free( fi-> baseClassName );
 	if ( fi->instance )
@@ -741,7 +745,7 @@ apc_img_load( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq,  
 	PImgLoadFileInstance fi;
 
 	if ( !( ret = plist_create( 8, 8))) {
-		if ( error ) strcpy( error, "Nor enough memory");
+		if ( error ) strcpy( error, "Not enough memory");
 		return NULL;
 	}
 
