@@ -4,16 +4,20 @@ use strict;
 use warnings;
 use Carp;
 use Prima;
+use Prima::Image::Loader;
 
 sub new
 {
 	my $class = shift;
 	my $self = bless {
-		images     => [],
+		loadAll    => 0,
 		model      => 'gif',
 		@_,
 		current    => -1,
 	}, $class;
+
+	$self->{loadAll} = 0 if $self->{images};
+	$self->{images} //= [] if $self->{loadAll};
 
 	$self-> reset;
 
@@ -53,29 +57,46 @@ sub load
 		$hash-> {$k} = $v;
 	}
 
-	my $i = Prima::Icon-> new(%events); # dummy object
+	if ( $opt{loadAll}) {
+		my $i = Prima::Icon-> new(%events); # dummy object
 
-	my @i = grep { defined } $i-> load(
-		$where,
-		loadExtras => 1,
-		loadAll    => 1,
-		iconUnmask => 1,
-		blending   => 1,
-		%args,
-	);
-	warn $@ if @i && !$i[-1];
+		my @i = grep { defined } $i-> load(
+			$where,
+			loadExtras => 1,
+			loadAll    => 1,
+			iconUnmask => 1,
+			blending   => 1,
+			%args,
+		);
+		warn $@ if @i && !$i[-1];
 
-	return unless @i;
+		return unless @i;
 
-	my $model = $class->detect_animation($i[0]->{extras}) or return;
-	$model = 'Prima::Image::Animate::' . $model;
+		my $model = $class->detect_animation($i[0]->{extras}) or return;
+		$model = 'Prima::Image::Animate::' . $model;
 
-	return $model-> new( images => \@i);
+		return $model-> new( images => \@i);
+	} else {
+		my ($l,$error) = Prima::Image::Loader->new(
+			$where,
+			icons      => 1,
+			iconUnmask => 1,
+			blending   => 1,
+			%args,
+		);
+		warn($error), return unless $l;
+
+		my $model = $class->detect_animation($l->{extras}) or return;
+		$model = 'Prima::Image::Animate::' . $model;
+
+		return $model-> new( loader => $l );
+	}
 }
 
 sub add
 {
 	my ( $self, $image) = @_;
+	croak "cannot add an image to a progressive animation loader" unless $self->{loadAll};
 	push @{$self-> {images}}, $image;
 }
 
@@ -112,6 +133,16 @@ sub union_rect
 	return \%ret;
 }
 
+sub total
+{
+	my ( $self, $index ) = @_;
+	return $self->{loadAll} ?
+		scalar @{$self->{images}} :
+		$self->{loader}->frames;
+}
+
+sub get_extras { shift->{image}->{extras} // {} }
+
 sub reset
 {
 	my $self = shift;
@@ -123,37 +154,59 @@ sub reset
 		loopCount changedRect 
 		)};
 
-	my $i = $self-> {images};
-	return unless @$i;
-
-	my $ix = $i-> [0];
+	my $ix;
+	if ( $self->{loadAll}) {
+		my $i = $self-> {images};
+		return unless @$i;
+		$ix = $i-> [0];
+	} else {
+		$self->{loader}->rewind;
+		$ix = $self->load_next_image;
+	}
 	return unless $ix;
 
-	my $e = $self-> get_extras(0);
-	return unless $e;
-
-	$self-> {image} = $self-> {images}-> [0];
-	$self-> {info}  = $e;
+	$self-> {image} = $ix;
+	my $e = $self-> {info}  = $self->get_extras;
 	$self-> {$_} = $e-> {$_} for qw(screenWidth screenHeight);
 	$self-> {changedRect} = {};
 	$self-> fixup_rect( $e, $ix);
+}
 
+sub load_next_image
+{
+	my $self = shift;
+	return unless $self->{loader};
+	my ( $i ) = $self->{loader}->next;
+	return $i;
 }
 
 sub advance_frame
 {
 	my $self = shift;
 
-	delete @{$self}{qw(image info)};
-	if ( ++$self-> {current} >= @{$self-> {images}}) {
+	my ( $oimg, $oinfo) = delete @{$self}{qw(image info)};
+	my $curr = $self->{current};
+	if ( ++$self-> {current} >= $self-> total) {
 		# go back to first frame, or stop
 		if ( defined $self-> {loopCount}) {
 		    return 0 if --$self-> {loopCount} <= 0;
 		}
 		$self-> {current} = 0;
+		$curr = -2;
 	}
-	$self-> {image} = $self-> {images}-> [$self-> {current}];
-	my $info = $self-> {info} = $self-> get_extras( $self-> {current} );
+
+	if ( $self->{loadAll}) {
+		$self->{image} = $self-> {images}-> [$self-> {current}];
+	} elsif ( $curr >= 0 ) {
+		$self->{image} = $self-> load_next_image;
+	} elsif ( $curr == -2 ) {
+		$self-> {loader}->rewind;
+		$self->{image} = $self-> load_next_image;
+	} else {
+		$self->{image} = $oimg;
+	}
+ 
+	my $info = $self->{info} = $self-> get_extras;
 	$self-> fixup_rect( $info, $self-> {image});
 
 	# load global extension data
@@ -174,7 +227,6 @@ sub next  { die }
 sub icon  { die }
 sub image { die }
 sub draw  { die }
-sub get_extras { die }
 
 sub draw_background
 {
@@ -193,7 +245,7 @@ sub draw_background
 sub is_stopped
 {
 	my $self = shift;
-	return $self-> {current} >= @{$self-> {images}};
+	return $self-> {current} >= $self-> total;
 }
 
 sub width   { $_[0]-> {canvas} ? $_[0]-> {canvas}-> width  : 0 }
@@ -202,15 +254,35 @@ sub size    { $_[0]-> {canvas} ? $_[0]-> {canvas}-> size   : (0,0) }
 sub bgColor { $_[0]-> {bgColor} }
 sub bgAlpha { $_[0]-> {bgAlpha} }
 sub current { $_[0]-> {current} }
-sub total   { scalar @{$_[0]-> {images}} }
 
 sub length
 {
+	my $self = shift;
 	my $length = 0;
-	$length += $_-> {delayTime} || 0 for
-		map { $_-> {extras} || {} }
-		@{$_[0]-> {images}};
-	return $length / 1000;
+	if ( $self->{loadAll}) {
+		$length += $_-> {delayTime} || 0 for
+			map { $_-> {extras} || {} }
+			@{$_[0]-> {images}};
+	} else {
+		return $self->{cached_length} if exists $self->{cached_length};
+
+		my ($l2) = Prima::Image::Loader->new(
+			$self->{loader}->source,
+			noImageData => 1,
+			loadExtras  => 1,
+		);
+		$self->{cached_length} = undef;
+		return undef unless $l2;
+
+		while ( !$l2->eof ) {
+			my ($i) = $l2->next;
+			last unless $i;
+			$length += $i->{extras}->{delayTime} // 0;
+		}
+		$self->{cached_length} = $length / 1000 if defined $length;
+	}
+
+	return defined($length) ? $length / 1000 : undef;
 }
 
 sub loopCount
@@ -229,16 +301,11 @@ use constant DISPOSE_RESTORE_PREVIOUS => 3; # Restore the previous (composited) 
 
 sub get_extras
 {
-	my ( $self, $ix) = @_;
-	$ix = $self-> {images}-> [$ix];
-	return unless $ix;
-
-	my $e = $ix-> {extras} || {};
-
-	$e-> {screenHeight}     ||= $ix-> height;
-	$e-> {screenWidth}      ||= $ix-> width;
+	my $self = shift;
+	my $e  = $self->SUPER::get_extras;
+	$e-> {screenHeight} ||= $self->{image}-> height;
+	$e-> {screenWidth}  ||= $self->{image}-> width;
 	$e-> {$_} ||= 0 for qw(disposalMethod useScreenPalette delayTime left top);
-
 	return $e;
 }
 
@@ -326,7 +393,7 @@ sub reset
 	my $self = shift;
 	$self-> SUPER::reset;
 
-	my $e = $self-> get_extras(0);
+	my $e = $self-> {info};
 	return unless $e;
 
 	$self-> {$_} = $e-> {$_} for qw(screenWidth screenHeight);
@@ -353,7 +420,7 @@ sub reset
 		my $cm =
 			$e-> {useScreenPalette} ?
 				$e-> {screenPalette} :
-				$self-> {images}-> [0]-> palette;
+				$self-> {image}-> palette;
 		my $i = $e-> {screenBackGroundColor} * 3;
 		$self-> {bgColor} = cl::from_rgb(map { $_ || 0 } @$cm[$i..$i+2]);
 		$self-> {bgAlpha} = 0xff;
@@ -410,18 +477,19 @@ sub new
 	return $class->SUPER::new(%opt);
 }
 
+sub load_next_image
+{
+	my $i = shift->SUPER::load_next_image;
+	$i->maskType(im::bpp8) if $i && $i->isa('Prima::Icon');
+}
+
 sub get_extras
 {
-	my ( $self, $ix) = @_;
-	$ix = $self-> {images}-> [$ix];
-	return unless $ix;
-
-	my $e = $ix-> {extras} || {};
-
-	$e-> {screenHeight}     ||= $ix-> height;
-	$e-> {screenWidth}      ||= $ix-> width;
+	my $self = shift;
+	my $e  = $self->SUPER::get_extras;
+	$e-> {screenHeight} ||= $self->{image}-> height;
+	$e-> {screenWidth}  ||= $self->{image}-> width;
 	$e-> {$_} ||= 0 for qw(disposalMethod blendMethod delayTime left top);
-
 	return $e;
 }
 
@@ -476,7 +544,7 @@ sub reset
 	my $self = shift;
 	$self-> SUPER::reset;
 
-	my $e = $self-> get_extras(0);
+	my $e = $self-> {info};
 	return unless $e;
 
 	$self-> {canvas}  = Prima::Icon-> new(
@@ -516,6 +584,28 @@ sub new
 	my $i = $self->{images} // [];
 	shift @$i if @$i > 1 && $i->[0]->{extras}->{default_frame};
 	return $self;
+}
+
+sub load_next_image
+{
+	my ( $self ) = shift;
+	my $i = $self->SUPER::load_next_image;
+	return unless $i;
+
+	if ( $self->{loader}->current == 1 && $i->{extras}->{default_frame} ) {
+		$self->{skip_default_frame} = 1;
+		return $self->SUPER::load_next_image;
+	}
+
+	return $i;
+}
+
+sub total
+{
+	my $self = shift;
+	my $total = $self->SUPER::total;
+	$total-- if $self->{skip_default_frame};
+	return $total;
 }
 
 1;

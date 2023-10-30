@@ -506,6 +506,20 @@ apply_profile( PImgLoadFileInstance fi, HV *profile)
 		fi->blending = pget_B( blending);
 }
 
+Bool
+apc_img_rewind_to_frame( PImgLoadFileInstance fi, int frame )
+{
+	if (
+		frame < 0 ||
+		frame > (fi-> incrementalLoad ? fi-> frameCount : fi->frameMapSize)
+	)
+		return false;
+
+	fi-> current_frame       = frame;
+	fi-> eof_is_not_an_error = false;
+	return true;
+}
+
 Handle
 apc_img_load_next_frame( Handle target, PImgLoadFileInstance fi, HV * profile, char * error )
 {

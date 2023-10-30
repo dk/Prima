@@ -186,6 +186,7 @@ extern PImgLoadFileInstance
 extern Handle
              apc_img_load_next_frame( Handle target, PImgLoadFileInstance fi, HV * profile, char * error );
 extern void  apc_img_close_load( PImgLoadFileInstance fi );
+extern Bool  apc_img_rewind_to_frame( PImgLoadFileInstance fi, int frame );
 
 extern void  apc_img_codecs( PList result);
 extern HV *  apc_img_info2hash( PImgCodec c);

@@ -107,6 +107,10 @@ XS( Image_load_FROMPERL)
 				croak("Another loading session is in progress");
 			else
 				load_next_frame = true;
+			if ( pexist(rewind)) {
+				apc_img_rewind_to_frame(( PImgLoadFileInstance) var-> loading_session, pget_i(rewind));
+				pdelete(rewind);
+			}
 		} else
 			open_load = true;
 	}
