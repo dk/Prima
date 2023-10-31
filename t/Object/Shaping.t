@@ -18,6 +18,10 @@ my $high_unicode_char;
 	}) : $_
 } @ARGV;
 
+my $bad_fonts = sub { qr/$_[0]/ }->( join('|', (
+	'Iosevka.*Curly Slab',
+)));
+
 sub xtr($)
 {
 	my $xtr = shift;
@@ -202,6 +206,7 @@ sub find_high_unicode_font
 	my @f = @{$::application->fonts};
 	for my $f ( @f ) {
 		next unless $f->{vector};
+		next if $f->{name} =~ $bad_fonts;
 		$c = find_high_unicode_char($f);
 		return $c if defined $c;
 	}
@@ -224,6 +229,7 @@ sub find_vector_font
 	for my $f ( @f ) {
 		next unless $f->{vector};
 		next unless $f->{name} =~ /^[A-Z]/;
+		next if $f->{name} =~ $bad_fonts;
 		next unless find_char($f, $find_char);
 		$found = $f;
 		$got_rtl = 1;
