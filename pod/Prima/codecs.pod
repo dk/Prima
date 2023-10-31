@@ -507,15 +507,11 @@ F<img/codec_X11.c>, which defines extra hotspot coordinates, X and Y.
 A saving request takes into account the image types that the codec previously
 declared to support, and that are defined in the C<< PImgCodecInfo-> saveTypes >> array. 
 Prima converts an image to be saved into one of these formats,
-before the actual C<save()> call takes place. Another boolean flag,
-C<< PImgSaveFileInstance-> append >> is used to decide whether it is appending
-(true) to rewriting a file (false) is expected to happen, however this
-functionality is under design. Due to the increased complexity of the code, that
-should respond to the C<append> flag, this behavior is not required.
+before the actual C<save()> call takes place. 
 
 A codec may also set two of C<PImgCodecInfo> flags, C<canSave> and
 C<canSaveMultiple>. Save requests will never be called if C<canSave> is false,
-and correspondingly, the append requests along with multiframe save requests
+and correspondingly, the multiframe save requests
 would be never invoked for a codec with C<canSaveMultiple> set to false.  The
 scenario for a multiframe save request is the same as for a multiframe loading
 request. All the issues concerning palette, data converting, and saving extra

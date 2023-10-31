@@ -912,25 +912,14 @@ apc_img_save( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq, H
 	CHK;
 	memset( &fi, 0, sizeof( fi));
 
-	if ( pexist( append) && pget_B( append))
-		fi. append = true;
-
 	if ( pexist( autoConvert))
 		autoConvert = pget_B( autoConvert);
 
 	/* open file */
-	if ( fi. append && ioreq == NULL) {
-		FILE * f = ( FILE *) prima_open_file( fileName, is_utf8, "rb");
-		if ( !f)
-			fi. append = false;
-		else
-			fclose( f);
-	}
-
 	fi. errbuf = error ? error : dummy_error_buf;
 	if ( ioreq == NULL) {
 		memcpy( &sioreq, &std_ioreq, sizeof( sioreq));
-		if (( sioreq. handle = prima_open_file( fileName, is_utf8, fi. append ? "rb+" : "wb+" )) == NULL)
+		if (( sioreq. handle = prima_open_file( fileName, is_utf8, "wb+" )) == NULL)
 			out( strerror( errno));
 		fi. req = &sioreq;
 		fi. req_is_stdio = true;
@@ -1044,9 +1033,6 @@ apc_img_save( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq, H
 			if ( fi. frameMapSize > 1 &&
 					!( c-> info-> IOFlags & IMG_SAVE_MULTIFRAME))
 				out("Codec cannot save mutiframe images");
-			if ( fi. append &&
-					!( c-> info-> IOFlags & IMG_SAVE_APPEND))
-				out("Codec cannot append frames");
 
 			if (( fi. instance = c-> vmt-> open_save( c, &fi)) == NULL)
 				out("Codec cannot handle this file");
@@ -1094,11 +1080,6 @@ apc_img_save( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq, H
 
 					if ( fi. frameMapSize > 1
 						&& !( c-> info-> IOFlags & IMG_SAVE_MULTIFRAME)) {
-						c = NULL;
-						continue;
-					}
-					if ( fi. append
-						&& !( c-> info-> IOFlags & IMG_SAVE_APPEND)) {
 						c = NULL;
 						continue;
 					}
@@ -1354,7 +1335,6 @@ apc_img_info2hash( PImgCodec codec)
 	pset_i( canSave        , c-> IOFlags & IMG_SAVE_TO_FILE);
 	pset_i( canSaveStream  , c-> IOFlags & IMG_SAVE_TO_STREAM);
 	pset_i( canSaveMultiple, c-> IOFlags & IMG_SAVE_MULTIFRAME);
-	pset_i( canAppend,       c-> IOFlags & IMG_SAVE_APPEND);
 
 	fill_ilist( "types",  c-> saveTypes, profile);
 
@@ -1388,8 +1368,6 @@ apc_img_info2hash( PImgCodec codec)
 
 	if ( c-> IOFlags & ( IMG_SAVE_TO_FILE|IMG_SAVE_TO_STREAM)) {
 		hv = codec-> vmt-> save_defaults( codec);
-		if ( c-> IOFlags & IMG_SAVE_MULTIFRAME)
-			(void) hv_store( hv, "append",       6, newSViv(0), 0);
 		(void) hv_store( hv, "autoConvert", 11, newSViv(1), 0);
 		(void) hv_store( hv, "codecID",     7,  newSVsv( NULL_SV), 0);
 	} else

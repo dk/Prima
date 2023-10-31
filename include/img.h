@@ -99,7 +99,6 @@ typedef struct _ImgSaveFileInstance {
 	Bool            is_utf8;
 	PImgIORequest   req;
 	Bool            req_is_stdio;
-	Bool            append;         /* true if append, false if rewrite */
 
 	/* instance data, filled by open_save */
 	void          * instance;       /* result of open, user data for save session */
@@ -122,7 +121,6 @@ typedef struct _ImgSaveFileInstance {
 #define IMG_SAVE_TO_FILE             0x0000010
 #define IMG_SAVE_TO_STREAM           0x0000020
 #define IMG_SAVE_MULTIFRAME          0x0000040
-#define IMG_SAVE_APPEND              0x0000080
 
 /* codec info */
 typedef struct _ImgCodecInfo {

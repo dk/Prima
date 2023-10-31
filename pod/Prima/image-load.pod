@@ -369,12 +369,6 @@ When the conversion takes place, the Image property C<conversion> is used
 for the selection of the error distribution algorithm if down-sampling
 is required.
 
-=head2 Appending frames to an existing file
-
-This functionality is under design, but the common outlines are already set.
-The parameter C<append> ( 0 by default ) triggers this behavior - if it is set,
-then an append attempt is made.
-
 =head1 Managing the codecs
 
 Prima provides the C<< Prima::Image-> codecs >> function that returns an
@@ -460,10 +454,6 @@ an index more than zero, 0 otherwise
 =item canSaveMultiple
 
 Is set if the codec can save more than one frame
-
-=item canAppend
-
-Is set if the codec can append frames to an existing file
 
 =item types
 
