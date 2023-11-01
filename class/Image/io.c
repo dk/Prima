@@ -105,10 +105,13 @@ XS( Image_load_FROMPERL)
 		if ( var-> loading_session ) {
 			if ( SvOK(sv))
 				croak("Another loading session is in progress");
-			else
-				load_next_frame = true;
+
+			load_next_frame = true;
 			if ( pexist(rewind)) {
-				apc_img_rewind_to_frame(( PImgLoadFileInstance) var-> loading_session, pget_i(rewind));
+				if ( !apc_img_rewind_to_frame(( PImgLoadFileInstance) var-> loading_session, pget_i(rewind))) {
+					strcpy(error, "Frame index out of range");
+					err = true;
+				}
 				pdelete(rewind);
 			}
 		} else
@@ -118,24 +121,26 @@ XS( Image_load_FROMPERL)
 	if ( SvROK(sv) && SvTYPE( SvRV( sv)) == SVt_PVGV)
 		f = IoIFP(sv_2io(ST(1)));
 
-	if ( !pexist( className))
+	if ( !pexist( className) && !load_next_frame)
 		pset_c( className, self ? my-> className : ( char*) SvPV_nolen( ST( 0)));
 	pset_i( eventMask, self ? var-> eventMask2 : 0);
 
-	if ( load_next_frame ) {
+	if ( err ) {
+		/* do nothing */
+	} else if ( load_next_frame ) {
 		Handle obj;
 		PImgLoadFileInstance fi = (PImgLoadFileInstance) var-> loading_session;
 		if ( !( ret = plist_create(1,1)))
 			croak("Not enough memory");
 		obj = apc_img_load_next_frame( NULL_HANDLE, fi, profile, error);
 		if ( obj == NULL_HANDLE ) {
-			if (!fi->eof_is_not_an_error) {
-				list_add( ret, NULL_HANDLE );
-				err = true;
-			}
+			list_add( ret, NULL_HANDLE );
+			err = true;
 			close_load = true;
-		} else
+		} else {
 			list_add( ret, obj );
+			fi-> frame++;
+		}
 	} else {
 		if ( f != NULL) {
 			pioreq        = &ioreq;
@@ -156,7 +161,7 @@ XS( Image_load_FROMPERL)
 
 		if ( open_load ) {
 			PImgLoadFileInstance fi;
-			fi = apc_img_open_load( NULL_HANDLE, fn, is_utf8, pioreq, profile, error);
+			fi = apc_img_open_load( fn, is_utf8, pioreq, profile, error);
 			if ( fi ) {
 				if ( fi-> loadExtras ) {
 					HV * extras = newHV();

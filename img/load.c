@@ -317,16 +317,25 @@ EXIT_NOW:
 	return !err;
 }
 
+Bool
+check_class_name( char * className )
+{
+	PVMT vmt;
+	vmt = gimme_the_vmt(className);
+	while ( vmt && vmt != (PVMT)CImage)
+		vmt = vmt-> base;
+	return vmt != NULL;
+}
 
 PImgLoadFileInstance
-apc_img_open_load( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq,  HV * profile, char * error)
+apc_img_open_load( char * fileName, Bool is_utf8, PImgIORequest ioreq,  HV * profile, char * error)
 {
 	dPROFILE;
-	int i;
 	Bool err = false;
 	char dummy_error_buf[256];
 	PImgCodec c;
 	PImgLoadFileInstance fi;
+	long pos = 0;
 
 	CHK;
 	if ( !( fi = malloc(sizeof(ImgLoadFileInstance)))) {
@@ -342,45 +351,14 @@ apc_img_open_load( Handle self, char * fileName, Bool is_utf8, PImgIORequest ior
 	if (!img_open_file( &fi->io, fileName, is_utf8, "rb", ioreq))
 		out(strerror(errno));
 
-	fi-> req           = &fi-> io.sioreq;
-	fi-> baseClassName = duplicate_string("Prima::Image");
-	fi-> stop          = false;
-	fi-> last_frame    = -2;
-	fi-> codecID       = -1;
+	fi-> req            = &fi-> io.sioreq;
+	fi-> stop           = false;
+	fi-> codecID        = -1;
+	fi-> fileProperties = newHV();
+	fi-> frameCount     = -1;
 
-	/* assigning user file profile */
-	if ( pexist( index)) {
-		fi-> frameMapSize = 1;
-		if ( !( fi-> frameMap  = (int*) malloc( sizeof( int))))
-			out("Not enough memory");
-		if ((*(fi-> frameMap) = pget_i( index)) < 0)
-			out("Invalid index");
-	} else if ( pexist( map)) {
-		SV * sv = pget_sv( map);
-		if ( SvOK( sv)) {
-			if ( SvROK( sv) && SvTYPE( SvRV( sv)) == SVt_PVAV) {
-				AV * av = ( AV*) SvRV( sv);
-				int len = av_len( av) + 1;
-				if ( !( fi-> frameMap = ( int *) malloc( sizeof( int) * len)))
-					out("Not enough memory");
-				for ( i = 0; i < len; i++) {
-					SV ** holder = av_fetch( av, i, 0);
-					if ( !holder) out("Array panic on 'map' property");
-					if (( fi-> frameMap[ i] = SvIV( *holder)) < 0)
-						out("Invalid index on 'map' property");
-				}
-				fi-> frameMapSize = len;
-			} else
-				out("Not an array passed to 'map' property");
-		}
-	} else if ( pexist( loadAll) && pget_B( loadAll)) {
-		fi-> loadAll = true;
-	} else {
-		fi-> frameMapSize = 1;
-		if ( ! (fi-> frameMap = ( int*) malloc( sizeof( int))))
-			out("Not enough memory");
-		*(fi-> frameMap) = 0;
-	}
+	if ( ioreq != NULL)
+		pos = req_tell( ioreq );
 
 	if ( pexist( loadExtras) && pget_B( loadExtras))
 		fi-> loadExtras = true;
@@ -407,79 +385,41 @@ apc_img_open_load( Handle self, char * fileName, Bool is_utf8, PImgIORequest ior
 		fi-> eventDelay = 1000.0 * pget_f( eventDelay);
 	if ( fi-> eventDelay <= 0)
 		fi-> eventDelay = 100; /* 100 ms. reasonable? */
-	EVENT_SCANLINES_RESET(fi);
-
-	if ( pexist( profiles)) {
-		SV * sv = pget_sv( profiles);
-		if ( SvOK( sv) && SvROK( sv) && SvTYPE( SvRV( sv)) == SVt_PVAV) {
-			fi-> profiles = ( AV *) SvRV( sv);
-			fi-> profiles_len = av_len( fi->profiles);
-			SvREFCNT_inc((SV*) fi->profiles);
-		} else
-			out("Not an array passed to 'profiles' property");
-	}
 
 	if ( pexist( className)) {
-		PVMT vmt;
 		fi->baseClassName = duplicate_string( pget_c( className) );
-		vmt = gimme_the_vmt( fi->baseClassName);
-		while ( vmt && vmt != (PVMT)CImage)
-			vmt = vmt-> base;
-		if ( !vmt)
+		if ( !check_class_name( fi->baseClassName ))
 			outd("class '%s' is not a Prima::Image descendant", fi->baseClassName);
-	}
-
-	/* all other properties to be parsed by codec */
-	fi-> extras         = profile;
-	fi-> fileProperties = newHV();
-	fi-> frameCount     = -1;
+	} else
+		fi-> baseClassName = duplicate_string("Prima::Image");
 
 	/* find codec */
 	if (( err = !img_find_codec( fi)))
 		goto EXIT_NOW;
 	c = fi->codec;
 
-	if ( fi-> loadAll) {
-		if ( fi-> frameCount >= 0) {
-			fi-> frameMapSize = fi-> frameCount;
-			if ( !( fi-> frameMap  = (int*) malloc( fi-> frameCount * sizeof(int))))
-				out("Not enough memory");
-			for ( i = 0; i < fi-> frameCount; i++)
-				fi-> frameMap[i] = i;
-		} else {
-			fi-> frameMapSize = INT_MAX;
-			fi-> incrementalLoad = true;
-		}
-	}
-
-
 	/* use common profile */
 	fi-> cached_defaults = c-> vmt-> load_defaults( c);
-	fi-> cached_commons = newHV();
+	fi-> profile = fi-> cached_commons = newHV();
 	if ( profile) {
 		c-> vmt-> load_check_in( c, fi-> cached_commons, profile);
 		apc_img_profile_add( fi-> cached_commons, profile, fi-> cached_defaults);
 	}
 
-	if ( fi-> loadExtras && c-> info-> fileType)
-		(void) hv_store( fi-> fileProperties, "codecID", 7, newSViv( fi-> codecID), 0);
-
 	if ( fi-> frameCount < 0 && fi-> wantFrames) {
 		if ( ioreq != NULL)
-			req_seek( ioreq, 0, SEEK_SET);
+			req_seek( ioreq, pos, SEEK_SET);
 		fi-> frameCount = apc_img_frame_count( fileName, is_utf8, ioreq);
-		if ( fi-> loadExtras ) 
-			(void) hv_store( fi-> fileProperties, "frames", 6, newSViv( fi-> frameCount), 0);
+		if ( ioreq != NULL)
+			req_seek( ioreq, pos, SEEK_SET);
 	}
 
-	/* returning info for null load request  */
-	if ( self && fi->loadExtras && fi->frameMapSize == 0) {
-		HV * extras = newHV();
-		SV * sv = newRV_noinc(( SV *) extras);
-		apc_img_profile_add( extras, fi->fileProperties,  fi->fileProperties);
-		(void) hv_store(( HV* )SvRV((( PAnyObject) self)-> mate), "extras", 6, newSVsv( sv), 0);
-		sv_free( sv);
+	if ( fi-> loadExtras ) {
+		(void) hv_store( fi-> fileProperties, "codecID", 7, newSViv( fi-> codecID), 0);
+		(void) hv_store( fi-> fileProperties, "frames",  6, newSViv( fi-> frameCount), 0);
 	}
+
+	EVENT_SCANLINES_RESET(fi);
 
 EXIT_NOW:;
 	if ( err ) {
@@ -492,35 +432,12 @@ EXIT_NOW:;
 	return fi;
 }
 
-static void
-apply_profile( PImgLoadFileInstance fi, HV *profile)
-{
-	dPROFILE;
-	PImgCodec c = fi->codec;
-	apc_img_profile_add( fi->profile, fi->cached_commons, fi->cached_commons);
-	c-> vmt-> load_check_in( c, fi->profile, profile);
-	apc_img_profile_add( fi->profile, profile, fi->cached_defaults);
-	if ( pexist( loadExtras))
-		fi->loadExtras  = pget_B( loadExtras);
-	if ( pexist( noImageData))
-		fi->noImageData = pget_B( noImageData);
-	if ( pexist( iconUnmask))
-		fi->iconUnmask = pget_B( iconUnmask);
-	if ( pexist( blending))
-		fi->blending = pget_B( blending);
-}
-
 Bool
 apc_img_rewind_to_frame( PImgLoadFileInstance fi, int frame )
 {
-	if (
-		frame < 0 ||
-		frame > (fi-> incrementalLoad ? fi-> frameCount : fi->frameMapSize)
-	)
+	if (frame < 0 || frame >= fi->frameCount)
 		return false;
-
-	fi-> current_frame       = frame;
-	fi-> eof_is_not_an_error = false;
+	fi-> frame = frame;
 	return true;
 }
 
@@ -533,33 +450,11 @@ apc_img_load_next_frame( Handle target, PImgLoadFileInstance fi, HV * profile, c
 	PImgCodec c = fi->codec;
 	char * className = fi->baseClassName;
 	HV *save_profile = NULL;
-	HV *firstObjectExtras = NULL;
 	Bool save[5], update_frame_count = fi->frameCount < 0;
 
 	fi->errbuf = error ? error : dummy_error_buf;
 	fi->errbuf[0] = 0;
 	fi->object = NULL_HANDLE;
-
-	if ( fi-> current_frame >= fi-> frameMapSize ) {
-		fi-> eof_is_not_an_error = true;
-		goto EXIT_NOW;
-	}
-
-	/* loading */
-	fi->frame = fi->incrementalLoad ? fi->current_frame : fi->frameMap[fi->current_frame];
-	if (
-		( fi-> frameCount >= 0 && fi-> frame >= fi-> frameCount) ||
-		( !(c-> info-> IOFlags & IMG_LOAD_MULTIFRAME) && fi-> frame > 0)
-	) {
-		if ( !(c-> info-> IOFlags & IMG_LOAD_MULTIFRAME) && fi-> frameCount < 0)
-			fi-> frameCount = fi->current_frame;
-		if ( fi->incrementalLoad) {
-			/* that means, codec bothered to set frameCount at last - report no error then */
-			fi-> eof_is_not_an_error = true;
-			goto EXIT_NOW;
-		}
-		out("Frame index out of range");
-	}
 
 	/* query profile */
 	save[0] = fi->loadExtras;
@@ -569,38 +464,22 @@ apc_img_load_next_frame( Handle target, PImgLoadFileInstance fi, HV * profile, c
 	save[4] = fi->noIncomplete;
 	save_profile = fi->profile;
 
-	if ( fi->profiles && ( fi->current_frame <= fi->profiles_len)) {
-		HV * hv;
-		SV ** holder = av_fetch( fi->profiles, fi->current_frame, 0);
-		if ( !holder) outd("Array panic on 'profiles[%d]' property", fi->current_frame);
-		if ( SvOK( *holder)) {
-			if ( SvROK( *holder) && SvTYPE( SvRV( *holder)) == SVt_PVHV)
-				hv = ( HV*) SvRV( *holder);
-			else
-				outd("Not a hash passed to 'profiles[%d]' property", fi->current_frame);
-			fi->profile = newHV();
-			apply_profile(fi, hv);
-		}
-	}
 	if ( profile ) {
-		if ( fi-> profile != save_profile )
-			fi->profile = newHV();
-		apply_profile(fi, profile);
-	}
-
-	fi->jointFrame = ( fi->frame == fi->last_frame + 1);
-	fi->last_frame = fi-> frame;
-
-	/* query className */
-	{
-		HV * profile = fi->profile;
+		fi->profile = newHV();
+		apc_img_profile_add( fi->profile, fi->cached_commons, fi->cached_commons);
+		c-> vmt-> load_check_in( c, fi->profile, profile);
+		apc_img_profile_add( fi->profile, profile, fi->cached_defaults);
+		if ( pexist( loadExtras))
+			fi->loadExtras  = pget_B( loadExtras);
+		if ( pexist( noImageData))
+			fi->noImageData = pget_B( noImageData);
+		if ( pexist( iconUnmask))
+			fi->iconUnmask = pget_B( iconUnmask);
+		if ( pexist( blending))
+			fi->blending = pget_B( blending);
 		if ( pexist( className)) {
-			PVMT vmt;
-			className = pget_c( className);
-			vmt = gimme_the_vmt( className);
-			while ( vmt && vmt != (PVMT)CImage)
-				vmt = vmt-> base;
-			if ( !vmt)
+			className = pget_c(className);
+			if ( !check_class_name( className))
 				outd("class '%s' is not a Prima::Image descendant", className);
 		}
 	}
@@ -619,8 +498,6 @@ apc_img_load_next_frame( Handle target, PImgLoadFileInstance fi, HV * profile, c
 		PIcon( fi->object)-> autoMasking = amNone;
 
 	fi->frameProperties = newHV();
-	if ( fi->loadExtras && c-> info-> fileType)
-		(void) hv_store( fi-> frameProperties, "codecID", 7, newSViv( fi->codecID), 0);
 
 	/* loading image */
 	if ( !c-> vmt-> load( c, fi)) {
@@ -629,15 +506,6 @@ apc_img_load_next_frame( Handle target, PImgLoadFileInstance fi, HV * profile, c
 			Object_destroy( fi->object);
 		fi-> frameProperties = NULL;
 		fi-> object = NULL_HANDLE;
-		if ( fi-> incrementalLoad) {
-			if ( fi-> frameCount < 0)
-				fi-> frameCount = fi-> frame;
-			else if ( fi->frame < fi->frameCount )
-				err = true;
-			fi-> eof_is_not_an_error = true;
-			/* or it is EOF, report no error then */
-			goto EXIT_NOW;
-		}
 		err = true;
 		goto EXIT_NOW;
 	}
@@ -646,7 +514,7 @@ apc_img_load_next_frame( Handle target, PImgLoadFileInstance fi, HV * profile, c
 		if (fi-> wasTruncated)
 			(void) hv_store( fi-> frameProperties, "truncated", 9, newSVpv( fi->errbuf, 0 ), 0);
 		if (update_frame_count && fi->frameCount >= 0) /* codec finally updated the number of frames */
-			(void) hv_store( fi-> frameProperties, "frames", 6, newSViv( fi->frameCount), 0);
+			(void) hv_store( fi-> fileProperties, "frames", 6, newSViv( fi->frameCount), 0);
 	}
 
 	/* checking for grayscale */
@@ -684,7 +552,6 @@ apc_img_load_next_frame( Handle target, PImgLoadFileInstance fi, HV * profile, c
 
 		apc_img_profile_add( extras, fi-> fileProperties,  fi-> fileProperties);
 		apc_img_profile_add( extras, fi-> frameProperties, fi-> frameProperties);
-		if ( fi->current_frame == 0) firstObjectExtras = extras;
 		(void) hv_store(( HV* )SvRV((( PAnyObject) fi-> object)-> mate), "extras", 6, newSVsv( sv), 0);
 		sv_free( sv);
 	} else if ( fi-> noImageData) { /* no extras, report dimensions only */
@@ -704,9 +571,6 @@ apc_img_load_next_frame( Handle target, PImgLoadFileInstance fi, HV * profile, c
 
 	sv_free(( SV *) fi-> frameProperties);
 	fi-> frameProperties = NULL;
-	if ( firstObjectExtras)
-		(void) hv_store( firstObjectExtras, "frames", 6, newSViv( fi->frameCount), 0);
-	fi->current_frame++;
 
 EXIT_NOW:
 	/* restore from custom profile, if anything */
@@ -728,8 +592,6 @@ void
 apc_img_close_load( PImgLoadFileInstance fi )
 {
 	PImgCodec c = fi->codec;
-	if ( fi->profiles)
-		SvREFCNT_dec((SV*) fi->profiles);
 	if ( fi-> baseClassName )
 		free( fi-> baseClassName );
 	if ( fi->instance )
@@ -742,34 +604,155 @@ apc_img_close_load( PImgLoadFileInstance fi )
 		sv_free((SV *) fi-> fileProperties);
 	if ( fi->io.req_is_stdio && fi->req != NULL && fi->req-> handle != NULL)
 		fclose(( FILE*) fi->req-> handle);
-	free( fi->frameMap);
 	free(fi);
 }
 
 PList
 apc_img_load( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq,  HV * profile, char * error)
 {
+	dPROFILE;
 	PList ret;
 	PImgLoadFileInstance fi;
+	int i, frameMapSize = 0, profiles_len = 0;
+	AV *profiles = NULL;
+	int *frameMap = NULL;
+	Bool incrementalLoad = false, err = false, fix_frames;
 
 	if ( !( ret = plist_create( 8, 8))) {
 		if ( error ) strcpy( error, "Not enough memory");
 		return NULL;
 	}
 
-	if ( !( fi = apc_img_open_load( self, fileName, is_utf8, ioreq, profile, error )))
+	if ( !( fi = apc_img_open_load( fileName, is_utf8, ioreq, profile, error )))
 		return NULL;
+	fix_frames = fi->frameCount < 0;
 
-	while ( 1 ) {
-		Handle img;
-		img = apc_img_load_next_frame( self, fi, NULL, error );
-		if ( img == NULL_HANDLE ) {
-			if ( !fi->eof_is_not_an_error )
-				list_add( ret, NULL_HANDLE );
-			break;
+	/* assigning user file profile */
+	if ( pexist( index)) {
+		frameMapSize = 1;
+		if ( !( frameMap  = (int*) malloc( sizeof( int))))
+			out("Not enough memory");
+		if ((*(frameMap) = pget_i( index)) < 0)
+			out("Invalid index");
+	} else if ( pexist( map)) {
+		SV * sv = pget_sv( map);
+		if ( SvOK( sv)) {
+			if ( SvROK( sv) && SvTYPE( SvRV( sv)) == SVt_PVAV) {
+				AV * av = ( AV*) SvRV( sv);
+				int len = av_len( av) + 1;
+				if ( !( frameMap = ( int *) malloc( sizeof( int) * len)))
+					out("Not enough memory");
+				for ( i = 0; i < len; i++) {
+					SV ** holder = av_fetch( av, i, 0);
+					if ( !holder) out("Array panic on 'map' property");
+					if (( frameMap[i] = SvIV( *holder)) < 0)
+						out("Invalid index on 'map' property");
+				}
+				frameMapSize = len;
+			} else
+				out("Not an array passed to 'map' property");
+		}
+	} else if ( pexist( loadAll) && pget_B( loadAll)) {
+		if ( fi-> frameCount >= 0) {
+			frameMapSize = fi-> frameCount;
+			if ( !( frameMap  = (int*) malloc( fi-> frameCount * sizeof(int))))
+				out("Not enough memory");
+			for ( i = 0; i < fi-> frameCount; i++)
+				frameMap[i] = i;
+		} else {
+			frameMapSize = INT_MAX;
+			incrementalLoad = true;
+		}
+	} else {
+		frameMapSize = 1;
+		if ( ! (frameMap = ( int*) malloc( sizeof( int))))
+			out("Not enough memory");
+		*frameMap = 0;
+	}
+
+	if ( pexist( profiles)) {
+		SV * sv = pget_sv( profiles);
+		if ( SvOK( sv) && SvROK( sv) && SvTYPE( SvRV( sv)) == SVt_PVAV) {
+			profiles = ( AV *) SvRV( sv);
+			profiles_len = av_len( profiles);
 		} else
+			out("Not an array passed to 'profiles' property");
+	}
+
+	/* returning info for null load request  */
+	if ( self && fi->loadExtras && frameMapSize == 0) {
+		HV * extras = newHV();
+		SV * sv = newRV_noinc(( SV *) extras);
+		apc_img_profile_add( extras, fi->fileProperties,  fi->fileProperties);
+		(void) hv_store(( HV* )SvRV((( PAnyObject) self)-> mate), "extras", 6, newSVsv( sv), 0);
+		sv_free( sv);
+	}
+
+	for ( i = 0; i < frameMapSize; i++) {
+		Handle img;
+		HV * frame_profile = NULL;
+		Bool eof_is_not_an_error = false;
+
+		if ( incrementalLoad ) {
+			if ( fi->frameCount < 0 )
+				fi->frame++;
+			else if ( i >= fi->frameCount)
+				break;
+		} else {
+			if ( fi->frameCount < 0 )
+				fi-> frame = frameMap[i];
+			else if ( frameMap[i] >= fi->frameCount )
+				out("No such frame");
+		}
+
+		if ( profiles && i <= profiles_len) {
+			SV ** holder = av_fetch( profiles, i, 0);
+			if ( !holder) outd("Array panic on 'profiles[%d]' property", i);
+			if ( SvOK( *holder)) {
+				if ( SvROK( *holder) && SvTYPE( SvRV( *holder)) == SVt_PVHV)
+					frame_profile = ( HV*) SvRV( *holder);
+				else
+					outd("Not a hash passed to 'profiles[%d]' property", i);
+			}
+		}
+
+		img = apc_img_load_next_frame( self, fi, frame_profile, error );
+
+		if ( img == NULL_HANDLE && incrementalLoad ) {
+			/* if it is EOF? report no error then */
+			if ( fi-> frameCount < 0) {
+				fi-> frameCount = fi-> frame;
+				eof_is_not_an_error = true;
+			} else if ( fi->frame >= fi->frameCount )
+				eof_is_not_an_error = true;
+		}
+		if ( !eof_is_not_an_error )
 			list_add( ret, img );
-		self = NULL_HANDLE; /* only load 1st frame to self */
+		if ( img == NULL_HANDLE )
+			break;
+
+		if ( i == 0 )
+			self = NULL_HANDLE; /* only load 1st frame to self */
+	}
+
+	/* fix frames, if needed */
+	if ( fi->loadExtras && fix_frames && fi->frameCount >= 0 ) {
+		for ( i = 0; i < ret->count; i++) {
+			HV * profile = ( HV* )SvRV((( PAnyObject) ret->items[i])-> mate);
+			if ( pexist(extras)) {
+				SV * sv = pget_sv(extras);
+				if ( SvOK(sv) && SvROK( sv) && SvTYPE( SvRV( sv)) == SVt_PVHV) {
+					profile = (HV*) SvRV(sv);
+					pset_i( frames, fi->frameCount);
+				}
+			}
+		}
+	}
+
+EXIT_NOW:
+	if ( err && ret ) {
+		plist_destroy(ret);
+		ret = NULL;
 	}
 
 	apc_img_close_load( fi );
@@ -781,7 +764,7 @@ apc_img_frame_count( char * fileName, Bool is_utf8, PImgIORequest ioreq )
 {
 	PImgCodec c = NULL;
 	ImgLoadFileInstance fi;
-	int i, frameMap, ret = 0;
+	int i, ret = 0;
 	char error[256];
 
 	CHK;
@@ -792,14 +775,11 @@ apc_img_frame_count( char * fileName, Bool is_utf8, PImgIORequest ioreq )
 
 	/* assigning request */
 	fi. req            = &fi.io.sioreq;
-	fi. frameMapSize   = frameMap = 0;
-	fi. frameMap       = &frameMap;
 	fi. loadExtras     = true;
 	fi. noImageData    = true;
 	fi. iconUnmask     = false;
 	fi. blending       = false;
 	fi. noIncomplete   = false;
-	fi. extras         = newHV();
 	fi. fileProperties = newHV();
 	fi. frameCount = -1;
 	fi. errbuf     = error;
@@ -830,7 +810,7 @@ apc_img_frame_count( char * fileName, Bool is_utf8, PImgIORequest ioreq )
 		HV * profile = newHV();
 		fi. object = Object_create( "Prima::Image", profile);
 		sv_free(( SV *) profile);
-		frameMap = fi. frame = INT_MAX;
+		fi. frame = INT_MAX;
 		fi. frameProperties = newHV();
 	}
 
@@ -843,10 +823,8 @@ apc_img_frame_count( char * fileName, Bool is_utf8, PImgIORequest ioreq )
 	}
 
 	/* can't report again - so loading as may as we can */
-	fi. loadAll = true;
 	for ( i = 0; i < INT_MAX; i++) {
-		fi. jointFrame = i > 0;
-		frameMap = fi. frame = i;
+		fi. frame = i;
 		if ( !( c-> info-> IOFlags & IMG_LOAD_MULTIFRAME)) {
 			c-> vmt-> close_load( c, &fi);
 			if ( !( fi. instance = c-> vmt-> open_load( c, &fi))) {
@@ -866,8 +844,6 @@ apc_img_frame_count( char * fileName, Bool is_utf8, PImgIORequest ioreq )
 EXIT_NOW:;
 	if ( fi. object)
 		Object_destroy( fi. object);
-	if ( fi. extras)
-		sv_free(( SV *) fi. extras);
 	if ( fi. frameProperties)
 		sv_free(( SV *) fi. frameProperties);
 	if ( fi. fileProperties)
@@ -878,7 +854,7 @@ EXIT_NOW:;
 }
 
 PImgSaveFileInstance
-apc_img_open_save( Handle self, char * fileName, Bool is_utf8, int n_frames, PImgIORequest ioreq, HV * profile, char * error)
+apc_img_open_save( char * fileName, Bool is_utf8, int n_frames, PImgIORequest ioreq, HV * profile, char * error)
 {
 	dPROFILE;
 	int i;
@@ -921,19 +897,10 @@ apc_img_open_save( Handle self, char * fileName, Bool is_utf8, int n_frames, PIm
 		SV * c = NULL;
 		if ( pexist( codecID))
 			c = pget_sv( codecID);
-		else if ( self &&  (( PAnyObject) self)-> mate &&
-			hv_exists(( HV*)SvRV((( PAnyObject) self)-> mate), "extras", 6)
-		) {
-			SV ** sv = hv_fetch(( HV*)SvRV((( PAnyObject) self)-> mate), "extras", 6, 0);
-			if ( sv && SvOK( *sv) && SvROK( *sv) && SvTYPE( SvRV( *sv)) == SVt_PVHV) {
-				HV * profile = ( HV *) SvRV( *sv);
-				if ( pexist( codecID))
-					c = pget_sv( codecID);
-			}
-		}
 		if ( c && SvOK( c)) { /* accept undef */
 			codecID = SvIV( c);
-			if ( codecID < 0) codecID = imgCodecs. count - codecID;
+			if ( codecID < 0)
+				codecID = imgCodecs. count - codecID;
 		}
 	}
 
@@ -1209,7 +1176,25 @@ apc_img_save( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq, H
 		frameMap[ i] = obj;
 	}
 
-	if ( !( fi = apc_img_open_save( self, fileName, is_utf8, n_frames, ioreq, profile, error)))
+	/* reuse codecID? */
+	if (
+		self &&
+		!pexist(codecID) &&
+		(( PAnyObject) self)-> mate &&
+		hv_exists(( HV*)SvRV((( PAnyObject) self)-> mate), "extras", 6)
+	) {
+		int codecID = -1;
+		SV ** sv = hv_fetch(( HV*)SvRV((( PAnyObject) self)-> mate), "extras", 6, 0);
+		if ( sv && SvOK( *sv) && SvROK( *sv) && SvTYPE( SvRV( *sv)) == SVt_PVHV) {
+			HV * profile = ( HV *) SvRV( *sv);
+			if ( pexist( codecID))
+				codecID = pget_i(codecID);
+		}
+		if ( codecID >= 0 )
+			pset_i( codecID, codecID );
+	}
+
+	if ( !( fi = apc_img_open_save( fileName, is_utf8, n_frames, ioreq, profile, error)))
 		goto EXIT_NOW;
 
 	/* saving */

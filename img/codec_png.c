@@ -1312,7 +1312,7 @@ close_load( PImgCodec instance, PImgLoadFileInstance fi)
 {
 	LoadRec * l = ( LoadRec *) fi-> instance;
 
-	if ( fi-> loadExtras && fi->frameMapSize == 0) {
+	if ( fi-> loadExtras && l->load_req == -1) {
 		/* null load request, ignore failure */
 		fi-> frame = -1;
 		load( instance, fi);

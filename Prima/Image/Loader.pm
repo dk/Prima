@@ -14,7 +14,6 @@ sub new
 	my $ok = $img->load( $source,
 		loadExtras => 1,
 		wantFrames => 1,
-		loadAll    => 1,
 		%opt,
 		session    => 1
 	);

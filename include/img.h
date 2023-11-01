@@ -56,37 +56,26 @@ typedef struct _ImgLoadFileInstance {
 
 	/* user-specified data - applied to whole file */
 	Bool            loadExtras;
-	Bool            loadAll;
 	Bool            noImageData;
 	Bool            iconUnmask;
 	Bool            noIncomplete;
 	Bool            blending;
 	Bool            wantFrames;
-	HV            * extras;         /* profile applied to all frames */
 
 	/* user-specified data - applied to every frame */
 	HV            * profile;         /* frame-specific profile, in */
 	HV            * frameProperties; /* frame-specific properties, out */
 
 	int             frame;          /* request frame index */
-	Bool            jointFrame;     /* true, if last frame was a previous one */
 	Handle          object;         /* to be used by load */
 
 	/* internal variables */
-	int             frameMapSize;
-	int           * frameMap;
 	Bool            stop;
 	char          * errbuf;         /* $! value */
 	HV            * cached_defaults;
 	HV            * cached_commons;
 	struct ImgCodec * codec;
-	AV            * profiles;
-	int             profiles_len;
 	char *          baseClassName;
-	Bool            incrementalLoad;
-	int             current_frame;
-	int             last_frame;
-	Bool            eof_is_not_an_error;
 	int             codecID;
 
 	/* scanline event progress */
@@ -186,7 +175,7 @@ extern int   apc_img_frame_count( char * fileName, Bool is_utf8, PImgIORequest i
 extern PList apc_img_load( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq, HV * profile, char * error);
 
 extern PImgLoadFileInstance
-             apc_img_open_load( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq,  HV * profile, char * error);
+             apc_img_open_load( char * fileName, Bool is_utf8, PImgIORequest ioreq,  HV * profile, char * error);
 extern Handle
              apc_img_load_next_frame( Handle target, PImgLoadFileInstance fi, HV * profile, char * error );
 extern void  apc_img_close_load( PImgLoadFileInstance fi );
@@ -194,7 +183,7 @@ extern Bool  apc_img_rewind_to_frame( PImgLoadFileInstance fi, int frame );
 
 extern int   apc_img_save( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq, HV * profile, char * error);
 extern PImgSaveFileInstance
-             apc_img_open_save( Handle self, char * fileName, Bool is_utf8, int n_frames, PImgIORequest ioreq, HV * profile, char * error);
+             apc_img_open_save( char * fileName, Bool is_utf8, int n_frames, PImgIORequest ioreq, HV * profile, char * error);
 extern Bool  apc_img_save_next_frame( Handle source, PImgSaveFileInstance fi, HV * profile, char * error );
 extern void  apc_img_close_save( PImgSaveFileInstance fi, Bool unlink_file );
 
