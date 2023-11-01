@@ -179,7 +179,6 @@ extern PImgLoadFileInstance
 extern Handle
              apc_img_load_next_frame( Handle target, PImgLoadFileInstance fi, HV * profile, char * error );
 extern void  apc_img_close_load( PImgLoadFileInstance fi );
-extern Bool  apc_img_rewind_to_frame( PImgLoadFileInstance fi, int frame );
 
 extern int   apc_img_save( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq, HV * profile, char * error);
 extern PImgSaveFileInstance

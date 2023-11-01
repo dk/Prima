@@ -432,15 +432,6 @@ EXIT_NOW:;
 	return fi;
 }
 
-Bool
-apc_img_rewind_to_frame( PImgLoadFileInstance fi, int frame )
-{
-	if (frame < 0 || frame >= fi->frameCount)
-		return false;
-	fi-> frame = frame;
-	return true;
-}
-
 Handle
 apc_img_load_next_frame( Handle target, PImgLoadFileInstance fi, HV * profile, char * error )
 {
@@ -455,6 +446,11 @@ apc_img_load_next_frame( Handle target, PImgLoadFileInstance fi, HV * profile, c
 	fi->errbuf = error ? error : dummy_error_buf;
 	fi->errbuf[0] = 0;
 	fi->object = NULL_HANDLE;
+
+	if ( fi-> frame < 0 )
+		out("Bad frame index");
+	if ( fi-> frameCount >= 0 && fi->frame >= fi->frameCount)
+		out("Frame index out of range");
 
 	/* query profile */
 	save[0] = fi->loadExtras;
@@ -869,6 +865,10 @@ apc_img_open_save( char * fileName, Bool is_utf8, int n_frames, PImgIORequest io
 	CHK;
 	if ( !( fi = malloc(sizeof(ImgSaveFileInstance)))) {
 		if ( error ) strcpy(error, "Not enough memory");
+		return NULL;
+	}
+	if (n_frames <= 0) {
+		if ( error ) strcpy(error, "Bad n_frames");
 		return NULL;
 	}
 
