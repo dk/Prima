@@ -211,47 +211,65 @@ img_open_file( ImgFileIOCommon * fi, char * fileName, Bool is_utf8, char * mode,
 	goto EXIT_NOW;}
 
 static Bool
+codec_matches_extension( PImgCodec c, char *fileName)
+{
+	int j = 0, fileNameLen = strlen( fileName);
+
+	while ( c-> info-> fileExtensions[ j]) {
+		char * ext = c-> info-> fileExtensions[ j];
+		int extLen = strlen( ext);
+		if ( extLen < fileNameLen && stricmp( fileName + fileNameLen - extLen, ext) == 0)
+			return true;
+		j++;
+	}
+
+	return false;
+}
+
+static Bool*
+disabled_codecs(void)
+{
+	Bool * map;
+	int i;
+
+	if ( !( map = ( Bool*) malloc( sizeof( Bool) * imgCodecs. count)))
+		return NULL;
+
+	memset( map, 0, sizeof( Bool) * imgCodecs. count);
+
+	for ( i = 0; i < imgCodecs. count; i++) {
+		PImgCodec c = ( PImgCodec ) ( imgCodecs. items[ i]);
+		if ( !c-> instance)
+			c-> instance = c-> vmt-> init( &c->info, c-> initParam);
+		if ( !c-> instance) /* failed to initialize, retry next time */
+			map[ i] = true;
+	}
+
+	return map;
+}
+
+static Bool
 img_find_codec( PImgLoadFileInstance fi)
 {
 	int i;
-	Bool * loadmap;
+	Bool * disabled = NULL;
 	PImgCodec c = NULL;
 	Bool err = false;
-	int load_mask = fi-> io.req_is_stdio ? IMG_LOAD_FROM_FILE : IMG_LOAD_FROM_STREAM;
+	int load_mask;
 
-	if ( !( loadmap = ( Bool *) malloc( sizeof( Bool) * imgCodecs. count)))
+	if ( !( disabled = disabled_codecs()))
 		out("Not enough memory");
 
-	memset( loadmap, 0, sizeof( Bool) * imgCodecs. count);
-	for ( i = 0; i < imgCodecs. count; i++) {
-		c = ( PImgCodec ) ( imgCodecs. items[ i]);
-		if ( !c-> instance)
-			c-> instance = c-> vmt-> init( &c->info, c-> initParam);
-		if ( !c-> instance) { /* failed to initialize, retry next time */
-			loadmap[ i] = true;
-			continue;
-		}
-	}
 	c = NULL;
+	load_mask = fi-> io.req_is_stdio ? IMG_LOAD_FROM_FILE : IMG_LOAD_FROM_STREAM;
 
 	/* finding by extension first */
 	if ( fi-> io.fileName) {
-		int fileNameLen = strlen( fi-> io.fileName);
 		for ( i = 0; i < imgCodecs. count; i++) {
-			int j = 0, found = false;
-			if ( loadmap[ i]) continue;
+			if ( disabled[ i]) continue;
 			c = ( PImgCodec ) ( imgCodecs. items[ i]);
-			while ( c-> info-> fileExtensions[ j]) {
-				char * ext = c-> info-> fileExtensions[ j];
-				int extLen = strlen( ext);
-				if ( extLen < fileNameLen && stricmp( fi->io.fileName + fileNameLen - extLen, ext) == 0) {
-					found = true;
-					break;
-				}
-				j++;
-			}
-			if ( found) {
-				loadmap[ i] = true;
+			if ( codec_matches_extension( c, fi-> io.fileName)) {
+				disabled[ i] = true;
 
 				if ( !( c-> info-> IOFlags & load_mask)) {
 					c = NULL;
@@ -264,7 +282,6 @@ img_find_codec( PImgLoadFileInstance fi)
 
 				if ( fi-> stop) {
 					err = true;
-					free( loadmap);
 					goto EXIT_NOW;
 				}
 			}
@@ -275,7 +292,7 @@ img_find_codec( PImgLoadFileInstance fi)
 	/* use first suitable codec */
 	if ( c == NULL) {
 		for ( i = 0; i < imgCodecs. count; i++) {
-			if ( loadmap[ i]) continue;
+			if ( disabled[ i]) continue;
 			c = ( PImgCodec ) ( imgCodecs. items[ i]);
 			if ( !( c-> info-> IOFlags & load_mask)) {
 				c = NULL;
@@ -287,16 +304,15 @@ img_find_codec( PImgLoadFileInstance fi)
 			}
 			if ( fi-> stop) {
 				err = true;
-				free( loadmap);
 				goto EXIT_NOW;
 			}
 			c = NULL;
 		}
 	}
-	free( loadmap);
 	if ( !c) out("No appropriate codec found");
 
 EXIT_NOW:
+	if ( disabled ) free( disabled);
 	fi->codec = c;
 	return !err;
 }
@@ -872,6 +888,7 @@ apc_img_open_save( Handle self, char * fileName, Bool is_utf8, int n_frames, PIm
 	int codecID = -1;
 	int save_mask;
 	char dummy_error_buf[256];
+	Bool *disabled = NULL;
 
 	CHK;
 	if ( !( fi = malloc(sizeof(ImgSaveFileInstance)))) {
@@ -892,111 +909,83 @@ apc_img_open_save( Handle self, char * fileName, Bool is_utf8, int n_frames, PIm
 	/* all other properties to be parsed by codec */
 	fi-> n_frames    = n_frames;
 	fi-> autoConvert = pexist( autoConvert) ? pget_B( autoConvert) : true;
-	fi-> extras = profile;
-	SvREFCNT_inc((SV*) fi->extras);
 
 	/* finding codec */
 	strcpy( fi-> errbuf, "No appropriate codec found");
+
+	if ( !( disabled = disabled_codecs()))
+		out("Not enough memory");
+
+	/* checking 'codecID', if available */
 	{
-		Bool * savemap = ( Bool*) malloc( sizeof( Bool) * imgCodecs. count);
+		SV * c = NULL;
+		if ( pexist( codecID))
+			c = pget_sv( codecID);
+		else if ( self &&  (( PAnyObject) self)-> mate &&
+			hv_exists(( HV*)SvRV((( PAnyObject) self)-> mate), "extras", 6)
+		) {
+			SV ** sv = hv_fetch(( HV*)SvRV((( PAnyObject) self)-> mate), "extras", 6, 0);
+			if ( sv && SvOK( *sv) && SvROK( *sv) && SvTYPE( SvRV( *sv)) == SVt_PVHV) {
+				HV * profile = ( HV *) SvRV( *sv);
+				if ( pexist( codecID))
+					c = pget_sv( codecID);
+			}
+		}
+		if ( c && SvOK( c)) { /* accept undef */
+			codecID = SvIV( c);
+			if ( codecID < 0) codecID = imgCodecs. count - codecID;
+		}
+	}
 
-		if ( !savemap)
-			out("Not enough memory");
-		memset( savemap, 0, sizeof( Bool) * imgCodecs. count);
+	/* find codec */
+	c = NULL;
+	if ( codecID >= 0) {
+		if ( codecID >= imgCodecs. count)
+			out("Codec index out of range");
 
+		c = ( PImgCodec ) ( imgCodecs. items[ codecID]);
+		if ( !( c-> info-> IOFlags & save_mask))
+			out( ioreq ?
+				"Codec cannot save images to streams" :
+				"Codec cannot save images");
+
+		if ( n_frames > 1 &&
+			!( c-> info-> IOFlags & IMG_SAVE_MULTIFRAME))
+			out("Codec cannot save mutiframe images");
+
+		if (( fi-> instance = c-> vmt-> open_save( c, fi)) == NULL)
+			out("Codec cannot handle this file");
+	}
+
+	if ( !c && fileName) {
+		/* finding codec by extension  */
 		for ( i = 0; i < imgCodecs. count; i++) {
+			if ( disabled[ i]) continue;
 			c = ( PImgCodec ) ( imgCodecs. items[ i]);
-			if ( !c-> instance)
-				c-> instance = c-> vmt-> init( &c->info, c-> initParam);
-			if ( !c-> instance) { /* failed to initialize, retry next time */
-				savemap[ i] = true;
-				continue;
-			}
-		}
+			if ( codec_matches_extension( c, fileName)) {
+				disabled[ i] = true;
 
-		/* checking 'codecID', if available */
-		{
-			SV * c = NULL;
-			if ( pexist( codecID))
-				c = pget_sv( codecID);
-			else if ( self &&  (( PAnyObject) self)-> mate &&
-				hv_exists(( HV*)SvRV((( PAnyObject) self)-> mate), "extras", 6)
-			) {
-				SV ** sv = hv_fetch(( HV*)SvRV((( PAnyObject) self)-> mate), "extras", 6, 0);
-				if ( sv && SvOK( *sv) && SvROK( *sv) && SvTYPE( SvRV( *sv)) == SVt_PVHV) {
-					HV * profile = ( HV *) SvRV( *sv);
-					if ( pexist( codecID))
-						c = pget_sv( codecID);
-				}
-			}
-			if ( c && SvOK( c)) { /* accept undef */
-				codecID = SvIV( c);
-				if ( codecID < 0) codecID = imgCodecs. count - codecID;
-			}
-		}
-
-		/* find codec */
-		c = NULL;
-		if ( codecID >= 0) {
-			if ( codecID >= imgCodecs. count)
-				out("Codec index out of range");
-
-			c = ( PImgCodec ) ( imgCodecs. items[ codecID]);
-			if ( !( c-> info-> IOFlags & save_mask))
-				out( ioreq ?
-					"Codec cannot save images to streams" :
-					"Codec cannot save images");
-
-			if ( n_frames > 1 &&
-				!( c-> info-> IOFlags & IMG_SAVE_MULTIFRAME))
-				out("Codec cannot save mutiframe images");
-
-			if (( fi-> instance = c-> vmt-> open_save( c, fi)) == NULL)
-				out("Codec cannot handle this file");
-		}
-
-		if ( !c && fileName) {
-			int fileNameLen = strlen( fileName);
-			/* finding codec by extension  */
-			for ( i = 0; i < imgCodecs. count; i++) {
-				int j = 0, found = false;
-				if ( savemap[ i]) continue;
-				c = ( PImgCodec ) ( imgCodecs. items[ i]);
-				while ( c-> info-> fileExtensions[ j]) {
-					char * ext = c-> info-> fileExtensions[ j];
-					int extLen = strlen( ext);
-					if ( extLen < fileNameLen && stricmp( fileName + fileNameLen - extLen, ext) == 0) {
-						found = true;
-						break;
-					}
-					j++;
+				if ( !( c-> info-> IOFlags & save_mask)) {
+					c = NULL;
+					continue;
 				}
 
-				if ( found) {
-					savemap[ i] = true;
-					if ( !( c-> info-> IOFlags & save_mask)) {
-						c = NULL;
-						continue;
-					}
-
-					if ( n_frames > 1
-						&& !( c-> info-> IOFlags & IMG_SAVE_MULTIFRAME)) {
-						c = NULL;
-						continue;
-					}
-
-					if (( fi-> instance = c-> vmt-> open_save( c, fi)) != NULL)
-						break;
+				if ( n_frames > 1
+					&& !( c-> info-> IOFlags & IMG_SAVE_MULTIFRAME)) {
+					c = NULL;
+					continue;
 				}
-				c = NULL;
-			}
-		}
 
-		free( savemap);
-		if ( !c) { /* use pre-formatted error string */
-			err = true;
-			goto EXIT_NOW;
+				if (( fi-> instance = c-> vmt-> open_save( c, fi)) != NULL)
+					break;
+			}
+			c = NULL;
 		}
+	}
+
+	if ( !c) { /* use pre-formatted error string */
+		err = true;
+		goto EXIT_NOW;
 	}
 
 	fi-> codec = c;
@@ -1013,6 +1002,8 @@ apc_img_open_save( Handle self, char * fileName, Bool is_utf8, int n_frames, PIm
 	}
 
 EXIT_NOW:;
+	if ( disabled )
+		free( disabled);
 	if ( err ) {
 		if ( fileName)
 			apc_fs_unlink( fileName, is_utf8 );
@@ -1112,8 +1103,8 @@ apc_img_save_next_frame( Handle source, PImgSaveFileInstance fi, HV * profile, c
 		apc_img_profile_add( final_profile, profile, fi-> cached_defaults);
 	}
 
-	fi-> object       = source;
-	fi-> objectExtras = profile;
+	fi-> object = source;
+	fi-> extras = final_profile;
 
 	/* converting image to format with maximum bit depth and category flags match */
 	if ( autoConvert) {
@@ -1142,8 +1133,6 @@ void
 apc_img_close_save( PImgSaveFileInstance fi, Bool unlink_file )
 {
 	PImgCodec c = fi->codec;
-	if ( fi->extras)
-		SvREFCNT_dec((SV*) fi->extras);
 	if ( fi->instance )
 		c-> vmt-> close_save( c, fi);
 	if ( fi-> cached_defaults)

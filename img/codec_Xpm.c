@@ -403,7 +403,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 	dPROFILE;
 	XpmInfo  info;
 	XpmImage image;
-	HV * profile = fi-> objectExtras;
+	HV * profile = fi-> extras;
 	PIcon i = ( PIcon) fi-> object;
 	int ret = XpmOpenFailed;
 	char * extholder = NULL;

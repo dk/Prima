@@ -1029,7 +1029,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 {
 	dPROFILE;
 	PImage i = ( PImage) fi-> object;
-	HV * profile = fi-> objectExtras;
+	HV * profile = fi-> extras;
 	int cRGB;
 	PImgIORequest fd = fi-> req;
 	RGBColor rgb_1bpp[2], * palette = i-> palette;

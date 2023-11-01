@@ -111,7 +111,6 @@ typedef struct _ImgSaveFileInstance {
 	int             frame;
 	int             n_frames;       /* how many frames to be saved */
 	Handle          object;         /* to be used by save */
-	HV            * objectExtras;   /* extras supplied to image object */
 
 	/* internal variables */
 	char          * errbuf;         /* $! value */

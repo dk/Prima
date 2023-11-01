@@ -646,7 +646,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 	s = ( SaveRec *) fi-> instance;
 	icon = kind_of( fi-> object, CIcon);
 	i = ( PIcon) fi-> object;
-	profile = fi-> objectExtras;
+	profile = fi-> extras;
 
 	/* settings */
 	if ( fi-> frame == 0)

@@ -225,7 +225,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 	char * xc = fi-> io.fileName, * name;
 	int ls = ( i-> w >> 3) + (( i-> w & 7) ? 1 : 0);
 	int first = 1;
-	HV * profile = fi-> objectExtras;
+	HV * profile = fi-> extras;
 
 	l = malloc( ls);
 	if ( !l) return false;

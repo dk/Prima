@@ -855,7 +855,7 @@ static Bool
 apply_encoder_options( PImgSaveFileInstance fi, enum heif_compression_format compression, struct heif_encoder* encoder)
 {
 	SV **tmp;
-	HV * profile = fi-> objectExtras;
+	HV * profile = fi-> extras;
 	SaveRec * l = ( SaveRec *) fi-> instance;
 	const struct heif_encoder_parameter*const* list;
 	const char * shrt = NULL, * enc_name;
@@ -922,7 +922,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 	dPROFILE;
 	SaveRec * l = ( SaveRec *) fi-> instance;
 	struct heif_encoder* encoder = NULL;
-	HV * profile = fi-> objectExtras;
+	HV * profile = fi-> extras;
 	enum heif_compression_format compression;
 	struct heif_image* himg = NULL;
 	PIcon i = ( PIcon) fi-> object;

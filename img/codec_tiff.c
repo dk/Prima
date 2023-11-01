@@ -1543,7 +1543,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 	TIFF * tiff = ( TIFF*) fi-> instance;
 	Bool icon = kind_of( fi-> object, CIcon);
 	int x, y;
-	HV * profile = fi-> objectExtras;
+	HV * profile = fi-> extras;
 	uint16_t u16;
 
 	errbuf = fi-> errbuf;
