@@ -2094,7 +2094,7 @@ write_first_frame(PImgSaveFileInstance fi)
 	png_unknown_chunk acTL_chunk = { "acTL", actl, 8, PNG_HAVE_IHDR };
        	png_byte apngChunks[]= {"acTL\0fcTL\0fdAT\0"};
 
-	png_save_uint_32( &actl[0],  fi->frameMapSize);
+	png_save_uint_32( &actl[0],  fi->n_frames);
 	png_save_uint_32( &actl[4],  pexist(loopCount) ? pget_i(loopCount) : 0);
 
 	png_set_keep_unknown_chunks( s->png_ptr, PNG_HANDLE_CHUNK_ALWAYS, apngChunks, 3); 
@@ -2160,13 +2160,13 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 	if ( setjmp( png_jmpbuf( s-> png_ptr)) != 0) return false;
 
 #ifdef APNG
-	if ( fi->frameMapSize == 1 )
+	if ( fi->n_frames == 1 )
 #endif
 		return write_classic_png(fi);
 #ifdef APNG
 	else if ( fi->frame == 0)
 		return write_first_frame(fi);
-	else if ( fi->frame == fi->frameMapSize - 1)
+	else if ( fi->frame == fi->n_frames - 1)
 		return write_last_frame(fi);
 	else
 		return write_middle_frame(fi);

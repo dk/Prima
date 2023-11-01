@@ -122,7 +122,7 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
 	int yh, yw;
 	Byte * data;
 
-	if( XReadBitmapFileData( fi-> fileName, fi-> is_utf8, &w, &h, &data, &yw, &yh) != BitmapSuccess)
+	if( XReadBitmapFileData( fi-> io.fileName, fi-> io.is_utf8, &w, &h, &data, &yw, &yh) != BitmapSuccess)
 		return NULL;
 
 	fi-> stop = true;
@@ -222,7 +222,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 	Byte * l;
 	int h = i-> h, col = -1;
 	Byte * s = i-> data + ( h - 1) * i-> lineSize;
-	char * xc = fi-> fileName, * name;
+	char * xc = fi-> io.fileName, * name;
 	int ls = ( i-> w >> 3) + (( i-> w & 7) ? 1 : 0);
 	int first = 1;
 	HV * profile = fi-> objectExtras;

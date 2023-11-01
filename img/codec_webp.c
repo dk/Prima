@@ -588,7 +588,7 @@ finalize_save(PImgSaveFileInstance fi, SaveRec *s)
 		return false;
 	}
 
-	need_loop_count = fi->frameMapSize > 1;
+	need_loop_count = fi->n_frames > 1;
 
 	if ( need_loop_count ) {
 		if (!(s->mux = WebPMuxCreate(&s->webp_data, 1))) {
@@ -734,7 +734,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 	s->timestamp += delay;
 
 	/* save file */
-	if ( fi->frame == fi->frameMapSize - 1) {
+	if ( fi->frame == fi->n_frames - 1) {
 		if (!finalize_save(fi, s))
 			return false;
 	}

@@ -185,38 +185,39 @@ static ImgIORequest std_ioreq = {
 	(void*) ferror
 };
 
-static int
-img_open_file( PImgLoadFileInstance fi, char * fileName, Bool is_utf8, PImgIORequest ioreq)
+static Bool
+img_open_file( ImgFileIOCommon * fi, char * fileName, Bool is_utf8, char * mode, PImgIORequest ioreq)
 {
-	int load_mask;
 	if ( ioreq == NULL) {
-		memcpy( &fi->sioreq, &std_ioreq, sizeof( fi->sioreq));
-		if (( fi->sioreq.handle = prima_open_file( fileName, is_utf8, "rb")) == NULL)
-			return -1;
-		fi->req = &fi->sioreq;
+		memcpy( &fi->sioreq, &std_ioreq, sizeof(ImgIORequest));
+		if (( fi->sioreq.handle = prima_open_file( fileName, is_utf8, mode)) == NULL)
+			return false;
 		fi->req_is_stdio = true;
-		load_mask = IMG_LOAD_FROM_FILE;
 	} else {
-		fi->req = ioreq;
+		memcpy( &fi-> sioreq, ioreq, sizeof( ImgIORequest));
 		fi->req_is_stdio = false;
-		load_mask = IMG_LOAD_FROM_STREAM;
 	}
 	fi-> fileName = fileName;
 	fi-> is_utf8  = is_utf8;
-	return load_mask;
+	return true;
 }
 
+#define out(x){ err = true;\
+	strlcpy( fi-> errbuf, x, 256);\
+	goto EXIT_NOW;}
+
+#define outd(x,d){ err = true;\
+	snprintf( fi-> errbuf, 256, x, d);\
+	goto EXIT_NOW;}
+
 static Bool
-img_find_codec( PImgLoadFileInstance fi, int load_mask)
+img_find_codec( PImgLoadFileInstance fi)
 {
 	int i;
 	Bool * loadmap;
 	PImgCodec c = NULL;
 	Bool err = false;
-
-#define out(x){ err = true;\
-	strlcpy( fi->errbuf, x, 256);\
-	goto EXIT_NOW;}
+	int load_mask = fi-> io.req_is_stdio ? IMG_LOAD_FROM_FILE : IMG_LOAD_FROM_STREAM;
 
 	if ( !( loadmap = ( Bool *) malloc( sizeof( Bool) * imgCodecs. count)))
 		out("Not enough memory");
@@ -234,8 +235,8 @@ img_find_codec( PImgLoadFileInstance fi, int load_mask)
 	c = NULL;
 
 	/* finding by extension first */
-	if ( fi-> fileName) {
-		int fileNameLen = strlen( fi-> fileName);
+	if ( fi-> io.fileName) {
+		int fileNameLen = strlen( fi-> io.fileName);
 		for ( i = 0; i < imgCodecs. count; i++) {
 			int j = 0, found = false;
 			if ( loadmap[ i]) continue;
@@ -243,7 +244,7 @@ img_find_codec( PImgLoadFileInstance fi, int load_mask)
 			while ( c-> info-> fileExtensions[ j]) {
 				char * ext = c-> info-> fileExtensions[ j];
 				int extLen = strlen( ext);
-				if ( extLen < fileNameLen && stricmp( fi->fileName + fileNameLen - extLen, ext) == 0) {
+				if ( extLen < fileNameLen && stricmp( fi->io.fileName + fileNameLen - extLen, ext) == 0) {
 					found = true;
 					break;
 				}
@@ -277,8 +278,8 @@ img_find_codec( PImgLoadFileInstance fi, int load_mask)
 			if ( loadmap[ i]) continue;
 			c = ( PImgCodec ) ( imgCodecs. items[ i]);
 			if ( !( c-> info-> IOFlags & load_mask)) {
-					c = NULL;
-					continue;
+				c = NULL;
+				continue;
 			}
 			if (( fi-> instance = c-> vmt-> open_load( c, fi)) != NULL) {
 				fi-> codecID = i;
@@ -295,7 +296,6 @@ img_find_codec( PImgLoadFileInstance fi, int load_mask)
 	free( loadmap);
 	if ( !c) out("No appropriate codec found");
 
-#undef out
 EXIT_NOW:
 	fi->codec = c;
 	return !err;
@@ -308,18 +308,9 @@ apc_img_open_load( Handle self, char * fileName, Bool is_utf8, PImgIORequest ior
 	dPROFILE;
 	int i;
 	Bool err = false;
-	int  load_mask;
 	char dummy_error_buf[256];
 	PImgCodec c;
 	PImgLoadFileInstance fi;
-
-#define out(x){ err = true;\
-	strlcpy( fi->errbuf, x, 256);\
-	goto EXIT_NOW;}
-
-#define outd(x,d){ err = true;\
-	snprintf( fi->errbuf, 256, x, d);\
-	goto EXIT_NOW;}
 
 	CHK;
 	if ( !( fi = malloc(sizeof(ImgLoadFileInstance)))) {
@@ -332,9 +323,10 @@ apc_img_open_load( Handle self, char * fileName, Bool is_utf8, PImgIORequest ior
 	fi-> errbuf = error ? error : dummy_error_buf;
 	fi-> errbuf[0] = 0;
 
-	if (( load_mask = img_open_file( fi, fileName, is_utf8, ioreq)) < 0)
+	if (!img_open_file( &fi->io, fileName, is_utf8, "rb", ioreq))
 		out(strerror(errno));
 
+	fi-> req           = &fi-> io.sioreq;
 	fi-> baseClassName = duplicate_string("Prima::Image");
 	fi-> stop          = false;
 	fi-> last_frame    = -2;
@@ -427,7 +419,7 @@ apc_img_open_load( Handle self, char * fileName, Bool is_utf8, PImgIORequest ior
 	fi-> frameCount     = -1;
 
 	/* find codec */
-	if (( err = !img_find_codec( fi, load_mask)))
+	if (( err = !img_find_codec( fi)))
 		goto EXIT_NOW;
 	c = fi->codec;
 
@@ -452,7 +444,6 @@ apc_img_open_load( Handle self, char * fileName, Bool is_utf8, PImgIORequest ior
 		c-> vmt-> load_check_in( c, fi-> cached_commons, profile);
 		apc_img_profile_add( fi-> cached_commons, profile, fi-> cached_defaults);
 	}
-
 
 	if ( fi-> loadExtras && c-> info-> fileType)
 		(void) hv_store( fi-> fileProperties, "codecID", 7, newSViv( fi-> codecID), 0);
@@ -483,9 +474,6 @@ EXIT_NOW:;
 	}
 
 	return fi;
-
-	#undef out
-	#undef outd
 }
 
 static void
@@ -523,13 +511,6 @@ apc_img_rewind_to_frame( PImgLoadFileInstance fi, int frame )
 Handle
 apc_img_load_next_frame( Handle target, PImgLoadFileInstance fi, HV * profile, char * error )
 {
-#define out(x){ err = true;\
-	strlcpy( fi->errbuf, x, 256);\
-	goto EXIT_NOW;}
-#define outd(x,d){ err = true;\
-	snprintf( fi->errbuf, 256, x, d);\
-	goto EXIT_NOW;}
-
 	dPROFILE;
 	Bool err = false;
 	char dummy_error_buf[256];
@@ -724,9 +705,6 @@ EXIT_NOW:
 		fi->profile      = save_profile;
 	}
 
-	#undef out
-	#undef outd
-
 	return err ? NULL_HANDLE : fi->object;
 }
 
@@ -746,7 +724,7 @@ apc_img_close_load( PImgLoadFileInstance fi )
 		sv_free(( SV *) fi-> cached_commons);
 	if ( fi-> fileProperties)
 		sv_free((SV *) fi-> fileProperties);
-	if ( fi->req_is_stdio && fi->req != NULL && fi->req-> handle != NULL)
+	if ( fi->io.req_is_stdio && fi->req != NULL && fi->req-> handle != NULL)
 		fclose(( FILE*) fi->req-> handle);
 	free( fi->frameMap);
 	free(fi);
@@ -789,15 +767,15 @@ apc_img_frame_count( char * fileName, Bool is_utf8, PImgIORequest ioreq )
 	ImgLoadFileInstance fi;
 	int i, frameMap, ret = 0;
 	char error[256];
-	int load_mask;
 
 	CHK;
 	memset( &fi, 0, sizeof( fi));
 
-	if (( load_mask = img_open_file( &fi, fileName, is_utf8, ioreq)) < 0)
+	if (!img_open_file( &fi.io, fileName, is_utf8, "rb", ioreq))
 		goto EXIT_NOW;
 
 	/* assigning request */
+	fi. req            = &fi.io.sioreq;
 	fi. frameMapSize   = frameMap = 0;
 	fi. frameMap       = &frameMap;
 	fi. loadExtras     = true;
@@ -812,7 +790,7 @@ apc_img_frame_count( char * fileName, Bool is_utf8, PImgIORequest ioreq )
 	fi. stop       = false;
 
 	/* find codec */
-	if ( !img_find_codec( &fi, load_mask))
+	if ( !img_find_codec( &fi ))
 		goto EXIT_NOW;
 	c = fi. codec;
 
@@ -883,103 +861,42 @@ EXIT_NOW:;
 	return ret;
 }
 
-int
-apc_img_save( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq, HV * profile, char * error)
+PImgSaveFileInstance
+apc_img_open_save( Handle self, char * fileName, Bool is_utf8, int n_frames, PImgIORequest ioreq, HV * profile, char * error)
 {
 	dPROFILE;
 	int i;
 	PImgCodec c = NULL;
-	ImgSaveFileInstance fi;
-	AV * images = NULL;
-	HV * def = NULL, * commonHV = NULL;
+	PImgSaveFileInstance fi;
 	Bool err = false;
 	int codecID = -1;
-	int xself = self ? 1 : 0;
-	int ret = 0;
-	Bool autoConvert = true;
-	ImgIORequest sioreq;
 	int save_mask;
 	char dummy_error_buf[256];
 
-#define out(x){ err = true;\
-	strlcpy( fi.errbuf, x, 256);\
-	goto EXIT_NOW;}
-
-#define outd(x,d){ err = true;\
-	snprintf( fi.errbuf, 256, x, d);\
-	goto EXIT_NOW;}
-
 	CHK;
-	memset( &fi, 0, sizeof( fi));
+	if ( !( fi = malloc(sizeof(ImgSaveFileInstance)))) {
+		if ( error ) strcpy(error, "Not enough memory");
+		return NULL;
+	}
 
-	if ( pexist( autoConvert))
-		autoConvert = pget_B( autoConvert);
+	memset( fi, 0, sizeof( ImgSaveFileInstance));
 
 	/* open file */
-	fi. errbuf = error ? error : dummy_error_buf;
-	if ( ioreq == NULL) {
-		memcpy( &sioreq, &std_ioreq, sizeof( sioreq));
-		if (( sioreq. handle = prima_open_file( fileName, is_utf8, "wb+" )) == NULL)
-			out( strerror( errno));
-		fi. req = &sioreq;
-		fi. req_is_stdio = true;
-		save_mask = IMG_SAVE_TO_FILE;
-	} else {
-		fi. req = ioreq;
-		fi. req_is_stdio = false;
-		save_mask = IMG_SAVE_TO_STREAM;
-	}
+	fi-> errbuf = error ? error : dummy_error_buf;
 
-	fi. fileName     = fileName;
-	fi. is_utf8      = is_utf8;
-
-	fi. frameMapSize = xself;
-	if ( pexist( images)) {
-		SV * sv = pget_sv( images);
-		if ( SvOK( sv) && SvROK( sv) && SvTYPE( SvRV( sv)) == SVt_PVAV) {
-			images = ( AV *) SvRV( sv);
-			fi. frameMapSize += av_len( images) + 1;
-		} else
-			out("Not an array passed to 'images' property");
-	}
-	if ( fi. frameMapSize == 0)
-		out("Nothing to save");
-
-	/* fill array of objects */
-	if ( !( fi. frameMap = ( Handle *) malloc( sizeof( Handle) * fi. frameMapSize)))
-		out("Not enough memory");
-	memset( fi. frameMap, 0, sizeof( Handle) * fi. frameMapSize);
-
-	for ( i = 0; i < fi. frameMapSize; i++) {
-		Handle obj = NULL_HANDLE;
-
-		/* query profile */
-		if ( self && (i == 0)) {
-			obj = self;
-			if ( !kind_of( obj, CImage))
-				out("Not a Prima::Image descendant passed");
-			if ( PImage(obj)-> w == 0 || PImage(obj)-> h == 0)
-				out("Cannot save a null image");
-		} else if ( images) {
-			SV ** holder = av_fetch( images, i - xself, 0);
-			if ( !holder) outd("Array panic on 'images[%d]' property", i - xself);
-			obj = gimme_the_mate( *holder);
-			if ( !obj)
-				outd("Invalid object reference passed in 'images[%d]'", i - xself);
-			if ( !kind_of( obj, CImage))
-				outd("Not a Prima::Image descendant passed in 'images[%d]'", i - xself);
-			if ( PImage(obj)-> w == 0 || PImage(obj)-> h == 0)
-				out("Cannot save a null image");
-		} else
-			out("Logic error");
-		fi. frameMap[ i] = obj;
-	}
+	if (!img_open_file( &fi->io, fileName, is_utf8, "wb+", ioreq))
+		out(strerror(errno));
+	fi->req = &fi->io.sioreq;
+	save_mask = ioreq ? IMG_SAVE_TO_STREAM : IMG_SAVE_TO_FILE;
 
 	/* all other properties to be parsed by codec */
-	fi. extras = profile;
+	fi-> n_frames    = n_frames;
+	fi-> autoConvert = pexist( autoConvert) ? pget_B( autoConvert) : true;
+	fi-> extras = profile;
+	SvREFCNT_inc((SV*) fi->extras);
 
 	/* finding codec */
-	strcpy( fi.errbuf, "No appropriate codec found");
+	strcpy( fi-> errbuf, "No appropriate codec found");
 	{
 		Bool * savemap = ( Bool*) malloc( sizeof( Bool) * imgCodecs. count);
 
@@ -1026,32 +943,16 @@ apc_img_save( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq, H
 
 			c = ( PImgCodec ) ( imgCodecs. items[ codecID]);
 			if ( !( c-> info-> IOFlags & save_mask))
-					out( ioreq ?
-						"Codec cannot save images to streams" :
-						"Codec cannot save images");
+				out( ioreq ?
+					"Codec cannot save images to streams" :
+					"Codec cannot save images");
 
-			if ( fi. frameMapSize > 1 &&
-					!( c-> info-> IOFlags & IMG_SAVE_MULTIFRAME))
+			if ( n_frames > 1 &&
+				!( c-> info-> IOFlags & IMG_SAVE_MULTIFRAME))
 				out("Codec cannot save mutiframe images");
 
-			if (( fi. instance = c-> vmt-> open_save( c, &fi)) == NULL)
+			if (( fi-> instance = c-> vmt-> open_save( c, fi)) == NULL)
 				out("Codec cannot handle this file");
-
-			if ( !autoConvert) {
-				int j, *k = c-> info-> saveTypes, ok = 0;
-				for ( j = 0; j < fi. frameMapSize; j++) {
-					int type = PImage( fi. frameMap[j])-> type;
-					while ( *k) {
-						if ( type == *k) {
-							ok = 1;
-							break;
-						}
-						k++;
-					}
-				}
-				if ( !ok)
-					out("Image type(s) not supported by the codec specified");
-			}
 		}
 
 		if ( !c && fileName) {
@@ -1078,31 +979,13 @@ apc_img_save( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq, H
 						continue;
 					}
 
-					if ( fi. frameMapSize > 1
+					if ( n_frames > 1
 						&& !( c-> info-> IOFlags & IMG_SAVE_MULTIFRAME)) {
 						c = NULL;
 						continue;
 					}
 
-					if ( !autoConvert) {
-						int j, *k = c-> info-> saveTypes, ok = 0;
-						for ( j = 0; j < fi. frameMapSize; j++) {
-							int type = PImage( fi. frameMap[j])-> type;
-							while ( *k) {
-								if ( type == *k) {
-									ok = 1;
-									break;
-								}
-								k++;
-							}
-						}
-						if ( !ok) {
-							c = NULL;
-							continue;
-						}
-					}
-
-					if (( fi. instance = c-> vmt-> open_save( c, &fi)) != NULL)
+					if (( fi-> instance = c-> vmt-> open_save( c, fi)) != NULL)
 						break;
 				}
 				c = NULL;
@@ -1116,107 +999,246 @@ apc_img_save( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq, H
 		}
 	}
 
-	snprintf( fi.errbuf, 256, "Error saving %s", fileName ? fileName : "to stream");
+	fi-> codec = c;
+	fi-> codecID = codecID;
+
+	snprintf( fi->errbuf, 256, "Error saving %s", fileName ? fileName : "to stream");
 
 	/* use common profile */
-	def = c-> vmt-> save_defaults( c);
-	commonHV = newHV();
+	fi-> cached_defaults = c-> vmt-> save_defaults( c);
+	fi-> cached_commons  = newHV();
 	if ( profile) {
-		c-> vmt-> save_check_in( c, commonHV, profile);
-		apc_img_profile_add( commonHV, profile, def);
+		c-> vmt-> save_check_in( c, fi->cached_commons, profile);
+		apc_img_profile_add( fi->cached_commons, profile, fi->cached_defaults);
 	}
 
-	/* saving */
-	for ( i = 0; i < fi. frameMapSize; i++) {
-		HV * profile = commonHV;
-		PImage im;
+EXIT_NOW:;
+	if ( err ) {
+		if ( fileName)
+			apc_fs_unlink( fileName, is_utf8 );
+		apc_img_close_save( fi, err );
+		fi = NULL;
+	}
 
-		im = ( PImage) fi. frameMap[ i];
-		if ( im-> mate && hv_exists(( HV*)SvRV( im-> mate), "extras", 6)) {
-			SV ** sv = hv_fetch(( HV*)SvRV( im-> mate), "extras", 6, 0);
-			if ( sv && SvOK( *sv) && SvROK( *sv) && SvTYPE( SvRV( *sv)) == SVt_PVHV) {
-				HV * hv = ( HV *) SvRV( *sv);
-				profile = newHV();
-				apc_img_profile_add( profile, commonHV, commonHV);
-				c-> vmt-> save_check_in( c, profile, hv);
-				apc_img_profile_add( profile, hv, def);
-			}
-		}
+	return fi;
+}
 
-		fi. frame  = i;
-		fi. object = fi. frameMap[ i];
-		fi. objectExtras = profile;
-
-		/* converting image to format with maximum bit depth and category flags match */
-		if ( autoConvert) {
-			int *k = c-> info-> saveTypes;
-			int max = *k & imBPP, best = *k, supported = false;
-			int flags = im-> type & imCategory, bestflags = *k & imCategory, bestmatch;
+static int
+find_best_type(int type, PImgCodec c)
+{
+	int *k = c-> info-> saveTypes;
+	int max = *k & imBPP, best = *k, supported = false;
+	int flags = type & imCategory, bestflags = *k & imCategory, bestmatch;
 #define dBITS(a) int i = 0x80, match = ( flags & (a)) >> 8
 #define CALCBITS(x) { \
 	x = 0;\
 	while ( i >>= 1 ) if ( match & i ) x++; \
 }
-			{
-				dBITS( bestflags );
-				CALCBITS( bestmatch )
-			}
-			while ( *k) {
-				if ( im-> type == *k) {
-					supported = true;
-					break;
-				}
-				if ( max < ( *k & imBPP)) {
-					dBITS( bestflags = ( *k & imCategory));
-					max       = *k & imBPP;
-					best      = *k;
-					CALCBITS( bestmatch );
-				} else if ( max == ( *k & imBPP)) {
-					dBITS( *k );
-					int testmatch;
-					CALCBITS( testmatch );
-					if ( testmatch > bestmatch ) {
-						best      = *k;
-						bestflags = *k & imCategory;
-						bestmatch = testmatch;
-					}
-				}
-				k++;
-			}
-			if ( !supported) {
-				im-> self-> set_type(( Handle) im, best);
-				if ( best != im-> type) outd("Failed converting image to type '%04x'", best);
+	{
+		dBITS( bestflags );
+		CALCBITS( bestmatch )
+	}
+	while ( *k) {
+		if (type == *k) {
+			supported = true;
+			break;
+		}
+		if ( max < ( *k & imBPP)) {
+			dBITS( bestflags = ( *k & imCategory));
+			max       = *k & imBPP;
+			best      = *k;
+			CALCBITS( bestmatch );
+		} else if ( max == ( *k & imBPP)) {
+			dBITS( *k );
+			int testmatch;
+			CALCBITS( testmatch );
+			if ( testmatch > bestmatch ) {
+				best      = *k;
+				bestflags = *k & imCategory;
+				bestmatch = testmatch;
 			}
 		}
+		k++;
+	}
 
-		/* saving image */
-		if ( !c-> vmt-> save( c, &fi)) {
-			c-> vmt-> close_save( c, &fi);
-			if ( fi. objectExtras != commonHV) sv_free(( SV *) fi. objectExtras);
-			err = true;
+	return supported ? type : best;
+}
+
+static Bool
+codec_supports_type( int type, PImgCodec c)
+{
+	int *k = c-> info-> saveTypes;
+	while ( *k) {
+		if ( type == *k)
+			return true;
+		k++;
+	}
+	return false;
+}
+
+Bool
+apc_img_save_next_frame( Handle source, PImgSaveFileInstance fi, HV * profile, char * error )
+{
+	dPROFILE;
+	PImage im;
+	HV * final_profile;
+	PImgCodec c = fi->codec;
+	Bool err = false, autoConvert;
+	char dummy_error_buf[256];
+
+	fi-> errbuf = error ? error : dummy_error_buf;
+	fi-> errbuf[0] = 0;
+
+	final_profile = fi-> cached_commons;
+	autoConvert = pexist(autoConvert) ? pget_B(autoConvert) : fi->autoConvert;
+
+	im = ( PImage) source;
+	if ( im-> mate && hv_exists(( HV*)SvRV( im-> mate), "extras", 6)) {
+		SV ** sv = hv_fetch(( HV*)SvRV( im-> mate), "extras", 6, 0);
+		if ( sv && SvOK( *sv) && SvROK( *sv) && SvTYPE( SvRV( *sv)) == SVt_PVHV) {
+			HV * hv = ( HV *) SvRV( *sv);
+			final_profile = newHV();
+			apc_img_profile_add( final_profile, fi-> cached_commons, fi-> cached_commons);
+			c-> vmt-> save_check_in( c, final_profile, hv);
+			apc_img_profile_add( final_profile, hv, fi-> cached_defaults);
+		}
+	}
+
+	if ( profile ) {
+		if ( final_profile == fi-> cached_commons )
+			final_profile = newHV();
+		apc_img_profile_add( final_profile, fi-> cached_commons, fi-> cached_commons);
+		c-> vmt-> save_check_in( c, final_profile, profile);
+		apc_img_profile_add( final_profile, profile, fi-> cached_defaults);
+	}
+
+	fi-> object       = source;
+	fi-> objectExtras = profile;
+
+	/* converting image to format with maximum bit depth and category flags match */
+	if ( autoConvert) {
+		int t = find_best_type( im-> type, c );
+		if ( t != im-> type ) {
+			im-> self-> set_type(( Handle) im, t);
+			if ( t != im-> type) outd("Failed converting image to type '%04x'", t);
+		}
+	} else if ( !codec_supports_type( im->type, c))
+		outd("Image type '%04x' is not supported by the codec", im->type);
+
+	/* saving image */
+	if ( !c-> vmt-> save( c, fi)) {
+		c-> vmt-> close_save( c, fi);
+		err = true;
+	}
+
+EXIT_NOW:
+	if ( final_profile != fi-> cached_commons) sv_free(( SV *) final_profile);
+	fi-> frame++;
+
+	return !err;
+}
+
+void
+apc_img_close_save( PImgSaveFileInstance fi, Bool unlink_file )
+{
+	PImgCodec c = fi->codec;
+	if ( fi->extras)
+		SvREFCNT_dec((SV*) fi->extras);
+	if ( fi->instance )
+		c-> vmt-> close_save( c, fi);
+	if ( fi-> cached_defaults)
+		sv_free(( SV *) fi-> cached_defaults);
+	if ( fi-> cached_commons)
+		sv_free(( SV *) fi-> cached_commons);
+	if ( fi->io.req_is_stdio && fi->req != NULL && fi->req-> handle != NULL)
+		fclose(( FILE*) fi->req-> handle);
+	if ( unlink_file && fi->io.fileName)
+		apc_fs_unlink( fi->io.fileName, fi->io.is_utf8 );
+	free(fi);
+}
+
+int
+apc_img_save( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq, HV * profile, char * error)
+{
+#undef out
+#undef outd
+#define out(x){ err = true;\
+	if ( error ) strlcpy( error, x, 256);\
+	goto EXIT_NOW;}
+
+#define outd(x,d){ err = true;\
+	if ( error ) snprintf( error, 256, x, d);\
+	goto EXIT_NOW;}
+
+	dPROFILE;
+	int i, ret = 0, xself = self ? 1 : 0, n_frames = xself;
+	Bool err = false;
+	PImgSaveFileInstance fi = NULL;
+	AV * images = NULL;
+	Handle *frameMap = NULL;
+
+	n_frames = xself;
+	if ( pexist( images)) {
+		SV * sv = pget_sv( images);
+		if ( SvOK( sv) && SvROK( sv) && SvTYPE( SvRV( sv)) == SVt_PVAV) {
+			images = ( AV *) SvRV( sv);
+			n_frames += av_len( images) + 1;
+		} else
+			out("Not an array passed to 'images' property");
+	}
+
+	if ( n_frames == 0)
+		out("Nothing to save");
+
+	/* fill array of objects */
+	if ( !( frameMap = ( Handle *) malloc( sizeof( Handle) * n_frames)))
+		out("Not enough memory");
+	memset( frameMap, 0, sizeof( Handle) * n_frames);
+
+	for ( i = 0; i < n_frames; i++) {
+		Handle obj = NULL_HANDLE;
+
+		/* query profile */
+		if ( self && (i == 0)) {
+			obj = self;
+			if ( !kind_of( obj, CImage))
+				out("Not a Prima::Image descendant passed");
+			if ( PImage(obj)-> w == 0 || PImage(obj)-> h == 0)
+				out("Cannot save a null image");
+		} else if ( images) {
+			SV ** holder = av_fetch( images, i - xself, 0);
+			if ( !holder) outd("Array panic on 'images[%d]' property", i - xself);
+			obj = gimme_the_mate( *holder);
+			if ( !obj)
+				outd("Invalid object reference passed in 'images[%d]'", i - xself);
+			if ( !kind_of( obj, CImage))
+				outd("Not a Prima::Image descendant passed in 'images[%d]'", i - xself);
+			if ( PImage(obj)-> w == 0 || PImage(obj)-> h == 0)
+				out("Cannot save a null image");
+		} else
+			out("Logic error");
+		frameMap[ i] = obj;
+	}
+
+	if ( !( fi = apc_img_open_save( self, fileName, is_utf8, n_frames, ioreq, profile, error)))
+		goto EXIT_NOW;
+
+	/* saving */
+	for ( i = 0; i < n_frames; i++) {
+		if ( !apc_img_save_next_frame( frameMap[i], fi, NULL, error ))
 			goto EXIT_NOW;
-		}
-
-		if ( fi. objectExtras != commonHV) sv_free(( SV *) fi. objectExtras);
 		ret++;
 	}
 
-	c-> vmt-> close_save( c, &fi);
-
 EXIT_NOW:;
-	free( fi. frameMap);
-	if ( ioreq == NULL && fi. req != NULL && fi. req-> handle != NULL)
-		fclose(( FILE*) fi. req-> handle);
-	if ( err && fileName)
-		apc_fs_unlink( fileName, is_utf8 );
-	if ( def)
-		sv_free(( SV *) def);
-	if ( commonHV)
-		sv_free(( SV *) commonHV);
+	if ( fi )
+		apc_img_close_save(fi, err);
+	if ( frameMap)
+		free( frameMap);
+
 	return err ? -ret : ret;
-#undef out
-#undef outd
 }
+
 void
 apc_img_codecs( PList ret)
 {

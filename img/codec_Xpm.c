@@ -99,7 +99,7 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
 
 	info. valuemask = XpmComments | XpmColorTable | XpmExtensions;
 
-	switch ( XpmReadFileToXpmImage( fi-> fileName, &image, &info)) {
+	switch ( XpmReadFileToXpmImage( fi-> io.fileName, &image, &info)) {
 	case XpmSuccess:
 		break;
 	case XpmNoMemory:
@@ -609,7 +609,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 		info. valuemask |= XpmExtensions;
 	}
 
-	ret = XpmWriteFileFromXpmImage( fi-> fileName, &image, &info);
+	ret = XpmWriteFileFromXpmImage( fi-> io.fileName, &image, &info);
 
 EXIT:
 	free( extholder);
