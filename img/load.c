@@ -335,7 +335,7 @@ apc_img_open_load( char * fileName, Bool is_utf8, PImgIORequest ioreq,  HV * pro
 	char dummy_error_buf[256];
 	PImgCodec c;
 	PImgLoadFileInstance fi;
-	long pos = 0;
+	long pos1 = 0, pos2 = 0;
 
 	CHK;
 	if ( !( fi = malloc(sizeof(ImgLoadFileInstance)))) {
@@ -356,9 +356,6 @@ apc_img_open_load( char * fileName, Bool is_utf8, PImgIORequest ioreq,  HV * pro
 	fi-> codecID        = -1;
 	fi-> fileProperties = newHV();
 	fi-> frameCount     = -1;
-
-	if ( ioreq != NULL)
-		pos = req_tell( ioreq );
 
 	if ( pexist( loadExtras) && pget_B( loadExtras))
 		fi-> loadExtras = true;
@@ -394,9 +391,13 @@ apc_img_open_load( char * fileName, Bool is_utf8, PImgIORequest ioreq,  HV * pro
 		fi-> baseClassName = duplicate_string("Prima::Image");
 
 	/* find codec */
+	if ( ioreq != NULL)
+		pos1 = req_tell( ioreq );
 	if (( err = !img_find_codec( fi)))
 		goto EXIT_NOW;
 	c = fi->codec;
+	if ( ioreq != NULL)
+		pos2 = req_tell( ioreq );
 
 	/* use common profile */
 	fi-> cached_defaults = c-> vmt-> load_defaults( c);
@@ -408,10 +409,10 @@ apc_img_open_load( char * fileName, Bool is_utf8, PImgIORequest ioreq,  HV * pro
 
 	if ( fi-> frameCount < 0 && fi-> wantFrames) {
 		if ( ioreq != NULL)
-			req_seek( ioreq, pos, SEEK_SET);
+			req_seek( ioreq, pos1, SEEK_SET);
 		fi-> frameCount = apc_img_frame_count( fileName, is_utf8, ioreq);
 		if ( ioreq != NULL)
-			req_seek( ioreq, pos, SEEK_SET);
+			req_seek( ioreq, pos2, SEEK_SET);
 	}
 
 	if ( fi-> loadExtras ) {
@@ -690,9 +691,7 @@ apc_img_load( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq,  
 		Bool eof_is_not_an_error = false;
 
 		if ( incrementalLoad ) {
-			if ( fi->frameCount < 0 )
-				fi->frame++;
-			else if ( i >= fi->frameCount)
+			if ( fi->frameCount >= 0 && i >= fi->frameCount)
 				break;
 		} else {
 			if ( fi->frameCount < 0 )
@@ -713,6 +712,9 @@ apc_img_load( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq,  
 		}
 
 		img = apc_img_load_next_frame( self, fi, frame_profile, error );
+
+		if ( incrementalLoad )
+			fi->frame++;
 
 		if ( img == NULL_HANDLE && incrementalLoad ) {
 			/* if it is EOF? report no error then */
@@ -1086,6 +1088,7 @@ apc_img_save_next_frame( Handle source, PImgSaveFileInstance fi, HV * profile, c
 	/* saving image */
 	if ( !c-> vmt-> save( c, fi)) {
 		c-> vmt-> close_save( c, fi);
+		fi->instance = NULL;
 		err = true;
 	}
 

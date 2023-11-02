@@ -983,6 +983,15 @@ sub save_stream
 	return $ok;
 }
 
+sub has_codec
+{
+	my $what = $_[1];
+	for ( map { $_->{fileShortType} } @{ Prima::Image->codecs }) {
+		return 1 if m/$what/;
+	}
+	return 0;
+}
+
 package Prima::Icon;
 use vars qw( @ISA);
 @ISA = qw(Prima::Image);
