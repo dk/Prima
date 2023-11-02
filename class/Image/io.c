@@ -130,7 +130,6 @@ XS( Image_load_FROMPERL)
 	self    = gimme_the_mate( ST( 0));
 	sv      = ST(1);
 	profile = parse_hv( ax, sp, items, mark, 2, "Image::load");
-	pioreq  = fill_ioreq(sv, &sioreq);
 
 	if ( pexist(session) && pget_B(session)) {
 		if ( !self )
@@ -152,9 +151,10 @@ XS( Image_load_FROMPERL)
 		pset_c( className, self ? my-> className : ( char*) SvPV_nolen( ST( 0)));
 	pset_i( eventMask, self ? var-> eventMask2 : 0);
 
-	if ( err ) {
-		/* do nothing */
-	} else if ( load_next_frame ) {
+	if ( !load_next_frame )
+		pioreq = fill_ioreq(sv, &sioreq);
+
+	if ( load_next_frame ) {
 		Handle obj;
 		PImgLoadFileInstance fi = (PImgLoadFileInstance) var-> loading_session;
 		if ( !( ret = plist_create(1,1)))
@@ -261,26 +261,24 @@ XS( Image_save_FROMPERL)
 	self    = gimme_the_mate( ST( 0));
 	sv      = ST(1);
 	profile = parse_hv( ax, sp, items, mark, 2, "Image::save");
-	pioreq  = fill_ioreq(sv, &sioreq );
 
 	if ( pexist(session) && pget_B(session)) {
 		if ( !self )
 			croak("Cannot start saving session without an object");
-		if ( var-> saving_session ) {
-			if ( SvOK(sv))
-				croak("Another saving session is in progress");
+		if ( var-> saving_session )
 			save_next_frame = true;
-		} else
+		else
 			open_save = true;
 	}
+
+	if ( !save_next_frame )
+		pioreq = fill_ioreq(sv, &sioreq );
 
 	if ( save_next_frame ) {
 		Handle obj;
 		PImgSaveFileInstance fi = (PImgSaveFileInstance) var-> saving_session;
 
-		if ( !pexist(image))
-			croak("`image' option expected");
-		obj = pget_H(image);
+		obj = gimme_the_mate(sv);
 		if ( !obj || !kind_of(obj, CImage))
 			croak("Bad image passed");
 

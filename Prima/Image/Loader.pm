@@ -88,5 +88,42 @@ sub current { shift->{current} }
 sub source  { shift->{source} }
 sub DESTROY { $_[0]->{image}-> destroy if $_[0]->{image} }
 
+package Prima::Image::Saver;
+
+sub new
+{
+	my ( $class, $target, %opt ) = @_;
+
+	my $img = Prima::Image->new;
+
+	my $ok = $img->save( $target,
+		unlink     => 0,
+		%opt,
+		session    => 1
+	);
+	unless ($ok) {
+		$img->destroy;
+		return (undef, $@);
+	}
+
+	return bless {
+		target => $target,
+		image  => $img,
+		saved  => 0,
+	}, $class;
+}
+
+sub save
+{
+	my ( $self, $image, %opt ) = @_;
+
+	my $ok = $self->{image}->save( $image, %opt, session => 1 );
+	unlink $self->{target} if !$ok && $self->{unlink};
+
+	return $ok ? 1 : (0, $@);
+}
+
+sub DESTROY { $_[0]->{image}-> destroy if $_[0]->{image} }
+
 1;
 
