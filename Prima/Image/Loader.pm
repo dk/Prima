@@ -136,7 +136,7 @@ sub DESTROY { $_[0]->{image}-> destroy if $_[0]->{image} }
 
 =head1 NAME
 
-Prima::Image::Loader - per-frame image loading and saving
+Prima::Image::Loader - progressive loading and saving for multiframe images
 
 =head1 DESCRIPTION
 

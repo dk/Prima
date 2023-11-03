@@ -522,7 +522,7 @@ L<Prima::Image::Animate> - animate gif and webp files
 
 L<Prima::Image::base64> - hardcoded image files
 
-L<Prima::Image::Loader> - per-frame image loading and saving
+L<Prima::Image::Loader> - progressive loading and saving for multiframe images
 
 L<Prima::IniFile> - support of Windows-like initialization files
 

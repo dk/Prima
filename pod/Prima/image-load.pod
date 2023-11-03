@@ -303,7 +303,6 @@ depending on the C<loadExtras> option.  The options supplied to the session
 opening call would apply to all subsequent frames, but these settings may be
 overridden later.
 
-
 Having the session successfully opened, the subsequent calls to C<load> with
 the C<< session => 1 >> option but with the first parameter set to undef will
 load the next frame. Each of those C<load> call will recognize the options
