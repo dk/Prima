@@ -986,10 +986,11 @@ sub save_stream
 sub has_codec
 {
 	my $what = $_[1];
-	for ( map { $_->{fileShortType} } @{ Prima::Image->codecs }) {
-		return 1 if m/$what/;
+	my @ret;
+	for ( @{ Prima::Image->codecs }) {
+		push @ret, $_ if $_->{fileShortType} =~ m/$what/;
 	}
-	return 0;
+	return wantarray ? @ret : $ret[0];
 }
 
 package Prima::Icon;

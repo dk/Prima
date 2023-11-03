@@ -26,12 +26,14 @@ sub new
 
 sub detect_animation
 {
-	my (undef, $extras) = @_;
+	my (undef, $extras, $min_frames) = @_;
+
+	$min_frames //= 2;
 	return undef unless                    # more than 1 frame?
 		$extras &&
 		defined($extras->{codecID}) &&
 		$extras->{frames} &&
-		$extras->{frames} > 1;
+		$extras->{frames} >= $min_frames;
 	my $c = Prima::Image->codecs($extras-> {codecID}) or return 0;
 	return undef unless $c;
 
@@ -68,13 +70,13 @@ sub load
 			blending   => 1,
 			%args,
 		);
-		warn $@ if @i && !$i[-1];
 
-		return unless @i;
+		return (undef, $@) unless @i && $i[-1];
 
-		my $model = $class->detect_animation($i[0]->{extras}) or return;
+		my $model = $class->detect_animation($i[0]->{extras}, 1);
+		return (undef, "not a recognized image or animation") unless $model;
+
 		$model = 'Prima::Image::Animate::' . $model;
-
 		return $model-> new( images => \@i);
 	} else {
 		my ($l,$error) = Prima::Image::Loader->new(
@@ -84,14 +86,17 @@ sub load
 			blending   => 1,
 			%args,
 		);
-		warn($error), return unless $l;
+		return (undef, $error) unless $l;
 
-		my $model = $class->detect_animation($l->{extras}) or return;
+		my $model = $class->detect_animation($l->{extras});
+		return (undef, "not a recognized image or animation") unless $model;
+
 		$model = 'Prima::Image::Animate::' . $model;
-
 		return $model-> new( loader => $l );
 	}
 }
+
+sub loader { shift->{loader} }
 
 sub add
 {
