@@ -139,9 +139,9 @@ XS( Image_load_FROMPERL)
 				croak("Another loading session is in progress");
 
 			load_next_frame = true;
-			if ( pexist(rewind)) {
-				(( PImgLoadFileInstance) var-> loading_session)->frame = pget_i(rewind);
-				pdelete(rewind);
+			if ( pexist(index)) {
+				(( PImgLoadFileInstance) var-> loading_session)->frame = pget_i(index);
+				pdelete(index);
 			}
 		} else
 			open_load = true;

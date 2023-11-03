@@ -483,9 +483,20 @@ apc_img_load_next_frame( Handle target, PImgLoadFileInstance fi, HV * profile, c
 
 	/* create storage */
 	if (target == NULL_HANDLE) {
-		HV * profile = newHV();
-		fi->object = Object_create( className, profile);
-		sv_free(( SV *) profile);
+		HE * he;
+		HV * hv = newHV();
+		hv_iterinit( profile);
+		while (( he = hv_iternext( profile)) != NULL) {
+			char *key = HeKEY(he);
+			if ( key && key[0] == 'o' && key[1] == 'n') {
+				SV ** holder;
+				holder = hv_fetch( profile, key, HeKLEN(he), 0);
+				if ( holder == NULL || !SvOK( *holder)) continue;
+				(void) hv_store( hv, key, HeKLEN(he), newSVsv(*holder), 0);
+			}
+		}
+		fi->object = Object_create( className, hv);
+		sv_free(( SV *) hv);
 		if ( !fi->object)
 			outd("Failed to create object '%s'", className);
 	} else

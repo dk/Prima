@@ -160,7 +160,7 @@ sub reset
 		return unless @$i;
 		$ix = $i-> [0];
 	} else {
-		$self->{loader}->rewind;
+		$self->{loader}->current(0);
 		$ix = $self->load_next_image;
 	}
 	return unless $ix;
@@ -200,7 +200,7 @@ sub advance_frame
 	} elsif ( $curr >= 0 ) {
 		$self->{image} = $self-> load_next_image;
 	} elsif ( $curr == -2 ) {
-		$self-> {loader}->rewind;
+		$self-> {loader}->current(0);
 		$self->{image} = $self-> load_next_image;
 	} else {
 		$self->{image} = $oimg;
