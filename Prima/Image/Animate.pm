@@ -88,7 +88,7 @@ sub load
 		);
 		return (undef, $error) unless $l;
 
-		my $model = $class->detect_animation($l->{extras});
+		my $model = $class->detect_animation($l->{extras}, 1);
 		return (undef, "not a recognized image or animation") unless $model;
 
 		$model = 'Prima::Image::Animate::' . $model;
