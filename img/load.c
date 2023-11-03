@@ -485,14 +485,16 @@ apc_img_load_next_frame( Handle target, PImgLoadFileInstance fi, HV * profile, c
 	if (target == NULL_HANDLE) {
 		HE * he;
 		HV * hv = newHV();
-		hv_iterinit( profile);
-		while (( he = hv_iternext( profile)) != NULL) {
-			char *key = HeKEY(he);
-			if ( key && key[0] == 'o' && key[1] == 'n') {
-				SV ** holder;
-				holder = hv_fetch( profile, key, HeKLEN(he), 0);
-				if ( holder == NULL || !SvOK( *holder)) continue;
-				(void) hv_store( hv, key, HeKLEN(he), newSVsv(*holder), 0);
+		if ( profile ) {
+			hv_iterinit( profile);
+			while (( he = hv_iternext( profile)) != NULL) {
+				char *key = HeKEY(he);
+				if ( key && key[0] == 'o' && key[1] == 'n') {
+					SV ** holder;
+					holder = hv_fetch( profile, key, HeKLEN(he), 0);
+					if ( holder == NULL || !SvOK( *holder)) continue;
+					(void) hv_store( hv, key, HeKLEN(he), newSVsv(*holder), 0);
+				}
 			}
 		}
 		fi->object = Object_create( className, hv);
