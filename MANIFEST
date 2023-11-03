@@ -320,6 +320,7 @@ Prima/Image/gif.pm
 Prima/Image/heif.fm
 Prima/Image/heif.pm
 Prima/Image/jpeg.pm
+Prima/Image/Loader.pm
 Prima/Image/png.pm
 Prima/Image/tiff.fm
 Prima/Image/tiff.pm
@@ -414,6 +415,7 @@ t/Image/Conversion.t
 t/Image/Extract.t
 t/Image/FloodFill.t
 t/Image/Import.t
+t/Image/Loader.t
 t/Image/Path.t
 t/Image/ROP.t
 t/Image/Stream.t

@@ -1312,7 +1312,7 @@ close_load( PImgCodec instance, PImgLoadFileInstance fi)
 {
 	LoadRec * l = ( LoadRec *) fi-> instance;
 
-	if ( fi-> loadExtras && fi->frameMapSize == 0) {
+	if ( fi-> loadExtras && l->load_req == -1) {
 		/* null load request, ignore failure */
 		fi-> frame = -1;
 		load( instance, fi);
@@ -1384,7 +1384,7 @@ typedef struct _SaveRec {
 	png_structp png_ptr;
 	png_infop info_ptr;
 	Byte * line;
-	Bool icon, autoConvert;
+	Bool icon;
 	int m_type, m_mask, m_palSize;
 	RGBColor m_palette[256];
 	png_byte m_dataPLTE[12 + 256 * 3];
@@ -1447,7 +1447,7 @@ write_IHDR(PImgSaveFileInstance fi)
 	if ( s->icon && i-> autoMasking != amMaskIndex && i-> autoMasking != amMaskColor ) {
 		/* png doesn't support paletted images with alpha channel? */
 		if ( color_type == PNG_COLOR_TYPE_PALETTE) {
-			if ( !s->autoConvert)
+			if ( !fi->autoConvert)
 				outc("Cannot apply alpha channel to a paletted image");
 			CImage( i)-> set_type(( Handle) i, imRGB);
 			if ( i-> type != imRGB)
@@ -1457,7 +1457,7 @@ write_IHDR(PImgSaveFileInstance fi)
 
 		/* and does not alpha with bit_depth other that 8 or 24 bits? */
 		if ( bit_depth != 8) {
-			if ( !s->autoConvert)
+			if ( !fi->autoConvert)
 				outc( "Image depth must be of 8 bits to be saved with alpha channel");
 			CImage( i)-> set_type(( Handle) i, imbpp8 | ( i-> type & imGrayScale));
 			if (( i-> type & imBPP) != 8)
@@ -1466,7 +1466,7 @@ write_IHDR(PImgSaveFileInstance fi)
 		}
 
 		if ( i-> maskType != imbpp8) {
-			if ( !s->autoConvert)
+			if ( !fi->autoConvert)
 				outc("maskType is not of type im::bpp8");
 			i-> self-> set_maskType( fi-> object, imbpp8);
 			if ( i-> maskType != imbpp8 )
@@ -1907,7 +1907,7 @@ write_fcTL(PImgSaveFileInstance fi)
 		(s->icon && i->maskType != s->m_mask) ||
 		(s->m_palSize > 0 && memcmp( s-> m_palette, i-> palette, i-> palSize * 3) != 0)
 	) {
-		if ( s->autoConvert ) {
+		if ( fi->autoConvert ) {
 			if (
 				i->type != s->m_type ||
 				(s->m_palSize > 0 && memcmp( s-> m_palette, i-> palette, i-> palSize * 3) != 0)
@@ -2094,7 +2094,7 @@ write_first_frame(PImgSaveFileInstance fi)
 	png_unknown_chunk acTL_chunk = { "acTL", actl, 8, PNG_HAVE_IHDR };
        	png_byte apngChunks[]= {"acTL\0fcTL\0fdAT\0"};
 
-	png_save_uint_32( &actl[0],  fi->frameMapSize);
+	png_save_uint_32( &actl[0],  fi->n_frames);
 	png_save_uint_32( &actl[4],  pexist(loopCount) ? pget_i(loopCount) : 0);
 
 	png_set_keep_unknown_chunks( s->png_ptr, PNG_HANDLE_CHUNK_ALWAYS, apngChunks, 3); 
@@ -2149,24 +2149,20 @@ write_classic_png(PImgSaveFileInstance fi)
 static Bool
 save( PImgCodec instance, PImgSaveFileInstance fi)
 {
-	dPROFILE;
-	HV * profile = fi-> extras;
 	SaveRec * s = ( SaveRec *) fi-> instance;
 
 	s-> icon = kind_of( fi-> object, CIcon);
-	/* recognize autoConvert as the image subsystem does */
-	s->autoConvert = pexist( autoConvert) ? pget_B( autoConvert) : true;
 
 	if ( setjmp( png_jmpbuf( s-> png_ptr)) != 0) return false;
 
 #ifdef APNG
-	if ( fi->frameMapSize == 1 )
+	if ( fi->n_frames == 1 )
 #endif
 		return write_classic_png(fi);
 #ifdef APNG
 	else if ( fi->frame == 0)
 		return write_first_frame(fi);
-	else if ( fi->frame == fi->frameMapSize - 1)
+	else if ( fi->frame == fi->n_frames - 1)
 		return write_last_frame(fi);
 	else
 		return write_middle_frame(fi);

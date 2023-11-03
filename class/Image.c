@@ -124,6 +124,15 @@ Image_handle_event( Handle self, PEvent event)
 void
 Image_done( Handle self)
 {
+	if ( var-> loading_session ) {
+		apc_img_close_load((PImgLoadFileInstance) var-> loading_session);
+		var-> loading_session = NULL;
+	}
+	if ( var-> saving_session ) {
+		apc_img_close_save((PImgSaveFileInstance) var-> saving_session, false);
+		var-> saving_session = NULL;
+	}
+
 	if ( var-> regionData ) {
 		free(var->regionData);
 		var->regionData = NULL;

@@ -603,7 +603,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 	dPROFILE;
 	GifFileType * g = ( GifFileType *) fi-> instance;
 	PImage i = ( PImage) fi-> object;
-	HV * profile = fi-> objectExtras;
+	HV * profile = fi-> extras;
 
 	if ( fi-> frame == 0) {
 		/* put screen description */

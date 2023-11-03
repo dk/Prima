@@ -896,7 +896,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 	i = ( PImage) fi-> object;
 	l = ( SaveRec *) fi-> instance;
 	appdata = NULL;
-	profile = fi-> objectExtras;
+	profile = fi-> extras;
 
 	l-> c. image_width  = i-> w;
 	l-> c. image_height = i-> h;

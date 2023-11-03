@@ -285,6 +285,32 @@ appropriate codec was compiled in, the following would work:
 		ICON
 	print $icon->save_stream;
 
+=head2 Reading one frame at a time
+
+When one needs to load all frames from an image that contains too many frames,
+or there is a constraint on memory, Prima provides a way to load images one by
+one, without needing to allocate space for all frames in the file.
+
+This section describes the lower-level API that allows for that functionality,
+however, an easier-to-use higher level API is documented in L<Prima::Image::Loader> .
+
+In order to read one frame at a time, the programmer needs to open a loading
+session, by adding the C<< session => 1 >> option to the C<load> call; that
+call can only be made on an existing object, not on the package. The call would
+return the success flag and an eventual error in C<$@>, as usual. No frames are
+loaded yet, though the C<extras> hash on the caller image object may be filled,
+depending on the C<loadExtras> option.  The options supplied to the session
+opening call would apply to all subsequent frames, but these settings may be
+overridden later.
+
+Having the session successfully opened, the subsequent calls to C<load> with
+the C<< session => 1 >> option but with the first parameter set to undef will
+load the next frame. Each of those C<load> call will recognize the options
+supplied and will apply them to indifidual frames. The session-based loading will
+recognize all of the function options, except the C<map>, C<profiles> and
+C<loadAll> options. The loading session is closed automatically after either a
+first loading failure or after the end of file is reached.
+
 =head1 Saving
 
 =head2 Simple saving
@@ -337,6 +363,30 @@ values raise an error.
        $x-> {extras}-> {comments} = 'Created by Prima';
        $x-> save( $f);
 
+=head2 Saving one frame at a time
+
+Similar to the session-based loading, Prima provides the functionality to
+save a multi-frame image with one frame at a time, using the similar API calls.
+
+This section describes the lower-level API that allows for that functionality,
+however, an easier-to-use higher level API is documented in
+L<Prima::Image::Loader/Prima::Image::Saver> .
+
+In order to save one frame at a time, the programmer needs to open a saving
+session, by adding the C<< session => 1 >> option to the C<save> call, and the
+C<frames> options that signals how many frames are to be saved in total; that
+call can only be made on an existing object, not on the package. The call would
+return the success flag and an eventual error in C<$@>, as usual. The options
+supplied to the session opening call would apply to all subsequent frames, but
+these settings may be overridden later.
+
+Having the session successfully opened, the subsequent calls to C<save> with
+the C<< session => 1 >> and the image as the first option option would save the
+next frame.  Each of those C<save> call will recognize the options supplied and
+will apply them to indifidual frames. The session-based saving will recognize
+all of the function options, except the C<images> option. The saving session is
+closed automatically after a first failure.
+
 =head2 Selecting a codec
 
 The integer field C<codecID>, the same field that is defined after successful
@@ -368,12 +418,6 @@ C<Prima::Dialog::ImageDialog::SaveImageDialog> code might be useful.
 When the conversion takes place, the Image property C<conversion> is used
 for the selection of the error distribution algorithm if down-sampling
 is required.
-
-=head2 Appending frames to an existing file
-
-This functionality is under design, but the common outlines are already set.
-The parameter C<append> ( 0 by default ) triggers this behavior - if it is set,
-then an append attempt is made.
 
 =head1 Managing the codecs
 
@@ -460,10 +504,6 @@ an index more than zero, 0 otherwise
 =item canSaveMultiple
 
 Is set if the codec can save more than one frame
-
-=item canAppend
-
-Is set if the codec can append frames to an existing file
 
 =item types
 
@@ -1194,7 +1234,7 @@ Default: 0
 
 =head2 WebP codec
 
-=head3 Load input
+=head3 Load output
 
 =over
 

@@ -822,7 +822,7 @@ and
    my $x = Prima::Image-> load( ... );
    die "$@" unless $x;
 
-See L<Prima::image-load> for details.
+See L<Prima::image-load> for details and L<Prima::Image::Loader> for more functionality.
 
 Note: when loading from streams on win32, mind the C<binmode>.
 
@@ -905,7 +905,7 @@ string.
 Note that when saving to a stream, C<codecID> must be explicitly given in
 C<%PARAMETERS>.
 
-See L<Prima::image-load> for details.
+See L<Prima::image-load> for details and L<Prima::Image::Loader/Prima::Image::Saver> for more functionality.
 
 Note: when saving to streams on win32, mind the C<binmode>.
 

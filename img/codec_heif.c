@@ -726,7 +726,7 @@ open_save( PImgCodec instance, PImgSaveFileInstance fi)
 	SaveRec *l;
 	int sz;
 
-	sz = sizeof(SaveRec) + (fi->frameMapSize * sizeof(struct heif_image_handle*));
+	sz = sizeof(SaveRec) + (fi->n_frames * sizeof(struct heif_image_handle*));
 	if (!(l = malloc(sz))) return NULL;
 	memset( l, 0, sz);
 	l-> handles = l->handlebuf;
@@ -774,7 +774,7 @@ encode_thumbnail( PImgSaveFileInstance fi, HV * profile)
 		return true;
 
 	thumbnail_of = pget_i(thumbnail_of);
-	if ( thumbnail_of < 0 || thumbnail_of >= fi->frameMapSize )
+	if ( thumbnail_of < 0 || thumbnail_of >= fi->n_frames )
 		SET_ERROR("thumbnail_of must be an integer from 0 to the last frame");
 	if ( thumbnail_of == fi->frame)
 		SET_ERROR("thumbnail_of cannot refer to itself");
@@ -855,7 +855,7 @@ static Bool
 apply_encoder_options( PImgSaveFileInstance fi, enum heif_compression_format compression, struct heif_encoder* encoder)
 {
 	SV **tmp;
-	HV * profile = fi-> objectExtras;
+	HV * profile = fi-> extras;
 	SaveRec * l = ( SaveRec *) fi-> instance;
 	const struct heif_encoder_parameter*const* list;
 	const char * shrt = NULL, * enc_name;
@@ -922,7 +922,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 	dPROFILE;
 	SaveRec * l = ( SaveRec *) fi-> instance;
 	struct heif_encoder* encoder = NULL;
-	HV * profile = fi-> objectExtras;
+	HV * profile = fi-> extras;
 	enum heif_compression_format compression;
 	struct heif_image* himg = NULL;
 	PIcon i = ( PIcon) fi-> object;
@@ -1063,7 +1063,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 		CHECK_HEIF_ERROR;
 	}
 
-	if ( fi-> frame == fi-> frameMapSize - 1 ) {
+	if ( fi-> frame == fi-> n_frames - 1 ) {
 		CALL heif_context_write(l->ctx, &writer, fi->req);
 		CHECK_HEIF_ERROR;
 	}
@@ -1083,7 +1083,7 @@ close_save( PImgCodec instance, PImgSaveFileInstance fi)
 	SaveRec * l = ( SaveRec *) fi-> instance;
 	int i;
 
-	for ( i = 0; i < fi-> frameMapSize; i++) {
+	for ( i = 0; i < fi-> n_frames; i++) {
 		if ( l->handles[i] )
 			heif_image_handle_release(l->handles[i]);
 	}

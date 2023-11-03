@@ -6,6 +6,7 @@ Revision history for Perl module Prima
  - Add menus to file dialogs
  - Remove obsolete RadioGroup and CheckBoxGroup - use GroupBox instead
  - Proofread all documentation through Grammarly
+ - Add progressive image loading and saving
 
 1.70 2023-09-03
  - Use fading effects in widgets
