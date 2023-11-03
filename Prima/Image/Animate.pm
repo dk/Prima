@@ -664,9 +664,15 @@ format name on success, undef otherwise.
 Loads a GIF, APNG, or WebP animation sequence from C<$SOURCE> which is either a
 file or a stream. Options are the same as used by the C<Prima::Image::load> method.
 
+Depending on the C<loadAll> option, either loads all frames at once (1), or uses
+C<Prima::Image::Loader> to load only a single frame at a time (0, default).
+Depending on the loading mode, some properties may not be available.
+
 =head2 add $IMAGE
 
 Appends an image frame to the container.
+
+Only available if the C<loadAll> option is on.
 
 =head2 bgColor
 
@@ -753,7 +759,7 @@ Returns the width of the composite frame
 
 =head1 SEE ALSO
 
-L<Prima::image-load>
+L<Prima::image-load>, L<Prima::Image::Loader>.
 
 =head1 AUTHOR
 
