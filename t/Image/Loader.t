@@ -53,6 +53,7 @@ sub test_codec
 	my @nx = Prima::Image->load(\*F, loadAll => 1, loadExtras => 1 );
 	is( scalar(@nx), 3, "$name: traditional load returned 3 frames");
 	is( $nx[0] && $nx[0]->{extras} && $nx[0]->{extras}->{frames}, 3, "$name: extras.frames is okay");
+	$_->type(im::Byte) for grep { defined } @nx;
 	for my $n ( 0..2 ) {
 		is($nx[$n]->pixel(0,0), $n, "$name/loadAll: image $n is loaded correctly") if $nx[$n];
 	}
@@ -60,23 +61,27 @@ sub test_codec
 	for my $n (0..2) {
 		seek(F,0,0);
 		@nx = Prima::Image->load(\*F, index => $n);
+		$_->type(im::Byte) for grep { defined } @nx;
 		is( scalar(@nx), 1, "$name/index: index $n loaded ok");
 		is($nx[0]->pixel(0,0), $n, "$name/index: image $n is loaded correctly") if $nx[0];
 
 		my $i = Prima::Image->new;
 		seek(F,0,0);
 		($ok,$err) = $i->load(\*F, index => $n);
+		$i->type(im::Byte);
 		ok( $ok, "$name/inplace: index $n loaded ok");
 		is($i->pixel(0,0), $n, "$name/inplace: image $n is loaded correctly");
 
 		seek(F,0,0);
 		@nx = Prima::Image->load(\*F, map => [$n]);
+		$_->type(im::Byte) for grep { defined } @nx;
 		is( scalar(@nx), 1, "$name/map: index $n loaded ok");
 		is($nx[0]->pixel(0,0), $n, "$name/map: image $n is loaded correctly") if $nx[0];
 
 		my $m = ($n < 2) ? $n + 1 : 0;
 		seek(F,0,0);
 		@nx = Prima::Image->load(\*F, map => [$n, $m]);
+		$_->type(im::Byte) for grep { defined } @nx;
 		is( scalar(@nx), 2, "$name/map($n,$m): images $n and $m loaded ok");
 		is($nx[0]->pixel(0,0), $n, "$name/map($n,$m): image $n is loaded correctly") if $nx[0];
 		is($nx[1]->pixel(0,0), $m, "$name/map($n,$m): image $m is loaded correctly") if $nx[1];
@@ -86,6 +91,7 @@ sub test_codec
 	$i = Prima::Image->new;
 	seek(F,0,0);
 	@nx = $i->load(\*F, map => [], loadExtras => 1, wantFrames => 1);
+	$_->type(im::Byte) for grep { defined } @nx;
 	is(scalar(@nx), 0, "$name: traditional null load request is ok");
 	is($i->{extras}->{frames}, 3, "$name: traditional null load request says 3 frames");
 
@@ -98,6 +104,7 @@ sub test_codec
 	for my $n (0..2) {
 		ok(!$lx->eof, "$name/loader: lx($n) is not eof");
 		($i,$err) = $lx->next;
+		$i->type(im::Byte) if $i;
 		ok( $i, "$name/loader: image $n loaded".($i?'':":$err"));
 		is($i->pixel(0,0), $n, "$name/loader: image $n is loaded correctly")
 			if $i;
@@ -111,7 +118,6 @@ sub test_codec
 
 for ( my $i = 0; $i < @codecs; $i++) {
 	test_codec($codecs[$i], $names[$i]);
-#	last; # XXX
 }
 
 

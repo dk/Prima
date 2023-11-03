@@ -694,10 +694,9 @@ apc_img_load( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq,  
 			if ( fi->frameCount >= 0 && i >= fi->frameCount)
 				break;
 		} else {
-			if ( fi->frameCount < 0 )
-				fi-> frame = frameMap[i];
-			else if ( frameMap[i] >= fi->frameCount )
+			if ( fi->frameCount >= 0 && frameMap[i] >= fi->frameCount )
 				out("No such frame");
+			fi-> frame = frameMap[i];
 		}
 
 		if ( profiles && i <= profiles_len) {
@@ -719,7 +718,7 @@ apc_img_load( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq,  
 		if ( img == NULL_HANDLE && incrementalLoad ) {
 			/* if it is EOF? report no error then */
 			if ( fi-> frameCount < 0) {
-				fi-> frameCount = fi-> frame;
+				fi-> frameCount = fi-> frame - 1;
 				eof_is_not_an_error = true;
 			} else if ( fi->frame >= fi->frameCount )
 				eof_is_not_an_error = true;
