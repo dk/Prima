@@ -16,11 +16,10 @@ sub new
 		current    => -1,
 	}, $class;
 
-	$self->{loadAll} = 0 if $self->{images};
+	$self->{loadAll} = 1 if $self->{images};
 	$self->{images} //= [] if $self->{loadAll};
 
 	$self-> reset;
-
 	return $self;
 }
 
@@ -486,6 +485,7 @@ sub load_next_image
 {
 	my $i = shift->SUPER::load_next_image;
 	$i->maskType(im::bpp8) if $i && $i->isa('Prima::Icon');
+	return $i;
 }
 
 sub get_extras
@@ -501,7 +501,7 @@ sub get_extras
 sub next
 {
 	my $self = shift;
-	my $info = $self->{info};
+	my $info = $self->{info} or return;
 	my %ret;
 
 	if ( $info-> {disposalMethod} eq 'restore') {
