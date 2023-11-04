@@ -332,7 +332,7 @@ handle_popup( Handle self, PEvent event)
 {
 	enter_method;
 	Handle org = self;
-	my-> notify( self, "<siP", "Popup", event-> gen. B, event-> gen. P. x, event-> gen. P. y);
+	my-> notify( self, "<siP", "Popup", event-> gen. B, event-> gen. P);
 	objCheck;
 	if ( evOK) {
 		while ( self) {
