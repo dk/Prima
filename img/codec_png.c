@@ -414,28 +414,30 @@ process_header( PImgLoadFileInstance fi, Bool use_subloader )
 	}
 
 	/* alpha blending */
-	if ( !l->icon && fi->blending ) {
-		png_color_16 p;
-		Color background = l->m_background;
-		/* override with user data */
-		if ( pexist( background)) 
-			background = pget_i( background);
-		if (( background & clSysFlag) == 0) {
-			p.red   = (background & 0xFF0000) >> 16;
-			p.green = (background & 0x00FF00) >> 8;
-			p.blue  = (background & 0x0000FF);
-			if (
-				( color_type == PNG_COLOR_TYPE_GRAY_ALPHA) &&
-				(( p.red != p.green) || (p.red != p.blue))
-			) {
-			/* setting background of GRAY_ALPHA with non-gray color can't be performed */
-			/* into gray color space */
-				png_set_gray_to_rgb(png_ptr);
-				png_set_bgr(png_ptr);
-				type = 24;
-				channels = 4;
+	if ( !l->icon ) {
+		if ( fi->blending ) {
+			png_color_16 p;
+			Color background = l->m_background;
+			/* override with user data */
+			if ( pexist( background))
+				background = pget_i( background);
+			if (( background & clSysFlag) == 0) {
+				p.red   = (background & 0xFF0000) >> 16;
+				p.green = (background & 0x00FF00) >> 8;
+				p.blue  = (background & 0x0000FF);
+				if (
+					( color_type == PNG_COLOR_TYPE_GRAY_ALPHA) &&
+					(( p.red != p.green) || (p.red != p.blue))
+				) {
+				/* setting background of GRAY_ALPHA with non-gray color can't be performed */
+				/* into gray color space */
+					png_set_gray_to_rgb(png_ptr);
+					png_set_bgr(png_ptr);
+					type = 24;
+					channels = 4;
+				}
+				png_set_background(png_ptr, &p, PNG_BACKGROUND_GAMMA_SCREEN, 0, 1.0);
 			}
-			png_set_background(png_ptr, &p, PNG_BACKGROUND_GAMMA_SCREEN, 0, 1.0);
 		}
 		png_set_strip_alpha(png_ptr);
 	}
