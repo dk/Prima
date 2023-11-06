@@ -14,11 +14,13 @@ sub new
 	while ( my ($k, $v) = each %opt) {
 		$events{$k} = $v if $k =~ /^on/;
 	}
+	my $rescue = delete $opt{rescue};
 
 	my $self = bless {
 		source  => $source,
 		events  => \%events,
 		options => \%opt,
+		rescue  => $rescue,
 	};
 
 	my ( $l, $ok ) = $self->reload;
@@ -61,6 +63,11 @@ sub next
 	my $new_frame;
 	$new_frame = $opt{index} = delete $self->{rewind_request}
 		if defined $self->{rewind_request};
+	if ( $self->{rescue}) {
+		$new_frame = $opt{index} = $self->{current}
+			unless defined $new_frame;
+		$self->reload;
+	}
 	my @img = $self->{image}->load( undef, %{ $self->{events} } , %opt, session => 1 );
 	if ( $img[0] ) {
 		my $e = $img[0]->{extras};
@@ -99,10 +106,13 @@ sub current
 	delete $self->{error};
 }
 
+sub rescue_mode { $#_ ? $_[0]->{rescue} = $_[1] : $_[0]->{rescue} }
+
 sub extras  { shift->{extras} }
 sub frames  { shift->{frames} }
 sub source  { shift->{source} }
 sub DESTROY { $_[0]->{image}-> destroy if $_[0]->{image} }
+
 
 package Prima::Image::Saver;
 
@@ -215,6 +225,11 @@ If it is desired to work around this limitation, a new session must be opened.
 The C<reload> method does this by reopening the loading session with all the
 parameters supplied to C<new>. The programmer thus has a chance to record how
 many successful frames were loaded, and only navigate these after the reload.
+
+=item rescue BOOLEAN
+
+If set, reopens the input stream or file on ever new frame.
+This may help recover broken frames.
 
 =item source
 
