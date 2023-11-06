@@ -15,11 +15,25 @@ sub new
 		$events{$k} = $v if $k =~ /^on/;
 	}
 
-	my $img = Prima::Image->new( %events );
-	my $ok = $img->load( $source,
+	my $self = bless {
+		source  => $source,
+		events  => \%events,
+		options => \%opt,
+	};
+
+	my ( $l, $ok ) = $self->reload;
+	return (undef, $ok) unless $l;
+	return $self;
+}
+
+sub reload
+{
+	my $self = shift;
+	my $img = Prima::Image->new( %{ $self->{events} } );
+	my $ok = $img->load( $self->{source},
 		loadExtras => 1,
 		wantFrames => 1,
-		%opt,
+		%{ $self->{options} },
 		session    => 1
 	);
 	unless ($ok) {
@@ -30,15 +44,12 @@ sub new
 		$img->destroy;
 		return (undef, "cannot read number of frames");
 	}
-
-	return bless {
-		source  => $source,
-		image   => $img,
-		extras  => $img->{extras},
-		frames  => $img->{extras}->{frames},
-		current => 0,
-		events  => \%events,
-	}, $class;
+	$self->{image}  = $img;
+	$self->{extras} = $img->{extras};
+	$self->{frames} = $img->{extras}->{frames};
+	$self->{current} = 0;
+	undef $self->{error};
+	return $img;
 }
 
 sub next
@@ -195,6 +206,15 @@ Returns number of frames in the file
 Loads the next image frame.
 
 Returns either a newly loaded image, or C<undef> and the error string.
+
+=item reload
+
+In case an animation file is defect, and cannot be loaded in full, the toolkit
+will not allow to continue the loading session and will close it automatically.
+If it is desired to work around this limitation, a new session must be opened.
+The C<reload> method does this by reopening the loading session with all the
+parameters supplied to C<new>. The programmer thus has a chance to record how
+many successful frames were loaded, and only navigate these after the reload.
 
 =item source
 

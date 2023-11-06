@@ -176,11 +176,21 @@ sub reset
 	$self-> fixup_rect( $e, $ix);
 }
 
+sub warning { shift->{warning} }
+
 sub load_next_image
 {
 	my $self = shift;
 	return unless $self->{loader};
-	my ( $i ) = $self->{loader}->next;
+	$self->{warning} = undef;
+	my ( $i, $err ) = $self->{loader}->next;
+	unless ($i) {
+		$self->{warning} = $err;
+		$self->{loader}->reload;
+		( $i, $err ) = $self->{loader}->next;
+		$self->{current} = 0;
+		$self->{warning} = $err unless $i;
+	}
 	return $i;
 }
 
@@ -208,6 +218,10 @@ sub advance_frame
 		$self->{image} = $self-> load_next_image;
 	} else {
 		$self->{image} = $oimg;
+	}
+	unless ($self->{image}) {
+		$self->{image} = $oimg;
+		$self->{info} = $oinfo;
 	}
  
 	my $info = $self->{info} = $self-> get_extras;
@@ -757,6 +771,13 @@ Returns the width and height of the composite frame
 =head2 total
 
 Return the number of frames
+
+=head2 warning
+
+If an error occured during frame loading, it will be stored in the C<warning>
+property. The animation will stop at the last successfully loaded frame
+
+Only available if the C<loadAll> option is off.
 
 =head2 width
 
