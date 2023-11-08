@@ -2133,6 +2133,7 @@ apc_widget_set_shape( Handle self, Handle mask)
 	HRGN rgn = NULL;
 	RECT xr;
 	objCheck false;
+	Point sz;
 
 	if ( !mask) {
 		if ( sys class_name == WC_FRAME && is_apt(aptLayered))
@@ -2144,6 +2145,7 @@ apc_widget_set_shape( Handle self, Handle mask)
 	}
 
 
+	sz = apc_widget_get_size( self);
 	rgn = CreateRectRgn(0,0,0,0);
 	CombineRgn( rgn, GET_REGION(mask)->region, NULL, RGN_COPY);
 	GetRgnBox( rgn, &xr);
@@ -2151,7 +2153,6 @@ apc_widget_set_shape( Handle self, Handle mask)
 	sys extra_bounds. y = GET_REGION(mask)->aperture;
 	if ( sys class_name == WC_FRAME && !is_apt(aptLayered)) {
 		Point delta = get_window_borders( sys s. window. border_style);
-		Point sz    = apc_widget_get_size( self);
 		Point p     = sys extra_bounds;
 		HRGN  r1, r2;
 
@@ -2170,10 +2171,12 @@ apc_widget_set_shape( Handle self, Handle mask)
 		DeleteObject(rgn);
 	} else if ( sys class_name == WC_FRAME ) {
 		sys extra_pos. x = sys extra_pos. y = 0;
+		OffsetRgn( rgn, 0, GET_REGION(mask)->aperture - xr.bottom - 1);
 		if ( !SetWindowRgn((HWND) var handle, rgn, true))
 			apiErrRet;
 	} else {
 		sys extra_pos. x = sys extra_pos. y = 0;
+		OffsetRgn( rgn, 0, sz.y - GET_REGION(mask)->aperture);
 		if ( !SetWindowRgn( HANDLE, rgn, true))
 			apiErrRet;
 	}

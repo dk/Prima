@@ -108,9 +108,19 @@ sub hs2xy
 	return map { $self->{scaling} * $_ } 128 + $r * sin( $a), 128 + $r * cos( $a);
 }
 
+sub _diameter
+{
+	my ($id, $pix) = @_;
+	my $imul = 256 * $pix / $id;
+	my $d = int( 256 * $pix - $imul * 2 - 1 + .5);
+	$d-- if $d % 2;
+	return $d;
+}
+
 sub create_wheel
 {
 	my ($id, $pix, $color)   = @_;
+	my $d = _diameter($id, $pix);
 	my $imul = 256 * $pix / $id;
 
 	my ( $y1, $x1) = ($id,$id);
@@ -143,11 +153,8 @@ sub create_wheel
 	);
 	$mask-> scaling( ist::Triangle ) if $quality;
 	$mask-> clear;
-	$mask-> fill_ellipse( map { $_ * $xmul }
-		128 * $pix, 128 * $pix,
-		(256 * $pix) - $imul * 2 - 2,
-		(256 * $pix) - $imul * 2 - 2,
-	);
+	my $c = int( 128 * $pix + .5 );
+	$mask-> fill_ellipse( map { $_ * $xmul } $c, $c, $d, $d);
 	$mask-> size( $i->size );
 
 	my $target = Prima::Image->new(
@@ -166,19 +173,21 @@ sub create_wheel_shape
 {
 	return unless $shapext;
 	my ($id, $pix) = @_;
-	my $imul = 256 * $pix / $id;
+	my $quality = $::application->get_bpp > 8;
+	my $xmul = $quality ? 2 : 1;
 	my $a = Prima::Image-> new(
-		width => 256 * $pix,
-		height => 256 * $pix,
-		type => im::BW,
+		width     => $xmul * 256 * $pix,
+		height    => $xmul * 256 * $pix,
+		type      => im::BW,
+		backColor => cl::Black,
+		color     => cl::White,
+		scaling   => ist::OR,
 	);
-	$a-> begin_paint;
-	$a-> color( cl::Black);
-	my $last = 256 * $pix - 1;
-	$a-> bar( 0, 0, $last, $last);
-	$a-> color( cl::White);
-	$a-> fill_ellipse( 128 * $pix, 128 * $pix, $last - $imul * 2, $last - $imul * 2);
-	$a-> end_paint;
+	my $d = _diameter($id,$pix);
+	my $c = int( 128 * $pix + .5 );
+	$a-> clear;
+	$a-> fill_ellipse( map { $xmul * $_ } $c, $c, $d, $d);
+	$a-> size( map { $_ / $xmul } $a->size);
 	return $a;
 }
 
