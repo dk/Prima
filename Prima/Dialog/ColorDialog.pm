@@ -122,46 +122,44 @@ sub create_wheel
 		type   => im::RGB,
 	);
 
-	$i-> color( cl::Black);
-	$i-> bar( 0, 0, $i-> width, $i-> height);
-
-	my ( $y, $x);
-
-	for ( $y = 0; $y < $y1; $y++) {
-		for ( $x = 0; $x < $x1; $x++) {
+	for ( my $y = 0; $y < $y1; $y++) {
+		for ( my $x = 0; $x < $x1; $x++) {
 			my ( $h, $s) = xy2hs( $x, $y, $d0);
 			my ( $r, $g, $b) = hsv2rgb( $h, $s, 1);
 			$i-> pixel( $x, $y, $b | ($g << 8) | ($r << 16));
 		}
 	}
-	$i-> scaling( ist::Gaussian ) if $::application->get_bpp > 8;
+
+	my $quality = $::application->get_bpp > 8;
+	$i-> scaling( ist::Gaussian ) if $quality;
 	$i-> size( 256 * $pix, 256 * $pix);
 
-	my $xa = Prima::DeviceBitmap-> new(
-		width  => 256 * $pix,
-		height => 256 * $pix,
-		name   => 'ColorWheel',
+	my $xmul = $quality ? 2 : 1;
+	my $mask = Prima::Image->new(
+		size      => [ map { $_ * $xmul } $i-> size ],
+		type      => im::Byte,
+		backColor => 0x000000,
+		color     => 0xffffff,
 	);
-
-	$xa-> begin_paint;
-	$xa-> color( $color);
-	$xa-> bar( 0, 0, $xa-> size);
-	$xa-> rop( rop::XorPut);
-	$xa-> put_image( 0, 0, $i);
-	$xa-> rop( rop::CopyPut);
-	$xa-> color( cl::Black);
-	$xa-> fill_ellipse(
+	$mask-> scaling( ist::Triangle ) if $quality;
+	$mask-> clear;
+	$mask-> fill_ellipse( map { $_ * $xmul }
 		128 * $pix, 128 * $pix,
-		(256 * $pix) - $imul * 2 - 1,
-		(256 * $pix) - $imul * 2 - 1
+		(256 * $pix) - $imul * 2 - 2,
+		(256 * $pix) - $imul * 2 - 2,
 	);
-	$xa-> rop( rop::XorPut);
-	$xa-> put_image( 0, 0, $i);
-	$xa-> end_paint;
+	$mask-> size( $i->size );
 
-	$i-> destroy;
-
-	return $xa;
+	my $target = Prima::Image->new(
+		type      => im::RGB,
+		size      => [$i->size],
+		backColor => $color,
+	);
+	$target->clear;
+	$i = Prima::Icon->create_combined( $i, $mask );
+	$i-> premultiply_alpha;
+	$target-> put_image(0,0,$i);
+	return $target->bitmap;
 }
 
 sub create_wheel_shape
@@ -222,7 +220,7 @@ sub init
 	my $dx = $Prima::Widget::default_font_box[0] / ($self-> designScale)[0];
 	my $dy = $Prima::Widget::default_font_box[1] / ($self-> designScale)[1];
 	my $pix = ( $dx < $dy ) ? $dx : $dy;
-	$colorWheel = create_wheel(32, $pix, $self-> backColor) unless $colorWheel;
+	$colorWheel = create_wheel(32, $pix, $self-> map_color($self->backColor)) unless $colorWheel;
 	$colorWheelShape = create_wheel_shape(32, $pix) unless $colorWheelShape;
 
 	$self-> {wheel} = $self-> insert( Widget =>
