@@ -128,7 +128,7 @@ sub calculate_single
 	my $last_color;
 	my $color;
 	if ( $self->{dither}) {
-		$color = $last_color = [ $start_color, $start_color, 0 ];
+		$color = $last_color = [ @start ];
 	} else {
 		$color = $last_color = $start_color;
 	}
@@ -146,7 +146,7 @@ sub calculate_single
 				$c = 0   if $c < 0;
 				push @c, int( $c * 64 + .5 ) / 64;
 			}
-			my $color = \@c;
+			$color = \@c;
 			if ( join('.', @$last_color) ne join('.', @$color )) {
 				my ($c1, $c2, $fp);
 				if ( 3 == grep { $_ == int } @$last_color) {
@@ -179,6 +179,7 @@ sub calculate_single
 						$new_stripe = 0;
 					}
 				}
+
 				push @ret, [$c1, $c2, $fp], $width if $new_stripe;
 				$last_color = $color;
 				$width = 0;
@@ -201,7 +202,16 @@ sub calculate_single
 		$width++;
 	}
 
-	return @ret, $color, $width;
+	if ( $self->{dither}) {
+		if ( @ret ) {
+			$ret[-1] += $width;
+			return @ret;
+		} else {
+			return [ $start_color, $start_color, 0 ], $width;
+		}
+	} else {
+		return @ret, $color, $width;
+	}
 }
 
 sub calculate
@@ -212,7 +222,8 @@ sub calculate
 	$offsets = [ $offsets ] unless ref $offsets;
 	for ( my $i = 0; $i < @$offsets; $i++) {
 		my $breadth = $offsets->[$i] - $last_offset;
-		push @ret, $self-> calculate_single( $breadth, $palette->[$i], $palette->[$i+1], $function, $last_offset);
+		my @k = $self-> calculate_single( $breadth, $palette->[$i], $palette->[$i+1], $function, $last_offset);
+		push @ret, @k;
 		$last_offset = $offsets->[$i];
 	}
 	return \@ret;
