@@ -549,7 +549,7 @@ sub next
 		$info-> {rect}-> {left},
 		$info-> {rect}-> {bottom},
 		$self-> {image},
-		(( $info-> {blendMethod} eq 'blend') ? rop::Blend : rop::SrcCopy)
+		(( $info-> {blendMethod} eq 'blend') ? rop::SrcOver : rop::SrcCopy)
 	);
 
 	$ret{$_} ||= 0 for qw(left bottom right top);
@@ -581,7 +581,7 @@ sub reset
 	}
 }
 
-sub icon  { shift->{canvas}->icon }
+sub icon  { shift->{canvas}->dup }
 sub image { shift->{canvas}->image }
 
 sub draw
