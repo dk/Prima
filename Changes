@@ -7,6 +7,7 @@ Revision history for Perl module Prima
  - Remove obsolete RadioGroup and CheckBoxGroup - use GroupBox instead
  - Proofread all documentation through Grammarly
  - Add progressive image loading and saving
+ - Deprecate Prima::Utils::sound
 
 1.70 2023-09-03
  - Use fading effects in widgets

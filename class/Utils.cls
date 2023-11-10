@@ -5,7 +5,6 @@ package Prima::Utils
 	int  get_os(void);
 	int  get_gui(void);
 	void beep( int flags = mbError) => apc_beep;
-	void sound( int freq = 2000, int dur = 100) => apc_beep_tone;
 	char *username() => apc_get_user_name;
 
 	int  access( SV* path, int mode, Bool effective = 0 );

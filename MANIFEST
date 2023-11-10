@@ -125,7 +125,6 @@ examples/ownerchange.pl
 examples/palette.pl
 examples/pbrush.pl
 examples/periodic.pl
-examples/pitch.pl
 examples/pointers.pl
 examples/print.pl
 examples/progressbar.pl

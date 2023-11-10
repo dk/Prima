@@ -28,6 +28,8 @@ use vars qw(@ISA @EXPORT @EXPORT_OK);
 	nearest_d nearest_i
 );
 
+sub sound { Carp::carp("Prima::Utils::sound is deprecated") }
+
 sub xcolor {
 # input: '#rgb' or '#rrggbb' or '#rrrgggbbb'
 # output: internal color used by Prima
@@ -264,12 +266,6 @@ the system supports no drive letters ( unix ), C<dt::None> is returned.
 Same as perl's native C<sleep> (i.e. C<CORE::sleep>) but with the event loop
 running.  Note that the argument it takes is seconds, for the sake of
 compatibility, while the rest of the toolkit operates in milliseconds.
-
-=item sound [ FREQUENCY = 2000, DURATION = 100 ]
-
-Issues a tone of FREQUENCY in Hz with DURATION in milliseconds.
-
-Obsoleted as modern systems stopped supporting APIs for primitive sound generation.
 
 =item username
 

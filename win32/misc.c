@@ -30,13 +30,6 @@ apc_beep( int style)
 }
 
 Bool
-apc_beep_tone( int freq, int duration)
-{
-	if ( !Beep( freq, duration)) apiErrRet;
-	return true;
-}
-
-Bool
 apc_query_drives_map( const char *firstDrive, char *map, int len)
 {
 	char *m = map;

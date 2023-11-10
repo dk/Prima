@@ -4022,9 +4022,6 @@ apc_file_change_mask( Handle self);
 extern Bool
 apc_beep( int style);
 
-extern Bool
-apc_beep_tone( int freq, int duration);
-
 /* fetch resource constants */
 #define FR(const_name) CONSTANT(fr,const_name)
 START_TABLE(fr,UV)
