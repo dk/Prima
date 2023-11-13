@@ -52,6 +52,7 @@ class/Image.c
 class/Image/conv.c
 class/Image/io.c
 class/Image/primitive.c
+class/Image/text.c
 class/Image.cls
 class/Menu.c
 class/Menu.cls
@@ -162,6 +163,7 @@ img/conv_gray.c
 img/conv_rgbx.c
 img/conv_scanline.c
 img/floodfill.c
+img/glyph.c
 img/line.c
 img/load.c
 img/type.c

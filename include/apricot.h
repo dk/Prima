@@ -1700,6 +1700,7 @@ typedef struct _ObjectOptions_ {
 	unsigned optUTF8_helpContext    : 1;
 	unsigned optPreserveType        : 1;   /* Image */
 	unsigned optReadonlyPaint       : 1;
+	unsigned optInFontQuery         : 1;
 	unsigned optAutoPopup           : 1;   /* Popup */
 	unsigned optActive              : 1;   /* Timer */
 	unsigned optOwnerIcon           : 1;   /* Window */
@@ -3651,6 +3652,7 @@ START_TABLE(ggo,UV)
 #define ggoGlyphIndex   0x01
 #define ggoUseHints     0x02
 #define ggoUnicode      0x04
+#define ggoMonochrome   0x08
 
 #define ggoMove         0
 GGO(Move)
@@ -3664,7 +3666,7 @@ END_TABLE(ggo,UV)
 #undef GGO
 
 extern int
-apc_gp_get_glyph_outline( Handle self, int index, int flags, int ** buffer);
+apc_gp_get_glyph_outline( Handle self, unsigned int index, unsigned int flags, int ** buffer);
 
 extern Byte
 apc_gp_get_mask_pixel( Handle self, int x, int y);
@@ -3836,9 +3838,6 @@ TS(Bytes)
 END_TABLE(ts,UV)
 #undef TS
 
-extern PTextShapeFunc
-apc_gp_get_text_shaper( Handle self, int * type);
-
 extern int
 apc_gp_get_text_width( Handle self, const char * text, int len, int flags);
 
@@ -3974,6 +3973,21 @@ apc_font_load( Handle self, char* filename);
 
 extern Bool
 apc_font_pick( Handle self, PFont source, PFont dest);
+
+extern Bool
+apc_font_begin_query( Handle self );
+
+extern void
+apc_font_end_query( Handle self );
+
+extern PTextShapeFunc
+apc_font_get_text_shaper( Handle self, int *type);
+
+extern Byte*
+apc_font_get_glyph_bitmap( Handle self, uint16_t index, unsigned int flags, PPoint offset, PPoint size, int *advance);
+
+extern Bool
+apc_font_set_font( Handle self, PFont font);
 
 extern PFont
 apc_fonts( Handle self, const char *facename, const char *encoding, int *retCount);

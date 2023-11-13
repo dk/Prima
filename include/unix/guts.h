@@ -1542,7 +1542,7 @@ extern PFontABC
 prima_xft_get_font_def( Handle self, int firstChar, int lastChar, int flags);
 
 extern int
-prima_xft_get_glyph_outline( Handle self, int index, int flags, int ** buffer);
+prima_xft_get_glyph_outline( Handle self, unsigned int index, unsigned int flags, int ** buffer);
 
 extern PCachedFont
 prima_xft_get_cache( PFont font, Matrix matrix);

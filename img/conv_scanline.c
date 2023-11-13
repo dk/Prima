@@ -804,6 +804,35 @@ bc_byte_rgb( register Byte * source, Byte * dest, register int count, register P
 }
 
 /* Gray Byte */
+
+void
+bc_graybyte_mono( register Byte * source, Byte * dest, register int count)
+{
+#define gb128 ((*source++) & 0x80)
+	int count8 = count & 7;
+	count >>= 3;
+	while ( count--)
+	{
+		register Byte  dst;
+		dst  = gb128;
+		dst |= gb128 >> 1;
+		dst |= gb128 >> 2;
+		dst |= gb128 >> 3;
+		dst |= gb128 >> 4;
+		dst |= gb128 >> 5;
+		dst |= gb128 >> 6;
+		*dest++ = dst | (gb128 >> 7);
+	}
+	if ( count8 > 0)
+	{
+		register Byte  dst = 0;
+		register Byte  i = 0;
+		while ( count8--) dst |= gb128 >> i++;
+		*dest = dst;
+	}
+#undef gb128
+}
+
 /* gray-> mono, halftoned */
 void
 bc_graybyte_mono_ht( register Byte * source, register Byte * dest, register int count, int lineSeqNo)
@@ -837,6 +866,21 @@ bc_graybyte_mono_ht( register Byte * source, register Byte * dest, register int 
 }
 
 /* gray -> 16 gray */
+void
+bc_graybyte_nibble( register Byte * source, Byte * dest, register int count)
+{
+	Byte tail = count & 1;
+	count = count >> 1;
+	while ( count--)
+	{
+		register uint16_t c;
+		c = div17[*source++] << 4;
+		*dest++ = c | div17[*source++];
+	}
+	if ( tail)
+		*dest = div17[*source++] << 4;
+}
+
 void
 bc_graybyte_nibble_ht( register Byte * source, Byte * dest, register int count, int lineSeqNo)
 {

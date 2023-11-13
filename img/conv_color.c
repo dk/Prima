@@ -773,6 +773,20 @@ BC( byte, rgb, None)
 }
 
 /* Graybyte */
+BC( graybyte, mono, None)
+{
+	dBCARGS;
+	BCWARN;
+#ifdef HAVE_OPENMP
+#pragma omp parallel for
+#endif
+	for ( i = 0; i < height; i++) {
+		dBCLOOP;
+		bc_graybyte_mono( BCCONVLOOP);
+	}
+	memcpy( dstPal, stdmono_palette, (*dstPalSize = 2) * sizeof(RGBColor));
+}
+
 BC( graybyte, mono, Ordered)
 {
 	dBCARGS;
@@ -802,6 +816,21 @@ BC( graybyte, mono, ErrorDiffusion)
 	}
 	EDIFF_DONE;
 	memcpy( dstPal, stdmono_palette, (*dstPalSize = 2) * sizeof(RGBColor));
+}
+
+BC( graybyte, nibble, None)
+{
+	dBCARGS;
+	BCWARN;
+#ifdef HAVE_OPENMP
+#pragma omp parallel for
+#endif
+	for ( i = 0; i < height; i++) {
+		dBCLOOP;
+		bc_graybyte_nibble( BCCONVLOOP );
+	}
+	memcpy( dstPal, std16gray_palette, sizeof( std16gray_palette));
+	*dstPalSize = 16;
 }
 
 BC( graybyte, nibble, Ordered)

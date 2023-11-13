@@ -1117,7 +1117,7 @@ win32_unicode_mapper( Handle self, PTextShapeRec t)
 }
 
 PTextShapeFunc
-apc_gp_get_text_shaper( Handle self, int * type)
+apc_font_get_text_shaper( Handle self, int * type)
 {
 	if ( *type == tsBytes ) {
 		*type = (sys tmPitchAndFamily & (TMPF_TRUETYPE|TMPF_OPENTYPE)) ?
@@ -1925,7 +1925,7 @@ apc_gp_get_glyphs_box( Handle self, PGlyphsOutRec t)
 }}
 
 int
-apc_gp_get_glyph_outline( Handle self, int index, int flags, int ** buffer)
+apc_gp_get_glyph_outline( Handle self, unsigned int index, unsigned int flags, int ** buffer)
 {
 	int offset, gdi_size, r_size, *r_buf, *r_ptr;
 	Byte * gdi_buf;
@@ -2078,6 +2078,86 @@ apc_gp_set_text_out_baseline( Handle self, Bool baseline)
 	apt_assign( aptTextOutBaseline, baseline);
 	if ( sys ps) SetTextAlign( sys ps, baseline ? TA_BASELINE : TA_BOTTOM);
 	return true;
+}
+
+Bool
+apc_font_begin_query( Handle self )
+{
+	if ( !( sys ps = CreateCompatibleDC( NULL )))
+		return false;
+	return true;
+}
+
+void
+apc_font_end_query( Handle self )
+{
+	DeleteDC( sys ps );
+	sys ps = 0;
+}
+
+
+Bool
+apc_font_set_font( Handle self, PFont font)
+{
+	return apc_gp_set_font(self, font);
+}
+
+Byte*
+apc_font_get_glyph_bitmap( Handle self, uint16_t index, unsigned int flags, PPoint offset, PPoint size, int *advance)
+{
+	int gdi_size;
+	Byte * gdi_buf;
+	GLYPHMETRICS gm;
+	MAT2 matrix;
+	UINT format;
+
+	memset(&matrix, 0, sizeof(matrix));
+	matrix.eM11.value = 1;
+	matrix.eM22.value = -1;
+
+	format = GGO_GLYPH_INDEX |
+		(( flags & ggoMonochrome ) ? GGO_BITMAP : GGO_GRAY8_BITMAP) |
+		(( flags & ggoUseHints )   ? 0          : GGO_UNHINTED)
+		;
+
+	gdi_size = (flags & ggoUnicode) ?
+		GetGlyphOutlineW(sys ps, index, format, &gm, 0, NULL, &matrix) :
+		GetGlyphOutlineA(sys ps, index, format, &gm, 0, NULL, &matrix);
+	if ( gdi_size < 0 )
+		return NULL;
+
+	if (( gdi_buf = malloc(gdi_size)) == NULL ) {
+		warn("Not enough memory");
+		return NULL;
+	}
+
+	if (
+		(( flags & ggoUnicode) ?
+			GetGlyphOutlineW(sys ps, index, format, &gm, gdi_size, gdi_buf, &matrix) :
+			GetGlyphOutlineA(sys ps, index, format, &gm, gdi_size, gdi_buf, &matrix)
+		) == GDI_ERROR
+	) {
+		apiErr;
+		free(gdi_buf);
+		return NULL;
+	}
+
+	size-> x   = gm.gmBlackBoxX;
+	size-> y   = gm.gmBlackBoxY;
+	offset-> x = gm.gmptGlyphOrigin.x;
+	offset-> y = gm.gmptGlyphOrigin.y;
+	*advance   = gm.gmCellIncX;
+
+	if ( !( flags & ggoMonochrome)) {
+		register Byte* buf = gdi_buf;
+		register unsigned int bytes = size->y * (( size->x * 8 + 31) / 32) * 4;
+		while (bytes--) {
+			*buf = *buf * 3.923 + .5; /* 255/65 */
+			buf++;
+		}
+	}
+
+	return gdi_buf;
 }
 
 #ifdef __cplusplus

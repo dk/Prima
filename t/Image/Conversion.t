@@ -142,7 +142,9 @@ for my $src_type (im::RGB, im::Byte, im::bpp4|im::GrayScale, im::BW) {
 			# 3 -> 0   3
 			# 4 -> 1   0
 			# etc      7*64 per 256 pixels = 1.75 per pixel
-			cmp_ok( $diff, '<', 1.75, "dithering $src_type->$typename with $filtername, mean ok");
+			my $mean_max = 1.75;
+			$mean_max = 8 if $filtername eq 'None' && ($type & im::BPP) == 4;
+			cmp_ok( $diff, '<', $mean_max, "dithering $src_type->$typename with $filtername, mean ok");
 		}
 	}
 }

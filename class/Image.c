@@ -137,6 +137,8 @@ Image_done( Handle self)
 		free(var->regionData);
 		var->regionData = NULL;
 	}
+	if ( is_opt(optInFontQuery))
+		my-> end_font_query(self);
 	if ( var->fillPatternImage ) {
 		unprotect_object(var-> fillPatternImage);
 		var->fillPatternImage = NULL_HANDLE;
@@ -294,6 +296,8 @@ Image_begin_paint( Handle self)
 		free(var->regionData);
 		var->regionData = NULL;
 	}
+	if ( is_opt(optInFontQuery))
+		my-> end_font_query(self);
 	if ( !inherited begin_paint( self))
 		return false;
 	if ( !( ok = apc_image_begin_paint( self))) {
@@ -314,6 +318,8 @@ Image_begin_paint_info( Handle self)
 		free(var->regionData);
 		var->regionData = NULL;
 	}
+	if ( is_opt(optInFontQuery))
+		my-> end_font_query(self);
 	if ( !inherited begin_paint_info( self))
 		return false;
 	if ( !( ok = apc_image_begin_paint_info( self))) {

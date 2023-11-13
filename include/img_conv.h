@@ -104,7 +104,9 @@ extern void bc_byte_op( Byte * source, Byte * dest, int count, U16 * tree, PRGBC
 extern void bc_byte_nop( Byte * source, Byte * dest, int count, U16 * tree, PRGBColor src_palette, PRGBColor dst_palette);
 extern void bc_byte_graybyte( register Byte * source, register Byte * dest, register int count, register PRGBColor palette);
 extern void bc_byte_rgb( register Byte * source, Byte * dest, register int count, register PRGBColor palette);
+extern void bc_graybyte_mono( register Byte * source, register Byte * dest, register int count);
 extern void bc_graybyte_mono_ht( register Byte * source, register Byte * dest, register int count, int lineSeqNo);
+extern void bc_graybyte_nibble( register Byte * source, Byte * dest, register int count);
 extern void bc_graybyte_nibble_ht( register Byte * source, Byte * dest, register int count, int lineSeqNo);
 extern void bc_graybyte_nibble_ed( Byte * source, Byte * dest, int count, int * err_buf);
 extern void bc_graybyte_rgb( register Byte * source, Byte * dest, register int count);
@@ -219,8 +221,10 @@ extern BC(byte,byte,Posterization);
 extern BC(byte,byte,ErrorDiffusion);
 extern BC(byte,graybyte,None);
 extern BC(byte,rgb,None);
+extern BC(graybyte,mono,None);
 extern BC(graybyte,mono,Ordered);
 extern BC(graybyte,mono,ErrorDiffusion);
+extern BC(graybyte,nibble,None);
 extern BC(graybyte,nibble,Ordered);
 extern BC(graybyte,nibble,ErrorDiffusion);
 extern BC(graybyte,rgb,None);
@@ -336,6 +340,7 @@ extern PBitBltProc img_find_blt_proc( int rop );
 extern void img_find_blend_proc( int rop, BlendFunc ** blend1, BlendFunc ** blend2 );
 extern Bool img_resample_colors( Handle dest, int bpp, PImgPaintContext ctx);
 extern void img_fill_alpha_buf( Byte * dst, Byte * src, int width, int bpp);
+extern void img_plot_glyph( Handle self, PImage glyph, int x, int y, PImgPaintContext ctx);
 
 typedef struct _NPolyPolyline {
 	unsigned int n_points, size;

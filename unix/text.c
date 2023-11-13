@@ -587,7 +587,7 @@ prima_text_shaper_core_text( Handle self, PTextShapeRec r)
 }
 
 PTextShapeFunc
-apc_gp_get_text_shaper( Handle self, int * type)
+apc_font_get_text_shaper( Handle self, int * type)
 {
 #ifdef USE_XFT
 	if ( X(self)-> font && X(self)-> font-> xft) {
@@ -602,6 +602,10 @@ apc_gp_get_text_shaper( Handle self, int * type)
 			prima_xft_text_shaper_ident;
 	}
 #endif
+
+	if ( is_opt( optInFontQuery ))
+		return NULL;
+
 	*type = tsNone;
 	return prima_text_shaper_core_text;
 }

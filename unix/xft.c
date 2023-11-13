@@ -665,7 +665,7 @@ my_XftFontMatch(Display        *dpy,
     if (!new)
         return NULL;
     FcConfigSubstitute (NULL, new, FcMatchPattern);
-    XftDefaultSubstitute (dpy, screen, new);
+    if (dpy) XftDefaultSubstitute (dpy, screen, new);
     match = FcFontMatch (NULL, new, result);
     FcPatternDestroy (new);
     return match;
@@ -2396,7 +2396,7 @@ ftoutline_cubic(const FT_Vector* control1, const FT_Vector* control2, const FT_V
 }
 
 int
-prima_xft_get_glyph_outline( Handle self, int index, int flags, int ** buffer)
+prima_xft_get_glyph_outline( Handle self, unsigned int index, unsigned int flags, int ** buffer)
 {
 	DEFXX;
 	FcChar32 c;

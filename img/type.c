@@ -295,9 +295,9 @@ ic_type_convert( Handle self, Byte * dstData, PRGBColor dstPal, int dstType, int
 				switch ( var->conversion)
 				{
 					case ictPosterization:
-						ic_byte_mono_ictNone(BCPARMS);
+						ic_graybyte_mono_ictNone(BCPARMS);
 						break;
-					CASE_CONVERSION(byte, mono, None);
+					CASE_CONVERSION(graybyte, mono, None);
 					CASE_CONVERSION(byte, mono, Optimized);
 					CASE_CONVERSION(graybyte, mono, Ordered);
 					CASE_CONVERSION(graybyte, mono, ErrorDiffusion);
@@ -306,7 +306,7 @@ ic_type_convert( Handle self, Byte * dstData, PRGBColor dstPal, int dstType, int
 			case im16:
 				switch ( var->conversion)
 				{
-					CASE_CONVERSION(byte, nibble, None);
+					CASE_CONVERSION(graybyte, nibble, None);
 					CASE_CONVERSION(byte, nibble, Posterization);
 					CASE_CONVERSION(byte, nibble, Optimized);
 					CASE_CONVERSION(graybyte, nibble, Ordered);

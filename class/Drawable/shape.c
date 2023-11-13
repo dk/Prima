@@ -624,7 +624,7 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 		shaper_type    = level;
 		gp_enter       = true;
 		gpENTER(NULL_SV);
-		if (!( system_shaper = apc_gp_get_text_shaper(self, &shaper_type))) {
+		if (!( system_shaper = apc_font_get_text_shaper(self, &shaper_type))) {
 			return_zero = true;
 			goto EXIT;
 		}
