@@ -137,10 +137,10 @@ Drawable_get_font_abcdef( Handle self, int first, int last, int flags, PFontABC 
 	if ( first > last)
 		abc = NULL;
 	else {
-		gpARGS;
-		gpENTER( newRV_noinc(( SV *) newAV()));
+		dmARGS;
+		dmENTER( newRV_noinc(( SV *) newAV()));
 		abc = func( self, first, last, flags );
-		gpLEAVE;
+		dmLEAVE;
 	}
 
 	av = newAV();
@@ -158,14 +158,14 @@ Drawable_get_font_abcdef( Handle self, int first, int last, int flags, PFontABC 
 SV *
 Drawable_get_font_abc( Handle self, int first, int last, int flags)
 {
-	CHECK_GP(NULL_SV);
+	dmCHECK(NULL_SV);
 	return Drawable_get_font_abcdef( self, first, last, flags, apc_gp_get_font_abc);
 }
 
 SV *
 Drawable_get_font_def( Handle self, int first, int last, int flags)
 {
-	CHECK_GP(NULL_SV);
+	dmCHECK(NULL_SV);
 	return Drawable_get_font_abcdef( self, first, last, flags, apc_gp_get_font_def);
 }
 
@@ -174,12 +174,12 @@ Drawable_get_font_languages( Handle self)
 {
 	char *buf, *p;
 	AV * av = newAV();
-	gpARGS;
+	dmARGS;
 
-	CHECK_GP(NULL_SV);
-	gpENTER( newRV_noinc(( SV *) av));
+	dmCHECK(NULL_SV);
+	dmENTER( newRV_noinc(( SV *) av));
 	p = buf = apc_gp_get_font_languages( self);
-	gpLEAVE;
+	dmLEAVE;
 	if (p) {
 		while (*p) {
 			int len = strlen(p);
@@ -197,12 +197,12 @@ Drawable_get_font_ranges( Handle self)
 	int count = 0;
 	unsigned long * ret;
 	AV * av = newAV();
-	gpARGS;
+	dmARGS;
 
-	CHECK_GP(NULL_SV);
-	gpENTER( newRV_noinc(( SV *) av));
+	dmCHECK(NULL_SV);
+	dmENTER( newRV_noinc(( SV *) av));
 	ret = apc_gp_get_font_ranges( self, &count);
-	gpLEAVE;
+	dmLEAVE;
 	if ( ret) {
 		int i;
 		for ( i = 0; i < count; i++)

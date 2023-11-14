@@ -16,16 +16,6 @@ extern "C" {
 #define var (( PDrawable) self)
 #define GS  var->current_state
 
-#define gpARGS            Bool inPaint = opt_InPaint
-#define gpENTER(fail)     if ( !inPaint) if ( !my-> begin_paint_info( self)) return (fail)
-#define gpLEAVE           if ( !inPaint) my-> end_paint_info( self)
-
-#define CHECK_GP(ret) \
-	if ( !is_opt(optSystemDrawable)) { \
-		warn("This method is not available because %s is not a system Drawable object. You need to implement your own (ref:%d)", my->className, __LINE__);\
-		return ret; \
-	}
-
 void
 Drawable_init( Handle self, HV * profile)
 {
@@ -84,6 +74,23 @@ Drawable_done( Handle self)
 	Drawable_clear_font_abc_caches( self);
 	apc_gp_done( self);
 	inherited done( self);
+}
+
+Bool
+Drawable_assert_drawing_mode( Handle self, int mode )
+{
+	switch (mode) {
+	case admStatus:
+		return opt_InPaint;
+	case admEnter:
+		return my->begin_paint_info(self);
+	case admLeave:
+		my->end_paint_info(self);
+		return 1;
+	case admAllowed:
+		return is_opt(optSystemDrawable);
+	}
+	return 0;
 }
 
 void
@@ -224,7 +231,7 @@ Drawable_get_bpp( Handle self)
 {
 	gpARGS;
 	int ret;
-	CHECK_GP(0);
+	gpCHECK(0);
 	gpENTER(0);
 	ret = apc_gp_get_bpp( self);
 	gpLEAVE;
@@ -246,7 +253,7 @@ Color
 Drawable_get_nearest_color( Handle self, Color color)
 {
 	gpARGS;
-	CHECK_GP(0);
+	gpCHECK(0);
 	gpENTER(clInvalid);
 	color = apc_gp_get_nearest_color( self, color);
 	gpLEAVE;
@@ -261,7 +268,7 @@ Drawable_get_physical_palette( Handle self)
 	AV * av = newAV();
 	PRGBColor r;
 
-	CHECK_GP(NULL_SV);
+	gpCHECK(NULL_SV);
 	gpENTER(newRV_noinc(( SV *) av));
 	r = apc_gp_get_physical_palette( self, &nCol);
 	gpLEAVE;
@@ -279,7 +286,7 @@ SV *
 Drawable_get_handle( Handle self)
 {
 	char buf[ 256];
-	CHECK_GP(NULL_SV);
+	gpCHECK(NULL_SV);
 	snprintf( buf, 256, PR_HANDLE_FMT, apc_gp_get_handle( self));
 	return newSVpv( buf, 0);
 }
@@ -298,7 +305,7 @@ Drawable_height( Handle self, Bool set, int height)
 Point
 Drawable_resolution( Handle self, Bool set, Point resolution)
 {
-	CHECK_GP(resolution);
+	gpCHECK(resolution);
 	if ( set)
 		croak("Attempt to write read-only property %s", "Drawable::resolution");
 	return apc_gp_get_resolution( self);
@@ -329,7 +336,7 @@ Bool
 Drawable_put_image_indirect( Handle self, Handle image, int x, int y, int xFrom, int yFrom, int xDestLen, int yDestLen, int xLen, int yLen, int rop)
 {
 	Bool ok, use_matrix;
-	CHECK_GP(false);
+	gpCHECK(false);
 	if ( image == NULL_HANDLE) return false;
 	if ( !(PObject(image)-> options.optSystemDrawable)) {
 		warn("This method is not available on this class because it is not a system Drawable object. You need to implement your own");
@@ -594,7 +601,7 @@ Drawable_palette( Handle self, Bool set, SV * palette)
 SV *
 Drawable_pixel( Handle self, Bool set, int x, int y, SV * color)
 {
-	CHECK_GP(0);
+	gpCHECK(0);
 	prima_matrix_apply_int_to_int(VAR_MATRIX, &x, &y);
 	if (!set)
 		return newSViv( apc_gp_get_pixel( self, x, y));

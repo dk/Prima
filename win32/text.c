@@ -2096,12 +2096,6 @@ apc_font_end_query( Handle self )
 }
 
 
-Bool
-apc_font_set_font( Handle self, PFont font)
-{
-	return apc_gp_set_font(self, font);
-}
-
 Byte*
 apc_font_get_glyph_bitmap( Handle self, uint16_t index, unsigned int flags, PPoint offset, PPoint size, int *advance)
 {
@@ -2114,29 +2108,18 @@ apc_font_get_glyph_bitmap( Handle self, uint16_t index, unsigned int flags, PPoi
 	memset(&matrix, 0, sizeof(matrix));
 	matrix.eM11.value = 1;
 	matrix.eM22.value = -1;
-
 	format = GGO_GLYPH_INDEX |
 		(( flags & ggoMonochrome ) ? GGO_BITMAP : GGO_GRAY8_BITMAP) |
 		(( flags & ggoUseHints )   ? 0          : GGO_UNHINTED)
 		;
-
-	gdi_size = (flags & ggoUnicode) ?
-		GetGlyphOutlineW(sys ps, index, format, &gm, 0, NULL, &matrix) :
-		GetGlyphOutlineA(sys ps, index, format, &gm, 0, NULL, &matrix);
-	if ( gdi_size < 0 )
+	if (( gdi_size = GetGlyphOutlineW(sys ps, index, format, &gm, 0, NULL, &matrix)) < 0 )
 		return NULL;
-
 	if (( gdi_buf = malloc(gdi_size)) == NULL ) {
 		warn("Not enough memory");
 		return NULL;
 	}
 
-	if (
-		(( flags & ggoUnicode) ?
-			GetGlyphOutlineW(sys ps, index, format, &gm, gdi_size, gdi_buf, &matrix) :
-			GetGlyphOutlineA(sys ps, index, format, &gm, gdi_size, gdi_buf, &matrix)
-		) == GDI_ERROR
-	) {
+	if ( GetGlyphOutlineW(sys ps, index, format, &gm, gdi_size, gdi_buf, &matrix) == GDI_ERROR) {
 		apiErr;
 		free(gdi_buf);
 		return NULL;
@@ -2145,8 +2128,16 @@ apc_font_get_glyph_bitmap( Handle self, uint16_t index, unsigned int flags, PPoi
 	size-> x   = gm.gmBlackBoxX;
 	size-> y   = gm.gmBlackBoxY;
 	offset-> x = gm.gmptGlyphOrigin.x;
-	offset-> y = gm.gmptGlyphOrigin.y;
-	*advance   = gm.gmCellIncX;
+	offset-> y =-gm.gmptGlyphOrigin.y;
+	if ( advance ) {
+		ABC x;
+		if (GetCharABCWidthsI( sys ps, index, 1, NULL, &x)) {
+			*advance = x.abcA + x.abcB + x.abcC;
+		} else {
+			*advance = gm.gmCellIncX;
+			apiErr;
+		}
+	}
 
 	if ( !( flags & ggoMonochrome)) {
 		register Byte* buf = gdi_buf;

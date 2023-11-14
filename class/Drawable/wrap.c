@@ -49,11 +49,11 @@ Drawable_call_get_font_abc( Handle self, unsigned int from, unsigned int to, int
 		abc = apc_gp_get_font_abc( self, from, to, flags);
 		if ( !abc) return NULL;
 	} else if ( my-> get_font_abc == Drawable_get_font_abc) {
-		gpARGS;
-		CHECK_GP(NULL);
-		gpENTER(NULL);
+		dmARGS;
+		dmCHECK(NULL);
+		dmENTER(NULL);
 		abc = apc_gp_get_font_abc( self, from, to, flags);
-		gpLEAVE;
+		dmLEAVE;
 		if ( !abc) return NULL;
 	} else {
 		SV * sv;
@@ -147,7 +147,7 @@ static Bool
 fill_font_ranges( Handle self )
 {
 	if ( Drawable_get_font_ranges == my->get_font_ranges ) {
-		CHECK_GP(false);
+		dmCHECK(false);
 		if ( !var-> font_abc_glyphs_ranges ) {
 			if ( !( var-> font_abc_glyphs_ranges = apc_gp_get_font_ranges(self, &var->font_abc_glyphs_n_ranges)))
 				return false;
@@ -271,7 +271,7 @@ query_abc_range_glyphs( Handle self, GlyphWrapRec * t, unsigned int base)
 			}
 		}
 		if ( font_changed ) {
-			if ( Drawable_set_font == my->set_font && is_opt(optSystemDrawable))
+			if ( Drawable_set_font == my->set_font && (is_opt(optSystemDrawable) || is_opt(optInFontQuery) ))
 				apc_gp_set_font( self, &var->font);
 			else
 				my->set_font(self, var->font);
@@ -1119,7 +1119,7 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * tw, GlyphWrapRec * gw, uint16_
 static SV*
 string_wrap( Handle self,SV * text, int width, int options, int tabIndent, int from, int len)
 {
-	gpARGS;
+	dmARGS;
 	TextWrapRec t;
 	int * c;
 	SV *ret;
@@ -1131,9 +1131,9 @@ string_wrap( Handle self,SV * text, int width, int options, int tabIndent, int f
 	}
 
 	text_init_wrap_rec( self, text, width, options, tabIndent, from, len, &t);
-	gpENTER(NULL_SV);
+	dmENTER(NULL_SV);
 	c = my->do_text_wrap( self, &t, NULL, NULL);
-	gpLEAVE;
+	dmLEAVE;
 	t.t_pos += from;
 
 	if (( t. options & twReturnFirstLineLength) == twReturnFirstLineLength)
@@ -1161,7 +1161,7 @@ string_wrap( Handle self,SV * text, int width, int options, int tabIndent, int f
 static SV*
 glyphs_wrap( Handle self, SV * text, int width, int options, int from, int len)
 {
-	gpARGS;
+	dmARGS;
 	GlyphWrapRec t;
 	int * c;
 	GlyphsOutRec g;
@@ -1178,9 +1178,9 @@ glyphs_wrap( Handle self, SV * text, int width, int options, int from, int len)
 	if (options & (twExpandTabs|twCollapseTilde|twCalcMnemonic|twCalcTabs|twWordBreak))
 		warn("Drawable::text_wrap(glyphs) does not accept tw::ExpandTabs,tw::CollapseTilde,tw::CalcMnemonic,tw::CalcTabs,tw::WordBreak");
 
-	gpENTER(NULL_SV);
+	dmENTER(NULL_SV);
 	c = my->do_text_wrap( self, NULL, &t, NULL);
-	gpLEAVE;
+	dmLEAVE;
 
 	if (( t. options & twReturnFirstLineLength) == twReturnFirstLineLength)
 		ret = first_line2sv(c, t.count);
@@ -1201,7 +1201,7 @@ glyphs_wrap( Handle self, SV * text, int width, int options, int from, int len)
 static SV*
 string_glyphs_wrap( Handle self, SV * text, int width, int options, int tabIndent, int from, int len, SV * glyphs)
 {
-	gpARGS;
+	dmARGS;
 	SV *qt, *ret, *av = NULL;
 	GlyphsOutRec g;
 	TextWrapRec tw;
@@ -1232,20 +1232,20 @@ string_glyphs_wrap( Handle self, SV * text, int width, int options, int tabInden
 			return qt;
 	}
 
-	gpENTER(NULL_SV);
+	dmENTER(NULL_SV);
 
 	glyph_init_wrap_rec( self, width, options, from, &g, &gw);
 	if ( g.indexes ) {
 		/* log2vis needs to address the whole string */
 		if ( !( log2vis = fill_log2vis(&g, from))) {
-			gpLEAVE;
+			dmLEAVE;
 			warn("not enough memory");
 			return NULL_SV;
 		}
 	}
 
 	c = my->do_text_wrap( self, &tw, &gw, log2vis + from);
-	gpLEAVE;
+	dmLEAVE;
 	tw.t_pos += from;
 
 	if (( options & twReturnFirstLineLength) == twReturnFirstLineLength) {
@@ -1288,13 +1288,13 @@ Drawable_text_wrap( Handle self, SV * text, int width, int options, int tabInden
 		return glyphs_wrap(self, text, width, options, from, len);
 	} else {
 		SV * ret;
-		gpARGS;
-		gpENTER(
+		dmARGS;
+		dmENTER(
 			(( options & twReturnFirstLineLength) == twReturnFirstLineLength) ?
 				newSViv(0) : newRV_noinc(( SV *) newAV())
 		);
 		ret = newSVsv(sv_call_perl(text, "text_wrap", "<Hiiiii", self, width, options, tabIndent, from, len));
-		gpLEAVE;
+		dmLEAVE;
 		return ret;
 	}
 }

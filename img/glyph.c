@@ -37,6 +37,13 @@ plot_glyph( int x, int y, int w, int h, PlotStruct * ptr)
 		ox = 0;
 		x = ptr->r.left;
 	}
+	if ( x < 0 ) {
+		ox -= x;
+		w += x;
+		x = 0;
+	}
+	if ( w <= 0 || ox >= ptr->src->w )
+		return true;
 
 	if ( ptr->r.top >= y + h )
 		h += y - ptr->r.bottom + 1;
@@ -49,6 +56,13 @@ plot_glyph( int x, int y, int w, int h, PlotStruct * ptr)
 		oy = 0;
 		y = ptr->r.bottom;
 	}
+	if ( y < 0 ) {
+		oy -= y;
+		h += y;
+		y = 0;
+	}
+	if ( h <= 0 || oy >= ptr->src->h )
+		return true;
 
 	ptr->func( ptr->src, ptr->dst, x, y, ox, oy, w, h, ptr->blt);
 
@@ -72,6 +86,7 @@ void
 img_plot_glyph( Handle self, PImage glyph, int x, int y, PImgPaintContext ctx)
 {
 	PImage i = (PImage) self;
+	int w, h;
 
 	PlotStruct rec = {
 		glyph, i, NULL,
@@ -92,8 +107,12 @@ img_plot_glyph( Handle self, PImage glyph, int x, int y, PImgPaintContext ctx)
 		return;
 	}
 
+	w = glyph->w;
+	h = glyph->h;
+	if ( x + w > i->w ) w = i->w - x - 1;
+	if ( y + h > i->h ) h = i->h - y - 1;
 	img_region_foreach( ctx->region,
-		x, y, glyph->w, glyph->h,
+		x, y, w, h,
 		(RegionCallbackFunc*)plot_glyph, &rec
 	);
 }

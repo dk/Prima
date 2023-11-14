@@ -88,13 +88,13 @@ object Prima::Image( Prima::Drawable)
 	weird  int    save( SV *className, SV *filename, HV * profile);
 	method Bool   sector( double x, double y, double dX, double dY, double startAngle, double endAngle);
 	method void   set( HV * profile);
-	method void   set_font( Font font);
 	c_only void   reset( int type, RGBColor * palette, int palSize);
 	c_only void   stretch( int width, int height);
 	method Bool   text_out( SV * text, int x, int y, int from = 0, int len = -1);
 	method Bool   transform( HV * options);
 	c_only void   update_change();
 
+	c_only Bool   assert_drawing_mode( int mode );
 	c_only Bool   begin_font_query();
 	c_only void   end_font_query();
 }

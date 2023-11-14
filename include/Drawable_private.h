@@ -13,12 +13,18 @@ extern "C" {
 #define gpARGS            Bool inPaint = opt_InPaint
 #define gpENTER(fail)     if ( !inPaint) if ( !my-> begin_paint_info( self)) return (fail)
 #define gpLEAVE           if ( !inPaint) my-> end_paint_info( self)
+#define gpCHECK(ret)      if ( !is_opt(optSystemDrawable)) { \
+	warn("This method is not available because %s is not a system Drawable object. You need to implement your own (ref:%d)", my->className, __LINE__);\
+	return ret; \
+}
 
-#define CHECK_GP(ret) \
-	if ( !is_opt(optSystemDrawable)) { \
-		warn("This method is not available because %s is not a system Drawable object. You need to implement your own (ref:%d)", my->className, __LINE__);\
-		return ret; \
-	}
+#define dmARGS            Bool inPaint = my->assert_drawing_mode(self, admStatus )
+#define dmENTER(fail)     if ( !inPaint) if ( !my-> assert_drawing_mode( self, admEnter)) return (fail)
+#define dmLEAVE           if ( !inPaint) my-> assert_drawing_mode( self, admLeave)
+#define dmCHECK(ret)      if ( !my-> assert_drawing_mode( self, admAllowed )) { \
+	warn("This method is not available because %s is not a system Drawable object. You need to implement your own (ref:%d)", my->className, __LINE__);\
+	return ret; \
+}
 
 #define MAX_CHARACTERS 8192
 

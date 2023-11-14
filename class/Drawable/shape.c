@@ -537,7 +537,7 @@ SV*
 Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 {
 	dPROFILE;
-	gpARGS;
+	dmARGS;
 	int i;
 	SV * ret = NULL_SV, 
 		*sv_glyphs = NULL_SV,
@@ -550,21 +550,21 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 	int shaper_type, level = tsDefault, replace_tabs = -1;
 	Bool skip_if_simple = false, return_zero = false, force_advances = false, 
 		reorder = true, polyfont = true, do_replace_tabs = false;
-	Bool gp_enter;
+	Bool dm_enter;
 	semistatic_t p_tabinfo;
 	uint16_t tabinfo_buf[256];
 
 	/* forward, if any */
 	if ( SvROK(text_sv)) {
 		SV * ref = newRV((SV*) profile);
-		gpENTER(NULL_SV);
+		dmENTER(NULL_SV);
 		ret = sv_call_perl(text_sv, "text_shape", "<HS", self, ref);
-		gpLEAVE;
+		dmLEAVE;
 		hv_clear(profile); /* old gencls bork */
 		sv_free(ref);
 		return newSVsv(ret);
 	}
-	CHECK_GP(NULL_SV);
+	dmCHECK(NULL_SV);
 	bzero(&t, sizeof(t));
 
 	/* asserts */
@@ -618,12 +618,12 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 	if ( level == tsNone ) {
 		shaper_type    = tsNone;
 		force_advances = false;
-		gp_enter       = false;
+		dm_enter       = false;
 		system_shaper  = bidi_only_shaper;
 	} else {
 		shaper_type    = level;
-		gp_enter       = true;
-		gpENTER(NULL_SV);
+		dm_enter       = true;
+		dmENTER(NULL_SV);
 		if (!( system_shaper = apc_font_get_text_shaper(self, &shaper_type))) {
 			return_zero = true;
 			goto EXIT;
@@ -731,7 +731,7 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 		}
 	}
 
-	if (gp_enter) gpLEAVE;
+	if (dm_enter) dmLEAVE;
 
 	/* fix advances for tabs */
 	if ( do_replace_tabs && t.advances) {
@@ -802,7 +802,7 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 
 EXIT:
 	if ( replace_tabs >= 0) semistatic_done( &p_tabinfo);
-	if (gp_enter) gpLEAVE;
+	if (dm_enter) dmLEAVE;
 	if ( t.text     ) free(t.text     );
 	if ( t.v2l      ) free(t.v2l      );
 	if ( t.analysis ) free(t.analysis );

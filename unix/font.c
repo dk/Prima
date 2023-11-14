@@ -1612,7 +1612,7 @@ apc_font_pick( Handle self, PFont source, PFont dest)
 			return true;
 	}
 #endif
-	if ( is_opt(isInFontQuery))
+	if ( is_opt(optInFontQuery))
 		return false;
 	return prima_core_font_pick( self, source, dest);
 }
@@ -2262,14 +2262,5 @@ Byte*
 apc_font_get_glyph_bitmap( Handle self, uint16_t index, unsigned int flags, PPoint offset, PPoint size, int *advance)
 {
 	return NULL;
-}
-
-Bool
-apc_font_set_font( Handle self, PFont font)
-{
-#ifdef USE_XFT
-	if ( guts. use_xft && prima_xft_set_font( self, font)) return true;
-#endif
-	return false;
 }
 

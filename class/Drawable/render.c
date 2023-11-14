@@ -1098,9 +1098,9 @@ Drawable_render_glyph( Handle self, int index, HV * profile)
 	int flags, *buffer, count;
 	SV * ret;
 	dPROFILE;
-	gpARGS;
-	CHECK_GP(NULL_SV);
-	gpENTER(NULL_SV);
+	dmARGS;
+	dmCHECK(NULL_SV);
+	dmENTER(NULL_SV);
 
 	flags = ggoUseHints;
 	if ( pexist(glyph)   && pget_B(glyph))   flags |= ggoGlyphIndex;
@@ -1108,7 +1108,7 @@ Drawable_render_glyph( Handle self, int index, HV * profile)
 	if ( pexist(unicode) && pget_B(unicode)) flags |= ggoUnicode;
 	count = apc_gp_get_glyph_outline( self, index, flags, &buffer);
 	hv_clear(profile); /* old gencls bork */
-	gpLEAVE;
+	dmLEAVE;
 
 	if ( count < 0 ) return NULL_SV;
 	ret = prima_array_new(sizeof(int) * count);

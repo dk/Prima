@@ -19,7 +19,7 @@ Image_begin_font_query( Handle self )
 	ok = apc_font_begin_query( self );
 	if ( ok ) {
 		opt_set(optInFontQuery);
-		apc_font_set_font( self, &var-> font);
+		apc_gp_set_font( self, &var-> font);
 	}
 	return ok;
 }
@@ -187,8 +187,7 @@ plot_glyphs( Handle self, PGlyphsOutRec t, int x, int y )
 		;
 
 	bzero(&ctx, sizeof(ImgPaintContext));
-	Image_color2pixel( self, my->get_color(self),     ctx.color);
-	Image_color2pixel( self, my->get_backColor(self), ctx.backColor);
+	Image_color2pixel( self, my->get_color(self), ctx.color);
 	ctx.rop = var-> extraROP;
 	if ( var->alpha < 255 ) {
 		ctx.rop &= ~(0xff << ropSrcAlphaShift);
@@ -222,7 +221,7 @@ plot_glyphs( Handle self, PGlyphsOutRec t, int x, int y )
 		Byte *arena;
 		Point offset, size;
 		Rect glyph;
-		int default_advance;
+		int default_advance = 0;
 
 		if ( t->fonts && t->fonts[i] != last_font ) {
 			if (t->fonts[i] != 0) {
@@ -233,21 +232,25 @@ plot_glyphs( Handle self, PGlyphsOutRec t, int x, int y )
 				apc_font_pick( self, &src, &dst);
 				if ( strcmp(dst.name, src.name) != 0 )
 					continue;
-				apc_font_set_font( self, &dst);
+				apc_gp_set_font( self, &dst);
 				last_font = t->fonts[i];
 				restore_font = true;
 			} else {
-				apc_font_set_font( self, &var->font);
+				apc_gp_set_font( self, &var->font);
 				last_font = 0;
 				restore_font = true;
 			}
 		}
 
-		if ( !( arena = apc_font_get_glyph_bitmap( self, t->glyphs[i], flags, &offset, &size, &default_advance)))
+		if ( !( arena = apc_font_get_glyph_bitmap(
+			self, t->glyphs[i], flags,
+			&offset, &size,
+			t->advances ? NULL : &default_advance
+		)))
 			return false;
 
-		glyph.left   = o.x - offset.x;
-		glyph.bottom = o.y - offset.y;
+		glyph.left   = o.x + offset.x;
+		glyph.bottom = o.y + offset.y;
 		if ( t->positions ) {
 			glyph.left   += t->positions[i2 + 0];
 			glyph.bottom += t->positions[i2 + 1];
@@ -274,7 +277,7 @@ plot_glyphs( Handle self, PGlyphsOutRec t, int x, int y )
 	}
 
 	if ( restore_font )
-		apc_font_set_font( self, &var-> font);
+		apc_gp_set_font( self, &var-> font);
 
 	return ok;
 }
@@ -283,6 +286,9 @@ Bool
 Image_text_out( Handle self, SV * text, int x, int y, int from, int len)
 {
 	Bool ok;
+	if (opt_InPaint)
+		return inherited text_out(self, text, x, y, from, len);
+
 	if ( !my-> begin_font_query(self) ) return false;
 
 	if ( !SvROK( text )) {
@@ -335,17 +341,6 @@ Image_text_out( Handle self, SV * text, int x, int y, int from, int len)
 		ok = ret && SvTRUE(ret);
 	}
 	return ok;
-}
-
-void
-Image_set_font( Handle self, Font font)
-{
-	if ( opt_InPaint )
-		return inherited set_font(self, font);
-	Drawable_clear_font_abc_caches( self);
-	apc_font_pick( self, &font, &var-> font);
-	if ( is_opt(optInFontQuery))
-		apc_font_set_font( self, &var-> font);
 }
 
 #ifdef __cplusplus

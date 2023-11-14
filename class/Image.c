@@ -148,6 +148,25 @@ Image_done( Handle self)
 	inherited done( self);
 }
 
+Bool
+Image_assert_drawing_mode( Handle self, int mode )
+{
+	switch (mode) {
+	case admStatus:
+		if ( opt_InPaint )
+			return inherited assert_drawing_mode(self, mode);
+		return is_opt(optInFontQuery);
+	case admEnter:
+		return my->begin_font_query(self);
+	case admLeave:
+		/* end_font_query() is okay to linger */
+		return 1;
+	case admAllowed:
+		return 1;
+	}
+	return 0;
+}
+
 Point
 Image_resolution( Handle self, Bool set, Point resolution)
 {

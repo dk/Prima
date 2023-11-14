@@ -395,7 +395,7 @@ Drawable_switch_font( Handle self, uint16_t fid)
 {
 	Font src, dst;
 	src = PASSIVE_FONT(fid)->font;
-	if ( is_opt(optSystemDrawable) ) {
+	if ( is_opt(optSystemDrawable) || is_opt(optInFontQuery) ) {
 		dst = var->font;
 		src.size = dst.size;
 		src.undef.size = 0;

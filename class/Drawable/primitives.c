@@ -39,7 +39,7 @@ primitive( Handle self, Bool fill, char * method, ...)
 Bool
 Drawable_arc( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
 {
-	CHECK_GP(false);
+	gpCHECK(false);
 	while ( startAngle > endAngle ) endAngle += 360.0;
 	return primitive( self, 0, "snnnnnn", "arc", x, y, dX, dY, startAngle, endAngle);
 }
@@ -47,14 +47,14 @@ Drawable_arc( Handle self, double x, double y, double dX, double dY, double star
 Bool
 Drawable_chord( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
 {
-	CHECK_GP(false);
+	gpCHECK(false);
 	return primitive( self, 0, "snnnnnn", "chord", x, y, dX, dY, startAngle, endAngle);
 }
 
 Bool
 Drawable_ellipse( Handle self, double x, double y,  double dX, double dY)
 {
-	CHECK_GP(false);
+	gpCHECK(false);
 	return primitive( self, 0, "snnnn", "ellipse", x, y, dX, dY);
 }
 
@@ -63,7 +63,7 @@ Drawable_bar( Handle self, double x1, double y1, double x2, double y2)
 {
 	NRect nrect = {x1,y1,x2,y2};
 	NPoint npoly[4];
-	CHECK_GP(false);
+	gpCHECK(false);
 
 	if ( prima_matrix_is_square_rectangular( VAR_MATRIX, &nrect, npoly)) {
 		Rect r;
@@ -93,7 +93,7 @@ Drawable_bars( Handle self, SV * rects)
 	NRect * p;
 	Bool ok, is_rect;
 
-	CHECK_GP(false);
+	gpCHECK(false);
 	NRect nrect = {0.0,0.0,1.0,1.0};
 	NPoint npoly[4];
 
@@ -164,7 +164,7 @@ Drawable_clear( Handle self, double x1, double y1, double x2, double y2)
 	Bool is_pure_rect = false;
 	NRect nrect = {x1,y1,x2,y2};
 	NPoint npoly[4];
-	CHECK_GP(false);
+	gpCHECK(false);
 
 	if ( x1 < 0 && y1 < 0 && x2 < 0 && y2 < 0 ) {
 		nrect.left   = x1 = 0;
@@ -204,21 +204,21 @@ Drawable_clear( Handle self, double x1, double y1, double x2, double y2)
 Bool
 Drawable_fill_chord( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
 {
-	CHECK_GP(false);
+	gpCHECK(false);
 	return primitive( self, 1, "snnnnnn", "chord", x, y, dX, dY, startAngle, endAngle);
 }
 
 Bool
 Drawable_fill_ellipse( Handle self, double x, double y,  double dX, double dY)
 {
-	CHECK_GP(false);
+	gpCHECK(false);
 	return primitive( self, 1, "snnnn", "ellipse", x, y, dX, dY);
 }
 
 Bool
 Drawable_fill_sector( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
 {
-	CHECK_GP(false);
+	gpCHECK(false);
 	return primitive( self, 1, "snnnnnn", "sector", x, y, dX, dY, startAngle, endAngle);
 }
 
@@ -229,7 +229,7 @@ Drawable_fillpoly(Handle self, SV * points)
 	int count;
 	void *p;
 	Bool ret = false;
-	CHECK_GP(false);
+	gpCHECK(false);
 
 	if ( prima_matrix_is_identity(VAR_MATRIX)) {
 		if ( !IS_AA ) {
@@ -283,7 +283,7 @@ EXIT:
 Bool
 Drawable_line(Handle self, double x1, double y1, double x2, double y2)
 {
-	CHECK_GP(false);
+	gpCHECK(false);
 	if (EMULATED_LINE)
 		return primitive( self, 0, "snnnn", "line", x1, y1, x2, y2);
 
@@ -334,7 +334,7 @@ EXIT:
 Bool
 Drawable_lines(Handle self, SV * lines)
 {
-	CHECK_GP(false);
+	gpCHECK(false);
 
 	if (EMULATED_LINE)
 		return primitive( self, 0, "sS", "lines", lines);
@@ -345,7 +345,7 @@ Drawable_lines(Handle self, SV * lines)
 Bool
 Drawable_polyline(Handle self, SV * lines)
 {
-	CHECK_GP(false);
+	gpCHECK(false);
 	if (EMULATED_LINE)
 		return primitive( self, 0, "sS", "line", lines);
 	else
@@ -358,7 +358,7 @@ Drawable_rectangle( Handle self, double x1, double y1, double x2, double y2)
 	NPoint npoly[4];
 	NRect nrect = {x1,y1,x2,y2};
 
-	CHECK_GP(false);
+	gpCHECK(false);
 	if ( EMULATED_LINE )
 		return primitive( self, 0, "snnnn", "rectangle", x1,y1,x2,y2);
 
@@ -377,7 +377,7 @@ Drawable_rectangle( Handle self, double x1, double y1, double x2, double y2)
 Bool
 Drawable_sector( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
 {
-	CHECK_GP(false);
+	gpCHECK(false);
 	return primitive( self, 0, "snnnnnn", "sector", x, y, dX, dY, startAngle, endAngle);
 }
 

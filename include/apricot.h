@@ -3611,6 +3611,12 @@ typedef struct {
 	Matrix matrix;
 } DrawablePaintState;
 
+/* assert drawing mode constants */
+#define admStatus  0
+#define admEnter   1
+#define admLeave   2
+#define admAllowed 3
+
 extern Bool
 apc_gp_init( Handle self);
 
@@ -3985,9 +3991,6 @@ apc_font_get_text_shaper( Handle self, int *type);
 
 extern Byte*
 apc_font_get_glyph_bitmap( Handle self, uint16_t index, unsigned int flags, PPoint offset, PPoint size, int *advance);
-
-extern Bool
-apc_font_set_font( Handle self, PFont font);
 
 extern PFont
 apc_fonts( Handle self, const char *facename, const char *encoding, int *retCount);

@@ -173,7 +173,7 @@ Drawable_text_out( Handle self, SV * text, int x, int y, int from, int len)
 		STRLEN dlen;
 		char * c_text = SvPV( text, dlen);
 		Bool   utf8 = prima_is_utf8_sv( text);
-		CHECK_GP(false);
+		gpCHECK(false);
 		if ( utf8) dlen = prima_utf8_length(c_text, dlen);
 		if ((len = Drawable_check_length(from,len,dlen)) == 0)
 			return true;
@@ -183,7 +183,7 @@ Drawable_text_out( Handle self, SV * text, int x, int y, int from, int len)
 		if ( !ok) perl_error();
 	} else if ( SvTYPE( SvRV( text)) == SVt_PVAV) {
 		GlyphsOutRec t;
-		CHECK_GP(false);
+		gpCHECK(false);
 		if (!Drawable_read_glyphs(&t, text, 0, "Drawable::text_out"))
 			return false;
 		if (t.len == 0)
@@ -234,13 +234,13 @@ Drawable_get_glyphs_width( Handle self, PGlyphsOutRec t, Bool add_overhangs)
 int
 Drawable_get_text_width( Handle self, SV * text, int flags, int from, int len)
 {
-	gpARGS;
+	dmARGS;
 	int res;
 
 	if ( !SvROK( text )) {
 		STRLEN dlen;
 		char * c_text = SvPV( text, dlen);
-		CHECK_GP(0);
+		dmCHECK(0);
 		if ( prima_is_utf8_sv( text)) {
 			dlen = utf8_length(( U8*) c_text, ( U8*) c_text + dlen);
 			flags |= toUTF8;
@@ -249,12 +249,12 @@ Drawable_get_text_width( Handle self, SV * text, int flags, int from, int len)
 		if (( len = Drawable_check_length(from,len,dlen)) == 0)
 			return 0;
 		c_text = Drawable_hop_text(c_text, flags & toUTF8, from);
-		gpENTER(0);
+		dmENTER(0);
 		res = apc_gp_get_text_width( self, c_text, len, flags);
-		gpLEAVE;
+		dmLEAVE;
 	} else if ( SvTYPE( SvRV( text)) == SVt_PVAV) {
 		GlyphsOutRec t;
-		CHECK_GP(0);
+		dmCHECK(0);
 		if (!Drawable_read_glyphs(&t, text, 0, "Drawable::get_text_width"))
 			return false;
 		if (t.len == 0)
@@ -264,14 +264,14 @@ Drawable_get_text_width( Handle self, SV * text, int flags, int from, int len)
 		Drawable_hop_glyphs(&t, from, len);
 		if (t.advances)
 			return Drawable_get_glyphs_width(self, &t, flags & toAddOverhangs);
-		gpENTER(0);
+		dmENTER(0);
 		res = apc_gp_get_glyphs_width( self, &t);
-		gpLEAVE;
+		dmLEAVE;
 	} else {
 		SV * ret;
-		gpENTER(0);
+		dmENTER(0);
 		ret = sv_call_perl(text, "get_text_width", "<Hiii", self, flags, from, len);
-		gpLEAVE;
+		dmLEAVE;
 		res = (ret && SvOK(ret)) ? SvIV(ret) : 0;
 	}
 
@@ -316,14 +316,14 @@ get_glyphs_box( Handle self, PGlyphsOutRec t, Point * pt)
 SV *
 Drawable_get_text_box( Handle self, SV * text, int from, int len )
 {
-	gpARGS;
+	dmARGS;
 	Point * p;
 	AV * av;
 	int i, flags = 0;
 	if ( !SvROK( text )) {
 		STRLEN dlen;
 		char * c_text = SvPV( text, dlen);
-		CHECK_GP(NULL_SV);
+		dmCHECK(NULL_SV);
 
 		if ( prima_is_utf8_sv( text)) {
 			dlen = utf8_length(( U8*) c_text, ( U8*) c_text + dlen);
@@ -332,12 +332,12 @@ Drawable_get_text_box( Handle self, SV * text, int from, int len )
 		if ((len = Drawable_check_length(from,len,dlen)) == 0)
 			return newRV_noinc(( SV *) newAV());
 		c_text = Drawable_hop_text(c_text, flags & toUTF8, from);
-		gpENTER( newRV_noinc(( SV *) newAV()));
+		dmENTER( newRV_noinc(( SV *) newAV()));
 		p = apc_gp_get_text_box( self, c_text, len, flags);
-		gpLEAVE;
+		dmLEAVE;
 	} else if ( SvTYPE( SvRV( text)) == SVt_PVAV) {
 		GlyphsOutRec t;
-		CHECK_GP(NULL_SV);
+		dmCHECK(NULL_SV);
 		if (!Drawable_read_glyphs(&t, text, 0, "Drawable::get_text_box"))
 			return false;
 		if (( len = Drawable_check_length(from,len,t.len)) == 0)
@@ -348,15 +348,15 @@ Drawable_get_text_box( Handle self, SV * text, int from, int len )
 				return newRV_noinc(( SV *) newAV());
 			get_glyphs_box(self, &t, p);
 		} else {
-			gpENTER( newRV_noinc(( SV *) newAV()));
+			dmENTER( newRV_noinc(( SV *) newAV()));
 			p = apc_gp_get_glyphs_box( self, &t);
-			gpLEAVE;
+			dmLEAVE;
 		}
 	} else {
 		SV * ret;
-		gpENTER( newRV_noinc(( SV *) newAV()));
+		dmENTER( newRV_noinc(( SV *) newAV()));
 		ret = newSVsv(sv_call_perl(text, "get_text_box", "<Hii", self, from, len ));
-		gpLEAVE;
+		dmLEAVE;
 		return ret;
 	}
 
