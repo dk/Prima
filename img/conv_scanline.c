@@ -1385,12 +1385,15 @@ bc_mono_put( Byte * source, unsigned int from, unsigned int width, Byte * dest, 
 	} else if ( ftail > ltail ) {
 		lshift = ftail - ltail;
 		rshift = 8 - lshift;
+		L = *(source++);
+		R = *(source++); /* count on 1-bit vectors are 4-byte aligned, so eating 1 byte too much is okay  */
 	} else {
 		rshift = ltail - ftail;
 		lshift = 8 - rshift;
+		L = 0;
+		R = *(source++);
 	}
 
-	L = R = *(source++);
 	while ( blen > 0 ) {
 		int i, sz = (blen > BUFSZ) ? BUFSZ : blen;
 		Byte *p = buf;
@@ -1400,6 +1403,7 @@ bc_mono_put( Byte * source, unsigned int from, unsigned int width, Byte * dest, 
 			L = R;
 			R = *(source++);
 		}
+
 		blt( buf, d, sz);
 		d += sz;
 	}

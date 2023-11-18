@@ -603,9 +603,6 @@ apc_font_get_text_shaper( Handle self, int * type)
 	}
 #endif
 
-	if ( is_opt( optInFontQuery ))
-		return NULL;
-
 	*type = tsNone;
 	return prima_text_shaper_core_text;
 }

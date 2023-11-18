@@ -2430,6 +2430,52 @@ prima_xft_get_glyph_outline( Handle self, unsigned int index, unsigned int flags
 	return storage.count;
 }
 
+Byte*
+prima_xft_get_glyph_bitmap( Handle self, uint16_t index, unsigned int flags, PPoint offset, PPoint size, int *advance)
+{
+	DEFXX;
+	Byte *ret = NULL;
+	FT_Face face;
+	FT_Int32 ft_flags =
+		FT_LOAD_RENDER |
+		(( flags & ggoUseHints )   ? 0 : FT_LOAD_NO_HINTING) |
+		(( flags & ggoMonochrome ) ? FT_LOAD_MONOCHROME : 0)
+		;
+
+	if ( !( face = XftLockFace( XX->font->xft)))
+		return NULL;
+
+	if ( FT_Load_Glyph (face, index, ft_flags) == 0 ) {
+		FT_Bitmap *b    = &face->glyph->bitmap;
+		int dst_stride  = ((b->width * ((flags & ggoMonochrome) ? 1 : 8) + 31) / 32) * 4;
+		int src_stride  = abs(b->pitch);
+		int bytes       = (src_stride > dst_stride) ? dst_stride : src_stride;
+		Byte *src       = b->buffer;
+		if ( b && ( ret = malloc( b->rows * dst_stride ))) {
+			int i;
+			Byte *dst = ret;
+			if ( b->pitch > 0 ) {
+				dst += dst_stride * (b->rows - 1);
+				dst_stride = -dst_stride;
+			}
+			for ( i = 0; i < b->rows; i++, src += src_stride, dst += dst_stride)
+				memcpy( dst, src, bytes);
+
+			offset->x = face->glyph->bitmap_left;
+			offset->y = face->glyph->bitmap_top - b->rows;
+			size->x   = b->width;
+			size->y   = b->rows;
+			if ( advance ) {
+				FT_Fixed a = face->glyph->linearHoriAdvance;
+				*advance = (a >> 16) + ((a & 0xffff) > 0x7ffff) ? 1 : 0;
+			}
+		}
+	}
+
+	XftUnlockFace(XX->font->xft);
+	return ret;
+}
+
 unsigned long *
 prima_xft_mapper_query_ranges(PFont font, int * count, unsigned int * flags)
 {

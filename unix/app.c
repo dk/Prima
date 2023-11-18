@@ -729,8 +729,6 @@ window_subsystem_done( void)
 		XFreeFont( DISP, guts.pointer_font);
 		guts.pointer_font = NULL;
 	}
-	XCloseDisplay( DISP);
-	DISP = NULL;
 
 	plist_destroy( guts. files);
 	guts. files = NULL;
@@ -742,6 +740,8 @@ window_subsystem_done( void)
 	if (guts.clipboards)         hash_destroy( guts.clipboards, false);
 	if (guts.clipboard_xfers)    hash_destroy( guts.clipboard_xfers, false);
 	prima_cleanup_font_subsystem();
+
+	XCloseDisplay( DISP);
 	bzero(&guts, sizeof(guts));
 }
 

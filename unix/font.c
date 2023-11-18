@@ -9,6 +9,8 @@
 #include "unix/guts.h"
 #include <locale.h>
 
+#define MY_MATRIX (PDrawable(self)->current_state.matrix)
+
 static PHash xfontCache = NULL;
 static Bool have_vector_fonts = false;
 static PHash encodings = NULL;
@@ -1612,8 +1614,6 @@ apc_font_pick( Handle self, PFont source, PFont dest)
 			return true;
 	}
 #endif
-	if ( is_opt(optInFontQuery))
-		return false;
 	return prima_core_font_pick( self, source, dest);
 }
 
@@ -1892,6 +1892,174 @@ apc_gp_get_glyph_outline( Handle self, unsigned int index, unsigned int flags, i
 	return -1;
 }
 
+static PRotatedFont
+find_or_allocate_rotated_font_entry( PCachedFont f, Fixed *fm, Fixed *im, Matrix cm)
+{
+	int    i, rbox_x[4], rbox_y[4], box_x[4], box_y[4], box[4];
+	XGCValues xgv;
+	PRotatedFont r = NULL, *pr = &f-> rotated;
+
+	/* finding record for given matrix without translation */
+	while (*pr) {
+		if (memcmp( (*pr)-> matrix, fm, sizeof(Fixed)*4) == 0) {
+			r = *pr;
+			break;
+		}
+		pr = ( PRotatedFont *) &((*pr)-> next);
+	}
+
+	/* creating startup values for new entry */
+	r = *pr = malloc( sizeof( RotatedFont));
+	if ( !r) {
+		warn("Not enough memory");
+		return NULL;
+	}
+	bzero( r, sizeof( RotatedFont));
+	r-> first1  = f-> fs-> min_byte1;
+	r-> first2  = f-> fs-> min_char_or_byte2;
+	r-> width   = ( f-> fs-> max_char_or_byte2 > 255 ? 255 : f-> fs-> max_char_or_byte2)
+		- r-> first2 + 1;
+	if ( r-> width < 0) r-> width = 0;
+	r-> height = f-> fs-> max_byte1 - f-> fs-> min_byte1 + 1;
+	r-> length = r-> width * r-> height;
+	r-> defaultChar1 = f-> fs-> default_char >> 8;
+	r-> defaultChar2 = f-> fs-> default_char & 0xff;
+
+	if ( r-> defaultChar1 < r-> first1 || r-> defaultChar1 >= r-> first1 + r-> height ||
+		r-> defaultChar2 < r-> first2 || r-> defaultChar2 >= r-> first2 + r-> width)
+		r-> defaultChar1 = r-> defaultChar2 = -1;
+
+	if ( r-> length > 0) {
+		if ( !( r-> map = malloc( r-> length * sizeof( void*)))) {
+			*pr = NULL;
+			free( r);
+			warn("Not enough memory");
+			return NULL;
+		}
+		bzero( r-> map, r-> length * sizeof( void*));
+	}
+
+	memcpy(r->matrix,  fm, sizeof(Fixed) * 4);
+	memcpy(r->inverse, im, sizeof(Fixed) * 4);
+
+/*
+	1(0,y)  2(x,y)
+	0(0,0)  3(x,0)
+*/
+	box_x[0] = box_y[0] = box_x[1] = box_y[3] = 0;
+	r-> orgBox. x = box_x[2] = box_x[3] = f-> fs-> max_bounds. width;
+	r-> orgBox. y = box_y[1] = box_y[2] = f-> fs-> max_bounds. ascent + f-> fs-> max_bounds. descent;
+
+	for ( i = 0; i < 4; i++) {
+		rbox_x[i] = box_x[i];
+		rbox_y[i] = box_y[i];
+		prima_matrix_apply_int_to_int(cm, &rbox_x[i], &rbox_y[i]);
+		box[i] = 0;
+	}
+	for ( i = 0; i < 4; i++) {
+		if ( rbox_x[i] < box[0]) box[0] = rbox_x[i];
+		if ( rbox_y[i] < box[1]) box[1] = rbox_y[i];
+		if ( rbox_x[i] > box[2]) box[2] = rbox_x[i];
+		if ( rbox_y[i] > box[3]) box[3] = rbox_y[i];
+	}
+	r-> dimension. x = box[2] - box[0] + 1;
+	r-> dimension. y = box[3] - box[1] + 1;
+	r-> shift. x = box[0];
+	r-> shift. y = box[1];
+
+	r-> lineSize = (( r-> orgBox. x + 31) / 32) * 4;
+	if ( !( r-> arena_bits = malloc( r-> lineSize * r-> orgBox. y)))
+		goto FAILED;
+
+	r-> arena = XCreatePixmap( DISP, guts. root, r-> orgBox.x, r-> orgBox. y, 1);
+	if ( !r-> arena) {
+		free( r-> arena_bits);
+FAILED:
+		*pr = NULL;
+		free( r-> map);
+		free( r);
+		warn("Cannot create pixmap");
+		return NULL;
+	}
+	XCHECKPOINT;
+	r-> arena_gc = XCreateGC( DISP, r-> arena, 0, &xgv);
+	XCHECKPOINT;
+	XSetFont( DISP, r-> arena_gc, f-> id);
+	XCHECKPOINT;
+	XSetBackground( DISP, r-> arena_gc, 0);
+
+	return r;
+}
+
+static PRotatedFont
+find_or_allocate_straight_font_entry( PCachedFont f)
+{
+	Matrix cm;
+	Fixed mx[4];
+	prima_matrix_set_identity(cm);
+	mx[0].l = mx[3].l = 1 * UINT16_PRECISION;
+	mx[1].l = mx[2].l = 0;
+	return find_or_allocate_rotated_font_entry(f, mx, mx, cm);
+}
+
+static PrimaXImage *
+render_bitmap_glyph( PCachedFont f, PRotatedFont r, XChar2b index, Bool wide)
+{
+	XCharStruct *cs;
+	XImage *ximage;
+	PrimaXImage *px;
+
+	cs = f-> fs-> per_char ?
+		f-> fs-> per_char +
+			( index. byte1 - f-> fs-> min_byte1) * r-> width +
+			index. byte2 - f-> fs-> min_char_or_byte2 :
+		&(f-> fs-> min_bounds);
+	XSetForeground( DISP, r-> arena_gc, 0);
+	XFillRectangle( DISP, r-> arena, r-> arena_gc, 0, 0, r-> orgBox. x, r-> orgBox .y);
+	XSetForeground( DISP, r-> arena_gc, 1);
+	if (wide)
+		XDrawString16( DISP, r-> arena, r-> arena_gc,
+			( cs-> lbearing < 0) ? -cs-> lbearing : 0,
+			r-> orgBox. y - f-> fs-> max_bounds. descent,
+			&index, 1);
+	else
+		XDrawString( DISP, r-> arena, r-> arena_gc,
+			( cs-> lbearing < 0) ? -cs-> lbearing : 0,
+			r-> orgBox. y - f-> fs-> max_bounds. descent,
+			(const char *)&index. byte2, 1);
+	XCHECKPOINT;
+
+	/* getting glyph bits */
+	if ( !( ximage = XGetImage( DISP, r-> arena, 0, 0, r-> orgBox. x, r-> orgBox. y, 1, XYPixmap))) {
+		warn("Can't get image %dx%d", r-> orgBox.x, r-> orgBox.y);
+		return NULL;
+	}
+	XCHECKPOINT;
+	prima_copy_1bit_ximage( r-> arena_bits, ximage, false);
+	XDestroyImage( ximage);
+
+	if ( !( px = prima_prepare_ximage( r-> dimension. x, r-> dimension. y, CACHE_BITMAP))) {
+		warn("Can't get image %dx%d", r-> orgBox.x, r-> orgBox.y);
+		return NULL;
+	}
+
+	return px;
+}
+
+static Bool
+validate_xchar2b( PRotatedFont r, XChar2b *index)
+{
+	if (
+		index-> byte1 < r-> first1 || index-> byte1 >= r-> first1 + r-> height ||
+		index-> byte2 < r-> first2 || index-> byte2 >= r-> first2 + r-> width
+	) {
+		if ( r-> defaultChar1 < 0 || r-> defaultChar2 < 0)
+			return false;
+		index-> byte1 = ( unsigned char) r-> defaultChar1;
+		index-> byte2 = ( unsigned char) r-> defaultChar2;
+	}
+	return true;
+}
 
 Bool
 prima_update_rotated_fonts( PCachedFont f, const char * text, int len, Bool wide, double direction, Matrix matrix, PRotatedFont * result,
@@ -1899,8 +2067,7 @@ prima_update_rotated_fonts( PCachedFont f, const char * text, int len, Bool wide
 {
 	Fixed fm[4], im[4];
 	Matrix cm;
-	PRotatedFont * pr = &f-> rotated;
-	PRotatedFont r = NULL;
+	PRotatedFont r;
 	int i;
 
 	while ( direction < 0)     direction += 360.0;
@@ -1952,110 +2119,18 @@ prima_update_rotated_fonts( PCachedFont f, const char * text, int len, Bool wide
 		im[3].l =  inv[0] * UINT16_PRECISION;
 	}
 
-	if ( direction == 0.0 && prima_matrix_is_translated_only(matrix)) {
+	if ( prima_matrix_is_translated_only(matrix)) {
 		if ( ok_to_not_rotate) *ok_to_not_rotate = true;
 		return false;
 	}
 	if ( ok_to_not_rotate) *ok_to_not_rotate = false;
 
-	/* finding record for given direction */
-	while (*pr) {
-		if (memcmp( (*pr)-> matrix, fm, sizeof(fm)) == 0) {
-			r = *pr;
-			break;
-		}
-		pr = ( PRotatedFont *) &((*pr)-> next);
-	}
-
-	if ( !r) { /* creating startup values for new entry */
-		int    i, rbox_x[4], rbox_y[4], box_x[4], box_y[4], box[4];
-		XGCValues xgv;
-
-		r = *pr = malloc( sizeof( RotatedFont));
-		if ( !r) {
-			warn("Not enough memory");
-			return false;
-		}
-		bzero( r, sizeof( RotatedFont));
-		r-> first1  = f-> fs-> min_byte1;
-		r-> first2  = f-> fs-> min_char_or_byte2;
-		r-> width   = ( f-> fs-> max_char_or_byte2 > 255 ? 255 : f-> fs-> max_char_or_byte2)
-			- r-> first2 + 1;
-		if ( r-> width < 0) r-> width = 0;
-		r-> height = f-> fs-> max_byte1 - f-> fs-> min_byte1 + 1;
-		r-> length = r-> width * r-> height;
-		r-> defaultChar1 = f-> fs-> default_char >> 8;
-		r-> defaultChar2 = f-> fs-> default_char & 0xff;
-
-		if ( r-> defaultChar1 < r-> first1 || r-> defaultChar1 >= r-> first1 + r-> height ||
-			r-> defaultChar2 < r-> first2 || r-> defaultChar2 >= r-> first2 + r-> width)
-			r-> defaultChar1 = r-> defaultChar2 = -1;
-
-		if ( r-> length > 0) {
-			if ( !( r-> map = malloc( r-> length * sizeof( void*)))) {
-				*pr = NULL;
-				free( r);
-				warn("Not enough memory");
-				return false;
-			}
-			bzero( r-> map, r-> length * sizeof( void*));
-		}
-
-		memcpy(r->matrix,  fm, sizeof(fm));
-		memcpy(r->inverse, im, sizeof(im));
-
-/*
-	1(0,y)  2(x,y)
-	0(0,0)  3(x,0)
-*/
-		box_x[0] = box_y[0] = box_x[1] = box_y[3] = 0;
-		r-> orgBox. x = box_x[2] = box_x[3] = f-> fs-> max_bounds. width;
-		r-> orgBox. y = box_y[1] = box_y[2] = f-> fs-> max_bounds. ascent + f-> fs-> max_bounds. descent;
-
-		for ( i = 0; i < 4; i++) {
-			rbox_x[i] = box_x[i];
-			rbox_y[i] = box_y[i];
-			prima_matrix_apply_int_to_int(cm, &rbox_x[i], &rbox_y[i]);
-			box[i] = 0;
-		}
-		for ( i = 0; i < 4; i++) {
-			if ( rbox_x[i] < box[0]) box[0] = rbox_x[i];
-			if ( rbox_y[i] < box[1]) box[1] = rbox_y[i];
-			if ( rbox_x[i] > box[2]) box[2] = rbox_x[i];
-			if ( rbox_y[i] > box[3]) box[3] = rbox_y[i];
-		}
-		r-> dimension. x = box[2] - box[0] + 1;
-		r-> dimension. y = box[3] - box[1] + 1;
-		r-> shift. x = box[0];
-		r-> shift. y = box[1];
-
-		r-> lineSize = (( r-> orgBox. x + 31) / 32) * 4;
-		if ( !( r-> arena_bits = malloc( r-> lineSize * r-> orgBox. y)))
-			goto FAILED;
-
-		r-> arena = XCreatePixmap( DISP, guts. root, r-> orgBox.x, r-> orgBox. y, 1);
-		if ( !r-> arena) {
-			free( r-> arena_bits);
-FAILED:
-			*pr = NULL;
-			free( r-> map);
-			free( r);
-			warn("Cannot create pixmap");
-			return false;
-		}
-		XCHECKPOINT;
-		r-> arena_gc = XCreateGC( DISP, r-> arena, 0, &xgv);
-		XCHECKPOINT;
-		XSetFont( DISP, r-> arena_gc, f-> id);
-		XCHECKPOINT;
-		XSetBackground( DISP, r-> arena_gc, 0);
-	}
+	if ( !( r = find_or_allocate_rotated_font_entry(f, fm, im, cm)))
+		return false;
 
 	/* processing character records */
 	for ( i = 0; i < len; i++) {
 		XChar2b index;
-		XCharStruct * cs;
-		XImage * ximage;
 		PrimaXImage * px;
 		Byte * ndata;
 
@@ -2063,46 +2138,15 @@ FAILED:
 		index. byte2 = wide ? (( XChar2b*) text + i)-> byte2 : *((unsigned char*)text + i);
 
 		/* querying character */
-		if ( index. byte1 < r-> first1 || index. byte1 >= r-> first1 + r-> height ||
-			index. byte2 < r-> first2 || index. byte2 >= r-> first2 + r-> width) {
-			if ( r-> defaultChar1 < 0 || r-> defaultChar2 < 0) continue;
-			index. byte1 = ( unsigned char) r-> defaultChar1;
-			index. byte2 = ( unsigned char) r-> defaultChar2;
-		}
+		if ( !validate_xchar2b( r, &index))
+			continue;
 
-		if ( r-> map[( index. byte1 - r-> first1) * r-> width + index. byte2 - r-> first2]) continue;
-		cs = f-> fs-> per_char ?
-			f-> fs-> per_char +
-				( index. byte1 - f-> fs-> min_byte1) * r-> width +
-				index. byte2 - f-> fs-> min_char_or_byte2 :
-			&(f-> fs-> min_bounds);
-		XSetForeground( DISP, r-> arena_gc, 0);
-		XFillRectangle( DISP, r-> arena, r-> arena_gc, 0, 0, r-> orgBox. x, r-> orgBox .y);
-		XSetForeground( DISP, r-> arena_gc, 1);
-		if (wide)
-			XDrawString16( DISP, r-> arena, r-> arena_gc,
-				( cs-> lbearing < 0) ? -cs-> lbearing : 0,
-				r-> orgBox. y - f-> fs-> max_bounds. descent,
-				&index, 1);
-		else
-			XDrawString( DISP, r-> arena, r-> arena_gc,
-				( cs-> lbearing < 0) ? -cs-> lbearing : 0,
-				r-> orgBox. y - f-> fs-> max_bounds. descent,
-				(const char *)&index. byte2, 1);
-		XCHECKPOINT;
+		if ( r-> map[( index. byte1 - r-> first1) * r-> width + index. byte2 - r-> first2])
+			continue;
 
-		/* getting glyph bits */
-		ximage = XGetImage( DISP, r-> arena, 0, 0, r-> orgBox. x, r-> orgBox. y, 1, XYPixmap);
-		if ( !ximage) {
-			warn("Can't get image %dx%d", r-> orgBox.x, r-> orgBox.y);
+		if ( !( px = render_bitmap_glyph( f, r, index, wide )))
 			return false;
-		}
-		XCHECKPOINT;
-		prima_copy_1bit_ximage( r-> arena_bits, ximage, false);
-		XDestroyImage( ximage);
 
-		px = prima_prepare_ximage( r-> dimension. x, r-> dimension. y, CACHE_BITMAP);
-		if ( !px) return false;
 		ndata = ( Byte*) px-> data_alias;
 		bzero( ndata, px-> bytes_per_line_alias * r-> dimension. y);
 
@@ -2164,6 +2208,37 @@ FAILED:
 		*result = r;
 
 	return true;
+}
+
+PrimaXImage*
+prepare_straight_glyph(PCachedFont f, PRotatedFont r, XChar2b index)
+{
+	PrimaXImage *px;
+	Byte *src, *dst;
+	unsigned int i, src_stride, dst_stride, ylim;
+
+	if ( !validate_xchar2b( r, &index))
+		return NULL;
+
+	if (( px = r-> map[( index. byte1 - r-> first1) * r-> width + index. byte2 - r-> first2]) != NULL)
+		return px;
+
+	if ( !( px = render_bitmap_glyph( f, r, index, true )))
+		return NULL;
+
+	src_stride = r->lineSize;
+	dst_stride = px->bytes_per_line_alias;
+	src        = r->arena_bits + src_stride * (r->orgBox.y - 1);
+	dst        = (Byte*) px-> data_alias;
+	ylim       = r->shift.y + r->dimension.y;
+	for ( i = r->shift.y; i < ylim; i++, src -= src_stride, dst += dst_stride) {
+		memcpy(dst, src, dst_stride);
+		if ( guts. bit_order != MSBFirst)
+			prima_mirror_bytes( dst, dst_stride);
+	}
+
+	r-> map[( index. byte1 - r-> first1) * r-> width + index. byte2 - r-> first2] = px;
+	return px;
 }
 
 XCharStruct *
@@ -2250,6 +2325,8 @@ apc_gp_set_text_matrix( Handle self, Matrix matrix)
 Bool
 apc_font_begin_query( Handle self )
 {
+	if ( !DISP )
+		return false;
 	return true;
 }
 
@@ -2258,9 +2335,134 @@ apc_font_end_query( Handle self )
 {
 }
 
+static Byte*
+get_glyph_bitmap( Handle self, uint16_t index, Bool mono, PPoint offset, PPoint size, int *advance)
+{
+	DEFXX;
+	PRotatedFont r;
+	XCharStruct *cs;
+	XChar2b ch;
+	Bool straight = false;
+	int i, px;
+	Fixed rx, ry;
+	Byte *ret, *src, *dst;
+	int src_stride, dst_stride, bytes;
+	XImage *xi;
+
+	ch.byte1 = index >> 8;
+	ch.byte2 = index & 0xff;
+	if ( !prima_update_rotated_fonts( XX-> font,
+		(const char*)&ch, 1, true,
+		PDrawable( self)-> font. direction, 
+		MY_MATRIX,
+		&r, &straight
+	)) {
+		if ( !straight )
+			return NULL;
+		if ( !( r = find_or_allocate_straight_font_entry(XX->font)))
+			return NULL;
+		if ( !prepare_straight_glyph(XX->font, r, ch))
+			return NULL;
+	}
+
+	if ( !validate_xchar2b( r, &ch))
+		return NULL;
+	cs = XX-> font-> fs-> per_char ?
+		XX-> font-> fs-> per_char +
+			( ch. byte1 - XX-> font-> fs-> min_byte1) * r-> width +
+			ch. byte2 - XX-> font-> fs-> min_char_or_byte2 :
+		&(XX-> font-> fs-> min_bounds);
+
+	/* querying character */
+	if ( r-> map[(ch. byte1 - r-> first1) * r-> width + ch. byte2 - r-> first2] == NULL)
+		return NULL;
+	xi = r-> map[(ch. byte1 - r-> first1) * r-> width + ch. byte2 - r-> first2]-> image;
+
+	/* find reference point in pixmap */
+	px = ( cs-> lbearing < 0) ? -cs-> lbearing : 0;
+	rx. l = px * r-> matrix[0]. l + UINT16_PRECISION/2;
+	ry. l = px * r-> matrix[1]. l + UINT16_PRECISION/2;
+
+	size-> x = r-> dimension. x;
+	size-> y = r-> dimension. y;
+	offset-> x = rx. i. i - r-> shift. x;
+	offset-> y = ry. i. i - r-> shift. y;
+	if (advance) *advance = cs-> width;
+
+	src_stride = xi-> bytes_per_line;
+	dst_stride = (( size->x * (mono ? 1 : 8) + 31) / 32) * 4;
+	bytes      = ( src_stride < dst_stride ) ? src_stride : dst_stride;
+
+	for (
+		i = size-> y - 1, src = ((Byte*) xi-> data) + (size-> y - 1) * src_stride;
+		i >= 0;
+		i++, src -= src_stride
+	) {
+		register unsigned int j = bytes;
+		register Byte *r = src;
+		while ( j--)
+			if ( *(r++) != 0 ) goto STOP1;
+		size->y--;
+		offset->y++;
+	}
+	STOP1:
+	for ( i = 0, src = (Byte*) xi->data; i < size->y; i++, src += src_stride) {
+		register unsigned int j = bytes;
+		register Byte *r = src;
+		while ( j--)
+			if ( *(r++) != 0 ) goto STOP2;
+		size->y--;
+	}
+	STOP2:
+	if ( size->y <= 0 ) {
+		size->x = size->y = offset->x = offset->y = 0;
+		return malloc(0);
+	}
+
+	if ( !( ret = malloc(dst_stride * size->y)))
+		return NULL;
+	dst  = ret + dst_stride * (size->y - 1);
+	for (
+		i = 0;
+		i < size->y;
+		i++, src += src_stride, dst -= dst_stride
+	) {
+		if ( guts.bit_order == MSBFirst) {
+			if ( mono )
+				memcpy(dst, src, bytes);
+			else
+				bc_mono_byte( src, dst, size->x);
+		} else {
+			register Byte *d = dst, *s = src, *mirrored_bits = prima_mirror_bits();
+			if ( mono ) {
+				register unsigned int j = bytes;
+				while (j--) *d++ = mirrored_bits[*s++];
+			} else {
+				Byte buf[128], *s = src, *d = dst;
+				unsigned int j = bytes;
+				while ( j > 0 ) {
+					register Byte *b = buf;
+					register unsigned int n = (j > sizeof(buf)) ? sizeof(buf) : j;
+					unsigned int m = n;
+					while (n--) *b++ = mirrored_bits[*s++];
+					bc_mono_byte( b, d, m );
+					d += m;
+					j -= m;
+				}
+			}
+		}
+	}
+	return ret;
+}
+
 Byte*
 apc_font_get_glyph_bitmap( Handle self, uint16_t index, unsigned int flags, PPoint offset, PPoint size, int *advance)
 {
-	return NULL;
+	DEFXX;
+#ifdef USE_XFT
+	if ( XX-> font-> xft)
+		return prima_xft_get_glyph_bitmap(self, index, flags, offset, size, advance);
+#endif
+	return get_glyph_bitmap(self, index, flags & ggoMonochrome, offset, size, advance);
 }
 

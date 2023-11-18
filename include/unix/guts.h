@@ -1573,6 +1573,9 @@ prima_xft_text_shaper_harfbuzz( Handle self, PTextShapeRec r);
 extern unsigned long *
 prima_xft_mapper_query_ranges(PFont font, int * count, unsigned int * flags);
 
+extern Byte*
+prima_xft_get_glyph_bitmap( Handle self, uint16_t index, unsigned int flags, PPoint offset, PPoint size, int *advance);
+
 #endif
 
 extern Bool
