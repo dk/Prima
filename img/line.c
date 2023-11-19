@@ -66,7 +66,7 @@ setpixel( ImgHLineRec* rec, int x, int y)
 			rec->proc( rec->color, rec->i->data + rec->i->lineSize * y + x * rec->bytes, rec->bytes);
 		else
 			rec->blend1(
-				rec-> color, 0, &rec->src_alpha, 0,
+				rec-> color, 1, &rec->src_alpha, 0,
 				rec->i->data + rec->i->lineSize * y + x * rec->bytes,
 				rec->use_dst_alpha ? 
 					&rec->dst_alpha : (rec->i->mask + rec->i->maskLine * y + x), 0,
