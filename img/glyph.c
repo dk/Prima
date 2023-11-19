@@ -1,5 +1,5 @@
 #include "img_conv.h"
-#include "Image.h"
+#include "Icon.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -20,8 +20,8 @@ bc_mono_colormask_on_byte(
 	B = *src++ << shift;
 
 	while ( bits > 0 ) {
-		/* skip pixels */
 		if ( curr == 0 ) {
+			/* skip pixels */
 			while ( bits > 0 ) {
 				if ( B == 0 ) {
 					register Byte skip = 8 - shift;
@@ -130,14 +130,18 @@ typedef void PlotFunc( int x, int y, int xFrom, int yFrom, int xLen, int yLen, P
 
 struct PlotStruct {
 	PImage src_image, dst_image;
-	Byte *src, *dst;
-	unsigned int src_stride, dst_stride;
+	Byte *src, *dst, *mask;
+	unsigned int src_stride, dst_stride, mask_stride;
 	Byte *color;
 	Rect r;
 
 	unsigned int bpp, bytes;
 	PlotFunc *func;
 	BitBltProc* blt;
+
+	BlendFunc  *blend1, *blend2;
+	Bool        use_dst_alpha, is_icon;
+	Byte        src_alpha, dst_alpha;
 };
 
 static Bool
@@ -218,6 +222,99 @@ plot_rop( int x, int y, int xFrom, int yFrom, int xLen, int yLen, PlotStruct *p)
 	}
 }
 
+static void
+plot_blend( int x, int y, int xFrom, int yFrom, int xLen, int yLen, PlotStruct *p)
+{
+	int i;
+	Byte *s, *d, *m;
+	Bool
+		use_mbuf  = p->blend2 && p->is_icon,
+		fill_mbuf = use_mbuf && p->bytes == 3;
+	Byte buf1[768], buf2[768], buf3[256], sa = p->src_alpha;
+
+	for (
+		i = 0,
+			s = p->src + yFrom * p->src_stride + xFrom,
+			d = p->dst + y * p->dst_stride + x * p->bytes,
+			m = p->use_dst_alpha ? &p->dst_alpha : p->mask + y * p->mask_stride + x
+			;
+		i < yLen;
+		i++, s += p->src_stride, d += p->dst_stride
+	) {
+		int pixels = xLen, bytes = p->bytes;
+		Bool curr = 0;
+		register Byte *ss = s, *dd = d, *mm = m;
+		while ( pixels > 0 ) {
+			if ( curr == 0 ) {
+				/* skip pixels */
+				while ( pixels > 0 ) {
+					if ( *ss > 0 )
+						goto FLIP;
+					dd += bytes;
+					pixels--;
+					ss++;
+					if ( !p->use_dst_alpha ) mm++;
+				}
+			} else {
+				/* plot pixels */
+#define BLEND \
+	if ( px1 > 0 ) {                                               \
+		p->blend1( buf1, 1, buf2, 1, dd, mm, 0, px1);          \
+		if ( use_mbuf )                                        \
+			p->blend2( mmbuf, 1, mmbuf, 1, mm, mm, 0, px2);\
+		dd += px1;                                             \
+		if ( !p->use_dst_alpha ) mm += px2;                    \
+	}
+				while ( pixels > 0 ) {
+					register Byte
+						*xbuf  = buf1,
+						*abuf  = buf2,
+						*mbuf  = fill_mbuf ? buf3 : buf2,
+						*mmbuf = mbuf;
+					register unsigned int
+						n = (sizeof(buf2) > pixels) ? pixels : sizeof(buf2),
+						px1 = 0,
+						px2 = 0;
+					while (n-- > 0) {
+						if ( *ss == 0 ) {
+							BLEND;
+							goto FLIP;
+						}
+						if ( bytes == 3 ) {
+							register Byte sss = *ss;
+							*xbuf++ = p->color[0] * sss / 255;
+							*xbuf++ = p->color[1] * sss / 255;
+							*xbuf++ = p->color[2] * sss / 255;
+							if ( sa < 255 )
+								sss = sss * sa / 255;
+							*abuf++ = sss;
+							*abuf++ = sss;
+							*abuf++ = sss;
+							if ( fill_mbuf ) *mbuf++ = sss;
+						} else {
+							register Byte sss = *ss;
+							*xbuf++ = p->color[0] * sss / 255;
+							*abuf++ = ( sa < 255 ) ? sss * sa / 255 : sss;
+						}
+						px1 += bytes;
+						px2 ++;
+						n   -= bytes;
+						pixels--;
+						ss++;
+					}
+					BLEND;
+				}
+			}
+		FLIP:
+			curr = !curr;
+		}
+#undef BLEND
+
+		if ( !p->use_dst_alpha )
+			m += p->mask_stride;
+	}
+}
+
 static Byte
 rop_black( int rop )
 {
@@ -271,8 +368,8 @@ img_plot_glyph( Handle self, PImage glyph, int x, int y, PImgPaintContext ctx)
 
 	PlotStruct rec = {
 		glyph, i,
-		glyph->data, i->data,
-		glyph->lineSize, i->lineSize,
+		glyph->data, i->data, NULL,
+		glyph->lineSize, i->lineSize, 0,
 		ctx->color,
 		{ x, y, x + glyph->w - 1, y + glyph->h - 1 }
 	};
@@ -288,19 +385,51 @@ img_plot_glyph( Handle self, PImage glyph, int x, int y, PImgPaintContext ctx)
 		return;
 	} else if ( rop < ropNoOper ) {
 		if ( !mono ) {
-			warn("img_plot_glyph: cannot use bitwise rops with antialiased glyphs");
+			warn("img_plot_glyph: cannot use raster operations with antialiased text");
 			return;
 		}
 		rec.blt   = img_find_blt_proc(rop);
 		rec.func  = plot_rop;
 		rec.bpp   = i->type & imBPP;
 		rec.bytes = rec.bpp / 8;
-	} else {
-		if ( i-> type != imByte && i-> type != imRGB ) {
-			warn("img_plot_glyph: cannot use blending on target type=%x", i->type);
+	} else if ( i-> type == imByte || i-> type == imRGB ) {
+		if ( mono ) {
+			warn("img_plot_glyph: cannot use blending with non-antialiased text");
 			return;
 		}
-		warn("img_plot_glyph: target type=%x rop=%x is not implemented", i->type, rop);
+
+		/* differentiate between per-pixel alpha and a global value */
+		if ( rop & ropSrcAlpha )
+			rec.src_alpha = (rop >> ropSrcAlphaShift) & 0xff;
+		else
+			rec.src_alpha = 0xff;
+		if ( rop & ropDstAlpha ) {
+			rec.use_dst_alpha = true;
+			rec.dst_alpha = (rop >> ropDstAlphaShift) & 0xff;
+		} else
+			rec.use_dst_alpha = false;
+		rop &= ropPorterDuffMask;
+		if ( rop > ropMaxPDFunc || rop < 0 ) return;
+
+		rec.is_icon = kind_of( self, CIcon );
+		if ( rec.is_icon ) {
+			if ((PIcon(self)-> maskType != imbpp8) && !rec.use_dst_alpha) {
+				warn("img_plot_glyph: cannot use antialiased text on 1-bit-mask icons");
+				return;
+			}
+			rec.mask        = PIcon(self)->mask;
+			rec.mask_stride = PIcon(self)->maskLine;
+		} else if ( !rec.use_dst_alpha ) {
+			rec.use_dst_alpha = true;
+			rec.dst_alpha = 0xff;
+		}
+		rec.func  = plot_blend;
+		rec.bpp   = i->type & imBPP;
+		rec.bytes = rec.bpp / 8;
+		img_find_blend_proc(rop, &rec.blend1, &rec.blend2);
+	} else {
+		warn("img_plot_glyph: cannot use blending on target type=%x", i->type);
+		return;
 	}
 
 	w = glyph->w;

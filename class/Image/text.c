@@ -73,6 +73,28 @@ prepare_simple_shaping_input( char * text, unsigned int len, Bool utf8)
 	return s;
 }
 
+static Color
+premultiply( Handle self, int alpha, Color color)
+{
+	if ( alpha == 255 )
+		return color;
+	if ( var->type & imGrayScale ) {
+		color = color * alpha / 255;
+	} else {
+		int c[3] = {
+			( color & 0xff         ) * alpha / 255,
+			( ((color)>>8) & 0xff  ) * alpha / 255,
+			( ((color)>>16) & 0xff ) * alpha / 255
+		};
+		color =
+			(c[0] & 0xff) |
+			((c[1] & 0xff) << 8) |
+			((c[2] & 0xff) << 16)
+			;
+	}
+	return color;
+}
+
 static Bool
 plot_glyphs( Handle self, PGlyphsOutRec t, int x, int y )
 {
@@ -84,6 +106,7 @@ plot_glyphs( Handle self, PGlyphsOutRec t, int x, int y )
 	Bool            straight     = (var->font.direction == 0.0) && prima_matrix_is_translated_only(VAR_MATRIX);
 	Matrix          matrix;
 	ImgPaintContext ctx;
+	Color color;
 
 	flags = ggoUseHints;
 	if (((var->type & imBPP) == 1) || !var->antialias)
@@ -95,9 +118,25 @@ plot_glyphs( Handle self, PGlyphsOutRec t, int x, int y )
 	o.y = y;
 
 	bzero(&ctx, sizeof(ImgPaintContext));
-	Image_color2pixel( self, my->get_color(self), ctx.color);
-	ctx.rop = my->effective_rop(self, var->extraROP);
 	ctx.region = var-> regionData;
+
+	ctx.rop    = my->effective_rop(self, var->extraROP);
+	if ( !( flags & ggoMonochrome)) {
+		/* make sure blending is used */
+		int a = (ctx.rop & ropSrcAlpha) ? (ctx.rop >> ropSrcAlphaShift ) & 0xff : 0xff;
+		a = var-> alpha * a / 255;
+		ctx.rop &= ~(0xff << ropSrcAlphaShift);
+		ctx.rop |= ropSrcAlpha | ( a << ropSrcAlphaShift );
+	}
+
+	color = my->get_color(self);
+	/* DWIM premultiplication for the default rop if blending is used */
+	if (
+		!( flags & ggoMonochrome) &&
+		((ctx.rop & ropPorterDuffMask) == ropBlend)
+	)
+		color = premultiply(self, (ctx.rop >> ropSrcAlphaShift) & 0xff, color);
+	Image_color2pixel( self, color, ctx.color);
 
 	if ( !straight ) {
 		if ( var->font.direction != 0.0 ) {

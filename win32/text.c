@@ -2144,7 +2144,7 @@ apc_font_get_glyph_bitmap( Handle self, uint16_t index, unsigned int flags, PPoi
 		register Byte* buf = gdi_buf;
 		register unsigned int bytes = size->y * (( size->x * 8 + 31) / 32) * 4;
 		while (bytes--) {
-			*buf = *buf * 3.923 + .5; /* 255/65 */
+			*buf = *buf * 3.984 + .5; /* 255/64 */
 			buf++;
 		}
 	}
