@@ -598,6 +598,7 @@ Image_put_image_indirect( Handle self, Handle image, int x, int y, int xFrom, in
 		Image_color2pixel( self, my->get_color(self), colorbuf );
 		color = colorbuf;
 	}
+	rop = my->effective_rop(self, rop);
 
 	prima_matrix_apply_int_to_int(*matrix, &x, &y);
 	if ( prima_matrix_is_translated_only(*matrix)) {

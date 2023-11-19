@@ -799,7 +799,12 @@ fully identical effect can be achieved by
    $image->alpha(128);
    $image->ellipse( 5, 5, 5, 5 );
 
-as well.
+as well, in a DWIM fashion. The only corner case here is when
+C<< $image->alpha >> is 255; add the rop flags
+C<< rop::DstAlpha | ( 255 < rop::DstAlphaShift ) >> to make sure that blending is selected.
+The corner case happens because the values of the Porter-Duff and bitwise rops clash, as the
+design was to make the values of C<rop::CopyPut> and C<rop::Blend> to be the same to serve
+as a sensible default. This may be resolved in future.
 
 When used with icons, their source and/or destination alpha channels are
 additionally multiplied by these values.

@@ -36,4 +36,5 @@ object Prima::Icon( Prima::Image)
 	c_only void       update_change();
 	c_only void       stretch( int width, int height);
 	c_only Byte*      convert_mask( int type );
+	c_only int        effective_rop(int rop);
 }

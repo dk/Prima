@@ -227,7 +227,7 @@ select_pen( Handle self )
 	RQPen key = sys rq_pen;
 	PDCObject ret;
 
-	if ( ! sys ps ) return false;
+	if ( ! sys ps || is_opt(optInFontQuery) ) return false;
 
 	key.type = DCO_PEN;
 	if ( !key.geometric ) {

@@ -180,7 +180,7 @@ apc_gp_get_clip_rect( Handle self)
 	RECT r;
 	Rect rr = {0,0,0,0};
 	objCheck rr;
-	if ( !is_opt( optInDraw) || !sys ps) return rr;
+	if ( !is_opt( optInDraw) || !sys ps || is_opt(optInFontQuery) ) return rr;
 	if ( !GetClipBox( sys ps, &r)) apiErr;
 	if ( IsRectEmpty( &r)) return rr;
 	rr. left   = r. left;
@@ -201,7 +201,7 @@ apc_gp_set_clip_rect( Handle self, Rect c)
 {
 	HRGN rgn;
 	objCheck false;
-	if ( !is_opt( optInDraw) || !sys ps) return true;
+	if ( !is_opt( optInDraw) || !sys ps || is_opt(optInFontQuery) ) return true;
 	// inclusive-exclusive
 	c. left   -= sys transform2. x;
 	c. right  -= sys transform2. x;
@@ -233,7 +233,7 @@ apc_gp_get_region( Handle self, Handle mask)
 	int res;
 
 	objCheck false;
-	if ( !is_opt( optInDraw) || !sys ps) return false;
+	if ( !is_opt( optInDraw) || !sys ps || is_opt(optInFontQuery) ) return false;
 	select_world_transform(self, false);
 
 	if ( !mask ) {
@@ -259,7 +259,7 @@ apc_gp_set_region( Handle self, Handle region)
 	HRGN rgn = NULL;
 	objCheck false;
 
-	if ( !is_opt( optInDraw) || !sys ps) return true;
+	if ( !is_opt( optInDraw) || !sys ps || is_opt(optInFontQuery) ) return true;
 	select_world_transform(self, false);
 
 	if ( !region) {

@@ -713,7 +713,12 @@ Color
 apc_gp_get_color( Handle self)
 {
 	objCheck 0;
-	return remap_color( sys ps ? sys rq_pen.logpen.lopnColor : sys fg, false);
+	return remap_color(
+		( sys ps && !is_opt(optInFontQuery)) ?
+			sys rq_pen.logpen.lopnColor :
+			sys fg,
+		false
+	);
 }
 
 int
@@ -742,7 +747,7 @@ int
 apc_gp_get_line_pattern( Handle self, unsigned char * buffer)
 {
 	objCheck 0;
-	if ( !sys ps) {
+	if ( !sys ps || is_opt(optInFontQuery) ) {
 		memcpy(
 			( char *) buffer,
 			(char*)(( sys line_pattern_len > sizeof(sys line_pattern)) ? sys line_pattern : (Byte*)(&sys line_pattern)),
@@ -918,7 +923,7 @@ int
 apc_gp_get_rop( Handle self)
 {
 	objCheck 0;
-	if ( !sys ps) return sys rop;
+	if ( !sys ps || is_opt(optInFontQuery) ) return sys rop;
 	return ctx_remap_def( GetROP2( sys ps), ctx_rop2R2, false, ropCopyPut);
 }
 
@@ -926,7 +931,7 @@ int
 apc_gp_get_rop2( Handle self)
 {
 	objCheck 0;
-	if ( !sys ps) return sys rop2;
+	if ( !sys ps || is_opt(optInFontQuery) ) return sys rop2;
 	return ( GetBkMode( sys ps) == OPAQUE) ? ropCopyPut : ropNoOper;
 }
 
@@ -946,7 +951,7 @@ apc_gp_set_back_color( Handle self, Color color)
 {
 	long clr = remap_color( color, true);
 	objCheck false;
-	if ( sys ps) {
+	if ( sys ps && !is_opt(optInFontQuery) ) {
 		if ( pal_ok) clr = palette_match( self, clr);
 		if ( SetBkColor( sys ps, clr) == CLR_INVALID) apiErr;
 		sys rq_brush.back_color = clr;
@@ -966,7 +971,7 @@ apc_gp_set_color( Handle self, Color color)
 	long clr = remap_color( color, true);
 	objCheck false;
 	sys fg = clr;
-	if ( sys ps) {
+	if ( sys ps && !is_opt(optInFontQuery) ) {
 		if ( pal_ok) clr = palette_match( self, clr);
 		sys rq_pen.logpen.lopnColor   = ( COLORREF) clr;
 		sys rq_brush.logbrush.lbColor = ( COLORREF) (( sys rq_brush.logbrush.lbStyle == BS_DIBPATTERNPT) ? 0 : clr);
@@ -991,7 +996,7 @@ apc_gp_set_fill_mode( Handle self, int fill_mode)
 {
 	objCheck false;
 	sys fill_mode = fill_mode;
-	if ( sys ps)
+	if ( sys ps && !is_opt(optInFontQuery) )
 		SetPolyFillMode( sys ps, ((fill_mode & fmWinding) == fmAlternate) ? ALTERNATE : WINDING);
 	return true;
 }
@@ -1036,7 +1041,7 @@ apc_gp_set_fill_pattern( Handle self, FillPattern pattern)
 	uint32_t *p2 = p1 + 1;
 
 	memcpy( &sys fill_pattern, pattern, sizeof( FillPattern));
-	if ( !ps) return true;
+	if ( !ps || is_opt(optInFontQuery) ) return true;
 
 	if (( *p1 == 0) && ( *p2 == 0)) {
 		b-> logbrush.lbStyle = BS_SOLID;
@@ -1073,7 +1078,7 @@ Bool
 apc_gp_set_fill_image( Handle self, Handle image)
 {
 	objCheck false;
-	if ( !sys ps || !image)
+	if ( !sys ps || !image || is_opt(optInFontQuery) )
 		return false;
 	sys rq_brush.back_color = GetBkColor(sys ps);
 	sys rq_brush.logbrush.lbStyle = BS_DIBPATTERNPT; /* for stylus_is_complex */
@@ -1087,7 +1092,7 @@ apc_gp_set_fill_pattern_offset( Handle self, Point offset)
 {
 	objCheck false;
 	sys fill_pattern_offset = offset;
-	if ( sys ps) {
+	if ( sys ps && !is_opt(optInFontQuery) ) {
 		offset = apply_fill_pattern_offset(self);
 		SetBrushOrgEx( sys ps, offset.x, offset.y, NULL);
 		if ( CURRENT_GP_BRUSH != NULL ) {
@@ -1138,7 +1143,7 @@ Bool
 apc_gp_set_line_pattern( Handle self, unsigned char * pattern, int len)
 {
 	objCheck false;
-	if ( !sys ps) {
+	if ( !sys ps || is_opt(optInFontQuery) ) {
 		if ( sys line_pattern_len > sizeof(sys line_pattern))
 			free( sys line_pattern);
 		if ( len > sizeof(sys line_pattern)) {
@@ -1176,7 +1181,7 @@ apc_gp_set_palette( Handle self)
 	}
 
 	pal = palette_create( self);
-	if ( sys ps) {
+	if ( sys ps && !is_opt(optInFontQuery) ) {
 		if ( pal)
 			SelectPalette( sys ps, pal, 0);
 		else
@@ -1192,7 +1197,10 @@ Bool
 apc_gp_set_rop( Handle self, int rop)
 {
 	objCheck false;
-	if ( !sys ps) { sys rop = rop; return true; }
+	if ( !sys ps || is_opt(optInFontQuery)) {
+		sys rop = rop;
+		return true;
+	}
 	sys rop = ctx_remap_def( rop, ctx_rop2R2, true, R2_COPYPEN);
 	if ( !SetROP2( sys ps, sys rop)) apiErr;
 	return true;
@@ -1202,7 +1210,10 @@ Bool
 apc_gp_set_rop2( Handle self, int rop)
 {
 	objCheck false;
-	if ( !sys ps) { sys rop2 = rop; return true; }
+	if ( !sys ps || is_opt(optInFontQuery)) {
+		sys rop2 = rop;
+		return true;
+	}
 	if ( rop != ropCopyPut) rop = ropNoOper;
 	sys rop2 = rop;
 	if ( !SetBkMode( sys ps, ( rop == ropCopyPut) ? OPAQUE : TRANSPARENT)) apiErr;
@@ -1229,9 +1240,9 @@ apc_gp_push(Handle self, GCStorageFunction * destructor, void * user_data, unsig
 	state->user_data_size = user_data_size;
 	state->user_destructor = destructor;
 
-	state->in_paint = (sys ps != 0);
+	state->in_paint = (sys ps != 0 && !is_opt(optInFontQuery) );
 
-	if ( sys ps ) {
+	if ( state-> in_paint ) {
 		int i;
 		if ( !( SaveDC(sys ps))) {
 			list_delete_at( sys gc_stack, sys gc_stack->count - 1);
@@ -1371,7 +1382,7 @@ Bool
 select_world_transform(Handle self, Bool want_transform)
 {
 	objCheck 0;
-	if ( ! sys ps )
+	if ( ! sys ps || is_opt(optInFontQuery) )
 		return false;
 
 	if (

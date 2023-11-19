@@ -1085,6 +1085,22 @@ Icon_matrix_transform( Handle self, Matrix matrix, ColorPixel fill, Point *apert
 	return ok;
 }
 
+int
+Icon_effective_rop( Handle self, int rop)
+{
+	if (
+		!( rop & ropSrcAlpha) && (
+			(var->alpha < 255)  ||
+			(rop & ropDstAlpha) ||
+			(var->maskType == 8)
+		)
+	) {
+		rop &= ~(0xff << ropSrcAlphaShift);
+		rop |= ropSrcAlpha | ( var-> alpha << ropSrcAlphaShift );
+	}
+	return rop;
+}
+
 #ifdef __cplusplus
 }
 #endif

@@ -73,98 +73,45 @@ prepare_simple_shaping_input( char * text, unsigned int len, Bool utf8)
 	return s;
 }
 
-static Bool
-plot_glyph( Handle self, Byte *arena, Point size, int x, int y, PImgPaintContext ctx)
-{
-	Image src_dummy;
-
-	img_fill_dummy( &src_dummy, size.x, size.y,
-		imGrayScale | (((var->type & imBPP) == 1) ? 1 : 8),
-		arena, NULL
-	);
-
-	if (
-		( var->type & imBPP) != 1 &&
-		( var->type & imBPP) != 4 &&
-		( var->type & imBPP) != 8 && (
-			( var->type & imGrayScale) != 0 ||
-			var->type == imRGB
-		)
-	) {
-		/* convert from 8 bit to other non-palette-matching depths */
-		Byte *arena2;
-		RGBColor dummy_palette;
-		int dummy_palsize = 0;
-
-		if ( !( arena2 = malloc(LINE_SIZE(size.x, var->type) * size.y))) {
-			warn("Not enough memory");
-			return false;
-		}
-		ic_type_convert((Handle)&src_dummy, arena2, &dummy_palette, var->type, &dummy_palsize, false);
-		img_fill_dummy( &src_dummy, size.x, size.y, var->type, arena2, NULL);
-	} else if ( var->type == 8 && ctx-> rop == ropCopyPut ) {
-		/* convert from 8 bit to 8 paletted bits - reuse memory */
-		/* XXX */
-	} else if ( (var->type &imBPP) == 4 ) {
-		/* convert from 8 bit to 4 bits - reuse memory */
-		RGBColor dummy_palette;
-		int dummy_palsize = 0;
-		ic_type_convert((Handle)&src_dummy, arena, &dummy_palette, var->type, &dummy_palsize, false);
-		img_fill_dummy( &src_dummy, size.x, size.y, var->type, arena, NULL);
-		if ( var->type == 4 && ctx-> rop == ropCopyPut ) {
-			/* XXX */
-		}
-	}
-
-	img_plot_glyph( self, &src_dummy, x, y, ctx);
-
-	return true;
-}
-
 static Byte
-rop_direct( int rop )
+rop_black( int rop )
 {
 	switch (rop) {
-	case ropBlackness  : return ropNotSrcAnd ;
-	case ropNotOr      : return ropXorPut    ;
-	case ropNotSrcAnd  : return ropNoOper    ;
-	case ropNotPut     : return ropOrPut     ;
-	case ropNotDestAnd : return ropNotSrcAnd ;
-	case ropInvert     : return ropXorPut    ;
-	case ropXorPut     : return ropNoOper    ;
-	case ropNotAnd     : return ropOrPut     ;
-	case ropAndPut     : return ropNotSrcAnd ;
-	case ropNotXor     : return ropXorPut    ;
-	case ropNoOper     : return ropNoOper    ;
-	case ropNotSrcOr   : return ropOrPut     ;
-	case ropCopyPut    : return ropNotSrcAnd ;
-	case ropNotDestOr  : return ropXorPut    ;
-	case ropOrPut      : return ropNoOper    ;
-	case ropWhiteness  : return ropOrPut     ;
+	case ropNotSrcAnd  :
+	case ropXorPut     :
+	case ropOrPut      : return ropNoOper;
+	case ropBlackness  :
+	case ropNotDestAnd :
+	case ropAndPut     :
+	case ropCopyPut    : return ropNotSrcAnd;
+	case ropNotPut     :
+	case ropNotAnd     :
+	case ropNotSrcOr   :
+	case ropWhiteness  : return ropOrPut;
+	case ropNotOr      :
+	case ropInvert     :
+	case ropNotXor     :
+	case ropNotDestOr  : return ropXorPut;
 	}
 	return rop;
 }
 
 static Byte
-rop_inverse( int rop )
+rop_white( int rop )
 {
 	switch (rop) {
-	case ropBlackness  : return ropOrPut     ;
-	case ropNotOr      : return ropNoOper    ;
-	case ropNotSrcAnd  : return ropXorPut    ;
-	case ropNotPut     : return ropNotSrcAnd ;
-	case ropNotDestAnd : return ropOrPut     ;
-	case ropInvert     : return ropNoOper    ;
-	case ropXorPut     : return ropXorPut    ;
-	case ropNotAnd     : return ropNotSrcAnd ;
-	case ropAndPut     : return ropOrPut     ;
-	case ropNotXor     : return ropNoOper    ;
-	case ropNoOper     : return ropXorPut    ;
-	case ropNotSrcOr   : return ropNotSrcAnd ;
-	case ropCopyPut    : return ropOrPut     ;
-	case ropNotDestOr  : return ropNoOper    ;
-	case ropOrPut      : return ropXorPut    ;
-	case ropWhiteness  : return ropNotSrcAnd ;
+	case ropAndPut     :
+	case ropNotXor     :
+	case ropNotSrcOr   : return ropNoOper;
+	case ropBlackness  :
+	case ropNotOr      :
+	case ropNotPut     : return ropNotSrcAnd;
+	case ropCopyPut    :
+	case ropNotDestOr  :
+	case ropWhiteness  : return ropOrPut;
+	case ropNotDestAnd :
+	case ropInvert     :
+	case ropNotAnd     : return ropXorPut;
 	}
 	return rop;
 }
@@ -173,31 +120,34 @@ static Bool
 plot_glyphs( Handle self, PGlyphsOutRec t, int x, int y )
 {
 	unsigned int    i, i2, flags;
-	Point           o            = {x, y};
+	Point           o;
 	int             advance      = 0;
 	Bool            restore_font = false;
 	uint32_t        last_font    = 0;
 	Bool            straight     = (var->font.direction == 0.0) && prima_matrix_is_translated_only(VAR_MATRIX);
 	Matrix          matrix;
 	ImgPaintContext ctx;
-	Bool            ok           = true;
 
-	flags = ggoUseHints |
-		(((var->type & imBPP) == 1) ? ggoMonochrome : 0)
-		;
+	flags = ggoUseHints;
+	if (((var->type & imBPP) == 1) || !var->antialias)
+		flags |= ggoMonochrome;
+
+	if ( !apc_gp_get_text_out_baseline( self))
+		y += var-> font. descent;
+	o.x = x;
+	o.y = y;
 
 	bzero(&ctx, sizeof(ImgPaintContext));
 	Image_color2pixel( self, my->get_color(self), ctx.color);
-	ctx.rop = var-> extraROP;
-	if ( var->alpha < 255 ) {
-		ctx.rop &= ~(0xff << ropSrcAlphaShift);
-		ctx.rop |= ropSrcAlpha | ( var->alpha << ropSrcAlphaShift );
-	}
+	ctx.rop = my->effective_rop(self, var->extraROP);
 	ctx.region = var-> regionData;
-	if ((var->type & imBPP) == 1) {
-		if (ctx.rop >= ropSrcOver )
-			ctx.rop = ropCopyPut;
-		ctx.rop = ctx.color[0] ? rop_inverse(ctx.rop) : rop_direct(ctx.rop);
+	if (flags & ggoMonochrome) {
+		if (ctx.rop >= ropNoOper )
+			ctx.rop = ropNoOper;
+		if ((var->type & imBPP) == 1)
+			ctx.rop = ctx.color[0] ? rop_white(ctx.rop) : rop_black(ctx.rop);
+		if ( ctx.rop == ropNoOper)
+			return true;
 	}
 
 	if ( !straight ) {
@@ -258,15 +208,20 @@ plot_glyphs( Handle self, PGlyphsOutRec t, int x, int y )
 		glyph.right  = glyph.left   + size.x - 1;
 		glyph.top    = glyph.bottom + size.y - 1;
 		if (
-			glyph.left < var->w &&
-			glyph.right >= 0 &&
-			glyph.bottom < var->h &&
-			glyph.top    >= 0
-		)
-			ok = plot_glyph(self, arena, size, glyph.left, glyph.bottom, &ctx);
+			glyph.left   <  var->w &&
+			glyph.right  >= 0      &&
+			glyph.bottom <  var->h &&
+			glyph.top    >= 0      &&
+			size.x       >  0      &&
+			size.y       >  0
+		) {
+			Image src_dummy;
+			img_fill_dummy( &src_dummy, size.x, size.y,
+				imGrayScale | ((flags & ggoMonochrome) ? 1 : 8),
+				arena, NULL);
+			img_plot_glyph( self, &src_dummy, glyph.left, glyph.bottom, &ctx);
+		}
 		free(arena);
-		if ( !ok )
-			break;
 
 		advance += t->advances ? t->advances[i]: default_advance;
 		o.x = x + advance;
@@ -279,7 +234,7 @@ plot_glyphs( Handle self, PGlyphsOutRec t, int x, int y )
 	if ( restore_font )
 		apc_gp_set_font( self, &var-> font);
 
-	return ok;
+	return true;
 }
 
 Bool

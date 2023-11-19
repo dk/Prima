@@ -2095,7 +2095,6 @@ apc_font_end_query( Handle self )
 	sys ps = 0;
 }
 
-
 Byte*
 apc_font_get_glyph_bitmap( Handle self, uint16_t index, unsigned int flags, PPoint offset, PPoint size, int *advance)
 {
@@ -2129,6 +2128,8 @@ apc_font_get_glyph_bitmap( Handle self, uint16_t index, unsigned int flags, PPoi
 	size-> y   = gm.gmBlackBoxY;
 	offset-> x = gm.gmptGlyphOrigin.x;
 	offset-> y =-gm.gmptGlyphOrigin.y;
+	if ( gdi_size == 0 )
+		size-> x = size-> y = 0;
 	if ( advance ) {
 		ABC x;
 		if (GetCharABCWidthsI( sys ps, index, 1, NULL, &x)) {

@@ -45,7 +45,7 @@ create_gdip_surface(Handle self)
 	return true;
 }
 
-#define CREATE_GDIP_SURFACE (( sys ps && sys graphics == NULL ) ? create_gdip_surface(self) : true)
+#define CREATE_GDIP_SURFACE (( sys ps && !is_opt(optInFontQuery) && sys graphics == NULL ) ? create_gdip_surface(self) : true)
 
 Bool
 apc_gp_set_alpha( Handle self, int alpha)
@@ -65,7 +65,7 @@ apc_gp_set_alpha( Handle self, int alpha)
 		}
 	}
 
-	if ( sys ps && sys graphics )
+	if ( sys ps && !is_opt(optInFontQuery) && sys graphics )
 		STYLUS_FREE_GP_BRUSH;
 
 	if ( sys alpha_arena_palette ) {
@@ -148,7 +148,7 @@ apc_gp_aa_bars( Handle self, int nr, NRect *rr)
 			apc_gp_set_back_color(self, 0xffffff);
 			apc_gp_set_rop(self, ropAndPut);
 			ok = apc_gp_bars(self, nr, bars);
-			apc_gp_set_rop(self, ropXor);
+			apc_gp_set_rop(self, ropXorPut);
 			apc_gp_set_color(self, fg);
 			apc_gp_set_back_color(self, 0);
 			ok |= apc_gp_bars(self, nr, bars);
@@ -240,7 +240,7 @@ apc_gp_aa_fill_poly( Handle self, int numPts, NPoint * points)
 			apc_gp_set_back_color(self, 0xffffff);
 			apc_gp_set_rop(self, ropAndPut);
 			ok = apc_gp_fill_poly( self, numPts, p );
-			apc_gp_set_rop(self, ropXor);
+			apc_gp_set_rop(self, ropXorPut);
 			apc_gp_set_color(self, fg);
 			apc_gp_set_back_color(self, 0);
 			ok |= apc_gp_fill_poly( self, numPts, p );
