@@ -73,49 +73,6 @@ prepare_simple_shaping_input( char * text, unsigned int len, Bool utf8)
 	return s;
 }
 
-static Byte
-rop_black( int rop )
-{
-	switch (rop) {
-	case ropNotSrcAnd  :
-	case ropXorPut     :
-	case ropOrPut      : return ropNoOper;
-	case ropBlackness  :
-	case ropNotDestAnd :
-	case ropAndPut     :
-	case ropCopyPut    : return ropNotSrcAnd;
-	case ropNotPut     :
-	case ropNotAnd     :
-	case ropNotSrcOr   :
-	case ropWhiteness  : return ropOrPut;
-	case ropNotOr      :
-	case ropInvert     :
-	case ropNotXor     :
-	case ropNotDestOr  : return ropXorPut;
-	}
-	return rop;
-}
-
-static Byte
-rop_white( int rop )
-{
-	switch (rop) {
-	case ropAndPut     :
-	case ropNotXor     :
-	case ropNotSrcOr   : return ropNoOper;
-	case ropBlackness  :
-	case ropNotOr      :
-	case ropNotPut     : return ropNotSrcAnd;
-	case ropCopyPut    :
-	case ropNotDestOr  :
-	case ropWhiteness  : return ropOrPut;
-	case ropNotDestAnd :
-	case ropInvert     :
-	case ropNotAnd     : return ropXorPut;
-	}
-	return rop;
-}
-
 static Bool
 plot_glyphs( Handle self, PGlyphsOutRec t, int x, int y )
 {
@@ -141,14 +98,6 @@ plot_glyphs( Handle self, PGlyphsOutRec t, int x, int y )
 	Image_color2pixel( self, my->get_color(self), ctx.color);
 	ctx.rop = my->effective_rop(self, var->extraROP);
 	ctx.region = var-> regionData;
-	if (flags & ggoMonochrome) {
-		if (ctx.rop >= ropNoOper )
-			ctx.rop = ropNoOper;
-		if ((var->type & imBPP) == 1)
-			ctx.rop = ctx.color[0] ? rop_white(ctx.rop) : rop_black(ctx.rop);
-		if ( ctx.rop == ropNoOper)
-			return true;
-	}
 
 	if ( !straight ) {
 		if ( var->font.direction != 0.0 ) {

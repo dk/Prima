@@ -218,11 +218,55 @@ plot_rop( int x, int y, int xFrom, int yFrom, int xLen, int yLen, PlotStruct *p)
 	}
 }
 
+static Byte
+rop_black( int rop )
+{
+	switch (rop) {
+	case ropNotSrcAnd  :
+	case ropXorPut     :
+	case ropOrPut      : return ropNoOper;
+	case ropBlackness  :
+	case ropNotDestAnd :
+	case ropAndPut     :
+	case ropCopyPut    : return ropNotSrcAnd;
+	case ropNotPut     :
+	case ropNotAnd     :
+	case ropNotSrcOr   :
+	case ropWhiteness  : return ropOrPut;
+	case ropNotOr      :
+	case ropInvert     :
+	case ropNotXor     :
+	case ropNotDestOr  : return ropXorPut;
+	}
+	return rop;
+}
+
+static Byte
+rop_white( int rop )
+{
+	switch (rop) {
+	case ropAndPut     :
+	case ropNotXor     :
+	case ropNotSrcOr   : return ropNoOper;
+	case ropBlackness  :
+	case ropNotOr      :
+	case ropNotPut     : return ropNotSrcAnd;
+	case ropCopyPut    :
+	case ropNotDestOr  :
+	case ropWhiteness  : return ropOrPut;
+	case ropNotDestAnd :
+	case ropInvert     :
+	case ropNotAnd     : return ropXorPut;
+	}
+	return rop;
+}
+
+
 void
 img_plot_glyph( Handle self, PImage glyph, int x, int y, PImgPaintContext ctx)
 {
 	PImage i = (PImage) self;
-	int w, h;
+	int w, h, rop = ctx->rop;
 	Bool mono = (glyph->type & imBPP) == 1;
 
 	PlotStruct rec = {
@@ -233,26 +277,37 @@ img_plot_glyph( Handle self, PImage glyph, int x, int y, PImgPaintContext ctx)
 		{ x, y, x + glyph->w - 1, y + glyph->h - 1 }
 	};
 
-	if (glyph-> w == 0 || glyph-> h == 0)
-		return;
+	if (mono) {
+		if (rop >= ropNoOper )
+			rop = ropNoOper;
+		if ((i->type & imBPP) == 1)
+			rop = ctx->color[0] ? rop_white(rop) : rop_black(rop);
+	}
 
-	if ( ctx->rop <= ropNoOper ) {
+	if ( rop == ropNoOper) {
+		return;
+	} else if ( rop < ropNoOper ) {
 		if ( !mono ) {
 			warn("img_plot_glyph: cannot use bitwise rops with antialiased glyphs");
 			return;
 		}
-		rec.blt   = img_find_blt_proc(ctx->rop);
+		rec.blt   = img_find_blt_proc(rop);
 		rec.func  = plot_rop;
 		rec.bpp   = i->type & imBPP;
 		rec.bytes = rec.bpp / 8;
 	} else {
-		warn("img_plot_glyph: target type=%x rop=%x is not implemented", i->type, ctx->rop);
+		if ( i-> type != imByte && i-> type != imRGB ) {
+			warn("img_plot_glyph: cannot use blending on target type=%x", i->type);
+			return;
+		}
+		warn("img_plot_glyph: target type=%x rop=%x is not implemented", i->type, rop);
 	}
 
 	w = glyph->w;
 	h = glyph->h;
 	if ( x + w > i->w ) w = i->w - x - 1;
 	if ( y + h > i->h ) h = i->h - y - 1;
+	if ( w <= 0 || h <= 0 ) return;
 
 	img_region_foreach( ctx->region,
 		x, y, w, h,

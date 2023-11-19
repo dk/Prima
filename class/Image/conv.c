@@ -1001,6 +1001,7 @@ int
 Image_effective_rop( Handle self, int rop)
 {
 	if (
+		( rop != ropAlphaCopy ) &&
 		!( rop & ropSrcAlpha) && (
 			(var->alpha < 255) ||
 			(rop & ropDstAlpha)
