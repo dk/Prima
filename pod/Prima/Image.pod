@@ -473,8 +473,14 @@ In the paint state behaves in the same way as C<Prima::Drawable::pixel>.
 
 =item preserveType BOOLEAN
 
-If 1, reverts the image type to its old value if an
-implicit conversion was called during C<end_paint()>.
+If 1, reverts the image type and eventual palette to their old values whenever
+an implicit pixel format change is needed, for example during C<end_paint()>.
+This option can be expensive, and repetitive conversions can drastically
+degrade image quality; use with care.
+
+Default: false
+
+See also: C<conversion>
 
 =item rangeHi
 

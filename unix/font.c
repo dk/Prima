@@ -2386,7 +2386,7 @@ get_glyph_bitmap( Handle self, uint16_t index, Bool mono, PPoint offset, PPoint 
 	size-> x = r-> dimension. x;
 	size-> y = r-> dimension. y;
 	offset-> x = rx. i. i - r-> shift. x;
-	offset-> y = ry. i. i - r-> shift. y;
+	offset-> y = ry. i. i - r-> shift. y - XX-> font-> font. descent;
 	if (advance) *advance = cs-> width;
 
 	src_stride = xi-> bytes_per_line;

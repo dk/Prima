@@ -3280,6 +3280,12 @@ AM(MaskIndex)
 END_TABLE(am,UV)
 #undef AM
 
+typedef struct {
+	Bool enabled;
+	int mask, type, colors;
+	RGBColor palette[256];
+} ImagePreserveTypeRec, *PImagePreserveTypeRec;
+
 /* image & bitmaps */
 extern Bool
 apc_image_create( Handle self);

@@ -535,21 +535,14 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
 	/* adjust destination type */
 	if (PImage(dest)-> type != bpp || ( kind_of( dest, CIcon) && PIcon(dest)->maskType != imbpp8 )) {
 		Bool ok;
-		Bool icon = kind_of(dest, CIcon);
-		int type = PImage(dest)->type;
-		int mask = icon ? PIcon(dest)->maskType : 0;
-
-		if ( type != bpp )
+		ImagePreserveTypeRec p;
+		CImage(dest)->begin_preserve_type(dest, &p);
+		if ( PImage(dest)->type != bpp )
 			CIcon(dest)-> set_type( dest, bpp );
-		if ( icon && mask != imbpp8 )
+		if ( kind_of(dest, CIcon) && PIcon(dest)->maskType != imbpp8 )
 			CIcon(dest)-> set_maskType( dest, imbpp8 );
 		ok = img_put_alpha( dest, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, xrop, region);
-		if ( PImage(dest)-> options. optPreserveType ) {
-			if ( type != bpp )
-				CImage(dest)-> set_type( dest, type );
-			if ( icon && mask != imbpp8 )
-				CIcon(dest)-> set_maskType( dest, mask );
-		}
+		CImage(dest)->end_preserve_type(dest, &p);
 		return ok;
 	}
 

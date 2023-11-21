@@ -29,12 +29,15 @@ object Prima::Icon( Prima::Image)
 	method void       combine( Handle xorMask, Handle andMask);
 	method void       premultiply_alpha(SV * alpha = NULL_SV);
 	method Bool       bar_alpha(int alpha, int x1=-1, int y1=-1, int x2=-1, int y2=-1);
+
+	c_only Byte*      convert_mask( int type );
+	c_only void       begin_preserve_type( PImagePreserveTypeRec save);
 	c_only void       create_empty( int width, int height, int type);
 	c_only void       create_empty_icon( int width, int height, int type, int maskType);
+	c_only int        effective_rop(int rop);
+	c_only void       end_preserve_type( PImagePreserveTypeRec save);
 	c_only void       make_empty();
 	c_only Bool       matrix_transform( Matrix matrix, ColorPixel fill, Point *aperture);
-	c_only void       update_change();
 	c_only void       stretch( int width, int height);
-	c_only Byte*      convert_mask( int type );
-	c_only int        effective_rop(int rop);
+	c_only void       update_change();
 }

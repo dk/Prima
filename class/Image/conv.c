@@ -229,6 +229,7 @@ Image_map( Handle self, Color color)
 	int   rop[2];
 	RGBColor r[2];
 	int bc = 0;
+	ImagePreserveTypeRec p;
 
 	if ( var-> data == NULL) return;
 
@@ -291,6 +292,7 @@ Image_map( Handle self, Color color)
 		if ( cc != color) bc = 0xffff; /* no exact color found */
 	}
 
+	my-> begin_preserve_type(self, &p);
 	if (
 		(( type & imBPP) < 8) ||
 		(
@@ -369,10 +371,7 @@ Image_map( Handle self, Color color)
 		}
 	}
 
-	if ( is_opt( optPreserveType) && var->type != type)
-		my-> set_type( self, type);
-	else
-		my-> update_change( self);
+	my-> end_preserve_type(self, &p);
 }
 
 static Bool
@@ -491,9 +490,9 @@ Image_mirror( Handle self, Bool vertically)
 void
 Image_premultiply_alpha( Handle self, SV * alpha)
 {
-	int oldType;
+	ImagePreserveTypeRec p;
 
-	oldType = var-> type;
+	my-> begin_preserve_type(self, &p);
 	if ( var-> type & imGrayScale ) {
 		if ( var-> type != imByte )
 			my-> set_type( self, imByte );
@@ -514,10 +513,7 @@ Image_premultiply_alpha( Handle self, SV * alpha)
 	} else
 		img_premultiply_alpha_constant( self, SvIV( alpha ));
 
-	if ( is_opt( optPreserveType ) && var-> type != oldType )
-		my-> set_type( self, oldType );
-	else
-		my-> update_change( self );
+	my-> end_preserve_type(self, &p);
 }
 
 void
@@ -545,8 +541,18 @@ Image_reset( Handle self, int new_type, RGBColor * palette, int palSize)
 	int new_pal_size = 0, new_line_size, new_data_size, want_only_palette_colors = 0;
 
 	if ( var->stage > csFrozen) return;
+	if (
+		palSize   == var->palSize &&
+		var->type == new_type     &&
+		((palSize > 0 && palette != NULL) ?
+			( memcmp( var->palette, palette, palSize * 3) == 0) :
+			true
+		)
+	)
+		return;
 
 	want_palette = (!( new_type & imGrayScale)) && ( new_type != imRGB) && (palSize > 0);
+
 	if ( want_palette) {
 		new_pal_size = palSize;
 		if ( new_pal_size == 0) want_palette = false;
@@ -559,19 +565,29 @@ Image_reset( Handle self, int new_type, RGBColor * palette, int palSize)
 		else
 			want_only_palette_colors = 1;
 	}
-	if ( !want_palette && (
-		((var->type == (imbpp8|imGrayScale)) && (new_type == imbpp8)) ||
-		((var->type == (imbpp4|imGrayScale)) && (new_type == imbpp4)) ||
-		((var->type == (imbpp1|imGrayScale)) && (new_type == imbpp1))
-		)) {
+	if (
+		!want_palette && (
+			((var->type == (imbpp8|imGrayScale)) && (new_type == imbpp8)) ||
+			((var->type == (imbpp4|imGrayScale)) && (new_type == imbpp4)) ||
+			((var->type == (imbpp1|imGrayScale)) && (new_type == imbpp1))
+		)
+	) {
 		var->type = new_type;
 		return;
 	}
 	if (( var->conversion & ictpMask) == ictpCubic)
 		want_palette = true;
-	if ( var-> type == new_type && (
-		((new_type != imbpp8 && new_type != imbpp4 && new_type != imbpp1) || !want_palette)
-		)) return;
+	if (
+		var-> type == new_type && (
+			(
+				new_type != imbpp8 &&
+				new_type != imbpp4 &&
+				new_type != imbpp1
+			) ||
+			!want_palette
+		)
+	)
+		return;
 
 	new_line_size = LINE_SIZE(var->w, new_type);
 	new_data_size = new_line_size * var-> h;
@@ -621,7 +637,9 @@ void
 Image_stretch( Handle self, int width, int height)
 {
 	Byte * newData = NULL;
-	int lineSize, oldType, newType;
+	int lineSize, newType;
+	ImagePreserveTypeRec p;
+
 	if ( var->stage > csFrozen) return;
 	if ( width  >  65535) width  =  65535;
 	if ( height >  65535) height =  65535;
@@ -634,7 +652,7 @@ Image_stretch( Handle self, int width, int height)
 		return;
 	}
 
-	oldType = var->type;
+	my->begin_preserve_type(self, &p);
 	newType = ic_stretch_suggest_type( var-> type, var-> scaling );
 	if ( newType != var->type)
 		my->set_type(self, newType);
@@ -660,9 +678,7 @@ Image_stretch( Handle self, int width, int height)
 	var->w = abs( width);
 	var->h = abs( height);
 
-	if ( is_opt( optPreserveType) && var-> type != oldType )
-		my-> set_type( self, oldType );
-
+	my->end_preserve_type(self, &p);
 	my->update_change( self);
 }
 
@@ -1013,6 +1029,25 @@ Image_effective_rop( Handle self, int rop)
 	return rop;
 }
 
+void
+Image_begin_preserve_type( Handle self, PImagePreserveTypeRec save)
+{
+	if ( !is_opt(optPreserveType)) {
+		save-> enabled = false;
+		return;
+	}
+	save->enabled = true;
+	save->type    = var->type;
+	save->colors  = var->palSize;
+	memcpy( save->palette, var->palette, sizeof(save->palette) );
+}
+
+void
+Image_end_preserve_type( Handle self, PImagePreserveTypeRec save)
+{
+	if ( save->enabled )
+		my->reset( self, save->type, save->palette, save->colors);
+}
 
 #ifdef __cplusplus
 }

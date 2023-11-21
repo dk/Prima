@@ -275,27 +275,22 @@ img_polyline( Handle dest, int n_points, Point * points, PImgPaintContext ctx)
 {
 	PIcon i = (PIcon) dest;
 	int j;
-	int type     = i->type;
-	int maskType = kind_of(dest, CIcon) ? i->maskType : 0;
 	ImgSegmentedLineRec rec;
 	RegionRec dummy_region;
 	Box dummy_region_box, *pbox;
 	Point* pp;
 	Rect  enclosure;
 	Bool closed;
+	ImagePreserveTypeRec p;
 
 	if ( ctx->rop == ropNoOper || n_points <= 1) return true;
 
+	CImage(dest)->begin_preserve_type(dest, &p);
 	switch ( hline_init( &rec.h, dest, ctx, "img_polyline")) {
 	case HLINE_INIT_RETRY: {
 		Bool ok;
 		ok = img_polyline( dest, n_points, points, ctx);
-		if ( i-> options. optPreserveType ) {
-			if ( type != i->type )
-				CImage(dest)-> set_type( dest, type );
-			if ( maskType != 0 && maskType != i->maskType )
-				CIcon(dest)-> set_maskType( dest, maskType );
-		}
+		CImage(dest)->end_preserve_type(dest, &p);
 		return ok;
 	}
 	case HLINE_INIT_FAIL:

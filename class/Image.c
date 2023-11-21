@@ -353,12 +353,13 @@ Image_begin_paint_info( Handle self)
 void
 Image_end_paint( Handle self)
 {
-	int oldType = var->type;
+	ImagePreserveTypeRec p;
 	if ( !is_opt( optInDraw)) return;
+	my-> begin_preserve_type(self, &p);
 	apc_image_end_paint( self);
 	inherited end_paint( self);
-	if ( is_opt( optPreserveType) && var->type != oldType) {
-		my->reset( self, oldType, NULL, 0);
+	if ( is_opt( optPreserveType)) {
+		my-> end_preserve_type(self, &p);
 		return;
 	}
 

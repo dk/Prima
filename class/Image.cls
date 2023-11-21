@@ -98,4 +98,6 @@ object Prima::Image( Prima::Drawable)
 	c_only Bool   begin_font_query();
 	c_only void   end_font_query();
 	c_only int    effective_rop(int rop);
+	c_only void   begin_preserve_type( PImagePreserveTypeRec save);
+	c_only void   end_preserve_type( PImagePreserveTypeRec save);
 }

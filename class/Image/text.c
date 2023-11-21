@@ -112,10 +112,16 @@ plot_glyphs( Handle self, PGlyphsOutRec t, int x, int y )
 	if (((var->type & imBPP) == 1) || !var->antialias)
 		flags |= ggoMonochrome;
 
-	if ( !apc_gp_get_text_out_baseline( self))
-		y += var-> font. descent;
-	o.x = x;
-	o.y = y;
+	if ( !(flags & ggoMonochrome) && var->type != imByte && var->type != imRGB) {
+		ImagePreserveTypeRec p;
+		my-> begin_preserve_type( self, &p);
+		my-> reset( self, (var->type & imGrayScale) ? imByte : imRGB, NULL, 0);
+		if ( is_opt( optPreserveType)) {
+			Bool ok = plot_glyphs( self, t, x, y );
+			my-> end_preserve_type( self, &p);
+			return ok;
+		}
+	}
 
 	bzero(&ctx, sizeof(ImgPaintContext));
 	ctx.region = var-> regionData;
@@ -128,6 +134,12 @@ plot_glyphs( Handle self, PGlyphsOutRec t, int x, int y )
 		ctx.rop &= ~(0xff << ropSrcAlphaShift);
 		ctx.rop |= ropSrcAlpha | ( a << ropSrcAlphaShift );
 	}
+
+	if ( !apc_gp_get_text_out_baseline( self))
+		y += var-> font. descent;
+	o.x = x;
+	o.y = y;
+
 
 	color = my->get_color(self);
 	/* DWIM premultiplication for the default rop if blending is used */

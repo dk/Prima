@@ -1099,6 +1099,22 @@ Icon_effective_rop( Handle self, int rop)
 	return rop;
 }
 
+void
+Icon_begin_preserve_type( Handle self, PImagePreserveTypeRec save)
+{
+	inherited begin_preserve_type(self, save);
+	save->mask   = var->maskType;
+
+}
+
+void
+Icon_end_preserve_type( Handle self, PImagePreserveTypeRec save)
+{
+	inherited end_preserve_type(self, save);
+	if ( save->enabled && var->maskType != save->mask)
+		my->set_maskType( self, save->mask);
+}
+
 #ifdef __cplusplus
 }
 #endif

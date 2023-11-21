@@ -181,23 +181,18 @@ img_bar_alpha( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 	/* align types and geometry - can only operate over imByte and imRGB */
 	bpp = ( PImage(dest)->type & imGrayScale) ? imByte : imRGB;
 	if (PImage(dest)-> type != bpp || ( kind_of( dest, CIcon) && PIcon(dest)->maskType != imbpp8 )) {
-		Bool icon = kind_of(dest, CIcon), ok;
-		int type = PImage(dest)->type;
-		int mask = icon ? PIcon(dest)->maskType : 0;
+		Bool ok;
+		ImagePreserveTypeRec p;
 
-		if ( type != bpp ) {
+		CImage(dest)-> begin_preserve_type( dest, &p );
+		if ( PImage(dest)->type != bpp ) {
 			img_resample_colors( dest, bpp, ctx );
 			CIcon(dest)-> set_type( dest, bpp );
 		}
-		if ( icon && mask != imbpp8 )
+		if ( kind_of(dest, CIcon) && PIcon(dest)->maskType != imbpp8 )
 			CIcon(dest)-> set_maskType( dest, imbpp8 );
 		ok = img_bar_alpha( dest, x, y, w, h, ctx);
-		if ( PImage(dest)-> options. optPreserveType ) {
-			if ( type != bpp )
-				CImage(dest)-> set_type( dest, type );
-			if ( icon && mask != imbpp8 )
-				CIcon(dest)-> set_maskType( dest, mask );
-		}
+		CImage(dest)-> end_preserve_type( dest, &p );
 		return ok;
 	}
 
@@ -838,19 +833,15 @@ static Bool
 img_bar_tile_alpha_fix_dest( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx, Bool dst_is_icon, int bpp)
 {
 	Bool ok;
-	int type = PIcon(dest)->type;
-	int mask = dst_is_icon ? PIcon(dest)->maskType : 0;
-	if ( type != bpp )
+	ImagePreserveTypeRec p;
+
+	CImage(dest)->begin_preserve_type(dest, &p);
+	if ( PIcon(dest)->type != bpp )
 		CIcon(dest)-> set_type( dest, bpp );
-	if ( dst_is_icon && mask != imbpp8 )
+	if ( dst_is_icon && PIcon(dest)->maskType != imbpp8 )
 		CIcon(dest)-> set_maskType( dest, imbpp8 );
 	ok = img_bar_tile_alpha( dest, x, y, w, h, ctx);
-	if ( PIcon(dest)-> options. optPreserveType ) {
-		if ( type != bpp )
-			CImage(dest)-> set_type( dest, type );
-		if ( dst_is_icon && mask != imbpp8 )
-			CIcon(dest)-> set_maskType( dest, mask );
-	}
+	CImage(dest)->end_preserve_type(dest, &p);
 	return ok;
 }
 
