@@ -272,7 +272,7 @@ plot_blend( int x, int y, int xFrom, int yFrom, int xLen, int yLen, PlotStruct *
 						*mbuf  = fill_mbuf ? buf3 : buf2;
 					Byte
 						*mmbuf = mbuf;
-					unsigned int
+					int
 						n = (sizeof(buf2) > pixels) ? pixels : sizeof(buf2),
 						px1 = 0,
 						px2 = 0;
