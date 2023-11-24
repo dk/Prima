@@ -2400,6 +2400,7 @@ PutImageFunc (*img_render_on_layered[SRC_NUM]) = {
 static int
 get_default_rop( Handle self )
 {
+	DEFXX;
 	return XF_LAYERED(XX) ? ropBlend : ropCopyPut;
 }
 
@@ -2498,7 +2499,7 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
 	req.dst_h = req.h;
 #endif
 
-	if ( rop == ropDefault ) rop = get_default_rop(self);
+	if ( rop == ropDefault ) rop = get_default_rop(image);
 	src = get_image_src_format(self, image, &rop);
 	if ( rop > ropWhiteness ) return false;
 	if ( src < 0 ) {
@@ -3068,7 +3069,7 @@ apc_gp_stretch_image_x11( Handle self, Handle image,
 	if ( PObject( self)-> options. optInDrawInfo) return false;
 	if ( !XF_IN_PAINT(XX)) return false;
 
-	if ( rop == ropDefault ) rop = get_default_rop(self);
+	if ( rop == ropDefault ) rop = get_default_rop(image);
 	src = get_image_src_format(self, image, &rop);
 	if ( rop > ropWhiteness ) return false;
 	if ( src < 0 ) return false;
@@ -3274,7 +3275,7 @@ apc_gp_stretch_image( Handle self, Handle image,
 	if ( !guts.render_extension)
 		goto FALLBACK;
 
-	if ( rop == ropDefault ) rop = get_default_rop(self);
+	if ( rop == ropDefault ) rop = get_default_rop(image);
 	src = get_image_src_format(self, image, &rop);
 	if ( rop > ropWhiteness ) return false;
 	if ( src < 0 ) return false;
