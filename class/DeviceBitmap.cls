@@ -12,4 +12,5 @@ object Prima::DeviceBitmap( Prima::Drawable)
 	method SV *   get_handle();
 	method int    get_paint_state();
 	method void   init( HV * profile);
+	c_only int    effective_rop(int rop);
 }

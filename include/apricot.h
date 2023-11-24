@@ -2783,42 +2783,41 @@ typedef Color ColorSet[ ciMaxId + 1];
 
 /* raster operations */
 typedef enum {
-	ropCopyPut = 0,      /* dest  = src */
-	ropXorPut,           /* dest ^= src */
-	ropAndPut,           /* dest &= src */
-	ropOrPut,            /* dest |= src */
-	ropNotPut,           /* dest = !src */
-	ropInvert,           /* dest = !dest*/
-	ropBlackness,        /* dest = 0 */
-	ropNotDestAnd,       /* dest = (!dest) & src */
-	ropNotDestOr,        /* dest = (!dest) | src */
-	ropWhiteness,        /* dest = 1 */
-	ropNotSrcAnd,        /* dest &= !src */
-	ropNotSrcOr,         /* dest |= !src */
-	ropNotXor,           /* dest = !(src ^ dest) */
-	ropNotAnd,           /* dest = !(src & dest) */
-	ropNotOr,            /* dest = !(src | dest) */
-	ropNoOper,           /* dest = dest */
+	/*                      src: 0011                       */
+	/*                      dst: 0101                       */
+	ropBlackness = 0,    /* rop: 0000 | dst  =  0           */
+	ropAndPut,           /* rop: 0001 | dst &= src          */
+	ropNotDestAnd,       /* rop: 0010 | dst  = !dst & src   */
+	ropCopyPut,          /* rop: 0011 | dst  = src          */
+	ropNotSrcAnd,        /* rop: 0100 | dst &= !src         */
+	ropNoOper,           /* rop: 0101 | dst  = dst          */
+	ropXorPut,           /* rop: 0110 | dst ^= src          */
+	ropOrPut,            /* rop: 0111 | dst |= src          */
+	ropNotOr,            /* rop: 1000 | dst  = !(src | dst) */
+	ropNotXor,           /* rop: 1001 | dst  = !(src ^ dst) */
+	ropInvert,           /* rop: 1010 | dst  = !dst         */
+	ropNotDestOr,        /* rop: 1011 | dst  = !dst | src   */
+	ropNotPut,           /* rop: 1100 | dst  = !src         */
+	ropNotSrcOr,         /* rop: 1101 | dst |= !src         */
+	ropNotAnd,           /* rop: 1110 | dst  = !(src & dst) */
+	ropWhiteness,        /* rop: 1111 | dst  = 1            */
 
 	/* Porter-Duff operators for 32-bit ARGB image operations */
-	ropBlend = ropCopyPut,/* save value as ropCopy, to serve as a default */
-	ropXor = ropXorPut,  /* so they have same value */
+	ropBlend,            /* same as ropSrcOver but assuming premultiplied src */
+	ropXorOver,
 	ropSrcOver,
 	ropDstOver,
-	ropSrcCopy,
-	ropDstCopy,
-	ropClear,
 	ropSrcIn,
 	ropDstIn,
 	ropSrcOut,
 	ropDstOut,
 	ropSrcAtop,
 	ropDstAtop,
-	/* and their extensions, photoshop blend modes */
+
+	/* Photoshop blending modes */
 	ropAdd,
 	ropMultiply,
 	ropScreen,
-	ropNoOper2 = ropNoOper,
 	ropOverlay,
 	ropDarken,
 	ropLighten,
@@ -2828,13 +2827,22 @@ typedef enum {
 	ropSoftLight,
 	ropDifference,
 	ropExclusion,
-	ropMaxPDFunc = ropExclusion,
+
+	ropDefault,          /* ropSrcOver for ARGB destinations, ropCopyPut otherwise */
+
+	/* PD rops that produce same results as bitwise ones */
+	ropSrcCopy       = ropCopyPut,
+	ropDstCopy       = ropNoOper,
+	ropClear         = ropBlackness,
+
+	ropMinPDFunc     = ropBlend,
+	ropMaxPDFunc     = ropExclusion,
 
 	/* 8-bit standalone alpha */
 	ropAlphaCopy          = 0x0000100,
 
 	/* extensions for Prima's own Image.put */
-	ropPorterDuffMask     = 0x000001F,
+	ropPorterDuffMask     = 0x000003F,
 	ropSrcAlpha           = 0x1000000,
 	ropSrcAlphaShift      = 8,
 	ropDstAlpha           = 0x2000000,
@@ -2855,11 +2863,11 @@ ROP(Invert) ROP(XorPut) ROP(NotAnd) ROP(AndPut) ROP(NotXor) ROP(NoOper)
 ROP(NotSrcOr) ROP(CopyPut) ROP(NotDestOr) ROP(OrPut) ROP(Whiteness)
 ROP(NotSrcXor) ROP(NotDestXor)
 
-ROP(Blend)
+ROP(Default) ROP(Blend)
 
 ROP(SrcOver) ROP(SrcCopy) ROP(SrcIn) ROP(SrcOut) ROP(SrcAtop)
 ROP(DstOver) ROP(DstCopy) ROP(DstIn) ROP(DstOut) ROP(DstAtop)
-ROP(Xor) ROP(Clear)
+ROP(XorOver) ROP(Clear)
 
 ROP(Add) ROP(Multiply) ROP(Screen) ROP(Overlay)
 ROP(Darken) ROP(Lighten) ROP(ColorDodge) ROP(ColorBurn)

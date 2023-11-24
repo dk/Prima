@@ -337,7 +337,7 @@ extern void img_premultiply_alpha_map( Handle self, Handle alpha);
 extern Bool img_polyline( Handle dest, int n_points, Point * points, PImgPaintContext ctx);
 extern Bool img_flood_fill( Handle self, int x, int y, ColorPixel color, Bool single_border, PImgPaintContext ctx);
 extern PBitBltProc img_find_blt_proc( int rop );
-extern void img_find_blend_proc( int rop, BlendFunc ** blend1, BlendFunc ** blend2 );
+extern Bool img_find_blend_proc( int rop, BlendFunc ** blend1, BlendFunc ** blend2 );
 extern Bool img_resample_colors( Handle dest, int bpp, PImgPaintContext ctx);
 extern void img_fill_alpha_buf( Byte * dst, Byte * src, int width, int bpp);
 extern void img_plot_glyph( Handle self, PImage glyph, int x, int y, PImgPaintContext ctx);

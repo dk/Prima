@@ -204,7 +204,6 @@ img_bar_alpha( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 		dst_alpha = (ctx->rop >> ropDstAlphaShift) & 0xff;
 	}
 	ctx->rop &= ropPorterDuffMask;
-	if ( ctx->rop > ropMaxPDFunc || ctx->rop < 0 ) ctx->rop = ropSrcOver;
 
 	/* assign pointers */
 	bpp = ( bpp == imByte ) ? 1 : 3;
@@ -487,31 +486,33 @@ tile( int x, int y, int w, int h, TileCallbackFunc *tiler, TileCallbackRec* tx)
 /* strictly imBW stipple */
 
 static int rop1_direct[16] = {
-	ropOrPut,ropXorPut,ropNoOper,ropOrPut,
-	ropNotSrcAnd,ropXorPut,ropNotSrcAnd,ropXorPut,
-	ropOrPut,ropOrPut,ropNotSrcAnd,ropNoOper,
-	ropNoOper,ropXorPut,ropNotSrcAnd,ropNoOper
+	ropNotSrcAnd,ropNoOper,ropXorPut,ropOrPut,
+	ropNotSrcAnd,ropNoOper,ropXorPut,ropOrPut,
+	ropNotSrcAnd,ropNoOper,ropXorPut,ropOrPut,
+	ropNotSrcAnd,ropNoOper,ropXorPut,ropOrPut,
 };
 
 static int rop1_inverse[16] = {
-	ropNotSrcAnd,ropNoOper,ropNotSrcAnd,ropNoOper,
-	ropOrPut,ropXorPut,ropNotSrcAnd,ropNotSrcAnd,
-	ropXorPut,ropOrPut,ropNoOper,ropOrPut,
-	ropXorPut,ropOrPut,ropXorPut,ropNoOper
+	ropNotSrcAnd,ropNotSrcAnd,ropNotSrcAnd,ropNotSrcAnd,
+	ropNoOper,ropNoOper,ropNoOper,ropNoOper,
+	ropXorPut,ropXorPut,ropXorPut,ropXorPut,
+	ropOrPut,ropOrPut,ropOrPut,ropOrPut,
 };
 
 static int ropX_step1[16] = {
-	ropNotOr, ropXorPut, ropInvert, ropNotOr,
-	ropNotSrcAnd, ropXorPut, ropNotSrcAnd, ropXorPut,
-	ropNotOr, ropNotOr, ropNotSrcAnd, ropInvert,
-	ropInvert, ropXorPut, ropNotSrcAnd, ropInvert
+	ropNotSrcAnd,ropInvert,ropXorPut,ropNotOr,
+	ropNotSrcAnd,ropInvert,ropXorPut,ropNotOr,
+	ropNotSrcAnd,ropInvert,ropXorPut,ropNotOr,
+	ropNotSrcAnd,ropInvert,ropXorPut,ropNotOr,
 };
+
 static int ropX_step2[16] = {
-	ropNotDestAnd, ropNoOper, ropNotDestAnd, ropInvert,
-	ropNotSrcOr, ropNotXor, ropAndPut, ropAndPut,
-	ropXorPut, ropNotAnd, ropNoOper, ropNotAnd,
-	ropXorPut, ropNotSrcOr, ropNotXor, ropInvert
+	ropAndPut,ropNotDestAnd,ropAndPut,ropNotDestAnd,
+	ropNoOper,ropInvert,ropNoOper,ropInvert,
+	ropNotXor,ropXorPut,ropNotXor,ropXorPut,
+	ropNotSrcOr,ropNotAnd,ropNotSrcOr,ropNotAnd,
 };
+
 
 static Bool
 put1( int x, int y, int w, int h, TileCallbackRec* tx)
@@ -944,7 +945,10 @@ img_bar_tile_alpha( Handle dest, int x, int y, int w, int h, PImgPaintContext ct
 	}
 
 	ctx->rop &= ropPorterDuffMask;
-	if ( ctx->rop > ropMaxPDFunc || ctx->rop < 0 ) ctx->rop = ropSrcOver;
+	if ( !img_find_blend_proc( ctx->rop, NULL, NULL)) {
+		warn("img_bar_tile_alpha: blending rop expected");
+		ctx->rop = ropSrcOver;
+	}
 
 	/* make buffers */
 	bytes = w * bpp;

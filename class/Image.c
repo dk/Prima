@@ -590,7 +590,7 @@ Image_put_image_indirect( Handle self, Handle image, int x, int y, int xFrom, in
 
 	if ( is_opt( optInDrawInfo)) return false;
 	if ( image == NULL_HANDLE) return false;
-	if ( is_opt( optInDraw))
+	if ( is_opt( optInDraw)) 
 		return inherited put_image_indirect( self, image, x, y, xFrom, yFrom, xDestLen, yDestLen, xLen, yLen, rop);
 	if ( !kind_of( image, CImage)) return false;
 
@@ -599,7 +599,7 @@ Image_put_image_indirect( Handle self, Handle image, int x, int y, int xFrom, in
 		Image_color2pixel( self, my->get_color(self), colorbuf );
 		color = colorbuf;
 	}
-	rop = my->effective_rop(self, rop);
+	rop = CDrawable(image)->effective_rop(image, rop);
 
 	prima_matrix_apply_int_to_int(*matrix, &x, &y);
 	if ( prima_matrix_is_translated_only(*matrix)) {
@@ -747,7 +747,7 @@ Image_rop( Handle self, Bool set, int rop)
 	if (!set) return var-> extraROP;
 	if ( rop < 0 ) rop = 0;
 	var-> extraROP = rop;
-	if ( rop > ropNoOper ) rop = ropNoOper;
+	if ( rop > ropWhiteness ) rop = ropCopyPut;
 	apc_gp_set_rop( self, rop);
 	return var-> extraROP;
 }

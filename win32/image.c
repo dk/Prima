@@ -1104,7 +1104,7 @@ img_put_argb_on_bitmap( Handle self, Handle image, PutImageRequest * req)
 {
 	if ( !img_put_and_mask( sys ps, image, req))
 		return false;
-	req-> rop = (req->rop == ropSrcCopy) ? ropCopyPut : ropOrPut;
+	req-> rop = (req->rop == ropBlend) ? ropOrPut : ropCopyPut;
 	return img_put_image_on_bitmap( self, image, req );
 }
 
@@ -1201,10 +1201,8 @@ img_put_argb_on_pixmap( Handle self, Handle image, PutImageRequest * req)
 	HDC src;
 	HBITMAP old;
 
-	if ( req-> rop == ropSrcCopy ) {
-		req-> rop = ropCopyPut;
+	if ( req-> rop == ropCopyPut )
 		return img_put_image_on_pixmap( self, image, req);
-	}
 
 	image_fill_bitmap_cache( image, BM_LAYERED, self );
 	if ( dsys(image) bm == NULL)
@@ -1222,11 +1220,9 @@ img_put_argb_on_pixmap( Handle self, Handle image, PutImageRequest * req)
 static Bool
 img_put_layered_on_pixmap( Handle self, Handle image, PutImageRequest * req)
 {
-	if ( req-> rop == ropSrcCopy ) {
-		req-> rop = ropCopyPut;
-		return img_put_pixmap_on_pixmap( self, image, req);
-	} else
-		return img_put_alpha_blend( sys ps, dsys(image)ps, req);
+	return (req-> rop == ropCopyPut) ?
+		img_put_pixmap_on_pixmap( self, image, req) :
+		img_put_alpha_blend( sys ps, dsys(image)ps, req);
 }
 
 /* layered */
@@ -1255,8 +1251,7 @@ img_put_argb_on_layered( Handle self, Handle image, PutImageRequest * req)
 
 	src = CreateCompatibleDC(sys ps);
 	old = SelectObject(src, dsys (image) bm);
-	if ( req-> rop == ropSrcCopy ) {
-		req-> rop = ropCopyPut;
+	if ( req-> rop == ropCopyPut ) {
 		img_draw_black_rect( self, req );
 		ok = img_put_stretch_blt( sys ps, src, req);
 	} else
@@ -1325,8 +1320,7 @@ img_put_a8_on_layered( Handle self, Handle image, PutImageRequest * req)
 static Bool
 img_put_layered_on_layered( Handle self, Handle image, PutImageRequest * req)
 {
-	if ( req-> rop == ropSrcCopy ) {
-		req-> rop = ropCopyPut;
+	if ( req-> rop == ropCopyPut ) {
 		img_draw_black_rect( self, req );
 		return img_put_stretch_blt( sys ps, dsys(image)ps, req);
 	} else
@@ -1493,9 +1487,9 @@ apc_gp_stretch_image( Handle self, Handle image,
 	}
 
 	if (( is_apt(aptDeviceBitmap) && ((PDeviceBitmap)self)->type == dbtBitmap) ||
-		( is_apt(aptImage)        && ((PImage)self)-> type == imBW ))
+		( is_apt(aptImage)        && ((PImage)self)-> type == imBW )) {
 		dst = img_put_on_bitmap;
-	else if ( is_apt(aptLayered))
+	} else if ( is_apt(aptLayered))
 		dst = img_put_on_layered;
 	else if (( is_apt(aptDeviceBitmap) && ((PDeviceBitmap)self)->type == dbtPixmap) ||
 		(is_apt(aptImage)        && ((PImage)self)-> type != imBW ))
@@ -1515,7 +1509,11 @@ apc_gp_stretch_image( Handle self, Handle image,
 		rop = ropCopyPut;
 	}
 
-	if ( rop > ropNoOper ) return false;
+	if ( src == SRC_LAYERED || src == SRC_ARGB ) {
+		if ( rop != ropCopyPut && rop != ropBlend ) return false;
+	} else {
+		if ( rop > ropWhiteness ) return false;
+	}
 
 	if ( dst[src] == NULL ) {
 		warn("not implemented");

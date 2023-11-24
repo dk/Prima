@@ -1013,20 +1013,37 @@ FAIL:
 	return false;
 }
 
-int
-Image_effective_rop( Handle self, int rop)
+Color
+Image_premultiply_color( Handle self, int rop, Color color)
 {
-	if (
-		( rop != ropAlphaCopy ) &&
-		!( rop & ropSrcAlpha) && (
-			(var->alpha < 255) ||
-			(rop & ropDstAlpha)
-		)
-	) {
-		rop &= ~(0xff << ropSrcAlphaShift);
-		rop |= ropSrcAlpha | ( var-> alpha << ropSrcAlphaShift );
+	int alpha;
+
+	if ( (rop & ropPorterDuffMask) != ropBlend)
+		return color;
+
+	alpha = var->alpha;
+	if ( rop & ropSrcAlpha)
+		alpha = alpha * ((rop >> ropSrcAlphaShift) & 0xff) / 255;
+	if ( alpha == 255 )
+		return color;
+
+	if ( var->type & imGrayScale )
+		return color * alpha / 255;
+
+	{
+		int c[3] = {
+			( color & 0xff         ) * alpha / 255,
+			( ((color)>>8) & 0xff  ) * alpha / 255,
+			( ((color)>>16) & 0xff ) * alpha / 255
+		};
+		color =
+			(c[0] & 0xff) |
+			((c[1] & 0xff) << 8) |
+			((c[2] & 0xff) << 16)
+			;
 	}
-	return rop;
+
+	return color;
 }
 
 void

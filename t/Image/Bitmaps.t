@@ -210,8 +210,8 @@ sub test_blend_pixels
 	my ($icon, $descr) = @_;
 
 	my $ok = 1;
-	$ok &= $dst->put_image(0,0,$icon);
-	$ok &= $dst->put_image(0,1,$icon);
+	$ok &= $dst->put_image(0,0,$icon,rop::Blend);
+	$ok &= $dst->put_image(0,1,$icon,rop::Blend);
 
 	ok( $ok, "put $descr" );
 
@@ -253,17 +253,14 @@ SKIP: {
 	$icon->combine($src,$mask);
 
 	fill_dst($dst);
-	$dst->rop(rop::Blend);
 	test_blend_pixels($icon, $descr);
 
 	fill_dst($dst);
-	$dst->rop(rop::Blend);
 	$icon->begin_paint;
 	test_blend_pixels($icon, "$descr (in paint)");
 	$icon->end_paint;
 
 	fill_dst($dst);
-	$dst->rop(rop::Blend);
 	test_blend_pixels($icon->bitmap, "$descr (layered)");
 }}
 
@@ -291,11 +288,10 @@ sub test_blend_native
 	$icon->combine($src,$mask);
 
 	fill_dst($dst);
-	$dst->rop(rop::Blend);
 
 	my $ok = 1;
-	$ok &= $dst->put_image(0,0,$icon);
-	$ok &= $dst->put_image(0,1,$icon);
+	$ok &= $dst->put_image(0,0,$icon,rop::Blend);
+	$ok &= $dst->put_image(0,1,$icon,rop::Blend);
 
 	my $save = $dst;
 

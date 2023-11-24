@@ -444,17 +444,17 @@ select_gp_brush(Handle self)
 
 	alpha = sys alpha;
 	switch ( sys rop ) {
-	case ropNotPut:
+	case R2_NOTCOPYPEN:
 		fg = ~sys rq_brush.color;
 		bg = ~sys rq_brush.back_color;
 		break;
-	case ropBlackness:
+	case R2_BLACK:
 		fg = bg = 0;
 		break;
-	case ropWhiteness:
+	case R2_WHITE:
 		fg = bg = 0xffffff;
 		break;
-	case ropNoOper:
+	case R2_NOP:
 		fg = bg = alpha = 0;
 		break;
 	default:

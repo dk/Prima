@@ -494,8 +494,10 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
 		dst_alpha = (rop >> ropDstAlphaShift) & 0xff;
 	}
 	rop &= ropPorterDuffMask;
-	if ( rop > ropMaxPDFunc || rop < 0 ) return false;
-
+	if ( !img_find_blend_proc( rop, NULL, NULL)) {
+		warn("put_image: blending rop expected");
+		return false;
+	}
 
 	/* align types and geometry - can only operate over imByte and imRGB */
 	if (

@@ -249,7 +249,7 @@ sub pd_color
 	elsif ( $rop == rop::DstOut  ) {  $dst = $d * (255 - $as) / 255.0                      }
 	elsif ( $rop == rop::SrcAtop ) {  $dst = ($s * $ad + $d * (255 - $as)) / 255.0         }
 	elsif ( $rop == rop::DstAtop ) {  $dst = ($s * (255 - $ad) + $d * $as) / 255.0         }
-	elsif ( $rop == rop::Xor     ) {  $dst = ($s * (255 - $ad) + $d * (255 - $as)) / 255.0 }
+	elsif ( $rop == rop::XorOver ) {  $dst = ($s * (255 - $ad) + $d * (255 - $as)) / 255.0 }
 	elsif ( $rop == rop::SrcCopy ) {  $dst = $s                                            }
 	else  { $dst = -1 }
 
@@ -343,7 +343,7 @@ sub test_rop
 test_rop( $_ ) for qw(
 	Blend
 	SrcOver DstOver DstCopy Clear  SrcIn  DstIn
-	SrcOut DstOut SrcAtop DstAtop Xor    SrcCopy
+	SrcOut DstOut SrcAtop DstAtop XorOver SrcCopy
 );
 
 done_testing;

@@ -252,10 +252,15 @@ prepare_fill_context(Handle self, PImgPaintContext ctx)
 	FillPattern * p = &ctx->pattern;
 
 	bzero(ctx, sizeof(ImgPaintContext));
-	Image_color2pixel( self, my->get_color(self), ctx->color);
-	Image_color2pixel( self, my->get_backColor(self), ctx->backColor);
 
-	ctx-> rop = my->effective_rop(self, var-> extraROP);
+	ctx-> rop = var-> extraROP;
+	if ( ctx->rop >= ropMinPDFunc && ctx->rop <= ropMaxPDFunc ) {
+		ctx->rop &= ~(0xff << ropSrcAlphaShift);
+		ctx->rop |= ropSrcAlpha | ( var-> alpha << ropSrcAlphaShift );
+	}
+	Image_color2pixel( self, Image_premultiply_color( self, ctx->rop, my->get_color(self)),     ctx->color);
+	Image_color2pixel( self, Image_premultiply_color( self, ctx->rop, my->get_backColor(self)), ctx->backColor);
+
 	ctx-> region = var->regionData;
 	ctx-> patternOffset = my->get_fillPatternOffset(self);
 	ctx-> transparent = my->get_rop2(self) == ropNoOper;
@@ -292,9 +297,15 @@ static void
 prepare_line_context( Handle self, unsigned char * lp, ImgPaintContext * ctx)
 {
 	bzero(ctx, sizeof(ImgPaintContext));
-	Image_color2pixel( self, my->get_color(self), ctx->color);
-	Image_color2pixel( self, my->get_backColor(self), ctx->backColor);
-	ctx->rop = my->effective_rop(self, var-> extraROP);
+
+	ctx-> rop = var-> extraROP;
+	if ( ctx->rop >= ropMinPDFunc && ctx->rop <= ropMaxPDFunc ) {
+		ctx->rop &= ~(0xff << ropSrcAlphaShift);
+		ctx->rop |= ropSrcAlpha | ( var-> alpha << ropSrcAlphaShift );
+	}
+	Image_color2pixel( self, Image_premultiply_color( self, ctx->rop, my->get_color(self)),     ctx->color);
+	Image_color2pixel( self, Image_premultiply_color( self, ctx->rop, my->get_backColor(self)), ctx->backColor);
+
 	ctx->region = var->regionData;
 	ctx->transparent = my->get_rop2(self) == ropNoOper;
 	if ( my-> linePattern == Drawable_linePattern) {

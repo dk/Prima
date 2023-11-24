@@ -376,15 +376,15 @@ img_plot_glyph( Handle self, PImage glyph, int x, int y, PImgPaintContext ctx)
 	};
 
 	if (mono) {
-		if (rop >= ropNoOper )
-			rop = ropNoOper;
+		if (rop >= ropWhiteness )
+			rop = ropCopyPut;
 		if ((i->type & imBPP) == 1)
 			rop = ctx->color[0] ? rop_white(rop) : rop_black(rop);
 	}
 
 	if ( rop == ropNoOper) {
 		return;
-	} else if ( rop < ropNoOper ) {
+	} else if ( rop <= ropWhiteness ) {
 		if ( !mono ) {
 			warn("img_plot_glyph: cannot use raster operations with antialiased text");
 			return;
@@ -410,7 +410,10 @@ img_plot_glyph( Handle self, PImage glyph, int x, int y, PImgPaintContext ctx)
 		} else
 			rec.use_dst_alpha = false;
 		rop &= ropPorterDuffMask;
-		if ( rop > ropMaxPDFunc || rop < 0 ) return;
+		if ( !img_find_blend_proc(rop, &rec.blend1, &rec.blend2)) {
+			warn("img_plot_glyph: blending rop expected");
+			return;
+		}
 
 		rec.is_icon = kind_of( self, CIcon );
 		if ( rec.is_icon ) {
@@ -427,7 +430,6 @@ img_plot_glyph( Handle self, PImage glyph, int x, int y, PImgPaintContext ctx)
 		rec.func  = plot_blend;
 		rec.bpp   = i->type & imBPP;
 		rec.bytes = rec.bpp / 8;
-		img_find_blend_proc(rop, &rec.blend1, &rec.blend2);
 	} else {
 		warn("img_plot_glyph: cannot use blending on target type=%x", i->type);
 		return;

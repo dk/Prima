@@ -153,8 +153,10 @@ hline_init( ImgHLineRec * rec, Handle dest, PImgPaintContext ctx, char * method)
 			rec->dst_alpha = (rop >> ropDstAlphaShift) & 0xff;
 		}
 		rop &= ropPorterDuffMask;
-		if ( rop > ropMaxPDFunc || rop < 0 ) return false;
-		img_find_blend_proc( rop, &rec->blend1, &rec->blend2 );
+		if ( !img_find_blend_proc( rop, &rec->blend1, &rec->blend2 )) {
+			warn("line: blending rop expected");
+			return false;
+		}
 		rec->is_icon = kind_of( dest, CIcon );
 
 		/* align types and geometry - can only operate over imByte and imRGB */

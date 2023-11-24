@@ -1746,7 +1746,7 @@ img_put_argb_on_bitmap( Handle self, Handle image, PutImageRequest * req)
 	if ( !img_put_icon_mask( self, cache->icon, req))
 		return false;
 
-	req-> rop = ( rop == ropSrcCopy ) ? GXcopy : GXor;
+	req-> rop = ( rop == ropCopyPut ) ? GXcopy : GXor;
 	XSetForeground( DISP, XX-> gc, 1);
 	XSetBackground( DISP, XX-> gc, 0);
 	XX-> flags. brush_fore = XX-> flags. brush_back = 0;
@@ -1850,7 +1850,7 @@ img_put_image_on_pixmap( Handle self, Handle image, PutImageRequest * req)
 	if ( req-> transform ) \
 		XRenderSetPictureTransform( DISP, picture, &render_identity_transform)
 
-#define ROP_SRC_OR_COPY  (req-> rop == ropSrcCopy) ? PictOpSrc : PictOpOver
+#define ROP_SRC_OR_COPY  (req-> rop == ropCopyPut) ? PictOpSrc : PictOpOver
 #define RENDER_COMPOSITE( ofs, rop, picture )                    \
 	XRenderComposite(                                        \
 		DISP, rop,                                       \
@@ -2152,10 +2152,57 @@ FAIL:
 }
 
 static Bool
+img_render_icon_on_picture( Handle self, Handle image, PutImageRequest * req, Bool on_layered)
+{
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+	DEFXX;
+	ImageCache *cache;
+	Pixmap pixmap;
+	GC gc;
+	XGCValues gcv;
+	Bool ret = false;
+	Picture picture;
+
+	/* XXX is 255 still good? request alpha_channel=255 because PictOpOver emulates SrcCopy here */
+	if (!(cache = prima_image_cache((PImage) image,
+		CACHE_LAYERED_ALPHA,
+		255, 255, 255)))
+		return false;
+
+	pixmap = XCreatePixmap( DISP, guts.root, req->w, req->h, guts.argb_visual.depth);
+	gcv. graphics_exposures = false;
+	gc = XCreateGC( DISP, pixmap, GCGraphicsExposures, &gcv);
+
+	SET_ROP(GXcopy);
+	if ( !( prima_put_ximage(
+		pixmap, gc, cache->image,
+		req->src_x, req->src_y, 0, 0,
+		req->w, req->h
+	))) goto FAIL;
+
+	picture = prima_render_create_picture(pixmap, 32);
+	RENDER_APPLY_TRANSFORM(picture);
+	RENDER_COMPOSITE( ofs,
+		(req-> rop == ropCopyPut && PIcon(image)->maskType == imbpp8) ? PictOpSrc : PictOpOver,
+		picture);
+	RENDER_FREE(picture);
+	XRENDER_SYNC_NEEDED;
+	ret = true;
+
+FAIL:
+	XFreeGC( DISP, gc);
+	XFreePixmap( DISP, pixmap );
+	return ret;
+#else
+	return false;
+#endif
+}
+
+static Bool
 img_render_image_on_pixmap( Handle self, Handle image, PutImageRequest * req)
 {
 	if ( XT_IS_ICON(X(image)))
-		return img_put_image_on_pixmap(self, image, req);
+		return img_render_icon_on_picture( self, image, req, false);
 	return img_render_image_on_picture( self, image, req, false);
 }
 
@@ -2163,7 +2210,7 @@ static Bool
 img_render_image_on_widget( Handle self, Handle image, PutImageRequest * req)
 {
 	if ( XT_IS_ICON(X(image)))
-		return img_put_image_on_widget(self, image, req);
+		return img_render_icon_on_picture( self, image, req, false);
 	return img_render_image_on_picture( self, image, req, false);
 }
 
@@ -2171,7 +2218,7 @@ static Bool
 img_render_image_on_layered( Handle self, Handle image, PutImageRequest * req)
 {
 	if ( XT_IS_ICON(X(image)))
-		return img_put_image_on_layered(self, image, req);
+		return img_render_icon_on_picture( self, image, req, true);
 	return img_render_image_on_picture( self, image, req, true);
 }
 
@@ -2351,6 +2398,12 @@ PutImageFunc (*img_render_on_layered[SRC_NUM]) = {
 };
 
 static int
+get_default_rop( Handle self )
+{
+	return XF_LAYERED(XX) ? ropBlend : ropCopyPut;
+}
+
+static int
 get_image_src_format( Handle self, Handle image, int * rop )
 {
 	DEFXX;
@@ -2397,7 +2450,7 @@ get_image_dst_format( Handle self, int rop, int src_type, Bool use_xrender )
 		if ( !guts.render_supports_argb32 && src_type == SRC_ARGB )
 			return img_render_nullset;
 		/* xrender cannot rops */
-		if ( src_type != SRC_LAYERED && src_type != SRC_ARGB && rop != ropCopyPut )
+		if ( src_type != SRC_LAYERED && src_type != SRC_ARGB && rop != ropCopyPut && rop != ropBlend )
 			return img_render_nullset;
 	}
 
@@ -2445,8 +2498,9 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
 	req.dst_h = req.h;
 #endif
 
+	if ( rop == ropDefault ) rop = get_default_rop(self);
 	src = get_image_src_format(self, image, &rop);
-	if ( rop > ropNoOper ) return false;
+	if ( rop > ropWhiteness ) return false;
 	if ( src < 0 ) {
 		warn("cannot guess image type");
 		return false;
@@ -2529,7 +2583,7 @@ apc_image_begin_paint( Handle self)
 		req.dst_w = req.w;
 		req.dst_h = req.h;
 #endif
-		req.rop = layered ? ropSrcCopy : GXcopy;
+		req.rop = layered ? ropCopyPut : GXcopy;
 		req.old_rop = XX-> gcv. function;
 		(*dst[layered ? SRC_ARGB : SRC_IMAGE])(self, self, &req);
 		/*                                     ^^^^^ ^^^^    :-)))  */
@@ -3014,8 +3068,9 @@ apc_gp_stretch_image_x11( Handle self, Handle image,
 	if ( PObject( self)-> options. optInDrawInfo) return false;
 	if ( !XF_IN_PAINT(XX)) return false;
 
+	if ( rop == ropDefault ) rop = get_default_rop(self);
 	src = get_image_src_format(self, image, &rop);
-	if ( rop > ropNoOper ) return false;
+	if ( rop > ropWhiteness ) return false;
 	if ( src < 0 ) return false;
 
 	XRENDER_SYNC;
@@ -3219,8 +3274,9 @@ apc_gp_stretch_image( Handle self, Handle image,
 	if ( !guts.render_extension)
 		goto FALLBACK;
 
+	if ( rop == ropDefault ) rop = get_default_rop(self);
 	src = get_image_src_format(self, image, &rop);
-	if ( rop > ropNoOper ) return false;
+	if ( rop > ropWhiteness ) return false;
 	if ( src < 0 ) return false;
 
 	if (!(dst = get_image_dst_format(self, rop, src, true))) {
@@ -3234,8 +3290,6 @@ apc_gp_stretch_image( Handle self, Handle image,
 		case ropNoOper:
 			return true;
 		case ropCopyPut:
-			break;
-		case ropSrcCopy:
 			if ( X(image)->flags.layered)
 				break;
 		default:

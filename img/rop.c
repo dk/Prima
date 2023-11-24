@@ -350,9 +350,6 @@ static BlendFunc* blend_functions[] = {
 	blend_xor,
 	blend_src_over,
 	blend_dst_over,
-	blend_src_copy,
-	blend_dst_copy,
-	blend_clear,
 	blend_src_in,
 	blend_dst_in,
 	blend_src_out,
@@ -362,7 +359,6 @@ static BlendFunc* blend_functions[] = {
 	blend_add,
 	blend_multiply,
 	blend_screen,
-	blend_dst_copy,
 	blend_overlay,
 	blend_darken,
 	blend_lighten,
@@ -374,11 +370,32 @@ static BlendFunc* blend_functions[] = {
 	blend_exclusion
 };
 
-void
+Bool
 img_find_blend_proc( int rop, BlendFunc ** blend1, BlendFunc ** blend2 )
 {
-	*blend1 = blend_functions[rop];
-	*blend2 = (rop >= ropMultiply) ? blend_functions[ropScreen] : blend_functions[rop];
+	BlendFunc *dummy;
+	if ( !blend1 ) blend1 = &dummy;
+	if ( !blend2 ) blend2 = &dummy;
+
+	switch (rop) {
+	case ropSrcCopy:
+		*blend1 = *blend2 = blend_src_copy;
+		return true;
+	case ropDstCopy:
+		*blend1 = *blend2 = blend_dst_copy;
+		return true;
+	case ropClear:
+		*blend1 = *blend2 = blend_clear;
+		return true;
+	}
+
+	if ( rop < ropMinPDFunc || rop > ropMaxPDFunc )
+		return false;
+
+	*blend1 = blend_functions[rop - ropMinPDFunc];
+	*blend2 = (rop >= ropMultiply) ? blend_functions[ropScreen] : blend_functions[rop - ropMinPDFunc];
+
+	return true;
 }
 
 Byte

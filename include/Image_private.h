@@ -26,6 +26,9 @@ Image_color2pixel( Handle self, Color color, Byte * pixel);
 Handle
 Icon_create_from_image( Handle self, int maskType, SV * mask_fill );
 
+Color
+Image_premultiply_color( Handle self, int rop, Color color);
+
 #ifdef __cplusplus
 }
 #endif

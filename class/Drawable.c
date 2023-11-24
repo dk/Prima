@@ -344,6 +344,7 @@ Drawable_put_image_indirect( Handle self, Handle image, int x, int y, int xFrom,
 	}
 	prima_matrix_apply_int_to_int(VAR_MATRIX, &x, &y);
 	use_matrix = !prima_matrix_is_translated_only(VAR_MATRIX);
+	rop = CDrawable(image)->effective_rop(image,rop);
 	if ( xLen == xDestLen && yLen == yDestLen && !use_matrix)
 		ok = apc_gp_put_image( self, image, x, y, xFrom, yFrom, xLen, yLen, rop);
 	else
@@ -424,6 +425,14 @@ Drawable_clipRect( Handle self, Bool set, Rect clipRect)
 		return apc_gp_get_clip_rect( self);
 	apc_gp_set_clip_rect( self, clipRect);
 	return clipRect;
+}
+
+int
+Drawable_effective_rop( Handle self, int rop)
+{
+	if ( rop == ropDefault )
+		rop = ropCopyPut;
+	return rop;
 }
 
 int

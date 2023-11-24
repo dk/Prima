@@ -108,4 +108,5 @@ object Prima::Drawable ( Prima::Component)
 	int             font_abc_glyphs_n_ranges;
 	c_only    int*  do_text_wrap( TextWrapRec * tw, GlyphWrapRec * gw, uint16_t * log2vis);
 	c_only   Bool   assert_drawing_mode( int mode );
+	c_only   int    effective_rop(int rop);
 }

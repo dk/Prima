@@ -770,7 +770,7 @@ sub put_image
 	$_[0]-> put_image_indirect(
 		@_[3,1,2], 0, 0,
 		($_[3]-> size) x 2,
-		defined ($_[4]) ? $_[4] : $_[0]-> rop
+		$_[4] // rop::Default
 	) if $_[3]
 }
 
@@ -778,7 +778,7 @@ sub stretch_image {
 	$_[0]-> put_image_indirect(
 		@_[5,1,2], 0, 0,
 		@_[3,4], $_[5]-> size,
-		defined ($_[6]) ? $_[6] : $_[0]-> rop
+		$_[6] // rop::Default
 	) if $_[5]
 }
 
@@ -1086,7 +1086,7 @@ sub image
 	my ($image, undef) = $self-> split;
 	$image->backColor($opt{background} // 0);
 	$image->clear;
-	$image->put_image(0,0,$self,rop::CopyPut);
+	$image->put_image(0,0,$self,rop::Default);
 	return $image;
 }
 
@@ -1139,9 +1139,7 @@ sub dup
 		size => [ $self->size ],
 		type => $self->type
 	);
-	$dup->backColor(0);
-	$dup->clear;
-	$dup->put_image(0,0,$self,rop::Blend);
+	$dup->put_image(0,0,$self,rop::CopyPut);
 	return $dup;
 }
 
@@ -1876,8 +1874,8 @@ sub begin_drag
 			$i->maskType(8);
 			$p->maskType(8)
 				if $p->isa('Prima::Icon');
-			$n->put_image( 0, $p->height, $i, rop::SrcCopy);
-			$n->put_image( $i->width, 0, $p, rop::SrcCopy);
+			$n->put_image( 0, $p->height, $i, rop::CopyPut);
+			$n->put_image( $i->width, 0, $p, rop::CopyPut);
 			$n->bar_alpha(0xff, $i->width, 0, $i->width + $p->width - 1, $p->height - 1)
 				if !$p->isa('Prima::Icon');
 			$n->{__pointerHotSpot} = \@hs;

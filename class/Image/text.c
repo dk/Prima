@@ -73,28 +73,6 @@ prepare_simple_shaping_input( char * text, unsigned int len, Bool utf8)
 	return s;
 }
 
-static Color
-premultiply( Handle self, int alpha, Color color)
-{
-	if ( alpha == 255 )
-		return color;
-	if ( var->type & imGrayScale ) {
-		color = color * alpha / 255;
-	} else {
-		int c[3] = {
-			( color & 0xff         ) * alpha / 255,
-			( ((color)>>8) & 0xff  ) * alpha / 255,
-			( ((color)>>16) & 0xff ) * alpha / 255
-		};
-		color =
-			(c[0] & 0xff) |
-			((c[1] & 0xff) << 8) |
-			((c[2] & 0xff) << 16)
-			;
-	}
-	return color;
-}
-
 static Bool
 plot_glyphs( Handle self, PGlyphsOutRec t, int x, int y )
 {
@@ -126,8 +104,13 @@ plot_glyphs( Handle self, PGlyphsOutRec t, int x, int y )
 	bzero(&ctx, sizeof(ImgPaintContext));
 	ctx.region = var-> regionData;
 
-	ctx.rop    = my->effective_rop(self, var->extraROP);
-	if ( !( flags & ggoMonochrome)) {
+	ctx.rop = var-> extraROP;
+	if ( flags & ggoMonochrome) {
+		if ( ctx.rop > ropWhiteness )
+			ctx.rop = ropCopyPut;
+	} else if ( ctx.rop >= ropMinPDFunc && ctx.rop <= ropMaxPDFunc ) {
+		ctx.rop &= ~(0xff << ropSrcAlphaShift);
+		ctx.rop |= ropSrcAlpha | ( var-> alpha << ropSrcAlphaShift );
 		/* make sure blending is used */
 		int a = (ctx.rop & ropSrcAlpha) ? (ctx.rop >> ropSrcAlphaShift ) & 0xff : 0xff;
 		a = var-> alpha * a / 255;
@@ -142,12 +125,8 @@ plot_glyphs( Handle self, PGlyphsOutRec t, int x, int y )
 
 
 	color = my->get_color(self);
-	/* DWIM premultiplication for the default rop if blending is used */
-	if (
-		!( flags & ggoMonochrome) &&
-		((ctx.rop & ropPorterDuffMask) == ropBlend)
-	)
-		color = premultiply(self, (ctx.rop >> ropSrcAlphaShift) & 0xff, color);
+	if ( !( flags & ggoMonochrome))
+		color = Image_premultiply_color(self, ctx.rop, color);
 	Image_color2pixel( self, color, ctx.color);
 
 	if ( !straight ) {
@@ -175,14 +154,8 @@ plot_glyphs( Handle self, PGlyphsOutRec t, int x, int y )
 
 		if ( t->fonts && t->fonts[i] != last_font ) {
 			if (t->fonts[i] != 0) {
-				Font src = PASSIVE_FONT(t->fonts[i])->font, dst;
-				dst = var->font;
-				src.size = dst.size;
-				src.undef.size = 0;
-				apc_font_pick( self, &src, &dst);
-				if ( strcmp(dst.name, src.name) != 0 )
+				if ( !Drawable_switch_font(self, t->fonts[i]))
 					continue;
-				apc_gp_set_font( self, &dst);
 				last_font = t->fonts[i];
 				restore_font = true;
 			} else {
