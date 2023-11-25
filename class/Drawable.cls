@@ -58,6 +58,7 @@ object Prima::Drawable ( Prima::Component)
 
 	method Bool  can_draw_alpha() => apc_gp_can_draw_alpha;
 	method int   get_bpp();
+	method int   get_effective_rop(int rop);
 	method Font  get_font();
 	method SV *  get_font_abc( int first = -1, int last = -1, int flags = 0);
 	method SV *  get_font_def( int first = -1, int last = -1, int flags = 0);
@@ -93,7 +94,7 @@ object Prima::Drawable ( Prima::Component)
 	method Bool  line(double x1, double y1, double x2, double y2);
 	method Bool  lines( SV * points);
 	method Bool  polyline( SV * points);
-	method Bool  put_image_indirect( Handle image, int x, int y, int xFrom, int yFrom, int xDestLen, int yDestLen, int xLen, int yLen, int rop);
+	method Bool  put_image_indirect( Handle image, int x, int y, int xFrom, int yFrom, int xDestLen, int yDestLen, int xLen, int yLen, int rop = ropDefault);
 	method Bool  rectangle(double x1, double y1, double x2, double y2);
 	method Bool  sector( double x, double y, double dX, double dY, double startAngle, double endAngle);
 	method Bool  text_out( SV * text, int x, int y, int from = 0, int len = -1);
@@ -108,5 +109,4 @@ object Prima::Drawable ( Prima::Component)
 	int             font_abc_glyphs_n_ranges;
 	c_only    int*  do_text_wrap( TextWrapRec * tw, GlyphWrapRec * gw, uint16_t * log2vis);
 	c_only   Bool   assert_drawing_mode( int mode );
-	c_only   int    effective_rop(int rop);
 }

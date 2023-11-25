@@ -63,7 +63,6 @@ sub init
 	my $pk = $self-> insert( ImageViewer =>
 		origin     => [ 524, 120],
 		name       => 'PickHole',
-		borderWidth=> 2,
 		alignment  => ta::Center,
 		valignment => ta::Center,
 		growMode   => gm::GrowLoX | gm::GrowLoY,

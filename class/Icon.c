@@ -1086,11 +1086,11 @@ Icon_matrix_transform( Handle self, Matrix matrix, ColorPixel fill, Point *apert
 }
 
 int
-Icon_effective_rop( Handle self, int rop)
+Icon_get_effective_rop( Handle self, int rop)
 {
 	if ( rop == ropDefault )
 		rop = (var->maskType == 1) ? ropCopyPut : ropBlend;
-	return inherited effective_rop(self, rop);
+	return inherited get_effective_rop(self, rop);
 }
 
 void

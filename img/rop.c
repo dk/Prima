@@ -393,7 +393,7 @@ img_find_blend_proc( int rop, BlendFunc ** blend1, BlendFunc ** blend2 )
 		return false;
 
 	*blend1 = blend_functions[rop - ropMinPDFunc];
-	*blend2 = (rop >= ropMultiply) ? blend_functions[ropScreen] : blend_functions[rop - ropMinPDFunc];
+	*blend2 = (rop >= ropMultiply) ? blend_functions[ropScreen - ropMinPDFunc] : blend_functions[rop - ropMinPDFunc];
 
 	return true;
 }

@@ -27,7 +27,7 @@ my $w = Prima::MainWindow->new(
 			NotAnd NotOr NoOper
 		)]],
 		[ 'Porter-~Duff' => [ map { [$_, $_, \&pd, {group => 1}] } qw(
-			SrcOver Xor DstOver SrcCopy DstCopy Clear
+			SrcOver XorOver DstOver SrcCopy DstCopy Clear
 			SrcIn DstIn SrcOut DstOut SrcAtop DstAtop
 		)]],
 		[ '~Photoshop' => [ map { [$_, $_, \&pd, {group => 1}] } qw(

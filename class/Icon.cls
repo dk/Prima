@@ -21,6 +21,7 @@ object Prima::Icon( Prima::Image)
 	property int      autoMasking;
 	method Handle     bitmap();
 	method void       init( HV * profile);
+	method int        get_effective_rop(int rop);
 	method Handle     extract( int x, int y, int width, int height);
 	method Handle     dup();
 	method Bool       rotate( double degrees, SV * fill = NULL_SV );
@@ -34,7 +35,6 @@ object Prima::Icon( Prima::Image)
 	c_only void       begin_preserve_type( PImagePreserveTypeRec save);
 	c_only void       create_empty( int width, int height, int type);
 	c_only void       create_empty_icon( int width, int height, int type, int maskType);
-	c_only int        effective_rop(int rop);
 	c_only void       end_preserve_type( PImagePreserveTypeRec save);
 	c_only void       make_empty();
 	c_only Bool       matrix_transform( Matrix matrix, ColorPixel fill, Point *aperture);

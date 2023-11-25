@@ -9,6 +9,7 @@ use strict;
 use warnings;
 
 package Prima::ComboBox::Button;
+use Prima;
 use base qw(Prima::Widget Prima::Widget::Fader);
 
 {

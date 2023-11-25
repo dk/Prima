@@ -178,8 +178,7 @@ PAINT:
 			$atx, $aty,
 			$xFrom, $yFrom,
 			$xDestLen, $yDestLen,
-			$xLen, $yLen,
-			rop::CopyPut
+			$xLen, $yLen
 		);
 	}
 
@@ -187,8 +186,7 @@ PAINT:
 		$self-> {image},
 		$atx, $aty,
 		$xDest, $yDest,
-		$imXz, $imYz, $imX, $imY,
-		rop::CopyPut
+		$imXz, $imYz, $imX, $imY
 	);
 }
 
@@ -531,7 +529,7 @@ sub PreviewImage_DataReady
 	# do not update if DataReady covers the whole image at once
 	return if $y == 0 and $x == 0 && $h == $image-> height && $w == $image-> width;
 
-	$self-> image-> put_image_indirect( $image, $x, $y, $x, $y, $w, $h, $w, $h, rop::CopyPut);
+	$self-> image-> put_image_indirect( $image, $x, $y, $x, $y, $w, $h, $w, $h);
 	my @r = $self-> point2screen( $x, $y, $x + $w, $y + $h);
 	$self-> invalidate_rect(
 		(map { int($_) } @r[0,1]),

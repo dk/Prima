@@ -190,15 +190,13 @@ my $w = Prima::MainWindow-> create(
 			$self-> set(
 				color     => cl::White,
 				backColor => cl::Black,
-				rop       => rop::AndPut,
 			);
-			$self-> put_image( $x * $d, $y * $d, $images{$_});
+			$self-> put_image( $x * $d, $y * $d, $images{$_}, rop::AndPut);
 			$self-> set(
 				color     => cl::Black,
 				backColor => $boy[ $y * 8 + $x] ? cl::LightGreen : cl::Green,
-				rop       => rop::XorPut,
 			);
-			$self-> put_image( $x * $d, $y * $d, $images{$_});
+			$self-> put_image( $x * $d, $y * $d, $images{$_}, rop::XorPut);
 		}
 	},
 	onMouseDown => sub {
@@ -230,19 +228,16 @@ my $w = Prima::MainWindow-> create(
 		$and-> begin_paint;
 		$and-> backColor(cl::White);
 		$and-> clear;
-		$and-> rop( rop::NotSrcAnd);
-		$and-> put_image( @pointer, $images{$i});
+		$and-> put_image( @pointer, $images{$i}, rop::NotSrcAnd);
 		$and-> end_paint;
 
 		$xor->type(im::RGB) if $xor->get_bpp == 1 && $::application-> get_system_value( sv::ColorPointer);
 		$xor-> begin_paint;
 		$xor-> set(
 			color      => cl::Black,
-			backColor  => $::application-> get_system_value( sv::ColorPointer) ?
-					cl::Green : cl::White,
-			rop        => rop::OrPut,
+			backColor  => $::application-> get_system_value( sv::ColorPointer) ?  cl::Green : cl::White,
 		);
-		$xor-> put_image( @pointer, $images{$i});
+		$xor-> put_image( @pointer, $images{$i}, rop::OrPut);
 		$xor-> end_paint;
 
 		$xx-> combine( $xor, $and);

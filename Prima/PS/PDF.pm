@@ -1249,6 +1249,8 @@ sub put_image_indirect
 {
 	return 0 unless $_[0]-> {can_draw};
 	my ( $self, $image, $x, $y, $xFrom, $yFrom, $xDestLen, $yDestLen, $xLen, $yLen, $rop) = @_;
+	$rop //= rop::Default;
+	$rop = $image->get_effective_rop($rop);
 	return 1 if $rop == rop::NoOper;
 
 	$image = $self->prepare_image($image, $xFrom, $yFrom, $xLen, $yLen);

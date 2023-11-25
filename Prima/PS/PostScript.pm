@@ -927,7 +927,10 @@ PIXEL
 sub put_image_indirect
 {
 	return 0 unless $_[0]-> {can_draw};
-	my ( $self, $image, $x, $y, $xFrom, $yFrom, $xDestLen, $yDestLen, $xLen, $yLen) = @_;
+	my ( $self, $image, $x, $y, $xFrom, $yFrom, $xDestLen, $yDestLen, $xLen, $yLen, $rop) = @_;
+	$rop //= rop::Default;
+	$rop = $image->get_effective_rop($rop);
+	return 1 if $rop == rop::NoOper;
 
 	my @is = $image-> size;
 	($x, $y, $xDestLen, $yDestLen) = $self-> pixel2point( $x, $y, $xDestLen, $yDestLen);

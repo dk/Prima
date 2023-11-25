@@ -691,8 +691,7 @@ sub on_paint
 			$imAtX, $imAtY,
 			$imgNo * $pw, 0,
 			$sw, $sh,
-			$pw, $ph,
-			rop::CopyPut
+			$pw, $ph
 		);
 CAPTION:
 		$self-> draw_veil( $canvas, $imAtX, $imAtY, $imAtX + $sw, $imAtY + $sh)

@@ -87,10 +87,10 @@ Handle DeviceBitmap_image( Handle self) { return xdup( self, false); }
 Handle DeviceBitmap_icon( Handle self) { return xdup( self, true); }
 
 int
-DeviceBitmap_effective_rop( Handle self, int rop)
+DeviceBitmap_get_effective_rop( Handle self, int rop)
 {
 	if ( rop == ropDefault )
-		rop = (var->type == dbtLayered) ? ropSrcCopy : ropCopyPut;
+		rop = (var->type == dbtLayered) ? ropBlend : ropCopyPut;
 	return rop;
 }
 

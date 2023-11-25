@@ -330,7 +330,7 @@ sub on_paint
 			$imAtY = ( $size[1] - $sh) / 2;
 		}
 		$canvas-> put_image_indirect( $i, $imAtX, $imAtY, 0, 0,
-			$sw, $sh,$pw, $ph,rop::CopyPut);
+			$sw, $sh,$pw, $ph);
 	}
 
 	$canvas-> color( $cl);

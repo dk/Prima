@@ -220,7 +220,7 @@ sub on_drawitem
 		int(($top + $bottom - $iconHeight) / 2+0.5),
 		0, 0,
 		$iconWidth, $iconHeight,
-		$iconWidth, $iconHeight, rop::CopyPut) if 1;
+		$iconWidth, $iconHeight);
 
 	$canvas-> text_shape_out( $text,
 		$left + 2 + $indent + $self-> {oneSpaceWidth} + $iconWidth,
