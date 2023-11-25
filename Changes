@@ -1,5 +1,13 @@
 Revision history for Perl module Prima
 
+1.72 202X-XX-XX
+ - Major rehaul of ROP constants with API compatibility break:
+   -- rop(R), put_image(X,Y,I) will not use rop R but rop::Default instead
+   -- rop::Blend and rop::CopyPut are no longer equal. rop::XorPut and rop::Xor
+      are no longer equal; the latter is rop::XorOver now.
+ - Image.text_out() works outside the paint mode by querying glyph bitmaps.
+      Other text- and font- related method work too.
+
 1.71 2023-10-29
  - Add Prima::Image::webp filter dialog
  - Add DeviceBitmap.maskPixel

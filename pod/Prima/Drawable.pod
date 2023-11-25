@@ -729,6 +729,20 @@ call to the C<Image.premultiply_alpha> method. The core image drawing supports
 this operator in case these premultiplied images are to be used not only on
 native surfaces but also on Prima images.
 
+=head3 Default raster operations
+
+The C<put_image>, C<stretch_image>, and C<put_image_indirect> methods are
+allowed to be called without explicitly specifying the ROP to be used. In this
+case, the I<default ROP>, that depends on the source drawable, will be used. In
+the majority of cases the default ROP is C<rop::CopyPut>, however, when drawing
+using layered device bitmaps and icons with 8-bit alpha masks, C<rop::Blend> is
+used instead. This is a sort of a DWIM behavior.
+
+This effect is achieved by translating the C<rop::Default> constant via the
+C<get_effective_rop> method, that can be used to detect what is the preferred
+raster operation for a source drawable. C<rop::Default> can only be used in the
+aforementioned there methods, not in the C<rop> property, not anywhere else.
+
 =head3 Additional ROPs
 
 Prima core imaging supports extra features for compositing images outside
@@ -1754,7 +1768,7 @@ Returns success flag; if failed, C<$@> contains the error.
 
 See also: fillpoly().
 
-=item put_image X, Y, OBJECT, [ ROP ]
+=item put_image X, Y, OBJECT, [ ROP=rop::Default]
 
 Draws an OBJECT at coordinates (X,Y). OBJECT must be Prima::Image,
 Prima::Icon, or Prima::DeviceBitmap. If ROP raster operation is specified,
@@ -1764,7 +1778,7 @@ Returns success flag; if failed, C<$@> contains the error.
 
 Context used: rop; color and backColor for a monochrome DeviceBitmap
 
-=item put_image_indirect OBJECT, X, Y, X_FROM, Y_FROM, DEST_WIDTH, DEST_HEIGHT, SRC_WIDTH, SRC_HEIGHT, ROP
+=item put_image_indirect OBJECT, X, Y, X_FROM, Y_FROM, DEST_WIDTH, DEST_HEIGHT, SRC_WIDTH, SRC_HEIGHT, [ROP=rop::Default]
 
 Draws the OBJECT's source rectangle into the destination rectangle,
 stretching or compressing the source bits to fit the dimensions of the
@@ -1889,7 +1903,7 @@ Context used: color, backColor, linePattern, lineWidth, lineEnd, miterLimit, rop
 
 See also: fill_spline, render_spline.
 
-=item stretch_image X, Y, DEST_WIDTH, DEST_HEIGHT, OBJECT, [ ROP ]
+=item stretch_image X, Y, DEST_WIDTH, DEST_HEIGHT, OBJECT, [ ROP=rop::Default ]
 
 Draws the OBJECT on the destination rectangle, stretching or compressing the
 source bits to fit the dimensions of the destination rectangle, if necessary.
@@ -2186,6 +2200,12 @@ Example:
 
 Returns device color depth. 1 is for black-and-white monochrome,
 24 for true color, etc.
+
+=item get_effective_rop ROP
+
+Converts a given ROP depending on the drawable type. The majority of cases only
+convert C<rop::Default> to C<rop::CopyPut>, however, layered device bitmaps and
+icons with 8-bit alpha masks return C<rop::Blend> instead.
 
 =item get_font_abc FIRST_CHAR = -1, LAST_CHAR = -1, UNICODE = 0
 
