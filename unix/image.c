@@ -2164,6 +2164,7 @@ img_render_icon_on_picture( Handle self, Handle image, PutImageRequest * req, Bo
 	Picture picture;
 
 	/* XXX is 255 still good? request alpha_channel=255 because PictOpOver emulates SrcCopy here */
+	printf("EKEKE\n");
 	if (!(cache = prima_image_cache((PImage) image,
 		CACHE_LAYERED_ALPHA,
 		255, 255, 255)))
@@ -2182,6 +2183,7 @@ img_render_icon_on_picture( Handle self, Handle image, PutImageRequest * req, Bo
 
 	picture = prima_render_create_picture(pixmap, 32);
 	RENDER_APPLY_TRANSFORM(picture);
+	printf("%d %d\n", req->rop,PIcon(image)->maskType);
 	RENDER_COMPOSITE( ofs,
 		(req-> rop == ropCopyPut && PIcon(image)->maskType == imbpp8) ? PictOpSrc : PictOpOver,
 		picture);
@@ -2441,7 +2443,7 @@ get_image_src_format( Handle self, Handle image, int * rop )
 }
 
 static PutImageFunc**
-get_image_dst_format( Handle self, int rop, int src_type, Bool use_xrender )
+get_image_dst_format( Handle self, Handle image, int rop, int src_type, Bool use_xrender )
 {
 	DEFXX;
 
@@ -2452,6 +2454,9 @@ get_image_dst_format( Handle self, int rop, int src_type, Bool use_xrender )
 			return img_render_nullset;
 		/* xrender cannot rops */
 		if ( src_type != SRC_LAYERED && src_type != SRC_ARGB && rop != ropCopyPut && rop != ropBlend )
+			return img_render_nullset;
+		/* bpp1 requires xor/and rops */
+		if ( XT_IS_ICON(X(image)) && PIcon(image)->maskType == imbpp1)
 			return img_render_nullset;
 	}
 
@@ -2501,17 +2506,21 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
 
 	if ( rop == ropDefault ) rop = get_default_rop(image);
 	src = get_image_src_format(self, image, &rop);
-	if ( rop > ropWhiteness ) return false;
+	if ( src == SRC_LAYERED || src == SRC_ARGB ) {
+		if ( rop != ropCopyPut && rop != ropBlend ) return false;
+	} else {
+		if ( rop > ropWhiteness ) return false;
+	}
 	if ( src < 0 ) {
 		warn("cannot guess image type");
 		return false;
 	}
-	if (!(dst = get_image_dst_format(self, rop, src, true))) {
+	if (!(dst = get_image_dst_format(self, image, rop, src, true))) {
 		warn("cannot guess surface type");
 		return false;
 	}
 	if ( !dst[src] ) {
-		if (!( dst = get_image_dst_format(self, rop, src, false))) {
+		if (!( dst = get_image_dst_format(self, image, rop, src, false))) {
 			warn("cannot guess surface type");
 			return false;
 		}
@@ -3071,7 +3080,11 @@ apc_gp_stretch_image_x11( Handle self, Handle image,
 
 	if ( rop == ropDefault ) rop = get_default_rop(image);
 	src = get_image_src_format(self, image, &rop);
-	if ( rop > ropWhiteness ) return false;
+	if ( src == SRC_LAYERED || src == SRC_ARGB ) {
+		if ( rop != ropCopyPut && rop != ropBlend ) return false;
+	} else {
+		if ( rop > ropWhiteness ) return false;
+	}
 	if ( src < 0 ) return false;
 
 	XRENDER_SYNC;
@@ -3277,10 +3290,14 @@ apc_gp_stretch_image( Handle self, Handle image,
 
 	if ( rop == ropDefault ) rop = get_default_rop(image);
 	src = get_image_src_format(self, image, &rop);
-	if ( rop > ropWhiteness ) return false;
+	if ( src == SRC_LAYERED || src == SRC_ARGB ) {
+		if ( rop != ropCopyPut && rop != ropBlend ) return false;
+	} else {
+		if ( rop > ropWhiteness ) return false;
+	}
 	if ( src < 0 ) return false;
 
-	if (!(dst = get_image_dst_format(self, rop, src, true))) {
+	if (!(dst = get_image_dst_format(self, image, rop, src, true))) {
 		warn("cannot guess surface type");
 		return false;
 	}

@@ -22,22 +22,22 @@
 #define COLOR_B16(x) (((x)<<8)&0xFF00)
 
 static int rop_map[] = {
-	GXcopy	       /* ropCopyPut    */, /* dest  = src          */
-	GXxor	       /* ropXorPut     */, /* dest ^= src          */
-	GXand	       /* ropAndPut     */, /* dest &= src          */
-	GXor	       /* ropOrPut      */, /* dest |= src          */
-	GXcopyInverted /* ropNotPut     */, /* dest = !src          */
-	GXinvert       /* ropInvert     */, /* dest = !dest         */
 	GXclear	       /* ropBlackness  */, /* dest = 0             */
+	GXand	       /* ropAndPut     */, /* dest &= src          */
 	GXandReverse   /* ropNotDestAnd */, /* dest = (!dest) & src */
-	GXorReverse    /* ropNotDestOr  */, /* dest = (!dest) | src */
-	GXset          /* ropWhiteness  */, /* dest = 1             */
+	GXcopy	       /* ropCopyPut    */, /* dest  = src          */
 	GXandInverted  /* ropNotSrcAnd  */, /* dest &= !src         */
-	GXorInverted   /* ropNotSrcOr   */, /* dest |= !src         */
-	GXequiv        /* ropNotXor     */, /* dest ^= !src         */
-	GXnand         /* ropNotAnd     */, /* dest = !(src & dest) */
+	GXnoop         /* ropNoOper     */, /* dest = dest          */
+	GXxor	       /* ropXorPut     */, /* dest ^= src          */
+	GXor	       /* ropOrPut      */, /* dest |= src          */
 	GXnor          /* ropNotOr      */, /* dest = !(src | dest) */
-	GXnoop         /* ropNoOper     */  /* dest = dest          */
+	GXequiv        /* ropNotXor     */, /* dest ^= !src         */
+	GXinvert       /* ropInvert     */, /* dest = !dest         */
+	GXorReverse    /* ropNotDestOr  */, /* dest = (!dest) | src */
+	GXcopyInverted /* ropNotPut     */, /* dest = !src          */
+	GXorInverted   /* ropNotSrcOr   */, /* dest |= !src         */
+	GXnand         /* ropNotAnd     */, /* dest = !(src & dest) */
+	GXset          /* ropWhiteness  */  /* dest = 1             */
 };
 
 int
