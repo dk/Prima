@@ -169,7 +169,7 @@ apc_fetch_resource( const char *className, const char *name,
 				Xdebug("color: %06x\n", *((Color*)result));
 				break;
 			case frFont:
-				prima_font_pp2font( s, ( Font *) result);
+				prima_corefont_pp2font( s, ( Font *) result);
 #define DEBUG_FONT(font) font.height,font.width,font.size,font.name,font.encoding
 				Xdebug("font: %d.[w=%d,s=%d].%s.%s\n", DEBUG_FONT((*(( Font *) result))));
 				break;

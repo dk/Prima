@@ -724,7 +724,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Mat
 	csi = ( CharSetInfo*) hash_fetch( encodings, requested_font. encoding, strlen( requested_font. encoding));
 	if ( !csi) {
 		/* xft has no such encoding, pass it back */
-		if ( prima_core_font_encoding( requested_font. encoding) || !guts. xft_priority)
+		if ( prima_corefont_encoding( requested_font. encoding) || !guts. xft_priority)
 			return false;
 		csi = locale;
 	}
@@ -984,7 +984,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Mat
 			}
 
 			/* check if core has cached face name */
-			if ( prima_find_known_font( &requested_font, false, by_size)) {
+			if ( prima_corefont_find_known_font( &requested_font, false, by_size)) {
 				XFTdebug("pass to cached core");
 				goto NAME_MISMATCH;
 			}
@@ -2297,6 +2297,7 @@ prima_xft_load_font( char* filename)
 		FAIL("FcConfigGetFonts(FcSetSystem) error")
 	if ( !( FcFileScan(fonts, NULL, NULL, NULL, (const FcChar8*)filename, FcFalse)))
 		FAIL("FcFileScan error")
+	prima_xft_init_font_substitution();
 
 	return count;
 }

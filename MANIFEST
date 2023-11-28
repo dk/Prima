@@ -460,6 +460,7 @@ unix/app.c
 unix/clipboard.c
 unix/cocoa.c
 unix/color.c
+unix/corefont.c
 unix/cursor.c
 unix/dnd.c
 unix/event.c

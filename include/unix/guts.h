@@ -1187,6 +1187,39 @@ extern Bool
 prima_font_subsystem_set_option( char *, char *);
 
 extern Bool
+prima_corefont_init( char *error_buf);
+
+extern Bool
+prima_corefont_pick_default_font_with_encoding(void);
+
+extern Bool
+prima_corefont_set_option( char * option, char * value);
+
+extern Byte*
+prima_corefont_get_glyph_bitmap( Handle self, uint16_t index, Bool mono, PPoint offset, PPoint size, int *advance);
+
+extern PFontABC
+prima_xfont2abc( XFontStruct * fs, int firstChar, int lastChar);
+
+extern PCachedFont
+prima_corefont_find_known_font( PFont font, Bool refill, Bool bySize);
+
+extern void
+prima_corefont_pp2font( char * ppFontNameSize, PFont font);
+
+extern Bool
+prima_corefont_pick( Handle self, Font * source, Font * dest);
+
+extern Bool
+prima_corefont_encoding( char * encoding);
+
+extern void
+prima_corefont_encodings(PHash hash);
+
+extern void
+prima_fill_default_font( Font * font );
+
+extern Bool
 prima_init_color_subsystem( char * error_buf);
 
 extern Bool
@@ -1407,21 +1440,6 @@ prima_wm_net_state_read_maximization( XWindow window, Atom property);
 extern unsigned char *
 prima_get_window_property( XWindow window, Atom property, Atom req_type, Atom * actual_type,
 			int * actual_format, unsigned long * nitems);
-
-extern PFontABC
-prima_xfont2abc( XFontStruct * fs, int firstChar, int lastChar);
-
-extern PCachedFont
-prima_find_known_font( PFont font, Bool refill, Bool bySize);
-
-extern void
-prima_font_pp2font( char * ppFontNameSize, PFont font);
-
-extern Bool
-prima_core_font_pick( Handle self, Font * source, Font * dest);
-
-extern Bool
-prima_core_font_encoding( char * encoding);
 
 extern void
 prima_init_try_height( HeightGuessStack * p, int target, int firstMove );

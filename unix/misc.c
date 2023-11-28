@@ -268,8 +268,8 @@ apc_show_message( const char * message, Bool utf8)
 		apc_sys_get_msg_font( &f);
 		f. pitch = fpDefault;
 #define DEBUG_FONT(font) font.height,font.width,font.size,font.name,font.encoding
-		prima_core_font_pick( NULL_HANDLE, &f, &f);
-		cf = prima_find_known_font( &f, false, false);
+		prima_corefont_pick( NULL_HANDLE, &f, &f);
+		cf = prima_corefont_find_known_font( &f, false, false);
 		if ( !cf || !cf-> id) {
 			warn( "%s", message);
 			return false;
