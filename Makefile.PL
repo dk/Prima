@@ -132,8 +132,8 @@ options:
     X11BASE           - path where X11 includes and libraries are installed
     WITH_XFT          - compile with/without Xft (default 1), X only
     WITH_FRIBIDI      - compile with/without fribidi (default 1)
-    WITH_FONTCONFIG   - compile with/without fontconfig (default 1)
-    WITH_FREETYPE     - compile with/without freetype (default 1)
+    WITH_FONTCONFIG   - compile with/without fontconfig (default 1), X only
+    WITH_FREETYPE     - compile with/without freetype (default 1), X only
     WITH_HARFBUZZ     - compile with/without harfbuzz (default 1), X only
     WITH_ICONV        - compile with/without iconv (default 1), X only
     WITH_GTK3         - compile with/without GTK3 (default 1), X only
@@ -190,14 +190,14 @@ sub setup_argv
 
 	%cmd_options = (
 		X11BASE         => $ENV{PRIMA_X11BASE}, # Default value of undef is ok
-		WITH_XFT        => $ENV{PRIMA_WITH_XFT}         // 1,
-		WITH_HARFBUZZ   => $ENV{PRIMA_WITH_HARFBUZZ}    // 1,
-		WITH_FONTCONFIG => $ENV{PRIMA_WITH_FONTCONFIG}  // 1,
-		WITH_FREETYPE   => $ENV{PRIMA_WITH_FREETYPE}    // 1,
-		WITH_FRIBIDI    => $ENV{PRIMA_WITH_FRIBIDI}     // 1,
-		WITH_ICONV      => $ENV{PRIMA_WITH_ICONV}       // 1,
+		WITH_XFT        => $ENV{PRIMA_WITH_XFT}         // ($^O !~ /mswin32/i),
+		WITH_HARFBUZZ   => $ENV{PRIMA_WITH_HARFBUZZ}    // ($^O !~ /mswin32/i),
+		WITH_FONTCONFIG => $ENV{PRIMA_WITH_FONTCONFIG}  // ($^O !~ /mswin32/i),
+		WITH_FREETYPE   => $ENV{PRIMA_WITH_FREETYPE}    // ($^O !~ /mswin32/i),
+		WITH_FRIBIDI    => $ENV{PRIMA_WITH_FRIBIDI}     // ($^O !~ /mswin32/i),
+		WITH_ICONV      => $ENV{PRIMA_WITH_ICONV}       // ($^O !~ /mswin32/i),
 		WITH_GTK2       => $ENV{PRIMA_WITH_GTK2}        // 0,
-		WITH_GTK3       => $ENV{PRIMA_WITH_GTK3}        // 1,
+		WITH_GTK3       => $ENV{PRIMA_WITH_GTK3}        // ($^O !~ /mswin32/i),
 		WITH_OPENMP     => $ENV{PRIMA_WITH_OPENMP}      // 1,
 		WITH_COCOA      => $ENV{PRIMA_WITH_COCOA}       // ($^O eq 'darwin'),
 		WITH_LIBTHAI    => $ENV{PRIMA_WITH_LIBTHAI}     // 1,
