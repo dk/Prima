@@ -905,6 +905,44 @@ prima_font_pp2font( char * ppFontNameSize, PFont font)
 			newEntry ? "new " : "", ppFontNameSize, DEBUG_FONT((*font)));
 }
 
+static void
+cleanup_rotated_font_entry( PRotatedFont r, unsigned int glyph_id )
+{
+	unsigned int i = r->length;
+	while (i--) {
+		if ( r-> map[i] )
+		if ( r-> map[i] && i != glyph_id ) {
+			prima_free_ximage( r-> map[i]);
+			r-> map[i] = NULL;
+			guts.rotated_font_cache_size -= r->arenaSize;
+		}
+	}
+}
+
+static Bool
+cleanup_rotated_font_entries( PCachedFont f, int keyLen, void * key, void * this_font)
+{
+	PRotatedFont r = f->rotated;
+	while ( r ) {
+		if ( r != this_font )
+			cleanup_rotated_font_entry( r, UINT_MAX );
+		r = (PRotatedFont) r-> next;
+	}
+
+	return guts.rotated_font_cache_size < MAX_ROTATED_FONT_CACHE_SIZE / 2;
+}
+
+static void
+cleanup_rotated_font_cache( PRotatedFont this_font, unsigned int this_glyph )
+{
+	if ( guts. font_hash)
+		hash_first_that( guts. font_hash, (void*)cleanup_rotated_font_entries, this_font, NULL, NULL);
+	if ( guts.rotated_font_cache_size < MAX_ROTATED_FONT_CACHE_SIZE )
+		return;
+	cleanup_rotated_font_entry( this_font, this_glyph);
+}
+
+
 void
 prima_free_rotated_entry( PCachedFont f)
 {
@@ -914,6 +952,7 @@ prima_free_rotated_entry( PCachedFont f)
 			if ( r-> map[ r-> length]) {
 				prima_free_ximage( r-> map[ r-> length]);
 				r-> map[ r-> length] = NULL;
+				guts.rotated_font_cache_size -= r->arenaSize;
 			}
 		}
 		f-> rotated = ( PRotatedFont) r-> next;
@@ -1968,7 +2007,8 @@ find_or_allocate_rotated_font_entry( PCachedFont f, Fixed *fm, Fixed *im, Matrix
 	r-> shift. y = box[1];
 
 	r-> lineSize = (( r-> orgBox. x + 31) / 32) * 4;
-	if ( !( r-> arena_bits = malloc( r-> lineSize * r-> orgBox. y)))
+	r-> arenaSize = r-> lineSize * r-> orgBox. y;
+	if ( !( r-> arena_bits = malloc( r-> arenaSize)))
 		goto FAILED;
 
 	r-> arena = XCreatePixmap( DISP, guts. root, r-> orgBox.x, r-> orgBox. y, 1);
@@ -2119,7 +2159,7 @@ prima_update_rotated_fonts( PCachedFont f, const char * text, int len, Bool wide
 		im[3].l =  inv[0] * UINT16_PRECISION;
 	}
 
-	if ( prima_matrix_is_translated_only(matrix)) {
+	if ( prima_matrix_is_translated_only(matrix) && direction == 0.0) {
 		if ( ok_to_not_rotate) *ok_to_not_rotate = true;
 		return false;
 	}
@@ -2133,6 +2173,7 @@ prima_update_rotated_fonts( PCachedFont f, const char * text, int len, Bool wide
 		XChar2b index;
 		PrimaXImage * px;
 		Byte * ndata;
+		unsigned int glyph_id;
 
 		index. byte1 = wide ? (( XChar2b*) text + i)-> byte1 : 0;
 		index. byte2 = wide ? (( XChar2b*) text + i)-> byte2 : *((unsigned char*)text + i);
@@ -2201,7 +2242,12 @@ prima_update_rotated_fonts( PCachedFont f, const char * text, int len, Bool wide
 
 		if ( guts. bit_order != MSBFirst)
 			prima_mirror_bytes( ndata, r-> dimension.y * px-> bytes_per_line_alias);
-		r-> map[( index. byte1 - r-> first1) * r-> width + index. byte2 - r-> first2] = px;
+		glyph_id = ( index. byte1 - r-> first1) * r-> width + index. byte2 - r-> first2;
+		r-> map[glyph_id] = px;
+
+		guts.rotated_font_cache_size += r-> arenaSize;
+		if ( guts.rotated_font_cache_size > MAX_ROTATED_FONT_CACHE_SIZE )
+			cleanup_rotated_font_cache( r, glyph_id );
 	}
 
 	if ( result)
@@ -2215,7 +2261,7 @@ prepare_straight_glyph(PCachedFont f, PRotatedFont r, XChar2b index)
 {
 	PrimaXImage *px;
 	Byte *src, *dst;
-	unsigned int i, src_stride, dst_stride, ylim;
+	unsigned int i, src_stride, dst_stride, ylim, glyph_id;
 
 	if ( !validate_xchar2b( r, &index))
 		return NULL;
@@ -2237,7 +2283,13 @@ prepare_straight_glyph(PCachedFont f, PRotatedFont r, XChar2b index)
 			prima_mirror_bytes( dst, dst_stride);
 	}
 
-	r-> map[( index. byte1 - r-> first1) * r-> width + index. byte2 - r-> first2] = px;
+	glyph_id = ( index. byte1 - r-> first1) * r-> width + index. byte2 - r-> first2;
+	r-> map[glyph_id] = px;
+
+	guts.rotated_font_cache_size += r-> arenaSize;
+	if ( guts.rotated_font_cache_size > MAX_ROTATED_FONT_CACHE_SIZE )
+		cleanup_rotated_font_cache( r, glyph_id );
+
 	return px;
 }
 

@@ -213,24 +213,25 @@ typedef struct _FontInfo {
 } FontInfo, *PFontInfo;
 
 typedef struct _RotatedFont {
-	int          first1;
-	int          first2;
-	int          height;
-	int          width;
-	int          length;
-	PrimaXImage**map;
-	Point        shift;
-	Point        dimension;
-	Point        orgBox;
-	Pixmap       arena;
-	GC           arena_gc;
-	Byte        *arena_bits;
-	int          lineSize;
-	int          defaultChar1;
-	int          defaultChar2;
-	Fixed        matrix[4];
-	Fixed        inverse[4];
-	struct       RotatedFont *next;
+	unsigned int  first1;
+	unsigned int  first2;
+	unsigned int  height;
+	unsigned int  width;
+	unsigned int  length;
+	PrimaXImage **map;
+	Point         shift;
+	Point         dimension;
+	Point         orgBox;
+	Pixmap        arena;
+	GC            arena_gc;
+	Byte         *arena_bits;
+	unsigned int  lineSize;
+	unsigned long arenaSize;
+	unsigned int  defaultChar1;
+	unsigned int  defaultChar2;
+	Fixed         matrix[4];
+	Fixed         inverse[4];
+	struct        RotatedFont *next;
 } RotatedFont, *PRotatedFont;
 
 typedef struct CachedFont {
@@ -796,6 +797,9 @@ typedef struct _UnixGuts
 	XIC                          xic;
 	char *                       xic_buffer;
 	unsigned int                 xic_bufsize;
+
+#define MAX_ROTATED_FONT_CACHE_SIZE (1024*1024)
+	unsigned long int            rotated_font_cache_size;
 } UnixGuts;
 
 extern UnixGuts  guts;
