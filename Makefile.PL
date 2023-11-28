@@ -132,6 +132,8 @@ options:
     X11BASE           - path where X11 includes and libraries are installed
     WITH_XFT          - compile with/without Xft (default 1), X only
     WITH_FRIBIDI      - compile with/without fribidi (default 1)
+    WITH_FONTCONFIG   - compile with/without fontconfig (default 1)
+    WITH_FREETYPE     - compile with/without freetype (default 1)
     WITH_HARFBUZZ     - compile with/without harfbuzz (default 1), X only
     WITH_ICONV        - compile with/without iconv (default 1), X only
     WITH_GTK3         - compile with/without GTK3 (default 1), X only
@@ -175,6 +177,7 @@ setup_X11() if $unix;
 setup_xlibs() if $unix;
 setup_codecs();
 setup_macosx() if $cmd_options{WITH_COCOA} || $macos_x11_path;
+finish_setup();
 create_codecs_c();
 create_config_h();
 create_config_pm();
@@ -186,32 +189,34 @@ sub setup_argv
 	$ARGV_STR = join(' ', @ARGV);
 
 	%cmd_options = (
-		X11BASE       => $ENV{PRIMA_X11BASE}, # Default value of undef is ok
-		WITH_XFT      => $ENV{PRIMA_WITH_XFT}      // 1,
-		WITH_HARFBUZZ => $ENV{PRIMA_WITH_HARFBUZZ} // 1,
-		WITH_FRIBIDI  => $ENV{PRIMA_WITH_FRIBIDI}  // 1,
-		WITH_ICONV    => $ENV{PRIMA_WITH_ICONV}    // 1,
-		WITH_GTK2     => $ENV{PRIMA_WITH_GTK2}     // 0,
-		WITH_GTK3     => $ENV{PRIMA_WITH_GTK3}     // 1,
-		WITH_OPENMP   => $ENV{PRIMA_WITH_OPENMP}   // 1,
-		WITH_COCOA    => $ENV{PRIMA_WITH_COCOA}    // ($^O eq 'darwin'),
-		WITH_LIBTHAI  => $ENV{PRIMA_WITH_LIBTHAI}  // 1,
-		DEBUG         => $ENV{PRIMA_DEBUG}         // 0,
-		EXTRA_CCFLAGS => $ENV{PRIMA_EXTRA_CCFLAGS} // '',
-		EXTRA_LDFLAGS => $ENV{PRIMA_EXTRA_LDFLAGS} // '',
-		VERBOSE       => $ENV{PRIMA_VERBOSE}       // 0,
+		X11BASE         => $ENV{PRIMA_X11BASE}, # Default value of undef is ok
+		WITH_XFT        => $ENV{PRIMA_WITH_XFT}         // 1,
+		WITH_HARFBUZZ   => $ENV{PRIMA_WITH_HARFBUZZ}    // 1,
+		WITH_FONTCONFIG => $ENV{PRIMA_WITH_FONTCONFIG}  // 1,
+		WITH_FREETYPE   => $ENV{PRIMA_WITH_FREETYPE}    // 1,
+		WITH_FRIBIDI    => $ENV{PRIMA_WITH_FRIBIDI}     // 1,
+		WITH_ICONV      => $ENV{PRIMA_WITH_ICONV}       // 1,
+		WITH_GTK2       => $ENV{PRIMA_WITH_GTK2}        // 0,
+		WITH_GTK3       => $ENV{PRIMA_WITH_GTK3}        // 1,
+		WITH_OPENMP     => $ENV{PRIMA_WITH_OPENMP}      // 1,
+		WITH_COCOA      => $ENV{PRIMA_WITH_COCOA}       // ($^O eq 'darwin'),
+		WITH_LIBTHAI    => $ENV{PRIMA_WITH_LIBTHAI}     // 1,
+		DEBUG           => $ENV{PRIMA_DEBUG}            // 0,
+		EXTRA_CCFLAGS   => $ENV{PRIMA_EXTRA_CCFLAGS}    // '',
+		EXTRA_LDFLAGS   => $ENV{PRIMA_EXTRA_LDFLAGS}    // '',
+		VERBOSE         => $ENV{PRIMA_VERBOSE}          // 0,
 
 		# service vars
-		AUTOMATED_RUN => $ENV{PRIMA_AUTOMATED_RUN} // 0,
-		DL_LOAD_FLAGS => $ENV{PRIMA_DL_LOAD_FLAGS}, # Default value of undef is ok
+		AUTOMATED_RUN   => $ENV{PRIMA_AUTOMATED_RUN}    // 0,
+		DL_LOAD_FLAGS   => $ENV{PRIMA_DL_LOAD_FLAGS}, # Default value of undef is ok
 	);
 
 	%passthru_options = (
-		DEFINE        => $ENV{PRIMA_DEFINE}        // '',
-		LIBS          => $ENV{PRIMA_LIBS}          // '',
-		INC           => $ENV{PRIMA_INC}           // '',
-		LD            => $ENV{PRIMA_LD}            // $Config{ld},
-		LDDLFLAGS     => $ENV{PRIMA_LDDLFLAGS}     // $Config{lddlflags},
+		DEFINE          => $ENV{PRIMA_DEFINE}           // '',
+		LIBS            => $ENV{PRIMA_LIBS}             // '',
+		INC             => $ENV{PRIMA_INC}              // '',
+		LD              => $ENV{PRIMA_LD}               // $Config{ld},
+		LDDLFLAGS       => $ENV{PRIMA_LDDLFLAGS}        // $Config{lddlflags},
 	);
 
 	@ARGV = grep {
@@ -1432,55 +1437,41 @@ sub setup_X11
 		printlog "Xext library found.\n";
 		push @LIBS, "Xext";
 	}
+	setup_x11_extension('Xext');
 }
 
-sub setup_xft
+sub setup_fontconfig
 {
-	my $HAVE_XFT = 0;
-	my $NEED_XFT = 4;
-	my @pre_xft_libs    = @LIBS;
-	my @pre_xft_libpath = @LIBPATH;
-	my @pre_xft_incpath = @INCPATH;
+	$cmd_options{WITH_FONTCONFIG} = 0;
 
+	my $ok;
 	if ( $use_pkgconfig ) {
-		my $has_xft = pkgconfig('xft') ? 1 : 0;
-		my @post_xft_libpath = @LIBPATH;
-		my @packages = map { pkgconfig($_) ? 1 : () } (qw(freetype2 fontconfig xrender));
-		if ((@packages + $has_xft) != $NEED_XFT ) {
-			$cmd_options{WITH_XFT} = 0;
-			@LIBS    = @pre_xft_libs;
-			@LIBPATH = @pre_xft_libpath;
-			@INCPATH = @pre_xft_incpath;
+		$ok = pkgconfig('fontconfig');
+	} elsif ( have_header( "fontconfig/fontconfig.h")) {
+		printlog "Checking for presence of fontconfig... ";
+		if ( defined find_lib( 'fontconfig', '', '')) {
+			push @LIBS, 'fontconfig';
+			$ok = 1;
+			printlog "yes\n";
 		} else {
-			$DEFINES{$_} = 1 for qw(
-				HAVE_FREETYPE_FREETYPE_H
-				HAVE_FONTCONFIG_FONTCONFIG_H
-				HAVE_X11_EXTENSIONS_XRENDER_H
-				HAVE_X11_XFT_XFT_H
-			);
-			if (
-				$macos_broken_setup &&
-				$macos_x11_path &&
-				$cmd_options{WITH_HARFBUZZ} &&
-				@pre_xft_libpath == @post_xft_libpath
-			) {
-				$cmd_options{WITH_HARFBUZZ} = 0;
-				$END .= <<BROKEN_PATH_SETUP;
-
-** Warning: harfbuzz have been disabled.
-
-This happened because broken setup was detected where both harfbuzz and libXft
-depend on freetype2, but one on /opt/X11 and another in /usr/local.
-This _WILL_ result in coredumps.
-
-To resolve the issue install libXft that uses the recent freetype2, with
-
-    brew install dk/x11/libxft
-
-BROKEN_PATH_SETUP
-			}
+			printlog "no\n";
 		}
-		return;
+	}
+
+	if ( $ok ) {
+		$DEFINES{WITH_FONTCONFIG} = 1;
+		$cmd_options{WITH_FONTCONFIG} = 1;
+	}
+}
+
+sub setup_freetype
+{
+	$cmd_options{WITH_FREETYPE} = 0;
+
+	my $ok;
+	if ( $use_pkgconfig ) {
+		$ok = pkgconfig('freetype2');
+		goto LEAVE;
 	}
 
 	my @ft_incpaths = ( "",
@@ -1513,49 +1504,78 @@ EOF
 	} else {
 		$incpath = find_header( "freetype/freetype.h", @ft_incpaths);
 	}
+
 	if (defined $incpath) {
 		printlog "yes";
 		printlog ", in $incpath" if $incpath;
 		printlog "\n";
 		push @INCPATH, $incpath if $incpath;
-		printlog "Checking for presence of libfreetype... ";
+		printlog "Checking for presence of freetype... ";
 		if ( defined find_lib( 'freetype', '', '')) {
 			push @LIBS, 'freetype';
-			$HAVE_XFT++;
 			printlog "yes\n";
-			$DEFINES{HAVE_FREETYPE_FREETYPE_H} = 1;
 		} else {
 			printlog "no\n";
-			$DEFINES{HAVE_FREETYPE_FREETYPE_H} = undef;
 		}
 	} else {
 		printlog "no\n";
 	}
 
-	if ( have_header( "fontconfig/fontconfig.h")) {
-		printlog "Checking for presence of libfontconfig... ";
-		if ( defined find_lib( 'fontconfig', '', '')) {
-			push @LIBS, 'fontconfig';
-			$HAVE_XFT++;
-			printlog "yes\n";
-		} else {
-			$DEFINES{HAVE_FONTCONFIG_FONTCONFIG_H} = undef;
-			printlog "no\n";
-		}
+LEAVE:
+	if ( $ok ) {
+		$DEFINES{WITH_FREETYPE} = 1;
+		$cmd_options{WITH_FREETYPE} = 1;
+	}
+}
+
+sub setup_xft
+{
+	if ( !$cmd_options{WITH_FONTCONFIG} || !$cmd_options{WITH_FREETYPE} || !$DEFINES{HAVE_X11_EXTENSIONS_XRENDER_H} ) {
+		printlog "Xft deselected as it requires fontconfig, freetype, and xrender\n";
+		$cmd_options{WITH_XFT} = 0;
+		return;
 	}
 
-	if ( have_header( "X11/extensions/Xrender.h", "X11/X.h",
-			"X11/Xlib.h", "X11/extensions/Xext.h")) {
-		printlog "Checking for presence of libXrender... ";
-		if ( defined find_lib( 'Xrender', '', '')) {
-			push @LIBS, 'Xrender';
-			$HAVE_XFT++;
-			printlog "yes\n";
+	my $HAVE_XFT = 0;
+	my @pre_xft_libs    = @LIBS;
+	my @pre_xft_libpath = @LIBPATH;
+	my @pre_xft_incpath = @INCPATH;
+
+	if ( $use_pkgconfig ) {
+		$HAVE_XFT = pkgconfig('xft');
+		my @post_xft_libpath = @LIBPATH;
+		if (!$HAVE_XFT) {
+			$cmd_options{WITH_XFT} = 0;
+			@LIBS    = @pre_xft_libs;
+			@LIBPATH = @pre_xft_libpath;
+			@INCPATH = @pre_xft_incpath;
 		} else {
-			$DEFINES{HAVE_X11_EXTENSIONS_XRENDER_H} = undef;
-			printlog "no\n";
+			$DEFINES{HAVE_X11_XFT_XFT_H} = 1;
+			if (
+				$macos_broken_setup &&
+				$macos_x11_path &&
+				$cmd_options{WITH_HARFBUZZ} &&
+				@pre_xft_libpath == @post_xft_libpath
+			) {
+				$cmd_options{WITH_HARFBUZZ} = 0;
+				$END .= <<BROKEN_PATH_SETUP;
+
+** Warning: harfbuzz have been disabled.
+
+This happened because broken setup was detected where both harfbuzz and libXft
+depend on freetype2, but one on /opt/X11 and another in /usr/local.
+This _WILL_ result in coredumps.
+
+To resolve the issue install libXft that uses the recent freetype2, with
+
+    brew install dk/x11/libxft
+
+BROKEN_PATH_SETUP
+			}
 		}
+		return;
 	}
+
 
 	if ( have_header( "X11/Xft/Xft.h", "X11/X.h", "X11/Xlib.h",
 			"X11/extensions/Xext.h", "X11/extensions/Xrender.h")) {
@@ -1570,7 +1590,7 @@ EOF
 		}
 	}
 
-	$cmd_options{WITH_XFT} = 0 unless $HAVE_XFT == $NEED_XFT;
+	$cmd_options{WITH_XFT} = 0 unless $HAVE_XFT;
 	@LIBS = @pre_xft_libs unless $cmd_options{WITH_XFT};
 }
 
@@ -1627,16 +1647,28 @@ sub setup_harfbuzz
 
 	if ( !$cmd_options{WITH_XFT}) {
 		printlog "harfbuzz deselected as it requires Xft\n";
-		return;
+		goto WAIL;
 	}
-
 	unless ( $use_pkgconfig ) {
 		printlog "Checking for presence of harfbuzz... no, can only check with pkg-config installed\n";
-		return;
+		goto WAIL;
 	}
-	return unless pkgconfig('harfbuzz');
+	unless (pkgconfig('harfbuzz')) {
+		goto WAIL;
+	}
+
 	$DEFINES{WITH_HARFBUZZ} = 1;
 	$cmd_options{WITH_HARFBUZZ} = 1;
+	return;
+
+WAIL:
+	$END .= <<NO_HARFBUZZ;
+
+** Warning: Prima compiled without harfbuzz will not be able
+to render proper ligatured text, f.ex. Arabic, Hindi, Tibetan etc etc.
+Consider fixing your installation.
+
+NO_HARFBUZZ
 }
 
 sub setup_gtk
@@ -1724,31 +1756,18 @@ sub setup_xrandr
 	$DEFINES{HAVE_XRANDR_1_5} = 1;
 }
 
+sub setup_xrender
+{
+	setup_x11_extension('xrender');
+}
+
 sub setup_xcomposite
 {
 	setup_x11_extension('xcomposite');
 }
 
-sub setup_xlibs
+sub setup_xcursor
 {
-	have_header( "X11/extensions/shape.h", "X11/X.h", "X11/Xlib.h", "X11/Xutil.h");
-	have_header( "X11/extensions/XShm.h", "X11/X.h", "X11/Xlib.h", "X11/Xutil.h");
-
-	setup_xft() if $cmd_options{WITH_XFT};
-	setup_harfbuzz() if $cmd_options{WITH_HARFBUZZ};
-	$END .= <<NO_HARFBUZZ unless $DEFINES{WITH_HARFBUZZ};
-
-** Warning: Prima compiled without harfbuzz will not be able
-to render proper ligatured text, f.ex. Arabic, Hindi, Tibetan etc etc.
-Consider fixing your installation.
-
-NO_HARFBUZZ
-	$cmd_options{WITH_ICONV} = 0 unless $cmd_options{WITH_XFT}; # iconv is used for xft only
-	setup_iconv() if $cmd_options{WITH_ICONV};
-	setup_gtk() if $cmd_options{WITH_GTK2} || $cmd_options{WITH_GTK3};
-	setup_xrandr();
-	setup_xcomposite();
-
 	if ( $use_pkgconfig ) {
 		$DEFINES{HAVE_X11_XCURSOR_XCURSOR_H} = 1 if pkgconfig('xcursor');
 	} elsif ( have_header( "X11/Xcursor/Xcursor.h", "X11/Xlib.h")) {
@@ -1761,14 +1780,24 @@ NO_HARFBUZZ
 			$DEFINES{HAVE_X11_XCURSOR_XCURSOR_H} = undef;
 		}
 	}
+}
 
-	printlog "Using Xft library\n" if $cmd_options{WITH_XFT};
-	printlog "Using fribidi library\n" if $cmd_options{WITH_FRIBIDI};
-	printlog "Using harfbuzz library\n" if $cmd_options{WITH_HARFBUZZ};
-	printlog "Using iconv library\n" if $cmd_options{WITH_ICONV};
-	printlog "Using gtk2 library\n" if $cmd_options{WITH_GTK2};
-	printlog "Using gtk3 library\n" if $cmd_options{WITH_GTK3};
-	printlog "Using Xrandr library\n" if $DEFINES{HAVE_X11_EXTENSIONS_XRANDR_H};
+sub setup_xlibs
+{
+	have_header( "X11/extensions/shape.h", "X11/X.h", "X11/Xlib.h", "X11/Xutil.h");
+	have_header( "X11/extensions/XShm.h", "X11/X.h", "X11/Xlib.h", "X11/Xutil.h");
+
+	setup_fontconfig() if $cmd_options{WITH_FONTCONFIG};
+	setup_freetype() if $cmd_options{WITH_FREETYPE};
+	setup_xrender();
+	setup_xft() if $cmd_options{WITH_XFT};
+	setup_harfbuzz() if $cmd_options{WITH_HARFBUZZ};
+	$cmd_options{WITH_ICONV} = 0 unless $cmd_options{WITH_XFT}; # iconv is used for xft only
+	setup_iconv() if $cmd_options{WITH_ICONV};
+	setup_gtk() if $cmd_options{WITH_GTK2} || $cmd_options{WITH_GTK3};
+	setup_xrandr();
+	setup_xcomposite();
+	setup_xcursor();
 }
 
 sub setup_macosx
@@ -1946,9 +1975,13 @@ sub setup_codecs
 				}
 			} elsif ( $codec eq 'heif') {
 				if ( pkgconfig('libheif')) {
-					$heif_version = $1 * 100 + $2 if
-						$MODVERSIONS{libheif} =~ /^(\d+).(\d+).\d+/;
+					if ( $MODVERSIONS{libheif} =~ /^(\d+).(\d+).\d+/) {
+						$heif_version = $1 * 100 + $2;
+						$found = 1;
+					}
 				}
+			} elsif ( $codec eq 'jpeg') {
+				$found = 1 if pkgconfig('libjpeg');
 			} elsif ( $codec eq 'png') {
 				$found = 1 if pkgconfig('libpng');
 			} elsif ( $codec eq 'tiff') {
@@ -2141,6 +2174,18 @@ Get libwebp binary from http://prima.eu.org/download/libwebp-1.0.2-win64.zip
 LIBWEBP
 	}
 	push @ACTIVE_CODECS, @builtin_codecs;
+}
+
+sub finish_setup
+{
+	print "Using system libraries:";
+	for my $k ( sort keys %cmd_options ) {
+		next unless $cmd_options{$k};
+		next unless $k =~ m/^WITH_(.*)$/;
+		print ' ', lc($1);
+	}
+	print "\n";
+	print "Using image libraries: @ACTIVE_CODECS\n";
 }
 
 sub create_codecs_c

@@ -34,10 +34,15 @@
 #include <X11/extensions/XShm.h>
 #define USE_MITSHM      1
 #endif
-#if defined(HAVE_X11_XFT_XFT_H) && defined(HAVE_FONTCONFIG_FONTCONFIG_H) && defined(HAVE_X11_EXTENSIONS_XRENDER_H) && defined(HAVE_FREETYPE_FREETYPE_H)
-#include <X11/Xft/Xft.h>
+#if defined(WITH_FONTCONFIG)
 #include <fontconfig/fontconfig.h>
+#endif
+#if defined(WITH_FREETYPE)
+#include <freetype/freetype.h>
 #include FT_OUTLINE_H
+#endif
+#if defined(HAVE_X11_XFT_XFT_H) && defined(HAVE_X11_EXTENSIONS_XRENDER_H)
+#include <X11/Xft/Xft.h>
 #  if XFT_MAJOR > 1 && FC_MAJOR > 1
 #     define USE_XFT
 #  endif
