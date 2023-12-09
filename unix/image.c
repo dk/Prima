@@ -2164,7 +2164,6 @@ img_render_icon_on_picture( Handle self, Handle image, PutImageRequest * req, Bo
 	Picture picture;
 
 	/* XXX is 255 still good? request alpha_channel=255 because PictOpOver emulates SrcCopy here */
-	printf("EKEKE\n");
 	if (!(cache = prima_image_cache((PImage) image,
 		CACHE_LAYERED_ALPHA,
 		255, 255, 255)))
@@ -3033,13 +3032,16 @@ put_transformed(Handle self, Handle image, int x, int y, int rop, Matrix matrix)
 	memset(&fill, 0x0, sizeof(fill));
 
 	if ( XT_IS_ICON(YY)) {
+		int mt = PIcon(img)->maskType;
 		img->self->set_preserveType(image, 0);
 		img->self->matrix_transform(image, matrix, fill, &aperture);
 		x += aperture.x;
 		y += aperture.y;
 		if ( !guts.render_supports_argb32 )
 			CIcon(img)->set_maskType( self, imbpp1 );
-		return apc_gp_put_image( self, image, x, y, 0, 0, img->w, img-> h, ropXorPut);
+		if ( mt == 1 && PIcon(img)->maskType != 1 ) /* 1-bit icons can only xor, emulate with blend */
+			rop = ropBlend;
+		return apc_gp_put_image( self, image, x, y, 0, 0, img->w, img-> h, rop);
 	} else {
 		Handle ok;
 		Handle icon = img->self->convert_to_icon(image, imbpp8, NULL);
@@ -3048,6 +3050,8 @@ put_transformed(Handle self, Handle image, int x, int y, int rop, Matrix matrix)
 		y += aperture.y;
 		if ( !guts.render_supports_argb32 )
 			CIcon(icon)->set_maskType( icon, imbpp1 );
+		else
+			rop = ropBlend;
 		ok = apc_gp_put_image( self, icon, x, y, 0, 0, PIcon(icon)->w, PIcon(icon)->h, rop);
 		Object_destroy(icon);
 		return ok;
