@@ -1539,8 +1539,9 @@ apc_font_pick( Handle self, PFont source, PFont dest)
 	if ( dest != NULL ) {
 		Drawable_font_add( NULL_HANDLE, source, dest );
 		source = dest;
-	}
-	dest->size = round(dest->size);
+	} else
+		dest = source;
+	dest->size = (int)(dest->size + .5);
 	font_font2gp( dest, apc_gp_get_resolution(self), source->undef.height, self ? sys ps : 0);
 	return true;
 }

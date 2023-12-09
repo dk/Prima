@@ -520,6 +520,7 @@ typedef struct _PostMsg {
 #define hash_create        prima_hash_create
 #define hash_destroy       prima_hash_destroy
 #define hash_fetch         prima_hash_fetch
+#define hash_fetch_key     prima_hash_fetch_key
 #define hash_delete        prima_hash_delete
 #define hash_store         prima_hash_store
 #define hash_count         prima_hash_count
@@ -1535,9 +1536,6 @@ prima_svpv_utf8( const char *text, int is_utf8);
 
 extern FILE*
 prima_open_file( const char *text, Bool is_utf8, const char * mode);
-
-extern UV
-prima_utf8_uvchr(const char * text, unsigned int textlen, unsigned int charlen);
 
 extern UV
 prima_utf8_uvchr_end(const char * text, const char * end, unsigned int * charlen);
