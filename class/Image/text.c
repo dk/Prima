@@ -130,6 +130,7 @@ plot_glyphs( Handle self, PGlyphsOutRec t, int x, int y )
 	ctx.region = var-> regionData;
 
 	ctx.rop = var-> extraROP;
+	color = my->get_color(self);
 	if ( flags & ggoMonochrome) {
 		if ( ctx.rop > ropWhiteness )
 			ctx.rop = ropCopyPut;
@@ -141,6 +142,22 @@ plot_glyphs( Handle self, PGlyphsOutRec t, int x, int y )
 		a = var-> alpha * a / 255;
 		ctx.rop &= ~(0xff << ropSrcAlphaShift);
 		ctx.rop |= ropSrcAlpha | ( a << ropSrcAlphaShift );
+	} else if ( ctx.rop <= ropWhiteness ) {
+		switch (ctx.rop) {
+		case ropCopyPut:
+			break;
+		case ropNoOper:
+			return true;
+		case ropBlackness:
+			color = 0;
+			break;
+		case ropWhiteness:
+			color = 0xffffff;
+			break;
+		default:
+			return false;
+		}
+		ctx.rop = ropBlend | ropSrcAlpha | (var-> alpha << ropSrcAlphaShift);
 	}
 
 	if ( !apc_gp_get_text_out_baseline( self))
@@ -148,8 +165,6 @@ plot_glyphs( Handle self, PGlyphsOutRec t, int x, int y )
 	o.x = x;
 	o.y = y;
 
-
-	color = my->get_color(self);
 	if ( !( flags & ggoMonochrome))
 		color = Image_premultiply_color(self, ctx.rop, color);
 	Image_color2pixel( self, color, ctx.color);
@@ -311,6 +326,14 @@ Image_fonts( Handle self, char * name, char * encoding)
 	if (!opt_InPaint && !my-> begin_font_query(self) )
 		return NULL_SV;
 	return Application_fonts( self, name, encoding);
+}
+
+SV*
+Image_font_encodings( Handle self, char * encoding)
+{
+	if (!opt_InPaint && !my-> begin_font_query(self) )
+		return NULL_SV;
+	return Application_font_encodings( self, encoding);
 }
 
 #ifdef __cplusplus

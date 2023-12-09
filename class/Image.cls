@@ -66,6 +66,7 @@ object Prima::Image( Prima::Drawable)
 	method Bool   flood_fill( int x, int y, Color color, Bool singleBorder = 1);
 	static Font*  font_match( SV * dummy, Font * source, Font * dest, Bool pick = true);
 	method SV*    fonts( char * name = "", char * encoding = "");
+	method SV*    font_encodings( char * encoding = "");
 	method int    get_bpp();
 	method SV   * get_handle();
 	method Color  get_nearest_color( Color color);

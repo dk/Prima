@@ -1866,6 +1866,8 @@ PS(Disabled)
 PS(Enabled)
 #define   psInformation     2
 PS(Information)
+#define   psFontQuery       3
+PS(FontQuery)
 END_TABLE(ps,UV)
 #undef PS
 

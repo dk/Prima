@@ -32,6 +32,9 @@ Image_premultiply_color( Handle self, int rop, Color color);
 SV*
 Application_fonts( Handle self, char * name, char * encoding);
 
+SV*
+Application_font_encodings( Handle self, char * encoding);
+
 #ifdef __cplusplus
 }
 #endif

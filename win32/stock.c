@@ -1614,6 +1614,8 @@ apc_fonts( Handle self, const char* facename, const char *encoding, int * retCou
 			CPrinter( self)-> begin_paint_info( self);
 		}
 		dc = sys ps;
+	} else if ( is_opt(optInFontQuery)) {
+		dc = sys ps;
 	} else
 		return NULL;
 
@@ -1676,6 +1678,8 @@ apc_font_encodings( Handle self )
 			hasdc = 1;
 			CPrinter( self)-> begin_paint_info( self);
 		}
+		dc = sys ps;
+	} else if ( is_opt(optInFontQuery)) {
 		dc = sys ps;
 	} else
 		return NULL;

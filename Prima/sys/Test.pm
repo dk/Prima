@@ -9,7 +9,7 @@ use Test::More;
 
 our @ISA     = qw(Exporter);
 our @EXPORT  = qw(create_window set_flag get_flag reset_flag wait_flag);
-our $noX11   = 1 if defined Prima::XOpenDisplay();
+our $noX11   = defined Prima::XOpenDisplay();
 our $flag;
 our $timeout = 500;
 

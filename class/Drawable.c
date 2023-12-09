@@ -246,6 +246,8 @@ Drawable_get_paint_state( Handle self)
 		return psEnabled;
 	else if ( is_opt( optInDrawInfo))
 		return psInformation;
+	else if ( is_opt( optInFontQuery))
+		return psFontQuery;
 	else
 		return psDisabled;
 }
