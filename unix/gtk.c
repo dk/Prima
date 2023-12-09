@@ -158,13 +158,13 @@ make_screenshot(int x, int y, int w, int h)
 	);
 	if ( !g_application_register (app, NULL, NULL)) {
 		g_object_unref(app);
-		Mdebug("cannot register another gtk application\n");
+		Mdebug("cannot register another gtk application");
 		return false;
 	}
 
 	if (!( conn = g_application_get_dbus_connection (app))) {
 		g_object_unref(app);
-		Mdebug("cannot get dbus connection\n");
+		Mdebug("cannot get dbus connection");
 		return false;
 	}
 
@@ -189,7 +189,7 @@ make_screenshot(int x, int y, int w, int h)
 	if ( results )
 		g_variant_unref( results );
 	if (error != NULL) {
-		Mdebug("cannot get gnome shell screenshot:%s\n", error->message);
+		Mdebug("cannot get gnome shell screenshot:%s", error->message);
       		g_error_free (error);
 		g_object_unref(app);
 		return false;
@@ -363,7 +363,7 @@ prima_gtk_init(void)
 			s->prima_class == wcButton
 		) ? GTK_STATE_ACTIVE : GTK_STATE_SELECTED;
 		if ( t == NULL ) {
-			Pdebug("cannot query gtk style for %s\n", s->name);
+			Pdebug("cannot query gtk style for %s", s->name);
 			t = gtk_rc_get_style_by_paths(settings, NULL, NULL, GTK_TYPE_WIDGET);
 			if ( !t ) continue;
 		}
@@ -401,7 +401,7 @@ prima_gtk_init(void)
 			c[ciHiliteText]   = gdk_color( t-> fg + selected );
 			c[ciHilite]       = gdk_color( t-> bg + selected );
 		}
-		Pdebug("gtk-color: %s %06x %06x %06x %06x %06x\n", s->name, c[0], c[1], c[2], c[3], c[4], c[5]);
+		Pdebug("gtk-color: %s %06x %06x %06x %06x %06x", s->name, c[0], c[1], c[2], c[3], c[4], c[5]);
 
 		if ( !f) continue;
 		bzero(f, sizeof(Font));
@@ -415,9 +415,9 @@ prima_gtk_init(void)
 			f-> style |= fsItalic;
 		strcpy( f->encoding, "Default" );
 		f-> undef. width = f-> undef. height = f-> undef. pitch = f-> undef. vector = 1;
-		apc_font_pick( prima_guts.application, f, f);
+		apc_font_pick( f, NULL );
 #define DEBUG_FONT(font) f->height,f->width,f->size,f->name,f->encoding
-		Fdebug("gtk-font (%s): %d.[w=%d,s=%d].%s.%s\n", s->name, DEBUG_FONT(f));
+		Fdebug("gtk-font (%s): %d.[w=%d,s=%d].%s.%s", s->name, DEBUG_FONT(f));
 #undef DEBUG_FONT
 	}
 #endif
@@ -437,7 +437,7 @@ prima_gtk_init(void)
 		pfd = pango_font_description_from_string((char*) g_value_peek_pointer(&value));
 
 		strlcpy( font.name, pango_font_description_get_family(pfd), 255);
-		font.size = pango_font_description_get_size(pfd) / 1000.0 + .5;
+		font.size = FONT_SIZE_ROUND(pango_font_description_get_size(pfd) / 1000.0);
 		weight    = pango_font_description_get_weight(pfd);
 		if ( weight <= PANGO_WEIGHT_LIGHT ) font.style |= fsThin;
 		if ( weight >= PANGO_WEIGHT_BOLD  ) font.style |= fsBold;
@@ -445,9 +445,9 @@ prima_gtk_init(void)
 			font.style |= fsItalic;
 		strcpy( font.encoding, "Default" );
 		font.undef.width = font.undef.height = font.undef.pitch = font.undef.vector = 1;
-		apc_font_pick( prima_guts.application, &font, &font);
+		prima_font_pick( &font, NULL, NULL, 0 );
 #define DEBUG_FONT font.height,font.width,font.size,font.name,font.encoding
-		Fdebug("gtk-font (%s): %d.[w=%d,s=%d].%s.%s\n", g_value_peek_pointer(&value), DEBUG_FONT);
+		Fdebug("gtk-font (%s): %d.[w=%d,s=%g].%s.%s", g_value_peek_pointer(&value), DEBUG_FONT);
 #undef DEBUG_FONT
 		guts.default_msg_font     =
 		guts.default_menu_font    =
@@ -477,7 +477,7 @@ prima_gtk_init(void)
 		for ( i = 0; i < sizeof(gt_color_properties)/sizeof(char*); i++) {
 			if (!gtk_style_context_lookup_color( ctx, gt_color_properties[i], &color))
 				continue;
-			Mdebug("gtk-color: %s %g %g %g\n", gt_color_properties[i], color.red, color.green, color.blue);
+			Mdebug("gtk-color: %s %g %g %g", gt_color_properties[i], color.red, color.green, color.blue);
 			colors[i] = gdk_color(&color);
 		}
 
@@ -901,7 +901,7 @@ prima_gtk_application_get_bitmap( Handle self, Handle image, int x, int y, int x
 	}
 	plist_destroy( codecs);
 	if ( !found_png ) {
-		Mdebug("PNG decoder not found\n");
+		Mdebug("PNG decoder not found");
 		return false;
 	}
 
@@ -914,7 +914,7 @@ prima_gtk_application_get_bitmap( Handle self, Handle image, int x, int y, int x
 	codecs = apc_img_load( image, filename, false, NULL, NULL, NULL);
 	unlink( filename );
 	if ( !codecs ) {
-		Mdebug("error loading png back\n");
+		Mdebug("error loading png back");
 		return false;
 	}
 	plist_destroy(codecs);

@@ -540,6 +540,9 @@ extern void*
 prima_hash_fetch( PHash self, const void *key, int keyLen);
 
 extern void*
+prima_hash_fetch_key( PHash self, const void *key, int keyLen);
+
+extern void*
 prima_hash_delete( PHash self, const void *key, int keyLen, Bool kill);
 
 extern Bool
@@ -1533,16 +1536,13 @@ prima_svpv_utf8( const char *text, int is_utf8);
 extern FILE*
 prima_open_file( const char *text, Bool is_utf8, const char * mode);
 
-#if PERL_PATCHLEVEL >= 16
-#define prima_utf8_uvchr(_text, _textlen, _charlen) \
-	utf8_to_uvchr_buf(( U8*)(_text), (U8*)(_text) + (_textlen), _charlen)
-#define prima_utf8_uvchr_end(_text, _end, _charlen) \
-	utf8_to_uvchr_buf(( U8*)(_text), (U8*)(_end), _charlen)
-#else
-#define prima_utf8_uvchr(_text, _textlen, _charlen) \
-	utf8_to_uvchr(( U8*)(_text), _charlen)
-#define prima_utf8_uvchr_end prima_utf8_uvchr
-#endif
+extern UV
+prima_utf8_uvchr(const char * text, unsigned int textlen, unsigned int charlen);
+
+extern UV
+prima_utf8_uvchr_end(const char * text, const char * end, unsigned int * charlen);
+
+#define prima_utf8_uvchr(t,l,c) prima_utf8_uvchr_end(t,t+l,c)
 
 extern SV *
 prima_array_new( size_t size);
@@ -2968,6 +2968,9 @@ FM(Winding)
 FM(Overlay)
 END_TABLE(fm,UV)
 #undef FM
+
+#define FONT_SIZE_GRANULARITY 64
+#define FONT_SIZE_ROUND(x) (round(x * FONT_SIZE_GRANULARITY) / FONT_SIZE_GRANULARITY)
 
 /* font styles */
 #define FS(const_name) CONSTANT(fs,const_name)

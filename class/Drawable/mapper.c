@@ -227,8 +227,8 @@ can_substitute(uint32_t c, int pitch, int fid)
 	if ( !pfe-> ranges_queried )
 		Drawable_query_ranges(pfe);
 
-	if ( 
-		pitch != fpDefault && 
+	if (
+		pitch != fpDefault &&
 		(( pfe->font.undef.pitch || pfe->font.pitch != pitch )) &&
 		!( pfe-> flags & MAPPER_FLAGS_SYNTHETIC_PITCH)
 	)
@@ -397,16 +397,20 @@ Drawable_switch_font( Handle self, uint16_t fid)
 	src = PASSIVE_FONT(fid)->font;
 	if ( is_opt(optSystemDrawable) || is_opt(optInFontQuery) ) {
 		dst = var->font;
-		src.size = dst.size;
-		src.undef.size = 0;
+		src.size         = dst.size;
+		src.height       = dst.height;
+		src.undef.size   = dst.undef.size;
+		src.undef.height = dst.undef.height;
 		apc_font_pick( self, &src, &dst);
 		if ( strcmp(dst.name, src.name) != 0 )
 			return false;
 		apc_gp_set_font( self, &dst);
 	} else {
 		dst = my->get_font(self);
-		src.size = dst.size;
-		src.undef.size = 0;
+		src.size         = dst.size;
+		src.height       = dst.height;
+		src.undef.size   = dst.undef.size;
+		src.undef.height = dst.undef.height;
 		my->set_font(self, src);
 	}
 	return true;

@@ -26,7 +26,7 @@ global %Font {
 	double      direction         with undef;
 	int         vector            with undef;
 	string      name              with undef;
-	int         size              with undef;
+	double      size              with undef;
 	string      encoding          with undef;
 	long        resolution        ;
 	string      family            ;

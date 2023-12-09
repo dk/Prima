@@ -217,7 +217,7 @@ prima_allocate_color( Handle self, Color color, Brush * brush)
 		a[0] = a[1] = a[2] = ( a[0] + a[1] + a[2]) / 3;
 		color = a[0] * ( 65536 + 256 + 1);
 	}
-	Pdebug("color: %s asked for %06x\n", self?PWidget(self)->name:"null", color);
+	Pdebug("color: %s asked for %06x", self?PWidget(self)->name:"null", color);
 	if (self && XT_IS_BITMAP(XX)) {
 		Byte balance = ( a[0] + a[1] + a[2] + 6) / (3 * 4);
 		if ( balance < 64) {
@@ -241,7 +241,7 @@ prima_allocate_color( Handle self, Color color, Brush * brush)
 				prima_color_sync();
 				if ( alloc_color( &xc)) {
 					prima_color_new( &xc);
-					Pdebug("color: %s alloc %d ( wanted %06x). got %02x %02x %02x\n", PWidget(self)-> name, xc.pixel, color, xc.red>>8,xc.green>>8,xc.blue>>8);
+					Pdebug("color: %s alloc %d ( wanted %06x). got %02x %02x %02x", PWidget(self)-> name, xc.pixel, color, xc.red>>8,xc.green>>8,xc.blue>>8);
 					prima_color_add_ref( self, xc. pixel, RANK_NORMAL);
 					return brush-> primary = xc. pixel;
 				}
@@ -327,7 +327,7 @@ B   C       D  CD>BD. ( CD = (AD*AD-AB*AB+BD*BD)/2BD, AC=sqrt(AD*AD-CD*CD))
 						b[0] = guts. palette[brush-> primary].r;
 						b[1] = guts. palette[brush-> primary].g;
 						b[2] = guts. palette[brush-> primary].b;
-						Pdebug("color:want %06x, closest is %06x\n", color, guts.palette[brush-> primary].composite);
+						Pdebug("color:want %06x, closest is %06x", color, guts.palette[brush-> primary].composite);
 						ab2 = (a[0]-b[0])*(a[0]-b[0]) +
 								(a[1]-b[1])*(a[1]-b[1]) +
 								(a[2]-b[2])*(a[2]-b[2]);
@@ -336,7 +336,7 @@ B   C       D  CD>BD. ( CD = (AD*AD-AB*AB+BD*BD)/2BD, AC=sqrt(AD*AD-CD*CD))
 							d[0] = guts. palette[i].r;
 							d[1] = guts. palette[i].g;
 							d[2] = guts. palette[i].b;
-							Pdebug("color:tasting %06x\n", guts.palette[i].composite);
+							Pdebug("color:tasting %06x", guts.palette[i].composite);
 							bd2 = (d[0]-b[0])*(d[0]-b[0]) +
 									(d[1]-b[1])*(d[1]-b[1]) +
 									(d[2]-b[2])*(d[2]-b[2]);
@@ -346,10 +346,10 @@ B   C       D  CD>BD. ( CD = (AD*AD-AB*AB+BD*BD)/2BD, AC=sqrt(AD*AD-CD*CD))
 									(d[1]-a[1])*(d[1]-a[1]) +
 									(d[2]-a[2])*(d[2]-a[2]);
 							cd  = ( ad2 - ab2 + bd2) / (2 * bd);
-							Pdebug("color:bd:%g,bd2:%d, ad2:%d, cd:%g\n", bd, bd2, ad2, cd);
+							Pdebug("color:bd:%g,bd2:%d, ad2:%d, cd:%g", bd, bd2, ad2, cd);
 							if ( cd < bd) {
 								ac2 = ad2 - cd * cd;
-								Pdebug("color:ac2:%d\n", ac2);
+								Pdebug("color:ac2:%d", ac2);
 								if ( ac2 < maxDiff || (( ac2 < maxDiff + 12) && (cd < mincd))) {
 									maxDiff = ac2;
 									bestMatch = i;
@@ -504,7 +504,7 @@ apply_color_class( int c_class, Color value)
 	int i;
 	Color ** t = standard_colors + 1;
 	for ( i = 1; i < MAX_COLOR_CLASS; i++, t++) (*t)[c_class] = value;
-	Mdebug("color: class %d=%06x\n", c_class, value);
+	Mdebug("color: class %d=%06x", c_class, value);
 }
 
 /* find color bounds and test if they are contiguous */
@@ -838,7 +838,7 @@ prima_color_subsystem_set_option( char * option, char * value)
 		if ( value) {
 			free( do_visual);
 			do_visual = duplicate_string( value);
-			Mdebug( "set visual: %s\n", do_visual);
+			Mdebug( "set visual: %s", do_visual);
 		} else
 			warn("`--visual' must be given value");
 		return true;
@@ -1016,7 +1016,7 @@ prima_color_add_ref( Handle self, int index, int rank)
 	if ( rank > guts. palette[index]. rank)
 		guts. palette[index]. rank = rank;
 	wlpal_set( self, index, nr);
-	Pdebug("color:%s %s %d %d\n", PWidget(self)-> name, r ? "raised to " : "added as", nr, index);
+	Pdebug("color:%s %s %d %d", PWidget(self)-> name, r ? "raised to " : "added as", nr, index);
 	return true;
 }
 
@@ -1125,7 +1125,7 @@ prima_palette_replace( Handle self, Bool fast)
 		}
 	}
 
-	Pdebug("color replace:%s find match for %d colors\n", PWidget(self)-> name, psz);
+	Pdebug("color replace:%s find match for %d colors", PWidget(self)-> name, psz);
 	/* find out if any allocated entries are present already */
 	for ( i = 0; i < psz; i++)
 		if (( req[i] & 0x80000000) == 0) {
@@ -1155,7 +1155,7 @@ prima_palette_replace( Handle self, Bool fast)
 			}
 		}
 
-	Pdebug("color replace: granted %d\n", granted);
+	Pdebug("color replace: granted %d", granted);
 	if ( restricted) {
 		free( req);
 		return true;
@@ -1188,7 +1188,7 @@ ALLOC_STAGE:
 				break;
 		}
 	}
-	Pdebug("color replace :ok - now %d are granted\n", granted);
+	Pdebug("color replace :ok - now %d are granted", granted);
 
 	if ( granted == psz) {
 		free( req);
@@ -1253,7 +1253,7 @@ ALLOC_STAGE:
 			j += ciMaxId + 1;
 	}
 
-	Pdebug("color: BIG:%d vs %d\n", j, psz);
+	Pdebug("color: BIG:%d vs %d", j, psz);
 	if ( !( rqx = malloc( sizeof( RGBColor) * j))) goto SUCCESS; /* :O */
 
 	{
@@ -1305,7 +1305,7 @@ ALLOC_STAGE:
 ENOUGH:;
 	}
 
-	Pdebug("color replace: ok. XAllocColor again\n");
+	Pdebug("color replace: ok. XAllocColor again");
 	granted = 0;
 	for ( i = stage; i < stage + psz; i++) {
 		XColor xc;
@@ -1324,7 +1324,7 @@ ENOUGH:;
 			break;
 	}
 	free( rqx);
-	Pdebug("color replace: ok - %d out of %d \n", granted, psz);
+	Pdebug("color replace: ok - %d out of %d ", granted, psz);
 	XCHECKPOINT;
 
 	/* now give away colors that can be mapped to reduced palette */
@@ -1348,7 +1348,7 @@ SUCCESS:
 		if ( PWidget( widgets. items[i])-> stage < csDead)
 			apc_widget_invalidate_rect( widgets. items[i], NULL);
 
-	Pdebug("color replace: exit\n");
+	Pdebug("color replace: exit");
 	list_destroy( &widgets);
 	return true;
 }
@@ -1373,11 +1373,11 @@ prima_palette_free( Handle self, Bool priority)
 		if ( rank > RANK_FREE && max >= rank) {
 			wlpal_set( self, i, RANK_FREE);
 			list_delete( &guts. palette[i]. users, self);
-			Pdebug("color: %s free %d, %d\n", PWidget(self)-> name, i, rank);
+			Pdebug("color: %s free %d, %d", PWidget(self)-> name, i, rank);
 			guts. palette[i]. touched = true;
 		}
 	}
-	Pdebug(":%s for %s\n", priority ? "PRIO" : "", PWidget(self)-> name);
+	Pdebug(":%s for %s", priority ? "PRIO" : "", PWidget(self)-> name);
 }
 
 int

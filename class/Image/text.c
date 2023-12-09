@@ -12,16 +12,16 @@ extern "C" {
 Bool
 Image_begin_font_query( Handle self )
 {
-	Bool ok;
 	if ( opt_InPaint )
+		return false;
 	if ( is_opt(optInFontQuery) )
 		return true;
-	ok = apc_font_begin_query( self );
-	if ( ok ) {
-		opt_set(optInFontQuery);
-		apc_gp_set_font( self, &var-> font);
-	}
-	return ok;
+	if ( !apc_font_begin_query( self ))
+		return false;
+	opt_set(optInFontQuery);
+	apc_font_pick( self, &var->font, NULL );
+	apc_gp_set_font( self, &var->font );
+	return true;
 }
 
 void
@@ -31,8 +31,32 @@ Image_end_font_query( Handle self )
 	opt_clear(optInFontQuery);
 }
 
+Font *
+Image_font_match( SV * dummy, Font * source, Font * dest, Bool pick)
+{
+	if ( pick) {
+		Handle self;
+		if ( dummy && SvOK(dummy) && (self = gimme_the_mate(dummy)) && kind_of(self, CImage)) {
+			my-> begin_font_query(self);
+			apc_font_pick( NULL_HANDLE, source, dest);
+		}
+	} else
+		Drawable_font_add( NULL_HANDLE, source, dest);
+
+	return dest;
+}
+
+void
+Image_set_font( Handle self, Font font)
+{
+	if (opt_InPaint || is_opt(optInFontQuery))
+		return inherited set_font(self, font);
+	Drawable_font_add( self, &font, &var->font);
+
+}
+
 static PTextShapeRec
-prepare_simple_shaping_input( char * text, unsigned int len, Bool utf8)
+prepare_simple_shaping_input( char * text, unsigned int bytelen, unsigned int len, Bool utf8)
 {
 	PTextShapeRec s;
 	Byte *buf;
@@ -56,13 +80,14 @@ prepare_simple_shaping_input( char * text, unsigned int len, Bool utf8)
 	if ( utf8 ) {
 		uint32_t *dst = s->text;
 		while ( len > 0 ) {
-			STRLEN charlen;
-			UV uv = prima_utf8_uvchr(text, len, &charlen);
+			unsigned int charlen;
+			UV uv = prima_utf8_uvchr(text, bytelen, &charlen);
 			if ( uv > 0x10FFFF ) uv = 0x10FFFF;
 			*(dst++) = uv;
 			if ( charlen == 0 ) break;
-			text  += charlen;
-			len   -= charlen;
+			text += charlen;
+			bytelen -= charlen;
+			len--;
 		}
 	} else {
 		uint32_t *dst = s->text;
@@ -222,13 +247,13 @@ Image_text_out( Handle self, SV * text, int x, int y, int from, int len)
 	if ( !SvROK( text )) {
 		GlyphsOutRec t;
 		TextShapeRec *s;
-		STRLEN dlen;
+		STRLEN dlen, bytelen;
 		PTextShapeFunc shaper;
-		char * c_text = SvPV( text, dlen);
+		char * c_text = SvPV( text, bytelen);
 		Bool   utf8   = prima_is_utf8_sv( text);
 		int    type;
 
-		if ( utf8) dlen = prima_utf8_length(c_text, dlen);
+		dlen = utf8 ? prima_utf8_length(c_text, bytelen) : bytelen;
 		if ((len = Drawable_check_length(from,len,dlen)) == 0)
 			return true;
 		c_text = Drawable_hop_text(c_text, utf8, from);
@@ -237,7 +262,7 @@ Image_text_out( Handle self, SV * text, int x, int y, int from, int len)
 		type = utf8 ? tsGlyphs : tsBytes;
 		if ( !( shaper = apc_font_get_text_shaper( self, &type)))
 			return false;
-		if ( !( s = prepare_simple_shaping_input(c_text, len, utf8)))
+		if ( !( s = prepare_simple_shaping_input(c_text, bytelen, len, utf8)))
 			return false;
 		if ( !(ok = shaper(self, s))) {
 			perl_error();
@@ -269,6 +294,23 @@ Image_text_out( Handle self, SV * text, int x, int y, int from, int len)
 		ok = ret && SvTRUE(ret);
 	}
 	return ok;
+}
+
+SV*
+Image_text_shape( Handle self, SV * text_sv, HV * profile)
+{
+	if (!opt_InPaint && !my-> begin_font_query(self) )
+		return NULL_SV;
+
+	return inherited text_shape(self, text_sv, profile);
+}
+
+SV*
+Image_fonts( Handle self, char * name, char * encoding)
+{
+	if (!opt_InPaint && !my-> begin_font_query(self) )
+		return NULL_SV;
+	return Application_fonts( self, name, encoding);
 }
 
 #ifdef __cplusplus

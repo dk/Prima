@@ -49,72 +49,90 @@ Drawable_font_match( char * dummy, Font * source, Font * dest, Bool pick)
 Bool
 Drawable_font_add( Handle self, Font * source, Font * dest)
 {
-	Bool useHeight = !source-> undef. height;
-	Bool useWidth  = !source-> undef. width;
-	Bool useSize   = !source-> undef. size;
-	Bool usePitch  = !source-> undef. pitch;
-	Bool useStyle  = !source-> undef. style;
-	Bool useDir    = !source-> undef. direction;
-	Bool useName   = !source-> undef. name;
-	Bool useVec    = !source-> undef. vector;
-	Bool useEnc    = !source-> undef. encoding;
+#define SRC(x)  (!source->undef.x)
+#define DST(x)  (!dest->undef.x)
+#define COPY(x) if (SRC(x)) { dest->x = source->x; dest->undef.x = 0; }
 
 	/* assigning values */
 	if ( dest != source) {
-		dest-> undef = source-> undef;
-		if ( useHeight) dest-> height    = source-> height;
-		if ( useWidth ) dest-> width     = source-> width;
-		if ( useDir   ) dest-> direction = source-> direction;
-		if ( useStyle ) dest-> style     = source-> style;
-		if ( usePitch ) dest-> pitch     = source-> pitch;
-		if ( useSize  ) dest-> size      = source-> size;
-		if ( useVec   ) dest-> vector    = source-> vector;
-		if ( useName  ) {
+		COPY(height);
+		COPY(width);
+		COPY(direction);
+		COPY(style);
+		COPY(pitch);
+		COPY(size);
+		COPY(vector);
+		if (SRC(name)) {
 			strcpy( dest-> name, source-> name);
 			dest->is_utf8.name = source->is_utf8.name;
 		}
-		if ( useEnc   ) {
+		if ( SRC(encoding)) {
 			strcpy( dest-> encoding, source-> encoding);
 			dest->is_utf8.encoding = source->is_utf8.encoding;
 		}
 	}
 
-	/* nulling dependencies */
-	if ( !useHeight && useSize)
-		dest-> height = 0;
-	if ( !useWidth && ( usePitch || useHeight || useName || useSize || useDir || useStyle))
-		dest-> width = 0;
-	if ( !usePitch && ( useStyle || useName || useDir || useWidth))
-		dest-> pitch = fpDefault;
-	if ( useHeight)
-		dest-> size = 0;
-	if ( !useHeight && !useSize && ( dest-> height <= 0 || dest-> height > 16383))
-		useSize = 1;
+	/* resolving ambiguities */
+	if ( SRC(height))
+		dest->undef.size   = 1;
+	else if (SRC(size))
+		dest->undef.height = 1;
+	if ( DST(size) && DST(height))
+		dest->undef.size   = 1;
 
-	/* validating entries */
-	if ( dest-> height <= 0) dest-> height = 1;
-		else if ( dest-> height > 16383 ) dest-> height = 16383;
-	if ( dest-> width  <  0) dest-> width  = 1;
-		else if ( dest-> width  > 16383 ) dest-> width  = 16383;
-	if ( dest-> size   <= 0) dest-> size   = 1;
-		else if ( dest-> size   > 16383 ) dest-> size   = 16383;
-	if ( dest-> name[0] == 0) {
+	if ( !SRC(width) && (DST(pitch) || DST(height) || DST(name) || DST(size) || DST(direction) || DST(style)))
+		dest->undef.width  = 1;
+	if ( !SRC(pitch) && (DST(name) || DST(size) || DST(direction) || DST(style)))
+		dest->undef.pitch  = 1;
+
+	/* syncing undef flags with values that are treated as undefs in the apc */
+	/* size,height,style,direction, and encoding don't have speclly treated values */
+	if ( dest-> pitch == fpDefault)
+		dest->undef.pitch  = 1;
+	if ( dest-> vector == fvDefault)
+		dest->undef.vector = 1;
+	if ( dest-> width == 0)
+		dest->undef.width  = 1;
+	if ( dest-> name[0] == 0 || strcmp(dest->name, "Default") == 0 ) {
+		dest->undef.name   = 1;
+	}
+
+	/* ... and in the other direction */
+	if ( !DST(size))
+		dest->size         = 0;
+	if ( !DST(height))
+		dest->height       = 0;
+	if ( !DST(direction))
+		dest->direction    = 0;
+	if ( !DST(style))
+		dest->style        = 0;
+	if ( !DST(pitch))
+		dest->pitch        = fpDefault;
+	if ( !DST(vector))
+		dest->vector       = fvDefault;
+	if ( !DST(width))
+		dest->width        = 0;
+	if ( !DST(name)) {
 		strcpy( dest-> name, "Default");
 		dest->is_utf8.name = false;
 	}
-	if ( dest-> undef.pitch || dest-> pitch < fpDefault || dest-> pitch > fpFixed)
-		dest-> pitch = fpDefault;
-	if ( dest-> undef. direction )
-		dest-> direction = 0;
-	if ( dest-> undef. style )
-		dest-> style = 0;
-	if ( dest-> undef. vector || dest-> vector < fvBitmap || dest-> vector > fvDefault)
-		dest-> vector = fvDefault;
-	if ( dest-> undef. encoding )
-		dest-> encoding[0] = 0;
-	memset(&dest->undef, 0, sizeof(dest->undef));
+	if ( !DST(encoding))
+		dest->encoding[0]  = 0;
 
-	return useSize && !useHeight;
+	/* validating the good entries */
+#define CLAMP(x) if ( DST(x) && dest->x <= 0) dest->x = 1; else if ( dest->x > 16383 ) dest->x = 16383
+	CLAMP(size);
+	CLAMP(height);
+	CLAMP(width);
+#undef CLAMP
+
+	if (DST(size))
+		dest-> size = FONT_SIZE_ROUND(dest->size);
+
+	return dest->undef.height;
+#undef SRC
+#undef DST
+#undef COPY
 }
 
 SV *

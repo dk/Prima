@@ -254,7 +254,7 @@ handle_xdnd_status( Handle self, XEvent* xev)
 static Bool
 handle_xdnd_finished( Handle self, XEvent* xev)
 {
-	Cdebug("dnd:finished disabled=%d/%x %x\n",guts.xdnd_disabled,xev->xclient.data.l[0],guts.xdnds_target);
+	Cdebug("dnd:finished disabled=%d/%x %x",guts.xdnd_disabled,xev->xclient.data.l[0],guts.xdnds_target);
 	if ( guts.xdnd_disabled )
 		return false;
 	if ( xev->xclient.data.l[0] != guts.xdnds_target)
@@ -266,7 +266,7 @@ handle_xdnd_finished( Handle self, XEvent* xev)
 	} else {
 		guts.xdnds_last_drop_response = 1;
 	}
-	Cdebug("dnd:finish with %d\n", guts.xdnds_last_action_response);
+	Cdebug("dnd:finish with %d", guts.xdnds_last_action_response);
 	guts.xdnds_finished = true;
 	return true;
 }
@@ -294,11 +294,11 @@ handle_xdnd_enter( Handle self, XEvent* xev)
 	guts.xdndr_version = xev->xclient.data.l[1] >> 24;
 
 	if (guts.xdndr_source == guts.xdnds_sender) {
-		Cdebug("dnd:enter local\n");
+		Cdebug("dnd:enter local");
 		return true;
 	}
 
-	Cdebug("dnd:enter %08x v%d %d %s %s %s\n", guts.xdndr_source, guts.xdndr_version,
+	Cdebug("dnd:enter %08x v%d %d %s %s %s", guts.xdndr_source, guts.xdndr_version,
 		xev->xclient.data.l[1] & 1,
 		atom_name(xev->xclient.data.l[2]),
 		atom_name(xev->xclient.data.l[3]),
@@ -337,9 +337,9 @@ handle_xdnd_enter( Handle self, XEvent* xev)
 		if (pguts->debug & DEBUG_CLIP)  {
 			int i;
 			Atom * types = (Atom *) data;
-			_debug("dnd clipboard formats:\n");
+			_debug("dnd clipboard formats:");
 			for ( i = 0; i < size / sizeof(Atom); i++, types++)
-				_debug("%d:%x %s\n", i, *types, XGetAtomName(DISP, *types));
+				_debug("%d:%x %s", i, *types, XGetAtomName(DISP, *types));
 		}
 	}
 	CC-> external[cfTargets].name = CF_TARGETS;
@@ -360,7 +360,7 @@ handle_xdnd_position( Handle self, XEvent* xev)
 
 	bzero(&xr, sizeof(xr));
 
-	/* Cdebug("xdnd:position disabled=%d\n",guts.xdnd_disabled); */
+	/* Cdebug("xdnd:position disabled=%d",guts.xdnd_disabled); */
 	if (guts.xdnd_disabled)
 		goto FAIL;
 
@@ -398,7 +398,7 @@ handle_xdnd_position( Handle self, XEvent* xev)
 	if ( !h )
 		goto FAIL;
 
-	/* Cdebug("dnd:position old widget %08x, new %08x\n", guts.xdndr_widget, h); */
+	/* Cdebug("dnd:position old widget %08x, new %08x", guts.xdndr_widget, h); */
 	XCHECKPOINT;
 	modmap  = query_pointer(NULL,NULL);
 	dx = x = xev->xclient.data.l[2] >> 16;
@@ -407,7 +407,7 @@ handle_xdnd_position( Handle self, XEvent* xev)
 	dx -= x;
 	dy -= y;
 	y = X(h)->size.y - y - 1;
-	/* Cdebug("xdnd:final position %d %d for %08x/%08x\n",x,y,h); */
+	/* Cdebug("xdnd:final position %d %d for %08x/%08x",x,y,h); */
 
 	/* send enter/leave messages */
 	if ( guts. xdndr_widget != h && guts. xdndr_widget != NULL_HANDLE ) {
@@ -555,7 +555,7 @@ handle_xdnd_drop( Handle self, XEvent* xev)
 		return false;
 	}
 
-	Cdebug("dnd:drop from %08x\n", guts.xdndr_source);
+	Cdebug("dnd:drop from %08x", guts.xdndr_source);
 	if ( X(guts.xdndr_widget)->flags.dnd_aware) {
 		XWindow dummy;
 		ev.cmd = cmDragEnd;
@@ -621,7 +621,7 @@ prima_handle_dnd_event( Handle self, XEvent *xev)
 	else if ( xev-> xclient. message_type == XdndPosition)
 		return handle_xdnd_position( self, xev);
 	else if ( xev-> xclient. message_type == XdndLeave) {
-		Cdebug("dnd:leave %08x\n",guts.xdndr_widget);
+		Cdebug("dnd:leave %08x",guts.xdndr_widget);
 		return handle_xdnd_leave( self);
 	}
 	else if ( xev-> xclient. message_type == XdndDrop)
@@ -788,16 +788,16 @@ apc_dnd_start( Handle self, int actions, Bool default_pointers, Handle * counter
 	int old_pointer;
 
 	if ( guts.xdnd_disabled || guts.xdnds_widget || !guts.xdnd_clipboard ) {
-		Cdebug("dnd:already is action\n");
+		Cdebug("dnd:already is action");
 		return -1;
 	}
 	if ((actions & dndMask) == 0) {
-		Cdebug("dnd:bad actions\n");
+		Cdebug("dnd:bad actions");
 		return -1;
 	}
 	top_level = get_top_window(self);
 	if ( top_level == prima_guts.application ) {
-		Cdebug("dnd:no toplevel window\n");
+		Cdebug("dnd:no toplevel window");
 		return -1;
 	}
 
@@ -819,12 +819,12 @@ apc_dnd_start( Handle self, int actions, Bool default_pointers, Handle * counter
 		ac_ptr += 5;
 	}
 	if ( n_actions == 0) {
-		Cdebug("dnd:no actions\n");
+		Cdebug("dnd:no actions");
 		return -1;
 	}
 
 	if ( prima_clipboard_fill_targets(guts.xdnd_clipboard) == 0) {
-		Cdebug("dnd:no clipboard data\n");
+		Cdebug("dnd:no clipboard data");
 		return -1; /* nothing to drag */
 	}
 
@@ -841,7 +841,7 @@ apc_dnd_start( Handle self, int actions, Bool default_pointers, Handle * counter
 	guts.xdnds_last_action = guts.xdnds_last_action_response = dndNone;
 	bzero( &guts.xdnds_suppress_events_within, sizeof(Box));
 	protect_object(self);
-	Cdebug("dnd:begin\n");
+	Cdebug("dnd:begin");
 
 	CC = C(guts.xdnd_clipboard);
 	prima_detach_xfers( CC, cfTargets, true);
@@ -869,7 +869,7 @@ apc_dnd_start( Handle self, int actions, Bool default_pointers, Handle * counter
 		XWindow new_receiver;
 
 		if ( !guts.xdnds_widget || !guts.xdnd_clipboard ) {
-			Cdebug("dnd:objects killed\n");
+			Cdebug("dnd:objects killed");
 			ret = dndNone;
 			goto EXIT;
 		}
@@ -886,7 +886,7 @@ apc_dnd_start( Handle self, int actions, Bool default_pointers, Handle * counter
 
 		if ( new_receiver != guts.xdnds_target ) {
 			banned_receiver = None;
-			Cdebug("dnd:target %08x => %08x\n", guts.xdnds_target, new_receiver);
+			Cdebug("dnd:target %08x => %08x", guts.xdnds_target, new_receiver);
 			if ( got_session && guts.xdnds_target ) {
 				xdnd_send_leave_message();
 				guts. xdnds_target = None;
@@ -903,7 +903,7 @@ apc_dnd_start( Handle self, int actions, Bool default_pointers, Handle * counter
 					&size, &data, 0);
 				if ( rps != RPS_OK || type != XA_ATOM || format != CF_32 || size != sizeof(Atom)) {
 					free(data);
-					Cdebug("dnd:bad XdndAware\n");
+					Cdebug("dnd:bad XdndAware");
 					banned_receiver = new_receiver;
 					continue;
 				}
@@ -911,7 +911,7 @@ apc_dnd_start( Handle self, int actions, Bool default_pointers, Handle * counter
 				free(data);
 				rps = prima_clipboard_fill_targets(guts.xdnd_clipboard);
 				if ( rps == 0 ) {
-					Cdebug("dnd:failed to query clipboard targets\n");
+					Cdebug("dnd:failed to query clipboard targets");
 					ret = -1;
 					goto EXIT;
 				}
@@ -919,7 +919,7 @@ apc_dnd_start( Handle self, int actions, Bool default_pointers, Handle * counter
 				got_session = true;
 				guts.xdnds_target = new_receiver;
 				targets = (Atom*) CC->internal[cfTargets].data;
-				Cdebug("dnd:send enter to %08x\n",guts.xdnds_target);
+				Cdebug("dnd:send enter to %08x",guts.xdnds_target);
 				xdnds_send_enter_message(rps, targets);
 			}
 		}
@@ -946,7 +946,7 @@ apc_dnd_start( Handle self, int actions, Bool default_pointers, Handle * counter
 
 		if ( new_modmap != modmap) {
 			Event ev = { cmDragQuery };
-			Cdebug("dnd:modmap %08x => %08x\n", modmap, new_modmap);
+			Cdebug("dnd:modmap %08x => %08x", modmap, new_modmap);
 
 			/* suggest allow action */
 			ev.dnd.modmap = modmap = new_modmap;
@@ -982,12 +982,12 @@ apc_dnd_start( Handle self, int actions, Bool default_pointers, Handle * counter
 					xdnd_send_drop_message();
 					guts.xdnds_widget = NULL_HANDLE;
 					ret = guts.xdnds_last_action_response;
-					Cdebug("dnd:drop\n");
+					Cdebug("dnd:drop");
 				} else {
 					xdnd_send_leave_message();
 					guts.xdnds_widget = NULL_HANDLE;
 					got_session = false;
-					Cdebug("dnd:leave\n");
+					Cdebug("dnd:leave");
 				}
 				break;
 			} else {
@@ -1011,7 +1011,7 @@ apc_dnd_start( Handle self, int actions, Bool default_pointers, Handle * counter
 		guts.xdnds_finished = false;
 		guts.xdnds_widget = self;
 		guts.xdnds_escape_key = false;
-		Cdebug("dnd:wait for finalization\n");
+		Cdebug("dnd:wait for finalization");
 		while ( 
 			prima_one_loop_round( WAIT_ALWAYS, true) && 
 			!guts.xdnds_finished && 
@@ -1019,7 +1019,7 @@ apc_dnd_start( Handle self, int actions, Bool default_pointers, Handle * counter
 		) {
 			XSync( DISP, false);
 		}
-		Cdebug("dnd:finalize by %s\n", guts.xdnds_escape_key ? "escape" : "event");
+		Cdebug("dnd:finalize by %s", guts.xdnds_escape_key ? "escape" : "event");
 		guts.xdnds_widget = NULL_HANDLE;
 		guts.xdnds_escape_key = false;
 	}
@@ -1039,6 +1039,6 @@ EXIT:
 	guts.xdnds_widget = NULL_HANDLE;
 	guts.xdnds_target = None;
 	if ( counterpart ) *counterpart = guts.xdndr_last_target;
-	Cdebug("dnd:stop\n");
+	Cdebug("dnd:stop");
 	return ret;
 }

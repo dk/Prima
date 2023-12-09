@@ -34,12 +34,16 @@
 #include <X11/extensions/XShm.h>
 #define USE_MITSHM      1
 #endif
-#if defined(WITH_FONTCONFIG)
-#include <fontconfig/fontconfig.h>
-#endif
 #if defined(WITH_FREETYPE)
 #include <freetype/freetype.h>
 #include FT_OUTLINE_H
+#endif
+#if defined(WITH_FONTCONFIG)
+#include <fontconfig/fontconfig.h>
+#include <fontconfig/fcfreetype.h>
+#endif
+#if defined(WITH_FREETYPE) && defined(WITH_FONTCONFIG)
+#define USE_FONTQUERY
 #endif
 #if defined(HAVE_X11_XFT_XFT_H) && defined(HAVE_X11_EXTENSIONS_XRENDER_H)
 #include <X11/Xft/Xft.h>
@@ -239,33 +243,52 @@ typedef struct _RotatedFont {
 	struct        RotatedFont *next;
 } RotatedFont, *PRotatedFont;
 
+#define MAX_CACHED_FONTS 50
+
 typedef struct CachedFont {
-	FontFlags    flags;
+	Byte         type;
+	int          ref_cnt;
+	int          lock_cnt;
 	Font         font;
+	int          underline_position;
+	int          underline_thickness;
+
+	/* corefont */
+	FontFlags    flags;
 	XFontStruct *fs;
 	XFont        id;
 	PRotatedFont rotated;
-	int          underlinePos;
-	int          underlineThickness;
-	int          refCnt;
+
+#ifdef USE_FONTQUERY
+	FT_Face      ft_face;
+	FcCharSet   *fc_charset;
+#endif
 #ifdef USE_XFT
 	XftFont     *xft;
-	XftFont     *xft_no_aa;
 	XftFont     *xft_base;
 #endif
 } CachedFont, *PCachedFont;
 
+
+#define FONTKEY_CORE      1
+#define FONTKEY_XFT       2
+#define FONTKEY_FREETYPE  4
+#define FONTKEY_DEFAULT   3
+
+#pragma pack(1)
 typedef struct _FontKey
 {
-	int height;
-	int width;
-	int style;
-	int pitch;
-	int vector;
-	int direction;
-	int matrix[4];
-	char name[ 256];
+	Byte     type;
+	Bool     vector;
+	int32_t  height;
+	uint16_t width;
+	uint16_t style;
+	uint16_t pitch;
+	int16_t  direction;
+	int16_t  matrix[4];
+	char     name[256];
 } FontKey, *PFontKey;
+#pragma pack()
 
 #define MAX_HGS_SIZE 5
 
@@ -536,8 +559,10 @@ typedef struct {
 #define DEBUG_XRDB  0x20
 #define DEBUG_ALL   0x3f
 #define _debug prima_debug
-extern int
+extern void
 prima_debug( const char *format, ...);
+extern void
+prima_debug2( const char *prefix, const char *format, ...);
 #define Fdebug if (pguts->debug & DEBUG_FONTS) _debug
 #define Cdebug if (pguts->debug & DEBUG_CLIP) _debug
 #define Edebug if (pguts->debug & DEBUG_EVENT) _debug
@@ -613,6 +638,7 @@ typedef struct _UnixGuts
 	PHash                                ximages;
 	/* Font management */
 	PHash                        font_hash;
+	PHash                        fc_mismatch;
 	PFontInfo                    font_info;
 	char                       **font_names;
 	int                          n_fonts;
@@ -705,7 +731,6 @@ typedef struct _UnixGuts
 	Bool                         xft_priority;
 	Bool                         xft_disable_large_fonts;
 	int                          xft_xrender_major_opcode;
-	Bool                         xft_no_antialias;
 	Bool                         randr_extension;
 	Bool                         render_extension;
 	Bool                         render_supports_argb32;
@@ -796,6 +821,7 @@ typedef struct _UnixGuts
 	char                         unicode_hex_input_buffer[MAX_UNICODE_HEX_LENGTH + 1];
 
 	Bool                         application_stop_signal;
+	int                          debug_indent;
 
 	Bool                         use_xim;
 	XIM                          xim;
@@ -805,6 +831,8 @@ typedef struct _UnixGuts
 
 #define MAX_ROTATED_FONT_CACHE_SIZE (1024*1024)
 	unsigned long int            rotated_font_cache_size;
+	int                          try_fc_monospace_emulation_by_name;
+	int                          force_fc_monospace_emulation;
 } UnixGuts;
 
 extern UnixGuts  guts;
@@ -922,7 +950,6 @@ typedef struct _drawable_sys_data
 		unsigned paint_pending            : 1;
 		unsigned pointer_obscured         : 1;
 		unsigned position_determined      : 1;
-		unsigned reload_font              : 1;
 		unsigned sizeable                 : 1;
 		unsigned sizemax_set              : 1;
 		unsigned sync_paint               : 1;
@@ -945,10 +972,12 @@ typedef struct _drawable_sys_data
 	XVisualInfo * visual;
 	Colormap colormap;
 	PList gc_stack;
+#ifdef USE_FONTQUERY
+	uint32_t * fc_map8;
+	Matrix     fc_font_matrix;
+#endif
 #ifdef USE_XFT
 	XftDraw  * xft_drawable;
-	uint32_t * xft_map8;
-	Matrix     xft_font_matrix;
 	XftDraw  * xft_shadow_drawable;
 	Point      xft_shadow_extentions;
 	Pixmap     xft_shadow_pixmap;
@@ -1185,14 +1214,47 @@ prima_release_gc( PDrawableSysData);
 extern Bool
 prima_init_clipboard_subsystem( char * error_buf);
 
+#define ROUND_DIRECTION 1000.0
+#define IS_ZERO(a)   ((int)(a*ROUND_DIRECTION)==0)
+#define ROUND2INT(a) ((int)(a*ROUND_DIRECTION))
+#define ROUGHLY(a)   (ROUND2INT(a)/ROUND_DIRECTION)
+
+
 extern Bool
-prima_init_font_subsystem( char * error_buf);
+prima_font_init_subsystem(void);
+
+extern Bool
+prima_font_init_x11( char * error_buf);
 
 extern Bool
 prima_font_subsystem_set_option( char *, char *);
 
+extern void
+prima_font_cleanup_subsystem( void);
+
+extern const char *
+prima_font_debug_style(int style);
+
+extern void
+prima_font_init_try_height( HeightGuessStack * p, int target, int firstMove );
+
+extern int
+prima_font_try_height( HeightGuessStack * p, int height);
+
+extern PCachedFont
+prima_font_pick( PFont source, Matrix matrix, PFont dest, unsigned int selection );
+
+extern Point *
+prima_get_text_box( Handle self, Point * ovx, int advance );
+
 extern Bool
 prima_corefont_init( char *error_buf);
+
+extern void
+prima_corefont_done( void);
+
+extern PFont
+prima_corefont_fonts( Handle self, const char *facename, const char * encoding, int *retCount);
 
 extern Bool
 prima_corefont_pick_default_font_with_encoding(void);
@@ -1204,22 +1266,28 @@ extern Byte*
 prima_corefont_get_glyph_bitmap( Handle self, uint16_t index, Bool mono, PPoint offset, PPoint size, int *advance);
 
 extern PFontABC
-prima_xfont2abc( XFontStruct * fs, int firstChar, int lastChar);
+prima_corefont_xfont2abc( XFontStruct * fs, int firstChar, int lastChar);
 
-extern PCachedFont
-prima_corefont_find_known_font( PFont font, Bool refill, Bool bySize);
+extern PFontABC
+prima_corefont_xfont2def( Handle self, int first, int last);
 
 extern void
 prima_corefont_pp2font( char * ppFontNameSize, PFont font);
 
 extern Bool
-prima_corefont_pick( Handle self, Font * source, Font * dest);
+prima_corefont_match(PFont match, Bool by_size, PCachedFont kf);
 
 extern Bool
 prima_corefont_encoding( char * encoding);
 
 extern void
 prima_corefont_encodings(PHash hash);
+
+extern void
+prima_corefont_free_cached_font( PCachedFont f);
+
+extern void
+prima_corefont_build_key( PFontKey key, PFont f, Bool bySize);
 
 extern void
 prima_fill_default_font( Font * font );
@@ -1340,9 +1408,6 @@ extern void
 prima_cleanup_drawable_after_painting( Handle self);
 
 extern void
-prima_cleanup_font_subsystem( void);
-
-extern void
 prima_cursor_tick( void);
 
 extern void
@@ -1370,9 +1435,6 @@ prima_update_cursor( Handle self);
 extern Bool
 prima_update_rotated_fonts( PCachedFont f, const char * text, int len, Bool wide,
 	double direction, Matrix matrix, PRotatedFont *result, Bool * ok_to_not_rotate);
-
-extern void
-prima_free_rotated_entry( PCachedFont f);
 
 #define frUnix_int 1000
 
@@ -1447,12 +1509,6 @@ prima_get_window_property( XWindow window, Atom property, Atom req_type, Atom * 
 			int * actual_format, unsigned long * nitems);
 
 extern void
-prima_init_try_height( HeightGuessStack * p, int target, int firstMove );
-
-extern int
-prima_try_height( HeightGuessStack * p, int height);
-
-extern void
 prima_utf8_to_wchar( const char * utf8, XChar2b * u16, int src_len_bytes, int target_len_xchars);
 
 extern XChar2b *
@@ -1523,17 +1579,11 @@ prima_xft_done( void);
 extern void
 prima_xft_gp_destroy( Handle self );
 
-extern Bool
-prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Matrix matrix, XftFont ** xft_result);
+void
+prima_xft_build_key( PFontKey key, PFont f, Matrix matrix, Bool bySize);
 
 extern Bool
-prima_xft_set_font( Handle self, PFont font);
-
-extern PFont
-prima_xft_fonts( PFont array, const char *facename, const char * encoding, int *retCount);
-
-extern void
-prima_xft_font_encodings( PHash hash);
+prima_xft_match( Font * font, Matrix matrix, Bool by_size, PCachedFont cf);
 
 extern int
 prima_xft_get_text_width( PCachedFont self, const char * text, int len,
@@ -1574,9 +1624,6 @@ prima_xft_get_glyph_outline( Handle self, unsigned int index, unsigned int flags
 extern PCachedFont
 prima_xft_get_cache( PFont font, Matrix matrix);
 
-extern uint32_t *
-prima_xft_map8( const char * encoding);
-
 extern Bool
 prima_xft_parse( char * ppFontNameSize, Font * font);
 
@@ -1592,10 +1639,8 @@ prima_xft_text_shaper_ident( Handle self, PTextShapeRec r);
 extern Bool
 prima_xft_text_shaper_bytes( Handle self, PTextShapeRec r);
 
-#ifdef WITH_HARFBUZZ
 extern Bool
 prima_xft_text_shaper_harfbuzz( Handle self, PTextShapeRec r);
-#endif
 
 extern unsigned long *
 prima_xft_mapper_query_ranges(PFont font, int * count, unsigned int * flags);
@@ -1679,9 +1724,6 @@ prima_notify_sys_handle( Handle self );
 extern int
 prima_flush_events( Display * disp, XEvent * ev, Handle self);
 
-extern const char *
-prima_font_debug_style(int style);
-
 extern Region
 prima_region_create( Handle mask);
 
@@ -1749,3 +1791,138 @@ my_XRenderCompositeDoublePoly (Display		    *dpy,
 			    int			    winding);
 #endif
 
+#ifdef USE_FONTQUERY
+
+extern void
+prima_fc_init(void);
+
+extern void
+prima_fc_init_font_substitution(void);
+
+extern void
+prima_fc_done(void);
+
+extern char *
+prima_fc_get_font_languages( FcPattern *pat);
+
+extern uint32_t *
+prima_fc_map8( const char * encoding);
+
+extern const char *
+prima_fc_find_encoding( const char *encoding );
+
+extern unsigned long *
+prima_fc_get_font_ranges( FcCharSet *c, int * count);
+
+extern int
+prima_fc_load_font( char* filename);
+
+extern void
+prima_fc_build_font_key( int type, PFontKey key, PFont f, Bool bySize, Matrix matrix);
+
+extern void
+prima_fc_set_font( Handle self, PFont font );
+
+extern PFont
+prima_fc_fonts( PFont array, const char *facename, const char * encoding, int *retCount);
+
+extern void
+prima_fc_font_encodings( PHash hash);
+
+extern void
+prima_fc_pattern2fontnames( FcPattern * pattern, Font * font);
+
+extern void
+prima_fc_pattern2font( FcPattern * pattern, PFont font);
+
+extern char *
+prima_fc_find_good_font_by_family( Font * f, int fc_spacing );
+
+extern const char *
+prima_fc_pattern2encoding( FcPattern *p);
+
+extern int
+prima_fc_suggest_pitch( PFont requested_font, PFont suggested_font, FcPattern *match);
+
+extern void
+prima_fc_end_suggestion(int flag);
+
+extern Bool
+prima_fc_encoding_is_supported( char *encoding, FcPattern *match);
+
+extern Bool
+prima_fq_begin_query(Handle self);
+
+extern void
+prima_fq_free_cached_font( PCachedFont f);
+
+extern void
+prima_fq_build_key( PFontKey key, PFont f, Bool by_size);
+
+extern Bool
+prima_fq_match( PFont dest, Bool by_size, PCachedFont kf);
+
+extern Bool
+prima_fq_set_font( Handle self, PCachedFont kf);
+
+extern Byte*
+prima_fq_get_glyph_bitmap( Handle self, uint16_t index, unsigned int flags, PPoint offset, PPoint size, int *advance);
+
+extern int
+prima_fq_get_glyph_outline( Handle self, unsigned int index, unsigned int flags, int ** buffer);
+
+extern Bool
+prima_fq_text_shaper_ident( Handle self, PTextShapeRec r);
+
+extern Bool
+prima_fq_text_shaper_bytes( Handle self, PTextShapeRec r);
+
+extern unsigned long *
+prima_fq_mapper_query_ranges(PFont font, int * count, unsigned int * flags);
+
+extern Bool
+prima_fq_text_shaper_harfbuzz( Handle self, PTextShapeRec r);
+
+extern int
+prima_fq_get_text_width( Handle self, const char * text, int len, int flags, Point * overhangs);
+
+extern int
+prima_fq_get_glyphs_width( Handle self, PGlyphsOutRec t, Point * overhangs);
+
+extern Point *
+prima_fq_get_text_box( Handle self, const char * text, int len, int flags);
+
+extern Point *
+prima_fq_get_glyphs_box( Handle self, PGlyphsOutRec t);
+
+extern PFontABC
+prima_fq_get_font_abc( Handle self, int firstChar, int lastChar, int flags);
+
+extern PFontABC
+prima_fq_get_font_def( Handle self, int firstChar, int lastChar, int flags);
+
+extern Bool
+prima_ft_init( void);
+
+extern void
+prima_ft_done( void);
+
+extern FT_Face
+prima_ft_lock_face( char *filename, int index);
+
+extern void
+prima_ft_unlock_face(FT_Face face);
+
+Bool
+prima_ft_combining_supported( FT_Face face );
+
+extern int
+prima_ft_get_glyph_outline( FT_Face face, FT_UInt ft_index, FT_Int32 ft_flags, int ** buffer);
+
+extern Byte*
+prima_ft_get_glyph_bitmap( FT_Face face, FT_UInt index, FT_Int32 flags, PPoint offset, PPoint size, int *advance);
+
+extern Bool
+prima_ft_text_shaper_harfbuzz( FT_Face face, PTextShapeRec r);
+
+#endif

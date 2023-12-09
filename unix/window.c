@@ -132,14 +132,14 @@ prima_wm_net_state_read_maximization( XWindow window, Atom property)
 		else if ( prop[i] == guts. atoms[ AI_NET_WM_STATE_MAXIMIZED_HORZ]) {
 			if ( guts. net_wm_maximize_HORZ_vs_HORIZ == 0) {
 				guts. net_wm_maximize_HORZ_vs_HORIZ = AI_NET_WM_STATE_MAXIMIZED_HORZ;
-				Mdebug("wm: kde-3 style detected\n");
+				Mdebug("wm: kde-3 style detected");
 			}
 			horiz = 1;
 		}
 		else if ( prop[i] == guts. atoms[ AI_NET_WM_STATE_MAXIMIZED_HORIZ]) {
 			if ( guts. net_wm_maximize_HORZ_vs_HORIZ == 0) {
 				guts. net_wm_maximize_HORZ_vs_HORIZ = AI_NET_WM_STATE_MAXIMIZED_HORIZ;
-				Mdebug("wm: kde-2 style detected\n");
+				Mdebug("wm: kde-2 style detected");
 			}
 			horiz = 1;
 		}
@@ -159,7 +159,7 @@ net_supports_maximization(void)
 	has_max = prima_wm_net_state_read_maximization( guts. root, NET_SUPPORTED);
 	if ( has_max != guts. net_wm_maximization) {
 		guts. net_wm_maximization = has_max;
-		Mdebug( has_max ? "wm: supports maximization\n" : "win: WM quits supporting maximization\n");
+		Mdebug( has_max ? "wm: supports maximization" : "win: WM quits supporting maximization");
 	}
 	return has_max;
 }
@@ -182,7 +182,7 @@ net_supports_fullscreen(void)
 		}
 	if ( ok != guts. net_wm_fullscreen ) {
 		guts. net_wm_fullscreen = ok;
-		Mdebug( ok ? "wm: supports fullscreen\n" : "wm: quits supporting fullscreen\n");
+		Mdebug( ok ? "wm: supports fullscreen" : "wm: quits supporting fullscreen");
 	}
 
 	return ok;

@@ -46,6 +46,15 @@ hash_fetch( PHash h, const void *key, int keyLen)
 }
 
 void *
+hash_fetch_key( PHash h, const void *key, int keyLen)
+{
+	HE *he;
+	ksv_check;
+	if ( !he) return NULL;
+	return HeKEY( he);
+}
+
+void *
 hash_delete( PHash h, const void *key, int keyLen, Bool kill)
 {
 	HE *he;

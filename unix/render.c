@@ -86,7 +86,7 @@ prima_init_xrender_subsystem(char * error_buf, Bool disable_argb32)
 		prima_find_color_mask_range( guts. argb_bits. alpha_mask, &guts. argb_bits. alpha_shift, &guts. argb_bits. alpha_range);
 		guts. xrender_argb32_format = f;
 		guts. argb_depth = f-> depth;
-		Pdebug("selected visual 0x%x for ARGB operations\n", list[i].visualid);
+		Pdebug("selected visual 0x%x for ARGB operations", list[i].visualid);
 		break;
 	}
 	if ( list) XFree( list);
@@ -109,16 +109,16 @@ prima_init_xrender_subsystem(char * error_buf, Bool disable_argb32)
 		guts. argbColormap = XCreateColormap( DISP, guts. root, guts. argb_visual. visual, AllocNone);
 		guts. render_supports_argb32 = true;
 	} else {
-		Pdebug("no ARGB visual found\n");
+		Pdebug("no ARGB visual found");
 	}
 
 	if ( !( guts. xrender_a8_format = XRenderFindStandardFormat(DISP, PictStandardA8))) {
-		Pdebug("no A8 visual found\n");
+		Pdebug("no A8 visual found");
 		guts. render_extension = false;
 		return false;
 	}
 	if ( !( guts. xrender_a1_format = XRenderFindStandardFormat(DISP, PictStandardA1))) {
-		Pdebug("no A1 visual found\n");
+		Pdebug("no A1 visual found");
 		guts. render_extension = false;
 		return false;
 	}

@@ -78,11 +78,9 @@ sub _debug
 		$out .= "fonts: @$g\n";
 		my %f = map { $_ => 1 } @$g;
 		delete $f{0};
-		if ( $::application ) {
-			for my $fid ( sort keys %f ) {
-				my $f = Prima::Font::Mapper->get($fid);
-				$out .= "  #$fid: $f->{name}\n";
-			}
+		for my $fid ( sort keys %f ) {
+			my $f = Prima::Font::Mapper->get($fid);
+			$out .= "  #$fid: $f->{name}\n";
 		}
 		$out .= "\n";
 	}

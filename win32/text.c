@@ -1507,7 +1507,7 @@ apc_gp_get_mapper_ranges(PFont font, int * count, unsigned int * flags)
 	*count = 0;
 
 	strlcpy(name, font->name, 256);
-	apc_font_pick( NULL_HANDLE, font, font);
+	apc_font_pick( NULL_HANDLE, font, NULL);
 	if ( strcmp( font->name, name ) != 0 ) 
 		return NULL;
 

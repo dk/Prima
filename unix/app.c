@@ -441,7 +441,7 @@ init_x11( char * error_buf )
 		if ( !prima_init_xrender_subsystem(error_buf, do_no_argb32)) return false;
 		guts.render_matrix_enabled = !do_no_xrender_matrix;
 	}
-	if ( !prima_init_font_subsystem      (error_buf)) return false;
+	if ( !prima_font_init_x11            (error_buf)) return false;
 #ifdef WITH_GTK
 	guts. use_gtk = do_no_gtk ? false : ( prima_gtk_init() != NULL );
 #endif
@@ -462,7 +462,7 @@ init_x11( char * error_buf )
 	env = getenv("XDG_SESSION_TYPE");
 	if (( env != NULL) && (strcmp(env, "wayland") == 0)) {
 		guts. is_xwayland = true;
-		Mdebug("XWayland detected\n");
+		Mdebug("XWayland detected");
 	}
 
 	if ( !do_no_xim )
@@ -478,8 +478,9 @@ window_subsystem_init( char * error_buf)
 	bzero( &guts, sizeof( guts));
 	guts. debug = do_debug;
 	guts. icccm_only = do_icccm_only;
-	Mdebug("init x11:%d, debug:%x, sync:%d, display:%s\n", do_x11, guts.debug,
+	Mdebug("init x11:%d, debug:%x, sync:%d, display:%s", do_x11, guts.debug,
 			do_sync, do_display ? do_display : "(default)");
+	prima_font_init_subsystem();
 	if ( do_x11) {
 		Bool ret = init_x11( error_buf );
 		if ( !ret && DISP) {
@@ -491,16 +492,31 @@ window_subsystem_init( char * error_buf)
 	return true;
 }
 
-int
+void
 prima_debug( const char *format, ...)
 {
-	int rc = 0;
+	int i;
 	va_list args;
 	va_start( args, format);
-	rc = vfprintf( stderr, format, args);
+	for ( i = 0; i < guts.debug_indent * 3; i++) fprintf( stderr, " ");
+	vfprintf( stderr, format, args);
 	va_end( args);
-	return rc;
+	fprintf(stderr, "\n");
 }
+
+void
+prima_debug2( const char *prefix, const char *format, ...)
+{
+	int i;
+	va_list args;
+	fprintf(stderr, "%s: ", prefix);
+	va_start( args, format);
+	for ( i = 0; i < guts.debug_indent * 3; i++) fprintf( stderr, " ");
+	vfprintf( stderr, format, args);
+	va_end( args);
+	fprintf(stderr, "\n");
+}
+
 
 Bool
 window_subsystem_get_options( int * argc, char *** argv)
@@ -535,6 +551,9 @@ window_subsystem_get_options( int * argc, char *** argv)
 #endif
 #ifdef WITH_GTK
 	"no-gtk",        "do not use GTK",
+#endif
+#ifdef USE_FONTQUERY
+	"no-freetype",   "do not use freetype",
 #endif
 #ifdef WITH_HARFBUZZ
 	"no-harfbuzz",   "do not use harfbuzz",
@@ -575,7 +594,7 @@ window_subsystem_get_options( int * argc, char *** argv)
 Bool
 window_subsystem_set_option( char * option, char * value)
 {
-	Mdebug("%s=%s\n", option, value);
+	Mdebug("%s=%s", option, value);
 	if ( strcmp( option, "no-x11") == 0) {
 		if ( value) warn("`--no-x11' option has no parameters");
 		do_x11 = false;
@@ -694,7 +713,10 @@ void
 window_subsystem_done( void)
 {
 	int i;
-	if ( !DISP) return;
+	if ( !DISP) {
+		prima_font_cleanup_subsystem();
+		return;
+	}
 
 	if ( guts.use_xim )
 		prima_xim_done();
@@ -739,7 +761,7 @@ window_subsystem_done( void)
 	if (guts.windows)            hash_destroy( guts.windows, false);
 	if (guts.clipboards)         hash_destroy( guts.clipboards, false);
 	if (guts.clipboard_xfers)    hash_destroy( guts.clipboard_xfers, false);
-	prima_cleanup_font_subsystem();
+	prima_font_cleanup_subsystem();
 
 	XCloseDisplay( DISP);
 	bzero(&guts, sizeof(guts));
@@ -804,7 +826,7 @@ apc_application_create( Handle self)
 	XSetWindowAttributes attrs;
 	DEFXX;
 	if ( !DISP) {
-		Mdebug("apc_application_create: failed, x11 layer is not up\n");
+		Mdebug("apc_application_create: failed, x11 layer is not up");
 		return false;
 	}
 
@@ -964,7 +986,7 @@ wm_net_get_current_workarea( Rect * r)
 					NULL, NULL,
 					&n);
 	if ( desktop == NULL || n < 1) goto EXIT;
-	Mdebug("wm: current desktop = %d\n", *desktop);
+	Mdebug("wm: current desktop = %d", *desktop);
 
 	workarea = ( unsigned long *) prima_get_window_property( guts. root,
 					NET_WORKAREA, XA_CARDINAL,
@@ -978,7 +1000,7 @@ wm_net_get_current_workarea( Rect * r)
 	r-> right  = w[2];
 	r-> bottom = w[3];
 	ret = true;
-	Mdebug("wm: current workarea = %d:%d:%d:%d\n", w[0], w[1], w[2], w[3]);
+	Mdebug("wm: current workarea = %d:%d:%d:%d", w[0], w[1], w[2], w[3]);
 
 EXIT:
 	free( workarea);

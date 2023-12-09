@@ -29,6 +29,9 @@ Icon_create_from_image( Handle self, int maskType, SV * mask_fill );
 Color
 Image_premultiply_color( Handle self, int rop, Color color);
 
+SV*
+Application_fonts( Handle self, char * name, char * encoding);
+
 #ifdef __cplusplus
 }
 #endif

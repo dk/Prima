@@ -1037,7 +1037,7 @@ reset_system_fonts(void)
 	strcpy( guts. window_font. name, DEFAULT_WIDGET_FONT);
 	guts. window_font. size  = DEFAULT_WIDGET_FONT_SIZE;
 	guts. window_font. undef. width = guts. window_font. undef. height = guts. window_font. undef. vector = 1;
-	apc_font_pick( NULL_HANDLE, &guts. window_font, &guts. window_font);
+	apc_font_pick( NULL_HANDLE, &guts. window_font, NULL);
 
 	guts. ncmData. cbSize = sizeof( NONCLIENTMETRICSW);
 	if ( !SystemParametersInfoW( SPI_GETNONCLIENTMETRICS, sizeof( NONCLIENTMETRICSW),
@@ -1331,6 +1331,7 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
 	useNameSubplacing = es. usePitch || es. useVector;
 	if ( font-> height < 0) font-> height *= -1;
 	if ( font-> size   < 0) font-> size   *= -1;
+	memset(&font->undef, 0xff, sizeof(font->undef));
 
 	MultiByteToWideChar(CP_UTF8, 0, font->name, -1, elf.lfFaceName, LF_FACESIZE);
 	elf. lfPitchAndFamily = 0;
@@ -1535,8 +1536,12 @@ Bool
 apc_font_pick( Handle self, PFont source, PFont dest)
 {
 	if ( self) objCheck false;
-	font_font2gp( dest, apc_gp_get_resolution(self),
-		Drawable_font_add( self, source, dest), self ? sys ps : 0);
+	if ( dest != NULL ) {
+		Drawable_font_add( NULL_HANDLE, source, dest );
+		source = dest;
+	}
+	dest->size = round(dest->size);
+	font_font2gp( dest, apc_gp_get_resolution(self), source->undef.height, self ? sys ps : 0);
 	return true;
 }
 

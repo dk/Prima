@@ -43,6 +43,7 @@ object Prima::Image( Prima::Drawable)
 	method Bool   bar_alpha(int alpha, int x1=-1, int y1=-1, int x2=-1, int y2=-1);
 	method Bool   bars(SV * rects);
 	method Handle bitmap();
+	method Bool   begin_font_query();
 	method Bool   begin_paint();
 	method Bool   begin_paint_info();
 	method Bool   can_draw_alpha();
@@ -54,6 +55,7 @@ object Prima::Image( Prima::Drawable)
 	method void   done();
 	method Handle dup();
 	method Bool   ellipse(double x, double y, double dX, double dY);
+	method void   end_font_query();
 	method void   end_paint();
 	method void   end_paint_info();
 	method Handle extract( int x, int y, int width, int height);
@@ -62,6 +64,8 @@ object Prima::Image( Prima::Drawable)
 	method Bool   fillpoly( SV * podoubles);
 	method Bool   fill_sector( double x, double y, double dX, double dY, double startAngle, double endAngle);
 	method Bool   flood_fill( int x, int y, Color color, Bool singleBorder = 1);
+	static Font*  font_match( SV * dummy, Font * source, Font * dest, Bool pick = true);
+	method SV*    fonts( char * name = "", char * encoding = "");
 	method int    get_bpp();
 	method SV   * get_handle();
 	method Color  get_nearest_color( Color color);
@@ -88,15 +92,15 @@ object Prima::Image( Prima::Drawable)
 	weird  int    save( SV *className, SV *filename, HV * profile);
 	method Bool   sector( double x, double y, double dX, double dY, double startAngle, double endAngle);
 	method void   set( HV * profile);
+	method void   set_font( Font font);
 	c_only void   reset( int type, RGBColor * palette, int palSize);
 	c_only void   stretch( int width, int height);
 	method Bool   text_out( SV * text, int x, int y, int from = 0, int len = -1);
+	method SV*    text_shape( SV * text, HV * profile);
 	method Bool   transform( HV * options);
 	c_only void   update_change();
 
 	c_only Bool   assert_drawing_mode( int mode );
-	c_only Bool   begin_font_query();
-	c_only void   end_font_query();
 	c_only void   begin_preserve_type( PImagePreserveTypeRec save);
 	c_only void   end_preserve_type( PImagePreserveTypeRec save);
 }

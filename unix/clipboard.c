@@ -257,11 +257,12 @@ apc_clipboard_close( Handle self)
 	if ( XX-> need_write &&
 		XX-> internal[cfUTF8]. size > 0 &&
 		XX-> internal[cfText]. size == 0) {
-		Byte * src = XX-> internal[cfUTF8]. data;
-		int len    = utf8_length( src, src + XX-> internal[cfUTF8]. size);
+		char * src = (char*) XX-> internal[cfUTF8]. data;
+		int len    = utf8_length((U8*) src, (U8*) src + XX-> internal[cfUTF8]. size);
 		if (( XX-> internal[cfText]. data = malloc( len))) {
-			STRLEN charlen;
-			U8 *dst, *end = src + XX-> internal[cfUTF8]. size;
+			unsigned int charlen;
+			U8 *dst;
+			char *end = src + XX-> internal[cfUTF8]. size;
 			dst = XX-> internal[cfText]. data;
 			XX-> internal[cfText]. size = len;
 			while ( len--) {
@@ -381,7 +382,7 @@ prima_read_property( XWindow window, Atom property, Atom * type, int * format,
 	unsigned long n, left, offs = 0, new_size, big_offs = *size;
 
 	XCHECKPOINT;
-	Cdebug("clipboard: read_property: %s\n", XGetAtomName(DISP, property));
+	Cdebug("clipboard: read_property: %s", XGetAtomName(DISP, property));
 	while ( 1) {
 		if ( XGetWindowProperty( DISP, window, property,
 			offs, guts. limits. request_length - 4, false,
@@ -389,11 +390,11 @@ prima_read_property( XWindow window, Atom property, Atom * type, int * format,
 			type, format, &n, &left, &prop) != Success) {
 			if ( delete_property )
 				XDeleteProperty( DISP, window, property);
-			Cdebug("clipboard:fail\n");
+			Cdebug("clipboard:fail");
 			return ret;
 		}
 		XCHECKPOINT;
-		Cdebug("clipboard: type=0x%x(%s) fmt=%d n=%d left=%d\n",
+		Cdebug("clipboard: type=0x%x(%s) fmt=%d n=%d left=%d",
 				*type, XGetAtomName(DISP,*type), *format, n, left);
 
 		if ( *format == 32) *format = CF_32;
@@ -453,7 +454,7 @@ query_datum( Handle self, Handle id, Atom query_target, Atom query_type)
 	gettimeofday( &start_time, NULL);
 	XCHECKPOINT;
 
-	Cdebug("clipboard:convert %s from %08x on %s\n", XGetAtomName( DISP, query_target), window, XGetAtomName(DISP, XX->selection));
+	Cdebug("clipboard:convert %s from %08x on %s", XGetAtomName( DISP, query_target), window, XGetAtomName(DISP, XX->selection));
 	XDeleteProperty( DISP, WIN, XX-> selection);
 	XConvertSelection( DISP, XX-> selection, query_target, XX-> selection, window, timestamp);
 	XFlush( DISP);
@@ -471,7 +472,7 @@ query_datum( Handle self, Handle id, Atom query_target, Atom query_type)
 			delay = (( timeout. tv_sec - start_time. tv_sec) * 1000 +
 				( timeout. tv_usec - start_time. tv_usec) / 1000);
 			if ( delay > guts. clipboard_event_timeout) {
-				Cdebug("clipboard:selection timeout\n");
+				Cdebug("clipboard:selection timeout");
 				goto FAIL;
 			}
 			XFlush( DISP);
@@ -485,7 +486,7 @@ query_datum( Handle self, Handle id, Atom query_target, Atom query_type)
 			continue;
 		}
 		if ( ev. xselection. property == None) goto FAIL;
-		Cdebug("clipboard:read SelectionNotify  %s %s\n",
+		Cdebug("clipboard:read SelectionNotify  %s %s",
 				XGetAtomName(DISP, ev. xselection. property),
 				XGetAtomName(DISP, ev. xselection. target));
 		if ( prima_read_property( window, ev. xselection. property, &type, &format, &size, &data, 1) > RPS_PARTIAL)
@@ -498,9 +499,9 @@ query_datum( Handle self, Handle id, Atom query_target, Atom query_type)
 	if ( type != XA_INCR) { /* ordinary, single-property selection */
 		if ( format != CF_FORMAT(id) || type != query_type) {
 			if ( format != CF_FORMAT(id))
-				Cdebug("clipboard: id=%d: formats mismatch: got %d, want %d\n", id, format, CF_FORMAT(id));
+				Cdebug("clipboard: id=%d: formats mismatch: got %d, want %d", id, format, CF_FORMAT(id));
 			if ( type != query_type)
-				Cdebug("clipboard: id=%d: types mismatch: got %s, want %s\n", id,
+				Cdebug("clipboard: id=%d: types mismatch: got %s, want %s", id,
 						XGetAtomName(DISP,type), XGetAtomName(DISP,query_type));
 			return false;
 		}
@@ -618,7 +619,7 @@ prima_clipboard_query_targets( Handle self)
 
 		Cdebug("clipboard targets:");
 		for ( i = 0; i < size/sizeof(Atom); i++)
-			Cdebug("%s\n", XGetAtomName( DISP, data[i]));
+			Cdebug("%s", XGetAtomName( DISP, data[i]));
 
 		/* find our index for TARGETS[i], assign CFDATA_NOT_ACQUIRED to it */
 		for ( i = 0; i < guts. clipboard_formats_count; i++) {
@@ -1004,7 +1005,6 @@ prima_clipboard_fill_targets( Handle self)
 			*(ci++) = PLAINTEXT_MIME;
 			Cdebug("PLAINTEXT_MIME ");
 		}
-		Cdebug("\n");
 	}
 	return count;
 }
@@ -1082,7 +1082,7 @@ handle_selection_request( XEvent *ev, XWindow win, Handle self)
 	xe. xselection. property  = None;
 	xe. xselection. time      = ev-> xselectionrequest. time;
 
-	Cdebug("clipboard: from %08x %s at %s\n", ev-> xselectionrequest. requestor,
+	Cdebug("clipboard: from %08x %s at %s", ev-> xselectionrequest. requestor,
 		XGetAtomName( DISP, ev-> xselectionrequest. target),
 		XGetAtomName( DISP, ev-> xselectionrequest. property)
 	);
@@ -1171,7 +1171,7 @@ handle_selection_request( XEvent *ev, XWindow win, Handle self)
 						data = ( unsigned char*) &incr;
 						ok = 1;
 						target = XA_INCR;
-						Cdebug("clipboard: init INCR for %08x %d\n", x-> requestor, x-> property);
+						Cdebug("clipboard: init INCR for %08x %d", x-> requestor, x-> property);
 					}
 				}
 				if ( !ok) size = reqlen;
@@ -1182,7 +1182,7 @@ handle_selection_request( XEvent *ev, XWindow win, Handle self)
 				xe. xselection. display,
 				xe. xselection. requestor,
 				prop, target, format, mode, data, size);
-			Cdebug("clipboard: store prop %s f=%d s=%d\n", XGetAtomName( DISP, prop), format, size);
+			Cdebug("clipboard: store prop %s f=%d s=%d", XGetAtomName( DISP, prop), format, size);
 			xe. xselection. property = prop;
 		}
 
@@ -1199,7 +1199,7 @@ SEND_EMPTY:
 
 	XSendEvent( xe.xselection.display, xe.xselection.requestor, false, 0, &xe);
 	XFlush( DISP);
-	Cdebug("clipboard:id %d, SelectionNotify to %08x , %s %s\n", id, xe.xselection.requestor,
+	Cdebug("clipboard:id %d, SelectionNotify to %08x , %s %s", id, xe.xselection.requestor,
 		xe. xselection. property ? XGetAtomName( DISP, xe. xselection. property) : "None",
 		XGetAtomName( DISP, xe. xselection. target));
 	exception_check_raise();
@@ -1243,7 +1243,7 @@ handle_property_notify( XEvent *ev, XWindow win, Handle self)
 		size = x-> size - offs;
 		if ( size > reqlen) size = reqlen;
 	}
-	Cdebug("clipboard: put %d %d in %08x %d\n", x-> offset, size, x-> requestor, x-> property);
+	Cdebug("clipboard: put %d %d in %08x %d", x-> offset, size, x-> requestor, x-> property);
 	if ( x-> format > 8)  size /= 2;
 	if ( x-> format > 16) size /= 2;
 	format = ( x-> format == CF_32) ? 32 : x-> format;
@@ -1258,7 +1258,7 @@ handle_property_notify( XEvent *ev, XWindow win, Handle self)
 static void
 handle_destroy_notify( XEvent *ev, XWindow win, Handle self)
 {
-	Cdebug("clipboard: destroy xfers at %08x\n", ev-> xdestroywindow. window);
+	Cdebug("clipboard: destroy xfers at %08x", ev-> xdestroywindow. window);
 	hash_first_that( guts. clipboards, (void*)delete_xfers, (void*) &ev-> xdestroywindow. window, NULL, NULL);
 	XFlush( DISP);
 }

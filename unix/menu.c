@@ -173,13 +173,13 @@ menu_window_delete_downlinks( PMenuSysData XX, PMenuWindow wx)
 }
 
 static int
-get_text_width( PCachedFont font, const char * text, int byte_length, Bool utf8, uint32_t * xft_map8)
+get_text_width( PCachedFont font, const char * text, int byte_length, Bool utf8, uint32_t * fc_map8)
 {
 	int ret = 0;
 	int char_len = utf8 ? utf8_length(( U8*) text, ( U8*) text + byte_length) : byte_length;
 #ifdef USE_XFT
 	if ( font-> xft)
-		return prima_xft_get_text_width( font, text, char_len, utf8 ? toUTF8 : 0, xft_map8, NULL);
+		return prima_xft_get_text_width( font, text, char_len, utf8 ? toUTF8 : 0, fc_map8, NULL);
 #endif
 	if ( utf8) {
 		XChar2b * xc = prima_alloc_utf8_to_wchar( text, char_len);
@@ -195,7 +195,7 @@ get_text_width( PCachedFont font, const char * text, int byte_length, Bool utf8,
 
 typedef struct {
 	void        * xft_drawable;
-	uint32_t    * xft_map8;
+	uint32_t    * fc_map8;
 	Color         rgb;
 	unsigned long pixel;
 	XWindow       win;
@@ -219,7 +219,7 @@ get_font_abc( PCachedFont font, char * index, Bool utf8, FontABC * rec, MenuDraw
 		Point ovx;
 		rec-> b = prima_xft_get_text_width(
 			font, index, 1, utf8 ? toUTF8 : 0,
-			data-> xft_map8, &ovx
+			data-> fc_map8, &ovx
 		);
 		/* not really abc, but enough for its single invocation */
 		rec-> a = -ovx. x;
@@ -435,7 +435,7 @@ update_menu_window( PMenuSysData XX, PMenuWindow w)
 	PUnixMenuItem ix;
 	int lastIncOk = 1;
 	PCachedFont kf = XX-> font;
-	uint32_t *xft_map8 = NULL;
+	uint32_t *fc_map8 = NULL;
 	PWindow owner = ( PWindow)(PComponent( w-> self)-> owner);
 
 #ifdef USE_XFT
@@ -443,7 +443,7 @@ update_menu_window( PMenuSysData XX, PMenuWindow w)
 		const char * encoding = ( XX-> type. popup) ?
 			owner-> popupFont. encoding :
 			owner-> menuFont. encoding;
-		xft_map8 = prima_xft_map8( encoding);
+		fc_map8 = prima_fc_map8( encoding);
 	}
 #endif
 	layered = vertical ? false : X(owner)->flags. layered;
@@ -499,9 +499,9 @@ update_menu_window( PMenuSysData XX, PMenuWindow w)
 					}
 				}
 				ix-> width += startx + get_text_width( kf, m-> text, i,
-					m-> flags. utf8_text, xft_map8);
+					m-> flags. utf8_text, fc_map8);
 				if ( ntildas)
-					ix-> width -= ntildas * get_text_width( kf, "~", 1, false, xft_map8);
+					ix-> width -= ntildas * get_text_width( kf, "~", 1, false, fc_map8);
 			} else if ( create_menu_bitmap(m->bitmap, &ix->bitmap, layered, m->flags.disabled, &w, &h)) {
 				ix-> height += (( h < kf-> font. height) ?  kf-> font. height : h) +
 					MENU_ITEM_GAP * 2;
@@ -518,7 +518,7 @@ update_menu_window( PMenuSysData XX, PMenuWindow w)
 
 			if ( m-> accel && ( l = strlen( m-> accel))) {
 				ix-> accel_width = get_text_width( kf, m-> accel, l,
-					m-> flags. utf8_accel, xft_map8);
+					m-> flags. utf8_accel, fc_map8);
 			}
 			if ( ix-> accel_width + ix-> width > x) x = ix-> accel_width + ix-> width;
 		}
@@ -832,10 +832,10 @@ store_char( char * src, int srclen, int * srcptr, char * dst, int * dstptr, Bool
 	if ( *srcptr >= srclen ) return;
 
 	if ( utf8) {
-		STRLEN char_len;
+		unsigned int char_len;
 		UV uv = prima_utf8_uvchr_end(src + *srcptr, src + srclen, &char_len);
 		*srcptr += char_len;
-		if ( data-> xft_map8) {
+		if ( data-> fc_map8) {
 			*(( uint32_t*)(dst + *dstptr)) = (uint32_t) uv;
 			*dstptr += 4;
 		} else {
@@ -844,10 +844,10 @@ store_char( char * src, int srclen, int * srcptr, char * dst, int * dstptr, Bool
 			*dstptr += 2;
 		}
 	} else {
-		if ( data-> xft_map8) {
+		if ( data-> fc_map8) {
 			uint32_t c = (( U8*) src)[ *srcptr];
 			if ( c > 127)
-				c = data-> xft_map8[ c - 128];
+				c = data-> fc_map8[ c - 128];
 			*(( uint32_t*)(dst + *dstptr)) = c;
 			(*dstptr) += 4;
 			(*srcptr)++;
@@ -940,7 +940,7 @@ DECL_DRAW(text)
 						haveDash = 1;
 						lineEnd = lineStart + 1 +
 							get_text_width( kf, t + i + 1, 1,
-								m-> flags. utf8_text, draw-> xft_map8);
+								m-> flags. utf8_text, draw-> fc_map8);
 					}
 					i++;
 				}
@@ -1408,7 +1408,7 @@ handle_menu_expose( XEvent *ev, XWindow win, Handle self)
 		char * encoding = ( XX-> type. popup) ?
 			owner-> popupFont. encoding :
 			owner-> menuFont. encoding;
-		draw. xft_map8 = prima_xft_map8( encoding);
+		draw. fc_map8 = prima_fc_map8( encoding);
 		draw. xft_drawable = XftDrawCreate( DISP, win,
 			draw.layered ? guts. argb_visual. visual : guts. visual. visual,
 			draw.layered ? guts. argbColormap : guts. defaultColormap);

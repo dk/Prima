@@ -140,15 +140,15 @@ apc_fetch_resource( const char *className, const char *name,
 
 	if (guts. debug & DEBUG_XRDB) {
 		int i;
-		_debug( "misc: inst: ");
+		fprintf( stderr, "misc: inst: ");
 		for ( i = 0; i < ni; i++) {
-			_debug( "%s ", XrmQuarkToString( instances[i]));
+			fprintf( stderr, "%s ", XrmQuarkToString( instances[i]));
 		}
-		_debug( "\nmisc: class: ");
+		fprintf( stderr, "misc: class: ");
 		for ( i = 0; i < nc; i++) {
-			_debug( "%s ", XrmQuarkToString( classes[i]));
+			fprintf( stderr, "%s ", XrmQuarkToString( classes[i]));
 		}
-		_debug( "\n");
+		fprintf(stderr, "\n");
 	}
 
 	if ( XrmQGetResource( guts.db,
@@ -157,7 +157,7 @@ apc_fetch_resource( const char *className, const char *name,
 				&type, &value)) {
 		if ( type == guts.qString) {
 			s = (char *)value.addr;
-			Xdebug("found %s\n", s);
+			Xdebug("found %s", s);
 			switch ( resType) {
 			case frString:
 				*((char**)result) = duplicate_string( s);
@@ -166,16 +166,16 @@ apc_fetch_resource( const char *className, const char *name,
 				if (!XParseColor( DISP, DefaultColormap( DISP, SCREEN), s, &clr))
 					return false;
 				*((Color*)result) = X_COLOR_TO_RGB(clr);
-				Xdebug("color: %06x\n", *((Color*)result));
+				Xdebug("color: %06x", *((Color*)result));
 				break;
 			case frFont:
 				prima_corefont_pp2font( s, ( Font *) result);
 #define DEBUG_FONT(font) font.height,font.width,font.size,font.name,font.encoding
-				Xdebug("font: %d.[w=%d,s=%d].%s.%s\n", DEBUG_FONT((*(( Font *) result))));
+				Xdebug("font: %d.[w=%d,s=%d].%s.%s", DEBUG_FONT((*(( Font *) result))));
 				break;
 			case frUnix_int:
 				*((int*)result) = atoi( s);
-				Xdebug("int: %d\n", *((int*)result));
+				Xdebug("int: %d", *((int*)result));
 				break;
 			default:
 				return false;

@@ -1,4 +1,4 @@
-/***********************************************************/
+/******************************************font->*****************/
 /*                                                         */
 /*  System dependent graphics (unix, x11)                  */
 /*                                                         */
@@ -175,11 +175,11 @@ gp_text_out_rotated(
 		dsy = REVERT( y + ry. i. i) + psy - r-> dimension. y + 1;
 
 		if ( guts. debug & DEBUG_FONTS) {
-			_debug("shift %d %d\n", r-> shift.x, r-> shift.y);
-			_debug("point ref: %d %d => %d %d. dims: %d %d, [%d %d %d]\n", px, py, psx, psy, r-> dimension.x, r-> dimension.y,
+			_debug("shift %d %d", r-> shift.x, r-> shift.y);
+			_debug("point ref: %d %d => %d %d. dims: %d %d, [%d %d %d]", px, py, psx, psy, r-> dimension.x, r-> dimension.y,
 				cs-> lbearing, cs-> rbearing - cs-> lbearing, cs-> width - cs-> rbearing);
-			_debug("plot ref: %d %d => %d %d\n", ax, ay, rx.i.i, ry.i.i);
-			_debug("at: %d %d ( sz = %d), dest: %d %d\n", x, y, XX-> size.y, dsx, dsy);
+			_debug("plot ref: %d %d => %d %d", ax, ay, rx.i.i, ry.i.i);
+			_debug("at: %d %d ( sz = %d), dest: %d %d", x, y, XX-> size.y, dsx, dsy);
 		}
 
 /*   GXandReverse   ropNotDestAnd */		/* dest = (!dest) & src */
@@ -258,13 +258,13 @@ gp_text_out_rotated(
 	if ( PDrawable( self)-> font. style & (fsUnderlined|fsStruckOut)) {
 		int lw = 1;
 		int tw = gp_get_text_width( self, text, len, flags | toAddOverhangs) - 1;
-		int d  = XX-> font-> underlinePos;
+		int d  = XX-> font-> underline_position;
 		Point ovx = gp_get_text_overhangs( self, text, len, flags);
 		int x1, y1, x2, y2;
 
-		if ( lw != XX-> font-> underlineThickness) {
+		if ( lw != XX-> font-> underline_thickness) {
 			XGCValues gcv;
-			lw = gcv.line_width = XX-> font-> underlineThickness;
+			lw = gcv.line_width = XX-> font-> underline_thickness;
 			XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);
 		}
 
@@ -350,11 +350,11 @@ draw_text_underline(Handle self, const char * text, int x, int y, int len, int f
 	DEFXX;
 	int lw = 1;
 	int tw = gp_get_text_width( self, text, len, flags | toAddOverhangs);
-	int d  = XX-> font-> underlinePos;
+	int d  = XX-> font-> underline_position;
 	Point ovx = gp_get_text_overhangs( self, text, len, flags);
-	if ( lw != XX-> font-> underlineThickness) {
+	if ( lw != XX-> font-> underline_thickness) {
 		XGCValues gcv;
-		lw = gcv.line_width = XX-> font-> underlineThickness;
+		lw = gcv.line_width = XX-> font-> underline_thickness;
 		XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);
 	}
 	if ( !XX-> flags. base_line)
@@ -589,6 +589,23 @@ prima_text_shaper_core_text( Handle self, PTextShapeRec r)
 PTextShapeFunc
 apc_font_get_text_shaper( Handle self, int * type)
 {
+
+#ifdef USE_FONTQUERY
+	if ( is_opt(optInFontQuery) ) {
+		int t = *type;
+		if (!(X(self)->font))
+			return NULL;
+#ifdef WITH_HARFBUZZ
+		if ( guts. use_harfbuzz && *type == tsFull )
+			return prima_fq_text_shaper_harfbuzz;
+#endif
+		*type = tsGlyphs;
+		return ( t == tsBytes ) ?
+			prima_fq_text_shaper_bytes :
+			prima_fq_text_shaper_ident;
+	}
+#endif
+
 #ifdef USE_XFT
 	if ( X(self)-> font && X(self)-> font-> xft) {
 		int t = *type;
@@ -608,7 +625,7 @@ apc_font_get_text_shaper( Handle self, int * type)
 }
 
 PFontABC
-prima_xfont2abc( XFontStruct * fs, int firstChar, int lastChar)
+prima_corefont_xfont2abc( XFontStruct * fs, int firstChar, int lastChar)
 {
 	int k, l;
 	CharStructABC s;
@@ -624,25 +641,7 @@ prima_xfont2abc( XFontStruct * fs, int firstChar, int lastChar)
 }
 
 PFontABC
-apc_gp_get_font_abc( Handle self, int firstChar, int lastChar, int flags)
-{
-	PFontABC abc;
-
-	if ( self) {
-		DEFXX;
-#ifdef USE_XFT
-		if ( XX-> font-> xft)
-			return prima_xft_get_font_abc( self, firstChar, lastChar, flags);
-#endif
-
-		abc = prima_xfont2abc( XX-> font-> fs, firstChar, lastChar);
-	} else
-		abc = prima_xfont2abc( guts. font_abc_nil_hack, firstChar, lastChar);
-	return abc;
-}
-
-PFontABC
-prima_xfont2def( Handle self, int first, int last)
+prima_corefont_xfont2def( Handle self, int first, int last)
 {
 	DEFXX;
 	XCharStruct *max;
@@ -727,15 +726,51 @@ prima_xfont2def( Handle self, int first, int last)
 }
 
 PFontABC
+apc_gp_get_font_abc( Handle self, int firstChar, int lastChar, int flags)
+{
+	PFontABC abc;
+
+#ifdef USE_FONTQUERY
+	if ( is_opt(optInFontQuery) ) {
+		if (X(self)->font)
+			return prima_fq_get_font_abc( self, firstChar, lastChar, flags);
+		return NULL;
+	}
+#endif
+
+	if ( self) {
+		DEFXX;
+#ifdef USE_XFT
+		if ( XX-> font-> xft)
+			return prima_xft_get_font_abc( self, firstChar, lastChar, flags);
+#endif
+
+		abc = prima_corefont_xfont2abc( XX-> font-> fs, firstChar, lastChar);
+	} else
+		abc = prima_corefont_xfont2abc( guts. font_abc_nil_hack, firstChar, lastChar);
+	return abc;
+}
+
+PFontABC
 apc_gp_get_font_def( Handle self, int firstChar, int lastChar, int flags)
 {
 	PFontABC abc;
+
+#ifdef USE_FONTQUERY
+	if ( is_opt(optInFontQuery) ) {
+		if (X(self)->font)
+			return prima_fq_get_font_def( self, firstChar, lastChar, flags);
+		return NULL;
+	}
+#endif
+
 #ifdef USE_XFT
 	DEFXX;
 	if ( XX-> font-> xft)
 		return prima_xft_get_font_def( self, firstChar, lastChar, flags);
 #endif
-	abc = prima_xfont2def( self, firstChar, lastChar);
+
+	abc = prima_corefont_xfont2def( self, firstChar, lastChar);
 	return abc;
 }
 
@@ -762,10 +797,18 @@ apc_gp_get_text_width( Handle self, const char * text, int len, int flags)
 	flags &= ~toGlyphs;
 	if ( len > 65535 ) len = 65535;
 
+#ifdef USE_FONTQUERY
+	if ( is_opt(optInFontQuery) ) {
+		if ( X(self)->font)
+			return prima_fq_get_text_width( self, text, len, flags, NULL);
+		return 0;
+	}
+#endif
+
 #ifdef USE_XFT
 	if ( X(self)-> font-> xft)
 		return prima_xft_get_text_width( X(self)-> font, text, len, flags,
-			X(self)-> xft_map8, NULL);
+			X(self)-> fc_map8, NULL);
 #endif
 
 	if ( flags & toUTF8 )
@@ -782,6 +825,14 @@ apc_gp_get_glyphs_width( Handle self, PGlyphsOutRec t)
 	int ret;
 	if ( t->len > 65535 ) t->len = 65535;
 
+#ifdef USE_FONTQUERY
+	if ( is_opt(optInFontQuery) ) {
+		if ( X(self)->font)
+			return prima_fq_get_glyphs_width( self, t, NULL);
+		return 0;
+	}
+#endif
+
 #ifdef USE_XFT
 	if ( X(self)-> font-> xft)
 		return prima_xft_get_glyphs_width( self, X(self)-> font, t, NULL);
@@ -793,35 +844,29 @@ apc_gp_get_glyphs_width( Handle self, PGlyphsOutRec t)
 	return ret;
 }
 
-static Point *
-gp_get_text_box( Handle self, const char * text, int len, int flags)
+Point *
+prima_get_text_box( Handle self, Point * ovx, int advance )
 {
 	DEFXX;
 	Point * pt = ( Point *) malloc( sizeof( Point) * 5);
-	int x;
-	Point ovx;
-
 	if ( !pt) return NULL;
-	if ( flags & toGlyphs ) flags &= ~toUTF8;
 
-	x = (flags & toUTF8) ?
-		XTextWidth16( XX-> font-> fs, ( XChar2b*) text, len) :
-		XTextWidth( XX-> font-> fs, (char*)text, len);
-	ovx = gp_get_text_overhangs( self, text, len, flags);
+	if ( ovx->x < 0 ) ovx->x = 0;
+	if ( ovx->y < 0 ) ovx->y = 0;
 
 	pt[0].y = pt[2]. y = XX-> font-> font. ascent - 1;
 	pt[1].y = pt[3]. y = - XX-> font-> font. descent;
 	pt[4].y = 0;
-	pt[4].x = x;
-	pt[3].x = pt[2]. x = x + ovx. y;
-	pt[0].x = pt[1]. x = - ovx. x;
+	pt[4].x = advance;
+	pt[3].x = pt[2]. x = advance + ovx->y;
+	pt[0].x = pt[1]. x = - ovx->x;
 
 	if ( !XX-> flags. base_line) {
 		int i;
 		for ( i = 0; i < 4; i++) pt[i]. y += XX-> font-> font. descent;
 	}
 
-	if ( PDrawable( self)-> font. direction != 0) {
+	if ( !IS_ZERO(PDrawable( self)-> font. direction)) { /* XXX */
 		int i;
 		double s = sin( PDrawable( self)-> font. direction / 57.29577951);
 		double c = cos( PDrawable( self)-> font. direction / 57.29577951);
@@ -836,6 +881,22 @@ gp_get_text_box( Handle self, const char * text, int len, int flags)
 	return pt;
 }
 
+static Point *
+gp_get_text_box( Handle self, const char * text, int len, int flags)
+{
+	DEFXX;
+	int x;
+	Point ovx;
+
+	if ( flags & toGlyphs ) flags &= ~toUTF8;
+	x = (flags & toUTF8) ?
+		XTextWidth16( XX-> font-> fs, ( XChar2b*) text, len) :
+		XTextWidth( XX-> font-> fs, (char*)text, len);
+	ovx = gp_get_text_overhangs( self, text, len, flags);
+	return prima_get_text_box(self, &ovx, x);
+}
+
+
 Point *
 apc_gp_get_text_box( Handle self, const char * text, int len, int flags)
 {
@@ -843,10 +904,19 @@ apc_gp_get_text_box( Handle self, const char * text, int len, int flags)
 
 	if ( len > 65535 ) len = 65535;
 
+#ifdef USE_FONTQUERY
+	if ( is_opt(optInFontQuery) ) {
+		if ( X(self)->font)
+			return prima_fq_get_text_box( self, text, len, flags);
+		return NULL;
+	}
+#endif
+
 #ifdef USE_XFT
 	if ( X(self)-> font-> xft)
 		return prima_xft_get_text_box( self, text, len, flags);
 #endif
+
 	if ( flags & toUTF8)
 		if ( !( text = ( char *) prima_alloc_utf8_to_wchar( text, len))) return 0;
 	ret = gp_get_text_box( self, text, len, flags);
@@ -860,10 +930,20 @@ apc_gp_get_glyphs_box( Handle self, PGlyphsOutRec t)
 {
 	Point * ret;
 	if ( t->len > 65535 ) t->len = 65535;
+
+#ifdef USE_FONTQUERY
+	if ( is_opt(optInFontQuery) ) {
+		if ( X(self)->font)
+			return prima_fq_get_glyphs_box( self, t);
+		return NULL;
+	}
+#endif
+
 #ifdef USE_XFT
 	if ( X(self)-> font-> xft)
 		return prima_xft_get_glyphs_box( self, t);
 #endif
+
 	SWAP_BYTES(t->glyphs,t->len);
 	ret = gp_get_text_box( self, (char*) t->glyphs, t->len, toUTF8);
 	SWAP_BYTES(t->glyphs,t->len);

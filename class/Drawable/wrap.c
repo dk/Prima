@@ -320,7 +320,7 @@ fill_tilde_properties(Handle self, TextWrapRec * t, int tildeIndex, int tildePos
 	t-> t_pos  = tildeCharPos + (( t->options & twCollapseTilde ) ? 0 : 1);
 	t-> t_char = t-> text + tildeIndex + 1;
 	if ( t-> utf8_text) {
-		STRLEN len;
+		unsigned int len;
 		uv = prima_utf8_uvchr_end(t-> t_char, t->text + t-> textLen, &len);
 		if ( len == 0 ) return;
 	} else
@@ -341,7 +341,7 @@ fill_tilde_properties(Handle self, TextWrapRec * t, int tildeIndex, int tildePos
 static void
 text_get_libthai_breaks( TextWrapRec* t)
 {
-	STRLEN charlen;
+	unsigned int charlen;
 	char * utf8, thbuf[1024 * sizeof(thwchar_t)];
 	int target_len_xchars, src_len_bytes, got_thai_chars = 0;
 	thwchar_t *u32;
@@ -730,7 +730,7 @@ glyphout2sv(Handle self, int * c, GlyphsOutRec *g, TextWrapRec *tw, GlyphWrapRec
 			k++, l++
 		) {
 			uint32_t uv;
-			STRLEN len;
+			unsigned int len;
 			if (tw->utf8_text) {
 				uv = prima_utf8_uvchr_end(text, tw->text + tw-> textLen, &len);
 				if ( len < 1 ) break;
@@ -888,7 +888,7 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * tw, GlyphWrapRec * gw, uint16_
 	while ( wr.curr.p < wr.limit ) {
 		float dw, c;
 		unsigned int j, nc, ng, wmul = 1;
-		STRLEN len = 1;
+		unsigned int len = 1;
 		uint32_t uv, uv0, last_uv = 0;
 		uint16_t index;
 

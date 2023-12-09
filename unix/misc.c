@@ -268,9 +268,7 @@ apc_show_message( const char * message, Bool utf8)
 		apc_sys_get_msg_font( &f);
 		f. pitch = fpDefault;
 #define DEBUG_FONT(font) font.height,font.width,font.size,font.name,font.encoding
-		prima_corefont_pick( NULL_HANDLE, &f, &f);
-		cf = prima_corefont_find_known_font( &f, false, false);
-		if ( !cf || !cf-> id) {
+		if ( !( cf = prima_font_pick( &f, NULL, NULL, FONTKEY_CORE))) {
 			warn( "%s", message);
 			return false;
 		}
@@ -828,7 +826,7 @@ prima_rect_intersect( XRectangle *t, const XRectangle *s)
 void
 prima_utf8_to_wchar( const char * utf8, XChar2b * u16, int src_len_bytes, int target_len_xchars )
 {
-	STRLEN charlen;
+	unsigned int charlen;
 	while ( target_len_xchars--) {
 		register UV u = prima_utf8_uvchr(utf8, src_len_bytes, &charlen);
 		if ( u < 0x10000) {

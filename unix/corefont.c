@@ -19,7 +19,7 @@ static Bool   do_no_scaled_fonts = false;
 #define MY_MATRIX (PDrawable(self)->current_state.matrix)
 #define DEBUG_FONT(font) font.height,font.width,font.size,font.name,font.encoding
 
-static void detail_font_info( PFontInfo f, PFont font, Bool addToCache, Bool bySize);
+static Bool detail_font_info( PFontInfo f, PFont font, PCachedFont kf, Bool bySize);
 static Bool xlfd_parse_font( char * xlfd_name, PFontInfo info, Bool do_vector_fonts);
 
 static void
@@ -113,7 +113,6 @@ prima_corefont_init( char *error_buf)
 	guts. n_fonts = j;
 	if ( vector_fonts > 0) have_vector_fonts = true;
 
-	guts. font_hash = hash_create();
 	xfontCache      = hash_create();
 
 	/* locale */
@@ -289,7 +288,7 @@ font_query_name( XFontStruct * s, PFontInfo f)
 					Font fx = f-> font;
 					prima_fill_default_font( &fx);
 					if ( f-> flags. encoding) strcpy( fx. encoding, f-> font. encoding);
-					prima_corefont_pick( prima_guts.application, &fx, &fx);
+					prima_font_pick( &fx, NULL, NULL, FONTKEY_CORE);
 					strcpy( f-> font. name, fx. name);
 				}
 			} else {
@@ -370,7 +369,7 @@ xlfd_parse_font( char * xlfd_name, PFontInfo info, Bool do_vector_fonts)
 					prima_fill_default_font( &xf);
 				if ( !nofamily) strcpy( xf. family, info-> font. family);
 				if ( !noname)   strcpy( xf. name, info-> font. name);
-				prima_corefont_pick( NULL_HANDLE, &xf, &xf);
+				prima_font_pick( &xf, NULL, NULL, FONTKEY_CORE);
 				if ( noname)   strcpy( info-> font. name,   xf. name);
 				if ( nofamily) strcpy( info-> font. family, xf. family);
 			}
@@ -660,7 +659,7 @@ prima_corefont_pick_default_font_with_encoding(void)
 		prima_fill_default_font( &guts. default_font);
 		strcpy( guts. default_font. name, guts. font_info[best].font.name);
 		strcpy( guts. default_font. encoding, guts. locale);
-		prima_corefont_pick( prima_guts.application, &guts. default_font, &guts. default_font);
+		prima_font_pick( &guts. default_font, NULL, NULL, FONTKEY_CORE);
 		guts. default_font. pitch = fpDefault;
 		return true;
 	}
@@ -706,10 +705,10 @@ prima_corefont_pp2font( char * ppFontNameSize, PFont font)
 	if ( !xf ) {
 		xf = XLoadQueryFont( DISP, ppFontNameSize);
 		if ( !xf) {
-			Fdebug("font: cannot load %s\n", ppFontNameSize);
+			Fdebug("font: cannot load %s", ppFontNameSize);
 			if ( !guts. default_font_ok) {
 				prima_fill_default_font( font);
-				apc_font_pick( prima_guts.application, font, font);
+				prima_font_pick( font, NULL, NULL, 0 );
 				font-> pitch = fpDefault;
 			}
 #ifdef USE_XFT
@@ -728,19 +727,21 @@ prima_corefont_pp2font( char * ppFontNameSize, PFont font)
 	fi. xname = ppFontNameSize;
 	xlfd_parse_font( ppFontNameSize, &fi, false);
 	font_query_name( xf, &fi);
-	detail_font_info( &fi, font, false, false);
+	detail_font_info( &fi, font, NULL, false);
 	*font = fi. font;
 	if ( guts. default_font_ok) {
 		def = &guts. default_font;
 	} else {
 		prima_fill_default_font( def = &def_dummy);
-		apc_font_pick( prima_guts.application, def, def);
+		if ( !prima_font_pick( def, NULL, NULL, 0)) /* too early */
+			goto NO_DEFAULT_FONT;
 	}
 	if ( font-> height == 0) font-> height = def-> height;
 	if ( font-> size   == 0) font-> size   = def-> size;
 	if ( strlen( font-> name) == 0) strcpy( font-> name, def-> name);
 	if ( strlen( font-> family) == 0) strcpy( font-> family, def-> family);
-	apc_font_pick( prima_guts.application, font, font);
+NO_DEFAULT_FONT:
+	prima_font_pick( font, NULL, NULL, 0);
 	if (
 		( stricmp( font-> family, fi. font. family) == 0) &&
 		( stricmp( font-> name, fi. font. name) == 0)
@@ -754,7 +755,8 @@ prima_corefont_pp2font( char * ppFontNameSize, PFont font)
 			guts. font_info[ guts. n_fonts++] = fi;
 		}
 	}
-	Fdebug("font: %s%s parsed to: %d.[w=%d,s=%d].%s.%s\n",
+
+	Fdebug("font: %s%s parsed to: %d.[w=%d,s=%g].%s.%s",
 			newEntry ? "new " : "", ppFontNameSize, DEBUG_FONT((*font)));
 }
 
@@ -773,9 +775,14 @@ cleanup_rotated_font_entry( PRotatedFont r, unsigned int glyph_id )
 }
 
 static Bool
-cleanup_rotated_font_entries( PCachedFont f, int keyLen, void * key, void * this_font)
+free_rotated_entries( PCachedFont f, int keyLen, void * key, void * this_font)
 {
-	PRotatedFont r = f->rotated;
+	PRotatedFont r;
+
+	if ( f->type != FONTKEY_CORE )
+		return false;
+
+	r = f->rotated;
 	while ( r ) {
 		if ( r != this_font )
 			cleanup_rotated_font_entry( r, UINT_MAX );
@@ -789,7 +796,7 @@ static void
 cleanup_rotated_font_cache( PRotatedFont this_font, unsigned int this_glyph )
 {
 	if ( guts. font_hash)
-		hash_first_that( guts. font_hash, (void*)cleanup_rotated_font_entries, this_font, NULL, NULL);
+		hash_first_that( guts. font_hash, (void*)free_rotated_entries, this_font, NULL, NULL);
 	if ( guts.rotated_font_cache_size < MAX_ROTATED_FONT_CACHE_SIZE )
 		return;
 	cleanup_rotated_font_entry( this_font, this_glyph);
@@ -797,7 +804,7 @@ cleanup_rotated_font_cache( PRotatedFont this_font, unsigned int this_glyph )
 
 
 void
-prima_free_rotated_entry( PCachedFont f)
+prima_corefont_free_cached_font( PCachedFont f)
 {
 	while ( f-> rotated) {
 		PRotatedFont r = f-> rotated;
@@ -818,16 +825,8 @@ prima_free_rotated_entry( PCachedFont f)
 	}
 }
 
-static Bool
-free_rotated_entries( PCachedFont f, int keyLen, void * key, void * dummy)
-{
-	prima_free_rotated_entry( f);
-	free( f);
-	return false;
-}
-
 void
-prima_cleanup_font_subsystem( void)
+prima_corefont_done( void)
 {
 	int i;
 
@@ -846,159 +845,30 @@ prima_cleanup_font_subsystem( void)
 	free(ignore_encodings);
 	free(s_ignore_encodings);
 
-	if ( guts. font_hash) {
+	if ( guts. font_hash)
 		hash_first_that( guts. font_hash, (void*)free_rotated_entries, NULL, NULL, NULL);
-		hash_destroy( guts. font_hash, false);
-		guts. font_hash = NULL;
-	}
 
 	hash_destroy( xfontCache, false);
 	xfontCache = NULL;
 	hash_destroy( encodings, false);
 	encodings = NULL;
-#ifdef USE_XFT
-	prima_xft_done();
-#endif
 
 }
 
 void
-prima_init_try_height( HeightGuessStack * p, int target, int firstMove )
+prima_corefont_build_key( PFontKey key, PFont f, Bool bySize)
 {
-	p-> locked = 0;
-	p-> sp     = 1;
-	p-> target = target;
-	p-> xlfd[0] = firstMove;
-}
-
-int
-prima_try_height( HeightGuessStack * p, int height)
-{
-	int ret = -1;
-
-	if ( p-> locked != 0) return p-> locked;
-	if ( p-> sp >= MAX_HGS_SIZE) goto DONT_ADVISE;
-
-	if ( p-> sp > 1) {
-		int x0 = p-> xlfd[ p-> sp - 2];
-		int x1 = p-> xlfd[ p-> sp - 1];
-		int y0 = p-> prima[ p-> sp - 2];
-		int y1 = p-> prima[ p-> sp - 1] = height;
-		int d0 = y0 - p-> target;
-		int d1 = y1 - p-> target;
-		if (( d0 < 0 && d1 < 0 && d1 >= d0) || ( d0 > 0 && d1 > 0 && d1 <= d0)) { /* underflow */
-			int sp = p-> sp - 2;
-			while ( d1 == d0 && sp-- > 0) { /* not even moved */
-				x0 = p-> xlfd[ sp];
-				y0 = p-> prima[ sp];
-				d0 = y0 - p-> target;
-			}
-			if ( d1 != d0) {
-				ret = x0 + ( x1 - x0) * ( p-> target - y0) / ( y1 - y0) + 0.5;
-				if ( ret == x1 ) ret += ( d1 < 0) ? 1 : -1;
-				if ( ret < 1 ) ret = 1;
-			}
-		} else if ((( d0 < 0 && d1 > 0) || ( d0 > 0 && d1 < 0)) && ( abs(x0 - x1) > 1)) { /* overflow */
-			ret = x0 + ( x1 - x0) * ( p-> target - y0) / ( y1 - y0) + 0.5;
-			if ( ret == x0 ) ret += ( d0 < 0) ? 1 : -1; else
-			if ( ret == x1 ) ret += ( d1 < 0) ? 1 : -1;
-			if ( ret < 1 ) ret = 1;
-		}
-		/* printf("-- [%d=>%d],[%d=>%d] (%d %d)\n", x0, y0, x1, y1, d0, d1); */
-	} else {
-		if ( height > 0) /* sp == 0 */
-			ret = p-> xlfd[0] * p-> target / height;
-		p-> prima[ p-> sp - 1] = height;
-	}
-
-	if ( ret > 0) {
-		int i;
-		for ( i = 0; i < p-> sp; i++)
-			if ( p-> xlfd[ i] == ret) { /* advised already? */
-				ret = -1;
-				break;
-			}
-	}
-
-	p-> xlfd[ p-> sp] = ret;
-
-	p-> sp++;
-
-DONT_ADVISE:
-	if ( ret < 0) { /* select closest match */
-		int i, best_i = -1, best_diff = INT_MAX, diff, sp = p-> sp - 1;
-		for ( i = 0; i < sp; i++) {
-			diff = p-> target - p-> prima[i];
-			if ( diff < 0) diff += 1000;
-			if ( best_diff > diff) {
-				if ( p-> xlfd[i] < 0 ) continue;
-				best_diff = diff;
-				best_i = i;
-			}
-		}
-		if ( best_i >= 0 && p-> xlfd[best_i] != p-> xlfd[ sp - 1])
-			ret = p-> xlfd[best_i];
-		p-> locked = -1;
-	}
-
-	return ret;
-}
-
-static void
-build_font_key( PFontKey key, PFont f, Bool bySize)
-{
-	bzero( key, sizeof( FontKey));
-	key-> height = bySize ? -f-> size : f-> height;
-	key-> width = f-> width;
-	key-> style = f-> style & ~(fsUnderlined|fsOutline|fsStruckOut) & fsMask;
-	key-> pitch = f-> pitch & fpMask;
-	key-> direction = 0;
+	key-> height = bySize ? -f-> size * FONT_SIZE_GRANULARITY : f-> height;
+	key-> width  = f-> width;
+	key-> style  = f-> style & ~(fsUnderlined|fsOutline|fsStruckOut) & fsMask;
+	key-> pitch  = f-> pitch & fpMask;
 	strcpy( key-> name, f-> name);
 	strcat( key-> name, "\1");
 	strcat( key-> name, f-> encoding);
 }
 
-PCachedFont
-prima_corefont_find_known_font( PFont font, Bool refill, Bool bySize)
-{
-	FontKey key;
-	PCachedFont kf;
-
-	build_font_key( &key, font, bySize);
-	kf = hash_fetch( guts. font_hash, &key, sizeof( FontKey));
-	if ( kf && refill) {
-		memcpy( font, &kf-> font, sizeof( Font));
-	}
-	return kf;
-}
-
-
 static Bool
-add_font_to_cache( PFontKey key, PFontInfo f, const char *name, XFontStruct *s, int uPos, int uThinkness)
-{
-	PCachedFont kf;
-
-	kf = malloc( sizeof( CachedFont));
-	if (!kf) {
-		warn( "no memory");
-		return false;
-	}
-	bzero( kf, sizeof( CachedFont));
-	kf-> id = s-> fid;
-	kf-> fs = s;
-	memcpy( &kf-> font, &f-> font, sizeof( Font));
-	kf-> font. style &= ~(fsUnderlined|fsOutline|fsStruckOut) & fsMask;
-	kf-> font. pitch &= fpMask;
-	kf-> flags = f-> flags;
-	kf-> underlinePos = uPos;
-	kf-> underlineThickness = uThinkness;
-	kf-> refCnt = 0;
-	hash_store( guts. font_hash, key, sizeof( FontKey), kf);
-	return true;
-}
-
-static void
-detail_font_info( PFontInfo f, PFont font, Bool addToCache, Bool bySize)
+detail_font_info( PFontInfo f, PFont font, PCachedFont kf, Bool bySize)
 {
 	XFontStruct *s = NULL;
 	unsigned long v;
@@ -1006,18 +876,17 @@ detail_font_info( PFontInfo f, PFont font, Bool addToCache, Bool bySize)
 	FontInfo fi;
 	PFontInfo of = f;
 	int height = 0, size = 0;
-	FontKey key;
-	Bool askedDefaultPitch;
 	HeightGuessStack hgs;
+	int underlinePos = 0, underlineThickness = 1;
 
 	if ( f-> vecname) {
 		if ( bySize)
 			size = font-> size * 10;
 		else {
 			height = font-> height * 10;
-			prima_init_try_height( &hgs, height, f-> flags. heights_cache ? f-> heights_cache[0] : height);
+			prima_font_init_try_height( &hgs, height, f-> flags. heights_cache ? f-> heights_cache[0] : height);
 			if ( f-> flags. heights_cache)
-				height = prima_try_height( &hgs, f-> heights_cache[1]);
+				height = prima_font_try_height( &hgs, f-> heights_cache[1]);
 		}
 	}
 
@@ -1035,28 +904,23 @@ AGAIN:
 			/* five fields */
 			sprintf( name, f-> vecname, height / 10, size, 0, 0, font-> width * 10);
 		}
-		Fdebug("font: construct h=%g, s=%d\n", (float)height/10, size);
+		Fdebug("font: construct by %s h=%g, s=%d", bySize ? "size" : "height", (float)height/10, size);
 	} else {
 		strcpy( name, f-> xname);
 	}
 
-	Fdebug( "font: loading %s\n", name);
+	Fdebug( "font: loading %s", name);
 	s = hash_fetch( xfontCache, name, strlen( name));
 
 	if ( !s) {
 		s = XLoadQueryFont( DISP, name);
 		XCHECKPOINT;
 		if ( !s) {
-			if ( !font)
-				warn( "font %s load error", name);
 			if ( of-> flags. disabled)
 				warn( "font %s pick-up error", name);
 			of-> flags. disabled = true;
-
-			Fdebug( "font: kill %s\n", name);
-			if ( font) prima_corefont_pp2font( "fixed", font);
-			of-> flags. disabled = false;
-			return;
+			Fdebug( "font: kill %s", name);
+			return false;
 		} else {
 			hash_store( xfontCache, name, strlen( name), s);
 		}
@@ -1069,8 +933,8 @@ AGAIN:
 			f-> font. height = h;
 		f-> flags. height = true;
 		if ( f-> vecname && !bySize && f-> font. height != font-> height) {
-			int h = prima_try_height( &hgs, f-> font. height * 10);
-			Fdebug("font height pick: %d::%d => %d, advised %d\n", hgs.sp-1, font-> height, f-> font. height, h);
+			int h = prima_font_try_height( &hgs, f-> font. height * 10);
+			Fdebug("font height pick: %d::%d => %d, advised %d", hgs.sp-1, font-> height, f-> font. height, h);
 			if ( h > 9) {
 				if ( !of-> flags. heights_cache) {
 					of-> heights_cache[0] = font-> height * 10;
@@ -1161,22 +1025,23 @@ AGAIN:
 		f-> font.  direction       = 0;
 		f-> flags. externalLeading = true;
 		f-> font.  externalLeading =
-						abs( s-> max_bounds. ascent  - s-> ascent) +
-						abs( s-> max_bounds. descent - s-> descent);
+			abs( s-> max_bounds. ascent  - s-> ascent) +
+			abs( s-> max_bounds. descent - s-> descent);
 		bzero(&f->font.is_utf8, sizeof(f->font.is_utf8));
+		bzero(&f->font.undef, sizeof(f->font.undef));
 
 		/* detailing width */
 		if ( f-> font. width == 0 || !f-> flags. width) {
 			 if ( f-> vecname && font-> width > 0) {
 				f-> font. width = font-> width;
-				Fdebug("font: width = copy as is %d\n", f->font.width);
+				Fdebug("font: width = copy as is %d", f->font.width);
 			} else if ( XGetFontProperty( s, FXA_AVERAGE_WIDTH, &v) && v) {
 				XCHECKPOINT;
 				f-> font. width = (v + 5) / 10;
-				Fdebug("font: width = FXA_AVERAGE_WIDTH %d(%d)\n", f->font.width, v);
+				Fdebug("font: width = FXA_AVERAGE_WIDTH %d(%d)", f->font.width, v);
 			} else {
 				f-> font. width = s-> max_bounds. width;
-				Fdebug("font: width = max_width %d\n", f->font.width);
+				Fdebug("font: width = max_width %d", f->font.width);
 			}
 		}
 		f-> flags. width = true;
@@ -1201,59 +1066,43 @@ AGAIN:
 					}
 			} else {
 				f-> font. width = f-> font. maximalWidth = s-> max_bounds. width;
-				Fdebug("font: force width = max_width %d\n", f->font.width);
+				Fdebug("font: force width = max_width %d", f->font.width);
 			}
 		}
 		of-> flags. sloppy = false;
 	}
 
-	if ( addToCache && font) {
-		/* detailing stuff */
-		int underlinePos = 0, underlineThickness = 1;
+	if ( !kf )
+		return true;
 
-		/* trust the slant part of style */
-		font-> style = f-> font. style;
+	/* detailing stuff */
+	*font = f-> font;
 
-		/* detailing underline things */
-		if ( XGetFontProperty( s, XA_UNDERLINE_POSITION, &v) && v) {
-			XCHECKPOINT;
-			underlinePos =  -s-> max_bounds. descent + v;
-		} else
-			underlinePos = - s-> max_bounds. descent + 1;
+	/* detailing underline things */
+	if ( XGetFontProperty( s, XA_UNDERLINE_POSITION, &v) && v) {
+		XCHECKPOINT;
+		underlinePos =  -s-> max_bounds. descent + v;
+	} else
+		underlinePos = - s-> max_bounds. descent + 1;
 
-		if ( XGetFontProperty( s, XA_UNDERLINE_THICKNESS, &v) && v) {
-			XCHECKPOINT;
-			underlineThickness = v;
-		} else
-			underlineThickness = 1;
+	if ( XGetFontProperty( s, XA_UNDERLINE_THICKNESS, &v) && v) {
+		XCHECKPOINT;
+		underlineThickness = v;
+	} else
+		underlineThickness = 1;
 
-		underlinePos -= underlineThickness;
-		if ( -underlinePos + underlineThickness / 2 > s-> max_bounds. descent)
-			underlinePos = -s-> max_bounds. descent + underlineThickness / 2;
+	underlinePos -= underlineThickness;
+	if ( -underlinePos + underlineThickness / 2 > s-> max_bounds. descent)
+		underlinePos = -s-> max_bounds. descent + underlineThickness / 2;
 
-		build_font_key( &key, font, bySize);
-		Fdebug("font cache add: %d(%d)x%d.%s.%s %s/%s\n", f-> font.height, f-> font.size, f->font.width, _F_DEBUG_STYLE(f-> font. style), _F_DEBUG_PITCH(f->font. pitch), f-> font.name, f-> font.encoding);
-		if ( !add_font_to_cache( &key, f, name, s, underlinePos, underlineThickness))
-			return;
-		askedDefaultPitch = font-> pitch == fpDefault;
-		memcpy( font, &f-> font, sizeof( Font));
-		build_font_key( &key, font, false);
-		if ( !hash_fetch( guts. font_hash, &key, sizeof( FontKey))) {
-			if ( !add_font_to_cache( &key, f, name, s, underlinePos, underlineThickness))
-				return;
-		}
+	Fdebug("font cache match: %dx%d(%g)%s.%s/%s %s", DEBUG_FONT((*font)), _F_DEBUG_STYLE(font->style), _F_DEBUG_PITCH(font->pitch));
+	kf-> id = s-> fid;
+	kf-> fs = s;
+	kf-> flags = f-> flags;
+	kf-> underline_position  = underlinePos;
+	kf-> underline_thickness = underlineThickness;
 
-		if ( askedDefaultPitch && font-> pitch != fpDefault) {
-			int pitch = font-> pitch;
-			font-> pitch = fpDefault;
-			build_font_key( &key, font, false);
-			if ( !hash_fetch( guts. font_hash, &key, sizeof( FontKey))) {
-				if ( !add_font_to_cache( &key, f, name, s, underlinePos, underlineThickness))
-					return;
-			}
-			font-> pitch = pitch;
-		}
-	}
+	return true;
 }
 
 #define QUERYDIFF_BY_SIZE        (-1)
@@ -1383,50 +1232,40 @@ query_diff( PFontInfo fi, PFont f, char * lcname, int selector)
 }
 
 Bool
-prima_corefont_pick( Handle self, PFont source, PFont dest)
+prima_corefont_match(PFont match, Bool by_size, PCachedFont kf)
 {
 	PFontInfo info = guts. font_info;
 	int i, n = guts. n_fonts, index, lastIndex;
-	Bool by_size = Drawable_font_add( self, source, dest);
 	int query_type = by_size ? QUERYDIFF_BY_SIZE : QUERYDIFF_BY_HEIGHT;
 	double minDiff;
 	char lcname[ 256];
-	Bool underlined = dest-> style & fsUnderlined;
-	Bool struckout  = dest-> style & fsStruckOut;
-	int  direction  = dest-> direction;
 	HeightGuessStack hgs;
 
-	if ( n == 0) return false;
+	if (n == 0) return false;
 
-	if ( strcmp( dest-> name, "Default") == 0)
-		strcpy( dest-> name, "helvetica");
-
-	if ( prima_corefont_find_known_font( dest, true, by_size)) {
-		if ( underlined) dest-> style |= fsUnderlined;
-		if ( struckout) dest-> style |= fsStruckOut;
-		dest-> direction = direction;
-		return true;
-	}
+	if ( strcmp( match-> name, "Default") == 0)
+		strcpy( match-> name, "helvetica");
 
 	if ( by_size) {
-		Fdebug("font reqS:%d(h=%d)x%d.%s.%s %s/%s\n", dest-> size, dest-> height, dest->width, _F_DEBUG_STYLE(dest-> style), _F_DEBUG_PITCH(dest-> pitch), dest-> name, dest-> encoding);
+		Fdebug("font reqS:%g(h=%d)x%d.%s.%s %s", match-> size, match-> height, match->width, _F_DEBUG_STYLE(match-> style), _F_DEBUG_PITCH(match-> pitch), match-> name, match-> encoding);
 	} else {
-		Fdebug("font reqH:%d(s=%d)x%d.%s.%s %s/%s\n", dest-> height, dest-> size, dest->width, _F_DEBUG_STYLE(dest-> style), _F_DEBUG_PITCH(dest-> pitch), dest-> name, dest-> encoding);
+		Fdebug("font reqH:%d(s=%g)x%d.%s.%s %s", match-> height, match-> size, match->width, _F_DEBUG_STYLE(match-> style), _F_DEBUG_PITCH(match-> pitch), match-> name, match-> encoding);
 	}
 
-	if ( !hash_fetch( encodings, dest-> encoding, strlen( dest-> encoding)))
-		dest-> encoding[0] = 0;
+	if ( !hash_fetch( encodings, match-> encoding, strlen( match-> encoding)))
+		match-> encoding[0] = 0;
 
-	if ( !by_size) prima_init_try_height( &hgs, dest-> height, dest-> height);
+	if ( !by_size)
+		prima_font_init_try_height( &hgs, match-> height, match-> height);
 
-	str_lwr( lcname, dest-> name);
+	str_lwr( lcname, match-> name);
 AGAIN:
 	index = lastIndex = -1;
 	minDiff = INT_MAX;
 	for ( i = 0; i < n; i++) {
 		double diff;
 		if ( info[i]. flags. disabled) continue;
-		diff = query_diff( info + i, dest, lcname, query_type);
+		diff = query_diff( info + i, match, lcname, query_type);
 		if ( diff < minDiff) {
 			lastIndex = index;
 			index = i;
@@ -1434,28 +1273,35 @@ AGAIN:
 		}
 		if ( diff < 1) break;
 	}
+	if (index < 0) {
+		Fdebug("font: no more fonts to match, bail out");
+		return false;
+	}
 
 	i = index;
-
-	Fdebug("font: #%d (diff=%g): %s\n", i, minDiff, info[i].xname);
-	Fdebug("font: pick:%d(%d)x%d.%s.%s %s/%s %s.%s\n", info[i].font. height, info[i].font. size, info[i].font. width, _F_DEBUG_STYLE(info[i].font. style), _F_DEBUG_PITCH(info[i].font. pitch), info[i].font. name, info[i].font. encoding, info[i].flags.sloppy?"sloppy":"", info[i].vecname?"vector":"");
+	Fdebug("font: #%d (diff=%g): %s", i, minDiff, info[i].xname);
+	Fdebug("font: pick:%d(%g)x%d.%s.%s %s/%s %s.%s", info[i].font. height, info[i].font. size, info[i].font. width, _F_DEBUG_STYLE(info[i].font. style), _F_DEBUG_PITCH(info[i].font. pitch), info[i].font. name, info[i].font. encoding, info[i].flags.sloppy?"sloppy":"", info[i].vecname?"vector":"");
 
 	if ( !by_size && info[ i]. flags. sloppy && !info[ i]. vecname) {
-		detail_font_info( info + i, dest, false, by_size);
-		if ( minDiff < query_diff( info + i, dest, lcname, by_size)) {
-			int h = prima_try_height( &hgs, info[i]. font. height);
+		if (!detail_font_info( info + i, match, NULL, by_size)) {
+			Fdebug("font: bad one, try again");
+			goto AGAIN;
+		}
+		if ( minDiff < query_diff( info + i, match, lcname, by_size)) {
+			int h = prima_font_try_height( &hgs, info[i]. font. height);
 			if ( h > 0) {
+				Fdebug("font: try again with new height %d", h);
 				query_type = h;
 				goto AGAIN;
 			}
 		}
 	}
 
-	detail_font_info( info + index, dest, true, by_size);
+	if (!detail_font_info( info + index, match, kf, by_size)) {
+		Fdebug("font: bad match, try again");
+		goto AGAIN;
+	}
 
-	if ( underlined) dest-> style |= fsUnderlined;
-	if ( struckout) dest-> style |= fsStruckOut;
-	dest-> direction = direction;
 	return true;
 }
 
@@ -1974,5 +1820,153 @@ prima_corefont_get_glyph_bitmap( Handle self, uint16_t index, Bool mono, PPoint 
 		}
 	}
 	return ret;
+}
+
+static PFont
+spec_fonts( int *retCount)
+{
+	int i, count = guts. n_fonts;
+	PFontInfo info = guts. font_info;
+	PFont fmtx = NULL;
+	List list;
+	PHash hash = NULL;
+
+	list_create( &list, 256, 256);
+
+	*retCount = 0;
+
+	if ( !( hash = hash_create())) {
+		list_destroy( &list);
+		return NULL;
+	}
+
+	/* collect font info */
+	for ( i = 0; i < count; i++) {
+		int len;
+		PFont fm;
+		if ( info[ i]. flags. disabled) continue;
+
+		len = strlen( info[ i].font.name);
+
+		fm = hash_fetch( hash, info[ i].font.name, len);
+		if ( fm) {
+			char ** enc = (char**) fm-> encoding;
+			unsigned char * shift = (unsigned char*)enc + sizeof(char *) - 1;
+			if ( *shift + 2 < 256 / sizeof(char*)) {
+				int j, exists = 0;
+				for ( j = 1; j <= *shift; j++) {
+					if ( strcmp( enc[j], info[i].xname + info[i].info_offset) == 0) {
+						exists = 1;
+						break;
+					}
+				}
+				if ( exists) continue;
+				*(enc + ++(*shift)) = info[i].xname + info[i].info_offset;
+			}
+			continue;
+		}
+
+		if ( !( fm = ( PFont) malloc( sizeof( Font)))) {
+			if ( hash) hash_destroy( hash, false);
+			list_delete_all( &list, true);
+			list_destroy( &list);
+			return NULL;
+		}
+
+		*fm = info[i]. font;
+
+		{ /* multi-encoding format */
+			char ** enc = (char**) fm-> encoding;
+			unsigned char * shift = (unsigned char*)enc + sizeof(char *) - 1;
+			memset( fm-> encoding, 0, 256);
+			*(enc + ++(*shift)) = info[i].xname + info[i].info_offset;
+			hash_store( hash, info[ i].font.name, strlen( info[ i].font.name), fm);
+		}
+
+		list_add( &list, ( Handle) fm);
+	}
+
+	if ( hash) hash_destroy( hash, false);
+
+	if ( list. count == 0) goto Nothing;
+	fmtx = ( PFont) malloc( list. count * sizeof( Font));
+	if ( !fmtx) {
+		list_delete_all( &list, true);
+		list_destroy( &list);
+		return NULL;
+	}
+
+	*retCount = list. count;
+		for ( i = 0; i < list. count; i++)
+			memcpy( fmtx + i, ( void *) list. items[ i], sizeof( Font));
+	list_delete_all( &list, true);
+
+Nothing:
+	list_destroy( &list);
+
+	return fmtx;
+}
+
+PFont
+prima_corefont_fonts( Handle self, const char *facename, const char * encoding, int *retCount)
+{
+	int i, count = guts. n_fonts;
+	PFontInfo info = guts. font_info;
+	PFontInfo * table;
+	int n_table;
+	PFont fmtx;
+
+	if ( !facename && !encoding) return spec_fonts( retCount);
+
+	*retCount = 0;
+	n_table = 0;
+
+	/* stage 1 - browse through names and validate records */
+	table = malloc( count * sizeof( PFontInfo));
+	if ( !table && count > 0) return NULL;
+
+	if ( facename == NULL) {
+		PHash hash = hash_create();
+		for ( i = 0; i < count; i++) {
+			int len;
+			if ( info[ i]. flags. disabled) continue;
+			len = strlen( info[ i].font.name);
+			if ( hash_fetch( hash, info[ i].font.name, len) ||
+				strcmp( info[ i].xname + info[ i].info_offset, encoding) != 0)
+				continue;
+			hash_store( hash, info[ i].font.name, len, (void*)1);
+			table[ n_table++] = info + i;
+		}
+		hash_destroy( hash, false);
+		*retCount = n_table;
+	} else {
+		for ( i = 0; i < count; i++) {
+			if ( info[ i]. flags. disabled) continue;
+			if (
+				( stricmp( info[ i].font.name, facename) == 0) &&
+				(
+					!encoding ||
+					( strcmp( info[ i].xname + info[ i].info_offset, encoding) == 0)
+				)
+			) {
+				table[ n_table++] = info + i;
+			}
+		}
+		*retCount = n_table;
+	}
+
+	fmtx = malloc( n_table * sizeof( Font));
+	bzero( fmtx, n_table * sizeof( Font));
+	if ( !fmtx && n_table > 0) {
+		*retCount = 0;
+		free( table);
+		return NULL;
+	}
+	for ( i = 0; i < n_table; i++) {
+		fmtx[i] = table[i]-> font;
+	}
+	free( table);
+
+	return fmtx;
 }
 

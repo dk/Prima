@@ -466,6 +466,9 @@ unix/dnd.c
 unix/event.c
 unix/file.c
 unix/font.c
+unix/fontconfig.c
+unix/fontquery.c
+unix/freetype.c
 unix/graphics.c
 unix/gtk.c
 unix/image.c

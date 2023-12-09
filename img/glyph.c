@@ -46,8 +46,8 @@ bc_mono_colormask_on_byte(
 			while ( bits > 0 ) {
 				Byte buf[256];
 				register Byte *pbuf = buf;
-				register unsigned int n = (sizeof(buf) > bits) ? bits : sizeof(buf), m = 0;
-				while (n-- > bytes - 1) {
+				register unsigned int n = (sizeof(buf) > bits * bytes) ? bits * bytes : sizeof(buf), m = 0;
+				while (n > bytes - 1) {
 					if (( B & 0x80 ) == 0) {
 						if ( m > 0 ) {
 							blt(buf, dst, m);

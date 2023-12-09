@@ -23,6 +23,7 @@ Drawable_init( Handle self, HV * profile)
 	inherited init( self, profile);
 	apc_gp_init( self);
 	var-> w = var-> h = 0;
+	memset( &var->font.undef, 0xff, sizeof(var->font.undef));
 	my-> set_alpha        ( self, pget_i ( alpha));
 	my-> set_antialias    ( self, pget_B ( antialias));
 	my-> set_color        ( self, pget_i ( color));

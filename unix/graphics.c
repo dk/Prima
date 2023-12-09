@@ -226,14 +226,7 @@ Unbuffered:
 		apc_gp_set_fill_pattern( self, fp);
 	}
 	apc_gp_set_fill_pattern_offset( self, XX-> fill_pattern_offset);
-
-	if ( !XX-> flags. reload_font && XX-> font && XX-> font-> id) {
-		XSetFont( DISP, XX-> gc, XX-> font-> id);
-		XCHECKPOINT;
-	} else {
-		apc_gp_set_font( self, &PDrawable( self)-> font);
-		XX-> flags. reload_font = false;
-	}
+	apc_gp_set_font( self, &PDrawable( self)-> font);
 }
 
 static void
@@ -366,9 +359,9 @@ prima_cleanup_drawable_after_painting( Handle self)
 		XX-> btransform. x = XX-> btransform. y = 0;
 	}
 	prima_release_gc(XX);
-	if ( XX-> font && ( --XX-> font-> refCnt <= 0)) {
-		prima_free_rotated_entry( XX-> font);
-		XX-> font-> refCnt = 0;
+	if ( XX-> font ) {
+		XX-> font-> lock_cnt--;
+		XX-> font = NULL;
 	}
 	if ( XX-> paint_region) {
 		XDestroyRegion( XX-> paint_region);
@@ -1450,45 +1443,6 @@ apc_gp_get_color( Handle self)
 	return ( XF_IN_PAINT(XX)) ? XX-> fore. color : prima_map_color(XX-> saved_fore, NULL);
 }
 
-unsigned long *
-apc_gp_get_font_ranges( Handle self, int * count)
-{
-	DEFXX;
-	unsigned long * ret = NULL;
-	XFontStruct * fs;
-#ifdef USE_XFT
-	if ( XX-> font-> xft)
-		return prima_xft_get_font_ranges( self, count);
-#endif
-	fs = XX-> font-> fs;
-	*count = (fs-> max_byte1 - fs-> min_byte1 + 1) * 2;
-	if (( ret = malloc( sizeof( unsigned long) * ( *count)))) {
-		int i;
-		for ( i = fs-> min_byte1; i <= fs-> max_byte1; i++) {
-			ret[(i - fs-> min_byte1) * 2 + 0] = i * 256 + fs-> min_char_or_byte2;
-			ret[(i - fs-> min_byte1) * 2 + 1] = i * 256 + fs-> max_char_or_byte2;
-		}
-	}
-	return ret;
-}
-
-char *
-apc_gp_get_font_languages( Handle self)
-{
-	DEFXX;
-	char * ret;
-#ifdef USE_XFT
-	if ( XX-> font-> xft)
-		return prima_xft_get_font_languages(self);
-#endif
-	if ( XX-> font-> flags.funky )
-		return NULL;
-	if ( !( ret = malloc(4)))
-		return NULL;
-	memcpy(ret, "en\0\0", 4);
-	return ret;
-}
-
 int
 apc_gp_get_fill_mode( Handle self)
 {
@@ -1752,11 +1706,6 @@ apc_gp_set_fill_pattern_offset( Handle self, Point fpo)
 	}
 	return true;
 }
-
-/*- see apc_font.c
-void
-apc_gp_set_font( Handle self, PFont font)
-*/
 
 Bool
 apc_gp_set_line_pattern( Handle self, unsigned char *pattern, int len)

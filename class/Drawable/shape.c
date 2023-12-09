@@ -44,8 +44,8 @@ sv2uint32( SV * text, unsigned int * size, unsigned int * flags)
 	if (*flags & toUTF8 ) {
 		uint32_t *dst = ret;
 		while ( dlen > 0 && dst - ret < *size) {
-			STRLEN charlen;
 			UV uv;
+			unsigned int charlen;
 			uv = prima_utf8_uvchr(src, dlen, &charlen);
 			if ( uv > 0x10FFFF ) uv = 0x10FFFF;
 			*(dst++) = uv;

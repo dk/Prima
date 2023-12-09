@@ -206,9 +206,10 @@ Clipboard_close( Handle self)
 	if ( utf8-> written && !text-> written) {
 		SV *utf8_sv, *text_sv;
 		if (( utf8_sv = utf8-> server( self, utf8, cefFetch, NULL_SV))) {
-			STRLEN bytelen, charlen;
-			U8 * src;
-			src = ( U8 *) SvPV( utf8_sv, bytelen);
+			STRLEN bytelen;
+			unsigned int charlen;
+			const char * src;
+			src = SvPV( utf8_sv, bytelen);
 			text_sv = newSVpvn("", 0);
 			while ( bytelen > 0) {
 				register UV u = prima_utf8_uvchr(src, bytelen, &charlen);

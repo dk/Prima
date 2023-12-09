@@ -50,7 +50,7 @@ prima_xim_update_cursor( Handle self)
 	preedit_attr = XVaCreateNestedList(0, XNSpotLocation, &spot, NULL);
 	error = XSetICValues(guts.xic, XNPreeditAttributes, preedit_attr, NULL);
 	if ( error != NULL )
-		Mdebug("XSetICValues(XNSpotLocation) error: %s\n", error);
+		Mdebug("XSetICValues(XNSpotLocation) error: %s", error);
 	XFree(preedit_attr);
 }
 
@@ -62,11 +62,11 @@ prima_xim_focus_in(Handle self)
 
     	error = XSetICValues(guts.xic, XNClientWindow, PWidget(toplevel)->handle, NULL);
 	if ( error != NULL )
-		Mdebug("XSetICValues(XNClientWindow) error: %s\n", error);
+		Mdebug("XSetICValues(XNClientWindow) error: %s", error);
 
     	error = XSetICValues(guts.xic, XNFocusWindow, PWidget(self)->handle, NULL);
 	if ( error != NULL )
-		Mdebug("XSetICValues(XNFocusWindow) error: %s\n", error);
+		Mdebug("XSetICValues(XNFocusWindow) error: %s", error);
 
     	XSetICFocus(guts.xic);
 #ifdef X_HAVE_UTF8_STRING
@@ -97,7 +97,7 @@ prima_xim_handle_key_press( Handle self, XKeyEvent *xev, Event *e, KeySym *sym)
 		char *b;
 
 		c = Xutf8LookupString(guts.xic, xev, guts.xic_buffer, guts.xic_bufsize - 1, sym, &status);
-		Mdebug("Xutf8LookupString: nc=%d status=%d\n", c, status);
+		Mdebug("Xutf8LookupString: nc=%d status=%d", c, status);
 		switch ( status ) {
 		case XLookupNone:
 		case XLookupKeySym:
@@ -124,14 +124,14 @@ prima_xim_handle_key_press( Handle self, XKeyEvent *xev, Event *e, KeySym *sym)
 	memcpy( buf, guts.xic_buffer, c);
 	guts.xic_buffer[0] = 0;
 	buf[c] = 0;
-	Mdebug("Xutf8LookupString: string=%s\n", buf);
+	Mdebug("Xutf8LookupString: string=%s", buf);
 
 	/* send events */
 	protect_object(self);
 	n = 0;
 	while ( *buf ) {
 		UV uv;
-		STRLEN charlen;
+		unsigned int charlen;
 		Event ev;
 
 		uv = prima_utf8_uvchr(buf, c, &charlen);
@@ -150,7 +150,7 @@ prima_xim_handle_key_press( Handle self, XKeyEvent *xev, Event *e, KeySym *sym)
 			U32 key = prima_keysym_to_keycode(*sym, xev, 0) & kbCodeMask;
 			if ( key != 0 ) ev.key.key = key;
 		}
-		Mdebug("Xutf8LookupString: char(%d)=%x key=%x\n", n, uv, ev.key.key);
+		Mdebug("Xutf8LookupString: char(%d)=%x key=%x", n, uv, ev.key.key);
 		CComponent(self)-> message(self,&ev);
 		if (PWidget(self)-> stage != csNormal)
 			break;
