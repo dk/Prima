@@ -413,7 +413,7 @@ sub create_info_window
 	my $w = shift;
 	my $f = $w-> Example-> font;
 	my $ww = Prima::Window-> create(
-		size => [ 500, $f-> height * 3 + $f-> externalLeading + $f-> descent + 450 ],
+		size => [ 500, $f-> height * 3 + $f-> externalLeading + $f-> descent + 482 ],
 		font => $f,
 		text => $f-> size.'.['.$f-> height.'x'.$f-> width.']'.$f-> name,
 		onPaint => sub {
@@ -498,6 +498,8 @@ sub create_info_window
 			$p-> text_out( 'last char           : '.$m-> {lastChar }, 2, $sd); $sd -= $fh;
 			$p-> text_out( 'break char          : '.$m-> {breakChar}, 2, $sd); $sd -= $fh;
 			$p-> text_out( 'default char        : '.$m-> {defaultChar}, 2, $sd); $sd -= $fh;
+			$p-> text_out( 'underline position  : '.$m-> {underlinePosition}, 2, $sd); $sd -= $fh;
+			$p-> text_out( 'underline thickness : '.$m-> {underlineThickness}, 2, $sd); $sd -= $fh;
 			$p-> text_out( 'family              : '.$m-> {family   }, 2, $sd); $sd -= $fh;
 			$p-> text_out( 'face name           : '.$cachedFacename, 2, $sd); $sd -= $fh;
 			unless ( $p-> Languages-> visible ) {
@@ -596,7 +598,7 @@ sub create_info_window
 	my $ih = int($f-> height * 1.5);
 	my $l = $ww-> insert( AbstractListViewer =>
 		origin => [0,0],
-		size   => [$ww-> width, $ww-> height - $f-> height - $f-> externalLeading - $f-> descent - 360],
+		size   => [$ww-> width, $ww-> height - $f-> height - $f-> externalLeading - $f-> descent - 400],
 		growMode => gm::Client,
 		font     => $f,
 		multiColumn => 1,

@@ -492,6 +492,9 @@ prima_xft_match( Font *font, Matrix matrix, Bool by_size, PCachedFont cf)
 			XFTdebug("set height: %d", font->height);
 		}
 		font-> maximalWidth = xf-> max_advance_width;
+		/* XXX FT_Face reports very strange values */
+		font->underlinePosition  = -xf-> descent;
+		font->underlineThickness = (font->height > 16) ? font->height / 16 : 1;
 	}
 
 	font-> descent = cf-> xft_base-> descent;
@@ -874,7 +877,9 @@ static void
 overstrike( Handle self, int x, int y, Point *ovx, int advance)
 {
 	DEFXX;
-	int d  = - PDrawable(self)-> font. descent;
+	int lw = 1;
+	int d  = PDrawable(self)-> font. underlinePosition;
+	int t  = PDrawable(self)-> font. underlineThickness;
 	int x1, y1, x2, y2;
 
 	XSetFillStyle( DISP, XX-> gc, FillSolid);
@@ -886,6 +891,12 @@ overstrike( Handle self, int x, int y, Point *ovx, int advance)
 	if ( ovx->x < 0 ) ovx->x = 0;
 	if ( ovx->y < 0 ) ovx->y = 0;
 	advance += ovx->y;
+
+	if ( lw != t ) {
+		XGCValues gcv;
+		lw = gcv.line_width = t;
+		XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);
+	}
 
 	if ( PDrawable( self)-> font. style & fsUnderlined) {
 		x1 = ovx->x;
@@ -913,6 +924,12 @@ overstrike( Handle self, int x, int y, Point *ovx, int advance)
 		x2 = x + x2;
 		y2 = y + y2;
 		XDrawLine( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y1), x2, REVERT( y2));
+	}
+
+	if ( lw != 1 ) {
+		XGCValues gcv;
+		gcv.line_width = 1;
+		XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);
 	}
 }
 

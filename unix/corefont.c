@@ -877,7 +877,6 @@ detail_font_info( PFontInfo f, PFont font, PCachedFont kf, Bool bySize)
 	PFontInfo of = f;
 	int height = 0, size = 0;
 	HeightGuessStack hgs;
-	int underlinePos = 0, underlineThickness = 1;
 
 	if ( f-> vecname) {
 		if ( bySize)
@@ -894,7 +893,7 @@ AGAIN:
 	if ( f-> vecname) {
 		memmove( &fi, f, sizeof( fi));
 		fi. flags. size = fi. flags. height = fi. flags. width = fi. flags. ascent =
-			fi. flags. descent = fi. flags. internalLeading = fi. flags. externalLeading = 0;
+			fi. flags. descent = fi. flags. internalLeading = 0;
 		f = &fi;
 
 		if ( f-> flags. bad_vector) {
@@ -985,6 +984,30 @@ AGAIN:
 			f-> flags. internalLeading = true;
 		}
 
+		if ( !f-> flags. underlines) {
+			int underlinePos, underlineThickness;
+			/* detailing underline things */
+			if ( XGetFontProperty( s, XA_UNDERLINE_POSITION, &v) && v) {
+				XCHECKPOINT;
+				underlinePos =  -s-> max_bounds. descent + v;
+			} else
+				underlinePos = - s-> max_bounds. descent + 1;
+
+			if ( XGetFontProperty( s, XA_UNDERLINE_THICKNESS, &v) && v) {
+				XCHECKPOINT;
+				underlineThickness = v;
+			} else
+				underlineThickness = 1;
+
+			underlinePos -= underlineThickness;
+			if ( -underlinePos + underlineThickness / 2 > s-> max_bounds. descent)
+				underlinePos = -s-> max_bounds. descent + underlineThickness / 2;
+			f-> font.underlinePosition  = underlinePos;
+			f-> font.underlineThickness = underlineThickness;
+			f-> flags.underlines = true;
+		}
+
+
 		/* detailing point size and height */
 		if ( bySize) {
 			if ( f-> vecname)
@@ -1009,21 +1032,15 @@ AGAIN:
 		f-> flags. size = true;
 
 		/* misc stuff */
-		f-> flags. resolution      = true;
 		f-> font. resolution       = f-> font. yDeviceRes * 0x10000 + f-> font. xDeviceRes;
 		f-> flags. ascent          = true;
 		f-> font. ascent           = f-> font. height - s-> max_bounds. descent;
 		f-> flags. descent         = true;
 		f-> font. descent          = s-> max_bounds. descent;
-		f-> flags. defaultChar     = true;
 		f-> font. defaultChar      = s-> default_char;
-		f-> flags. firstChar       = true;
 		f-> font.  firstChar       = s-> min_byte1 * 256 + s-> min_char_or_byte2;
-		f-> flags. lastChar        = true;
 		f-> font.  lastChar        = s-> max_byte1 * 256 + s-> max_char_or_byte2;
-		f-> flags. direction       = true;
 		f-> font.  direction       = 0;
-		f-> flags. externalLeading = true;
 		f-> font.  externalLeading =
 			abs( s-> max_bounds. ascent  - s-> ascent) +
 			abs( s-> max_bounds. descent - s-> descent);
@@ -1078,29 +1095,10 @@ AGAIN:
 	/* detailing stuff */
 	*font = f-> font;
 
-	/* detailing underline things */
-	if ( XGetFontProperty( s, XA_UNDERLINE_POSITION, &v) && v) {
-		XCHECKPOINT;
-		underlinePos =  -s-> max_bounds. descent + v;
-	} else
-		underlinePos = - s-> max_bounds. descent + 1;
-
-	if ( XGetFontProperty( s, XA_UNDERLINE_THICKNESS, &v) && v) {
-		XCHECKPOINT;
-		underlineThickness = v;
-	} else
-		underlineThickness = 1;
-
-	underlinePos -= underlineThickness;
-	if ( -underlinePos + underlineThickness / 2 > s-> max_bounds. descent)
-		underlinePos = -s-> max_bounds. descent + underlineThickness / 2;
-
 	Fdebug("font cache match: %dx%d(%g)%s.%s/%s %s", DEBUG_FONT((*font)), _F_DEBUG_STYLE(font->style), _F_DEBUG_PITCH(font->pitch));
 	kf-> id = s-> fid;
 	kf-> fs = s;
 	kf-> flags = f-> flags;
-	kf-> underline_position  = underlinePos;
-	kf-> underline_thickness = underlineThickness;
 
 	return true;
 }

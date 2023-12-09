@@ -619,6 +619,15 @@ In a typical Western language font it is 32, the ASCII space character.
 Index of a glyph that is drawn instead of a nonexistent
 glyph if its index is passed to the text drawing routines.
 
+=item underlinePosition
+
+Position below baseline where to draw underscore line, in pixels.
+Is negative.
+
+=item underlineThickness
+
+Pixel width of the underscore line
+
 =back
 
 =head2 Font ABC metrics

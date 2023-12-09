@@ -42,6 +42,8 @@ global %Font {
 	int         lastChar          ;
 	int         breakChar         ;
 	int         defaultChar       ;
+	int         underlinePosition ;
+	int         underlineThickness;
 }
 
 global @FillPattern U8[8];

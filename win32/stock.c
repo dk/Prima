@@ -1126,6 +1126,9 @@ font_textmetric2font( TEXTMETRICW * tm, Font * fm, Bool readonly)
 	fm-> lastChar               = tm-> tmLastChar;
 	fm-> breakChar              = tm-> tmBreakChar;
 	fm-> defaultChar            = tm-> tmDefaultChar;
+	/* XXX */
+	fm->underlinePosition       = -fm-> descent;
+	fm->underlineThickness      = (fm->height > 16) ? fm->height / 16 : 1;
 	strcpy( fm-> encoding, font_charset2encoding( tm-> tmCharSet));
 }
 

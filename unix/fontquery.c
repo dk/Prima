@@ -94,6 +94,9 @@ fill_synthetic_fields( FT_Face f, PFont font, Bool by_size)
 	font->width           = f-> max_advance_width * mul + .5; /* XXX, also bitmap fonts */
 	font->externalLeading = (f-> bbox.yMax - f-> ascender ) * mul + .5;
 	font->xDeviceRes      = font->yDeviceRes = 72;
+	/* XXX FT_Face reports very strange values */
+	font->underlinePosition  = -font-> descent;
+	font->underlineThickness = (font->height > 16) ? font->height / 16 : 1;
 }
 
 Bool

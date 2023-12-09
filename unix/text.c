@@ -258,13 +258,14 @@ gp_text_out_rotated(
 	if ( PDrawable( self)-> font. style & (fsUnderlined|fsStruckOut)) {
 		int lw = 1;
 		int tw = gp_get_text_width( self, text, len, flags | toAddOverhangs) - 1;
-		int d  = XX-> font-> underline_position;
+		int d  = PDrawable(self)-> font.underlinePosition;
+		int t  = PDrawable(self)-> font.underlineThickness;
 		Point ovx = gp_get_text_overhangs( self, text, len, flags);
 		int x1, y1, x2, y2;
 
-		if ( lw != XX-> font-> underline_thickness) {
+		if ( lw != t) {
 			XGCValues gcv;
-			lw = gcv.line_width = XX-> font-> underline_thickness;
+			lw = gcv.line_width = t;
 			XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);
 		}
 
@@ -350,11 +351,12 @@ draw_text_underline(Handle self, const char * text, int x, int y, int len, int f
 	DEFXX;
 	int lw = 1;
 	int tw = gp_get_text_width( self, text, len, flags | toAddOverhangs);
-	int d  = XX-> font-> underline_position;
+	int d  = PDrawable(self)-> font.underlinePosition;
+	int t  = PDrawable(self)-> font.underlineThickness;
 	Point ovx = gp_get_text_overhangs( self, text, len, flags);
-	if ( lw != XX-> font-> underline_thickness) {
+	if ( lw != t ) {
 		XGCValues gcv;
-		lw = gcv.line_width = XX-> font-> underline_thickness;
+		lw = gcv.line_width = t;
 		XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);
 	}
 	if ( !XX-> flags. base_line)

@@ -183,28 +183,21 @@ typedef struct _FontFlags {
 	unsigned width            : 1;
 	unsigned style            : 1;
 	unsigned pitch            : 1;
-	unsigned direction        : 1;
-	unsigned resolution       : 1;
 	unsigned name             : 1;
 	unsigned encoding         : 1;
 	unsigned size             : 1;
-	unsigned codepage         : 1;
 	unsigned family           : 1;
 	unsigned vector           : 1;
 	unsigned ascent           : 1;
 	unsigned descent          : 1;
 	unsigned weight           : 1;
-	unsigned maximalWidth     : 1;
 	unsigned internalLeading  : 1;
-	unsigned externalLeading  : 1;
 	unsigned xDeviceRes       : 1;
 	unsigned yDeviceRes       : 1;
-	unsigned firstChar        : 1;
-	unsigned lastChar         : 1;
-	unsigned breakChar        : 1;
-	unsigned defaultChar      : 1;
+	unsigned maximalWidth     : 1;
+	unsigned underlines       : 1;
 	/* extras */
-	unsigned bad_vector	     : 1;
+	unsigned bad_vector       : 1;
 	unsigned sloppy           : 1;
 	unsigned disabled         : 1;
 	unsigned funky            : 1;
@@ -251,8 +244,6 @@ typedef struct CachedFont {
 	int          ref_cnt;
 	int          lock_cnt;
 	Font         font;
-	int          underline_position;
-	int          underline_thickness;
 
 	/* corefont */
 	FontFlags    flags;
