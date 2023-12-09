@@ -249,10 +249,8 @@ squares, the mean value, variance, and standard deviation.
 
 =head2 Standalone usage
 
-Some of the image functionality can be used standalone, with all other parts of
-the toolkit being uninitialized. The functionality is limited to loading and
-saving files, reading and writing pixels (outside begin_paint only), and
-drawing graphic primitives.  All other calls are ignored. Example:
+All of the drawing functionality can be used standalone, with all other parts of
+the toolkit being uninitialized. Example:
 
    my $i = Prima::Image->new( size => [5,5]);
    $i->color(cl::Red);
@@ -270,6 +268,13 @@ color, region, etc). Also, the graphic primitives and C<put_image> methods
 support drawing using the Porter-Duff and Photoshop operators that can be
 specified in the C<::rop> property by using values from the extended set of the
 C<rop::XXX> constants, i e rop::SrcOver and above.
+
+All text API is also supported (on unix if Prima is compiled with freetype and
+fontconfig) and can be used transparently for the caller. The list of available
+fonts, and their renderings, may differ from the fonts available in the system.
+For example, where the system may choose to render glyphs with pixel layout
+optimized for LCD screens, the font query subsystem may not. See
+C<begin_font_query> for details.
 
 See individual methods and properties in L<API> that support standalone usage,
 and how they differ from system-dependent implementation.
@@ -768,6 +773,38 @@ involving the system backend.
 
 =over
 
+=item begin_font_query
+
+Enters a special mode that allows to query font and text information without
+requiring C<Prima::Application> object to be instantiated, and in particular,
+no X11 connection on unix. With this mode on, the system reports all the text
+and font information that is available inside C<begin_paint>/C<end_paint>
+brackets (or in modes reported as C<ps::Information> and C<ps::Enabled> by
+C<get_paint_state>).  The C<get_paint_state> method returns the
+C<ps::FontQuery> value when this mode is on.
+
+The mode can be entered both by explicitly calling on it manually, and implicitly
+when performing any font or text related input or output. For example, these are
+equivalent:
+
+     $image->text_out(...);
+
+and
+
+     $image->begin_font_query;
+     $image->text_out(...);
+
+When either of the C<begin_paint> or C<begin_paint_info> methods is called, the
+font query mode is finished automatically. It can also be finished by calling
+C<end_font_query>.
+
+In the majority of cases, one shouldn't use this method. The only reason to do
+so is to use the difference of how the C<set_font> method operates in
+C<ps::Disabled> and C<ps::FontQuery> modes. In the former mode, a calls to
+C<set_font> only stores the new font in the object, while in the latter mode,
+the resulting font is also matched towards the system font collection, exactly
+as C<Prima::Drawable::set_font> does, except that the resulting fonts can be different.
+
 =item bitmap
 
 Returns a newly created C<Prima::DeviceBitmap> object
@@ -792,6 +829,10 @@ This method can be called without object instance:
 
 Returns a copy of the object, a newly created C<Prima::Image>, with all
 properties copied. Does not preserve the graphical properties though (color etc).
+
+=item end_font_query
+
+Ends the font query mode.
 
 =item extract X_OFFSET, Y_OFFSET, WIDTH, HEIGHT
 

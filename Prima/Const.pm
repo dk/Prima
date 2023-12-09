@@ -1122,6 +1122,7 @@ See also L<Prima::Window/modalResult>, L<Prima::Button/modalResult>.
 	ps::Disabled    - can neither draw, nor get/set graphical properties on an object
 	ps::Enabled     - can both draw and get/set graphical properties on an object
 	ps::Information - can only get/set graphical properties on an object
+	ps::FontQuery   - query text and font information on image objects
 
 For brevity, ps::Disabled is equal to 0 so this allows for simple boolean testing if one can
 get/set graphical properties on an object.
