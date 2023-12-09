@@ -1133,6 +1133,13 @@ font_textmetric2font( TEXTMETRICW * tm, Font * fm, Bool readonly)
 }
 
 void
+font_otm2font( OUTLINETEXTMETRICW * otm, Font * fm)
+{
+	fm-> underlinePosition  = -otm->otmsUnderscorePosition;
+	fm-> underlineThickness =  otm->otmsUnderscoreSize;
+}
+
+void
 font_pp2font( char * presParam, Font * f)
 {
 	int i;
@@ -1301,12 +1308,15 @@ EXIT:
 static int
 font_font2gp( PFont font, Point res, Bool forceSize, HDC dc);
 
-static void
-font_logfont2textmetric( HDC dc, LOGFONTW * lf, TEXTMETRICW * tm)
+static Bool
+font_logfont2textmetric( HDC dc, LOGFONTW * lf, TEXTMETRICW * tm, OUTLINETEXTMETRICW * otm)
 {
+	Bool ok;
 	HFONT hf = SelectObject( dc, CreateFontIndirectW( lf));
 	GetTextMetricsW( dc, tm);
+	ok = otm ? GetOutlineTextMetricsW(dc, sizeof(OUTLINETEXTMETRICW), otm) : false;
 	DeleteObject( SelectObject( dc, hf));
+	return ok;
 }
 
 int
@@ -1375,7 +1385,7 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
 					TEXTMETRICW tm;
 					font_font2logfont( &xf, &lpf);
 					lpf. lfWeight = 700;
-					font_logfont2textmetric( dc, &lpf, &tm);
+					font_logfont2textmetric( dc, &lpf, &tm, NULL);
 					if ( xf. width + tm. tmOverhang == font-> width) {
 						font_textmetric2font( &tm, font, true);
 						font-> direction = 0;
@@ -1401,7 +1411,7 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
 				LOGFONTW lpf = es. lf;
 				TEXTMETRICW tm;
 				lpf. lfWeight = 700; // ignore italics, it changes tmOverhang also
-				font_logfont2textmetric( dc, &lpf, &tm);
+				font_logfont2textmetric( dc, &lpf, &tm, NULL);
 				es. tm. tmMaxCharWidth += tm. tmOverhang;
 				es. lf. lfWidth        += tm. tmOverhang;
 			}
@@ -1419,6 +1429,8 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
 		if ( es. vecId) {
 			LOGFONTW lpf = es. lf;
 			TEXTMETRICW tm;
+			OUTLINETEXTMETRICW otm;
+			Bool have_otm;
 
 			// since proportional computation of small items as InternalLeading
 			// gives incorrect result, querying the only valid source - GetTextMetrics
@@ -1430,7 +1442,7 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
 
 			lpf. lfWidth = es. useWidth ? font-> width : 0;
 
-			font_logfont2textmetric( dc, &lpf, &tm);
+			have_otm = font_logfont2textmetric( dc, &lpf, &tm, &otm);
 			if ( forceSize)
 				font-> height = tm. tmHeight;
 			else
@@ -1440,6 +1452,7 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
 				font-> width = tm. tmAveCharWidth;
 
 			font_textmetric2font( &tm, font, true);
+			if ( have_otm ) font_otm2font( &otm, font );
 			strlcpy( font-> family, es. family, LF_FULLFACESIZE);
 			font-> is_utf8.family = es.is_utf8_family;
 			out( fvOutline);

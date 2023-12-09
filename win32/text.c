@@ -153,8 +153,7 @@ underscore_font( Handle self, int x, int y, int width, Bool use_alpha)
 	if ( var font. style & (fsUnderlined|fsStruckOut)) {
 		int line_width = 1;
 		COLORREF fg = sys rq_pen.logpen.lopnColor;
-		if (sys otmsUnderscoreSize > 0)
-			line_width = sys otmsUnderscoreSize;
+		line_width = var font. underlineThickness;
 		if ( use_alpha ) {
 			gppen = stylus_gp_get_pen(line_width,
 				( sys alpha << 24) |
@@ -174,10 +173,7 @@ underscore_font( Handle self, int x, int y, int width, Bool use_alpha)
 
 		if ( !is_apt( aptTextOutBaseline))
 			Y -= var font. descent;
-		if (sys otmsUnderscoreSize > 0)
-			Y -= sys otmsUnderscorePosition;
-		else
-			Y += var font. descent - 1;
+		Y += var font. underlinePosition;
 
 		pt[0].x = 0;
 		pt[0].y = -Y;
