@@ -35,7 +35,8 @@
 #define USE_MITSHM      1
 #endif
 #if defined(WITH_FREETYPE)
-#include <freetype/freetype.h>
+#include <ft2build.h>
+#include FT_FREETYPE_H
 #include FT_OUTLINE_H
 #endif
 #if defined(WITH_FONTCONFIG)
