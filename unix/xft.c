@@ -915,7 +915,7 @@ overstrike( Handle self, int x, int y, Point *ovx, int advance)
 	if ( PDrawable( self)-> font. style & fsStruckOut) {
 		x1 = ovx->x;
 		x2 = advance;
-		y2 = (XX-> font-> font.ascent - XX-> font-> font.internalLeading)/2;
+		y2 = (XX-> font-> font.ascent - XX-> font-> font.internalLeading)/3;
 		y1 = -y2;
 		prima_matrix_apply_int_to_int( XX->fc_font_matrix, &x1, &y1);
 		prima_matrix_apply_int_to_int( XX->fc_font_matrix, &x2, &y2);

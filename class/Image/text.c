@@ -279,7 +279,7 @@ plot_glyphs( Handle self, PGlyphsOutRec t, int x, int y )
 			Point poly[2];
 			poly[0].x = x;
 			poly[1].x = x + advance;
-			poly[0].y = poly[1].y = y + (var-> font.ascent - var-> font.internalLeading) / 2;
+			poly[0].y = poly[1].y = y + (var-> font.ascent - var-> font.internalLeading) / 3;
 			prima_matrix_apply2_int_to_int( matrix, poly, poly, 2);
 			if ( var-> font.underlineThickness <= 1 )
 				img_polyline(self, 2, poly, &ctx);

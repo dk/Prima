@@ -284,7 +284,7 @@ gp_text_out_rotated(
 		}
 
 		if ( PDrawable( self)-> font. style & fsStruckOut) {
-			ay = (PDrawable( self)-> font.ascent - PDrawable( self)-> font.internalLeading)/2 +
+			ay = (PDrawable( self)-> font.ascent - PDrawable( self)-> font.internalLeading)/3 +
 				+ ( XX-> flags. base_line ? 0 : XX-> font-> font. descent);
 			rx. l = -ovx.x * r-> matrix[0]. l + ay * r-> matrix[2]. l + 0.5;
 			ry. l = -ovx.x * r-> matrix[1]. l + ay * r-> matrix[3]. l + 0.5;
@@ -365,7 +365,7 @@ draw_text_underline(Handle self, const char * text, int x, int y, int len, int f
 		XDrawLine( DISP, XX-> gdrawable, XX-> gc,
 			x - ovx.x, REVERT( y + d), x + tw - 1 + ovx.y, REVERT( y + d));
 	if ( PDrawable( self)-> font. style & fsStruckOut) {
-		int scy = REVERT( y + (XX-> font-> font.ascent - XX-> font-> font.internalLeading)/2);
+		int scy = REVERT( y + (XX-> font-> font.ascent - XX-> font-> font.internalLeading)/3);
 		XDrawLine( DISP, XX-> gdrawable, XX-> gc,
 			x - ovx.x, scy, x + tw - 1 + ovx.y, scy);
 	}

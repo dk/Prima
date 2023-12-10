@@ -205,7 +205,7 @@ underscore_font( Handle self, int x, int y, int width, Bool use_alpha)
 		if (sys otmsStrikeoutSize > 0)
 			Y -= sys otmsStrikeoutPosition;
 		else
-			Y -= (var font. ascent - var font. internalLeading) / 2;
+			Y -= (var font. ascent - var font. internalLeading) / 3;
 
 		pt[0].x = 0;
 		pt[0].y = -Y;
