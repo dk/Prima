@@ -173,7 +173,7 @@ underscore_font( Handle self, int x, int y, int width, Bool use_alpha)
 
 		if ( !is_apt( aptTextOutBaseline))
 			Y -= var font. descent;
-		Y += var font. underlinePosition;
+		Y -= var font. underlinePosition;
 
 		pt[0].x = 0;
 		pt[0].y = -Y;
@@ -205,7 +205,7 @@ underscore_font( Handle self, int x, int y, int width, Bool use_alpha)
 		if (sys otmsStrikeoutSize > 0)
 			Y -= sys otmsStrikeoutPosition;
 		else
-			Y -= var font. ascent / 2;
+			Y -= (var font. ascent - var font. internalLeading) / 2;
 
 		pt[0].x = 0;
 		pt[0].y = -Y;

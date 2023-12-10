@@ -201,7 +201,9 @@ plot_glyphs( Handle self, PGlyphsOutRec t, int x, int y )
 			COPY_MATRIX_WITHOUT_TRANSLATION( VAR_MATRIX, matrix);
 		o.x += VAR_MATRIX[4];
 		o.y += VAR_MATRIX[5];
-	}
+	} else
+		prima_matrix_set_identity(matrix);
+
 
 	for ( i = i2 = 0; i < t->len; i++, i2 += 2) {
 		Byte *arena;
@@ -259,6 +261,46 @@ plot_glyphs( Handle self, PGlyphsOutRec t, int x, int y )
 			o.y = y;
 			prima_matrix_apply_int_to_int( matrix, &o.x, &o.y);
 		}
+	}
+
+	if ( var-> font.style & (fsUnderlined|fsStruckOut) ) {
+		if ( var-> font.underlineThickness <= 1 ) {
+			ctx.linePattern = lpSolid;
+		} else {
+			my-> graphic_context_push(self);
+			my-> set_lineWidth( self, var->font.underlineThickness );
+			my-> set_lineEnd( self, sv_2mortal(newSViv(leRound)) );
+			my-> set_linePattern( self, sv_2mortal(newSVpv("\1", PL_na)) );
+			if ( flags & ggoMonochrome)
+				my-> set_antialias( self, false );
+		}
+
+		if ( var-> font.style & fsStruckOut ) {
+			Point poly[2];
+			poly[0].x = x;
+			poly[1].x = x + advance;
+			poly[0].y = poly[1].y = y + (var-> font.ascent - var-> font.internalLeading) / 2;
+			prima_matrix_apply2_int_to_int( matrix, poly, poly, 2);
+			if ( var-> font.underlineThickness <= 1 )
+				img_polyline(self, 2, poly, &ctx);
+			else
+				Image_draw_primitive( self, 0, "siiii", "line", poly[0].x, poly[0].y, poly[1].x, poly[1].y);
+		}
+
+		if ( var-> font.style & fsUnderlined ) {
+			Point poly[2];
+			poly[0].x = x;
+			poly[1].x = x + advance;
+			poly[0].y = poly[1].y = y + var-> font.underlinePosition;
+			prima_matrix_apply2_int_to_int( matrix, poly, poly, 2);
+			if ( var-> font.underlineThickness <= 1 )
+				img_polyline(self, 2, poly, &ctx);
+			else
+				Image_draw_primitive( self, 0, "siiii", "line", poly[0].x, poly[0].y, poly[1].x, poly[1].y);
+		}
+
+		if ( var-> font.underlineThickness > 1 )
+			my-> graphic_context_pop(self);
 	}
 
 	if ( restore_font )

@@ -1135,8 +1135,8 @@ font_textmetric2font( TEXTMETRICW * tm, Font * fm, Bool readonly)
 void
 font_otm2font( OUTLINETEXTMETRICW * otm, Font * fm)
 {
-	fm-> underlinePosition  = -otm->otmsUnderscorePosition;
-	fm-> underlineThickness =  otm->otmsUnderscoreSize;
+	fm-> underlinePosition  = otm->otmsUnderscorePosition;
+	fm-> underlineThickness = otm->otmsUnderscoreSize;
 }
 
 void
@@ -1537,6 +1537,7 @@ font_font2gp( PFont font, Point res, Bool forceSize, HDC dc)
 	memcpy( &key, font, sizeof( Font));
 	font_font2gp_internal( font, res, forceSize, dc);
 	font-> resolution = res. y * 0x10000 + res. x;
+	memset( &font->undef, 0, sizeof(font->undef));
 	if ( forceSize) {
 		key. height = font-> height;
 		addSizeEntry = true;

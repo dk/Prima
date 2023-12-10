@@ -326,9 +326,8 @@ prepare_line_context( Handle self, unsigned char * lp, ImgPaintContext * ctx)
 	ctx->linePattern = lp;
 }
 
-
-static Bool
-primitive( Handle self, Bool fill, char * method, ...)
+Bool
+Image_draw_primitive( Handle self, Bool fill, char * method, ...)
 {
 	Bool r;
 	SV * ret;
@@ -356,7 +355,7 @@ Image_arc( Handle self, double x, double y, double dX, double dY, double startAn
 {
 	if ( opt_InPaint) return inherited arc(self, x, y, dX, dY, startAngle, endAngle);
 	while ( startAngle > endAngle ) endAngle += 360.0;
-	return primitive( self, 0, "snnnnnn", "arc", x, y, dX, dY, startAngle, endAngle);
+	return Image_draw_primitive( self, 0, "snnnnnn", "arc", x, y, dX, dY, startAngle, endAngle);
 }
 
 Bool
@@ -371,7 +370,7 @@ Image_bar( Handle self, double x1, double y1, double x2, double y2)
 	if (opt_InPaint)
 		return inherited bar( self, x1, y1, x2, y2);
 	else if ( var-> antialias ) {
-		ok = primitive( self, 1, "snnnn", "rectangle", x1, y1, x2, y2);
+		ok = Image_draw_primitive( self, 1, "snnnn", "rectangle", x1, y1, x2, y2);
 		my-> update_change(self);
 		return ok;
 	}
@@ -390,7 +389,7 @@ Image_bar( Handle self, double x1, double y1, double x2, double y2)
 		points = prima_array_tie( sv, sizeof(double), "d");
 		COPY_MATRIX(VAR_MATRIX, save);
 		COPY_MATRIX(identity, VAR_MATRIX);
-		ok = primitive( self, 1, "sS", "line", points );
+		ok = Image_draw_primitive( self, 1, "sS", "line", points );
 		COPY_MATRIX(save, VAR_MATRIX);
 		sv_free(points);
 		my-> update_change(self);
@@ -425,7 +424,7 @@ Image_bars( Handle self, SV * rects)
 		if (( p = prima_read_array( rects, "Image::bars", 'd', 4, 0, -1, &count, &do_free)) == NULL)
 			return false;
 		for ( i = 0, r = p; i < count; i++, r++) {
-			ok = primitive( self, 1, "snnnn", "rectangle",
+			ok = Image_draw_primitive( self, 1, "snnnn", "rectangle",
 				r->left,
 				r->bottom,
 				r->right - r->left,
@@ -462,7 +461,7 @@ Image_bars( Handle self, SV * rects)
 					points = prima_array_tie( sv, sizeof(double), "d");
 				}
 				memcpy( storage, npoly, sizeof(npoly));
-				ok &= primitive( self, 1, "sS", "line", points );
+				ok &= Image_draw_primitive( self, 1, "sS", "line", points );
 				continue;
 			}
 
@@ -488,7 +487,7 @@ Bool
 Image_chord( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
 {
 	if ( opt_InPaint) return inherited chord(self, x, y, dX, dY, startAngle, endAngle);
-	return primitive( self, 0, "snnnnnn", "chord", x, y, dX, dY, startAngle, endAngle);
+	return Image_draw_primitive( self, 0, "snnnnnn", "chord", x, y, dX, dY, startAngle, endAngle);
 }
 
 Bool
@@ -507,7 +506,7 @@ Image_clear(Handle self, double x1, double y1, double x2, double y2)
 		if ( !my->graphic_context_push(self)) return false;
 		apc_gp_set_color(self, apc_gp_get_back_color(self));
 		apc_gp_set_fill_pattern(self, fillPatterns[fpSolid]);
-		ok = primitive( self, 1, "snnnn", "rectangle", x1, y1, x2, y2);
+		ok = Image_draw_primitive( self, 1, "snnnn", "rectangle", x1, y1, x2, y2);
 		my->graphic_context_pop(self);
 		return ok;
 	} else {
@@ -554,7 +553,7 @@ Image_clear(Handle self, double x1, double y1, double x2, double y2)
 			COPY_MATRIX(identity, VAR_MATRIX);
 			apc_gp_set_color(self, apc_gp_get_back_color(self));
 			apc_gp_set_fill_pattern(self, fillPatterns[fpSolid]);
-			ok = primitive( self, 1, "sS", "line", points );
+			ok = Image_draw_primitive( self, 1, "sS", "line", points );
 			COPY_MATRIX(save, VAR_MATRIX);
 			sv_free(points);
 			my-> graphic_context_pop(self);
@@ -571,35 +570,35 @@ Bool
 Image_ellipse( Handle self, double x, double y,  double dX, double dY)
 {
 	if ( opt_InPaint) return inherited ellipse(self, x, y, dX, dY);
-	return primitive( self, 0, "snnnn", "ellipse", x, y, dX, dY);
+	return Image_draw_primitive( self, 0, "snnnn", "ellipse", x, y, dX, dY);
 }
 
 Bool
 Image_fill_chord( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
 {
 	if ( opt_InPaint) return inherited fill_chord(self, x, y, dX, dY, startAngle, endAngle);
-	return primitive( self, 1, "snnnnnn", "chord", x, y, dX, dY, startAngle, endAngle);
+	return Image_draw_primitive( self, 1, "snnnnnn", "chord", x, y, dX, dY, startAngle, endAngle);
 }
 
 Bool
 Image_fill_ellipse( Handle self, double x, double y,  double dX, double dY)
 {
 	if ( opt_InPaint) return inherited fill_ellipse(self, x, y, dX, dY);
-	return primitive( self, 1, "snnnn", "ellipse", x, y, dX, dY);
+	return Image_draw_primitive( self, 1, "snnnn", "ellipse", x, y, dX, dY);
 }
 
 Bool
 Image_fillpoly( Handle self, SV * points)
 {
 	if ( opt_InPaint) return inherited fillpoly(self, points);
-	return primitive( self, 1, "sS", "line", points );
+	return Image_draw_primitive( self, 1, "sS", "line", points );
 }
 
 Bool
 Image_fill_sector( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
 {
 	if ( opt_InPaint) return inherited fill_sector(self, x, y, dX, dY, startAngle, endAngle);
-	return primitive( self, 1, "snnnnnn", "sector", x, y, dX, dY, startAngle, endAngle);
+	return Image_draw_primitive( self, 1, "snnnnnn", "sector", x, y, dX, dY, startAngle, endAngle);
 }
 
 Bool
@@ -636,7 +635,7 @@ Image_line(Handle self, double x1, double y1, double x2, double y2)
 		prepare_line_context( self, lp, &ctx);
 		return img_polyline(self, 2, poly, &ctx);
 	} else {
-		return primitive( self, 0, "snnnn", "line", x1, y1, x2, y2);
+		return Image_draw_primitive( self, 0, "snnnn", "line", x1, y1, x2, y2);
 	}
 }
 
@@ -664,7 +663,7 @@ Image_lines( Handle self, SV * points)
 		if (do_free) free(lines);
 		return ok;
 	} else {
-		return primitive( self, 0, "sS", "lines", points );
+		return Image_draw_primitive( self, 0, "sS", "lines", points );
 	}
 }
 
@@ -694,7 +693,7 @@ Image_polyline( Handle self, SV * points)
 		free( lines );
 		return ok;
 	} else {
-		return primitive( self, 0, "sS", "line", points );
+		return Image_draw_primitive( self, 0, "sS", "line", points );
 	}
 }
 
@@ -713,7 +712,7 @@ Image_rectangle(Handle self, double x1, double y1, double x2, double y2)
 		prepare_line_context( self, lp, &ctx);
 		return img_polyline(self, 5, dst, &ctx);
 	} else {
-		return primitive( self, 0, "snnnn", "rectangle", x1, y1, x2, y2);
+		return Image_draw_primitive( self, 0, "snnnn", "rectangle", x1, y1, x2, y2);
 	}
 }
 
@@ -721,7 +720,7 @@ Bool
 Image_sector( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
 {
 	if ( opt_InPaint) return inherited sector(self, x, y, dX, dY, startAngle, endAngle);
-	return primitive( self, 0, "snnnnnn", "sector", x, y, dX, dY, startAngle, endAngle);
+	return Image_draw_primitive( self, 0, "snnnnnn", "sector", x, y, dX, dY, startAngle, endAngle);
 }
 
 
