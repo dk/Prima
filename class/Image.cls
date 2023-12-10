@@ -43,7 +43,7 @@ object Prima::Image( Prima::Drawable)
 	method Bool   bar_alpha(int alpha, int x1=-1, int y1=-1, int x2=-1, int y2=-1);
 	method Bool   bars(SV * rects);
 	method Handle bitmap();
-	method Bool   begin_font_query();
+	c_only Bool   begin_font_query();
 	method Bool   begin_paint();
 	method Bool   begin_paint_info();
 	method Bool   can_draw_alpha();
@@ -55,7 +55,7 @@ object Prima::Image( Prima::Drawable)
 	method void   done();
 	method Handle dup();
 	method Bool   ellipse(double x, double y, double dX, double dY);
-	method void   end_font_query();
+	c_only void   end_font_query();
 	method void   end_paint();
 	method void   end_paint_info();
 	method Handle extract( int x, int y, int width, int height);
@@ -68,6 +68,7 @@ object Prima::Image( Prima::Drawable)
 	method SV*    fonts( char * name = "", char * encoding = "");
 	method SV*    font_encodings( char * encoding = "");
 	method int    get_bpp();
+	method Font   get_font();
 	method SV   * get_handle();
 	method Color  get_nearest_color( Color color);
 	method Bool   graphic_context_push();

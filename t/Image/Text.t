@@ -16,13 +16,10 @@ if ( $^O !~ /win32/i && 0 == grep { $_ eq 'freetype' } @{ $Prima::Config::Config
 my $i = Prima::Image->new( size => [50,50], type => im::BW );
 
 is( $i-> get_paint_state, ps::Disabled, 'get_paint_state == ps::Disabled');
-ok( $i->begin_font_query, 'begin font query');
+$i->get_font;
 is( $i-> get_paint_state, ps::FontQuery, 'get_paint_state == ps::FontQuery');
-$i->end_font_query;
-is( $i-> get_paint_state, ps::Disabled, 'end_font_query == ps::Disabled');
 
 unless ( $noX11 ) {
-	ok( $i->begin_font_query, 'begin font query again');
 	ok( $i->begin_paint_info, 'begin paint info');
 	is( $i-> get_paint_state, ps::Information, 'get_paint_state == ps::Information');
 	$i->end_paint_info;

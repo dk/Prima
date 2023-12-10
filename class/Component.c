@@ -50,6 +50,7 @@ Component_init( Handle self, HV * profile)
 		my-> add_notification( self, HeKEY( he), *holder, self, -1);
 	}
 	sv_free( res);
+	CORE_INIT_TRANSIENT(Component);
 }
 
 void

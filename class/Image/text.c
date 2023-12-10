@@ -46,13 +46,30 @@ Image_font_match( SV * dummy, Font * source, Font * dest, Bool pick)
 	return dest;
 }
 
+Font
+Image_get_font( Handle self)
+{
+	if ( !is_opt(optInFontQuery))
+		my-> begin_font_query(self);
+
+	return var-> font;
+}
+
 void
 Image_set_font( Handle self, Font font)
 {
-	if (opt_InPaint || is_opt(optInFontQuery))
-		return inherited set_font(self, font);
-	Drawable_font_add( self, &font, &var->font);
+	if (
+		!is_opt(optInFontQuery) &&        /* special case during inherited init             */
+		var->transient_class == CComponent /* to not enter for every image creation          */
+	) {                                       /* until at least some font operations are needed */
+		Drawable_font_add( self, &font, &var->font);
+		return;
+	}
 
+	if ( !is_opt(optInFontQuery))
+		my-> begin_font_query(self);
+
+	inherited set_font(self, font);
 }
 
 static PTextShapeRec
