@@ -70,6 +70,9 @@ Drawable_font_key( const char * name, unsigned int style);
 int
 Drawable_get_glyphs_width( Handle self, PGlyphsOutRec t, Bool add_overhangs);
 
+void
+Drawable_get_glyphs_box( Handle self, PGlyphsOutRec t, Point * pt);
+
 char *
 Drawable_hop_text(char * start, Bool utf8, int from);
 

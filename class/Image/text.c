@@ -119,14 +119,16 @@ static Bool
 plot_glyphs( Handle self, PGlyphsOutRec t, int x, int y )
 {
 	unsigned int    i, i2, flags;
-	Point           o;
+	Point           o, org;
+	int             dy = 0;
 	int             advance      = 0;
 	Bool            restore_font = false;
 	uint32_t        last_font    = 0;
 	Bool            straight     = (var->font.direction == 0.0) && prima_matrix_is_translated_only(VAR_MATRIX);
 	Matrix          matrix;
 	ImgPaintContext ctx;
-	Color color;
+	Color           color;
+	Bool            gp_save = false;
 
 	flags = ggoUseHints;
 	if (((var->type & imBPP) == 1) || !var->antialias)
@@ -177,14 +179,10 @@ plot_glyphs( Handle self, PGlyphsOutRec t, int x, int y )
 		ctx.rop = ropBlend | ropSrcAlpha | (var-> alpha << ropSrcAlphaShift);
 	}
 
-	if ( !apc_gp_get_text_out_baseline( self))
-		y += var-> font. descent;
-	o.x = x;
-	o.y = y;
-
-	if ( !( flags & ggoMonochrome))
-		color = Image_premultiply_color(self, ctx.rop, color);
-	Image_color2pixel( self, color, ctx.color);
+	if ( !apc_gp_get_text_out_baseline( self)) {
+		dy = var-> font. descent;
+		y += dy;
+	}
 
 	if ( !straight ) {
 		if ( var->font.direction != 0.0 ) {
@@ -196,14 +194,61 @@ plot_glyphs( Handle self, PGlyphsOutRec t, int x, int y )
 			m2[2] = -s;
 			m2[3] = c;
 			prima_matrix_multiply( VAR_MATRIX, m2, matrix );
-			matrix[4] = matrix[5] = 0.0;
 		} else
-			COPY_MATRIX_WITHOUT_TRANSLATION( VAR_MATRIX, matrix);
-		o.x += VAR_MATRIX[4];
-		o.y += VAR_MATRIX[5];
+			COPY_MATRIX( VAR_MATRIX, matrix);
 	} else
 		prima_matrix_set_identity(matrix);
+	org.x = x;
+	org.y = y;
+	o.x = matrix[4] += x;
+	o.y = matrix[5] += y;
+	x = y = 0;
 
+	if ( my->get_rop2(self) != ropNoOper ) {
+		Point p[5];
+		Color bc;
+		double d = var->font.direction;
+		var->font.direction = 0;
+		Drawable_get_glyphs_box(self, t, p);
+		var->font.direction = d;
+
+		bc = my->get_backColor(self);
+		if ( !( flags & ggoMonochrome))
+			bc = Image_premultiply_color(self, ctx.rop, bc);
+		if ( p[0].x == p[1].x && p[0].y == p[2].y && straight) {
+			Image_color2pixel( self, bc, ctx.color);
+			memset(&ctx.pattern, 0xff, sizeof(FillPattern));
+			img_bar( self, o.x + p[1].x, o.y + p[1].y - dy, p[2].x - p[1].x + 1, p[2].y - p[1].y + 1, &ctx);
+		} else {
+			SV * sv1  = prima_array_new(sizeof(Point) * 4);
+			SV * sv2  = sv_2mortal( prima_array_tie(sv1, sizeof(p[0].x), "i"));
+			Point *p2 = (Point*) SvPV(sv1, PL_na);
+			p2[0].x = p[0].x;
+			p2[0].y = p[0].y - dy;
+			p2[1].x = p[1].x;
+			p2[1].y = p[1].y - dy;
+			p2[2].x = p[3].x;
+			p2[2].y = p[3].y - dy;
+			p2[3].x = p[2].x;
+			p2[3].y = p[2].y - dy;
+			prima_matrix_apply2_int_to_int( matrix, p2, p2, 4);
+			if ( !gp_save) {
+				gp_save = my-> graphic_context_push(self);
+				prima_matrix_set_identity(VAR_MATRIX);
+				apc_gp_set_text_matrix( self, VAR_MATRIX);
+			}
+			apc_gp_set_fill_pattern( self, fillPatterns[fpSolid]);
+			my-> set_rop(self, ropCopyPut);
+			my-> set_color(self, bc);
+			if ( flags & ggoMonochrome)
+				my-> set_antialias( self, false );
+			Image_draw_primitive( self, 1, "sS", "line", sv2 );
+		}
+	}
+
+	if ( !( flags & ggoMonochrome))
+		color = Image_premultiply_color(self, ctx.rop, color);
+	Image_color2pixel( self, color, ctx.color);
 
 	for ( i = i2 = 0; i < t->len; i++, i2 += 2) {
 		Byte *arena;
@@ -216,12 +261,11 @@ plot_glyphs( Handle self, PGlyphsOutRec t, int x, int y )
 				if ( !Drawable_switch_font(self, t->fonts[i]))
 					continue;
 				last_font = t->fonts[i];
-				restore_font = true;
 			} else {
 				apc_gp_set_font( self, &var->font);
 				last_font = 0;
-				restore_font = true;
 			}
+			restore_font = !gp_save;
 		}
 
 		if ( !( arena = apc_font_get_glyph_bitmap(
@@ -234,6 +278,7 @@ plot_glyphs( Handle self, PGlyphsOutRec t, int x, int y )
 		glyph.left   = o.x + offset.x;
 		glyph.bottom = o.y + offset.y;
 		if ( t->positions ) {
+			/* XXX -- it this correct? */
 			glyph.left   += t->positions[i2 + 0];
 			glyph.bottom += t->positions[i2 + 1];
 		}
@@ -260,17 +305,33 @@ plot_glyphs( Handle self, PGlyphsOutRec t, int x, int y )
 		if ( !straight ) {
 			o.y = y;
 			prima_matrix_apply_int_to_int( matrix, &o.x, &o.y);
+		} else {
+			o.x += matrix[4];
+			o.y = y + matrix[5];
 		}
 	}
 
 	if ( var-> font.style & (fsUnderlined|fsStruckOut) ) {
-		if ( var-> font.underlineThickness <= 1 ) {
+		Bool use_1px =
+			var-> font.underlineThickness <= 1 && (
+				(flags & ggoMonochrome) ||
+				straight ||
+				!my->get_antialias(self)
+			)
+		;
+
+		if ( use_1px ) {
 			ctx.linePattern = lpSolid;
 		} else {
-			my-> graphic_context_push(self);
+			if ( !gp_save ) {
+				gp_save = my-> graphic_context_push(self);
+				prima_matrix_set_identity(VAR_MATRIX);
+				apc_gp_set_text_matrix( self, VAR_MATRIX);
+			}
+			my-> set_color(self, color);
 			my-> set_lineWidth( self, var->font.underlineThickness );
 			my-> set_lineEnd( self, sv_2mortal(newSViv(leRound)) );
-			my-> set_linePattern( self, sv_2mortal(newSVpv("\1", PL_na)) );
+			apc_gp_set_line_pattern(self, lpSolid, strlen((char*) lpSolid));
 			if ( flags & ggoMonochrome)
 				my-> set_antialias( self, false );
 		}
@@ -281,7 +342,7 @@ plot_glyphs( Handle self, PGlyphsOutRec t, int x, int y )
 			poly[1].x = x + advance;
 			poly[0].y = poly[1].y = y + (var-> font.ascent - var-> font.internalLeading) / 3;
 			prima_matrix_apply2_int_to_int( matrix, poly, poly, 2);
-			if ( var-> font.underlineThickness <= 1 )
+			if ( use_1px)
 				img_polyline(self, 2, poly, &ctx);
 			else
 				Image_draw_primitive( self, 0, "siiii", "line", poly[0].x, poly[0].y, poly[1].x, poly[1].y);
@@ -293,15 +354,17 @@ plot_glyphs( Handle self, PGlyphsOutRec t, int x, int y )
 			poly[1].x = x + advance;
 			poly[0].y = poly[1].y = y + var-> font.underlinePosition;
 			prima_matrix_apply2_int_to_int( matrix, poly, poly, 2);
-			if ( var-> font.underlineThickness <= 1 )
+			if ( use_1px) {
 				img_polyline(self, 2, poly, &ctx);
-			else
+			} else {
 				Image_draw_primitive( self, 0, "siiii", "line", poly[0].x, poly[0].y, poly[1].x, poly[1].y);
+			}
 		}
 
-		if ( var-> font.underlineThickness > 1 )
-			my-> graphic_context_pop(self);
 	}
+
+	if ( gp_save )
+		my-> graphic_context_pop(self);
 
 	if ( restore_font )
 		apc_gp_set_font( self, &var-> font);

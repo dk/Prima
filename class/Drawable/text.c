@@ -278,8 +278,8 @@ Drawable_get_text_width( Handle self, SV * text, int flags, int from, int len)
 	return res;
 }
 
-static void
-get_glyphs_box( Handle self, PGlyphsOutRec t, Point * pt)
+void
+Drawable_get_glyphs_box( Handle self, PGlyphsOutRec t, Point * pt)
 {
 	Bool text_out_baseline;
 
@@ -346,7 +346,7 @@ Drawable_get_text_box( Handle self, SV * text, int from, int len )
 		if (t.advances) {
 			if (!( p = malloc( sizeof(Point) * 5 )))
 				return newRV_noinc(( SV *) newAV());
-			get_glyphs_box(self, &t, p);
+			Drawable_get_glyphs_box(self, &t, p);
 		} else {
 			dmENTER( newRV_noinc(( SV *) newAV()));
 			p = apc_gp_get_glyphs_box( self, &t);
