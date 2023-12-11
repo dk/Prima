@@ -119,7 +119,7 @@ static Bool
 plot_glyphs( Handle self, PGlyphsOutRec t, int x, int y )
 {
 	unsigned int    i, i2, flags;
-	Point           o, org;
+	Point           o;
 	int             dy = 0;
 	int             advance      = 0;
 	Bool            restore_font = false;
@@ -198,8 +198,6 @@ plot_glyphs( Handle self, PGlyphsOutRec t, int x, int y )
 			COPY_MATRIX( VAR_MATRIX, matrix);
 	} else
 		prima_matrix_set_identity(matrix);
-	org.x = x;
-	org.y = y;
 	o.x = matrix[4] += x;
 	o.y = matrix[5] += y;
 	x = y = 0;
