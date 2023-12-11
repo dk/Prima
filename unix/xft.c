@@ -626,7 +626,7 @@ prima_xft_get_text_box( Handle self, const char * text, int len, int flags)
 {
 	DEFXX;
 	Point ovx;
-	return prima_get_text_box(self, &ovx,
+	return prima_get_text_box(self, &ovx, 
 		prima_xft_get_text_width( XX-> font, text, len, flags, XX-> fc_map8, &ovx)
 	);
 }
@@ -895,12 +895,13 @@ overstrike( Handle self, int x, int y, Point *ovx, int advance)
 	if ( lw != t ) {
 		XGCValues gcv;
 		lw = gcv.line_width = t;
-		XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);
+		gcv.cap_style = CapNotLast;
+		XChangeGC( DISP, XX-> gc, GCLineWidth | GCCapStyle, &gcv);
 	}
 
 	if ( PDrawable( self)-> font. style & fsUnderlined) {
 		x1 = ovx->x;
-		x2 = advance;
+		x2 = advance + 1;
 		y2 = d;
 		y1 = -y2;
 		prima_matrix_apply_int_to_int( XX->fc_font_matrix, &x1, &y1);
@@ -914,7 +915,7 @@ overstrike( Handle self, int x, int y, Point *ovx, int advance)
 
 	if ( PDrawable( self)-> font. style & fsStruckOut) {
 		x1 = ovx->x;
-		x2 = advance;
+		x2 = advance + 1;
 		y2 = (XX-> font-> font.ascent - XX-> font-> font.internalLeading)/3;
 		y1 = -y2;
 		prima_matrix_apply_int_to_int( XX->fc_font_matrix, &x1, &y1);
@@ -1108,10 +1109,8 @@ prima_xft_text_out( Handle self, const char * text, int x, int y, int len, int f
 
 	if ( PDrawable( self)-> font. style & (fsUnderlined|fsStruckOut)) {
 		Point ovx;
-		overstrike(self, x, y, &ovx, prima_xft_get_text_width(
-			XX-> font, text, len, flags | toAddOverhangs,
-			X(self)-> fc_map8, &ovx) - 1
-		);
+		int l = prima_xft_get_text_width( XX-> font, text, len, flags | toAddOverhangs, X(self)-> fc_map8, &ovx);
+		overstrike(self, x, y, &ovx, l - ovx.x - ovx.y - 1);
 	}
 	XFLUSH;
 

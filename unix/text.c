@@ -257,7 +257,7 @@ gp_text_out_rotated(
 
 	if ( PDrawable( self)-> font. style & (fsUnderlined|fsStruckOut)) {
 		int lw = 1;
-		int tw = gp_get_text_width( self, text, len, flags | toAddOverhangs) - 1;
+		int tw = gp_get_text_width( self, text, len, flags);
 		int d  = PDrawable(self)-> font.underlinePosition;
 		int t  = PDrawable(self)-> font.underlineThickness;
 		Point ovx = gp_get_text_overhangs( self, text, len, flags);
@@ -266,7 +266,8 @@ gp_text_out_rotated(
 		if ( lw != t) {
 			XGCValues gcv;
 			lw = gcv.line_width = t;
-			XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);
+			gcv.cap_style = CapNotLast;
+			XChangeGC( DISP, XX-> gc, GCLineWidth | GCCapStyle, &gcv);
 		}
 
 		if ( PDrawable( self)-> font. style & fsUnderlined) {
@@ -278,6 +279,7 @@ gp_text_out_rotated(
 			tw += ovx.y;
 			rx. l = tw * r-> matrix[0]. l + ay * r-> matrix[2]. l + 0.5;
 			ry. l = tw * r-> matrix[1]. l + ay * r-> matrix[3]. l + 0.5;
+			tw -= ovx.y;
 			x2 = x + rx. i. i;
 			y2 = y + ry. i. i;
 			XDrawLine( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y1), x2, REVERT( y2));
@@ -293,6 +295,7 @@ gp_text_out_rotated(
 			tw += ovx.y;
 			rx. l = tw * r-> matrix[0]. l + ay * r-> matrix[2]. l + 0.5;
 			ry. l = tw * r-> matrix[1]. l + ay * r-> matrix[3]. l + 0.5;
+			tw -= ovx.y;
 			x2 = x + rx. i. i;
 			y2 = y + ry. i. i;
 			XDrawLine( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y1), x2, REVERT( y2));
@@ -350,14 +353,15 @@ draw_text_underline(Handle self, const char * text, int x, int y, int len, int f
 {
 	DEFXX;
 	int lw = 1;
-	int tw = gp_get_text_width( self, text, len, flags | toAddOverhangs);
+	int tw = gp_get_text_width( self, text, len, flags);
 	int d  = PDrawable(self)-> font.underlinePosition;
 	int t  = PDrawable(self)-> font.underlineThickness;
 	Point ovx = gp_get_text_overhangs( self, text, len, flags);
 	if ( lw != t ) {
 		XGCValues gcv;
 		lw = gcv.line_width = t;
-		XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);
+		gcv.cap_style = CapNotLast;
+		XChangeGC( DISP, XX-> gc, GCLineWidth | GCCapStyle, &gcv);
 	}
 	if ( !XX-> flags. base_line)
 		y += XX-> font-> font. descent;
