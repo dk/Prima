@@ -204,7 +204,7 @@ plot_glyphs( Handle self, PGlyphsOutRec t, int x, int y )
 	o.y = matrix[5] += y;
 	x = y = 0;
 
-	if ( my->get_rop2(self) != ropNoOper ) {
+	if ( my->get_textOpaque(self)) {
 		Point p[5];
 		Color bc;
 		double d = var->font.direction;

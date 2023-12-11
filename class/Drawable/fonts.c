@@ -65,10 +65,12 @@ Drawable_font_add( Handle self, Font * source, Font * dest)
 		if (SRC(name)) {
 			strcpy( dest-> name, source-> name);
 			dest->is_utf8.name = source->is_utf8.name;
+			dest->undef.name = 0;
 		}
 		if ( SRC(encoding)) {
 			strcpy( dest-> encoding, source-> encoding);
 			dest->is_utf8.encoding = source->is_utf8.encoding;
+			dest->undef.encoding = 0;
 		}
 	}
 
