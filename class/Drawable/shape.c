@@ -342,13 +342,14 @@ static Bool
 shape_unicode(Handle self, PTextShapeRec t, PTextShapeFunc shaper,
 	Bool glyph_mapper_only, Bool fribidi_arabic_shaping, Bool reorder
 ) {
-	Bool ok, reorder_swaps_rtl, font_changed = false;
+	Bool ok, reorder_swaps_rtl;
 	Byte analysis_buf[MAX_CHARACTERS], *save_analysis, *analysis;
 	uint16_t fonts_buf[MAX_CHARACTERS], *save_fonts, *fonts;
 	uint16_t l2v_buf[MAX_CHARACTERS], *l2v;
 	unsigned int i, run_offs, run_len;
 	semistatic_t p_analysis, p_fonts, p_l2v;
 	BidiRunRec brr;
+	SaveFont savefont;
 
 #ifdef _DEBUG
 	printf("\n%s input: ", (t->flags & toRTL) ? "rtl" : "ltr");
@@ -430,6 +431,7 @@ shape_unicode(Handle self, PTextShapeRec t, PTextShapeFunc shaper,
 	t-> analysis = analysis;
 	save_fonts = t->fonts;
 	if ( t->fonts ) t-> fonts = fonts;
+	Drawable_save_font(self, &savefont);
 	while (( run_len = run_next(t, &brr)) > 0) {
 		TextShapeRec run;
 		run_alloc(t, run_offs, run_len, glyph_mapper_only ^ reorder_swaps_rtl, &run);
@@ -445,20 +447,14 @@ shape_unicode(Handle self, PTextShapeRec t, PTextShapeFunc shaper,
 		printf("\n");
 	}
 #endif
-		if ( t-> fonts && ( run.fonts[0] != 0 || font_changed )) {
-			if ( run.fonts[0] == 0 ) {
-				apc_gp_set_font( self, &var->font);
-			} else {
-				if ( Drawable_switch_font(self, run.fonts[0])) {
+		if ( t-> fonts ) {
+			if ( Drawable_switch_font(self, &savefont, run.fonts[0])) {
 #ifdef _DEBUG
-					printf("%d: set font #%d\n", run_offs, run.fonts[0]);
+				printf("%d: set font #%d\n", run_offs, run.fonts[0]);
 #endif
-					font_changed = true;
-				}
+			} else {
 #ifdef _DEBUG
-				else {
-					printf("%d: failed to set font #%d\n", run_offs, run.fonts[0]);
-				}
+				printf("%d: failed to set font #%d\n", run_offs, run.fonts[0]);
 #endif
 			}
 		}
@@ -498,8 +494,7 @@ shape_unicode(Handle self, PTextShapeRec t, PTextShapeFunc shaper,
 	semistatic_done( &p_fonts);
 	semistatic_done( &p_l2v);
 
-	if ( font_changed )
-		apc_gp_set_font( self, &var->font);
+	Drawable_restore_font( self, &savefont);
 
 	return ok;
 }

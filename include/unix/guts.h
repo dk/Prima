@@ -1237,7 +1237,7 @@ extern PCachedFont
 prima_font_pick( PFont source, Matrix matrix, PFont dest, unsigned int selection );
 
 extern Point *
-prima_get_text_box( Handle self, Point * ovx, int advance );
+prima_get_text_box( Handle self, Point ovx, int advance );
 
 extern Bool
 prima_corefont_init( char *error_buf);

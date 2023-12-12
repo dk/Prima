@@ -196,10 +196,11 @@ query_abc_range_glyphs( Handle self, GlyphWrapRec * t, unsigned int base)
 		/* different fonts case */
 		Byte * fa;
 		PassiveFontEntry *pfe;
-		int i, font_changed = 0;
+		int i;
 		uint32_t from, to;
 		unsigned int page;
 		char * key;
+		SaveFont savefont;
 		Byte used_fonts[MAX_CHARACTERS / 8], filled_entries[256 / 8];
 
 		from = base * 256;
@@ -210,6 +211,7 @@ query_abc_range_glyphs( Handle self, GlyphWrapRec * t, unsigned int base)
 		used_fonts[0] = 0x01; /* fid = 0 */
 		key = Drawable_font_key(var->font.name, var->font.style);
 		i = PTR2IV(hash_fetch(font_substitutions, key, strlen(key)));
+		Drawable_save_font(self, &savefont);
 		if ( i > 0 ) {
 			/* copy ranges from subst table */
 			pfe = PASSIVE_FONT(i);
@@ -248,9 +250,8 @@ query_abc_range_glyphs( Handle self, GlyphWrapRec * t, unsigned int base)
 			used_fonts[fid >> 3] |= 1 << (fid & 7);
 
 			pfe = PASSIVE_FONT(fid);
-			if ( !Drawable_switch_font(self, fid))
+			if ( !Drawable_switch_font(self, &savefont, fid))
 				continue;
-			font_changed = 1;
 
 			if ( !pfe-> ranges_queried )
 				Drawable_query_ranges(pfe);
@@ -269,13 +270,10 @@ query_abc_range_glyphs( Handle self, GlyphWrapRec * t, unsigned int base)
 				filled_entries[(uv - from) >> 3] |= 1 << ((uv - from) & 7);
 				abc[uv - from] = abc2[uv - from];
 			}
+
+			free(abc2);
 		}
-		if ( font_changed ) {
-			if ( Drawable_set_font == my->set_font && (is_opt(optSystemDrawable) || is_opt(optInFontQuery) ))
-				apc_gp_set_font( self, &var->font);
-			else
-				my->set_font(self, var->font);
-		}
+		Drawable_restore_font( self, &savefont );
 	}
 NO_FONT_ABC:
 

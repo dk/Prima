@@ -107,6 +107,12 @@ object Prima::Drawable ( Prima::Component)
 	PList    font_abc_glyphs;
 	unsigned long * font_abc_glyphs_ranges;
 	int             font_abc_glyphs_n_ranges;
-	c_only    int*  do_text_wrap( TextWrapRec * tw, GlyphWrapRec * gw, uint16_t * log2vis);
+
+	# misc stuff
+	NPoint   trig_cache;
+	c_only   NPoint trig_cache();
+	c_only   void   calculate_text_box( int advance, Bool text_out_baseline, Point overhangs, Point * pt);
+	c_only   int*   do_text_wrap( TextWrapRec * tw, GlyphWrapRec * gw, uint16_t * log2vis);
 	c_only   Bool   assert_drawing_mode( int mode );
+
 }

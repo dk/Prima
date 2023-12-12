@@ -244,6 +244,7 @@ Drawable_set_font( Handle self, Font font)
 	Drawable_clear_font_abc_caches( self);
 	apc_font_pick( self, &font, &var-> font);
 	apc_gp_set_font( self, &var-> font);
+	opt_clear(optFontTrigCache);
 }
 
 

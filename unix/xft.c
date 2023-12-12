@@ -317,11 +317,12 @@ prima_xft_match( Font *font, Matrix matrix, Bool by_size, PCachedFont cf)
 			FcMatrixScale( &mat, ( double) font-> width / base_width, 1);
 			XFTdebug("FcMatrixScale %d/%d=%g", font->width, base_width, ( double) font-> width / base_width);
 		}
-		if ( !IS_ZERO(requested_font. direction))
+		if ( !IS_ZERO(requested_font. direction)) {
 			FcMatrixRotate( &mat,
 				cos(font->direction * 3.14159265358 / 180.0),
 				sin(font->direction * 3.14159265358 / 180.0)
 			);
+		}
 		if ( matrix ) {
 			FcMatrix result;
 			FcMatrix m = { matrix[0], matrix[2], matrix[1], matrix[3] };
@@ -626,7 +627,7 @@ prima_xft_get_text_box( Handle self, const char * text, int len, int flags)
 {
 	DEFXX;
 	Point ovx;
-	return prima_get_text_box(self, &ovx, 
+	return prima_get_text_box(self, ovx, 
 		prima_xft_get_text_width( XX-> font, text, len, flags, XX-> fc_map8, &ovx)
 	);
 }
@@ -636,7 +637,7 @@ prima_xft_get_glyphs_box( Handle self, PGlyphsOutRec t)
 {
 	DEFXX;
 	Point ovx;
-	return prima_get_text_box(self, &ovx,
+	return prima_get_text_box(self, ovx,
 		prima_xft_get_glyphs_width(self, XX-> font, t, &ovx)
 	);
 }

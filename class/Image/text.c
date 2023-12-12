@@ -122,13 +122,12 @@ plot_glyphs( Handle self, PGlyphsOutRec t, int x, int y )
 	Point           o;
 	int             dy = 0;
 	int             advance      = 0;
-	Bool            restore_font = false;
-	uint32_t        last_font    = 0;
 	Bool            straight     = (var->font.direction == 0.0) && prima_matrix_is_translated_only(VAR_MATRIX);
 	Matrix          matrix;
 	ImgPaintContext ctx;
 	Color           color;
 	Bool            gp_save = false;
+	SaveFont        savefont;
 
 	flags = ggoUseHints;
 	if (((var->type & imBPP) == 1) || !var->antialias)
@@ -187,12 +186,11 @@ plot_glyphs( Handle self, PGlyphsOutRec t, int x, int y )
 	if ( !straight ) {
 		if ( var->font.direction != 0.0 ) {
 			Matrix m2;
-			double s = sin( var-> font.direction / 57.29577951);
-			double c = cos( var-> font.direction / 57.29577951);
-			m2[0] = c;
-			m2[1] = s;
-			m2[2] = -s;
-			m2[3] = c;
+			NPoint c = my->trig_cache(self);
+			m2[0] =  c.y;
+			m2[1] =  c.x;
+			m2[2] = -c.x;
+			m2[3] =  c.y;
 			prima_matrix_multiply( VAR_MATRIX, m2, matrix );
 		} else
 			COPY_MATRIX( VAR_MATRIX, matrix);
@@ -248,23 +246,16 @@ plot_glyphs( Handle self, PGlyphsOutRec t, int x, int y )
 		color = Image_premultiply_color(self, ctx.rop, color);
 	Image_color2pixel( self, color, ctx.color);
 
+	Drawable_save_font( self, &savefont );
 	for ( i = i2 = 0; i < t->len; i++, i2 += 2) {
 		Byte *arena;
 		Point offset, size;
 		Rect glyph;
 		int default_advance = 0;
 
-		if ( t->fonts && t->fonts[i] != last_font ) {
-			if (t->fonts[i] != 0) {
-				if ( !Drawable_switch_font(self, t->fonts[i]))
-					continue;
-				last_font = t->fonts[i];
-			} else {
-				apc_gp_set_font( self, &var->font);
-				last_font = 0;
-			}
-			restore_font = !gp_save;
-		}
+		if ( t->fonts )
+			if ( !Drawable_switch_font(self, &savefont, t->fonts[i]))
+				continue;
 
 		if ( !( arena = apc_font_get_glyph_bitmap(
 			self, t->glyphs[i], flags,
@@ -308,6 +299,7 @@ plot_glyphs( Handle self, PGlyphsOutRec t, int x, int y )
 			o.y = y + matrix[5];
 		}
 	}
+	Drawable_restore_font( self, &savefont );
 
 	if ( var-> font.style & (fsUnderlined|fsStruckOut) ) {
 		Bool use_1px =
@@ -363,9 +355,6 @@ plot_glyphs( Handle self, PGlyphsOutRec t, int x, int y )
 
 	if ( gp_save )
 		my-> graphic_context_pop(self);
-
-	if ( restore_font )
-		apc_gp_set_font( self, &var-> font);
 
 	return true;
 }

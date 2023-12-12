@@ -460,7 +460,7 @@ Point *
 prima_fq_get_text_box( Handle self, const char * text, int len, int flags)
 {
 	Point ovx;
-	return prima_get_text_box(self, &ovx,
+	return prima_get_text_box(self, ovx,
 		prima_fq_get_text_width( self, text, len, flags, &ovx)
 	);
 }
@@ -469,7 +469,7 @@ Point *
 prima_fq_get_glyphs_box( Handle self, PGlyphsOutRec t)
 {
 	Point ovx;
-	return prima_get_text_box(self, &ovx,
+	return prima_get_text_box(self, ovx,
 		prima_fq_get_glyphs_width(self, t, &ovx)
 	);
 }

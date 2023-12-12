@@ -360,7 +360,7 @@ rop_white( int rop )
 }
 
 
-void
+Bool
 img_plot_glyph( Handle self, PImage glyph, int x, int y, PImgPaintContext ctx)
 {
 	PImage i = (PImage) self;
@@ -383,11 +383,11 @@ img_plot_glyph( Handle self, PImage glyph, int x, int y, PImgPaintContext ctx)
 	}
 
 	if ( rop == ropNoOper) {
-		return;
+		return true;
 	} else if ( rop <= ropWhiteness ) {
 		if ( !mono ) {
 			warn("img_plot_glyph: cannot use raster operations with antialiased text");
-			return;
+			return false;
 		}
 		rec.blt   = img_find_blt_proc(rop);
 		rec.func  = plot_rop;
@@ -396,7 +396,7 @@ img_plot_glyph( Handle self, PImage glyph, int x, int y, PImgPaintContext ctx)
 	} else if ( i-> type == imByte || i-> type == imRGB ) {
 		if ( mono ) {
 			warn("img_plot_glyph: cannot use blending with non-antialiased text");
-			return;
+			return false;
 		}
 
 		/* differentiate between per-pixel alpha and a global value */
@@ -412,14 +412,14 @@ img_plot_glyph( Handle self, PImage glyph, int x, int y, PImgPaintContext ctx)
 		rop &= ropPorterDuffMask;
 		if ( !img_find_blend_proc(rop, &rec.blend1, &rec.blend2)) {
 			warn("img_plot_glyph: blending rop expected");
-			return;
+			return false;
 		}
 
 		rec.is_icon = kind_of( self, CIcon );
 		if ( rec.is_icon ) {
 			if ((PIcon(self)-> maskType != imbpp8) && !rec.use_dst_alpha) {
 				warn("img_plot_glyph: cannot use antialiased text on 1-bit-mask icons");
-				return;
+				return false;
 			}
 			rec.mask        = PIcon(self)->mask;
 			rec.mask_stride = PIcon(self)->maskLine;
@@ -432,19 +432,21 @@ img_plot_glyph( Handle self, PImage glyph, int x, int y, PImgPaintContext ctx)
 		rec.bytes = rec.bpp / 8;
 	} else {
 		warn("img_plot_glyph: cannot use blending on target type=%x", i->type);
-		return;
+		return false;
 	}
 
 	w = glyph->w;
 	h = glyph->h;
 	if ( x + w > i->w ) w = i->w - x - 1;
 	if ( y + h > i->h ) h = i->h - y - 1;
-	if ( w <= 0 || h <= 0 ) return;
+	if ( w <= 0 || h <= 0 ) return true;
 
 	img_region_foreach( ctx->region,
 		x, y, w, h,
 		(RegionCallbackFunc*)plot_glyph, &rec
 	);
+
+	return true;
 }
 
 #ifdef __cplusplus

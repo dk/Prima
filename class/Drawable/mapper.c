@@ -390,12 +390,43 @@ prima_font_mapper_action(int action, PFont font)
 	return -1;
 }
 
+void
+Drawable_save_font( Handle self, SaveFont *f)
+{
+	f->font     = var->font;
+	f->restore  = false;
+	f->last_fid = 0;
+}
+
+void
+Drawable_restore_font( Handle self, SaveFont *f)
+{
+	if ( !f->restore )
+		return;
+
+	f-> last_fid = 0;
+	f->restore   = false;
+	if ( Drawable_set_font == my->set_font && (is_opt(optSystemDrawable) || is_opt(optInFontQuery) ))
+		apc_gp_set_font( self, &f->font);
+	else
+		my->set_font(self, f->font);
+}
+
 Bool
-Drawable_switch_font( Handle self, uint16_t fid)
+Drawable_switch_font( Handle self, SaveFont *f, uint16_t fid)
 {
 	Font src, dst;
+
+	if ( fid == f-> last_fid )
+		return true;
+
+	if ( fid == 0 ) {
+		Drawable_restore_font( self, f );
+		return true;
+	}
+
 	src = PASSIVE_FONT(fid)->font;
-	if ( is_opt(optSystemDrawable) || is_opt(optInFontQuery) ) {
+	if ( Drawable_set_font == my->set_font && (is_opt(optSystemDrawable) || is_opt(optInFontQuery) )) {
 		dst = var->font;
 		src.size         = dst.size;
 		src.height       = dst.height;
@@ -413,6 +444,8 @@ Drawable_switch_font( Handle self, uint16_t fid)
 		src.undef.height = dst.undef.height;
 		my->set_font(self, src);
 	}
+	f-> restore = true;
+	f-> last_fid = fid;
 	return true;
 }
 

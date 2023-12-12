@@ -851,39 +851,16 @@ apc_gp_get_glyphs_width( Handle self, PGlyphsOutRec t)
 }
 
 Point *
-prima_get_text_box( Handle self, Point * ovx, int advance )
+prima_get_text_box( Handle self, Point ovx, int advance )
 {
 	DEFXX;
-	Point * pt = ( Point *) malloc( sizeof( Point) * 5);
-	if ( !pt) return NULL;
+	Point *pt;
 
-	if ( ovx->x < 0 ) ovx->x = 0;
-	if ( ovx->y < 0 ) ovx->y = 0;
-
-	pt[0].y = pt[2]. y = XX-> font-> font. ascent - 1;
-	pt[1].y = pt[3]. y = - XX-> font-> font. descent;
-	pt[4].y = 0;
-	pt[4].x = advance;
-	pt[3].x = pt[2]. x = advance + ovx->y;
-	pt[0].x = pt[1]. x = - ovx->x;
-
-	if ( !XX-> flags. base_line) {
-		int i;
-		for ( i = 0; i < 4; i++) pt[i]. y += XX-> font-> font. descent;
-	}
-
-	if ( !IS_ZERO(PDrawable( self)-> font. direction)) { /* XXX */
-		int i;
-		double s = sin( PDrawable( self)-> font. direction / 57.29577951);
-		double c = cos( PDrawable( self)-> font. direction / 57.29577951);
-		for ( i = 0; i < 5; i++) {
-			double x = pt[i]. x * c - pt[i]. y * s;
-			double y = pt[i]. x * s + pt[i]. y * c;
-			pt[i]. x = x + (( x > 0) ? 0.5 : -0.5);
-			pt[i]. y = y + (( y > 0) ? 0.5 : -0.5);
-		}
-	}
-
+	if ( !( pt = ( Point *) malloc( sizeof( Point) * 5)))
+		return NULL;
+	ovx.x = (ovx.x < 0) ? 0 : -ovx.x;
+	ovx.y = (ovx.y < 0) ? 0 : -ovx.y;
+	Drawable_calculate_text_box( self, advance, XX->flags.base_line, ovx, pt);
 	return pt;
 }
 
@@ -899,7 +876,7 @@ gp_get_text_box( Handle self, const char * text, int len, int flags)
 		XTextWidth16( XX-> font-> fs, ( XChar2b*) text, len) :
 		XTextWidth( XX-> font-> fs, (char*)text, len);
 	ovx = gp_get_text_overhangs( self, text, len, flags);
-	return prima_get_text_box(self, &ovx, x);
+	return prima_get_text_box(self, ovx, x);
 }
 
 

@@ -85,8 +85,20 @@ Drawable_query_ranges(PPassiveFontEntry pfe);
 Bool
 Drawable_read_glyphs( PGlyphsOutRec t, SV * text, Bool indexes_required, const char * caller);
 
+typedef struct {
+	Font     font;
+	Bool     restore;
+	uint16_t last_fid;
+} SaveFont;
+
+void
+Drawable_save_font( Handle self, SaveFont *f);
+
+void
+Drawable_restore_font( Handle self, SaveFont *f);
+
 Bool
-Drawable_switch_font( Handle self, uint16_t fid);
+Drawable_switch_font( Handle self, SaveFont *f, uint16_t fid);
 
 Bool
 Drawable_read_line_ends(SV *lineEnd, DrawablePaintState *state);

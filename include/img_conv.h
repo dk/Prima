@@ -340,7 +340,7 @@ extern PBitBltProc img_find_blt_proc( int rop );
 extern Bool img_find_blend_proc( int rop, BlendFunc ** blend1, BlendFunc ** blend2 );
 extern Bool img_resample_colors( Handle dest, int bpp, PImgPaintContext ctx);
 extern void img_fill_alpha_buf( Byte * dst, Byte * src, int width, int bpp);
-extern void img_plot_glyph( Handle self, PImage glyph, int x, int y, PImgPaintContext ctx);
+extern Bool img_plot_glyph( Handle self, PImage glyph, int x, int y, PImgPaintContext ctx);
 
 typedef struct _NPolyPolyline {
 	unsigned int n_points, size;

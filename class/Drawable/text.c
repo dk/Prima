@@ -278,21 +278,31 @@ Drawable_get_text_width( Handle self, SV * text, int flags, int from, int len)
 	return res;
 }
 
-void
-Drawable_get_glyphs_box( Handle self, PGlyphsOutRec t, Point * pt)
+NPoint
+Drawable_trig_cache( Handle self )
 {
-	Bool text_out_baseline;
+	if ( !is_opt(optFontTrigCache)) {
+#define GRAD 57.29577951
+		var->trig_cache.x = sin( var-> font. direction / GRAD);
+		var->trig_cache.y = cos( var-> font. direction / GRAD);
+#undef GRAD
+	}
+	return var->trig_cache;
+}
 
-	t-> flags = 0;
+void
+Drawable_calculate_text_box( Handle self, int advance, Bool text_out_baseline, Point ovx, Point * pt)
+{
+	if ( ovx.x > 0 ) ovx.x = 0;
+	if ( ovx.y > 0 ) ovx.y = 0;
 
 	pt[0].y = pt[2]. y = var-> font. ascent - 1;
 	pt[1].y = pt[3]. y = - var-> font. descent;
-	pt[4].y = pt[0]. x = pt[1].x = 0;
-	pt[3].x = pt[2]. x = pt[4].x = Drawable_get_glyphs_width(self, t, false);
+	pt[4].y = 0;
+	pt[4].x = advance;
+	pt[3].x = pt[2]. x = advance - ovx.y;
+	pt[0]. x = pt[1].x = ovx.x;
 
-	text_out_baseline = ( my-> textOutBaseline == Drawable_textOutBaseline) ?
-		apc_gp_get_text_out_baseline(self) :
-		my-> get_textOutBaseline(self);
 	if ( !text_out_baseline ) {
 		int i = 4, d = var->font. descent;
 		while ( i--) pt[i]. y += d;
@@ -300,17 +310,56 @@ Drawable_get_glyphs_box( Handle self, PGlyphsOutRec t, Point * pt)
 
 	if ( var-> font. direction != 0) {
 		int i;
-#define GRAD 57.29577951
-		float s = sin( var-> font. direction / GRAD);
-		float c = cos( var-> font. direction / GRAD);
-#undef GRAD
+		NPoint c = my->trig_cache(self);
 		for ( i = 0; i < 5; i++) {
-			float x = pt[i]. x * c - pt[i]. y * s;
-			float y = pt[i]. x * s + pt[i]. y * c;
-			pt[i]. x = x + (( x > 0) ? 0.5 : -0.5);
-			pt[i]. y = y + (( y > 0) ? 0.5 : -0.5);
+			float x = pt[i]. x * c.y - pt[i]. y * c.x;
+			float y = pt[i]. x * c.x + pt[i]. y * c.y;
+			pt[i].x = x + (( x > 0) ? 0.5 : -0.5);
+			pt[i].y = y + (( y > 0) ? 0.5 : -0.5);
 		}
 	}
+}
+
+void
+Drawable_get_glyphs_box( Handle self, PGlyphsOutRec t, Point * pt)
+{
+	int l;
+	Bool text_out_baseline;
+	Point ovx = {0,0};
+	SaveFont savefont;
+	FontABC *abc;
+
+	t-> flags = 0;
+	text_out_baseline = ( my-> textOutBaseline == Drawable_textOutBaseline) ?
+		apc_gp_get_text_out_baseline(self) :
+		my-> get_textOutBaseline(self);
+	l = Drawable_get_glyphs_width(self, t, false);
+
+	if ( t->fonts )
+		Drawable_save_font(self, &savefont);
+
+	if ( t-> fonts )
+		Drawable_switch_font( self, &savefont, t-> fonts[0]);
+
+	if (( abc = Drawable_call_get_font_abc( self, t->glyphs[0], t->glyphs[0], toGlyphs)) != NULL) {
+		int l = t->len - 1;
+		ovx.x = abc->a;
+		if ( t->glyphs[0] == t->glyphs[l] && ( !t->fonts || t->fonts[0] == t->fonts[l])) {
+			ovx.y = abc->c;
+			free(abc);
+		} else {
+			free(abc);
+			if (( abc = Drawable_call_get_font_abc( self, t->glyphs[l], t->glyphs[l], toGlyphs)) != NULL) {
+				ovx.y = abc->c;
+				free(abc);
+			}
+		}
+	}
+
+	if ( t->fonts )
+		Drawable_restore_font(self, &savefont);
+
+	Drawable_calculate_text_box(self, l, text_out_baseline, ovx, pt);
 }
 
 SV *
