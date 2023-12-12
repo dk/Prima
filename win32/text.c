@@ -135,20 +135,8 @@ static void
 underscore_font( Handle self, int x, int y, int width, Bool use_alpha)
 {
 	HDC dc = sys ps;
-	float c, s;
 	GpPen * gppen = NULL;
-
-	if ( var font. direction != 0) {
-		if ( sys font_sin == sys font_cos && sys font_sin == 0.0 ) {
-			sys font_sin = sin( var font. direction / GRAD);
-			sys font_cos = cos( var font. direction / GRAD);
-		}
-		c = sys font_cos;
-		s = sys font_sin;
-	} else {
-		s = 0.0;
-		c = 1.0;
-	}
+	NPoint cs = CDrawable(self)->trig_cache(self);
 
 	if ( var font. style & (fsUnderlined|fsStruckOut)) {
 		int line_width = 1;
@@ -181,8 +169,8 @@ underscore_font( Handle self, int x, int y, int width, Bool use_alpha)
 		pt[1].y = -Y;
 		if ( var font. direction != 0) {
 			for ( i = 0; i < 2; i++) {
-				float x = pt[i].x * c - pt[i].y * s;
-				float y = pt[i].x * s + pt[i].y * c;
+				float x = pt[i].x * cs.y - pt[i].y * cs.x;
+				float y = pt[i].x * cs.x + pt[i].y * cs.y;
 				pt[i].x = x + (( x > 0) ? 0.5 : -0.5);
 				pt[i].y = y + (( y > 0) ? 0.5 : -0.5);
 			}
@@ -213,8 +201,8 @@ underscore_font( Handle self, int x, int y, int width, Bool use_alpha)
 		pt[1].y = -Y;
 		if ( var font. direction != 0) {
 			for ( i = 0; i < 2; i++) {
-				float x = pt[i].x * c - pt[i].y * s;
-				float y = pt[i].x * s + pt[i].y * c;
+				float x = pt[i].x * cs.y - pt[i].y * cs.x;
+				float y = pt[i].x * cs.x + pt[i].y * cs.y;
 				pt[i].x = x + (( x > 0) ? 0.5 : -0.5);
 				pt[i].y = y + (( y > 0) ? 0.5 : -0.5);
 			}
@@ -581,7 +569,8 @@ apc_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 	int opa = is_apt( aptTextOpaque) ? OPAQUE : TRANSPARENT;
 	Bool use_path, use_alpha;
 	FontContext fc;
-	float s, c, fxx, fyy;
+	float fxx, fyy;
+	NPoint cs = CDrawable(self)->trig_cache(self);
 
 	select_world_transform(self, true);
 	SHIFT_XY(x,y);
@@ -601,18 +590,6 @@ apc_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 		if ( opa != bk) SetBkMode( ps, opa);
 	}
 
-	if ( var font. direction != 0) {
-		if ( sys font_sin == sys font_cos && sys font_sin == 0.0 ) {
-			sys font_sin = sin( var font. direction / GRAD);
-			sys font_cos = cos( var font. direction / GRAD);
-		}
-		s = sys font_sin;
-		c = sys font_cos;
-	} else {
-		c = 1.0;
-		s = 0.0;
-	}
-
 	fxx = xx = 0;
 	fyy = yy = 0;
 	savelen = t->len;
@@ -625,8 +602,8 @@ apc_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 			))
 			break;
 		if ( !fc.stop ) {
-			fxx += (float)advance * c;
-			fyy -= (float)advance * s;
+			fxx += (float)advance * cs.y;
+			fyy -= (float)advance * cs.x;
 			xx = fxx + ((fxx < 0) ? -.5 : +.5);
 			yy = fyy + ((fyy < 0) ? -.5 : +.5);
 
@@ -1842,41 +1819,8 @@ apc_gp_get_glyphs_width( Handle self, PGlyphsOutRec t)
 void
 gp_get_text_box( Handle self, ABC * abc, Point * pt)
 {
-	pt[0].y = pt[2]. y = var font. ascent - 1;
-	pt[1].y = pt[3]. y = - var font. descent;
-	pt[4].y = pt[0]. x = pt[1].x = 0;
-	pt[3].x = pt[2]. x = pt[4].x = abc->abcB;
-
-	if ( !is_apt( aptTextOutBaseline)) {
-		int i = 4, d = var font. descent;
-		while ( i--) pt[ i]. y += d;
-	}
-
-	if ( abc->abcA < 0) {
-		pt[0].x += abc->abcA;
-		pt[1].x += abc->abcA;
-	}
-	if ( abc->abcC < 0) {
-		pt[2].x -= abc->abcC;
-		pt[3].x -= abc->abcC;
-	}
-
-	if ( var font. direction != 0) {
-		int i;
-		float s, c;
-		if ( sys font_sin == sys font_cos && sys font_sin == 0.0 ) {
-			sys font_sin = sin( var font. direction / GRAD);
-			sys font_cos = cos( var font. direction / GRAD);
-		}
-		s = sys font_sin;
-		c = sys font_cos;
-		for ( i = 0; i < 5; i++) {
-			float x = pt[i]. x * c - pt[i]. y * s;
-			float y = pt[i]. x * s + pt[i]. y * c;
-			pt[i]. x = x + (( x > 0) ? 0.5 : -0.5);
-			pt[i]. y = y + (( y > 0) ? 0.5 : -0.5);
-		}
-	}
+	Point ovx = { abc->abcA, abc->abcC };
+	Drawable_calculate_text_box( self, abc->abcB, is_apt(aptTextOutBaseline), ovx, pt);
 }
 
 Point *

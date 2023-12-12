@@ -1134,8 +1134,6 @@ apc_gp_set_font( Handle self, PFont font)
 		}
 	}
 
-	sys font_sin = sys font_cos = 0.0;
-
 	return true;
 }
 
@@ -1255,9 +1253,6 @@ apc_gp_push(Handle self, GCStorageFunction * destructor, void * user_data, unsig
 		for ( i = 0; i < DCO_COUNT; i++)
 			if ( state->paint.dc_obj[i] )
 				state->paint.dc_obj[i]->refcnt++;
-		state->paint.font_sin  = sys font_sin;
-		state->paint.font_cos  = sys font_cos;
-
 		state->paint.rq_pen    = sys rq_pen;
 		state->paint.rq_brush  = sys rq_brush;
 
@@ -1313,8 +1308,6 @@ apc_gp_pop( Handle self, void * user_data)
 		memcpy( sys current_dc_obj, state->paint.dc_obj, sizeof(sys current_dc_obj));
 		sys stylus_flags        = state-> paint.stylus_flags;
 		sys dc_font             = state-> paint.dc_font;
-		sys font_sin            = state-> paint.font_sin;
-		sys font_cos            = state-> paint.font_cos;
 		sys rq_pen              = state-> paint.rq_pen;
 		sys rq_brush            = state-> paint.rq_brush;
 		apt_assign(aptWantWorldTransform  , state->paint.wt_want  );

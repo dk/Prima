@@ -429,7 +429,6 @@ typedef struct _PaintState
 		RQPen      rq_pen;
 		RQBrush    rq_brush;
 		PDCFont    dc_font;
-		float      font_sin, font_cos;
 		Bool       wt_want, wt_used, wt_cached;
 	} paint;
 	struct {
@@ -480,7 +479,6 @@ typedef struct _DrawableData
 	WORD           tmPitchAndFamily;
 	LONG           tmOverhang;
 	int            otmsStrikeoutSize, otmsStrikeoutPosition, otmsUnderscoreSize, otmsUnderscorePosition;
-	float          font_sin, font_cos;
 
 	/* HDC attributes storage outside paint mode */
 	Color          fg, bg;

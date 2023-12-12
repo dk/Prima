@@ -224,6 +224,7 @@ Drawable_graphic_context_pop(Handle self)
 	}
 	var->alpha     = apc_gp_get_alpha(self);
 	var->antialias = apc_gp_get_antialias( self );
+	opt_clear( optFontTrigCache );
 	return true;
 }
 

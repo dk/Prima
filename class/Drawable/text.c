@@ -282,10 +282,15 @@ NPoint
 Drawable_trig_cache( Handle self )
 {
 	if ( !is_opt(optFontTrigCache)) {
+		if ( var-> font. direction == 0.0 ) {
+			var->trig_cache.x = 0.0;
+			var->trig_cache.y = 1.0;
+		} else {
 #define GRAD 57.29577951
-		var->trig_cache.x = sin( var-> font. direction / GRAD);
-		var->trig_cache.y = cos( var-> font. direction / GRAD);
+			var->trig_cache.x = sin( var-> font. direction / GRAD);
+			var->trig_cache.y = cos( var-> font. direction / GRAD);
 #undef GRAD
+		}
 	}
 	return var->trig_cache;
 }

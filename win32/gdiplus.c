@@ -312,16 +312,10 @@ static Bool
 aa_make_arena(Handle self)
 {
 	int w,h;
+
 	w = var font. maximalWidth;
 	h = var font. height;
 	if ( w < h ) w = h;
-
-	if ( var font. direction != 0) {
-		if ( sys font_sin == sys font_cos && sys font_sin == 0.0 ) {
-			sys font_sin = sin( var font. direction / GRAD);
-			sys font_cos = cos( var font. direction / GRAD);
-		}
-	}
 
 	if ( w < sys alpha_arena_size.x || h < sys alpha_arena_size.y || !sys alpha_arena_dc ) {
 		HDC dc;
@@ -370,6 +364,7 @@ aa_render( Handle self, int x, int y, NPoint* delta, ABCFLOAT * abc, int advance
 	register uint32_t * p, * palette;
 	int i, j, miny, maxy, maxx, minx;
 	Point sz;
+	NPoint cs = CDrawable(self)->trig_cache(self);
 
 	/* replace white to our color + alpha, calculate minimal affected box */
 	p = sys alpha_arena_ptr;
@@ -402,8 +397,8 @@ aa_render( Handle self, int x, int y, NPoint* delta, ABCFLOAT * abc, int advance
 	if ( advance >= 0 ) {
 		shift = advance;
 		if ( var font.direction != 0 ) {
-			xx = (dx * sys font_cos) - (dy * sys font_sin);
-			yy = (dx * sys font_sin) + (dy * sys font_cos);
+			xx = (dx * cs.y) - (dy * cs.x);
+			yy = (dx * cs.x) + (dy * cs.y);
 		} else {
 			xx = dx;
 			yy = dy;
@@ -416,8 +411,8 @@ aa_render( Handle self, int x, int y, NPoint* delta, ABCFLOAT * abc, int advance
 	y += round(delta->y - yy);
 
 	if ( var font.direction != 0 ) {
-		delta->x += shift * sys font_cos;
-		delta->y -= shift * sys font_sin;
+		delta->x += shift * cs.y;
+		delta->y -= shift * cs.x;
 	} else {
 		delta->x += shift;
 	}
@@ -429,8 +424,8 @@ aa_render( Handle self, int x, int y, NPoint* delta, ABCFLOAT * abc, int advance
 	if ( is_apt( aptTextOutBaseline)) {
 		if ( var font. direction != 0 ) {
 			float d = var font. descent;
-			x += d * sys font_sin + .5;
-			y += d * sys font_cos + .5;
+			x += d * cs.x + .5;
+			y += d * cs.y + .5;
 		} else
 			y += var font. descent;
 	}
