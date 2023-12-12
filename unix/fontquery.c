@@ -78,6 +78,26 @@ static void
 fill_synthetic_fields( FT_Face f, PFont font, Bool by_size)
 {
 	float mul;
+
+	if ( f-> units_per_EM == 0 ) {
+		/* .Apple Color Emoji UI does this -- a SVG font? */
+		if ( by_size )
+			font->height = font->size;
+		else
+			font->size = font->height;
+
+		font->ascent          = font->height;
+		font->descent         = 0;
+		font->internalLeading = 0;
+		font->maximalWidth    = font->height;
+		font->width           = font->height;
+		font->externalLeading = 0;
+		font->xDeviceRes      = font->yDeviceRes = 72;
+		font->underlinePosition  = -1;
+		font->underlineThickness = (font->height > 16) ? font->height / 16 : 1;
+		return;
+	}
+
 	if (by_size) {
 		mul = (float) font->size / f-> units_per_EM;
 		font->height = f-> height * mul + .5;
@@ -106,6 +126,7 @@ prima_fq_match( PFont font, Bool by_size, PCachedFont kf)
 	FcResult res = FcResultNoMatch;
 	const char *encoding;
 	FontKey key;
+	double request_size = by_size ? font->size : font->height;
 
 	/* see if the font is not present - the hashed negative matches
 			are stored with width=0, as the width alterations are derived */
@@ -187,6 +208,10 @@ prima_fq_match( PFont font, Bool by_size, PCachedFont kf)
 
 	FQdebug("loaded ok");
 	prima_fc_pattern2font( match, font);
+	if ( font->undef.size && font->undef.height) {
+		/* .Apple Color Emoji UI does this -- a SVG font? */
+		font->size = font-> height = request_size;
+	}
 	fill_synthetic_fields( kf->ft_face, font, by_size);
 	strcpy( font->encoding, encoding);
 	return true;
@@ -505,8 +530,13 @@ prima_fq_mapper_query_ranges(PFont font, int * count, unsigned int * flags)
 {
 	PCachedFont kf;
 	unsigned long * ranges;
+	Font f = *font;
 
-	if ( !( kf = prima_font_pick( font, NULL, NULL, FONTKEY_FREETYPE))) {
+	if ( f.undef.size && f.undef.height ) {
+		f.undef.size = 0;
+		f.size = 12.0;
+	}
+	if ( !( kf = prima_font_pick( &f, NULL, NULL, FONTKEY_FREETYPE))) {
 		*count = 0;
 		return NULL;
 	}

@@ -444,6 +444,7 @@ prima_fc_pattern2font( FcPattern * pattern, PFont font)
 	if ( FcPatternGetInteger( pattern, FC_SLANT, 0, &i) == FcResultMatch)
 		if ( i == FC_SLANT_ITALIC || i == FC_SLANT_OBLIQUE)
 			font-> style |= fsItalic;
+
 	if ( FcPatternGetInteger( pattern, FC_WEIGHT, 0, &i) == FcResultMatch) {
 		if ( i <= FC_WEIGHT_LIGHT)
 			font-> style |= fsThin;
@@ -456,13 +457,20 @@ prima_fc_pattern2font( FcPattern * pattern, PFont font)
 	font-> yDeviceRes = guts. resolution. y;
 	if ( FcPatternGetDouble( pattern, FC_DPI, 0, &d) == FcResultMatch)
 		font-> yDeviceRes = d + 0.5;
+	else
+		font-> yDeviceRes = 72;
 	if ( FcPatternGetDouble( pattern, FC_ASPECT, 0, &d) == FcResultMatch)
 		font-> xDeviceRes = font-> yDeviceRes * d;
+	else
+		font-> xDeviceRes = font->yDeviceRes;
 
 	font-> undef.pitch = 1;
 	if ( FcPatternGetInteger( pattern, FC_SPACING, 0, &i) == FcResultMatch) {
 		font-> pitch = (( i == FC_PROPORTIONAL) ? fpVariable : fpFixed);
 		font-> undef.pitch = 0;
+	} else {
+		font-> pitch = fpDefault;
+		font-> undef.pitch = 1;
 	}
 
 	font-> undef.height = 1;
@@ -470,6 +478,10 @@ prima_fc_pattern2font( FcPattern * pattern, PFont font)
 		font-> height = d + 0.5;
 		font-> undef. height = 0;
 		FCdebug("height factor read:%d (%g)", font-> height, d);
+	} else {
+		font-> height = 0;
+		font-> undef. height = 1;
+		FCdebug("height unknown");
 	}
 
 	font-> width = 100; /* warning, FC_WIDTH does not reflect FC_MATRIX scale changes */
@@ -489,6 +501,7 @@ prima_fc_pattern2font( FcPattern * pattern, PFont font)
 		font-> undef. size = 0;
 		FCdebug("size calculated:%g", font-> size);
 	} else {
+		font-> size = 0;
 		font-> undef. size = 1;
 		FCdebug("size unknown");
 	}

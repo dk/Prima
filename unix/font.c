@@ -803,6 +803,12 @@ apc_gp_get_font_ranges( Handle self, int * count)
 	DEFXX;
 	unsigned long * ret = NULL;
 	XFontStruct * fs;
+
+#ifdef USE_FONTQUERY
+	if ( is_opt(optInFontQuery) )
+		return prima_fq_get_font_ranges( self, count);
+#endif
+
 #ifdef USE_XFT
 	if ( XX-> font-> xft)
 		return prima_xft_get_font_ranges( self, count);
@@ -824,6 +830,10 @@ apc_gp_get_font_languages( Handle self)
 {
 	DEFXX;
 	char * ret;
+#ifdef USE_FONTQUERY
+	if ( is_opt(optInFontQuery) )
+		return prima_fq_get_font_languages( self);
+#endif
 #ifdef USE_XFT
 	if ( XX-> font-> xft)
 		return prima_xft_get_font_languages(self);

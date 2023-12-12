@@ -10,6 +10,7 @@ Genereate a PostScript or a PDF document with all available fonts
 
 use strict;
 use warnings;
+use Prima::noX11;
 use Prima;
 use Prima::PS::Printer;
 use Prima::PS::PDF;

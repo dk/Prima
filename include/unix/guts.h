@@ -1893,6 +1893,12 @@ prima_fq_get_font_abc( Handle self, int firstChar, int lastChar, int flags);
 extern PFontABC
 prima_fq_get_font_def( Handle self, int firstChar, int lastChar, int flags);
 
+extern unsigned long *
+prima_fq_get_font_ranges( Handle self, int * count);
+
+extern char *
+prima_fq_get_font_languages( Handle self);
+
 extern Bool
 prima_ft_init( void);
 
