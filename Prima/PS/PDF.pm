@@ -411,7 +411,7 @@ ROOT
 	$self-> {changed} = { map { $_ => 0 } qw(
 		fill lineEnd linePattern lineWidth lineJoin miterLimit font)};
 
-	$self-> SUPER::begin_paint;
+	$self-> {paint_state} = ps::Enabled;
 	$self-> save_state;
 
 	$self-> {delay} = 1;
@@ -497,7 +497,7 @@ sub abort_doc
 	my $self = $_[0];
 	return unless $self-> {can_draw};
 	$self-> {can_draw} = 0;
-	$self-> SUPER::end_paint;
+	delete $self->{paint_state};
 	$self-> abandon_state;
 	delete $self-> {$_} for
 		qw (save_state ps_data changed );
@@ -657,7 +657,7 @@ TRAILER
 	$self->{ps_data} = '';
 
 	$self-> {can_draw} = 0;
-	$self-> SUPER::end_paint;
+	delete $self->{paint_state};
 	$self-> restore_state;
 	delete $self-> {$_} for
 		qw (save_state changed ps_data glyph_keeper glyph_font);

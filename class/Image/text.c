@@ -438,11 +438,11 @@ Image_fonts( Handle self, char * name, char * encoding)
 }
 
 SV*
-Image_font_encodings( Handle self, char * encoding)
+Image_font_encodings( Handle self)
 {
 	if (!opt_InPaint && !my-> begin_font_query(self) )
 		return NULL_SV;
-	return Application_font_encodings( self, encoding);
+	return Application_font_encodings( self);
 }
 
 #ifdef __cplusplus

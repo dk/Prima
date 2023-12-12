@@ -404,7 +404,7 @@ EXIT:
 }
 
 SV*
-Application_font_encodings( Handle self, char * encoding)
+Application_font_encodings( Handle self)
 {
 	AV * glo = newAV();
 	HE *he;

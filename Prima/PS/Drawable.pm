@@ -120,17 +120,21 @@ sub begin_paint_info
 {
 	my $self = $_[0];
 	return 0 if $self-> get_paint_state;
-	my $ok = $self-> SUPER::begin_paint_info;
-	return 0 unless $ok;
 	$self-> save_state;
+	$self->{paint_state} = ps::Information;
 }
 
 sub end_paint_info
 {
 	my $self = $_[0];
 	return if $self-> get_paint_state != ps::Information;
-	$self-> SUPER::end_paint_info;
 	$self-> restore_state;
+	delete $self->{paint_state};
+}
+
+sub get_paint_state
+{
+	return $_[0]->{paint_state} // ps::Disabled;
 }
 
 sub spool
@@ -417,20 +421,23 @@ sub fonts
 	} else {
 		return [] if defined($encoding) && $encoding ne '' && $encoding ne $enc;
 
-		my @f = @{$::application->fonts($family) // []};
+		my @f = @{$self->glyph_canvas->fonts($family) // []};
 		return [] unless @f;
 		$f[0]->{encoding} = $enc;
 		return [$f[0]];
 	}
 }
 
+sub font_encodings { ['iso10646-1'] } # unicode only
+
 sub glyph_canvas
 {
 	my $self = shift;
-	return $self->{glyph_canvas} //= Prima::DeviceBitmap->create(
+	return $self->{glyph_canvas} //= Prima::Image->create(
 		width           => 1,
 		height          => 1,
 		textOutBaseline => 1,
+		type            => im::BW, # want only monochrome bitmaps
 	);
 }
 

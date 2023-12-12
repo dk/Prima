@@ -57,7 +57,7 @@ object Prima::Application( Prima::Widget)
 	method void   end_paint();
 	method void   end_paint_info();
 	method SV*    fonts( char * name = "", char * encoding = "");
-	method SV*    font_encodings( char * encoding = "");
+	method SV*    font_encodings();
 	static SV*    font_mapper_action( char * dummy, HV * profile);
 	method Handle get_active_window();
 	static Font   get_caption_font( char * dummy = "");

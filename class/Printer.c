@@ -136,9 +136,9 @@ Printer_fonts( Handle self, char * name, char * encoding)
 }
 
 SV*
-Printer_font_encodings( Handle self, char * encoding)
+Printer_font_encodings( Handle self)
 {
-	return Application_font_encodings( self, encoding);
+	return Application_font_encodings( self);
 }
 
 SV *

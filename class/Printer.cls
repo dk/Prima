@@ -13,7 +13,7 @@ object Prima::Printer( Prima::Drawable)
 	method void   end_paint();
 	method void   end_paint_info();
 	method SV*    fonts( char * name = "", char * encoding = "");
-	method SV*    font_encodings( char * encoding = "");
+	method SV*    font_encodings();
 	method void   init( HV * profile);
 	method Bool   new_page();
 	public void   options();
