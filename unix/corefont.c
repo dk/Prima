@@ -1229,7 +1229,7 @@ query_diff( PFontInfo fi, PFont f, char * lcname, int selector)
 	return diff;
 }
 
-Bool
+PCachedFont
 prima_corefont_match(PFont match, Bool by_size, PCachedFont kf)
 {
 	PFontInfo info = guts. font_info;
@@ -1239,7 +1239,7 @@ prima_corefont_match(PFont match, Bool by_size, PCachedFont kf)
 	char lcname[ 256];
 	HeightGuessStack hgs;
 
-	if (n == 0) return false;
+	if (n == 0) return NULL;
 
 	if ( strcmp( match-> name, "Default") == 0)
 		strcpy( match-> name, "helvetica");
@@ -1273,7 +1273,7 @@ AGAIN:
 	}
 	if (index < 0) {
 		Fdebug("font: no more fonts to match, bail out");
-		return false;
+		return NULL;
 	}
 
 	i = index;
@@ -1300,7 +1300,7 @@ AGAIN:
 		goto AGAIN;
 	}
 
-	return true;
+	return kf;
 }
 
 static PRotatedFont

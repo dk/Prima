@@ -119,7 +119,7 @@ fill_synthetic_fields( FT_Face f, PFont font, Bool by_size)
 	font->underlineThickness = (font->height > 16) ? font->height / 16 : 1;
 }
 
-Bool
+PCachedFont
 prima_fq_match( PFont font, Bool by_size, PCachedFont kf)
 {
 	FcPattern *request, *match;
@@ -135,14 +135,14 @@ prima_fq_match( PFont font, Bool by_size, PCachedFont kf)
 	FQdebug("want %gx%d.%s.%s.%s/%s^%g.%d", by_size ? -font->size : font->height, key.width, _F_DEBUG_STYLE(key.style), _F_DEBUG_PITCH(key.pitch), key.name, font->encoding, ROUGHLY(font->direction), font->vector);
 	if ( hash_fetch( guts.fc_mismatch, &key, sizeof( FontKey))) {
 		FQdebug("refuse");
-		return false;
+		return NULL;
 	}
 
 	encoding = prima_fc_find_encoding( font->encoding);
 
 	/* create FcPattern request */
 	if ( !( request = FcPatternCreate()))
-		return false;
+		return NULL;
 	if ( strcmp( font-> name, "Default") != 0)
 		FcPatternAddString( request, FC_FAMILY, ( FcChar8*) font-> name);
 	FcPatternAddInteger( request, FC_SPACING,
@@ -158,7 +158,7 @@ prima_fq_match( PFont font, Bool by_size, PCachedFont kf)
 	if ( !( match = FcFontMatch (NULL, request, &res))) {
 		FQdebug("FcFontMatch error");
 		FcPatternDestroy( request);
-		return false;
+		return NULL;
 	}
 	FcPatternDestroy( request);
 
@@ -170,11 +170,10 @@ prima_fq_match( PFont font, Bool by_size, PCachedFont kf)
 		if ( fcam > 0 ) {
 			PCachedFont kff;
 			if (( kff = prima_font_pick( &suggested_font, NULL, NULL, FONTKEY_FREETYPE)) != NULL ) {
-				*kf   = *kff;
 				*font = suggested_font;
 				prima_fc_end_suggestion(fcam);
 				FcPatternDestroy(match);
-				return true;
+				return kff;
 			};
 			prima_fc_end_suggestion(fcam);
 		}
@@ -182,7 +181,7 @@ prima_fq_match( PFont font, Bool by_size, PCachedFont kf)
 
 	if ( !prima_fc_encoding_is_supported(font->encoding, match)) {
 		FcPatternDestroy( match);
-		return false;
+		return NULL;
 	}
 
 	/* Check if the matched font is scalable */
@@ -193,7 +192,7 @@ prima_fq_match( PFont font, Bool by_size, PCachedFont kf)
 			hash_store( guts.fc_mismatch, &key, sizeof( FontKey), (void*)1);
 			FQdebug("refuse bitmapped font");
 			FcPatternDestroy( match);
-			return false;
+			return NULL;
 		}
 	}
 
@@ -203,7 +202,7 @@ prima_fq_match( PFont font, Bool by_size, PCachedFont kf)
 		hash_store( guts.fc_mismatch, &key, sizeof( FontKey), (void*)1);
 		FQdebug("error loading font");
 		FcPatternDestroy( match);
-		return false;
+		return NULL;
 	}
 
 	FQdebug("loaded ok");
@@ -214,7 +213,7 @@ prima_fq_match( PFont font, Bool by_size, PCachedFont kf)
 	}
 	fill_synthetic_fields( kf->ft_face, font, by_size);
 	strcpy( font->encoding, encoding);
-	return true;
+	return kf;
 }
 
 typedef struct {

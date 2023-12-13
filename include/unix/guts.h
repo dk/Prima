@@ -1266,7 +1266,7 @@ prima_corefont_xfont2def( Handle self, int first, int last);
 extern void
 prima_corefont_pp2font( char * ppFontNameSize, PFont font);
 
-extern Bool
+extern PCachedFont
 prima_corefont_match(PFont match, Bool by_size, PCachedFont kf);
 
 extern Bool
@@ -1574,7 +1574,7 @@ prima_xft_gp_destroy( Handle self );
 void
 prima_xft_build_key( PFontKey key, PFont f, Matrix matrix, Bool bySize);
 
-extern Bool
+extern PCachedFont
 prima_xft_match( Font * font, Matrix matrix, Bool by_size, PCachedFont cf);
 
 extern int
@@ -1851,7 +1851,7 @@ prima_fq_free_cached_font( PCachedFont f);
 extern void
 prima_fq_build_key( PFontKey key, PFont f, Bool by_size);
 
-extern Bool
+extern PCachedFont
 prima_fq_match( PFont dest, Bool by_size, PCachedFont kf);
 
 extern Bool

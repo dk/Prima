@@ -439,8 +439,7 @@ build_font_key(PFontKey fk, PFont source, Matrix matrix, int type)
 static PCachedFont
 match_font( PFontKey fk, PFont font, Matrix matrix)
 {
-	PCachedFont cf;
-	Bool ok;
+	PCachedFont cf, cf2;
 	Bool by_size     = font->undef.height;
 	int style        = font->style & (fsUnderlined|fsOutline|fsStruckOut);
 	double direction = font->direction;
@@ -458,27 +457,28 @@ match_font( PFontKey fk, PFont font, Matrix matrix)
 
 	switch (fk-> type) {
 	case FONTKEY_CORE:
-		ok = prima_corefont_match( font, by_size, cf );
+		cf2 = prima_corefont_match( font, by_size, cf );
 		break;
 	case FONTKEY_XFT:
-		ok = prima_xft_match( font, matrix, by_size, cf );
+		cf2 = prima_xft_match( font, matrix, by_size, cf );
 		break;
 	case FONTKEY_FREETYPE:
-		ok = prima_fq_match( font, by_size, cf );
+		cf2 = prima_fq_match( font, by_size, cf );
 		break;
 	default:
 		return NULL;
 	}
 
-	if ( !ok ) {
+	if ( !cf2 ) {
 		free(cf);
 		return NULL;
-	}
-
-	/* the matched font needs to fill all fields */
-	cf->type = fk->type;
-	bzero(&font->undef, sizeof(font->undef));
-	cf->font = *font;
+	} else if ( cf2 == cf ) {
+		/* the new matched font needs to fill all fields */
+		cf->type = fk->type;
+		bzero(&font->undef, sizeof(font->undef));
+		cf->font = *font;
+	} else
+		cf = cf2;
 
 	/* Restore the flags that are either not used by backends, or must be the same anyway.
 	This is a bit of hack because we know what flags the backends won't use */
@@ -520,12 +520,12 @@ find_font( int type, PFont font, Matrix matrix)
 	}
 	if (!( cf = match_font(&fk, font, matrix)))
 		return NULL;
+	cf->ref_cnt++;
 
 	if ( hash_count(guts.font_hash) > MAX_CACHED_FONTS)
 		hash_first_that(guts.font_hash, (void*)cleanup_cached_entry, NULL, NULL, NULL);
 
 	/* cache font */
-	cf->ref_cnt++;
 	hash_store( guts.font_hash, &fk, sizeof( FontKey), cf);
 
 	/* cache by size */

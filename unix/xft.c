@@ -219,7 +219,7 @@ my_XftFontMatch(Display        *dpy,
 	return match;
 }
 
-Bool
+PCachedFont
 prima_xft_match( Font *font, Matrix matrix, Bool by_size, PCachedFont cf)
 {
 	FcPattern *request, *match;
@@ -233,7 +233,7 @@ prima_xft_match( Font *font, Matrix matrix, Bool by_size, PCachedFont cf)
 	double pixel_size = font->height;
 	Bool transformation_needed;
 
-	if ( !guts. use_xft) return false;
+	if ( !guts. use_xft) return NULL;
 
 	if ( guts. xft_disable_large_fonts > 0) {
 		/* xft is unable to deal with large polygon requests.
@@ -242,7 +242,7 @@ prima_xft_match( Font *font, Matrix matrix, Bool by_size, PCachedFont cf)
 			( by_size && ( font->size >= MAX_GLYPH_SIZE)) ||
 			(!by_size && ( font->height >= MAX_GLYPH_SIZE / 72.27 * guts. resolution. y))
 		)
-			return false;
+			return NULL;
 	}
 
 	/* see if the font is not present in xft - the hashed negative matches are stored with width=height=0 */
@@ -250,7 +250,7 @@ prima_xft_match( Font *font, Matrix matrix, Bool by_size, PCachedFont cf)
 	XFTdebug("want %gx%d.%s.%s.%s/%s^%g.%d", by_size ? -font->size : font->height, key.width, _F_DEBUG_STYLE(key.style), _F_DEBUG_PITCH(key.pitch), key.name, font->encoding, ROUGHLY(font->direction), font->vector);
 	if ( hash_fetch( guts.fc_mismatch, &key, sizeof( FontKey))) {
 		XFTdebug("refuse");
-		return false;
+		return NULL;
 	}
 
 	/* convert encoding */
@@ -258,7 +258,7 @@ prima_xft_match( Font *font, Matrix matrix, Bool by_size, PCachedFont cf)
 	if ( strcmp( encoding, font->encoding ) != 0 ) {
 		/* xft has no such encoding, pass it back */
 		if ( prima_corefont_encoding( font->encoding) || !guts. xft_priority)
-			return false;
+			return NULL;
 	}
 
 	/* see if the non-transformed font exists */
@@ -274,7 +274,7 @@ prima_xft_match( Font *font, Matrix matrix, Bool by_size, PCachedFont cf)
 		guts.debug_indent--;
 		if ( !kf_base ) {
 			XFTdebug("cannot, bail out");
-			return false;
+			return NULL;
 		}
 		*cf   = *kf_base;
 		*font = f;
@@ -292,7 +292,7 @@ prima_xft_match( Font *font, Matrix matrix, Bool by_size, PCachedFont cf)
 
 	/* create FcPattern request */
 	if ( !( request = FcPatternCreate()))
-		return false;
+		return NULL;
 	if ( strcmp( font-> name, "Default") != 0)
 		FcPatternAddString( request, FC_FAMILY, ( FcChar8*) font-> name);
 	if ( by_size) {
@@ -338,7 +338,7 @@ prima_xft_match( Font *font, Matrix matrix, Bool by_size, PCachedFont cf)
 	if ( !match) {
 		XFTdebug("XftFontMatch error");
 		FcPatternDestroy( request);
-		return false;
+		return NULL;
 	}
 	/* if (pguts->debug & DEBUG_FONTS) { FcPatternPrint(match); } */
 	FcPatternDestroy( request);
@@ -351,11 +351,10 @@ prima_xft_match( Font *font, Matrix matrix, Bool by_size, PCachedFont cf)
 		if ( fcam > 0 ) {
 			PCachedFont kf;
 			if (( kf = prima_font_pick( &suggested_font, matrix, NULL, FONTKEY_XFT)) != NULL ) {
-				*cf   = *kf;
 				*font = suggested_font;
 				prima_fc_end_suggestion(fcam);
 				FcPatternDestroy(match);
-				return true;
+				return kf;
 			};
 			prima_fc_end_suggestion(fcam);
 		}
@@ -363,7 +362,7 @@ prima_xft_match( Font *font, Matrix matrix, Bool by_size, PCachedFont cf)
 
 	if ( !prima_fc_encoding_is_supported(requested_font.encoding, match)) {
 		FcPatternDestroy( match);
-		return false;
+		return NULL;
 	}
 
 	/* Check if the matched font is scalable -- see comments in the beginning
@@ -375,7 +374,7 @@ prima_xft_match( Font *font, Matrix matrix, Bool by_size, PCachedFont cf)
 			hash_store( guts.fc_mismatch, &key, sizeof( FontKey), (void*)1);
 			XFTdebug("refuse bitmapped font");
 			FcPatternDestroy( match);
-			return false;
+			return NULL;
 		}
 	}
 
@@ -394,7 +393,7 @@ prima_xft_match( Font *font, Matrix matrix, Bool by_size, PCachedFont cf)
 				build_mismatch_key( &key, &requested_font);
 				hash_store( guts.fc_mismatch, &key, sizeof( FontKey), (void*)1);
 				FcPatternDestroy( match);
-				return false;
+				return NULL;
 			}
 
 			/* check if core has cached face name */
@@ -429,7 +428,7 @@ prima_xft_match( Font *font, Matrix matrix, Bool by_size, PCachedFont cf)
 		hash_store( guts.fc_mismatch, &key, sizeof( FontKey), (void*)1);
 		XFTdebug("XftFontOpenPattern error");
 		FcPatternDestroy( match);
-		return false;
+		return NULL;
 	}
 	XFTdebug("load font %x", xf);
 
@@ -505,7 +504,7 @@ prima_xft_match( Font *font, Matrix matrix, Bool by_size, PCachedFont cf)
 		font-> ascent = font-> height - font-> descent;
 	}
 
-	return true;
+	return cf;
 }
 
 static FcChar32 *
