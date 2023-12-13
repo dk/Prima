@@ -412,7 +412,7 @@ apc_font_pick( Handle self, PFont source, PFont dest)
 }
 
 static void
-build_font_key(PFontKey fk, PFont source, Matrix matrix, int type)
+build_font_key(PFontKey fk, PFont source, PFont save_synthetics, Matrix matrix, int type)
 {
 	Bool by_size = source->undef.height;
 	Font sanitized = *source;
@@ -420,6 +420,9 @@ build_font_key(PFontKey fk, PFont source, Matrix matrix, int type)
 	sanitized.pitch  &= fpMask;
 	sanitized.vector &= fvMask;
 	sanitized.style  &= fsMask & ~(fsUnderlined|fsOutline|fsStruckOut);
+
+	if ( save_synthetics )
+		*save_synthetics = *source;
 
 	bzero(fk, sizeof(FontKey));
 	fk->type = type;
@@ -436,13 +439,24 @@ build_font_key(PFontKey fk, PFont source, Matrix matrix, int type)
 	}
 }
 
+static void
+apply_synthetic_fields(PCachedFont kf, PFont s, PFont d)
+{
+	d-> style |= s->style & (fsUnderlined|fsOutline|fsStruckOut);
+	d-> direction = d->direction;
+	switch (kf->type) {
+	case FONTKEY_FREETYPE:
+		prima_fq_apply_synthetic_fields(kf, s, d);
+		break;
+	}
+}
+
 static PCachedFont
 match_font( PFontKey fk, PFont font, Matrix matrix)
 {
 	PCachedFont cf, cf2;
+	Font s = *font;
 	Bool by_size     = font->undef.height;
-	int style        = font->style & (fsUnderlined|fsOutline|fsStruckOut);
-	double direction = font->direction;
 
 	if ( !( cf = malloc(sizeof(CachedFont)))) {
 		warn("no memory");
@@ -482,8 +496,7 @@ match_font( PFontKey fk, PFont font, Matrix matrix)
 
 	/* Restore the flags that are either not used by backends, or must be the same anyway.
 	This is a bit of hack because we know what flags the backends won't use */
-	font-> style    |= style;
-	font-> direction = direction;
+	apply_synthetic_fields(cf, &s, font); 
 
 	return cf;
 }
@@ -492,7 +505,7 @@ static Bool
 store_font( PFont font, Matrix matrix, int type, PCachedFont cf)
 {
 	FontKey fk;
-	build_font_key(&fk, font, matrix, type);
+	build_font_key(&fk, font, NULL, matrix, type);
 	if (hash_fetch( guts.font_hash, &fk, sizeof( FontKey)))
 		return false;
 	cf->ref_cnt++;
@@ -503,19 +516,16 @@ store_font( PFont font, Matrix matrix, int type, PCachedFont cf)
 static PCachedFont
 find_font( int type, PFont font, Matrix matrix)
 {
-	Font f;
+	Font f, s;
 	FontKey fk;
 	PCachedFont cf;
 	Bool want_default_pitch = font->pitch == fpDefault;
 
 	/* find by font */
-	build_font_key(&fk, font, matrix, type);
+	build_font_key(&fk, font, &s, matrix, type);
 	if (( cf = hash_fetch( guts. font_hash, &fk, sizeof( FontKey))) != NULL) {
-		int style        = font->style & (fsUnderlined|fsOutline|fsStruckOut);
-		double direction = font->direction;
 		*font = cf->font;
-		font-> style    |= style;
-		font-> direction = direction;
+		apply_synthetic_fields( cf, &s, font );
 		return cf;
 	}
 	if (!( cf = match_font(&fk, font, matrix)))
@@ -693,14 +703,14 @@ apc_menu_set_font( Handle self, PFont font)
 
 #ifdef USE_XFT
 	if ( guts. use_xft) {
-		build_font_key(&fk, font, NULL, FONTKEY_XFT);
+		build_font_key(&fk, font, NULL, NULL, FONTKEY_XFT);
 		if (( kf = hash_fetch( guts. font_hash, &fk, sizeof( FontKey))) != NULL)
 			xft_metrics = 1;
 	}
 #endif
 
 	if ( !kf) {
-		build_font_key(&fk, font, NULL, FONTKEY_CORE);
+		build_font_key(&fk, font, NULL, NULL, FONTKEY_CORE);
 		if (( kf = hash_fetch( guts. font_hash, &fk, sizeof( FontKey))) == NULL ) {
 			dump_font( font);
 			return false;

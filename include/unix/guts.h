@@ -1899,6 +1899,9 @@ prima_fq_get_font_ranges( Handle self, int * count);
 extern char *
 prima_fq_get_font_languages( Handle self);
 
+extern void
+prima_fq_apply_synthetic_fields(PCachedFont kf, PFont source, PFont dest);
+
 extern Bool
 prima_ft_init( void);
 
