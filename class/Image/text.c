@@ -123,7 +123,7 @@ plot_glyphs( Handle self, PGlyphsOutRec t, int x, int y )
 	int             dy = 0;
 	int             advance      = 0;
 	Bool            straight     = (var->font.direction == 0.0) && prima_matrix_is_translated_only(VAR_MATRIX);
-	Matrix          matrix;
+	Matrix          matrix, pos_matrix;
 	ImgPaintContext ctx;
 	Color           color;
 	Bool            gp_save = false;
@@ -199,6 +199,7 @@ plot_glyphs( Handle self, PGlyphsOutRec t, int x, int y )
 	o.x = matrix[4] += x;
 	o.y = matrix[5] += y;
 	x = y = 0;
+	COPY_MATRIX_WITHOUT_TRANSLATION(matrix, pos_matrix);
 
 	if ( my->get_textOpaque(self)) {
 		Point p[5];
@@ -267,9 +268,10 @@ plot_glyphs( Handle self, PGlyphsOutRec t, int x, int y )
 		glyph.left   = o.x + offset.x;
 		glyph.bottom = o.y + offset.y;
 		if ( t->positions ) {
-			/* XXX -- it this correct? */
-			glyph.left   += t->positions[i2 + 0];
-			glyph.bottom += t->positions[i2 + 1];
+			Point pos = { t->positions[i2 + 0], t->positions[i2 + 1] };
+			prima_matrix_apply_int_to_int( pos_matrix, &pos.x, &pos.y);
+			glyph.left   += pos.x;
+			glyph.bottom += pos.y;
 		}
 		glyph.right  = glyph.left   + size.x - 1;
 		glyph.top    = glyph.bottom + size.y - 1;
