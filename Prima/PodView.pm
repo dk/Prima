@@ -709,9 +709,11 @@ sub add_image
 	my $w = $opt{width} // $src-> width;
 	my $h = $opt{height} // $src-> height;
 	my @resolution = $self-> resolution;
-	my $W = $w * 72 / $resolution[0];
-	my $H = $h * 72 / $resolution[1];
-	$src-> {stretch} = [$w, $h];
+	# images are so far assumed to be designed for 96 dpi, but their dimensions are specified in 72-dpi points
+	my $W = $w * 72 / 96;
+	my $H = $h * 72 / 96;
+	$src-> {stretch} = [$W, $H];
+
 	my $r = $self-> {readState};
 	$r-> {pod_cutting} = $opt{cut} ? 0 : 1
 		if defined $opt{cut};
@@ -802,7 +804,9 @@ sub _imgpaint
 {
 	my ( $self, $canvas, $block, $state, $x, $y, $img) = @_;
 	my ( $dx, $dy) = @{$img->{stretch}};
-
+	my @r = $canvas->resolution;
+	$dx *= $r[0] / 72;
+	$dy *= $r[1] / 72;
 	$canvas-> stretch_image( $x, $y, $dx, $dy, $img);
 	$canvas-> graphic_context(
 		color             => $canvas->backColor,
