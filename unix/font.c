@@ -447,6 +447,7 @@ apply_synthetic_fields(PCachedFont kf, PFont s, PFont d)
 	switch (kf->type) {
 	case FONTKEY_FREETYPE:
 		prima_fq_apply_synthetic_fields(kf, s, d);
+		d->size = FONT_SIZE_ROUND(d->size);
 		break;
 	}
 }

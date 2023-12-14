@@ -101,11 +101,12 @@ fill_synthetic_fields( FT_Face f, PFont font, Bool by_size)
 	if (by_size) {
 		mul = (float) font->size / f-> units_per_EM;
 		font->height = f-> height * mul + .5;
+		FQdebug("set height: %d", font->height);
 	} else {
 		mul = (float) font->height / f-> height;
 		font->size   = f-> units_per_EM * mul;
+		FQdebug("set size: %g", font->size);
 	}
-	FQdebug("set height: %d", font->height);
 
 	font->ascent          = f-> ascender * mul + .5;
 	font->descent         = font->height - font->ascent;
@@ -279,7 +280,7 @@ font_context_next( FontContext * fc)
 	if ( !( kf = prima_font_pick( &src, NULL, &dst, FONTKEY_FREETYPE)))
 		return;
 	fc-> current = kf-> ft_face;
-	FT_Set_Pixel_Sizes( fc->current, fc->font.height, fc->font.height );
+	FT_Set_Pixel_Sizes( fc->current, fc->font.size+.5, fc->font.size +.5 );
 }
 
 Bool
@@ -304,7 +305,7 @@ prima_fq_set_font( Handle self, PCachedFont kf)
 
 	prima_fc_set_font( self, font );
 
-	FT_Set_Pixel_Sizes( kf->ft_face, font->height, font->height );
+	FT_Set_Pixel_Sizes( kf->ft_face, font->size+.5, font->size+.5);
 
 	ft_matrix.xx = XX->fc_font_matrix[0] * 0x10000L;
 	ft_matrix.yx = XX->fc_font_matrix[1] * 0x10000L;

@@ -2970,7 +2970,7 @@ FM(Overlay)
 END_TABLE(fm,UV)
 #undef FM
 
-#define FONT_SIZE_GRANULARITY 64
+#define FONT_SIZE_GRANULARITY 100
 #define FONT_SIZE_ROUND(x) (round(x * FONT_SIZE_GRANULARITY) / FONT_SIZE_GRANULARITY)
 
 /* font styles */
