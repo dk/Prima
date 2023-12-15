@@ -38,7 +38,7 @@ Image_font_match( SV * dummy, Font * source, Font * dest, Bool pick)
 		Handle self;
 		if ( dummy && SvOK(dummy) && (self = gimme_the_mate(dummy)) && kind_of(self, CImage)) {
 			my-> begin_font_query(self);
-			apc_font_pick( NULL_HANDLE, source, dest);
+			apc_font_pick( self, source, dest);
 		}
 	} else
 		Drawable_font_add( NULL_HANDLE, source, dest);

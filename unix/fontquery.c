@@ -112,7 +112,7 @@ fill_synthetic_fields( FT_Face f, PFont font, Bool by_size)
 	font->descent         = font->height - font->ascent;
 	font->internalLeading = (f-> height - f-> units_per_EM) * mul + .5;
 	font->maximalWidth    = f-> max_advance_width * mul + .5;
-	font->width           = f-> max_advance_width * mul + .5; /* XXX, also bitmap fonts */
+	font->width           = font->height; /* XXX bitmap fonts? */
 	font->externalLeading = (f-> bbox.yMax - f-> ascender ) * mul + .5;
 	font->xDeviceRes      = font->yDeviceRes = 72;
 	/* XXX FT_Face reports very strange values */

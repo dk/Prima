@@ -467,7 +467,7 @@ sub set_font
 
 	my $div        = 72.27 / $self-> {resolution}-> [1];
 	my $by_height  = !( defined $font->{size} && !defined $font->{height});
-	$font = Prima::Drawable-> font_match( $font, $self-> {font});
+	$font = $canvas-> font_match( $font, $self-> {font});
 
 	$self-> glyph_canvas_set_font(%$font);
 	my $f1000 = { %{ $self->glyph_canvas->get_font }};
@@ -496,7 +496,7 @@ sub set_font
 	# When querying glyph extensions, remember to scale to the
 	# difference between PS and Prima models, ie without and with the internal leading
 	$font->{$_}   = int( $f1000->{$_} * $self->{font_scale} + .5)
-		for qw(ascent height internalLeading externalLeading width);
+		for qw(ascent height internalLeading externalLeading width maximalWidth);
 	$font->{size} = int( $f1000->{size} * $ratio + .5);
 	$font->{descent}    = $font->{height} - $font->{ascent};
 

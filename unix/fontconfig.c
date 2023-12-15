@@ -614,6 +614,7 @@ prima_fc_fonts( PFont array, const char *facename, const char * encoding, int *r
 	for ( i = 0; i < s->nfont; i++, ppat++) {
 		FcCharSet *c = NULL;
 		prima_fc_pattern2font( *ppat, f);
+		bzero(&f->undef, sizeof(f->undef));
 		FcPatternGetCharSet( *ppat, FC_CHARSET, 0, &c);
 		if ( c && FcCharSetCount(c) == 0) continue;
 		if ( encoding) {

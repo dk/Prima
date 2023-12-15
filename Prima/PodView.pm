@@ -174,7 +174,7 @@ sub init
 
 sub colorMap
 {
-	return @{$_[0]->SUPER::colorMap} unless $#_;
+	return $_[0]->SUPER::colorMap unless $#_;
 	my ( $self, $cm) = @_;
 	$self-> {link_handler}->color( $$cm[ COLOR_LINK_FOREGROUND & ~tb::COLOR_INDEX ] );
 	$self-> SUPER::colorMap($cm);
