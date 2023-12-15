@@ -497,7 +497,7 @@ prima_fc_pattern2font( FcPattern * pattern, PFont font)
 		font-> undef. size = 0;
 		FCdebug("size factor read:%g", font-> size);
 	} else if (!font-> undef.height && font->yDeviceRes != 0) {
-		font-> size = font-> height * 72.27 / font-> yDeviceRes;
+		font-> size = font-> height * 72.0 / font-> yDeviceRes;
 		font-> undef. size = 0;
 		FCdebug("size calculated:%g", font-> size);
 	} else {

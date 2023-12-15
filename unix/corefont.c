@@ -976,7 +976,7 @@ AGAIN:
 					f-> font. internalLeading = s-> max_bounds. ascent + s-> max_bounds. descent - f-> font. height;
 				} else if ( f-> flags. size) {
 					f-> font. internalLeading = s-> max_bounds. ascent + s-> max_bounds. descent -
-						( f-> font. size * f-> font. yDeviceRes) / 72.27 + 0.5;
+						( f-> font. size * f-> font. yDeviceRes) / 72.0 + 0.5;
 				} else {
 					f-> font. internalLeading = 0;
 				}
@@ -1026,7 +1026,7 @@ AGAIN:
 					XCHECKPOINT;
 					f-> font. size = ( v < 10) ? 1 : ( v / 10);
 				} else
-					f-> font. size = ( f-> font. height - f-> font. internalLeading) * 72.27 / f-> font. height + 0.5;
+					f-> font. size = ( f-> font. height - f-> font. internalLeading) * 72.0 / f-> font. height + 0.5;
 			}
 		}
 		f-> flags. size = true;

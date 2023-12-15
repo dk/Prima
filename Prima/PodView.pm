@@ -1722,7 +1722,7 @@ sub print
 	for ( 0 .. ( scalar @{$self-> fontPalette} - 1)) {
 		$$state[ tb::BLK_FONT_ID] = $_;
 		$self-> realize_state( $canvas, $state, tb::REALIZE_FONTS);
-		$indents[$_] = $canvas-> font-> width;
+		$indents[$_] = $canvas-> get_text_width('m');
 	}
 	$$state[ tb::BLK_FONT_ID] = 0;
 

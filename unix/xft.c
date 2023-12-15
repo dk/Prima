@@ -240,7 +240,7 @@ prima_xft_match( Font *font, Matrix matrix, Bool by_size, PCachedFont cf)
 			we must cut the large fonts here, before Xlib croaks */
 		if (
 			( by_size && ( font->size >= MAX_GLYPH_SIZE)) ||
-			(!by_size && ( font->height >= MAX_GLYPH_SIZE / 72.27 * guts. resolution. y))
+			(!by_size && ( font->height >= MAX_GLYPH_SIZE / 72.0 * guts. resolution. y))
 		)
 			return NULL;
 	}
@@ -439,7 +439,7 @@ prima_xft_match( Font *font, Matrix matrix, Bool by_size, PCachedFont cf)
 		if ( requested_font.width > 0 )
 			font-> width = requested_font.width;
 
-		font->internalLeading = xf-> height - font->size * guts. resolution. y / 72.27 + 0.5;
+		font->internalLeading = xf-> height - font->size * guts. resolution. y / 72.0 + 0.5;
 		if ( !by_size && !exact_pixel_size) {
 			/* Try to locate the corresponding size and
 			the correct height - FC_PIXEL_SIZE is not correct most probably

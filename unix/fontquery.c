@@ -99,7 +99,7 @@ fill_synthetic_fields( FT_Face f, PFont font, Bool by_size)
 	}
 
 	if (by_size) {
-		mul = (float) font->size / f-> units_per_EM;
+		mul = font->size / f-> units_per_EM;
 		font->height = f-> height * mul + .5;
 		FQdebug("set height: %d", font->height);
 	} else {
