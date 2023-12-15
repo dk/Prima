@@ -862,7 +862,7 @@ sub read_paragraph
 		# Translate verbatim paragraph
 		if (/^\s/) {
 			$self-> add_verbatim_mark(1) unless defined $r->{verbatim};
-			$self-> add($_,STYLE_VERBATIM,$r-> {indent}) for split "\n", $_;
+			$self-> add($_,STYLE_VERBATIM,$r-> {indent}) for split "[\x0a\x0d]+", $_;
 			$self-> add_new_line;
 			next;
 		}
