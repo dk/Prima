@@ -1552,14 +1552,19 @@ font_font2gp( PFont font, Point res, Bool forceSize, HDC dc)
 Bool
 apc_font_pick( Handle self, PFont source, PFont dest)
 {
+	Point res;
 	if ( self) objCheck false;
 	if ( dest != NULL ) {
 		Drawable_font_add( NULL_HANDLE, source, dest );
 		source = dest;
 	} else
 		dest = source;
+	if ( self && is_opt(optInFontQuery))
+		res.x = res.y = 72;
+	else
+		res = apc_gp_get_resolution(self);
 	dest->size = (int)(dest->size + .5);
-	font_font2gp( dest, apc_gp_get_resolution(self), source->undef.height, self ? sys ps : 0);
+	font_font2gp( dest, res, source->undef.height, self ? sys ps : 0);
 	return true;
 }
 

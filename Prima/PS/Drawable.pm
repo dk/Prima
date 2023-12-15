@@ -99,8 +99,8 @@ sub point2pixel
 	my @res;
 	for ( $i = 0; $i < scalar @_; $i+=2) {
 		my ( $x, $y) = @_[$i,$i+1];
-		push @res, $x * $self-> {resolution}-> [0] / 72.27;
-		push @res, $y * $self-> {resolution}-> [1] / 72.27 if defined $y;
+		push @res, $x * $self-> {resolution}-> [0] / 72.0;
+		push @res, $y * $self-> {resolution}-> [1] / 72.0 if defined $y;
 	}
 	return @res;
 }
@@ -353,8 +353,8 @@ sub calc_page
 		@m = @m[1,0,3,2];
 	}
 	$self-> {size} = [
-		int(( $s[0] - $m[0] - $m[2]) * $self-> {resolution}-> [0] / 72.27 + 0.5),
-		int(( $s[1] - $m[1] - $m[3]) * $self-> {resolution}-> [1] / 72.27 + 0.5),
+		int(( $s[0] - $m[0] - $m[2]) * $self-> {resolution}-> [0] / 72.0 + 0.5),
+		int(( $s[1] - $m[1] - $m[3]) * $self-> {resolution}-> [1] / 72.0 + 0.5),
 	];
 }
 
@@ -465,7 +465,7 @@ sub set_font
 	$font = { %$font };
 	my $explicit_width = delete $font-> {width};
 
-	my $div        = 72.27 / $self-> {resolution}-> [1];
+	my $div        = 72.0 / $self-> {resolution}-> [1];
 	my $by_height  = !( defined $font->{size} && !defined $font->{height});
 	$font = $canvas-> font_match( $font, $self-> {font});
 

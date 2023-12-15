@@ -671,7 +671,7 @@ sub glyph_out_outline
 	my @ix_lengths = defined($plaintext) ? $text-> index_lengths : ();
 	my $adv        = 0;
 	my $canvas     = $self->glyph_canvas;
-	my $resolution = 72.27 / $self->{resolution}->[0];
+	my $resolution = 72.0 / $self->{resolution}->[0];
 	my $keeper     = $self->{glyph_keeper};
 	my $font       = $self->{glyph_font};
 	my $div        = $self->{font_scale};
