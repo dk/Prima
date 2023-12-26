@@ -12,6 +12,10 @@ check memory leaks
 
 #define MY_MATRIX (PDrawable(self)->current_state.matrix)
 
+#define FT266_TRUNC(x)    ((x) >> 6)
+#define FT266_ROUND(x)    (((x)+32) & -64)
+#define FT266_to_short(x) ((short)(FT266_TRUNC(FT266_ROUND(x))))
+
 void
 prima_fq_build_key( PFontKey key, PFont f, Bool by_size)
 {
@@ -224,9 +228,28 @@ prima_fq_match( PFont font, Bool by_size, PCachedFont kf)
 		/* .Apple Color Emoji UI does this -- a SVG font? */
 		font->size = font-> height = request_size;
 	}
+	fill_synthetic_fields( kf->ft_face, font, by_size);
 	if ( width > 0 )
 		font->width = width;
-	fill_synthetic_fields( kf->ft_face, font, by_size);
+	else if ( font->pitch != fpFixed) {
+		/* see comment about detailing font width in xft.c */
+		FcChar32 c;
+		int num = 0, sum = 0;
+		for ( c = 63; c < 126; c += 4 ) {
+			FT_UInt ix;
+			if (( ix = FcFreeTypeCharIndex( kf->ft_face, c)) == 0)
+				continue;
+			if ( FT_Load_Glyph( kf->ft_face, ix, FT_LOAD_IGNORE_TRANSFORM | FT_LOAD_NO_BITMAP))
+				continue;
+			sum += FT266_to_short(kf->ft_face->glyph->metrics.width);
+			num++;
+		}
+
+		font->width = (num > 10) ? ((float) sum / num + .5) : font->maximalWidth;
+		FQdebug("set width: %d based off %d samples", font->width, num);
+	} else
+		font->width = font->maximalWidth;
+
 	strcpy( font->encoding, encoding);
 	return kf;
 }
@@ -328,10 +351,6 @@ prima_fq_set_font( Handle self, PCachedFont kf)
 		if ( (_flags & toAddOverhangs) && c < 0) ret -= c;                       \
 		if ( overhangs) overhangs-> y = (c < 0) ? -c : 0;                        \
 	}
-
-#define FT266_TRUNC(x)    ((x) >> 6)
-#define FT266_ROUND(x)    (((x)+32) & -64)
-#define FT266_to_short(x) ((short)(FT266_TRUNC(FT266_ROUND(x))))
 
 unsigned long *
 prima_fq_get_font_ranges( Handle self, int * count)
