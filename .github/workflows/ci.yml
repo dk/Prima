@@ -52,7 +52,7 @@ jobs:
       - name: Build
         run: |
             perl Makefile.PL
-            make
+            gmake
       - name: Test
         run: |
-            make test
+            gmake test
