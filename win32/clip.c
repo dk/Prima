@@ -121,19 +121,16 @@ cf2name(UINT f)
 	switch ( f ) {
 	case CF_TEXT:
 		return duplicate_string("Text");
-		break;
 	case CF_BITMAP:
 		return duplicate_string("Image");
-		break;
 	case CF_UNICODETEXT:
 		return duplicate_string("UTF8");
-		break;
 	case CF_DIB:
 		return duplicate_string("CF_DIB");
-		break;
 	case CF_PALETTE:
 		return duplicate_string("CF_PALETTE");
-		break;
+	case CF_HDROP:
+		return duplicate_string("Win32.CF_HDROP");
 	default: {
 		int i = 0;
 		char name[256];
@@ -453,6 +450,10 @@ apc_clipboard_register_format( Handle self, const char * format)
 {
 	UINT r;
 	int i = 0;
+
+	if ( strcmp(format, "Win32.CF_HDROP") == 0)
+		return cfCustom + CF_HDROP;
+
 	while ( formats[i]. format != CF_MAX) {
 		if ( strcmp(formats[i]. desc, format) == 0) 
 			return formats[i]. format + cfCustom;

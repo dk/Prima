@@ -201,6 +201,32 @@ whether there exists a UTF-8 text storage before resorting to 8-bit text.
 C<image> on X11 is even more complicated and may use image codecs to transfer
 encoded PNG streams, for example.
 
+=head2 Special system formats
+
+Warning: this section is experimental.
+
+Under win32, it is possible to access files dropped from Explorer. The application
+must register a special C<Win32.CF_HDROP> format, and read raw binary data in the
+C<onDragEnd> handler:
+
+	use constant CF_HDROP => "Win32.CF_HDROP";
+	$::application-> Clipboard-> register_format( CF_HDROP );
+
+	onDragEnd => sub {
+		my ( $self, $clipboard, $action, $modmap, $x, $y, $counterpart, $ref) = @_;
+		if ($clipboard->has_format(CF_HDROP)) {
+			my $raw = $clipboard->fetch(CF_HDROP);
+			my ($offset, $x, $y, $nonclient, $wide) = unpack("Lllll", $raw);
+			my $files = substr($raw, $offset);
+			if ($wide) {
+				use Encode;
+				$files = Encode::decode("utf-16le", $files);
+			}
+			my @files = split "\x0", $files;
+			print "dropped files: [@files] at [$x,$y]\n";
+		}
+	}
+
 =head1 API
 
 =head2 Properties
