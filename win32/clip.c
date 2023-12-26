@@ -99,19 +99,19 @@ static struct {
    UINT format;
    char desc[ 20];
 } formats[] = {
-      {CF_METAFILEPICT     , "CF_METAFILEPICT"
-   }, {CF_SYLK             , "CF_SYLK"
-   }, {CF_DIF              , "CF_DIF"
-   }, {CF_TIFF             , "CF_TIFF"
-   }, {CF_OEMTEXT          , "CF_OEMTEXT"
-   }, {CF_PENDATA          , "CF_PENDATA"
-   }, {CF_RIFF             , "CF_RIFF"
-   }, {CF_WAVE             , "CF_WAVE"
-   }, {CF_ENHMETAFILE      , "CF_ENHMETAFILE"
-   }, {CF_HDROP            , "CF_HDROP"
-   }, {CF_LOCALE           , "CF_LOCALE"
-   }, {CF_DIBV5            , "CF_DIBV5"
-   }, {CF_MAX              , "CF_MAX"
+      {CF_METAFILEPICT     , "Win32.CF_METAFILEPICT"
+   }, {CF_SYLK             , "Win32.CF_SYLK"
+   }, {CF_DIF              , "Win32.CF_DIF"
+   }, {CF_TIFF             , "Win32.CF_TIFF"
+   }, {CF_OEMTEXT          , "Win32.CF_OEMTEXT"
+   }, {CF_PENDATA          , "Win32.CF_PENDATA"
+   }, {CF_RIFF             , "Win32.CF_RIFF"
+   }, {CF_WAVE             , "Win32.CF_WAVE"
+   }, {CF_ENHMETAFILE      , "Win32.CF_ENHMETAFILE"
+   }, {CF_HDROP            , "Win32.CF_HDROP"
+   }, {CF_LOCALE           , "Win32.CF_LOCALE"
+   }, {CF_DIBV5            , "Win32.CF_DIBV5"
+   }, {CF_MAX              , "Win32.CF_MAX"
    }
 };
 
@@ -126,11 +126,9 @@ cf2name(UINT f)
 	case CF_UNICODETEXT:
 		return duplicate_string("UTF8");
 	case CF_DIB:
-		return duplicate_string("CF_DIB");
+		return duplicate_string("Win32.CF_DIB");
 	case CF_PALETTE:
-		return duplicate_string("CF_PALETTE");
-	case CF_HDROP:
-		return duplicate_string("Win32.CF_HDROP");
+		return duplicate_string("Win32.CF_PALETTE");
 	default: {
 		int i = 0;
 		char name[256];
@@ -451,11 +449,8 @@ apc_clipboard_register_format( Handle self, const char * format)
 	UINT r;
 	int i = 0;
 
-	if ( strcmp(format, "Win32.CF_HDROP") == 0)
-		return cfCustom + CF_HDROP;
-
 	while ( formats[i]. format != CF_MAX) {
-		if ( strcmp(formats[i]. desc, format) == 0) 
+		if ( strcmp(formats[i]. desc, format) == 0)
 			return formats[i]. format + cfCustom;
 		i++;
 	}
