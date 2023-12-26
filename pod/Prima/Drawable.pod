@@ -2265,8 +2265,7 @@ greater than 24.
 
 Returns the paint state value as one of the C<ps::> constants - C<ps::Disabled>
 if the object is in the disabled state, C<ps::Enabled> for the enabled state,
-C<ps::Information> for the information state, and C<ps::FontQuery> for the images
-requesting font and text data.
+C<ps::Information> for the information state.
 
 The C<ps::Disabled> constant is equal to 0 so this allows for simple boolean
 testing whether one can get/set graphical properties on the object.

@@ -17,7 +17,7 @@ my $i = Prima::Image->new( size => [50,50], type => im::BW );
 
 is( $i-> get_paint_state, ps::Disabled, 'get_paint_state == ps::Disabled');
 $i->get_font;
-is( $i-> get_paint_state, ps::FontQuery, 'get_paint_state == ps::FontQuery');
+is( $i-> get_paint_state, ps::Disabled, 'get_paint_state == ps::Disabled');
 
 unless ( $noX11 ) {
 	ok( $i->begin_paint_info, 'begin paint info');
