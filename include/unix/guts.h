@@ -258,6 +258,7 @@ typedef struct CachedFont {
 #ifdef USE_XFT
 	XftFont     *xft;
 	XftFont     *xft_base;
+	float        xft_width_factor;
 #endif
 } CachedFont, *PCachedFont;
 

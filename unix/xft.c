@@ -74,10 +74,11 @@ typedef struct {
 	uint32_t fid;
 	uint16_t *fonts;
 	Matrix matrix;
+	float width_factor;
 } FontContext;
 
 static void
-font_context_init( FontContext * fc, Font * font, uint16_t * fonts, XftFont * orig, XftFont * base, Matrix matrix)
+font_context_init( FontContext * fc, Font * font, uint16_t * fonts, XftFont * orig, XftFont * base, float width_factor, Matrix matrix)
 {
 	bzero(fc, sizeof(FontContext));
 	fc->font      = *font;
@@ -85,6 +86,7 @@ font_context_init( FontContext * fc, Font * font, uint16_t * fonts, XftFont * or
 	fc->orig_base = fc->xft_base_font = base;
 	fc->fid       = 0;
 	fc->fonts     = fonts;
+	fc->width_factor = width_factor;
 	COPY_MATRIX(matrix, fc->matrix);
 }
 
@@ -434,11 +436,8 @@ prima_xft_match( Font *font, Matrix matrix, Bool by_size, PCachedFont cf)
 
 	cf-> xft       = xf;
 	cf-> xft_base  = kf_base ? kf_base-> xft : xf;
+	cf-> xft_width_factor = (transformation_needed && font->width > 0.0) ? (float) font->width / base_width : 1.0;
 	if ( !kf_base) {
-		/* XXX copy font details - very important these are correct !!! */
-		if ( requested_font.width > 0 )
-			font-> width = requested_font.width;
-
 		font->internalLeading = xf-> height - font->size * guts. resolution. y / 72.0 + 0.5;
 		if ( !by_size && !exact_pixel_size) {
 			/* Try to locate the corresponding size and
@@ -495,7 +494,36 @@ prima_xft_match( Font *font, Matrix matrix, Bool by_size, PCachedFont cf)
 		/* XXX FT_Face reports very strange values */
 		font->underlinePosition  = -xf-> descent;
 		font->underlineThickness = (font->height > 16) ? font->height / 16 : 1;
-	}
+
+		if ( font->pitch != fpFixed) {
+			/* XXX 
+			detail the width to conform a bit more to win32 definition of font width -
+			I believe though that the whole concept of width needs reworking because win32
+			has one idea what width is, both when picking up and when detailing font info,
+			while freetype simple doesn't use either
+			*/
+			FcChar32 c;
+			int num = 0, sum = 0;
+			XftFont *x = kf_base ? kf_base->xft : xf;
+			for ( c = 63; c < 126; c += 4 ) {
+				XGlyphInfo g;
+				FT_UInt ix;
+				if (( ix = XftCharIndex( DISP, x, c)) == 0)
+					continue;
+				XftGlyphExtents( DISP, x, &ix, 1, &g);
+				if ( g.xOff > 0 && g.xOff <= x-> max_advance_width ) {
+					sum += g.xOff;
+					num++;
+				} else
+					XFTdebug("!! font %s returns bad XftGlyphExtents", font->name);
+			}
+
+			font->width = (num > 10) ? ((float) sum / num + .5) : font->maximalWidth;
+			XFTdebug("set width: %d based off %d samples", font->width, num);
+		} else
+			font->width = font->maximalWidth;
+	} else
+		font-> width = ( requested_font.width > 0 ) ? requested_font.width : base_width;
 
 	font-> descent = cf-> xft_base-> descent;
 	font-> ascent  = cf-> xft_base-> ascent;
@@ -550,15 +578,15 @@ check_width(PCachedFont self, int len)
 	return len;
 }
 
-#define UPDATE_OVERHANGS(_len,_flags)                                             \
+#define UPDATE_OVERHANGS(_len,_flags,wf)                                          \
 	if ( i == 0) {                                                            \
 		if (( _flags & toAddOverhangs ) && glyph. x > 0) ret += glyph. x; \
-		if ( overhangs) overhangs-> x = (glyph.x > 0) ? glyph. x : 0;     \
+		if ( overhangs) overhangs-> x = (glyph.x > 0) ? wf * glyph. x + .5 : 0;\
 	}                                                                         \
 	if ( i == _len - 1) {                                                     \
 		int c = glyph. xOff - glyph. width + glyph. x;                    \
 		if ( (_flags & toAddOverhangs) && c < 0) ret -= c;                \
-		if ( overhangs) overhangs-> y = (c < 0) ? -c : 0;                 \
+		if ( overhangs) overhangs-> y = (c < 0) ? -c *wf + .5 : 0;        \
 	}
 
 int
@@ -589,9 +617,9 @@ prima_xft_get_text_width(
 			c = text[i];
 		ft_index = XftCharIndex( DISP, font, c);
 		XftGlyphExtents( DISP, font, &ft_index, 1, &glyph);
-		ret += glyph. xOff;
+		ret += glyph. xOff * self->xft_width_factor + .5;
 		if ( (flags & toAddOverhangs ) || overhangs) {
-			UPDATE_OVERHANGS(len,flags)
+			UPDATE_OVERHANGS(len,flags, self->xft_width_factor)
 		}
 	}
 	return ret;
@@ -603,7 +631,7 @@ prima_xft_get_glyphs_width( Handle self, PCachedFont selfxx, PGlyphsOutRec t, Po
 	int i, ret = 0;
 	FontContext fc;
 
-	font_context_init(&fc, &selfxx->font, t->fonts, selfxx->xft_base, NULL, MY_MATRIX);
+	font_context_init(&fc, &selfxx->font, t->fonts, selfxx->xft_base, NULL, selfxx-> xft_width_factor, MY_MATRIX);
 	if ( overhangs) overhangs-> x = overhangs-> y = 0;
 
 	t->len = check_width(selfxx, t->len);
@@ -613,9 +641,9 @@ prima_xft_get_glyphs_width( Handle self, PCachedFont selfxx, PGlyphsOutRec t, Po
 		ft_index = t->glyphs[i];
 		font_context_next(&fc);
 		XftGlyphExtents( DISP, fc.xft_font, &ft_index, 1, &glyph);
-		ret += glyph. xOff;
+		ret += glyph. xOff * fc.width_factor + .5;
 		if ( (t->flags & toAddOverhangs ) || overhangs) {
-			UPDATE_OVERHANGS(t->len,t->flags)
+			UPDATE_OVERHANGS(t->len,t->flags,fc.width_factor)
 		}
 	}
 	return ret;
@@ -716,7 +744,8 @@ xft_draw_glyphs( Handle self, PDrawableSysData selfxx,
 		PGlyphsOutRec t)
 {
 	XGCValues old_gcv, gcv;
-	int i, ox, oy, shift;
+	int i, ox, oy;
+	double shift;
 	FontContext fc;
 	uint16_t * advances  = t ? t->advances : NULL;
 	int16_t  * positions = t ? t->positions : NULL;
@@ -725,11 +754,12 @@ xft_draw_glyphs( Handle self, PDrawableSysData selfxx,
 	font_context_init(&fc, &XX->font->font, 
 		t ? t->fonts : NULL, 
 		XX->font->xft, advances ? NULL : XX->font->xft_base,
+		XX->font->xft_width_factor,
 		MY_MATRIX);
 
 	ox = x;
 	oy = y;
-	shift = 0;
+	shift = 0.0;
 	if ( XX-> flags. layered && EMULATE_ALPHA_CLEARING) {
 		FT_UInt ft_index;
 		/* prepare xrender */
@@ -745,7 +775,8 @@ xft_draw_glyphs( Handle self, PDrawableSysData selfxx,
 
 	if (t) len = t->len;
 	for ( i = 0; i < len; i++) {
-		int cx, cy, dx = 0, dy = 0;
+		int rx, ry;
+		double cx, cy, dx = 0, dy = 0;
 		FT_UInt ft_index;
 		XGlyphInfo glyph;
 
@@ -753,35 +784,38 @@ xft_draw_glyphs( Handle self, PDrawableSysData selfxx,
 			ft_index = t->glyphs[i];
 			font_context_next(&fc);
 			if ( advances ) {
-				register int x, y;
 				shift += *(advances++);
-				dx = x = *(positions++);
-				dy = y = *(positions++);
+				dx = *(positions++);
+				dy = *(positions++);
 				if ( !straight )
-					prima_matrix_apply_int_to_int( XX-> fc_font_matrix, &dx, &dy);
+					prima_matrix_apply( XX-> fc_font_matrix, &dx, &dy);
 			} else
 				goto CHECK_EXTENTS;
 		} else {
 			ft_index = XftCharIndex( DISP, fc.xft_font, string[i]);
 		CHECK_EXTENTS:
 			XftGlyphExtents( DISP, fc.xft_base_font, &ft_index, 1, &glyph);
-			shift += glyph. xOff;
+			shift += fc.width_factor * glyph. xOff;
 		}
 		if ( straight ) {
 			cx = ox + shift;
 			cy = oy;
 		} else {
-			int ax = shift, ay = 0;
-			prima_matrix_apply_int_to_int( XX-> fc_font_matrix, &ax, &ay);
+			double ax = shift, ay = 0;
+			prima_matrix_apply( XX-> fc_font_matrix, &ax, &ay);
 			cx = ox + ax;
 			cy = oy - ay;
 		}
+		dx += x;
+		dy += y;
+		rx = (dx > 0) ? dx + .5 : dx - .5;
+		ry = (dy > 0) ? dy + .5 : dy - .5;
 		if ( XX-> flags. layered && EMULATE_ALPHA_CLEARING)
-			XftDrawGlyph_layered( XX, color, fc.xft_font, x + dx, y - dy, ft_index);
+			XftDrawGlyph_layered( XX, color, fc.xft_font, rx, ry, ft_index);
 		else
-			XftDrawGlyphs( XX-> xft_drawable, color, fc.xft_font, x + dx, y - dy, &ft_index, 1);
-		x = cx;
-		y = cy;
+			XftDrawGlyphs( XX-> xft_drawable, color, fc.xft_font, rx, ry, &ft_index, 1);
+		x = (cx > 0) ? cx + .5 : cx - .5;
+		y = (cy > 0) ? cy + .5 : cy - .5;
 	}
 
 	if ( XX-> flags. layered && EMULATE_ALPHA_CLEARING)
