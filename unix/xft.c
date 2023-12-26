@@ -316,7 +316,7 @@ prima_xft_match( Font *font, Matrix matrix, Bool by_size, PCachedFont cf)
 		FcMatrix mat;
 		FcMatrixInit(&mat);
 		if ( font-> width != 0) {
-			FcMatrixScale( &mat, ( double) font-> width / base_width, 1);
+			FcMatrixScale( &mat, ( double) font-> width / base_width, 1.0);
 			XFTdebug("FcMatrixScale %d/%d=%g", font->width, base_width, ( double) font-> width / base_width);
 		}
 		if ( !IS_ZERO(requested_font. direction)) {
@@ -328,7 +328,7 @@ prima_xft_match( Font *font, Matrix matrix, Bool by_size, PCachedFont cf)
 		if ( matrix ) {
 			FcMatrix result;
 			FcMatrix m = { matrix[0], matrix[2], matrix[1], matrix[3] };
-			FcMatrixMultiply( &result, &mat, &m);
+			FcMatrixMultiply( &result, &m, &mat);
 			XFTdebug("FcMatrixMutiply %g %g %g %g", matrix[0], matrix[1], matrix[2], matrix[3]);
 			mat = result;
 		}
