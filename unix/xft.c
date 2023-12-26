@@ -436,7 +436,7 @@ prima_xft_match( Font *font, Matrix matrix, Bool by_size, PCachedFont cf)
 
 	cf-> xft       = xf;
 	cf-> xft_base  = kf_base ? kf_base-> xft : xf;
-	cf-> xft_width_factor = (transformation_needed && font->width > 0.0) ? (float) font->width / base_width : 1.0;
+	cf-> width_factor = (transformation_needed && font->width > 0.0) ? (float) font->width / base_width : 1.0;
 	if ( !kf_base) {
 		font->internalLeading = xf-> height - font->size * guts. resolution. y / 72.0 + 0.5;
 		if ( !by_size && !exact_pixel_size) {
@@ -617,9 +617,9 @@ prima_xft_get_text_width(
 			c = text[i];
 		ft_index = XftCharIndex( DISP, font, c);
 		XftGlyphExtents( DISP, font, &ft_index, 1, &glyph);
-		ret += glyph. xOff * self->xft_width_factor + .5;
+		ret += glyph. xOff * self->width_factor + .5;
 		if ( (flags & toAddOverhangs ) || overhangs) {
-			UPDATE_OVERHANGS(len,flags, self->xft_width_factor)
+			UPDATE_OVERHANGS(len,flags, self->width_factor)
 		}
 	}
 	return ret;
@@ -631,7 +631,7 @@ prima_xft_get_glyphs_width( Handle self, PCachedFont selfxx, PGlyphsOutRec t, Po
 	int i, ret = 0;
 	FontContext fc;
 
-	font_context_init(&fc, &selfxx->font, t->fonts, selfxx->xft_base, NULL, selfxx-> xft_width_factor, MY_MATRIX);
+	font_context_init(&fc, &selfxx->font, t->fonts, selfxx->xft_base, NULL, selfxx-> width_factor, MY_MATRIX);
 	if ( overhangs) overhangs-> x = overhangs-> y = 0;
 
 	t->len = check_width(selfxx, t->len);
@@ -754,7 +754,7 @@ xft_draw_glyphs( Handle self, PDrawableSysData selfxx,
 	font_context_init(&fc, &XX->font->font, 
 		t ? t->fonts : NULL, 
 		XX->font->xft, advances ? NULL : XX->font->xft_base,
-		XX->font->xft_width_factor,
+		XX->font->width_factor,
 		MY_MATRIX);
 
 	ox = x;
@@ -784,8 +784,8 @@ xft_draw_glyphs( Handle self, PDrawableSysData selfxx,
 			ft_index = t->glyphs[i];
 			font_context_next(&fc);
 			if ( advances ) {
-				shift += *(advances++);
-				dx = *(positions++);
+				shift += fc.width_factor * *(advances++);
+				dx = fc.width_factor * *(positions++);
 				dy = *(positions++);
 				if ( !straight )
 					prima_matrix_apply( XX-> fc_font_matrix, &dx, &dy);
