@@ -737,7 +737,7 @@ apc_gp_get_font_abc( Handle self, int firstChar, int lastChar, int flags)
 	PFontABC abc;
 
 #ifdef USE_FONTQUERY
-	if ( is_opt(optInFontQuery) ) {
+	if ( self && is_opt(optInFontQuery) ) {
 		if (X(self)->font)
 			return prima_fq_get_font_abc( self, firstChar, lastChar, flags);
 		return NULL;
