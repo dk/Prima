@@ -452,6 +452,8 @@ L<Prima::Drawable::Metafile> - graphics recorder
 
 L<Prima::Drawable::Path> - stroke and fill complex paths
 
+L<Prima::Drawable::Pod> - POD parser and renderer
+
 L<Prima::Drawable::Subcanvas> - paint a hierarchy of widgets to any drawable
 
 L<Prima::Drawable::TextBlock> - rich text representation

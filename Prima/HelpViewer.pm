@@ -417,9 +417,9 @@ sub init
 		if $sec-> {VariableFont};
 	$self-> {text}-> {fontPalette}-> [1]-> {name} = $sec-> {FixedFont}
 		if $sec-> {FixedFont};
-	$self-> {text}-> {colorMap}-> [ Prima::PodView::COLOR_CODE_FOREGROUND & ~tb::COLOR_INDEX] = $sec-> {ColorCode}
+	$self-> {text}-> {colorMap}-> [ Prima::PodView::COLOR_INDEX_CODE_FG] = $sec-> {ColorCode}
 		if $sec-> {ColorCode};
-	$self-> {text}-> {colorMap}-> [ Prima::PodView::COLOR_LINK_FOREGROUND & ~tb::COLOR_INDEX] = $sec-> {ColorLink}
+	$self-> {text}-> {colorMap}-> [ Prima::PodView::COLOR_INDEX_LINK_FG] = $sec-> {ColorLink}
 		if $sec-> {ColorLink};
 
 	push @Prima::HelpViewer::helpWindows, $self;
@@ -613,18 +613,18 @@ sub update_menu
 	# update document menu layout
 	my $m = $self-> menu;
 	$m-> remove( $$_[0]) for @{$m-> get_items('doc')};
-	my $t = $self-> {text};
+	my $t = $self-> {text}-> pod_handler-> topics;
 
-	if ( $loaded_ok == 1 && scalar @{$t-> {topics}}) {
+	if ( $loaded_ok == 1 && scalar @$t) {
 		my @array;
 		my $current = \@array;
 		my $level = 0;
 		my @stack;
 		my $id = -1;
-		for ( @{$t-> {topics}}) {
+		for ( @$t ) {
 			$id++;
 			my ( $start, $end, $text, $style, $depth, $offset) = @$_;
-			$depth = $style - Prima::PodView::STYLE_HEAD_1 + $depth;
+			$depth = $style - pod::STYLE_HEAD_1 + $depth;
 			$text =~ s/([A-Z]<|>)//g;
 		AGAIN:
 			if ( $level == $depth) {
@@ -965,15 +965,15 @@ sub setup_dialog
 	$setupdlg-> VarFont-> text( $sec-> {VariableFont} ? $sec-> {VariableFont} : 'Default');
 	$setupdlg-> FixFont-> text( $sec-> {FixedFont} ? $sec-> {FixedFont} : 'Default');
 	$setupdlg-> LinkColor-> value( defined($sec-> {ColorLink}) ? $sec-> {ColorLink} :
-		$t-> {colorMap}-> [ Prima::PodView::COLOR_LINK_FOREGROUND & ~tb::COLOR_INDEX ]);
+		$t-> {colorMap}-> [ Prima::PodView::COLOR_INDEX_LINK_FG ]);
 	$setupdlg-> CodeColor-> value( defined($sec-> {ColorCode}) ? $sec-> {ColorCode} :
-		$t-> {colorMap}-> [ Prima::PodView::COLOR_CODE_FOREGROUND & ~tb::COLOR_INDEX ]);
+		$t-> {colorMap}-> [ Prima::PodView::COLOR_INDEX_CODE_FG ]);
 
 	return if $setupdlg-> execute != mb::OK;
 
 	my $cm = $t->colorMap;
-	$$cm[ Prima::PodView::COLOR_LINK_FOREGROUND & ~tb::COLOR_INDEX ] = $setupdlg-> LinkColor-> value;
-	$$cm[ Prima::PodView::COLOR_CODE_FOREGROUND & ~tb::COLOR_INDEX ] = $setupdlg-> CodeColor-> value;
+	$$cm[ Prima::PodView::COLOR_INDEX_LINK_FG ] = $setupdlg-> LinkColor-> value;
+	$$cm[ Prima::PodView::COLOR_INDEX_CODE_FG ] = $setupdlg-> CodeColor-> value;
 	$t-> colorMap($cm);
 
 	my $f1 = $setupdlg-> VarFont-> text;

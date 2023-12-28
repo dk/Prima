@@ -300,6 +300,7 @@ Prima/Drawable/Gradient.pm
 Prima/Drawable/Metafile.pm
 Prima/Drawable/Markup.pm
 Prima/Drawable/Path.pm
+Prima/Drawable/Pod.pm
 Prima/Drawable/Subcanvas.pm
 Prima/Drawable/TextBlock.pm
 Prima/Dialog/ColorDialog.pm
