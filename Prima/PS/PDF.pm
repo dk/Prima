@@ -972,7 +972,6 @@ sub glyph_out_outline
 	$len += $from;
 	my $emit = '';
 	my $fid  = 0;
-	my $ff = $canvas->font;
 	my $curr_subfont = -1;
 	my ($x, $y) = (0,0);
 	for ( my $i = $from; $i < $len; $i++) {
@@ -1015,7 +1014,7 @@ sub glyph_out_outline
 			$advance = ($$xr[0] + $$xr[1] + $$xr[2]) * $div;
 		}
 		$adv += $advance;
-		($x2, $y2) = map { int( $_ * 100 + 0.5) / 100 } $self->pixel2point($x2, $y2);
+		($x2, $y2) = $self->pixel2point($x2, $y2);
 		my $dx = $x2 - $x;
 		my $dy = $y2 - $y;
 		if  ($dx != 0 || $dy != 0) {

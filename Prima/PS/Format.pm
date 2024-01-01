@@ -17,6 +17,12 @@ sub float_format
 	return (wantarray || @_ > 1) ? @r : $r[0];
 }
 
-sub float_inplace(@) { $_ = float_format $_ for @_ }
+sub float_inplace(@)
+{
+	for ( @_ ) {
+		$_ = sprintf "%.4f", $_;
+		s/\.?0+$//;
+	}
+}
 
 1;

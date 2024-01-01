@@ -660,10 +660,9 @@ sub text_shape
 	my $shaped = $canvas->text_shape($text, %opt);
 	return $shaped unless $shaped;
 	$shaped->[Prima::Drawable::Glyphs::CUSTOM()] = $text;
-	if ( $shaped-> advances ) {
-		my $scale  = $self->{font_scale};
-		$_ *= $scale for @{ $shaped->advances  };
-		$_ *= $scale for @{ $shaped->positions };
+	if ( my $advances = $shaped-> advances ) {
+		Prima::array::multiply( $advances, $self->{font_scale} );
+		Prima::array::multiply( $shaped->positions, $self->{font_scale} );
 	}
 	return $shaped;
 }

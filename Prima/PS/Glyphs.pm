@@ -142,7 +142,8 @@ sub get_outline
 						$pts[$j + 2], $pts[$j + 3],
 				}
 				push @xts, @pts[-2,-1];
-				for ( my $j = 0; $j < @xts - 4; $j += 4) {
+				my $max = @xts - 4;
+				for ( my $j = 0; $j < $max; $j += 4) {
 					$code .= $self->rrcurveto(conic2curve(@xts[$j .. $j + 5]));
 				}
 			}

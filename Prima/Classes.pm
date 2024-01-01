@@ -92,8 +92,8 @@ sub list
 }
 
 sub TIEARRAY  { bless \@_, shift }
-sub FETCH     { unpack( $_[0]->[PACK], CORE::substr( $_[0]->[REF], $_[1] * $_[0]->[SIZE], $_[0]->[SIZE] )) }
-sub STORE     { CORE::substr( $_[0]->[REF], $_[1] * $_[0]->[SIZE], $_[0]->[SIZE], pack( $_[0]->[PACK], $_[2] )) }
+# sub FETCH   { unpack( $_[0]->[PACK], CORE::substr( $_[0]->[REF], $_[1] * $_[0]->[SIZE], $_[0]->[SIZE] )) } # optimized in C
+# sub STORE     { CORE::substr( $_[0]->[REF], $_[1] * $_[0]->[SIZE], $_[0]->[SIZE], pack( $_[0]->[PACK], $_[2] )) }
 sub FETCHSIZE { length( $_[0]->[REF] ) / $_[0]->[SIZE] }
 sub EXISTS    { $_[1] < FETCHSIZE($_[0]) }
 sub EXTEND    { $_[0]->[REF] .= "\x0" x ($_[1] * $_[0]->[SIZE] - length $_[0]->[REF]) }

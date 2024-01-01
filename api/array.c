@@ -42,11 +42,9 @@ prima_array_tie( SV * array, size_t size_of_entry, char * letter)
 	return newRV_noinc((SV*) av2);
 }
 
-Bool
-prima_array_parse( SV * sv, void ** ref, size_t * length, char ** letter)
+static Bool
+array_parse_nomagic( SV * sv, void ** ref, size_t * length, char ** letter)
 {
-	SV * tied;
-	const MAGIC * mg;
 	SV ** ssv;
 	AV * av;
 	int cur;
@@ -54,17 +52,6 @@ prima_array_parse( SV * sv, void ** ref, size_t * length, char ** letter)
 	if ( !sv || !SvOK(sv) ||  !SvROK(sv) || SvTYPE( SvRV( sv)) != SVt_PVAV)
 		return false;
 	av = (AV *) SvRV(sv);
-
-	if (( mg = SvTIED_mg(( SV*) av, PERL_MAGIC_tied )) == NULL)
-		return false;
-
-	tied = SvTIED_obj(( SV* ) av, mg );
-	if ( !tied || !SvROK(tied) || !sv_isa( tied, "Prima::array" ))
-		return false;
-
-	av = (AV*) SvRV(tied);
-	if ( SvTYPE((SV*) av) != SVt_PVAV)
-		croak("panic: corrupted array");
 
 	ssv = av_fetch( av, 0, 0);
 	if ( ssv == NULL ) croak("panic: corrupted array");
@@ -80,6 +67,27 @@ prima_array_parse( SV * sv, void ** ref, size_t * length, char ** letter)
 	if( letter) *letter = SvPV(*ssv, PL_na);
 
 	return true;
+}
+
+Bool
+prima_array_parse( SV * sv, void ** ref, size_t * length, char ** letter)
+{
+	SV * tied;
+	AV * av;
+	const MAGIC * mg;
+
+	if ( !sv || !SvOK(sv) ||  !SvROK(sv) || SvTYPE( SvRV( sv)) != SVt_PVAV)
+		return false;
+	av = (AV *) SvRV(sv);
+
+	if (( mg = SvTIED_mg(( SV*) av, PERL_MAGIC_tied )) == NULL)
+		return false;
+
+	tied = SvTIED_obj(( SV* ) av, mg );
+	if ( !tied || !SvROK(tied) || !sv_isa( tied, "Prima::array" ))
+		return false;
+
+	return array_parse_nomagic( tied, ref, length, letter);
 }
 
 Bool
@@ -360,6 +368,148 @@ XS(Prima_array_deduplicate_FROMPERL)
 	}
 
 EXIT:
+	XSRETURN_EMPTY;
+}
+
+XS(Prima_array_multiply_FROMPERL)
+{
+	dXSARGS;
+	void *ref;
+	char * letter;
+	double mul;
+	int i;
+	size_t length;
+	SV * sv;
+	if ( items != 2)
+		croak ("Invalid usage of ::multiply");
+
+	sv  = ST(0);
+	mul = SvNV( ST(1) );
+	if ( prima_array_parse( ST(0), &ref, &length, &letter)) {
+#define xmul_i(T) for ( i = 0; i < length; i++) ((T*)(ref))[i] = floor( mul * ((T*)(ref))[i] + .5 )
+		switch (*letter) {
+		case 'i':
+			xmul_i(int);
+			break;
+		case 's':
+			xmul_i(int16_t);
+			break;
+		case 'S':
+			xmul_i(uint16_t);
+			break;
+#undef xmul_i
+		case 'd':
+			for ( i = 0; i < length; i++)
+				((double*)(ref))[i] = mul * ((double*)(ref))[i];
+			break;
+		default:
+			warn("invalid array passed to %s", "Prima::array::multiply");
+		}
+	} else if ( sv && SvOK(sv) && SvROK(sv) && SvTYPE( SvRV( sv)) == SVt_PVAV) {
+		AV * av = (AV *) SvRV(sv);
+		length = av_len(av);
+		for ( i = 0; i <= length; i++) {
+			SV **psv;
+			if ((psv = av_fetch(av, i, 0)) == NULL) {
+				warn("Array panic on item %d on %s", i, "Prima::array::multiply");
+				goto FAIL;
+			}
+			sv_setnv( *psv, SvNV( *psv ) * mul );
+		}
+	} else {
+		warn("invalid array passed to %s", "Prima::array::multiply");
+	}
+
+FAIL:
+	XSRETURN_EMPTY;
+}
+
+XS(Prima_array_FETCH_FROMPERL)
+{
+	dXSARGS;
+	void *ref;
+	char * letter;
+	int ix;
+	size_t length;
+	if ( items != 2)
+		croak ("Invalid usage of ::FETCH");
+
+	if ( !array_parse_nomagic( ST(0), &ref, &length, &letter)) {
+		warn("invalid array passed to %s", "Prima::array::FETCH");
+		goto FAIL;
+	}
+	ix = SvIV(ST(1));
+	SPAGAIN;
+	SP -= items;
+	if ( ix < 0 )
+		ix = length - ix;
+	if ( ix < 0 || ix >= length )
+		goto FAIL;
+
+	switch (*letter) {
+	case 'i':
+		XPUSHs( sv_2mortal( newSViv( ((int*)(ref))[ix] )));
+		break;
+	case 's':
+		XPUSHs( sv_2mortal( newSViv( ((int16_t*)(ref))[ix] )));
+		break;
+	case 'S':
+		XPUSHs( sv_2mortal( newSViv( ((uint16_t*)(ref))[ix] )));
+		break;
+	case 'd':
+		XPUSHs( sv_2mortal( newSVnv( ((double*)(ref))[ix] )));
+		break;
+	default:
+		warn("invalid array passed to %s", "Prima::array::FETCH");
+		goto FAIL;
+	}
+
+	PUTBACK;
+	return;
+
+FAIL:
+	XSRETURN_EMPTY;
+}
+
+XS(Prima_array_STORE_FROMPERL)
+{
+	dXSARGS;
+	void *ref;
+	char * letter;
+	int ix;
+	size_t length;
+	if ( items != 3)
+		croak ("Invalid usage of ::STORE");
+
+	if ( !array_parse_nomagic( ST(0), &ref, &length, &letter)) {
+		warn("invalid array passed to %s", "Prima::array::STORE");
+		goto FAIL;
+	}
+	ix = SvIV(ST(1));
+	if ( ix < 0 )
+		ix = length - ix;
+	if ( ix < 0 || ix >= length )
+		goto FAIL;
+
+	switch (*letter) {
+	case 'i':
+		((int*)(ref))[ix] = SvIV( ST(2) );
+		break;
+	case 's':
+		((int16_t*)(ref))[ix] = SvIV( ST(2) );
+		break;
+	case 'S':
+		((uint16_t*)(ref))[ix] = SvIV( ST(2) );
+		break;
+	case 'd':
+		((double*)(ref))[ix] = SvNV( ST(2) );
+		break;
+	default:
+		warn("invalid array passed to %s", "Prima::array::STORE");
+		goto FAIL;
+	}
+
+FAIL:
 	XSRETURN_EMPTY;
 }
 

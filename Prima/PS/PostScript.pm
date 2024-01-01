@@ -680,7 +680,6 @@ sub glyph_out_outline
 	$len += $from;
 	my $emit = '';
 	my $fid  = 0;
-	my $ff = $canvas->font;
 	for ( my $i = $from; $i < $len; $i++) {
 		my $advance;
 		my $glyph     = $glyphs->[$i];
