@@ -263,7 +263,7 @@ sub stroke
 sub begin_doc
 {
 	my ( $self, $docName) = @_;
-	return 0 if $self-> get_paint_state;
+	$@ = 'Bad object', return 0 if $self-> get_paint_state;
 	$self-> {ps_data}  = '';
 	$self-> {can_draw} = 1;
 
@@ -374,7 +374,7 @@ sub abort_doc
 sub end_doc
 {
 	my $self = $_[0];
-	return 0 unless $self-> {can_draw};
+	$@ = 'Bad object', return 0 unless $self-> {can_draw};
 	$self-> {can_draw} = 0;
 
 	$self->{glyph_keeper}-> evacuate( sub { $self->spool( $_[0] ) } )

@@ -353,7 +353,7 @@ sub emit_new_dummy_object
 sub begin_doc
 {
 	my ( $self, $docName) = @_;
-	return 0 if $self-> get_paint_state;
+	$@ = 'Bad object', return 0 if $self-> get_paint_state;
 
 	$self-> {ps_data}  = '';
 	$self-> {can_draw} = 1;
@@ -405,7 +405,7 @@ ROOT
 	$self-> {all_alphas}    = {};
 	unless ($self-> {page_content} = $self->new_file_obj) {
 		$self-> abort_doc;
-		return 0;
+		$@ = 'Cannot create temp file', return 0;
 	}
 
 	$self-> {changed} = { map { $_ => 0 } qw(
@@ -509,7 +509,7 @@ sub end_paint   {        $_[0]-> abort_doc; }
 sub end_doc
 {
 	my $self = $_[0];
-	return 0 unless $self-> {can_draw};
+	$@ = 'Bad object', return 0 unless $self-> {can_draw};
 	$self-> end_page;
 
 	my $pages = scalar @{ $self->{pages} };

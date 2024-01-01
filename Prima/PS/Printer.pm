@@ -177,8 +177,9 @@ sub _end_doc
 {
 	my $self = $_[0];
 	my $backend = $self->{backend};
-	$backend->can('end_doc')->($self);
+	my $ok = $backend->can('end_doc')->($self);
 	$self-> __end(0);
+	return $ok;
 }
 
 sub _abort_doc
@@ -193,7 +194,7 @@ sub _abort_doc
 sub show_msg
 {
 	my ( $self, $msg ) = @_;
-	return unless $self->{gui};
+	$@ = $msg, return unless $self->{gui};
 
 	if (
 		defined($self->{spoolSTDERR}) &&
