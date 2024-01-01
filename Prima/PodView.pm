@@ -24,6 +24,13 @@ sub img_paint
 	);
 }
 
+sub end_page
+{
+	my $self = shift;
+	my $cb   = $self->{print_callback};
+	return $cb ? $cb->() : 1;
+}
+
 package
 	Prima::PodView;
 use Config;
@@ -34,10 +41,9 @@ use vars qw(@ISA);
 @ISA = qw(Prima::TextView);
 
 # 0 and 1 are reserved in TextView for FG anf BG
-use constant COLOR_INDEX_VERBATIM_FG => 2;
-use constant COLOR_INDEX_LINK_FG     => 3;
-use constant COLOR_INDEX_CODE_FG     => 4;
-use constant COLOR_INDEX_CODE_BG     => 5;
+use constant COLOR_INDEX_LINK_FG     => 2;
+use constant COLOR_INDEX_CODE_FG     => 3;
+use constant COLOR_INDEX_CODE_BG     => 4;
 use constant COLOR_LINK_FOREGROUND   => COLOR_INDEX_LINK_FG | tb::COLOR_INDEX;
 use constant COLOR_CODE_FOREGROUND   => COLOR_INDEX_CODE_FG | tb::COLOR_INDEX;
 use constant COLOR_CODE_BACKGROUND   => COLOR_INDEX_CODE_BG | tb::COLOR_INDEX;
@@ -85,7 +91,6 @@ sub profile_default
 		colorMap => [
 			$def-> {color},
 			$def-> {backColor},
-			0xcccccc, # verbatim div foreground
 			Prima::PodView::Renderer->default_colors,
 		],
 		styles        => [$_[0]->default_styles],
@@ -454,7 +459,7 @@ sub message
 {
 	my ( $self, $message, $error) = @_;
 	my $x;
-	$self-> open_read( createIndex => 0 );
+	$self-> open_read( create_index => 0 );
 	if ( $error) {
 		$x = $self-> {pod_handler}->styles-> [pod::STYLE_HEAD_1]-> {color};
 		$self-> {pod_handler}->styles-> [pod::STYLE_HEAD_1]-> {color} = cl::Red;
@@ -571,6 +576,7 @@ sub close_read
 sub stop_format
 {
 	my $self = $_[0];
+	$self-> {pod_handler}->end_format;
 	$self-> {formatTimer}-> destroy if $self-> {formatTimer};
 	undef $self-> {formatData};
 	undef $self-> {formatTimer};
@@ -596,7 +602,6 @@ sub format
 	$self-> stop_format;
 	$self-> selection(-1,-1,-1,-1);
 
-	my $paneWidth = $pw;
 	my $paneHeight = 0;
 	my ( $min, $max, $linkIdStart) = @{$self-> {modelRange}};
 	if ( $min >= $max) {
@@ -610,30 +615,22 @@ sub format
 	$self-> link_handler->clear_positions;
 
 	$self-> begin_paint_info;
-
-	# cache indents
-	my @indents;
-	my $state = $self-> create_state;
-
-	for my $fid ( 0 .. ( scalar @{$self-> fontPalette} - 1)) {
-		$$state[ tb::BLK_FONT_ID] = $fid;
-		$self-> realize_state( $self, $state, tb::REALIZE_FONTS);
-		$indents[$fid] = $self-> font-> width;
-	}
-	$$state[ tb::BLK_FONT_ID] = 0;
-
+	$self->{pod_handler}->begin_format(
+		canvas         => $self,
+		width          => $pw,
+		font_palette   => $self->fontPalette,
+		justify        => $self->{justify},
+		resolution     => [$self->resolution],
+		text_direction => $self->textDirection,
+		exportable     => $opt{exportable},
+	);
 	$self-> end_paint_info;
 
 	$self-> {formatData} = {
-		indents       => \@indents,
-		state         => $state,
-		orgState      => [ @$state ],
 		linkId        => $linkIdStart,
 		min           => $min,
 		max           => $max,
 		current       => $min,
-		paneWidth     => $paneWidth,
-		formatWidth   => $paneWidth,
 		step          => FORMAT_LINES,
 		position      => undef,
 		positionSet   => 0,
@@ -683,10 +680,9 @@ sub paint_code_div
 	);
 	if ( $style == pod::TDIVSTYLE_SOLID ) {
 		$save{backColor} = $canvas->backColor;
-		my $cm = $self->{colorMap};
 		$canvas->set(
-			color     => $cm->[ COLOR_INDEX_VERBATIM_FG ],
-			backColor => $cm->[ COLOR_INDEX_CODE_BG ],
+			color     => 0xcccccc,
+			backColor => $self->{colorMap}->[ COLOR_INDEX_CODE_BG ],
 		);
 		$path->fill_stroke;
 	} else {
@@ -715,7 +711,6 @@ sub add_code_div
 	$$b[tb::BLK_WIDTH]  = $w;
 	$$b[tb::BLK_HEIGHT] = $h;
 	$$b[tb::BLK_TEXT_OFFSET] = -1;
-	$style = pod::TDIVSTYLE_OUTLINE if $self->{formatData}->{exportable};
 
 	push @$b,
 		tb::code( \&paint_code_div, [$style, $w, $h, $self->{defaultFontSize} * 2 * $self->{resolution}->[0] / 96.0]),
@@ -736,20 +731,13 @@ sub format_chunks
 	my $link_map = $self-> {pod_handler}->link_map;
 	my $max = $f-> {current} + $f-> {step};
 	$max = $f-> {max} if $max > $f-> {max};
-	my $indents   = $f-> {indents};
-	my $state     = $f-> {state};
-	my $formatWidth = $f-> {formatWidth};
-	my $fw = $self->font->width;
-
-
+	my $model = $self->{pod_handler}->model;
 
 	for ( ; $mid <= $max; $mid++) {
-		my $g = tb::block_create();
-		my $m = $self-> {pod_handler}->model-> [$mid];
 
+		my $m = $model-> [$mid];
 		if (( $m->[pod::M_TYPE] & pod::T_TYPE_MASK) == pod::T_DIV ) {
-			next if $self->{formatData}->{exportable};
-
+			next if $f->{exportable};
 			if ( $m->[pod::MDIV_TAG] == pod::TDIVTAG_OPEN) {
 				$f->{verbatim} = scalar @{ $self->{blocks} };
 			} else {
@@ -761,33 +749,11 @@ sub format_chunks
 			next;
 		}
 
-		my @blocks;
-		$$g[tb::BLK_TEXT_OFFSET] = $$m[pod::M_TEXT_OFFSET];
-		$$g[tb::BLK_Y] = undef;
-		push @$g, @$m[pod::M_START .. $#$m ];
-
-		# format the paragraph
-
-		my $next_text_offs = ( $mid == $self->{pod_handler}->model_length - 1 ) ?
-			$self->{pod_handler}->text_length :
-			$self->{pod_handler}->model->[$mid + 1]->[pod::M_TEXT_OFFSET];
-		my $indent = $$m[pod::M_INDENT] * $$indents[ $$m[pod::M_FONT_ID]];
-		@blocks = $self-> format_block( $self, $g, $state, $formatWidth, $indent);
-
-		# adjust size
-		for ( @blocks) {
-			if ( $self->{textDirection} ) {
-				$$_[ tb::BLK_X] = $f->{paneWidth} - $$_[ tb::BLK_WIDTH] - $indent;
-			} else {
-				$$_[ tb::BLK_X] += $indent;
-			}
-			$f-> {paneWidth} = $$_[ tb::BLK_X] + $$_[ tb::BLK_WIDTH]
-				if $$_[ tb::BLK_X] + $$_[ tb::BLK_WIDTH] > $f-> {paneWidth};
-		}
+		my @blocks = $self->{pod_handler}->format_model($m);
 
 		# check links
 		if ( $link_map-> {$mid}) {
-			$f->{linkId} = $self-> link_handler-> add_positions_from_blocks($f->{linkId}, \@blocks);
+			$f->{linkId} = $self-> {link_handler}-> add_positions_from_blocks($f->{linkId}, \@blocks);
 		}
 
 		# push back
@@ -828,8 +794,9 @@ sub format_chunks
 	}
 
 	my $ps = $self-> {paneWidth};
-	if ( $ps != $f-> {paneWidth}) {
-		$self-> paneSize( $f-> {paneWidth}, $paneHeight);
+	my $ww = $self-> {pod_handler}->accumulated_width_overrun;
+	if ( $ps != $ww ) {
+		$self-> paneSize( $ww, $paneHeight);
 	} else {
 		my $oph = $self-> {paneHeight};
 		$self-> {paneHeight} = $paneHeight; # direct nasty hack
@@ -853,165 +820,18 @@ sub format_chunks
 sub print
 {
 	my ( $self, $canvas, $_callback) = @_;
+	return unless $_callback-> ();
 
-	my ( $min, $max, $linkIdStart) = @{$self-> {modelRange}};
-	return 1 if $min >= $max;
-	my $ret = 0;
-
-	my $save_defaultFontSize = $self->{defaultFontSize};
-	my $print_defaultFontSize = 10;
-	$self->{defaultFontSize} = $print_defaultFontSize;
-
-	my $callback = sub {
-		return 1 unless $_callback;
-		$self->{defaultFontSize} = $save_defaultFontSize;
-		my $ret = $_callback->();
-		$self->{defaultFontSize} = $print_defaultFontSize;
-		return $ret;
-	};
-
-	goto ABORT unless $callback-> ();
-
-	# cache indents
-	my @indents;
-	my $state = $self-> create_state;
-	for ( 0 .. ( scalar @{$self-> fontPalette} - 1)) {
-		$$state[ tb::BLK_FONT_ID] = $_;
-		$self-> realize_state( $canvas, $state, tb::REALIZE_FONTS);
-		$indents[$_] = $canvas-> get_text_width('x');
-	}
-	$$state[ tb::BLK_FONT_ID] = 0;
-
-	my ( $formatWidth, $formatHeight) = $canvas-> size;
-        my $hmargin = $formatWidth  / 24;
-        my $vmargin = $formatHeight / 12;
-        $formatWidth  -= $hmargin * 2;
-        $formatHeight -= $vmargin * 1.5;
-        $canvas->translate( $hmargin, $vmargin );
-
-	my $mid = $min;
-	my $y = $formatHeight;
-
-	my $pageno = 1;
-	my $pagenum = sub {
-		$canvas->translate( 0, 0 );
-		my %save = %{$canvas->font};
-		$canvas->font->set( name => $self->fontPalette->[0]->{name} || 'Default', size => 6, style => 0, pitch => fp::Default );
-		$canvas->set( color => cl::Black );
-		$canvas->text_out( $pageno, ( $formatWidth - $canvas->get_text_width($pageno) ) / 2, ($vmargin - $canvas->font->height ) / 2 );
-		delete $save{height}; # XXX fix this
-		$canvas->font(\%save);
-		$pageno++;
-	};
-
-	my $new_page = sub {
-		goto ABORT unless $callback-> ();
-		$pagenum->();
-		goto ABORT unless $canvas-> new_page;
-		$canvas->translate( $hmargin, $vmargin );
-	};
-
-	my $get_blocks = sub {
-		# don't print the Index section
-		return if defined $self->{pod_handler}->index_ends_at and $mid < $self->{pod_handler}->index_ends_at;
-
-		my $m = $self-> {pod_handler}->model->[$mid];
-		return if ($$m[pod::M_TYPE] & pod::T_TYPE_MASK) != pod::T_NORMAL; # don't print divs
-
-		my $g = tb::block_create();
-		$$g[ tb::BLK_TEXT_OFFSET] = $$m[pod::M_TEXT_OFFSET];
-		$$g[ tb::BLK_Y] = undef;
-		push @$g, @$m[ pod::M_START .. $#$m ];
-
-		# format the paragraph
-		my $indent = $$m[pod::M_INDENT] * $indents[ $$m[pod::M_FONT_ID]];
-		return $self-> format_block( $canvas, $g, $state, $formatWidth, $indent, 1);
-	};
-
-	my @block_queue;
-	for ( ; $mid <= $max; $mid++) {
-		my @queue;
-		my @blocks = $get_blocks->() or next;
-		my $m      = $self-> {pod_handler}->model->[$mid];
-		push @queue, [ $m, \@blocks ];
-
-		# try to look-ahead some blocks, see if they all can fit on the same page
-		if ( my $lookahead = $m->[pod::M_TYPE] & pod::T_LOOKAHEAD) {
-			my $y2 = 0;
-			$y2 += $$_[tb::BLK_HEIGHT] for @blocks;
-			for ( 1 .. $lookahead ) {
-				last if $mid + 1 > $max;
-				my $xm = $self-> {pod_handler}->model->[$mid + 1];
-				last if $xm->[pod::M_TYPE] & pod::T_LOOKAHEAD;
-				$mid++;
-				my @b = $get_blocks->();
-				$y2 += $$_[tb::BLK_HEIGHT] for @b;
-				push @queue, [ $xm, \@b ] if @b;
-			}
-			if ( $y2 > $y && @blocks && $blocks[0][tb::BLK_HEIGHT] <= $formatHeight ) {
-				$new_page->();
-				$y = $formatHeight;
-			}
-		}
-
-		# paint
-		$self-> reset_state;
-		for my $q (@queue) {
-			my ( $m, $blocks ) = @$q;
-			my $indent = $$m[pod::M_INDENT] * $indents[ $$m[pod::M_FONT_ID]];
-			for my $b ( @$blocks) {
-				if ( $y < $$b[ tb::BLK_HEIGHT]) {
-					if ( $$b[ tb::BLK_HEIGHT] < $formatHeight) {
-						$new_page->();
-						$y = $formatHeight - $$b[ tb::BLK_HEIGHT];
-						$self-> block_draw( $canvas, $b, $indent, $y);
-					} else {
-						$y -= $$b[ tb::BLK_HEIGHT];
-						while ( $y < 0) {
-							$new_page->();
-							$self-> block_draw( $canvas, $b, $indent, $y);
-							$y += $formatHeight;
-						}
-					}
-				} else {
-					$y -= $$b[ tb::BLK_HEIGHT];
-					goto ABORT unless $self-> block_draw( $canvas, $b, $indent, $y);
-				}
-			}
-		}
-	}
-	$pagenum->();
-
-	$ret = 1;
-ABORT:
-	$self->{defaultFontSize} = $save_defaultFontSize;
-	return $ret;
-}
-
-sub format_block
-{
-	my ( $self, $canvas, $block, $state, $width, $indent, $printing ) = @_;
-
-	$width -= $indent * 2;
-
-	my @blocks = $self-> block_wrap( $canvas, $block, $state, $width ) or return;
-
-	if ( $printing and 1 == @blocks and $width < $blocks[0][tb::BLK_WIDTH] ) {
-		# cannot wrap a (verbatim?) block -- force break it
-		return $self-> block_wrap( $canvas, $block, $state, $width, stripLeadingSpaces => 0, ignoreWraps => 1);
-	}
-
-	if ( $self->{justify}) {
-		my @b;
-		for ( my $i = 0; $i < $#blocks; $i++) {
-			my $b = $self->justify_interspace( $canvas, $blocks[$i], $width);
-			push @b, $b // $blocks[$i];
-		}
-		push @b, $blocks[-1];
-		@blocks = @b;
-	}
-
-	return @blocks;
+	my ($min, $max) = @{$self-> {modelRange}};
+	local $self->{print_callback} = $_callback;
+	return $self->{pod_handler}->print(
+		from           => $min,
+		to             => $max,
+		canvas         => $canvas,
+		font_palette   => $self->fontPalette,
+		justify        => $self->{justify},
+		text_direction => $self->textDirection,
+	);
 }
 
 sub select_text_offset
@@ -1281,6 +1101,6 @@ Called after new content is loaded
 
 =head1 SEE ALSO
 
-L<Prima::Drawable::Pod>
+L<Prima::Drawable::Pod>, L<Prima::Drawable::TextView>
 
 =cut

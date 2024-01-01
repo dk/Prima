@@ -468,6 +468,8 @@ L<prima-cfgmaint> - configuration tool for Visual Builder
 
 L<Prima::VB::CfgMaint> - configures the widget palette in the Visual Builder
 
+L<prima-fmview> - .fm file viewer
+
 =item PostScript printer interface
 
 L<Prima::PS::PostScript> - PostScript interface to C<Prima::Drawable>
@@ -512,6 +514,8 @@ L<Prima::codecs>    - Step-by-step image codec creation
 
 L<prima-gencls>     - C<prima-gencls>, a class compiler tool.
 
+L<prima-tmlink>     - C<prima-tmlink>, optimizer tool for files produced by prima-gencls.
+
 =item Miscellaneous
 
 L<Prima::faq> - frequently asked questions
@@ -527,6 +531,10 @@ L<Prima::Image::base64> - hardcoded image files
 L<Prima::Image::Loader> - progressive loading and saving for multiframe images
 
 L<Prima::IniFile> - support of Windows-like initialization files
+
+L<podview> - POD viewer
+
+L<pod2pdf> - POD printer
 
 L<Prima::StdBitmap> - shared access to the standard bitmaps
 

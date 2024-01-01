@@ -493,6 +493,7 @@ utils/makedoc/makedoc.pl
 utils/makedoc/Makefile
 utils/prima-class.pl
 utils/podview.pl
+utils/pod2pdf.pl
 utils/prima-tmlink.pl
 win32/apc.c
 win32/clip.c

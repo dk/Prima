@@ -58,8 +58,21 @@ use Prima::Drawable::Markup;
 sub default_colors
 {(
 	0x337ab7, # link foreground
-	0x0000ff, # code foreground
+	0x000080, # code foreground
 	0xf5f5f5, # code background
+)}
+
+sub default_font_palette
+{(
+	{
+		name     => (($^O =~ /win32/i) ? 'Arial' : 'Helvetica'),
+		encoding => '',
+		pitch    => fp::Default,
+	},{
+		name     => 'Courier',
+		encoding => '',
+		pitch    => fp::Fixed,
+	}
 )}
 
 sub default_styles
@@ -148,7 +161,7 @@ sub open_read
 
 		topicStack    => [[-1]],
 
-		createIndex   => 1,
+		create_index  => 1,
 		encoding      => undef,
 		bom           => undef,
 		utf8          => undef,
@@ -327,7 +340,7 @@ sub close_read
 	$self-> add_new_line; # end
 	$self-> add_verbatim_mark(0);
 
-	unless ($self-> {read_state}-> {createIndex}) {
+	unless ($self-> {read_state}-> {create_index}) {
 		$self-> _close_topic( pod::STYLE_HEAD_1);
 		goto NO_INDEX;
 	}
@@ -907,7 +920,6 @@ sub add_verbatim_mark
 	push @{$self-> {model}}, [ div_create(open => $open, style => pod::TDIVSTYLE_SOLID) ];
 }
 
-
 sub podpath2file
 {
 	my ($self, $manpage) = @_;
@@ -1057,6 +1069,335 @@ sub update_styles # used for the direct {styles} hacking
 	"rchevron"    =>        "\xBB",        #   right chevron (double greater than)
 );
 
+sub begin_format
+{
+	my ($self, %opt) = @_;
+
+	return if $self->{format};
+
+	my $canvas = $opt{canvas} or Carp::croak("canvas expected");
+
+	$opt{width}  //= $canvas->width;
+	$opt{height} //= $canvas->height;
+	$opt{hmargin}       //= 0;
+	$opt{vmargin}       //= 0;
+	$opt{width}  -= $opt{hmargin} * 2;
+	$opt{height} -= $opt{vmargin} * 1.5;
+
+	$opt{default_font_size} //= 10;
+
+	my $fp = $opt{font_palette} // [default_font_palette];
+	Carp::croak("font_palette with at least 2 fonts is needed") if @$fp < 2;
+	unless ( $opt{indents}) {
+		my @indents;
+		for ( 0 .. $#$fp) {
+			$canvas->font( %{$fp->[$_]}, size => $opt{default_font_size});
+			$indents[$_] = $canvas-> get_text_width('x');
+		}
+		$opt{indents} = \@indents;
+	}
+
+	$opt{color_palette} //= [ cl::Fore, cl::Back, $self-> default_colors ];
+	$opt{resolution}    //= [ $canvas->resolution ];
+
+	my $state = tb::block_create();
+	$$state[tb::BLK_FONT_SIZE] = $opt{default_font_size};
+	$$state[tb::BLK_COLOR]     = tb::COLOR_INDEX;
+	$$state[tb::BLK_BACKCOLOR] = tb::BACKCOLOR_DEFAULT;
+	$$state[tb::BLK_FONT_ID]   = 0;
+
+	my $r = $self->{format} = {
+		justify             => 0,
+		text_direction      => 0,
+		exportable          => 0,
+		allow_width_overrun => 1,
+		%opt,
+		pageno              => 1,
+		state               => $state,
+	};
+
+	$r->{width_overrun} = $r->{width};
+
+	return 1;
+}
+
+sub block_wrap
+{
+	my ( $self, $b, $width, %opt) = @_;
+	my $r = $self->{format} or return;
+	return tb::block_wrap( $b,
+		textPtr       => $self->{text},
+		canvas        => $r->{canvas},
+		state         => $r->{state},
+		width         => $width,
+		fontmap       => $r->{font_palette},
+		baseFontSize  => $r->{default_font_size},
+		resolution    => $r->{resolution},
+		wordBreak     => 1,
+		textDirection => $r->{text_direction},
+		%opt
+	);
+}
+
+sub justify_interspace
+{
+	my ( $self, $b, $width) = @_;
+	my $r = $self->{format} or return;
+	return tb::justify_interspace( $b,
+		textPtr       => $self->{text},
+		canvas        => $r->{canvas},
+		width         => $width,
+		fontmap       => $r->{font_palette},
+		baseFontSize  => $r->{default_font_size},
+		resolution    => $r->{resolution},
+	);
+}
+
+sub format_block
+{
+	my ( $self, $block, $indent ) = @_;
+	my $r = $self-> {format} or return;
+
+	my $width  = $r->{width} - $indent * 2;
+	my @blocks = $self-> block_wrap( $block, $width ) or return;
+
+	if ( !$r->{allow_width_overrun} and 1 == @blocks and $width < $blocks[0][tb::BLK_WIDTH] ) {
+		# cannot wrap a (verbatim?) block -- force break it
+		return $self-> block_wrap(
+			$block, $width,
+			stripLeadingSpaces => 0,
+			ignoreWraps        => 1
+		);
+	}
+
+	if ( $r->{justify}) {
+		my @b;
+		for ( my $i = 0; $i < $#blocks; $i++) {
+			my $b = $self->justify_interspace( $blocks[$i], $width);
+			push @b, $b // $blocks[$i];
+		}
+		push @b, $blocks[-1];
+		@blocks = @b;
+	}
+
+	return @blocks;
+}
+
+sub accumulated_width_overrun
+{
+	my $self = shift;
+	my $r = $self-> {format} or return;
+	return $r->{width_overrun};
+}
+
+sub format_model
+{
+	my ($self, $m) = @_;
+
+	my $r = $self-> {format} or return;
+	return if ($m->[pod::M_TYPE] & pod::T_TYPE_MASK) == pod::T_DIV;
+
+	my $g = tb::block_create();
+	$$g[tb::BLK_TEXT_OFFSET] = $$m[pod::M_TEXT_OFFSET];
+	$$g[tb::BLK_Y] = undef;
+	push @$g, @$m[pod::M_START .. $#$m ];
+
+	# format the paragraph
+	my $indent = $$m[pod::M_INDENT] * $r->{indents}->[ $$m[pod::M_FONT_ID] ];
+	my @blocks = $self-> format_block( $g, $indent);
+
+	# adjust size
+	for ( @blocks) {
+		if ( $self->{text_direction} ) {
+			$$_[ tb::BLK_X] = $r->{width_overrun} - $$_[ tb::BLK_WIDTH] - $indent;
+		} else {
+			$$_[ tb::BLK_X] += $indent; # XXX for print?
+		}
+		$r-> {width_overrun} = $$_[ tb::BLK_X] + $$_[ tb::BLK_WIDTH] if
+			$r->{allow_width_overrun} and
+			$$_[ tb::BLK_X] + $$_[ tb::BLK_WIDTH] > $r-> {width_overrun};
+	}
+
+	return @blocks;
+}
+
+sub model2block
+{
+	my ($self, $model) = @_;
+	return if ($model->[pod::M_TYPE] & pod::T_TYPE_MASK) == pod::T_DIV;
+	my $g = tb::block_create();
+	$$g[tb::BLK_TEXT_OFFSET] = $$model[pod::M_TEXT_OFFSET];
+	$$g[tb::BLK_Y] = undef;
+	push @$g, @$model[pod::M_START .. $#$model ];
+	return $g;
+}
+
+sub end_format { undef $_[0]->{format} }
+
+sub print_page_number
+{
+	my $self = shift;
+	my $r = $self->{format} or return;
+	my $c = $r->{canvas};
+	$c-> graphic_context_push;
+	$c->font->set( name => $r->{font_palette}->[0]->{name} || 'Default', size => 6, style => 0, pitch => fp::Default );
+	$c->set( color => cl::Black );
+	$c->text_out( $r->{pageno},
+		( $r->{width} - $c->get_text_width($r->{pageno}) ) / 2,
+		0,
+	);
+	$c-> graphic_context_pop;
+	$r->{pageno}++;
+}
+
+sub begin_page
+{
+	my $self = shift;
+	my $r = $self->{format} or return;
+	$r->{y} = $r->{height};
+	$r->{canvas}->translate( 0,0 );
+	$self->print_page_number;
+	$r->{canvas}->translate( $r->{hmargin}, $r->{vmargin} );
+	return 1;
+}
+
+sub end_page { 1 }
+
+sub print_block
+{
+	my ( $self, $b, $x, $y) = @_;
+
+	my $r = $self->{format} or return;
+	my $ret = 1;
+	my @xy = ($x, $y);
+	my @state;
+	my $semaphore = 0;
+	my $canvas = $r->{canvas};
+	tb::walk( $b,
+		textPtr      => $self->{text},
+		baseFontSize => $r->{default_font_size},
+		resolution   => $r->{resolution},
+		semaphore    => \$semaphore,
+		trace        => tb::TRACE_GEOMETRY | tb::TRACE_REALIZE_PENS | tb::TRACE_TEXT,
+		canvas       => $canvas,
+		position     => \@xy,
+		state        => \@state,
+		realize      => sub {
+			my ($state, $mode) = @_;
+			$canvas-> set_font(tb::realize_fonts($r-> {font_palette}, $state))
+				if $mode & tb::REALIZE_FONTS;
+			$canvas-> set( tb::realize_colors( $r-> {color_palette}, $state))
+				if $mode & tb::REALIZE_COLORS;
+		},
+		text         => sub {
+			return if $canvas-> text_shape_out($_[-1], @xy);
+			$semaphore = 1;
+			$ret = 0;
+		},
+		code         => sub {
+			my ( $code, $data ) = @_;
+			$code-> ( $self, $canvas, $b, \@state, @xy, $data);
+		},
+	);
+
+	return $ret;
+}
+
+sub print
+{
+	my ( $self, %opt ) = @_;
+	return 0 if $self->{format};
+
+	$opt{from} //= 0;
+	$opt{to}   //= $self->model_length - 1;
+	return 1 if $opt{from} >= $opt{to};
+	my ( $from, $to) = @opt{qw(from to)};
+
+	my @sz = $opt{canvas}->size;
+	$self->begin_format(
+		allow_width_overrun => 0,
+		exportable          => 0,
+		width               => $sz[0],
+		height              => $sz[1],
+		hmargin             => $sz[0] / 24,
+		vmargin             => $sz[1] / 12,
+		resolution          => [$opt{canvas}->resolution],
+		%opt
+	);
+	my $r = $self->{format};
+	my @block_queue;
+	my $model = $self->{model};
+	$from //= 0;
+	$to   //= $#$model;
+
+	goto ABORT unless $self-> begin_page;
+	for ( ; $from <= $to; $from++) {
+		# don't print the Index section
+		next if defined $self->{index_ends_at} and $from < $self->{index_ends_at};
+
+		my @queue;
+		my $m      = $model->[$from];
+		my @blocks = $self->format_model( $m );
+		push @queue, [ $m, \@blocks ];
+
+		# try to look-ahead some blocks, see if they all can fit on the same page
+		if ( my $lookahead = $m->[pod::M_TYPE] & pod::T_LOOKAHEAD) {
+			my $y2 = 0;
+			$y2 += $$_[tb::BLK_HEIGHT] for @blocks;
+			for ( 1 .. $lookahead ) {
+				last if $from + 1 > $to;
+				my $xm = $model->[$from + 1];
+				last if $xm->[pod::M_TYPE] & pod::T_LOOKAHEAD;
+				$from++;
+				my @b = $self->format_model($xm);
+				$y2 += $$_[tb::BLK_HEIGHT] for @b;
+				push @queue, [ $xm, \@b ] if @b;
+			}
+			if ( $y2 > $r->{y} && @blocks && $blocks[0][tb::BLK_HEIGHT] <= $r->{height} ) {
+				goto ABORT unless $self-> end_page;
+				$r->{canvas}-> new_page;
+				goto ABORT unless $self-> begin_page;
+			}
+		}
+
+		# paint
+		for my $q (@queue) {
+			my ( $m, $blocks ) = @$q;
+			my $indent = $$m[pod::M_INDENT] * $r->{indents}->[ $$m[pod::M_FONT_ID] ];
+			for my $b ( @$blocks) {
+				if ( $r->{y} < $$b[ tb::BLK_HEIGHT]) {
+					if ( $$b[ tb::BLK_HEIGHT] < $r->{height}) {
+						goto ABORT unless $self->end_page;
+						$r->{canvas}-> new_page;
+						goto ABORT unless $self-> begin_page;
+						$r->{y} = $r->{height} - $$b[ tb::BLK_HEIGHT];
+						goto ABORT unless $self-> print_block( $b, $indent, $r->{y});
+					} else {
+						$r->{y} -= $$b[ tb::BLK_HEIGHT];
+						while ( $r->{y} < 0) {
+							goto ABORT unless $self-> end_page;
+							$r->{canvas}-> new_page;
+							goto ABORT unless $self-> begin_page;
+							goto ABORT unless $self-> print_block( $b, $indent, $r->{y});
+							$r->{y} += $r->{height};
+						}
+					}
+				} else {
+					$r->{y} -= $$b[ tb::BLK_HEIGHT];
+					goto ABORT unless $self-> print_block( $b, $indent, $r->{y});
+				}
+			}
+		}
+	}
+	goto ABORT unless $self->end_page;
+
+	$self->end_format;
+	return 1;
+
+ABORT:
+	$self->end_format;
+	return 0;
+}
 
 1;
 
@@ -1077,10 +1418,21 @@ Prima::Drawable::Pod - POD parser and renderer
 	$pod-> read("=head1 NAME\n\nI'm also a pod!\n\n");
 	$pod-> close_read;
 
+	$pod-> begin_format( width => 100, canvas => $my_window );
+	for ( my $model_id = 0; $model_id < $pod->model_length; $model_id++) {
+		my @blocks = $pod-> format_model;
+		... render blocks ...
+	}
+	$pod-> end_format;
+
 =head1 DESCRIPTION
 
-Prima::Drawable::Pod contains a formatter ( in terms of L<perlpod> ) and a renderer of
-the POD content.
+Prima::Drawable::Pod contains a formatter ( in terms of L<perlpod> ) and a
+renderer of the POD content. The POD text is converted in I<model>, a set of
+text blocks in format described in L<Prima::Drawable::TextBlock>. The model
+blocks are not directly usable though, and would need to be rendered to another
+set of text blocks, that in turn can be drawn on the screen, a printer, etc.
+The module also provides helper routines for these operations.
 
 =head1 USAGE
 
@@ -1216,6 +1568,89 @@ Each style is a hash with the following keys: C<fontId>, C<fontSize>, C<fontStyl
 C<color>, and C<backColor>, fully analogous to the tb::BLK_DATA_XXX options.
 This functionality provides another layer of accessibility to the pod formatter.
 
+=head2 Rendering
+
+The model loaded by the read functions is stored internally. It is independent
+of screen resolution, fonts, colors, etc. To be rendered or printed, the following
+functions can be used:
+
+=over
+
+=item begin_format %OPTIONS
+
+Starts formatting session. The following options are recognized:
+
+=over
+
+=item allow_width_overrun BOOLEAN=1
+
+If set, allows resulting block width to overrun the canvas width.
+If set, the actual width can be queried by calling the C<accumulated_width_overrun> method.
+Otherwise forcibly breaks blocks explicitly marked to be not wrapped.
+
+=item color_palette ARRAY
+
+Array of at least 5 color entries (default foreground color, default background color,
+link color, verbatime text color, and its background color). If unset, some sensible default
+values are used.
+
+=item font_palette ARRAY_OF_HASHES
+
+Set of at least 2 hashes each describing a font to be used for normal text (index 0)
+and verbatim text (index 1). If unset, some sensible default
+values are used.
+
+=item hmargin, vmargin
+
+Target device margins
+
+=item resolution ARRAY_OF_2
+
+Target device resolution
+
+=item width, height
+
+Target device size
+
 =back
+
+=item format_model $MODEL
+
+Renders a model block C<$MODEL> and returns zero or more text blocks suitable
+for the drawing on the given canvas. Also the C<block_draw> method can be used
+for the same purpose.
+
+=item end_format
+
+Ends formatting session
+
+=back
+
+=back
+
+=head2 Printing
+
+The method C<print> prints the pod content on a target canvas.
+Accepts the following options:
+
+=over
+
+=item canvas OBJECT
+
+The target device
+
+=item from, to INDEX
+
+Selectets the model ranhe to be printed
+
+=back
+
+=head1 SEE ALSO
+
+L<Prima::Drawable::TextBlock>, L<Prima::PodView>.
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
 
 =cut
