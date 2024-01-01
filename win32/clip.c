@@ -97,7 +97,7 @@ static Handle cf2CF( Handle id)
 
 static struct {
    UINT format;
-   char desc[ 20];
+   char desc[ 26];
 } formats[] = {
       {CF_METAFILEPICT     , "Win32.CF_METAFILEPICT"
    }, {CF_SYLK             , "Win32.CF_SYLK"
