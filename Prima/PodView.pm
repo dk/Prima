@@ -284,96 +284,28 @@ sub load_link
 	my ( $self, $s, %opt) = @_;
 
 	my $mark = $self-> make_bookmark;
-	my $t;
-	if ( $s =~ /^topic:\/\/(.*)$/) { # local topic
-		$t = $1;
-		return 0 unless $t =~ /^\d+$/;
-		return 0 if $t < 0 || $t >= scalar @{$self-> {pod_handler}->topics};
-	}
-
+	my %link = $self->{pod_handler}->parse_link($s);
 	my $doBookmark;
 
-	unless ( defined $t) { # page / section / item
-		my ( $page, $section, $item, $lead_slash) = ( '', '', 1, '');
-		my $default_topic = 0;
-		if ( $s =~ /^file:\/\/(.*?)(?:\|([^\/]*))?$/) {
-			($page, $section) = ($1, $2 // '');
-		} elsif ( $s =~ m{^([:\w]+)/?$} ) {
-			$page = $1;
-		} elsif ( $s =~ /^([^\/]*)(\/)(.*)$/) {
-			( $page, $lead_slash, $section) = ( $1, $2, $3);
-		} else {
-			$section = $s;
+	if ( defined $link{file} and $link{file} ne $self-> {pageName}) { # new page?
+		if ( $self-> load_file( $link{file}, %opt) != 1) {
+			$self-> notify(q(Bookmark), $mark) if $mark;
+			return 0;
 		}
-		$item = 0 if $section =~ s/^\"(.*?)\"$/$1/;
-
-		if ( !length $page) {
-			my $tid = -1;
-			for ( @{$self-> {pod_handler}->topics}) {
-				$tid++;
-				next unless $section eq $$_[pod::T_DESCRIPTION];
-				next if !$item && $$_[pod::T_STYLE] == pod::STYLE_ITEM;
-				$t = $tid;
-				last;
-			}
-			if ( !defined $t || $t < 0) {
-				$tid = -1;
-				my $s = quotemeta $section;
-				for ( @{$self-> {pod_handler}->topics}) {
-					$tid++;
-					next unless $$_[pod::T_DESCRIPTION] =~ m/^$s/;
-					next if !$item && $$_[pod::T_STYLE] == pod::STYLE_ITEM;
-					$t = $tid;
-					last;
-				}
-			}
-			unless ( defined $t) { # no such topic, must be a page?
-				$page = $lead_slash . $section;
-				$section = '';
-			}
-		}
-		if ( length $page and $page ne $self-> {pageName}) { # new page?
-			if ( $self-> load_file( $page, %opt) != 1) {
-				$self-> notify(q(Bookmark), $mark) if $mark;
-				return 0;
-			}
-			$doBookmark = 1;
-		}
-
-		if ( ! defined $t) {
-			$t = $default_topic if length $page && $self-> {topicView};
-			my $tid = -1;
-			for ( @{$self-> {pod_handler}->topics}) {
-				$tid++;
-				next unless $section eq $$_[pod::T_DESCRIPTION];
-				$t = $tid;
-				last;
-			}
-			if ( length( $section) and ( !defined $t || $t < 0)) {
-				$tid = -1;
-				my $s = quotemeta $section;
-				for ( @{$self-> {pod_handler}->topics}) {
-					$tid++;
-					next unless $$_[pod::T_DESCRIPTION] =~ m/^$s/;
-					$t = $tid;
-					last;
-				}
-			}
-		}
+		%link = $self->{pod_handler}->parse_link($s);
+		$doBookmark = 1;
 	}
 
-	if ( defined $t) {
-		if ( $t = $self-> {pod_handler}->topics-> [$t]) {
-			if ( $self-> {topicView}) {
-				$self-> select_topic($t, %opt);
-			} else {
-				$self-> select_text_offset(
-					$self-> {pod_handler}->model-> [$$t[ pod::T_MODEL_START]]-> [pod::M_TEXT_OFFSET]
-				);
-			}
-			$self-> notify(q(Bookmark), $mark) if $mark;
-			return 1;
+	if ( defined ( my $t = $link{topic})) {
+		if ( $self-> {topicView}) {
+			$self-> select_topic($t, %opt);
+		} else {
+			$self-> select_text_offset(
+				$self-> {pod_handler}->model-> [$$t[ pod::T_MODEL_START]]-> [pod::M_TEXT_OFFSET]
+			);
 		}
+		$self-> notify(q(Bookmark), $mark) if $mark;
+		return 1;
 	} elsif ( $doBookmark) {
 		$self-> notify(q(Bookmark), $mark) if $mark;
 		return 1;
@@ -559,7 +491,7 @@ sub close_read
 	my ( $self, $topicView) = @_;
 	return unless $self-> {pod_handler}->is_reading;
 
-	my $r = $self-> {pod_handler}->close_read;
+	my $r = $self-> {pod_handler}->close_read // {};
 
 	$self-> {contents}-> [0]-> references( $self-> {pod_handler}-> links);
 
@@ -869,56 +801,6 @@ sub text_range
 		$pod->model->[$self-> {modelRange}-> [1] + 1]-> [pod::M_TEXT_OFFSET];
 	$range[1]-- if $range[1] > $range[0];
 	return @range;
-}
-
-sub _is_block_prunable
-{
-	my ( $self, $b ) = @_;
-
-	my $semaphore;
-	tb::walk( $b,
-		trace     => tb::TRACE_TEXT,
-		textPtr   => $self->textRef,
-		semaphore => \ $semaphore,
-		code      => sub { $semaphore++ },
-		text      => sub { $semaphore++ if pop =~ /\S/ },
-	);
-	return !$semaphore;
-}
-
-sub export_blocks
-{
-	my ($self, %opt) = @_;
-	my %save;
-	$save{$_} = $self->{$_} for qw(blocks contents modelRange);
-
-	if ( $opt{trim_header}) {
-		# remove section header, display pure content
-		$self->{modelRange} = [ @{ $self->{modelRange} } ];
-		$self->{modelRange}->[pod::T_MODEL_START]++;
-	}
-
-	$self->format(sync => 1, exportable => 1);
-	my @b = @{ $self->{blocks} };
-	$self->{$_} = $save{$_} for qw(blocks contents modelRange);
-
-	if ( $opt{trim_header}) {
-		# prune empty heads
-		shift @b while @b && $self->_is_block_prunable($b[0]);
-		return unless @b;
-	}
-	if ( $opt{trim_footer}) {
-		# prune empty tails
-		pop @b while @b && $self->_is_block_prunable($b[-1]);
-	}
-	return unless @b;
-
-	return Prima::Drawable::PolyTextBlock->new(
-		blocks   => \@b,
-		fontmap  => $self->{fontPalette},
-		colormap => $self->{colorMap},
-		textRef  => $self->textRef,
-	);
 }
 
 1;

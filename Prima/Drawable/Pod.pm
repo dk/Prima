@@ -1086,7 +1086,7 @@ sub begin_format
 
 	$opt{default_font_size} //= 10;
 
-	my $fp = $opt{font_palette} // [default_font_palette];
+	my $fp = $opt{font_palette} //= [default_font_palette];
 	Carp::croak("font_palette with at least 2 fonts is needed") if @$fp < 2;
 	unless ( $opt{indents}) {
 		my @indents;
@@ -1399,6 +1399,199 @@ ABORT:
 	return 0;
 }
 
+sub parse_link
+{
+	my ( $self, $s) = @_;
+
+	my %ret;
+
+	my $t;
+	if ( $s =~ /^topic:\/\/(.*)$/) { # local topic
+		$t = $1;
+		return unless $t =~ /^\d+$/;
+		return if $t < 0 || $t >= scalar @{$self-> {topics}};
+	}
+
+	unless ( defined $t) { # page / section / item
+		my ( $page, $section, $item, $lead_slash) = ( '', '', 1, '');
+		if ( $s =~ /^file:\/\/(.*?)(?:\|([^\/]*))?$/) {
+			($page, $section) = ($1, $2 // '');
+		} elsif ( $s =~ m{^([:\w]+)/?$} ) {
+			$page = $1;
+		} elsif ( $s =~ /^([^\/]*)(\/)(.*)$/) {
+			( $page, $lead_slash, $section) = ( $1, $2, $3);
+		} else {
+			$section = $s;
+		}
+		$item = 0 if $section =~ s/^\"(.*?)\"$/$1/;
+
+		if ( !length $page) {
+			my $tid = -1;
+			for ( @{$self-> {topics}}) {
+				$tid++;
+				next unless $section eq $$_[pod::T_DESCRIPTION];
+				next if !$item && $$_[pod::T_STYLE] == pod::STYLE_ITEM;
+				$t = $tid;
+				last;
+			}
+			if ( !defined $t || $t < 0) {
+				$tid = -1;
+				my $s = quotemeta $section;
+				for ( @{$self-> {topics}}) {
+					$tid++;
+					next unless $$_[pod::T_DESCRIPTION] =~ m/^$s/;
+					next if !$item && $$_[pod::T_STYLE] == pod::STYLE_ITEM;
+					$t = $tid;
+					last;
+				}
+			}
+			unless ( defined $t) { # no such topic, must be a page?
+				$page = $lead_slash . $section;
+				$section = '';
+			}
+		}
+		$ret{file} = $page if length $page;
+
+		if ( ! defined $t) {
+			my $tid = -1;
+			for ( @{$self-> {topics}}) {
+				$tid++;
+				next unless $section eq $$_[pod::T_DESCRIPTION];
+				$t = $tid;
+				last;
+			}
+			if ( length( $section) and ( !defined $t || $t < 0)) {
+				$tid = -1;
+				my $s = quotemeta $section;
+				for ( @{$self-> {topics}}) {
+					$tid++;
+					next unless $$_[pod::T_DESCRIPTION] =~ m/^$s/;
+					$t = $tid;
+					last;
+				}
+			}
+		}
+	}
+
+	$ret{topic} = $self-> {topics}-> [$t] if defined $t;
+
+	return %ret;
+}
+
+sub load_pod_content
+{
+	my ( $self, $content, %opt) = @_;
+	$self-> manpath('');
+	$self-> open_read(%opt);
+	$self-> read($content);
+	$self-> close_read;
+}
+
+sub load_pod_file
+{
+	my ( $self, $manpage, %opt) = @_;
+
+	my $ok = 1;
+	my $path = '';
+	unless (-f $manpage) {
+		my ($new_manpage, $new_path) = $self->podpath2file($manpage);
+		if ( defined $new_manpage ) {
+			($manpage, $path) = ($new_manpage, $new_path);
+		} else {
+			$ok = 0;
+		}
+	}
+
+	my $f;
+	return 0 unless $ok && open $f, "<", $manpage;
+
+	$self-> manpath($path);
+	$self-> open_read(%opt);
+	$self-> read($_) while <$f>;
+	close $f;
+
+	return 0 unless $self-> close_read;
+	return 1;
+}
+
+sub load_link
+{
+	my ( $self, $s, %opt) = @_;
+
+	my %link = $self->parse_link($s);
+	if ( defined $link{file}) {
+		return 0 unless $self-> load_pod_file($link{file}, %opt);
+		%link = $self->parse_link($s);
+	}
+
+	if ( defined (my $t = $link{topic}) ) {
+		my $from = $$t[pod::T_MODEL_START];
+		my $to   = $$t[pod::T_MODEL_END];
+		@{ $self->{model} } = @{ $self->{model} } [ $from .. $to ];
+	}
+
+	return 1;
+}
+
+
+sub _is_block_prunable
+{
+	my ( $self, $b ) = @_;
+
+	my $semaphore;
+	tb::walk( $b,
+		trace     => tb::TRACE_TEXT,
+		textPtr   => $self->text_ref,
+		semaphore => \ $semaphore,
+		code      => sub { $semaphore++ },
+		text      => sub { $semaphore++ if pop =~ /\S/ },
+	);
+	return !$semaphore;
+}
+
+sub export_blocks
+{
+	my ($self, %opt) = @_;
+	$opt{from} //= 0;
+	$opt{to}   //= $self->model_length - 1;
+
+	if ( $opt{trim_header}) {
+		# remove section header, display pure content
+		$opt{from}++;
+	}
+
+	my @b;
+	my $model = $self->model;
+	$self->begin_format(%opt, exportable => 1);
+	my $r = $self->{format};
+	for ( my $i = $opt{from}; $i <= $opt{to}; $i++) {
+		push @b, $self->format_model($model->[$i]);
+		last if $b[-1] && defined $opt{max_height} && $b[-1][tb::BLK_Y] > $opt{max_height};
+	}
+	my %ctx = (
+		fontmap  => $r->{font_palette},
+		colormap => $r->{color_palette},
+	);
+	$self->end_format;
+
+	if ( $opt{trim_header}) {
+		# prune empty heads
+		shift @b while @b && $self->_is_block_prunable($b[0]);
+		return unless @b;
+	}
+	if ( $opt{trim_footer}) {
+		# prune empty tails
+		pop @b while @b && $self->_is_block_prunable($b[-1]);
+	}
+	return unless @b;
+
+	return Prima::Drawable::PolyTextBlock->new(
+		%ctx,
+		blocks   => \@b,
+		textRef  => $self->text_ref,
+	);
+}
+
 1;
 
 __END__
@@ -1412,18 +1605,15 @@ Prima::Drawable::Pod - POD parser and renderer
 =head1 SYNOPSIS
 
 	use Prima::Drawable::Pod;
+	use Prima::PS::Printer;
 
 	my $pod = Prima::Drawable::Pod->new;
-	$pod-> open_read;
-	$pod-> read("=head1 NAME\n\nI'm also a pod!\n\n");
-	$pod-> close_read;
+	$pod-> load_pod_content("=head1 NAME\n\nI'm also a pod!\n\n");
 
-	$pod-> begin_format( width => 100, canvas => $my_window );
-	for ( my $model_id = 0; $model_id < $pod->model_length; $model_id++) {
-		my @blocks = $pod-> format_model;
-		... render blocks ...
-	}
-	$pod-> end_format;
+	my $printer = Prima::PS::PDF::File->new( file => 'pod.pdf');
+	$printer-> begin_doc or die $@;
+	$pod-> print($printer);
+	$printer-> end_doc;
 
 =head1 DESCRIPTION
 
@@ -1442,6 +1632,10 @@ file locating and loading, formatting, and navigation.
 =head2 Content methods
 
 =over
+
+=item load_pod_content CONTENT, %OPTIONS
+
+High-level POD content parser. C<%OPTIONS> are same as in C<open_read>.
 
 =item open_read %OPTIONS
 
@@ -1631,7 +1825,7 @@ Ends formatting session
 =head2 Printing
 
 The method C<print> prints the pod content on a target canvas.
-Accepts the following options:
+Accepts the following options (along with all the other options from C<begin_format>)
 
 =over
 
@@ -1641,7 +1835,76 @@ The target device
 
 =item from, to INDEX
 
-Selectets the model ranhe to be printed
+Selects the model range to be printed
+
+=back
+
+=head2 Block export
+
+The method C<export_blocks> can render the model into a set of blocks that can
+be reused elsewhere. This functionality is used by C<Prima::Label> that is able
+to display the pod content. Returns a C<Prima::Drawable::PolyTextBlock> object
+that is a super-set of text blocks that also contains all necessary information
+(fonts, colors, etc) needed to pass on the block drawing routines and to
+be suitable as input for C<text_out> method.
+
+The method accepts the following options (along with all the other options from
+C<begin_format>):
+
+=over
+
+=item canvas OBJECT
+
+The target device
+
+=item from, to INDEX
+
+Selects the model range to be printed
+
+=item max_height INTEGER
+
+Stops rendering after C<max_height> pixel are occupied by the pod content
+
+=item trim_header BOOLEAN
+
+If set, removes the topic or page header, so that only the content itself is rendered
+
+=item trim_footer BOOLEAN
+
+Prunes empty newlines
+
+=item width INTEGER
+
+Desired render width in pixels
+
+=back
+
+=head2 Navigation
+
+=over
+
+=item load_link LINK, %OPTIONS
+
+Parses and loads POD content from LINK. If the LINK contains a section
+reference, loads only that section. Returns the success flag.
+
+C<%OPTIONS> are same as understood by the C<load_pod_file> and C<open_read>.
+
+=item load_pod_file FILE, %OPTIONS
+
+High-level POD file reader. C<%OPTIONS> are same as in C<open_read>.
+
+=item parse_link LINK
+
+The method C<parse_link> accepts text in the format of L<perlpod>
+C<LE<lt>E<gt>> link: "manpage/section". Returns a hash with up to two
+items, C<file> and C<topic>. If the C<file> is set, then the link contains a
+file reference. If the C<topic> is set, then the link topic matches the currently
+loaded set of topic.
+
+Note: if the file requested is not loaded, f.ex. by C<load_pod_file>, then
+C<topic> will not me matched. Issue another call to C<parse_link> to match the
+topic if C<file> is set.
 
 =back
 

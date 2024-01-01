@@ -4,6 +4,7 @@ use warnings;
 use base qw(Prima::Widget::EventRectangles);
 use Prima::Drawable::TextBlock;
 use Prima::Drawable::Markup;
+use Prima::Drawable::Pod;
 
 sub notification_types {{
 	Link           => nt::Action,
@@ -154,19 +155,24 @@ sub on_linkpreview
 			$link = "file://$1|$2";
 		}
 
-		my $pod = Prima::PodView->new(
-			visible   => 0,
-			size      => [ Prima::HintWidget-> max_extents ],
-			topicView => $topicView,
-			color     => $::application->hintColor,
-			backColor => $::application->hintBackColor,
-		);
-		if ( $pod->load_link($link, createIndex => 0, format => 0) ) {
-			if ( my $polyblock = $pod->export_blocks( trim_footer => 1, trim_header => $topicView || $tip) ) {
-				$$url = $polyblock;
-			}
+		my $pod = Prima::Drawable::Pod->new;
+		return unless $pod->load_link($link, create_index => 0);
+
+		my @sz = Prima::HintWidget-> max_extents;
+
+		my $x = $::application;
+		$x->begin_paint_info;
+		if ( my $polyblock = $pod->export_blocks(
+			canvas        => $x,
+			width         => $sz[0],
+			max_height    => $sz[1],
+			trim_footer   => 1,
+			trim_header   => $topicView || $tip,
+		)) {
+			$$url = $polyblock;
 		}
-		$pod->destroy;
+		$x->end_paint_info;
+
 	} elsif ( $url =~ m[^(ftp|https?)://]) {
 		# same
 	}
@@ -503,6 +509,6 @@ Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
 
 =head1 SEE ALSO
 
-L<Prima>, L<Prima::Drawable::Markup>, L<Prima::Label>, L<Prima::PodView>
+L<Prima>, L<Prima::Drawable::Markup>, L<Prima::Label>, L<Prima::Drawable::Pod>
 
 =cut
