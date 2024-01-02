@@ -158,7 +158,9 @@ sub glyph_lengths
 
 sub index_lengths
 {
-	my @map = map { $_ & ~to::RTL } @{ shift->indexes };
+	my @map = @{ shift->indexes };
+	my $r   = ~to::RTL;
+	$_ &= $r for @map;
 	my @sorted = sort { $a <=> $b } @map;
 	my @lengths;
 	for ( my $i = 0; $i < $#sorted; $i++) {

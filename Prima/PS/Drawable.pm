@@ -633,17 +633,15 @@ sub text_wrap
 	my ( $self, $text, $width, @rest ) = @_;
 	my $res;
 	my $gc = $self->glyph_canvas;
-	my $x  = $self->{font_scale};
+	my $x  = 1.0 / $self->{font_scale};
 	if ( $rest[-1] && ((ref($rest[-1]) // '') eq 'Prima::Drawable::Glyphs') && $rest[-1]->advances ) {
 		my $s = $rest[-1];
 		my @save  = ($s->advances, $s->positions);
 		my @clone = map { Prima::array::clone($_) } @save;
-		for my $v ( @clone ) {
-			$_ /= $x for @$v;
-		}
-		$s->[ Prima::Drawable::Glyphs::ADVANCES()  ] = $clone[0];
+		Prima::array::multiply( $_, $x) for @clone;
+ 		$s->[ Prima::Drawable::Glyphs::ADVANCES()  ] = $clone[0];
 		$s->[ Prima::Drawable::Glyphs::POSITIONS() ] = $clone[1];
-		$res = $gc->text_wrap($text, $width / $x, @rest);
+		$res = $gc->text_wrap($text, $width * $x, @rest);
 		$s->[ Prima::Drawable::Glyphs::ADVANCES()  ] = $save[0];
 		$s->[ Prima::Drawable::Glyphs::POSITIONS() ] = $save[1];
 	} else {
