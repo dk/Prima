@@ -953,11 +953,11 @@ sub setup_dialog
 	$self-> text('Enumerating fonts...');
 
 	my $fonts = $::application-> fonts;
-	$setupdlg-> FixFont-> items( ['Default', 
-		sort map { $_-> {name}} 
+	$setupdlg-> FixFont-> items( ['Default',
+		sort map { $_-> {name}}
 		grep { $_-> {pitch} == fp::Fixed }
 		@$fonts ]);
-	$setupdlg-> VarFont-> items( ['Default', 
+	$setupdlg-> VarFont-> items( ['Default',
 		sort map { $_-> {name}}
 		@$fonts ]);
 	$self-> text( $ntext);

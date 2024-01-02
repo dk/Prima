@@ -144,7 +144,7 @@ sub colorMap
 {
 	return $_[0]->SUPER::colorMap unless $#_;
 	my ( $self, $cm) = @_;
-	$self-> {link_handler}->color( $$cm[ COLOR_LINK_FOREGROUND & ~tb::COLOR_INDEX ] );
+	$self-> {link_handler}->color( $$cm[ COLOR_INDEX_LINK_FG ] );
 	$self-> SUPER::colorMap($cm);
 }
 

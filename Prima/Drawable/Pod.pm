@@ -62,7 +62,7 @@ sub default_colors
 	0xf5f5f5, # code background
 )}
 
-sub default_font_palette
+sub default_fontmap
 {(
 	{
 		name     => (($^O =~ /win32/i) ? 'Arial' : 'Helvetica'),
@@ -958,6 +958,28 @@ FOUND:
 	return $manpage, $path;
 }
 
+sub style
+{
+	return $_[0]->{styles}->[$_[1]] if @_ < 3;
+	my ( $self, $id, @v ) = @_;
+	if ( 1 == @v ) {
+		# replace
+		$self->{styles}->[$id] = $v[0];
+	} else {
+		# merge
+		my $curr  = $self->{styles}->[$id] //= {};
+		for ( my $i = 0; $i < @v; $i +=2 ) {
+			my ($k, $v) = @v[$i,$i+1];
+			if ( defined $v ) {
+				$curr->{$k} = $v;
+			} else {
+				delete $curr->{$k};
+			}
+		}
+	}
+	$self-> update_styles;
+}
+
 sub styles
 {
 	return $_[0]-> {styles} unless $#_;
@@ -1086,8 +1108,8 @@ sub begin_format
 
 	$opt{default_font_size} //= 10;
 
-	my $fp = $opt{font_palette} //= [default_font_palette];
-	Carp::croak("font_palette with at least 2 fonts is needed") if @$fp < 2;
+	my $fp = $opt{fontmap} //= [default_fontmap];
+	Carp::croak("fontmap with at least 2 fonts is needed") if @$fp < 2;
 	unless ( $opt{indents}) {
 		my @indents;
 		for ( 0 .. $#$fp) {
@@ -1097,7 +1119,7 @@ sub begin_format
 		$opt{indents} = \@indents;
 	}
 
-	$opt{color_palette} //= [ cl::Fore, cl::Back, $self-> default_colors ];
+	$opt{colormap} //= [ cl::Fore, cl::Back, $self-> default_colors ];
 	$opt{resolution}    //= [ $canvas->resolution ];
 
 	my $state = tb::block_create();
@@ -1130,7 +1152,7 @@ sub block_wrap
 		canvas        => $r->{canvas},
 		state         => $r->{state},
 		width         => $width,
-		fontmap       => $r->{font_palette},
+		fontmap       => $r->{fontmap},
 		baseFontSize  => $r->{default_font_size},
 		resolution    => $r->{resolution},
 		wordBreak     => 1,
@@ -1147,7 +1169,7 @@ sub justify_interspace
 		textPtr       => $self->{text},
 		canvas        => $r->{canvas},
 		width         => $width,
-		fontmap       => $r->{font_palette},
+		fontmap       => $r->{fontmap},
 		baseFontSize  => $r->{default_font_size},
 		resolution    => $r->{resolution},
 	);
@@ -1240,7 +1262,7 @@ sub print_page_number
 	my $r = $self->{format} or return;
 	my $c = $r->{canvas};
 	$c-> graphic_context_push;
-	$c->font->set( name => $r->{font_palette}->[0]->{name} || 'Default', size => 6, style => 0, pitch => fp::Default );
+	$c->font->set( name => $r->{fontmap}->[0]->{name} || 'Default', size => 6, style => 0, pitch => fp::Default );
 	$c->set( color => cl::Black );
 	$c->text_out( $r->{pageno},
 		( $r->{width} - $c->get_text_width($r->{pageno}) ) / 2,
@@ -1284,9 +1306,9 @@ sub print_block
 		state        => \@state,
 		realize      => sub {
 			my ($state, $mode) = @_;
-			$canvas-> set_font(tb::realize_fonts($r-> {font_palette}, $state))
+			$canvas-> set_font(tb::realize_fonts($r-> {fontmap}, $state))
 				if $mode & tb::REALIZE_FONTS;
-			$canvas-> set( tb::realize_colors( $r-> {color_palette}, $state))
+			$canvas-> set( tb::realize_colors( $r-> {colormap}, $state))
 				if $mode & tb::REALIZE_COLORS;
 		},
 		text         => sub {
@@ -1569,8 +1591,8 @@ sub export_blocks
 		last if $b[-1] && defined $opt{max_height} && $b[-1][tb::BLK_Y] > $opt{max_height};
 	}
 	my %ctx = (
-		fontmap  => $r->{font_palette},
-		colormap => $r->{color_palette},
+		fontmap  => $r->{fontmap},
+		colormap => $r->{colormap},
 	);
 	$self->end_format;
 
@@ -1782,13 +1804,13 @@ If set, allows resulting block width to overrun the canvas width.
 If set, the actual width can be queried by calling the C<accumulated_width_overrun> method.
 Otherwise forcibly breaks blocks explicitly marked to be not wrapped.
 
-=item color_palette ARRAY
+=item colormap ARRAY
 
 Array of at least 5 color entries (default foreground color, default background color,
 link color, verbatime text color, and its background color). If unset, some sensible default
 values are used.
 
-=item font_palette ARRAY_OF_HASHES
+=item fontmap ARRAY_OF_HASHES
 
 Set of at least 2 hashes each describing a font to be used for normal text (index 0)
 and verbatim text (index 1). If unset, some sensible default

@@ -53,6 +53,7 @@ if ( $input eq '-') {
 }
 
 my $pod = Prima::Drawable::Pod->new;
+$pod->style( pod::STYLE_CODE, backColor => undef);
 $pod->open_read( create_index => 1 );
 $pod->read($_) while <$fin>;
 die "Error reading from $input:$!\n" if $!;
