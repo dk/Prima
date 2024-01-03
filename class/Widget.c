@@ -1229,6 +1229,7 @@ Widget_set_font( Handle self, Font font)
 	else {
 		apc_font_pick( self, &font, & var-> font);
 		opt_clear( optOwnerFont);
+		opt_clear( optFontTrigCache);
 		apc_widget_set_font( self, & var-> font);
 		my-> repaint( self);
 	}

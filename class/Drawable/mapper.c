@@ -406,9 +406,10 @@ Drawable_restore_font( Handle self, SaveFont *f)
 
 	f-> last_fid = 0;
 	f->restore   = false;
-	if ( Drawable_set_font == my->set_font && (is_opt(optSystemDrawable) || is_opt(optInFontQuery) ))
+	if ( Drawable_set_font == my->set_font && (is_opt(optSystemDrawable) || is_opt(optInFontQuery) )) {
+		opt_clear(optFontTrigCache);
 		apc_gp_set_font( self, &f->font);
-	else
+	} else
 		my->set_font(self, f->font);
 }
 

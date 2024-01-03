@@ -1474,7 +1474,7 @@ validate_xchar2b( PRotatedFont r, XChar2b *index)
 }
 
 Bool
-prima_update_rotated_fonts( PCachedFont f, const char * text, int len, Bool wide, double direction, Matrix matrix, PRotatedFont * result,
+prima_update_rotated_fonts( PCachedFont f, const char * text, int len, Bool wide, NPoint trig_cache, Matrix matrix, PRotatedFont * result,
 	Bool * ok_to_not_rotate)
 {
 	Fixed fm[4], im[4];
@@ -1482,23 +1482,16 @@ prima_update_rotated_fonts( PCachedFont f, const char * text, int len, Bool wide
 	PRotatedFont r;
 	int i;
 
-	while ( direction < 0)     direction += 360.0;
-	while ( direction > 360.0) direction -= 360.0;
-
 	/* granulate direction and matrix */
 	{
 		int i;
 		Matrix m1, inv;
 		double d, ad, bc;
 		prima_matrix_set_identity(m1);
-		if ( direction != 0.0 ) {
-			double s = sin( direction / 57.29577951);
-			double c = cos( direction / 57.29577951);
-			m1[0] = c;
-			m1[1] = s;
-			m1[2] = -s;
-			m1[3] = c;
-		}
+		m1[0] = trig_cache.y;
+		m1[1] = trig_cache.x;
+		m1[2] = -trig_cache.x;
+		m1[3] = trig_cache.y;
 		if ( prima_matrix_is_identity(matrix)) {
 			COPY_MATRIX(m1, cm);
 		} else {
@@ -1531,7 +1524,7 @@ prima_update_rotated_fonts( PCachedFont f, const char * text, int len, Bool wide
 		im[3].l =  inv[0] * UINT16_PRECISION;
 	}
 
-	if ( prima_matrix_is_translated_only(matrix) && direction == 0.0) {
+	if ( prima_matrix_is_translated_only(matrix) && trig_cache.x == 0.0 && trig_cache.y == 1.0) {
 		if ( ok_to_not_rotate) *ok_to_not_rotate = true;
 		return false;
 	}
@@ -1718,7 +1711,7 @@ prima_corefont_get_glyph_bitmap( Handle self, uint16_t index, Bool mono, PPoint 
 	ch.byte2 = index & 0xff;
 	if ( !prima_update_rotated_fonts( XX-> font,
 		(const char*)&ch, 1, true,
-		PDrawable( self)-> font. direction, 
+		CDrawable( self)-> trig_cache(self),
 		MY_MATRIX,
 		&r, &straight
 	)) {

@@ -682,6 +682,7 @@ Application_set_font( Handle self, Font font)
 {
 	if ( !opt_InPaint) my-> first_that( self, (void*)prima_font_notify, &font);
 	apc_font_pick( self, &font, & var-> font);
+	opt_clear(optFontTrigCache);
 	if ( opt_InPaint) apc_gp_set_font ( self, &var-> font);
 }
 

@@ -125,7 +125,7 @@ gp_text_out_rotated(
 
 	if ( !prima_update_rotated_fonts( XX-> font,
 		text, len, wide,
-		PDrawable( self)-> font. direction, 
+		CDrawable( self)-> trig_cache(self),
 		MY_MATRIX,
 		&r, ok_to_not_rotate
 	))

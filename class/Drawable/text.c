@@ -291,6 +291,7 @@ Drawable_trig_cache( Handle self )
 			var->trig_cache.y = cos( var-> font. direction / GRAD);
 #undef GRAD
 		}
+		opt_set(optFontTrigCache);
 	}
 	return var->trig_cache;
 }

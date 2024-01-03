@@ -20,6 +20,7 @@ Image_begin_font_query( Handle self )
 		return false;
 	opt_set(optInFontQuery);
 	apc_font_pick( self, &var->font, NULL );
+	opt_clear(optFontTrigCache);
 	apc_gp_set_font( self, &var->font );
 	return true;
 }
