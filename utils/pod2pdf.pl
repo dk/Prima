@@ -3,6 +3,7 @@ use strict;
 use warnings;
 use Getopt::Long;
 use Prima::noX11;
+use Prima::noARGV;
 use Prima qw(Drawable::Pod PS::Printer);
 
 my %opt = (
