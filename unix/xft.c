@@ -55,6 +55,8 @@ TO DO
 #ifndef WITH_FREETYPE
 #error "panic: WITH_FREETYPE is not defined"
 #endif
+#include FT_TRUETYPE_TABLES_H
+#include FT_TRUETYPE_TAGS_H
 
 #ifdef WITH_HARFBUZZ
 #include <harfbuzz/hb.h>
@@ -496,30 +498,26 @@ prima_xft_match( Font *font, Matrix matrix, Bool by_size, PCachedFont cf)
 		font->underlineThickness = (font->height > 16) ? font->height / 16 : 1;
 
 		if ( font->pitch != fpFixed) {
-			/* XXX 
-			detail the width to conform a bit more to win32 definition of font width -
-			I believe though that the whole concept of width needs reworking because win32
-			has one idea what width is, both when picking up and when detailing font info,
-			while freetype simple doesn't use either
-			*/
-			FcChar32 c;
-			int num = 0, sum = 0;
+			/* get TTF and OTF metrics so these match win32 ones more or less */
+			FT_Face f;
 			XftFont *x = kf_base ? kf_base->xft : xf;
-			for ( c = 63; c < 126; c += 4 ) {
-				XGlyphInfo g;
-				FT_UInt ix;
-				if (( ix = XftCharIndex( DISP, x, c)) == 0)
-					continue;
-				XftGlyphExtents( DISP, x, &ix, 1, &g);
-				if ( g.xOff > 0 && g.xOff <= x-> max_advance_width ) {
-					sum += g.xOff;
-					num++;
-				} else
-					XFTdebug("!! font %s returns bad XftGlyphExtents", font->name);
+			if ( ( f = XftLockFace(x)) != NULL) {
+				TT_OS2 *os2;
+				TT_HoriHeader *hori;
+				float mul = by_size ?
+					font->size / f-> units_per_EM :
+					(float) font->height / f-> height;
+				if ( ( hori = (TT_HoriHeader*) FT_Get_Sfnt_Table(f, ft_sfnt_hhea))) {
+					font->externalLeading = hori->Line_Gap * mul + .5;
+					XFTdebug("set external leading: %d", font->externalLeading);
+				}
+				if ( ( os2  = (TT_OS2*) FT_Get_Sfnt_Table(f, ft_sfnt_os2 ))) {
+					font->width           = os2->xAvgCharWidth * mul + .5;
+					font->internalLeading = (f-> height - f-> units_per_EM) * mul + .5;
+					XFTdebug("set width: %d and internal leading: %d", font->width, font->internalLeading);
+				}
+				XftUnlockFace(x);
 			}
-
-			font->width = (num > 10) ? ((float) sum / num + .5) : font->maximalWidth;
-			XFTdebug("set width: %d based off %d samples", font->width, num);
 		} else
 			font->width = font->maximalWidth;
 	} else
