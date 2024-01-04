@@ -422,7 +422,10 @@ sub load_file
 		} else {
 			$ok = 0;
 		}
+	} elsif ( $manpage =~ m/^(.*)[\\\/]([^\\\/]+)/ ) {
+		$path = $1;
 	}
+
 
 	my $f;
 	unless ( $ok && open $f, "<", $manpage) {

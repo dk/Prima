@@ -54,6 +54,7 @@ if ( $input eq '-') {
 }
 
 my $pod = Prima::Drawable::Pod->new;
+$pod->manpath($1) if $input =~ m/^(.*)[\\\/]([^\\\/]+)/;
 $pod->style( pod::STYLE_CODE, backColor => undef);
 $pod->open_read( create_index => 1 );
 $pod->read($_) while <$fin>;
