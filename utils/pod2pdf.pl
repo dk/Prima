@@ -8,7 +8,7 @@ use Prima qw(Drawable::Pod PS::Printer);
 my %opt = (
 	help  => 0,
 	font  => ($^O =~ /win32/i) ? 'Arial' : 'Helvetica',
-	mono  => 'Courier',
+	mono  => ($^O =~ /win32/i) ? 'Courier New' : 'Courier',
 	size  => 10,
 );
 
@@ -81,9 +81,9 @@ my @font_palette = (
 my $ps = Prima::PS::PDF::FileHandle->new( handle => $fout );
 $ps->begin_doc or die "Error printing to $output\n";
 my $ok = $pod->print(
-	canvas       => $ps,
-	font_palette => \@font_palette,
-	justify      => 1,
+	canvas   => $ps,
+	fontmap  => \@font_palette,
+	justify  => 1,
 );
 if ( $ok ) {
 	$ps->end_doc or die "Printing failed:$@\n";

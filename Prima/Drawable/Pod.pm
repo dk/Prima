@@ -69,7 +69,7 @@ sub default_fontmap
 		encoding => '',
 		pitch    => fp::Default,
 	},{
-		name     => 'Courier',
+		name     => (($^O =~ /win32/i) ? 'Courier New' : 'Courier'),
 		encoding => '',
 		pitch    => fp::Fixed,
 	}
