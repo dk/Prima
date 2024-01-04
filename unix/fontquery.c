@@ -1,12 +1,14 @@
 /*
 XXX todo:
-export underscore position and size
 check memory leaks
 
 */
 #include "unix/guts.h"
 
 #ifdef USE_FONTQUERY
+
+#include FT_TRUETYPE_TABLES_H
+#include FT_TRUETYPE_TAGS_H
 
 #define FQdebug(...) if (pguts->debug & DEBUG_FONTS) prima_debug2("fq", __VA_ARGS__)
 
@@ -117,7 +119,23 @@ fill_synthetic_fields( FT_Face f, PFont font, Bool by_size)
 	font->internalLeading = (f-> height - f-> units_per_EM) * mul + .5;
 	font->maximalWidth    = f-> max_advance_width * mul + .5;
 	font->width           = font->height; /* XXX bitmap fonts? */
-	font->externalLeading = (f-> bbox.yMax - f-> ascender ) * mul + .5;
+	font->externalLeading = (f-> bbox.yMax - f->bbox.yMin - f-> height) * mul + .5;
+
+	{
+		/* get TTF and OTF metrics so these match win32 ones more or less */
+		TT_OS2 *os2;
+		TT_HoriHeader *hori;
+		if ( ( hori = (TT_HoriHeader*) FT_Get_Sfnt_Table(f, ft_sfnt_hhea))) {
+			font->externalLeading = hori->Line_Gap * mul + .5;
+		}
+		if ( ( os2  = (TT_OS2*) FT_Get_Sfnt_Table(f, ft_sfnt_os2 ))) {
+			font->width           = os2->xAvgCharWidth * mul + .5;
+			font->internalLeading = (f-> height - f-> units_per_EM) * mul + .5;
+		}
+	}
+
+	if ( font->externalLeading < 0 )
+		font->externalLeading = 0;
 	font->xDeviceRes      = font->yDeviceRes = 72;
 	/* XXX FT_Face reports very strange values */
 	font->underlinePosition  = -font-> descent;
