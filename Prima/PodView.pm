@@ -553,7 +553,7 @@ sub format
 	$self->{pod_handler}->begin_format(
 		canvas         => $self,
 		width          => $pw,
-		font_palette   => $self->fontPalette,
+		fontmap        => $self->fontPalette,
 		justify        => $self->{justify},
 		resolution     => [$self->resolution],
 		text_direction => $self->textDirection,
