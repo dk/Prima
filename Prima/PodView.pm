@@ -763,7 +763,7 @@ sub print
 		from           => $min,
 		to             => $max,
 		canvas         => $canvas,
-		font_palette   => $self->fontPalette,
+		fontmap        => $self->fontPalette,
 		justify        => $self->{justify},
 		text_direction => $self->textDirection,
 	);
