@@ -1462,15 +1462,27 @@ Prima::PS::PDF -  PDF interface to Prima::Drawable
 
 =head1 SYNOPSIS
 
-	use Prima;
-	use Prima::PS::PDF;
+Recommended usage:
 
+	use Prima::PS::Printer;
+	my $x = Prima::PS::PDF::File-> new( file => 'out.pdf');
+
+or
+
+	my $x = Prima::PS::PDF::FileHandle-> new( handle => \&STDOUT);
+
+Low-level:
+
+	use Prima::PS::PDF;
 	my $x = Prima::PS::PDF-> create( onSpool => sub {
 		open F, ">> ./test.pdf";
 		binmode F;
 		print F $_[1];
 		close F;
 	});
+
+Printing:
+
 	die "error:$@" unless $x-> begin_doc;
 	$x-> font-> size( 30);
 	$x-> text_out( "hello!", 100, 100);
@@ -1479,7 +1491,7 @@ Prima::PS::PDF -  PDF interface to Prima::Drawable
 
 =head1 DESCRIPTION
 
-Realizes the Prima library interface to PDF v1.4.
+Implements the Prima library interface to PDF v1.4.
 The module is designed to be compliant with the Prima::Drawable interface.
 All properties' behavior is as same as Prima::Drawable's except those
 described below.

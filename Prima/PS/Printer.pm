@@ -844,20 +844,6 @@ Prima::PS::Printer - PostScript and PDF interfaces to Prima::Printer
 
 =head1 SYNOPSIS
 
-  use Prima qw(PS::Printer);
-
-=head1 DESCRIPTION
-
-Realizes the Prima printer interface to PostScript level 2 document language
-through the Prima::PS::PostScript module, and to PDF v1.4 through the
-Prima::PS::PDF module. Allows different user profiles to be created and managed
-with the standard setup dialog. The module is designed to be compliant with the
-Prima::Printer interface.
-
-Also contains convenience classes (File, LPR, Pipe) for non-GUI use.
-
-=head1 SYNOPSIS
-
 	use Prima::PS::Printer;
 
 	my $x;
@@ -877,8 +863,15 @@ Also contains convenience classes (File, LPR, Pipe) for non-GUI use.
 	$x-> text_out( "hello!", 100, 100);
 	$x-> end_doc;
 
-=cut
+=head1 DESCRIPTION
 
+Realizes the Prima printer interface to PostScript level 2 document language
+through the Prima::PS::PostScript module, and to PDF v1.4 through the
+Prima::PS::PDF module. Allows different user profiles to be created and managed
+with the standard setup dialog. The module is designed to be compliant with the
+Prima::Printer interface.
+
+Also contains convenience classes (File, LPR, Pipe) for non-GUI use.
 
 =head1 Printer options
 

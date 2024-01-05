@@ -1077,14 +1077,26 @@ Prima::PS::PostScript -  PostScript interface to Prima::Drawable
 
 =head1 SYNOPSIS
 
-	use Prima;
-	use Prima::PS::PostScript;
+Recommended usage:
 
+	use Prima::PS::Printer;
+	my $x = Prima::PS::File-> new( file => 'out.ps');
+
+or
+
+	my $x = Prima::PS::FileHandle-> new( handle => \&STDOUT);
+
+Low-level:
+
+	use Prima::PS::PostScript;
 	my $x = Prima::PS::PostScript-> create( onSpool => sub {
 		open F, ">> ./test.ps";
 		print F $_[1];
 		close F;
 	});
+
+Printing:
+
 	die "error:$@" unless $x-> begin_doc;
 	$x-> font-> size( 30);
 	$x-> text_out( "hello!", 100, 100);
@@ -1093,7 +1105,7 @@ Prima::PS::PostScript -  PostScript interface to Prima::Drawable
 
 =head1 DESCRIPTION
 
-Realizes the Prima library interface to PostScript level 2 document language.
+Implements the Prima library interface to PostScript level 2 document language.
 The module is designed to be compliant with the Prima::Drawable interface.
 All properties' behavior is as same as Prima::Drawable's except those
 described below.
