@@ -390,12 +390,13 @@ sub walk
 			last if $$semaphore;
 			next;
 		} elsif (($cmd == OP_FONT) && ($trace & TRACE_FONTS)) {
-			if ( $$block[$i + F_MODE] == F_SIZE && $$block[$i + F_DATA] < F_HEIGHT ) {
-				$$state[ $$block[$i + F_MODE]] = $def_fs + $$block[$i + F_DATA];
-			} elsif ( $$block[$i + F_MODE] == F_STYLE ) {
-				$$state[ $$block[$i + F_MODE]] = $$block[$i + F_DATA] | $def_fl;
+			my ($op, $data) = @{$block}[$i + F_MODE, $i + F_DATA];
+			if ( $op == F_SIZE && $data < F_HEIGHT ) {
+				$$state[F_SIZE] = $def_fs + $data;
+			} elsif ( $op == F_STYLE ) {
+				$$state[F_STYLE] = $data | $def_fl;
 			} else {
-				$$state[ $$block[$i + F_MODE]] = $$block[$i + F_DATA];
+				$$state[$op] = $data;
 			}
 			$font = $f_taint = undef;
 		} elsif (($cmd == OP_COLOR) && ($trace & TRACE_COLORS)) {

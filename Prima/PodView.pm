@@ -551,27 +551,28 @@ sub format
 
 	$self-> begin_paint_info;
 	$self->{pod_handler}->begin_format(
-		canvas         => $self,
-		width          => $pw,
-		fontmap        => $self->fontPalette,
-		justify        => $self->{justify},
-		resolution     => [$self->resolution],
-		text_direction => $self->textDirection,
-		exportable     => $opt{exportable},
+		canvas            => $self,
+		width             => $pw,
+		fontmap           => $self->fontPalette,
+		justify           => $self->{justify},
+		resolution        => [$self->resolution],
+		text_direction    => $self->textDirection,
+		exportable        => $opt{exportable},
+		default_font_size => $self->{defaultFontSize},
 	);
 	$self-> end_paint_info;
 
 	$self-> {formatData} = {
-		linkId        => $linkIdStart,
-		min           => $min,
-		max           => $max,
-		current       => $min,
-		step          => FORMAT_LINES,
-		position      => undef,
-		positionSet   => 0,
-		verbatim      => undef,
-		last_ymap     => 0,
-		exportable    => $opt{exportable},
+		linkId            => $linkIdStart,
+		min               => $min,
+		max               => $max,
+		current           => $min,
+		step              => FORMAT_LINES,
+		position          => undef,
+		positionSet       => 0,
+		verbatim          => undef,
+		last_ymap         => 0,
+		exportable        => $opt{exportable},
 	};
 
 	if ( !$opt{sync} ) {
