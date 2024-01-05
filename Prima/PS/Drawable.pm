@@ -645,7 +645,7 @@ sub text_wrap
 		$s->[ Prima::Drawable::Glyphs::ADVANCES()  ] = $save[0];
 		$s->[ Prima::Drawable::Glyphs::POSITIONS() ] = $save[1];
 	} else {
-		$res = $gc->text_wrap($text, $width / $x, @rest);
+		$res = $gc->text_wrap($text, $width * $x, @rest);
 	}
 	return $res;
 }
