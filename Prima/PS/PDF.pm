@@ -78,6 +78,7 @@ sub change_transform
 		$ps->[0] - $pm->[2] - $pm->[0],
 		$ps->[1] - $pm->[3] - $pm->[1]
 	);
+	@pm[0,1] = (0,0) if $self->{lock_margins};
 
 	my ($doClip, @cr);
 	my $rg = $self-> region;
@@ -849,6 +850,7 @@ sub graphic_context_push
 	my $self = shift;
 	return 0 unless $self->SUPER::graphic_context_push;
 	$self->emit_content('q');
+	$self->{lock_margins}++;
 	return 1;
 }
 
@@ -857,6 +859,7 @@ sub graphic_context_pop
 	my $self = shift;
 	$self->emit_content('Q');
 	return unless $self->SUPER::graphic_context_pop;
+	$self->{lock_margins}--;
 	return 1;
 }
 
