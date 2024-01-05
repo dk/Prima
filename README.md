@@ -31,13 +31,13 @@ Installation
 Debian/Ubuntu
 -------------
 
-  apt-get install libgtk-3-dev libgif-dev libjpeg-dev libtiff-dev libxpm-dev 
-      libwebp-dev libfribidi-dev libharfbuzz-dev libthai-dev libheif-dev
+  apt-get install libgtk-3-dev libgif-dev libjpeg-dev libtiff-dev libxpm-dev
+      libwebp-dev libfribidi-dev libharfbuzz-dev libthai-dev libheif-dev libfreetype-dev
 
 FreeBSD
 -------
 
-  pkg install gtk3 fribidi harfbuzz libxpm libthai pkgconf tiff webp giflib libheif
+  pkg install gtk3 fribidi harfbuzz libxpm libthai pkgconf tiff webp giflib libheif freetype
 
 OpenSUSE
 --------
@@ -45,7 +45,7 @@ OpenSUSE
   zypper install gtk3-devel giflib-devel libjpeg-devel libtiff-devel
       libXpm-devel libXrandr-devel libXcomposite-devel libXcursor-devel
       libfribidi-devel libwebp-devel libharfbuzz-devel libthai-devel
-      libheif-devel
+      libheif-devel libfreetype-dev
 
 
 Solaris
@@ -65,7 +65,7 @@ Cygwin
 - install prerequisites:
 
    apt-cyg install libgtk3.0-devel libfribidi-devel libgif-devel libjpeg-devel libtiff-devel libXpm-devel
-        libwebp-devel libharfbuzz-devel libthai-devel libheif-devel
+        libwebp-devel libharfbuzz-devel libthai-devel libheif-devel libfreetype-dev
 
 Win32-Strawberry
 ----------------
