@@ -103,7 +103,7 @@ $pod = $panel-> insert( PodView =>
 
 $arabic_text =~ s/(.*?)\n//;
 $pod_text = "=head1 $1\n\n" . join("\n\n", split "\n", $arabic_text) . "\n\n";
-$pod-> open_read( createIndex => 0 );
+$pod-> open_read( create_index => 0 );
 $pod-> read($pod_text);
 $pod-> close_read;
 

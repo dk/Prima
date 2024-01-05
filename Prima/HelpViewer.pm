@@ -66,22 +66,22 @@ sub load_file
 	return $ret;
 }
 
-sub link_click
+sub on_link
 {
-	my ( $self, $s, $btn, $mod, $x, $y) = @_;
-	$self-> SUPER::link_click( $s, $btn, $mod, $x, $y);
+	my ( $self, $link_handler, $url, $btn, $mod) = @_;
+	$self-> SUPER::on_link( $link_handler, $url, $btn, $mod);
 	return if $btn != mb::Right;
 
 	my $new = ref($self-> owner)-> create;
-	if ( $s =~ /^\//) {
-		$s = "$self->{pageName}$s";
-	} elsif ( $s =~ /^"(.*)"$/) {
-		$s = "$self->{pageName}/$1";
-	} elsif ( $s =~ /^topic:\/\//) {
+	if ( $url =~ /^\//) {
+		$url = "$self->{pageName}$url";
+	} elsif ( $url =~ /^"(.*)"$/) {
+		$url = "$self->{pageName}/$1";
+	} elsif ( $url =~ /^topic:\/\//) {
 		$new-> {text}-> load_link( $self-> {pageName});
 	}
 	$new-> {text}-> update_view;
-	$new-> {text}-> load_link( $s);
+	$new-> {text}-> load_link( $url);
 	$new-> select;
 }
 

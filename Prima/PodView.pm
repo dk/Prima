@@ -75,6 +75,8 @@ sub default_styles
 		{ fontSize => 2, fontStyle => fs::Bold }, # STYLE_HEAD_2
 		{ fontSize => 1, fontStyle => fs::Bold }, # STYLE_HEAD_3
 		{ fontSize => 1, fontStyle => fs::Bold }, # STYLE_HEAD_4
+		{ fontSize => 0, fontStyle => fs::Bold }, # STYLE_HEAD_5
+		{ fontSize => -1, fontStyle => fs::Bold },# STYLE_HEAD_6
 		{ fontStyle => fs::Bold },                # STYLE_ITEM
 		{ color     => COLOR_LINK_FOREGROUND},    # STYLE_LINK
 		{ fontId    => 1,                         # STYLE_VERBATIM
@@ -231,7 +233,7 @@ sub make_bookmark
 			}
 
 			return "$self->{pageName}|0|0" unless defined $t;
-			if ( $$t[ pod::T_STYLE] >= pod::STYLE_HEAD_1 && $$t[ pod::T_STYLE] <= pod::STYLE_HEAD_4) {
+			if ( $$t[ pod::T_STYLE] >= pod::STYLE_HEAD_1 && $$t[ pod::T_STYLE] <= pod::STYLE_HEAD_6) {
 				$t = $topics-> [0];
 				return "$self->{pageName}|$$t[pod::T_MODEL_START]|0"
 			}

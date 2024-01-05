@@ -14,10 +14,12 @@ use constant STYLE_HEAD_1      => 2;
 use constant STYLE_HEAD_2      => 3;
 use constant STYLE_HEAD_3      => 4;
 use constant STYLE_HEAD_4      => 5;
-use constant STYLE_ITEM        => 6;
-use constant STYLE_LINK        => 7;
-use constant STYLE_VERBATIM    => 8;
-use constant STYLE_MAX_ID      => 8;
+use constant STYLE_HEAD_5      => 6;
+use constant STYLE_HEAD_6      => 7;
+use constant STYLE_ITEM        => 8;
+use constant STYLE_LINK        => 9;
+use constant STYLE_VERBATIM    => 10;
+use constant STYLE_MAX_ID      => 10;
 
 # model layout indices
 use constant M_TYPE            => 0; # T_XXXX
@@ -88,6 +90,8 @@ sub default_styles
 		{ fontSize => 2, fontStyle => fs::Bold }, # STYLE_HEAD_2
 		{ fontSize => 1, fontStyle => fs::Bold }, # STYLE_HEAD_3
 		{ fontSize => 1, fontStyle => fs::Bold }, # STYLE_HEAD_4
+		{ fontSize => 0, fontStyle => fs::Bold }, # STYLE_HEAD_5
+		{ fontSize => -1, fontStyle => fs::Bold },# STYLE_HEAD_6
 		{ fontStyle => fs::Bold },                # STYLE_ITEM
 		{ color     => $colors[0]},               # STYLE_LINK
 		{ fontId    => 1,                         # STYLE_VERBATIM
@@ -231,17 +235,8 @@ sub read_paragraph
 			elsif ($Cmd eq 'pod') {
 				$r-> {cutting} = 0;
 			}
-			elsif ($Cmd eq 'head1') {
-				$self-> add( $args, pod::STYLE_HEAD_1, pod::DEF_FIRST_INDENT);
-			}
-			elsif ($Cmd eq 'head2') {
-				$self-> add( $args, pod::STYLE_HEAD_2, pod::DEF_FIRST_INDENT);
-			}
-			elsif ($Cmd eq 'head3') {
-				$self-> add( $args, pod::STYLE_HEAD_3, pod::DEF_FIRST_INDENT);
-			}
-			elsif ($Cmd eq 'head4') {
-				$self-> add( $args, pod::STYLE_HEAD_4, pod::DEF_FIRST_INDENT);
+			elsif ($Cmd =~ /^head([1-6])$/) {
+				$self-> add( $args, pod::STYLE_HEAD_1 - 1 + $1, pod::DEF_FIRST_INDENT);
 			}
 			elsif ($Cmd eq 'over') {
 				push(@{$r-> {indentStack}}, $r-> {indent});
@@ -309,7 +304,7 @@ sub _close_topic
 
 	my $r = $self-> {read_state};
 	my $t = $r-> {topicStack};
-	my $state = ( $style >= pod::STYLE_HEAD_1 && $style <= pod::STYLE_HEAD_4) ?
+	my $state = ( $style >= pod::STYLE_HEAD_1 && $style <= pod::STYLE_HEAD_6) ?
 		0 : scalar @{$r-> {indentStack}};
 
 	if ( $state <= $$t[-1]-> [0]) {
@@ -863,7 +858,7 @@ sub add
 
 		# add topic
 		if (
-	        	( $style >= pod::STYLE_HEAD_1 && $style <= pod::STYLE_HEAD_4 ) ||
+			( $style >= pod::STYLE_HEAD_1 && $style <= pod::STYLE_HEAD_6 ) ||
 			(( $style == pod::STYLE_ITEM) && $p !~ /^[0-9*]+\.?$/)
 		) {
 			my $itemDepth = ( $style == pod::STYLE_ITEM) ?
@@ -1776,6 +1771,8 @@ text parts. These styles are:
 	pod::STYLE_HEAD_2   - =head2
 	pod::STYLE_HEAD_3   - =head3
 	pod::STYLE_HEAD_4   - =head4
+	pod::STYLE_HEAD_5   - =head5
+	pod::STYLE_HEAD_6   - =head6
 	pod::STYLE_ITEM     - =item
 	pod::STYLE_LINK     - style for L<> text
 	pod::STYLE_VERBATIM - style for pre-formatted text
