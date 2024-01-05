@@ -870,7 +870,7 @@ Mirrors the image either vertically or horizontally depending on the boolean fla
 
 Applies premultiplication formula to each pixel
 
-   pixel = pixel * alpha / 256
+   pixel = int( pixel * alpha / 255 + 0.5 )
 
 where the alpha either is a constant or the corresponding pixel value in the image
 
