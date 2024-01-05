@@ -7,6 +7,8 @@ Revision history for Perl module Prima
       are no longer equal; the latter is rop::XorOver now.
  - Image.text_out() works outside the paint mode by querying glyph bitmaps.
       Other text- and font- related method work too.
+ - Pod parsing and rendering moved to Prima::Drawable::Pod
+   -- added utils/pod2pdf that works without needing a X11 server
 
 1.71 2023-10-29
  - Add Prima::Image::webp filter dialog
