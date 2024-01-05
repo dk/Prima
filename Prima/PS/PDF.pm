@@ -950,12 +950,20 @@ sub text_out_outline
 {
 	my ( $self, $text ) = @_;
 	my $shaped   = $self->text_shape($text, level => ts::Glyphs ) or return;
+	local $self->{allow_multi_tj} = 1;
 	$self-> glyph_out_outline($shaped, 0, scalar @{$shaped->glyphs});
+}
+
+sub text_shape_out
+{
+	my $self = shift;
+	local $self->{allow_multi_tj} = 1;
+	return $self->SUPER::text_shape_out(@_);
 }
 
 sub glyph_out_outline
 {
-	my ( $self, $text, $from, $len ) = @_;
+	my ( $self, $text, $from, $len) = @_;
 
 	my $glyphs     = $text-> glyphs;
 	my $indexes    = $text-> indexes;
@@ -977,6 +985,8 @@ sub glyph_out_outline
 	my $fid  = 0;
 	my $curr_subfont = -1;
 	my ($x, $y) = (0,0);
+	my $allow_tj = $self->{allow_multi_tj};
+	my @multi_tj;
 	for ( my $i = $from; $i < $len; $i++) {
 		my $advance;
 		my $glyph     = $glyphs->[$i];
@@ -1006,6 +1016,21 @@ sub glyph_out_outline
 			$curr_subfont = $subfont;
 			my $xid = $self-> {all_fonts}-> {$font}-> {xids}-> [ $subfont ] //= $self->new_dummy_obj;
 			$self->{page_fonts}->{$xid} //= 1;
+			if ( @multi_tj ) {
+				($x2, $y2) = $self->pixel2point($x2, $y2);
+				my $dx = $x2 - $x;
+				my $dy = $y2 - $y;
+				if ($dx != 0 || $dy != 0) {
+					float_inplace($dx, $dy);
+					$emit .= "$dx $dy Td ";
+				}
+				if ( $allow_tj ) {
+					$emit .= "(".join('',@multi_tj).") Tj\n";
+				} else {
+					$emit .= "[".join(' ',@multi_tj)."] TJ\n";
+				}
+				@multi_tj = ();
+			}
 			$emit .= "/F$xid $self->{font}->{size} Tf\n";
 		}
 		if ( $advances) {
@@ -1018,14 +1043,32 @@ sub glyph_out_outline
 		}
 		$adv += $advance;
 		($x2, $y2) = $self->pixel2point($x2, $y2);
-		my $dx = $x2 - $x;
-		my $dy = $y2 - $y;
-		if  ($dx != 0 || $dy != 0) {
-			float_inplace($dx, $dy);
-			$emit .= "$dx $dy Td ";
+		if ( defined $gid ) {
+			if ( $allow_tj ) {
+				push @multi_tj, sprintf("\\%03o", $gid);
+			} elsif ( 1 ) {
+				my ($xadv) = float_format($self->pixel2point($advance));
+				push @multi_tj, sprintf("(\\%03o)", $gid), $xadv;
+			} else {
+				# individual placement, obsolete but keep for the reference
+				my $dx = $x2 - $x;
+				my $dy = $y2 - $y;
+				if ($dx != 0 || $dy != 0) {
+					float_inplace($dx, $dy);
+					$emit .= "$dx $dy Td ";
+				}
+				$emit .= sprintf "<%02x> Tj\n", $gid;
+			}
 		}
 		($x, $y) = ($x2, $y2);
-		$emit .= sprintf "<%02x> Tj\n", $gid if defined $gid;
+	}
+	if ( @multi_tj ) {
+		if ( $allow_tj ) {
+			$emit .= "(".join('',@multi_tj).") Tj\n";
+		} else {
+			$emit .= "[".join(' ',@multi_tj)."] TJ\n";
+		}
+		@multi_tj = ();
 	}
 
 	if ($restore_font) {
