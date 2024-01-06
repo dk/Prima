@@ -130,9 +130,12 @@ font_context_next( FontContext * fc )
 	return len;
 }
 
-/* emulate underscore and strikeout because ExtTextOutW with ETO_PDY underlines each glyph separately */
+/*
+	emulate underscore and strikeout because ExtTextOutW with ETO_PDY underlines each glyph separately .
+	Also, Gdip ignores viewport, specify params in parallel
+*/
 static void
-underscore_font( Handle self, int x, int y, int width, Bool use_alpha)
+underscore_font( Handle self, int x1, int y1, int x2, int y2, int width, Bool use_alpha)
 {
 	HDC dc = sys ps;
 	GpPen * gppen = NULL;
@@ -177,10 +180,10 @@ underscore_font( Handle self, int x, int y, int width, Bool use_alpha)
 		}
 
 		if ( use_alpha ) {
-			GdipDrawLineI(sys graphics, gppen, x + pt[0].x, y - pt[0].y, x + pt[1].x, y - pt[1].y);
+			GdipDrawLineI(sys graphics, gppen, x2 + pt[0].x, y2 - pt[0].y, x2 + pt[1].x, y2 - pt[1].y);
 		} else {
-			MoveToEx( dc, x + pt[0].x, y - pt[0].y, NULL);
-			LineTo( dc, x + pt[1].x, y - pt[1].y);
+			MoveToEx( dc, x1 + pt[0].x, y1 - pt[0].y, NULL);
+			LineTo( dc, x1 + pt[1].x, y1 - pt[1].y);
 		}
 	}
 
@@ -209,10 +212,10 @@ underscore_font( Handle self, int x, int y, int width, Bool use_alpha)
 		}
 
 		if ( use_alpha ) {
-			GdipDrawLineI(sys graphics, gppen, x + pt[0].x, y - pt[0].y, x + pt[1].x, y - pt[1].y);
+			GdipDrawLineI(sys graphics, gppen, x2 + pt[0].x, y2 - pt[0].y, x2 + pt[1].x, y2 - pt[1].y);
 		} else {
-			MoveToEx( dc, x + pt[0].x, y - pt[0].y, NULL);
-			LineTo( dc, x + pt[1].x, y - pt[1].y);
+			MoveToEx( dc, x1 + pt[0].x, y1 - pt[0].y, NULL);
+			LineTo( dc, x1 + pt[1].x, y1 - pt[1].y);
 		}
 	}
 }
@@ -451,7 +454,7 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flag
 	}
 
 	if ( var font. style & (fsUnderlined | fsStruckOut))
-		underscore_font( self, 0, 0, gp_get_text_width( self, text, len, flags), use_alpha);
+		underscore_font( self, 0, 0, x, y, gp_get_text_width( self, text, len, flags), use_alpha);
 
 	if ( use_path ) {
 		EndPath(ps);
@@ -618,7 +621,7 @@ apc_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 	t->len = savelen;
 
 	if ( var font. style & (fsUnderlined | fsStruckOut))
-		underscore_font( self, 0, yy, gp_get_glyphs_width( self, t, 0), use_alpha);
+		underscore_font( self, 0, yy, x, y + yy, gp_get_glyphs_width( self, t, 0), use_alpha);
 
 	if ( use_path ) {
 		EndPath(ps);
