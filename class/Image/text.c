@@ -199,9 +199,13 @@ paint_background(
 	var->font.direction = d;
 
 	bc = my->get_backColor(self);
-	if ( !monochrome)
-		bc = Image_premultiply_color(self, ctx->rop, bc);
 	if ( p[0].x == p[1].x && p[0].y == p[2].y && straight) {
+		if ( !monochrome) {
+			int a = var->alpha;
+			var->alpha = 255;
+			bc = Image_premultiply_color(self, ctx->rop, bc);
+			var->alpha = a;
+		}
 		Image_color2pixel( self, bc, ctx->color);
 		memset(ctx->pattern, 0xff, sizeof(FillPattern));
 		img_bar( self, o.x + p[1].x, o.y + p[1].y - dy, p[2].x - p[1].x + 1, p[2].y - p[1].y + 1, ctx);
@@ -400,9 +404,16 @@ plot_glyphs( Handle self, PGlyphsOutRec t, int x, int y )
 	if ( my->get_textOpaque(self))
 		paint_background( self, t, flags & ggoMonochrome, o, dy, straight, matrix, &ctx, &gp_save);
 
-	if ( !( flags & ggoMonochrome))
-		color = Image_premultiply_color(self, ctx.rop, color);
-	Image_color2pixel( self, color, ctx.color);
+	/* img_plot_glyph doesn't use var->alpha, but Prima primitives do */
+	if ( !( flags & ggoMonochrome)) {
+		int a = var->alpha;
+		Color c;
+		var->alpha = 255;
+		c = Image_premultiply_color(self, ctx.rop, color);
+		var->alpha = a;
+		Image_color2pixel( self, c, ctx.color);
+	} else
+		Image_color2pixel( self, color, ctx.color);
 
 	Drawable_save_font( self, &savefont );
 	for ( i = 0; i < t->len; i++) {
