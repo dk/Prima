@@ -2043,10 +2043,19 @@ apc_font_get_glyph_bitmap( Handle self, uint16_t index, unsigned int flags, PPoi
 	GLYPHMETRICS gm;
 	MAT2 matrix;
 	UINT format;
+	Matrix *m = &var current_state.matrix;
 
 	memset(&matrix, 0, sizeof(matrix));
-	matrix.eM11.value = 1;
-	matrix.eM22.value = -1;
+#define FLOAT2FIXED(field,val) \
+	matrix.field.value = ((val) < 0) ? ((short)(val)) - 1 : ((short)(val));\
+	matrix.field.fract = ((val) - matrix.field.value) * 65535
+	FLOAT2FIXED(eM11, (*m)[0]);
+	FLOAT2FIXED(eM12, -(*m)[1]);
+	FLOAT2FIXED(eM21, (*m)[2]);
+	FLOAT2FIXED(eM22, -(*m)[3]);
+#undef FLOAT2FIXED
+	select_world_transform(self, false);
+
 	format = GGO_GLYPH_INDEX |
 		(( flags & ggoMonochrome ) ? GGO_BITMAP : GGO_GRAY8_BITMAP) |
 		(( flags & ggoUseHints )   ? 0          : GGO_UNHINTED)

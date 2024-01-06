@@ -401,6 +401,7 @@ GENPROC
 
 for ( qw( ascent descent family weight maximalWidth internalLeading externalLeading
 	xDeviceRes yDeviceRes firstChar lastChar breakChar defaultChar 
+	underlinePosition underlineThickness
 )) {
 	eval <<GENPROC;
    sub $_
