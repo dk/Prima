@@ -152,7 +152,7 @@ draw_lines(
 		)
 	;
 	Bool use_bar =
-		!use_1px && straight && !aa;
+		!use_1px && straight;
 
 	if ( use_1px ) {
 		ctx->linePattern = lpSolid;
@@ -166,7 +166,7 @@ draw_lines(
 		}
 		my-> set_color(self, color);
 		my-> set_lineWidth( self, var->font.underlineThickness + (aa ? -1 : 1));
-		my-> set_lineEnd( self, sv_2mortal(newSViv(leRound)) );
+		my-> set_lineEnd( self, sv_2mortal(newSViv(leFlat)) );
 		apc_gp_set_line_pattern(self, lpSolid, strlen((char*) lpSolid));
 		if ( monochrome )
 			my-> set_antialias( self, false );
