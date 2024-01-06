@@ -1529,6 +1529,9 @@ If FLAG is 1, then text_out() fills the text background area with the
 C<::backColor> property value before drawing the text. The default value is 0
 when text_out() plots text only.
 
+In the system-based text drawing, if the background area is filled, then the alpha value is ignored.
+In the standalone text drawing, if the background area is filled, then the alpha value is not ignored.
+
 See get_text_box().
 
 =item textOutBaseline FLAG
