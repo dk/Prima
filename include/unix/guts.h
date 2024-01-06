@@ -1784,6 +1784,8 @@ my_XRenderCompositeDoublePoly (Display		    *dpy,
 			    _Xconst XPointDouble    *fpoints,
 			    int			    npoints,
 			    int			    winding);
+Picture
+prima_pen_picture(Handle self);
 #endif
 
 #ifdef USE_FONTQUERY

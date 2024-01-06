@@ -905,24 +905,37 @@ setup_alpha(PDrawableSysData selfxx, XftColor * xftcolor, XftFont ** font)
 }
 
 /* emulate over- and understriking */
+
 static void
-overstrike( Handle self, int x, int y, Point *ovx, int advance)
+draw_x11_underline( Handle self, int ox, int oy, int x, int y, int w)
+{
+	DEFXX;
+	int x1, y1, x2, y2;
+	x1 = x;
+	x2 = w + 1;
+	y2 = y;
+	y1 = -y2;
+	prima_matrix_apply_int_to_int( X(self)->fc_font_matrix, &x1, &y1);
+	prima_matrix_apply_int_to_int( X(self)->fc_font_matrix, &x2, &y2);
+	x1 = ox - x1;
+	y1 = oy - y1;
+	x2 = ox + x2;
+	y2 = oy + y2;
+	XDrawLine( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y1), x2, REVERT( y2));
+}
+
+static void
+overstrike_x11( Handle self, int x, int y, Point *ovx, int advance)
 {
 	DEFXX;
 	int lw = 1;
-	int d  = PDrawable(self)-> font. underlinePosition;
 	int t  = PDrawable(self)-> font. underlineThickness;
-	int x1, y1, x2, y2;
 
 	XSetFillStyle( DISP, XX-> gc, FillSolid);
 	if ( !XX-> flags. brush_fore) {
 		XSetForeground( DISP, XX-> gc, XX-> fore. primary);
 		XX-> flags. brush_fore = 1;
 	}
-
-	if ( ovx->x < 0 ) ovx->x = 0;
-	if ( ovx->y < 0 ) ovx->y = 0;
-	advance += ovx->y;
 
 	if ( lw != t ) {
 		XGCValues gcv;
@@ -931,39 +944,92 @@ overstrike( Handle self, int x, int y, Point *ovx, int advance)
 		XChangeGC( DISP, XX-> gc, GCLineWidth | GCCapStyle, &gcv);
 	}
 
-	if ( PDrawable( self)-> font. style & fsUnderlined) {
-		x1 = ovx->x;
-		x2 = advance + 1;
-		y2 = d;
-		y1 = -y2;
-		prima_matrix_apply_int_to_int( XX->fc_font_matrix, &x1, &y1);
-		prima_matrix_apply_int_to_int( XX->fc_font_matrix, &x2, &y2);
-		x1 = x - x1;
-		y1 = y - y1;
-		x2 = x + x2;
-		y2 = y + y2;
-		XDrawLine( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y1), x2, REVERT( y2));
-	}
+	if ( PDrawable( self)-> font. style & fsUnderlined)
+		draw_x11_underline( self, x, y, ovx->x, PDrawable(self)-> font. underlinePosition, advance);
 
-	if ( PDrawable( self)-> font. style & fsStruckOut) {
-		x1 = ovx->x;
-		x2 = advance + 1;
-		y2 = (XX-> font-> font.ascent - XX-> font-> font.internalLeading)/3;
-		y1 = -y2;
-		prima_matrix_apply_int_to_int( XX->fc_font_matrix, &x1, &y1);
-		prima_matrix_apply_int_to_int( XX->fc_font_matrix, &x2, &y2);
-		x1 = x - x1;
-		y1 = y - y1;
-		x2 = x + x2;
-		y2 = y + y2;
-		XDrawLine( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y1), x2, REVERT( y2));
-	}
+	if ( PDrawable( self)-> font. style & fsStruckOut)
+		draw_x11_underline( self, x, y, ovx->x, (XX-> font-> font.ascent - XX-> font-> font.internalLeading)/3, advance);
 
 	if ( lw != 1 ) {
 		XGCValues gcv;
 		gcv.line_width = 1;
 		XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);
 	}
+}
+
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+
+static void
+draw_alpha_underline(Handle self, int ox, int oy, int x, int y, int w)
+{
+	DEFXX;
+	int x1, y1, x2, y2, h;
+	XPointDouble p[5];
+
+	h = PDrawable(self)-> font. underlineThickness;
+
+	x1 = x;
+	x2 = x + w + 1;
+	y1 = y - (h - 1) / 2;
+	y2 = y + h / 2;
+
+	prima_matrix_apply_int_to_int( X(self)->fc_font_matrix, &x1, &y1);
+	prima_matrix_apply_int_to_int( X(self)->fc_font_matrix, &x2, &y2);
+
+	x1 = ox + x1;
+	y1 = REVERT(oy + y1);
+	x2 = ox + x2;
+	y2 = REVERT(oy + y2);
+
+	p[0].x = p[3].x = x1;
+	p[1].x = p[2].x = x2;
+	p[0].y = p[1].y = y1;
+	p[2].y = p[3].y = y2;
+	p[4] = p[0];
+
+	my_XRenderCompositeDoublePoly(
+		DISP, PictOpOver, prima_pen_picture(self), XX->argb_picture,
+		guts.xrender_a8_format,
+		0, 0, 0, 0, p, 4,
+		WindingRule
+	);
+}
+
+static void
+overstrike_alpha( Handle self, int x, int y, Point *ovx, int advance)
+{
+	DEFXX;
+	if ( PDrawable( self)-> font. style & fsUnderlined)
+		draw_alpha_underline( self, x, y, ovx->x, PDrawable(self)-> font. underlinePosition, advance);
+
+	if ( PDrawable( self)-> font. style & fsStruckOut)
+		draw_alpha_underline( self, x, y, ovx->x, (XX-> font-> font.ascent - XX-> font-> font.internalLeading)/3, advance);
+}
+#endif
+
+static void
+overstrike( Handle self, int x, int y, Point *ovx, int advance)
+{
+	DEFXX;
+	Bool have_xrender =
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+		1
+#else
+		0
+#endif
+	;
+	if ( ovx->x < 0 ) ovx->x = 0;
+	if ( ovx->y < 0 ) ovx->y = 0;
+	advance += ovx->y;
+	if (XX->alpha == 255 || XT_IS_BITMAP(XX) || !have_xrender) {
+		if ( XT_IS_BITMAP(XX) && XX->alpha < 0x7f )
+			return;
+		overstrike_x11(self, x, y, ovx, advance);
+	}
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+	else
+		overstrike_alpha(self, x, y, ovx, advance);
+#endif
 }
 
 static void

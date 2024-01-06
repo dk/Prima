@@ -339,8 +339,8 @@ prima_render_cleanup_stipples(Handle self)
 	}
 }
 
-static Picture
-pen_picture( Handle self)
+Picture
+prima_pen_picture( Handle self)
 {
 	DEFXX;
 	if ( guts.xrender_pen_dirty ) {
@@ -384,7 +384,7 @@ apc_gp_aa_bars( Handle self, int nr, NRect *rr)
 		}
 	}
 
-	pen = pen_picture(self);
+	pen = prima_pen_picture(self);
 	format = XX->flags.antialias ? guts.xrender_a8_format : guts.xrender_a1_format;
 	for (i = 0; i < nr; i++, rr++) {
 		double x1, y1, x2, y2;
@@ -452,7 +452,7 @@ apc_gp_aa_fill_poly( Handle self, int numPts, NPoint * points)
 	RANGE2(p[numPts].x, p[numPts].y);
 
 	ok = my_XRenderCompositeDoublePoly(
-		DISP, PictOpOver, pen_picture(self), XX->argb_picture,
+		DISP, PictOpOver, prima_pen_picture(self), XX->argb_picture,
 		XX->flags.antialias ? guts.xrender_a8_format : guts.xrender_a1_format,
 		0, 0, 0, 0, p, numPts,
 		((XX->fill_mode & fmWinding) == fmAlternate) ? EvenOddRule : WindingRule
