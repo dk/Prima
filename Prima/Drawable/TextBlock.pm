@@ -424,8 +424,8 @@ sub walk
 				}
 			}
 			if ( $f & X_DIMENSION_POINT) {
-				$x *= $resolution->[0] / 72;
-				$y *= $resolution->[1] / 72;
+				$x = int($x * $resolution->[0] / 72 + .5);
+				$y = int($y * $resolution->[1] / 72 + .5);
 				$f &= ~X_DIMENSION_POINT;
 			}
 			$ret = $sub->( @opcode, $x, $y, $f ) if $sub;

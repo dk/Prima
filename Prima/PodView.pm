@@ -644,7 +644,7 @@ sub add_code_div
 	my $h = $y2 - $y1;
 	my $b = tb::block_create();
 	$$b[tb::BLK_X] = $self->{blocks}->[$from]->[tb::BLK_X];
-	$$b[tb::BLK_Y] = $y1 - $fh / 2;
+	$$b[tb::BLK_Y] = int( $y1 - $fh / 2 + .5);
 	$w += 2 * $fw;
 	$$b[tb::BLK_WIDTH]  = $w;
 	$$b[tb::BLK_HEIGHT] = $h;

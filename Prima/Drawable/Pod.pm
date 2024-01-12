@@ -522,14 +522,13 @@ sub add_image
 	my $w = $opt{width} // $src-> width;
 	my $h = $opt{height} // $src-> height;
 	# images are so far assumed to be designed for 96 dpi, but their dimensions are specified in 72-dpi points
-	my $W = $w * 72 / 96;
-	my $H = $h * 72 / 96;
+	my $W = int($w * 72 / 96 + .5);
+	my $H = int($h * 72 / 96 + .5);
 	$src-> {stretch} = [$W, $H];
 
 	my $r = $self-> {read_state};
 	$r-> {pod_cutting} = $opt{cut} ? 0 : 1
 		if defined $opt{cut};
-
 	my @imgop = (
 		tb::moveto( 2, 0, tb::X_DIMENSION_FONT_HEIGHT),
 		tb::wrap(tb::WRAP_MODE_OFF),
