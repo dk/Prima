@@ -406,19 +406,21 @@ prima_gtk_init(void)
 		if ( !f) continue;
 		bzero(f, sizeof(Font));
 		strlcpy( f->name, pango_font_description_get_family(t->font_desc), 255);
-		/* does gnome ignore X resolution? */
-		f-> size = pango_font_description_get_size(t->font_desc) / PANGO_SCALE * (96.0 / guts. resolution. y) + .5;
-		weight = pango_font_description_get_weight(t->font_desc);
-		if ( weight <= PANGO_WEIGHT_LIGHT ) f-> style |= fsThin;
-		if ( weight >= PANGO_WEIGHT_BOLD  ) f-> style |= fsBold;
-		if ( pango_font_description_get_style(t->font_desc) == PANGO_STYLE_ITALIC)
-			f-> style |= fsItalic;
-		strcpy( f->encoding, "Default" );
-		f-> undef. width = f-> undef. height = f-> undef. pitch = f-> undef. vector = 1;
-		apc_font_pick( f, NULL );
+		if ( strncmp(f->name, ".Apple", 6) != 0) {
+			/* does gnome ignore X resolution? */
+			f-> size = pango_font_description_get_size(t->font_desc) / PANGO_SCALE * (96.0 / guts. resolution. y) + .5;
+			weight = pango_font_description_get_weight(t->font_desc);
+			if ( weight <= PANGO_WEIGHT_LIGHT ) f-> style |= fsThin;
+			if ( weight >= PANGO_WEIGHT_BOLD  ) f-> style |= fsBold;
+			if ( pango_font_description_get_style(t->font_desc) == PANGO_STYLE_ITALIC)
+				f-> style |= fsItalic;
+			strcpy( f->encoding, "Default" );
+			f-> undef. width = f-> undef. height = f-> undef. pitch = f-> undef. vector = 1;
+			apc_font_pick( f, NULL );
 #define DEBUG_FONT(font) f->height,f->width,f->size,f->name,f->encoding
-		Fdebug("gtk-font (%s): %d.[w=%d,s=%d].%s.%s", s->name, DEBUG_FONT(f));
+			Fdebug("gtk-font (%s): %d.[w=%d,s=%d].%s.%s", s->name, DEBUG_FONT(f));
 #undef DEBUG_FONT
+		}
 	}
 #endif
 
@@ -437,25 +439,27 @@ prima_gtk_init(void)
 		pfd = pango_font_description_from_string((char*) g_value_peek_pointer(&value));
 
 		strlcpy( font.name, pango_font_description_get_family(pfd), 255);
-		font.size = FONT_SIZE_ROUND(pango_font_description_get_size(pfd) / 1000.0);
-		weight    = pango_font_description_get_weight(pfd);
-		if ( weight <= PANGO_WEIGHT_LIGHT ) font.style |= fsThin;
-		if ( weight >= PANGO_WEIGHT_BOLD  ) font.style |= fsBold;
-		if ( pango_font_description_get_style(pfd) == PANGO_STYLE_ITALIC)
-			font.style |= fsItalic;
-		strcpy( font.encoding, "Default" );
-		font.undef.width = font.undef.height = font.undef.pitch = font.undef.vector = 1;
-		prima_font_pick( &font, NULL, NULL, 0 );
+		if ( strncmp(font.name, ".Apple", 6) != 0) {
+			font.size = FONT_SIZE_ROUND(pango_font_description_get_size(pfd) / 1000.0);
+			weight    = pango_font_description_get_weight(pfd);
+			if ( weight <= PANGO_WEIGHT_LIGHT ) font.style |= fsThin;
+			if ( weight >= PANGO_WEIGHT_BOLD  ) font.style |= fsBold;
+			if ( pango_font_description_get_style(pfd) == PANGO_STYLE_ITALIC)
+				font.style |= fsItalic;
+			strcpy( font.encoding, "Default" );
+			font.undef.width = font.undef.height = font.undef.pitch = font.undef.vector = 1;
+			prima_font_pick( &font, NULL, NULL, 0 );
 #define DEBUG_FONT font.height,font.width,font.size,font.name,font.encoding
-		Fdebug("gtk-font (%s): %d.[w=%d,s=%g].%s.%s", g_value_peek_pointer(&value), DEBUG_FONT);
+			Fdebug("gtk-font (%s): %d.[w=%d,s=%g].%s.%s", g_value_peek_pointer(&value), DEBUG_FONT);
 #undef DEBUG_FONT
-		guts.default_msg_font     =
-		guts.default_menu_font    =
-		guts.default_widget_font  =
-		guts.default_caption_font =
-		guts.default_font         = font;
+			guts.default_msg_font     =
+			guts.default_menu_font    =
+			guts.default_widget_font  =
+			guts.default_caption_font =
+			guts.default_font         = font;
 
-		pango_font_description_free(pfd);
+			pango_font_description_free(pfd);
+		}
 
 	}
 
