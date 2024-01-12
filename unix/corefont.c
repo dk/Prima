@@ -35,7 +35,7 @@ Bool
 prima_corefont_init( char *error_buf)
 {
 	char **names;
-	int count, j , i, bad_fonts = 0, vector_fonts = 0;
+	int count, j , i, vector_fonts = 0;
 	PFontInfo info;
 
 	if ( do_core_fonts) {
@@ -105,8 +105,7 @@ prima_corefont_init( char *error_buf)
 			vector_fonts += ( info[j]. font. vector == fvBitmap ) ? 0 : 1;
 			info[j]. xname = names[ i];
 			j++;
-		} else
-			bad_fonts++;
+		}
 	}
 
 	guts. font_info = info;

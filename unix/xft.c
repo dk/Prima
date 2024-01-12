@@ -652,9 +652,8 @@ prima_xft_get_text_box( Handle self, const char * text, int len, int flags)
 {
 	DEFXX;
 	Point ovx;
-	return prima_get_text_box(self, ovx, 
-		prima_xft_get_text_width( XX-> font, text, len, flags, XX-> fc_map8, &ovx)
-	);
+	int p = prima_xft_get_text_width( XX-> font, text, len, flags, XX-> fc_map8, &ovx);
+	return prima_get_text_box(self, ovx, p);
 }
 
 Point *
@@ -662,9 +661,8 @@ prima_xft_get_glyphs_box( Handle self, PGlyphsOutRec t)
 {
 	DEFXX;
 	Point ovx;
-	return prima_get_text_box(self, ovx,
-		prima_xft_get_glyphs_width(self, XX-> font, t, &ovx)
-	);
+	int p = prima_xft_get_glyphs_width(self, XX-> font, t, &ovx);
+	return prima_get_text_box(self, ovx, p);
 }
 
 #define SORT(a,b)       { int swp; if ((a) > (b)) { swp=(a); (a)=(b); (b)=swp; }}
