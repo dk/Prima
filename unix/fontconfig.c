@@ -1003,5 +1003,24 @@ prima_fc_encoding_is_supported( char *encoding, FcPattern *match)
 	return true;
 }
 
+void
+prima_fc_build_key( PFontKey key, PFont f, Matrix matrix, Bool bySize)
+{
+	key-> height    = bySize ? -f-> size * FONT_SIZE_GRANULARITY : f-> height;
+	key-> width     = f-> width;
+	key-> style     = f-> style;
+	key-> pitch     = f-> pitch;
+	key-> vector    = (f-> vector == fvBitmap) ? 0 : 1;
+	key-> direction = ROUND2INT(f-> direction);
+	if ( matrix ) {
+		/* don't mix matrix and direction to avoid sin/cos calls here */
+		int i;
+		for ( i = 0; i < 4; i++) key->matrix[i] = ROUND2INT( matrix[i] );
+	} else {
+		key->matrix[0] = key->matrix[3] = ROUND_DIRECTION;
+	}
+	strcpy( key-> name, f-> name);
+}
+
 
 #endif

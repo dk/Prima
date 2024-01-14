@@ -1574,7 +1574,7 @@ prima_xft_done( void);
 extern void
 prima_xft_gp_destroy( Handle self );
 
-void
+extern void
 prima_xft_build_key( PFontKey key, PFont f, Matrix matrix, Bool bySize);
 
 extern PCachedFont
@@ -1854,7 +1854,7 @@ extern void
 prima_fq_free_cached_font( PCachedFont f);
 
 extern void
-prima_fq_build_key( PFontKey key, PFont f, Bool by_size);
+prima_fq_build_key( PFontKey key, PFont f);
 
 extern PCachedFont
 prima_fq_match( PFont dest, Bool by_size, PCachedFont kf);

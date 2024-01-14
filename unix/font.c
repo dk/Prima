@@ -36,6 +36,8 @@ Bool
 prima_font_init_subsystem(void)
 {
 	guts. font_hash = hash_create();
+
+	(void) do_freetype;
 #ifdef USE_FONTQUERY
 	prima_fc_init();
 	if ( do_freetype)
@@ -52,6 +54,8 @@ prima_font_init_x11( char * error_buf)
 		return false;
 
 	guts. xft_priority     = do_xft_priority;
+
+	(void) do_xft;
 #ifdef USE_XFT
 	if ( do_xft) prima_xft_init();
 #endif
@@ -430,12 +434,16 @@ build_font_key(PFontKey fk, PFont source, PFont save_synthetics, Matrix matrix, 
 	case FONTKEY_CORE:
 		prima_corefont_build_key( fk, &sanitized, by_size );
 		return;
+#ifdef USE_XFT
 	case FONTKEY_XFT:
 		prima_xft_build_key( fk, &sanitized, matrix, by_size);
 		return;
+#endif
+#ifdef USE_FONTQUERY
 	case FONTKEY_FREETYPE:
-		prima_fq_build_key( fk, &sanitized, by_size);
+		prima_fq_build_key( fk, &sanitized);
 		return;
+#endif
 	}
 }
 
@@ -445,10 +453,12 @@ apply_synthetic_fields(PCachedFont kf, PFont s, PFont d)
 	d-> style |= s->style & (fsUnderlined|fsOutline|fsStruckOut);
 	d-> direction = d->direction;
 	switch (kf->type) {
+#ifdef USE_FONTQUERY
 	case FONTKEY_FREETYPE:
 		prima_fq_apply_synthetic_fields(kf, s, d);
 		d->size = FONT_SIZE_ROUND(d->size);
 		break;
+#endif
 	}
 }
 
@@ -474,12 +484,16 @@ match_font( PFontKey fk, PFont font, Matrix matrix)
 	case FONTKEY_CORE:
 		cf2 = prima_corefont_match( font, by_size, cf );
 		break;
+#ifdef USE_XFT
 	case FONTKEY_XFT:
 		cf2 = prima_xft_match( font, matrix, by_size, cf );
 		break;
+#endif
+#ifdef USE_FONTQUERY
 	case FONTKEY_FREETYPE:
 		cf2 = prima_fq_match( font, by_size, cf );
 		break;
+#endif
 	default:
 		return NULL;
 	}
@@ -572,7 +586,6 @@ find_font( int type, PFont font, Matrix matrix)
 PCachedFont
 prima_font_pick( PFont source, Matrix matrix, PFont dest, unsigned int selection )
 {
-	PCachedFont cf;
 	if ( selection == 0 )
 		selection = FONTKEY_DEFAULT;
 
@@ -588,6 +601,7 @@ prima_font_pick( PFont source, Matrix matrix, PFont dest, unsigned int selection
 
 #ifdef USE_XFT
 	if ( guts. use_xft && (selection & FONTKEY_XFT) ) {
+		PCachedFont cf;
 		if (( cf = find_font( FONTKEY_XFT, dest, matrix)) != NULL)
 			return cf;
 	}
@@ -654,12 +668,16 @@ set_font( Handle self, int type, PFont font)
 			XCHECKPOINT;
 		}
 		break;
+#ifdef USE_XFT
 	case FONTKEY_XFT:
 		prima_fc_set_font( self, font );
 		break;
+#endif
+#ifdef USE_FONTQUERY
 	case FONTKEY_FREETYPE:
 		prima_fq_set_font( self, kf );
 		break;
+#endif
 	}
 
 	if ( XX-> font ) XX-> font-> lock_cnt--;
@@ -781,8 +799,6 @@ apc_gp_get_mapper_ranges(PFont font, int * count, unsigned int * flags)
 Byte*
 apc_font_get_glyph_bitmap( Handle self, uint16_t index, unsigned int flags, PPoint offset, PPoint size, int *advance)
 {
-	DEFXX;
-
 #ifdef USE_FONTQUERY
 	if ( is_opt(optInFontQuery) ) {
 		if ( X(self)->font)
@@ -792,7 +808,7 @@ apc_font_get_glyph_bitmap( Handle self, uint16_t index, unsigned int flags, PPoi
 #endif
 
 #ifdef USE_XFT
-	if ( XX-> font-> xft)
+	if ( X(self)-> font-> xft)
 		return prima_xft_get_glyph_bitmap(self, index, flags, offset, size, advance);
 #endif
 

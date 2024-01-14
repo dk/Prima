@@ -19,7 +19,7 @@ check memory leaks
 #define FT266_to_short(x) ((short)(FT266_TRUNC(FT266_ROUND(x))))
 
 void
-prima_fq_build_key( PFontKey key, PFont f, Bool by_size)
+prima_fq_build_key( PFontKey key, PFont f)
 {
 	key-> style     = f-> style;
 	key-> pitch     = f-> pitch;
@@ -75,9 +75,7 @@ build_mismatch_key( PFontKey key, PFont font)
 {
 	bzero(key, sizeof(FontKey));
 	key->type = FONTKEY_FREETYPE;
-	prima_xft_build_key(key, font, NULL, true);
-	key->direction = 0;
-	key->width = 0;
+	prima_fq_build_key( key, font);
 }
 
 static void

@@ -15,6 +15,9 @@ if ( $^O !~ /win32/i && 0 == grep { $_ eq 'freetype' } @{ $Prima::Config::Config
 
 my $i = Prima::Image->new( size => [50,50], type => im::BW );
 
+my $x = scalar @{ $i->fonts // [] };
+plan skip_all => "no image text services" unless $x;
+
 is( $i-> get_paint_state, ps::Disabled, 'get_paint_state == ps::Disabled');
 $i->get_font;
 is( $i-> get_paint_state, ps::Disabled, 'get_paint_state == ps::Disabled');
@@ -26,7 +29,6 @@ unless ( $noX11 ) {
 	is( $i-> get_paint_state, ps::Disabled, 'end_font_query == ps::Disabled');
 }
 
-my $x = scalar @{ $i->fonts // [] };
 cmp_ok( $x, '>=', 1, "$x direct access fonts are reported");
 
 $x = $i->font_mapper->count;
