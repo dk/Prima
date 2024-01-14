@@ -37,7 +37,7 @@ Debian/Ubuntu
 FreeBSD
 -------
 
-  pkg install gtk3 fribidi harfbuzz libxpm libthai pkgconf tiff webp giflib libheif freetype
+  pkg install gtk3 fribidi harfbuzz libxpm libthai pkgconf tiff webp giflib libheif freetype2
 
 OpenSUSE
 --------
