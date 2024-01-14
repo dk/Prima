@@ -432,31 +432,39 @@ create_tmp_image( PImage template, int channels, PImage target, Point size, Colo
 	return true;
 }
 
+typedef struct {
+	int channels;
+	int src_w;
+	int dst_w;
+	float *fill;
+	Bool reverse;
+} ShearXCommonRec;
+
 #define SHEAR_X_FUNCTION(type,pixel_interim_type) \
 static void                                                       \
 shear_x_scanline_ ## type(                                        \
-	void * _src, int channels, int src_w,                     \
-	void * _dst, int dst_w,                                   \
-	int delta, float sf, float * fill, Bool reverse           \
+	ShearXCommonRec *ctx,                                     \
+	void * _src, void * _dst, int delta, float sf             \
 ) {                                                               \
 	int x, c, nx, dsrc;                                       \
 	float leftover[3];                                        \
+	const int channels = (const int)ctx->channels;            \
 	type *src = (type*)_src, *dst = (type*) _dst;             \
 	pixel_interim_type new_pixel;                             \
 	                                                          \
-	if ( reverse ) {                                          \
+	if ( ctx->reverse ) {                                          \
 		dsrc = channels * 2;                              \
-		src  += (src_w - 1) * channels;                   \
+		src  += (ctx->src_w - 1) * channels;              \
 	} else                                                    \
 		dsrc = 0;                                         \
 	                                                          \
 	for ( c = 0; c < channels; c++)                           \
-		leftover[c] = fill[c] * (1.0 - sf);               \
+		leftover[c] = ctx->fill[c] * (1.0 - sf);          \
 	                                                          \
 	dst += delta * channels;                                  \
 	for (                                                     \
 		x = 0, nx = delta;                                \
-		x < src_w;                                        \
+		x < ctx->src_w;                                   \
 		x++, nx++, src -= dsrc                            \
 	) {                                                       \
 		for ( c = 0; c < channels; c++, src++) {          \
@@ -464,7 +472,7 @@ shear_x_scanline_ ## type(                                        \
 
 #define SHEAR_X_LOOP \
 			float to_leave    = *src - new_pixel + leftover[c]; \
-			if ( nx >= dst_w ) return;
+			if ( nx >= ctx->dst_w ) return;
 
 #define CLAMP(minval,maxval) \
 			if ( new_pixel < minval ) new_pixel = minval; \
@@ -479,7 +487,7 @@ shear_x_scanline_ ## type(                                        \
 		}                                     \
 	}
 #define SHEAR_X_TAIL \
-	if ( nx >= 0 && nx < dst_w) \
+	if ( nx >= 0 && nx < ctx->dst_w) \
 		for ( c = 0; c < channels; c++) {
 
 #define SHEAR_X_FUNCTION_END \
@@ -493,7 +501,7 @@ SHEAR_X_FUNCTION(Byte,short int)
 	CLAMP(0,255)
 	SHEAR_X_LOOP_END
 	SHEAR_X_TAIL
-	new_pixel = leftover[c] + fill[c] * sf + 0.5;
+	new_pixel = leftover[c] + ctx->fill[c] * sf + 0.5;
 	CLAMP(0,255)
 SHEAR_X_FUNCTION_END
 
@@ -503,7 +511,7 @@ SHEAR_X_FUNCTION(Short,int)
 	CLAMP(INT16_MIN,INT16_MAX)
 	SHEAR_X_LOOP_END
 	SHEAR_X_TAIL
-	new_pixel = leftover[c] + fill[c] * sf + 0.5;
+	new_pixel = leftover[c] + ctx->fill[c] * sf + 0.5;
 	CLAMP(INT16_MIN,INT16_MAX)
 SHEAR_X_FUNCTION_END
 
@@ -513,7 +521,7 @@ SHEAR_X_FUNCTION(Long,int64_t)
 	CLAMP(INT32_MIN,INT32_MAX)
 	SHEAR_X_LOOP_END
 	SHEAR_X_TAIL
-	new_pixel = leftover[c] + fill[c] * sf + 0.5;
+	new_pixel = leftover[c] + ctx->fill[c] * sf + 0.5;
 	CLAMP(INT32_MIN,INT32_MAX)
 SHEAR_X_FUNCTION_END
 
@@ -522,7 +530,7 @@ SHEAR_X_FUNCTION(float,float)
 	SHEAR_X_LOOP
 	SHEAR_X_LOOP_END
 	SHEAR_X_TAIL
-	new_pixel = leftover[c] + fill[c] * sf ;
+	new_pixel = leftover[c] + ctx->fill[c] * sf ;
 SHEAR_X_FUNCTION_END
 
 SHEAR_X_FUNCTION(double,double)
@@ -530,45 +538,56 @@ SHEAR_X_FUNCTION(double,double)
 	SHEAR_X_LOOP
 	SHEAR_X_LOOP_END
 	SHEAR_X_TAIL
-	new_pixel = leftover[c] + fill[c] * sf;
+	new_pixel = leftover[c] + ctx->fill[c] * sf;
 SHEAR_X_FUNCTION_END
+
+typedef struct {
+	int channels;
+	int src_w;
+	int src_h;
+	int src_stride;
+	int dst_w;
+	int dst_h;
+	int dst_stride;
+	float *fill;
+} ShearYCommonRec;
 
 #define SHEAR_Y_FUNCTION(type,pixel_interim_type) \
 static void                                                               \
 shear_y_scanline_ ## type(                                                \
-	void * _src, int channels, int src_w, int src_h, int src_stride,  \
-	void * _dst, int dst_w, int dst_h, int dst_stride,                \
-	int delta, float sf, float * fill                                 \
+	ShearYCommonRec *ctx,                                             \
+	void * _src, void * _dst, int delta, float sf                     \
 ) {                                                                       \
 	int y, c, ny;                                                     \
 	float leftover[3];                                                \
+	const int channels = (const int)ctx->channels;                    \
 	type * src = (type*)_src, * dst = ( type* ) _dst;                 \
 	pixel_interim_type new_pixel;                                     \
 	                                                                  \
 	for ( c = 0; c < channels; c++)                                   \
-		leftover[c] = fill[c] * ( 1 - sf );                       \
+		leftover[c] = ctx->fill[c] * ( 1 - sf );                  \
 	                                                                  \
-	dst = (type*) (((Byte*) dst) + delta * dst_stride);               \
+	dst = (type*) (((Byte*) dst) + delta * ctx->dst_stride);          \
 	                                                                  \
-	for ( y = 0, ny = delta; y < src_h; y++, ny++) {                  \
+	for ( y = 0, ny = delta; y < ctx->src_h; y++, ny++) {             \
 		for ( c = 0; c < channels; c++) {                         \
 			type   pixel           = src[c];                  \
 			float to_transfer = ((float)pixel) * sf;
 
 #define SHEAR_Y_LOOP \
 			float to_leave    = pixel - new_pixel + leftover[c];\
-			if ( ny >= dst_h) return;
+			if ( ny >= ctx->dst_h) return;
 
 #define SHEAR_Y_LOOP_END(type) \
 			if ( ny >= 0 ) dst[c] = new_pixel;                \
 			leftover[c] = to_leave;                           \
 		}                                                         \
-		src = (type*)(((Byte*)src) + src_stride);                 \
-		dst = (type*)(((Byte*)dst) + dst_stride);                 \
+		src = (type*)(((Byte*)src) + ctx->src_stride);            \
+		dst = (type*)(((Byte*)dst) + ctx->dst_stride);            \
 	}
 
 #define SHEAR_Y_TAIL \
-	if ( ny >= 0 && ny < dst_h)                                       \
+	if ( ny >= 0 && ny < ctx->dst_h)                                  \
 		for ( c = 0; c < channels; c++) {
 
 #define SHEAR_Y_FUNCTION_END \
@@ -582,7 +601,7 @@ SHEAR_Y_FUNCTION(Byte,short int)
 	CLAMP(0,255)
 	SHEAR_Y_LOOP_END(Byte)
 	SHEAR_Y_TAIL
-	new_pixel = leftover[c] + fill[c] * sf + 0.5;
+	new_pixel = leftover[c] + ctx->fill[c] * sf + 0.5;
 	CLAMP(0,255)
 SHEAR_Y_FUNCTION_END
 
@@ -592,7 +611,7 @@ SHEAR_Y_FUNCTION(Short,int)
 	CLAMP(INT16_MIN,INT16_MAX)
 	SHEAR_Y_LOOP_END(Short)
 	SHEAR_Y_TAIL
-	new_pixel = leftover[c] + fill[c] * sf + 0.5;
+	new_pixel = leftover[c] + ctx->fill[c] * sf + 0.5;
 	CLAMP(INT16_MIN,INT16_MAX)
 SHEAR_Y_FUNCTION_END
 
@@ -602,7 +621,7 @@ SHEAR_Y_FUNCTION(Long,int64_t)
 	CLAMP(INT32_MIN,INT32_MAX)
 	SHEAR_Y_LOOP_END(Long)
 	SHEAR_Y_TAIL
-	new_pixel = leftover[c] + fill[c] * sf + 0.5;
+	new_pixel = leftover[c] + ctx->fill[c] * sf + 0.5;
 	CLAMP(INT32_MIN,INT32_MAX)
 SHEAR_Y_FUNCTION_END
 
@@ -611,7 +630,7 @@ SHEAR_Y_FUNCTION(float,float)
 	SHEAR_Y_LOOP
 	SHEAR_Y_LOOP_END(float)
 	SHEAR_Y_TAIL
-	new_pixel = leftover[c] + fill[c] * sf ;
+	new_pixel = leftover[c] + ctx->fill[c] * sf ;
 SHEAR_Y_FUNCTION_END
 
 SHEAR_Y_FUNCTION(double,double)
@@ -619,19 +638,17 @@ SHEAR_Y_FUNCTION(double,double)
 	SHEAR_Y_LOOP
 	SHEAR_Y_LOOP_END(double)
 	SHEAR_Y_TAIL
-	new_pixel = leftover[c] + fill[c] * sf;
+	new_pixel = leftover[c] + ctx->fill[c] * sf;
 SHEAR_Y_FUNCTION_END
 
 typedef void ShearXFunc(
-	void * src, int channels, int src_w,
-	void * dst, int dst_w,
-	int delta, float sf, float * fill, Bool reverse);
+	ShearXCommonRec *ctx,
+	void * src, void * dst, 
+	int delta, float sf);
 
 typedef void ShearYFunc(
-	void * _src, int channels, int src_w, int src_h, int src_stride,
-	void * _dst, int dst_w, int dst_h, int dst_stride,
-	int delta, float sf, float * fill
-);
+	ShearYCommonRec *ctx,
+	void * _src, void * _dst, int delta, float sf);
 
 #define FIND_SHEAR_FUNC(letter) \
 	case imByte   : shear_func = shear_## letter ##_scanline_Byte;   break;\
@@ -646,6 +663,7 @@ shear_x( PImage src, int channels, PImage dst, float func_mul, float func_add, F
 	int w, dw, h, y, lim_y, dsrc, ddst;
 	Byte * src_scanline, * dst_scanline;
 	ShearXFunc * shear_func;
+	ShearXCommonRec ctx;
 
 	w  = src->w / channels;
 	dw = dst->w / channels;
@@ -668,16 +686,21 @@ shear_x( PImage src, int channels, PImage dst, float func_mul, float func_add, F
 	}
 
 	lim_y = ( h < dst->h ) ? h : dst->h;
+	ctx.channels = channels;
+	ctx.src_w    = w;
+	ctx.dst_w    = dw;
+	ctx.fill     = fill;
+	ctx.reverse  = apply_180;
 #ifdef HAVE_OPENMP
 #pragma omp parallel for
 #endif
 	for ( y = 0; y < lim_y; y++) {
 		float sk = func_add + (( func_mul > 0 ) ? func_mul * y : (-func_mul) * (h - y - 1));
 		int   si = (int) floorf(sk);
-		shear_func(
-			src_scanline + dsrc * y, channels, w,
-			dst_scanline + ddst * y, dw,
-			si + dx, filter(sk - si), fill, apply_180
+		shear_func( &ctx,
+			src_scanline + dsrc * y,
+			dst_scanline + ddst * y,
+			si + dx, filter(sk - si)
 		);
 	}
 }
@@ -688,6 +711,7 @@ shear_y( PImage src, int channels, PImage dst, float func_mul, float func_add, F
 	int x, w, h, dw, lim_x, dscanline;
 	Byte * src_scanline, * dst_scanline;
 	ShearYFunc * shear_func;
+	ShearYCommonRec ctx;
 
 	w  = src->w / channels;
 	dw = dst->w / channels;
@@ -704,16 +728,25 @@ shear_y( PImage src, int channels, PImage dst, float func_mul, float func_add, F
 	}
 
 	lim_x = ( w < dst-> w ) ? w : dst->w;
+	ctx.channels   = channels;
+	ctx.src_w      = w;
+	ctx.src_h      = h;
+	ctx.src_stride = src->lineSize;
+	ctx.dst_w      = dw;
+	ctx.dst_h      = dst->h;
+	ctx.dst_stride = dst->lineSize;
+	ctx.fill       = fill;
 #ifdef HAVE_OPENMP
 #pragma omp parallel for
 #endif
 	for ( x = 0; x < lim_x; x++) {
 		float sk = func_add + (( func_mul > 0 ) ? func_mul * x : (-func_mul) * (w - x - 1));
 		int    si = (int) floorf(sk);
-		shear_func(
-			src_scanline + dscanline * x, channels, w, h, src->lineSize,
-			dst_scanline + dscanline * x, dw, dst->h, dst->lineSize,
-			si + dy, filter(sk - si), fill);
+		shear_func( &ctx,
+			src_scanline + dscanline * x, 
+			dst_scanline + dscanline * x,
+			si + dy, filter(sk - si)
+		);
 	}
 }
 
