@@ -633,7 +633,12 @@ sub run_test
 	my $unix = shift;
 
 	$w = Prima::DeviceBitmap-> create( type => dbt::Pixmap, width => 32, height => 32);
-	$w->font->name( $opt{font}) if defined $opt{font};
+	if (defined $opt{font}) {
+		$w->font->name( $opt{font});
+	} elsif ( $^O =~ /win32/i && $w->font->name !~ /arial|courier|times|segoe|verdana|tahoma|consolas/i) {
+		$w->font->name('Arial'); # we're testing shaping implementation, not that all possible fonts
+		                         # can be properly shaped
+	}
 	my $found = find_vector_font(xtr('A'));
 
 	my $z = $w-> text_shape( "1", polyfont => 0 );
