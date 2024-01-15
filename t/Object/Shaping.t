@@ -4,8 +4,28 @@ use Test::More;
 use Prima::sys::Test;
 use Prima::Application;
 
+
 my $w;
 my $z;
+
+{
+	no warnings 'redefine';
+	sub curry
+	{
+		my $cb = shift;
+		my $ok = $cb->(@_);
+		return $ok if $ok;
+		diag('font: [', $w->font->name, ']');
+		return 0;
+	}
+	my $is_deeply = \&is_deeply;
+	my $ok = \&ok;
+	my $is = \&is;
+	*is_deeply = sub { curry($is_deeply, @_) };
+	*ok        = sub ($;$)  { curry($ok, @_) };
+	*is        = sub ($$;$) { curry($is, @_) };
+}
+
 
 my %opt;
 my %glyphs;
