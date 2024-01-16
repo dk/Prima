@@ -2617,7 +2617,7 @@ sub postamble
 	my $showlog = '';
 
 	# that's because CPAN doesn't save Makefile.PL output, and I want it for tests
-	if ( $ENV{AUTOMATED_TESTING} ) {
+	if ( grep { $ENV{$_} } qw(AUTOMATED_TESTING NONINTERACTIVE_TESTING PERL_BATCH) {
 		$showlog = 'showlog';
 		$t .= <<SHOWMORE;
 
