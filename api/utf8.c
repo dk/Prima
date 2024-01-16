@@ -49,7 +49,7 @@ prima_utf8_uvchr_end(const char * text, const char * end, unsigned int *charlen)
 #if PERL_PATCHLEVEL >= 16
 		utf8_to_uvchr_buf(( U8*)(text), (U8*)(end), &l);
 #else
-		utf8_to_uvchr(( U8*)(_text), &l);
+		utf8_to_uvchr(( U8*)(text), &l);
 #endif
 	*charlen = ((int)l < 0) ? 0 : l;
 	return uv;
