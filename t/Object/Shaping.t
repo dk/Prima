@@ -654,7 +654,7 @@ sub run_test
 
 	$w = Prima::DeviceBitmap-> create( type => dbt::Pixmap, width => 32, height => 32);
 	if (defined $opt{font}) {
-		$w->font->name( $opt{font});
+		$w->font->set( name => $opt{font}, encoding => "");
 	} elsif ( $^O =~ /win32/i && $w->font->name !~ /arial|courier|times|segoe|verdana|tahoma|consolas/i) {
 		$w->font->name('Arial'); # we're testing shaping implementation, not that all possible fonts
 		                         # can be properly shaped
