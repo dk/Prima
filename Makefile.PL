@@ -1076,7 +1076,7 @@ and unpack it in the include catalog so that the headers are in
 ./include/gdiplus/*.h
 
 GDIP
-			exit 1;
+			exit 255;
 		}
 		printlog "yes\n";
 	}
@@ -1355,7 +1355,7 @@ sub setup_X11
 			warn
 				"Prima needs package with x11 development file for compilation! ".
 				"Please install it with your system installer tool.\n";
-			exit(0);
+			exit 255;
 		}
 		pkgconfig('xext');
 		if ( $macos_broken_setup ) {
@@ -1389,7 +1389,7 @@ sub setup_X11
 			"Prima needs X11 headers for compilation! ".
 			"Set X11BASE='/path/to/X' or INCPATH+='/path/to/X/include' ".
 			"if you have a non-standard path to X. $see_makefile_log\n";
-		exit(0);
+		exit 255;
 	}
 
 	printlog "yes";
@@ -1422,7 +1422,7 @@ sub setup_X11
 			"Prima needs X11 libraries for compilation! ".
 			"Set X11BASE='/path/to/X' ".
 			"if you have a non-standard path to X. $see_makefile_log\n";
-		exit(0);
+		exit 255;
 	}
 
 	printlog "yes";
