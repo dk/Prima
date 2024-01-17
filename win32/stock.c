@@ -1047,6 +1047,13 @@ reset_system_fonts(void)
 	font_logfont2font( &guts.ncmData.lfCaptionFont, &guts.cap_font,  &guts.display_resolution);
 }
 
+static void
+font_logfontname2font( LOGFONTW *lf, Font *f)
+{
+	f-> is_utf8.name = utf8_flag_strncpy( f->name, lf->lfFaceName, LF_FACESIZE);
+	f-> undef.name = 0;
+}
+
 void
 font_logfont2font( LOGFONTW * lf, Font * f, Point * res)
 {
@@ -1111,6 +1118,7 @@ font_textmetric2font( TEXTMETRICW * tm, Font * fm, Bool readonly)
 			( tm-> tmStruckOut  ? fsStruckOut  : 0) |
 			(( tm-> tmWeight >= 700) ? fsBold   : 0)
 			;
+		fm->undef.size = fm->undef.width = fm->undef.height = fm->undef.style = 0;
 	}
 	fm-> pitch  = (( tm-> tmPitchAndFamily & TMPF_FIXED_PITCH) ? fpVariable : fpFixed);
 	fm-> vector = (( tm-> tmPitchAndFamily & ( TMPF_VECTOR | TMPF_TRUETYPE)) ? true : false);
@@ -1130,6 +1138,7 @@ font_textmetric2font( TEXTMETRICW * tm, Font * fm, Bool readonly)
 	fm->underlinePosition       = -fm-> descent;
 	fm->underlineThickness      = (fm->height > 16) ? fm->height / 16 : 1;
 	strcpy( fm-> encoding, font_charset2encoding( tm-> tmCharSet));
+	fm->undef.pitch = fm->undef.vector = 0;
 }
 
 void
@@ -1387,6 +1396,7 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
 					lpf. lfWeight = 700;
 					font_logfont2textmetric( dc, &lpf, &tm, NULL);
 					if ( xf. width + tm. tmOverhang == font-> width) {
+						font_logfontname2font( &lpf, font);
 						font_textmetric2font( &tm, font, true);
 						font-> direction = 0;
 						font-> size   = xf. size;
@@ -1415,6 +1425,7 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
 				es. tm. tmMaxCharWidth += tm. tmOverhang;
 				es. lf. lfWidth        += tm. tmOverhang;
 			}
+			font_logfontname2font( &es.lf, font);
 			font_textmetric2font( &es. tm, font, true);
 			font-> direction = 0;
 			strlcpy( font-> family, es. family, LF_FULLFACESIZE);
@@ -1451,6 +1462,7 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
 			if ( !es. useWidth)
 				font-> width = tm. tmAveCharWidth;
 
+			font_logfontname2font( &lpf, font);
 			font_textmetric2font( &tm, font, true);
 			if ( have_otm ) font_otm2font( &otm, font );
 			strlcpy( font-> family, es. family, LF_FULLFACESIZE);
@@ -1477,9 +1489,11 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
 			switch ( font->pitch ) {
 			case fpFixed:
 				strcpy( font-> name, guts. default_fixed_font);
+				font->undef.name = 0;
 				break;
 			case fpVariable:
 				strcpy( font-> name, guts. default_variable_font);
+				font->undef.name = 0;
 				break;
 			}
 			font-> pitch = fpDefault;
@@ -1495,6 +1509,7 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
 		if (( ogp == fpFixed) && ( strcmp( font-> name, guts. default_fixed_font) != 0)) {
 			strcpy( font-> name, DEFAULT_SYSTEM_FONT);
 			font-> pitch = fpDefault;
+			font->undef.name = 0;
 			ret = font_font2gp( font, res, forceSize, dc);
 		}
 		recursiveFFPitch--;
@@ -1503,6 +1518,7 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
 
 	// font not found, so use general representation for height and width
 	strcpy( font-> name, guts. default_system_font);
+	font->undef.name = 0;
 	if ( recursiveFF == 0)
 	{
 		// trying to catch default font with correct values
