@@ -809,10 +809,10 @@ UpdateLayeredWindow(
 #define MUI_COMPLEX_SCRIPT_FILTER 0x200
 #endif
 
-BOOL
+extern BOOL
 my_GetUserPreferredUILanguages(
 	DWORD dwFlags, PULONG pulNumLanguages,
-	PZZWSTR pwszLanguagesBuffer, PULONG pcchLanguagesBuffer
+	WCHAR* pwszLanguagesBuffer, PULONG pcchLanguagesBuffer
 );
 
 #ifndef CONSOLE_READ_NOREMOVE
@@ -823,7 +823,7 @@ my_GetUserPreferredUILanguages(
 #define CONSOLE_READ_NOWAIT     0x0002
 #endif
 
-Bool
+extern Bool
 read_console_input(
 	WINHANDLE hConsoleInput, PINPUT_RECORD lpBuffer, DWORD nLength,
 	LPDWORD lpNumberOfEventsRead, USHORT wFlags

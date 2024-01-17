@@ -137,8 +137,8 @@ apc_application_get_gui_info( char * description, int len1, char * language, int
 		strlcpy( description, "Windows", len1);
 	if ( language ) {
 		ULONG n_lang, n_words = 128;
-		WORD buffer[128];
-		if ( my_GetUserPreferredUILanguages(MUI_LANGUAGE_NAME, &n_lang, (PZZWSTR) &buffer, &n_words)) {
+		WCHAR buffer[128];
+		if ( my_GetUserPreferredUILanguages(MUI_LANGUAGE_NAME, &n_lang, buffer, &n_words)) {
 			if ( len2 < n_words ) n_words = len2;
 			wchar2char( language, (WCHAR*) &buffer, n_words );
 		} else

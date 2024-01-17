@@ -91,13 +91,13 @@ static HRESULT (__stdcall *DwmIsCompositionEnabled)(BOOL *pfEnabled) = NULL;
 static BOOL    (__stdcall *ReadConsoleInputExW)( WINHANDLE hConsoleInput, PINPUT_RECORD lpBuffer, DWORD nLength, LPDWORD lpNumberOfEventsRead, USHORT wFlags) = NULL;
 
 #if WINVER < 0x0600
-static BOOL    (__stdcall *GetUserPreferredUILanguages)(DWORD dwFlags, PULONG pulNumLanguages, PZZWSTR pwszLanguagesBuffer, PULONG pcchLanguagesBuffer) = NULL;
+static BOOL    (__stdcall *GetUserPreferredUILanguages)(DWORD dwFlags, PULONG pulNumLanguages, WCHAR* pwszLanguagesBuffer, PULONG pcchLanguagesBuffer) = NULL;
 #endif
 
 BOOL
 my_GetUserPreferredUILanguages(
 	DWORD dwFlags, PULONG pulNumLanguages,
-	PZZWSTR pwszLanguagesBuffer, PULONG pcchLanguagesBuffer
+	WCHAR* pwszLanguagesBuffer, PULONG pcchLanguagesBuffer
 ) {
 #if WINVER < 0x0600
 	if ( GetUserPreferredUILanguages == NULL) 
