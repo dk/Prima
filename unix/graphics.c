@@ -318,6 +318,14 @@ void
 prima_cleanup_drawable_after_painting( Handle self)
 {
 	DEFXX;
+	PPaintState state;
+
+	if (
+		XX-> gc_stack &&
+		XX-> gc_stack-> count > 0 &&
+		( state = ( PPaintState) list_at( XX-> gc_stack, XX-> gc_stack-> count - 1)) != NULL
+	)
+		PDrawable(self)->font = state->font;
 
 	cleanup_gc_stack(self, 0);
 	cleanup_stipples(self);
