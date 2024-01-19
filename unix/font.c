@@ -451,7 +451,7 @@ static void
 apply_synthetic_fields(PCachedFont kf, PFont s, PFont d)
 {
 	d-> style |= s->style & (fsUnderlined|fsOutline|fsStruckOut);
-	d-> direction = d->direction;
+	d-> direction = s->direction;
 	switch (kf->type) {
 #ifdef USE_FONTQUERY
 	case FONTKEY_FREETYPE:
