@@ -911,7 +911,9 @@ $w-> insert( Widget =>
 				last RANGES if length($latin) > 32 || length($non_latin) > 32;
 			}
 		}
-		$probe = (length($latin) > 32) ? $_[1]-> font-> size.".".$_[1]-> font-> name : substr($non_latin, 0, 12);
+		$probe = (length($latin) > 32) ?
+			int($_[1]-> font-> size + .5). "." . $_[1]-> font-> name :
+			substr($non_latin, 0, 12);
 
 		my @box = @{$_[1]-> get_text_box( $probe)};
 		pop @box;
