@@ -481,7 +481,7 @@ prima_xft_match( Font *font, Matrix matrix, Bool by_size, PCachedFont cf)
 				XFTdebug("found nothing");
 			}
 
-			if ( guessed_font && requested_font. height != guessed_font-> font.height) {
+			if ( guessed_font && requested_font.height != xf-> height) {
 				cf->xft = xf  = guessed_font->xft;
 				cf->xft_base  = guessed_font->xft_base;
 				font-> height = guessed_font->font.height;
