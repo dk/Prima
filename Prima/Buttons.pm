@@ -548,10 +548,14 @@ sub update_shape
 {
 	my $self = shift;
 	my @sz = $self->size;
+	my $r = Prima::rect->new_box(-.5,-.5,$sz[0]-1,$sz[1]-1);
+	$$r[0]--, $$r[2]++ unless $sz[0] % 2;
+	$$r[1]--, $$r[3]++ unless $sz[1] % 2;
 	my $shape = $self-> new_path-> round_rect(
-		-.5, -.5, $sz[0]-.5, $sz[1]-.5,
+		@$r,
 		$self-> font-> height
 	)-> region;
+	$shape->combine( Prima::Region->new(box =>[0,0,@sz]), rgnop::Intersect );
 	$self->shape($shape);
 }
 
