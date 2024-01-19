@@ -879,7 +879,7 @@ detail_font_info( PFontInfo f, PFont font, PCachedFont kf, Bool bySize)
 
 	if ( f-> vecname) {
 		if ( bySize)
-			size = font-> size * 10;
+			size = font-> size * 10 + .5;
 		else {
 			height = font-> height * 10;
 			prima_font_init_try_height( &hgs, height, f-> flags. heights_cache ? f-> heights_cache[0] : height);
@@ -897,10 +897,10 @@ AGAIN:
 
 		if ( f-> flags. bad_vector) {
 			/* three fields */
-			sprintf( name, f-> vecname, height / 10, size, font-> width * 10);
+			sprintf( name, f-> vecname, (int)((float)height / 10.0 + 0.5), size, font-> width * 10);
 		} else {
 			/* five fields */
-			sprintf( name, f-> vecname, height / 10, size, 0, 0, font-> width * 10);
+			sprintf( name, f-> vecname, (int)((float)height / 10.0 + 0.5), size, 0, 0, font-> width * 10);
 		}
 		Fdebug("font: construct by %s h=%g, s=%d", bySize ? "size" : "height", (float)height/10, size);
 	} else {
@@ -975,7 +975,7 @@ AGAIN:
 					f-> font. internalLeading = s-> max_bounds. ascent + s-> max_bounds. descent - f-> font. height;
 				} else if ( f-> flags. size) {
 					f-> font. internalLeading = s-> max_bounds. ascent + s-> max_bounds. descent -
-						( f-> font. size * f-> font. yDeviceRes) / 72.0 + 0.5;
+						( f-> font. size * f-> font. yDeviceRes) / 72.0;
 				} else {
 					f-> font. internalLeading = 0;
 				}
@@ -1009,9 +1009,9 @@ AGAIN:
 
 		/* detailing point size and height */
 		if ( bySize) {
-			if ( f-> vecname)
-				f-> font. size = size / 10;
-			else if ( !f-> flags. size)
+			if ( f-> vecname) {
+				f-> font. size = (float) size / 10;
+			} else if ( !f-> flags. size)
 				f-> font. size = font-> size;
 		} else {
 
@@ -1023,9 +1023,9 @@ AGAIN:
 			if ( !f-> flags. size) {
 				if ( XGetFontProperty( s, FXA_POINT_SIZE, &v) && v) {
 					XCHECKPOINT;
-					f-> font. size = ( v < 10) ? 1 : ( v / 10);
+					f-> font. size = ( v < 10) ? 1.0 : ( v / 10.0);
 				} else
-					f-> font. size = ( f-> font. height - f-> font. internalLeading) * 72.0 / f-> font. height + 0.5;
+					f-> font. size = ( f-> font. height - f-> font. internalLeading) * 72.0 / f-> font. height;
 			}
 		}
 		f-> flags. size = true;
@@ -1161,7 +1161,7 @@ query_diff( PFontInfo fi, PFont f, char * lcname, int selector)
 		int a, b;
 		switch ( selector) {
 		case QUERYDIFF_BY_SIZE:
-			a = fi-> font. size;
+			a = fi-> font. size + .5;
 			b = f-> size;
 			break;
 		case QUERYDIFF_BY_HEIGHT:
