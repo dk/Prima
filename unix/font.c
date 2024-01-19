@@ -535,6 +535,7 @@ find_font( int type, PFont font, Matrix matrix)
 	FontKey fk;
 	PCachedFont cf;
 	Bool want_default_pitch = font->pitch == fpDefault;
+	Bool by_size = font->undef.height;
 
 	/* find by font */
 	build_font_key(&fk, font, &s, matrix, type);
@@ -553,30 +554,29 @@ find_font( int type, PFont font, Matrix matrix)
 	/* cache font */
 	hash_store( guts.font_hash, &fk, sizeof( FontKey), cf);
 
-	/* cache by size */
 	f = *font;
-	f.undef.height = 1;
-	f.height = 1;
-	store_font( &f, matrix, type, cf);
-
-	/* cache by height */
-	f = *font;
-	f.undef.size = 1;
-	f.size = 1;
+	if ( by_size ) {
+		/* cache by size */
+		f.undef.height = 1;
+		f.height = 1;
+	} else {
+		/* cache by height */
+		f.undef.size = 1;
+		f.size = 1;
+	}
 	store_font( &f, matrix, type, cf);
 
 	if ( want_default_pitch && font->pitch != fpDefault ) {
 		/* cache by default pitch too */
 		f = *font;
 		f.pitch = fpDefault;
-		f.undef.height = 1;
-		f.height = 1;
-		store_font( &f, matrix, type, cf);
-
-		f = *font;
-		f.pitch = fpDefault;
-		f.undef.size = 1;
-		f.size = 1;
+		if ( by_size ) {
+			f.undef.height = 1;
+			f.height = 1;
+		} else {
+			f.undef.size = 1;
+			f.size = 1;
+		}
 		store_font( &f, matrix, type, cf);
 	}
 
