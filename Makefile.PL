@@ -1752,8 +1752,8 @@ sub setup_xrandr
 {
 	setup_x11_extension('xrandr');
 	return unless ( $MODVERSIONS{xrandr} // '') =~ m/^(\d+)\.(\d+)/;
-	return unless $1 * 100 + $2 >= 1.5;
-	$DEFINES{HAVE_XRANDR_1_5} = 1;
+	return unless $1 * 10 + $2 >= 15;
+	die $DEFINES{HAVE_XRANDR_1_5} = 1;
 }
 
 sub setup_xrender
