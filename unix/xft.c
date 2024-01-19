@@ -504,9 +504,7 @@ prima_xft_match( Font *font, Matrix matrix, Bool by_size, PCachedFont cf)
 			if ( ( f = XftLockFace(x)) != NULL) {
 				TT_OS2 *os2;
 				TT_HoriHeader *hori;
-				float mul = by_size ?
-					font->size / f-> units_per_EM :
-					(float) font->height / f-> height;
+				float mul = (float) font->height / f-> height;
 				if ( ( hori = (TT_HoriHeader*) FT_Get_Sfnt_Table(f, ft_sfnt_hhea))) {
 					font->externalLeading = hori->Line_Gap * mul + .5;
 					XFTdebug("set external leading: %d", font->externalLeading);
