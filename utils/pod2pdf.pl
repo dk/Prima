@@ -95,7 +95,7 @@ if ( $ok ) {
 	die "Printing failed\n";
 }
 
-=cut
+=pod
 
 =head1 NAME
 

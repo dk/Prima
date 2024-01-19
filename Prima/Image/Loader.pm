@@ -250,6 +250,8 @@ Return the filename or the file handle passed to the C<new> call.
 		die $err;
 	}
 
+=over
+
 =item new FILENAME|FILEHANDLE, %OPTIONS
 
 Opens a filename or a file handle and an image saving handler. The C<%OPTIONS>
@@ -264,6 +266,8 @@ Returns either a new saver object, or C<undef> and the error string.
 Saves the next image frame.
 
 Returns a success boolean flag and an eventual error string
+
+=back
 
 =head1 AUTHOR
 

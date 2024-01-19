@@ -1838,8 +1838,6 @@ Ends formatting session
 
 =back
 
-=back
-
 =head2 Printing
 
 The method C<print> prints the pod content on a target canvas.
