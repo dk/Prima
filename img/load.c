@@ -748,7 +748,11 @@ apc_img_load( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq,  
 	/* fix frames, if needed */
 	if ( fi->loadExtras && fix_frames && fi->frameCount >= 0 ) {
 		for ( i = 0; i < ret->count; i++) {
-			HV * profile = ( HV* )SvRV((( PAnyObject) ret->items[i])-> mate);
+			HV * profile;
+			PAnyObject o;
+			if ( !( o = (PAnyObject) ret->items[i]))
+				continue;
+			profile = ( HV*)SvRV(o-> mate);
 			if ( pexist(extras)) {
 				SV * sv = pget_sv(extras);
 				if ( SvOK(sv) && SvROK( sv) && SvTYPE( SvRV( sv)) == SVt_PVHV) {
