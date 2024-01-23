@@ -34,7 +34,7 @@ fq_load(FcPattern *pattern, PCachedFont kf)
 
 	switch (FcPatternGetString(pattern, FC_FILE, 0, &filename)) {
 	case FcResultNoMatch:
-		if (FcPatternGetFTFace (pattern, FC_FT_FACE, 0, &kf->ft_face) != FcResultMatch || !&kf->ft_face)
+		if (FcPatternGetFTFace (pattern, FC_FT_FACE, 0, &kf->ft_face) != FcResultMatch || !kf->ft_face)
 			return false;
 		break;
 	case FcResultMatch:
@@ -534,18 +534,16 @@ Point *
 prima_fq_get_text_box( Handle self, const char * text, int len, int flags)
 {
 	Point ovx;
-	return prima_get_text_box(self, ovx,
-		prima_fq_get_text_width( self, text, len, flags, &ovx)
-	);
+	int w = prima_fq_get_text_width( self, text, len, flags, &ovx);
+	return prima_get_text_box(self, ovx, w);
 }
 
 Point *
 prima_fq_get_glyphs_box( Handle self, PGlyphsOutRec t)
 {
 	Point ovx;
-	return prima_get_text_box(self, ovx,
-		prima_fq_get_glyphs_width(self, t, &ovx)
-	);
+	int w = prima_fq_get_glyphs_width(self, t, &ovx);
+	return prima_get_text_box(self, ovx, w);
 }
 
 int
