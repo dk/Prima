@@ -589,6 +589,8 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 SUCCESS:
 	ret = true;
 FAIL:
+	if ( !ret && fi->frameCount < 0 )
+		fi->frameCount = l->toplevel->count; /* failure, not a EOF */
 	if (himg) heif_image_release(himg);
 	if (hdo) heif_decoding_options_free(hdo);
 	if ( h && h != l->curr_toplevel_handle )
