@@ -107,7 +107,6 @@ init( PImgCodecInfo * info, void * param)
 
 		n = GET_DESCRIPTORS(heif_compression_undefined, NULL,
 			(const struct heif_encoder_descriptor**) enc, 1024);
-		printf("DECOMP %d\n", n);
 		for ( i = 0; i < n; i++) {
 			char buf[2048], *compstr;
 			const char *name, *shrt;
