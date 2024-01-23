@@ -73,18 +73,42 @@ load_defaults( PImgCodec c)
 	return profile;
 }
 
+#if LIBHEIF_NUMERIC_VERSION >= ((1<<24) | (15<<16) | (0<<8) | 0)
+#define HAS_V1_15_API
+#endif
+
+#define GET_DESCRIPTORS compat_get_encoder_descriptors
+static int
+compat_get_encoder_descriptors(enum heif_compression_format format_filter,
+                                 const char* name_filter,
+                                 const struct heif_encoder_descriptor** out_encoders,
+                                 int count)
+{
+	int n;
+	struct heif_context*ctx = heif_context_alloc();
+#ifdef HAS_V1_15_API
+	n = heif_get_encoder_descriptors(format_filter, name_filter, out_encoders, count);
+#else
+	n = heif_context_get_encoder_descriptors(ctx, format_filter, name_filter, out_encoders, count);
+#endif
+	heif_context_free(ctx);
+	return n;
+}
+
+
 static void *
 init( PImgCodecInfo * info, void * param)
 {
+	int feat = 0;
 	*info = &codec_info;
 	{
-		struct heif_context*ctx = heif_context_alloc();
 		struct heif_encoder_descriptor *enc[1024];
-		int i, n, feat, got_hevc = 0;
+		int i, n, got_hevc = 0;
 
-		n = heif_context_get_encoder_descriptors(ctx, heif_compression_undefined, NULL,
+		n = GET_DESCRIPTORS(heif_compression_undefined, NULL,
 			(const struct heif_encoder_descriptor**) enc, 1024);
-		for ( i = feat = 0; i < n; i++) {
+		printf("DECOMP %d\n", n);
+		for ( i = 0; i < n; i++) {
 			char buf[2048], *compstr;
 			const char *name, *shrt;
 			enum heif_compression_format comp;
@@ -109,6 +133,8 @@ init( PImgCodecInfo * info, void * param)
 				compstr = "AV1";
 				ext[2] = "avif";
 				break;
+			case heif_compression_JPEG:
+			case heif_compression_JPEG2000:
 			default:
 				continue;
 			}
@@ -129,15 +155,50 @@ init( PImgCodecInfo * info, void * param)
 			buf[2047] = 0;
 			features[feat++] = duplicate_string(buf);
 
+#if !defined(HAS_V1_15_API)
 			if ( heif_have_decoder_for_format(comp)) {
 				snprintf(buf, 2048, "decoder %s/%s", compstr, shrt);
 				buf[2047] = 0;
 				features[feat++] = duplicate_string(buf);
 			}
+#endif
 		}
 		if ( got_hevc ) default_compression = heif_compression_HEVC;
-		heif_context_free(ctx);
 	}
+
+#if defined(HAS_V1_15_API)
+	{
+		struct heif_decoder_descriptor *dec[1024];
+		int i, n;
+
+		n = heif_get_decoder_descriptors(heif_compression_undefined,
+			(const struct heif_decoder_descriptor**) dec, 1024);
+		for ( i = 0; i < n; i++) {
+			char buf[2048];
+			const char *name, *shrt;
+
+			if ( feat >= MAX_FEATURES) {
+				features[MAX_FEATURES] = NULL;
+				break;
+			}
+
+			name     = heif_decoder_descriptor_get_name(dec[i]);
+			shrt     = heif_decoder_descriptor_get_id_name(dec[i]);
+			if (strstr(shrt, "jpeg") != NULL)
+				continue;
+
+
+			snprintf(buf, 2048, "decoder %s/%s",
+				shrt,
+				name
+			);
+			buf[2047] = 0;
+			features[feat++] = duplicate_string(buf);
+
+		}
+	}
+#endif
+
 	if ( heif_have_encoder_for_format(default_compression))
 		codec_info.IOFlags |= IMG_SAVE_TO_FILE | IMG_SAVE_TO_STREAM | IMG_SAVE_MULTIFRAME;
 	return (void*)1;
