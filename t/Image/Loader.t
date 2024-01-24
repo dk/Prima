@@ -98,12 +98,22 @@ sub test_singleframe_codec
 }
 
 sub test_multiframe_codec
-{
+{SKIP:{
 	my ($codecID, $name) = @_;
 	my %saveopts;
 
 	if ( $name eq 'HEIF') {
 		$saveopts{quality} = 'lossless';
+		my $ok = 0;
+		my $info = Prima::Image->has_codec('HEIF') or goto FAIL;
+		goto FAIL unless length $info->{saveInput}->{encoder}; # codec cannot suggest a good plugin that can both load and save
+		$ok = 0;
+	FAIL:
+		unless ($ok) {
+			$info //= {};
+			diag($_) for @{ $info->{featuresSupported} // [] };
+			skip("HEIF cannot both load and save with the same codec", 1);
+		}
 	}
 
 	my $buf1 = '';
@@ -192,7 +202,7 @@ sub test_multiframe_codec
 	ok(!$i, "$name/loader: image(3) is null");
 
 	close F;
-}
+}}
 
 my $tests_run = 0;
 for ( @{ Prima::Image->codecs }) {

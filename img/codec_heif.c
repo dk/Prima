@@ -75,7 +75,7 @@ load_defaults( PImgCodec c)
 }
 
 #if LIBHEIF_NUMERIC_VERSION >= ((1<<24) | (15<<16) | (0<<8) | 0)
-#define HAS_V1_15_API
+//#define HAS_V1_15_API
 #endif
 
 static int
@@ -158,15 +158,19 @@ init( PImgCodecInfo * info, void * param)
 			features[feat++] = duplicate_string(buf);
 
 #if !defined(HAS_V1_15_API)
+			/* default plugin is always NULL because we cannot say whether
+			something a random encoder creates can be read by a random decoder */
 			if ( heif_have_decoder_for_format(comp)) {
-				snprintf(buf, 2048, "decoder %s (%s)", compstr, shrt);
+				snprintf(buf, 2048, "decoder ? %s ()", compstr);
 				buf[2047] = 0;
 				features[feat++] = duplicate_string(buf);
-				strlcpy( default_plugin, shrt, sizeof(default_plugin));
 				codec_info.IOFlags |= IMG_SAVE_TO_FILE | IMG_SAVE_TO_STREAM | IMG_SAVE_MULTIFRAME;
 			}
 #else
-			prima_hash_store(encoders, shrt, strlen(shrt), (void*)1);
+			{
+				intptr_t v = (intptr_t) comp;
+				prima_hash_store(encoders, shrt, strlen(shrt), (void*)v);
+			}
 #endif
 		}
 		if ( n > 0 )
@@ -182,7 +186,8 @@ init( PImgCodecInfo * info, void * param)
 			(const struct heif_decoder_descriptor**) dec, 1024);
 		for ( i = 0; i < n; i++) {
 			char buf[2048];
-			const char *name, *shrt;
+			const char *name, *shrt, *compstr = "?";
+			intptr_t v;
 
 			if ( feat >= MAX_FEATURES) {
 				features[MAX_FEATURES] = NULL;
@@ -194,15 +199,30 @@ init( PImgCodecInfo * info, void * param)
 			if (strstr(shrt, "jpeg") != NULL)
 				continue;
 
-			snprintf(buf, 2048, "decoder %s (%s)",
-				shrt,
-				name
-			);
+			v = (intptr_t) prima_hash_fetch(encoders, shrt, strlen(shrt));
+			switch ((int) v) {
+			case heif_compression_HEVC:
+				compstr = "HEVC";
+				break;
+			case heif_compression_AVC:
+				compstr = "AVC";
+				break;
+			case heif_compression_AV1:
+				compstr = "AV1";
+				break;
+			default:
+				if ( strcmp( shrt, "dav1d" ) == 0 )
+					compstr = "AV1";
+				else if ( strcmp( shrt, "ffmpeg" ) == 0 )
+					compstr = "HEVC";
+			}
+
+			snprintf(buf, 2048, "decoder %s %s (%s)", shrt, compstr, name);
 			buf[2047] = 0;
 			features[feat++] = duplicate_string(buf);
 
 			if (
-				prima_hash_fetch(encoders, shrt, strlen(shrt)) && (
+				v && (
 					default_plugin[0] == 0 || (
 						hevc_plugin[0] != 0 &&
 						( strcmp( hevc_plugin, shrt ) == 0)
