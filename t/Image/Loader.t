@@ -100,17 +100,22 @@ sub test_singleframe_codec
 sub test_multiframe_codec
 {
 	my ($codecID, $name) = @_;
+	my %saveopts;
+
+	if ( $name eq 'HEIF') {
+		$saveopts{quality} = 'lossless';
+	}
 
 	my $buf1 = '';
 	open F, "+>", \ $buf1 or die $!;
 
-	my $ok = Prima::Image->save( \*F, images => \@ix, codecID => $codecID);
+	my $ok = Prima::Image->save( \*F, images => \@ix, codecID => $codecID, %saveopts);
 	ok( $ok, "$name: traditional save".( $ok ? '' : ":$@"));
 
 	my $buf2 = '';
 	open G, "+>", \ $buf2 or die $!;
 
-	my ($s,$err) = Prima::Image::Saver->new( \*G, codecID => $codecID, frames => scalar(@ix) ) ;
+	my ($s,$err) = Prima::Image::Saver->new( \*G, codecID => $codecID, frames => scalar(@ix), %saveopts ) ;
 	ok( $s, "$name: open_save".($s ? '' : ":$err"));
 
 	for (0..2) {

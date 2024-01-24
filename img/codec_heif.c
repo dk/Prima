@@ -289,7 +289,9 @@ struct heif_reader reader = {
 	.wait_for_file_size = heif_wait_for_file_size
 };
 
-#define SET_ERROR(e) if (1) { strlcpy(fi->errbuf,e,256); goto FAIL; }
+#define SET_ERROR(e) if (1) { \
+	snprintf(fi->errbuf, 256, "%s (at %s line %d)", e, __FILE__, __LINE__);\
+	goto FAIL; }
 #define SET_HEIF_ERROR SET_ERROR(l->error.message)
 #define CHECK_HEIF_ERROR if (l->error.code != heif_error_Ok) SET_HEIF_ERROR
 #define CALL l->error=
@@ -1003,20 +1005,6 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 	enum heif_chroma chroma;
 	char *plugin;
 
-	if ( pexist(quality)) {
-		char * c = pget_c(quality);
-		if ( strcmp(c, "lossless") == 0) {
-			CALL heif_encoder_set_lossless(encoder, 1);
-		} else {
-			char * err = NULL;
-			int quality = strtol(c, &err, 10);
-			if ( *err || quality < 0 || quality > 100 )
-				SET_ERROR("quality must be set either to an integer between 0 and 100 or to 'lossless'");
-			CALL heif_encoder_set_lossy_quality(encoder, quality);
-		}
-	}
-	CHECK_HEIF_ERROR;
-
 	if ( pexist( encoder )) {
 		plugin = pget_c(encoder);
 		if ( plugin[0] == 0 )
@@ -1027,6 +1015,22 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 		plugin = NULL;
 	if ( !apply_encoder_options(fi, plugin, &encoder))
 		goto FAIL;
+
+	if ( pexist(quality)) {
+		char * c = pget_c(quality);
+		if ( strcmp(c, "lossless") == 0) {
+			CALL heif_encoder_set_lossless(encoder, 1);
+			CHECK_HEIF_ERROR;
+		} else {
+			char * err = NULL;
+			int quality = strtol(c, &err, 10);
+			if ( *err || quality < 0 || quality > 100 )
+				SET_ERROR("quality must be set either to an integer between 0 and 100 or to 'lossless'");
+			CALL heif_encoder_set_lossy_quality(encoder, quality);
+			CHECK_HEIF_ERROR;
+		}
+	}
+
 
 	options = heif_encoding_options_alloc();
 
