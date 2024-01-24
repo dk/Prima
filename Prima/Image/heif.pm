@@ -32,8 +32,8 @@ sub on_change
 	$self-> {image} = $image;
 	my $e = $self-> {data}  = \ %{ $image->{extras} // {} };
 
-	if ( exists $e->{compression} ) {
-		$self->Encoder->text($e->{compression});
+	if ( exists $e->{encoder} ) {
+		$self->Encoder->text($e->{encoder});
 		$self->Encoder->notify(q(Change));
 	}
 	if ( exists $e->{quality} ) {
@@ -195,15 +195,13 @@ sub save_dialog
 	my $curr_encoder = 0;
 	my %keys;
 	for ( @{ $codec->{featuresSupported} // [] } ) {
-		next unless m[^encoder\s+(\w+)\s(\w+)[^\(]*\((.*)\)$];
+		next unless m[^encoder\s+(\w+)\s\w+[^\(]*\((.*)\)$];
 		push @encoders, {
-			compression => $1,
-			text        => "$1/$2",
-			key         => $2,
-			description => $3,
+			key         => $1,
+			description => $2,
 		};
 		$curr_encoder = $#encoders if $1 eq $codec->{saveInput}->{encoder};
-		$keys{$2}++;
+		$keys{$1}++;
 	}
 	return unless @encoders;
 
@@ -228,13 +226,13 @@ sub save_dialog
 		OK      => { onClick => \&OK_Click },
 		Cancel  => { onClick => \&Cancel_Click },
 		Encoder => {
-			items       => [ map { $_->{text} } @encoders ],
-			focusedItem => $curr_encoder,
+			items       => [ map { $_->{key} } @encoders ],
+			text        => $encoders[$curr_encoder]->{key},
 			onChange    => sub {
 				my $self = shift;
 				my $v =  $encoders[ $self-> focusedItem ] // {};
 				$self-> owner-> Description-> text( $v->{description} // '' );
-				$dialog->{data}->{compression} = $v->{compression};
+				$dialog->{data}->{encoder} = $v->{key};
 			},
 		},
 		Properties => {
@@ -268,7 +266,7 @@ sub save_dialog
 # 	my $image = Prima::Image->new;
 # 	$image->{extras} = {
 # 		'x265.quality' => 30,
-# 		compression    => 'AV1',
+# 		encoder    => 'x265',
 # 	};
 # 	my ($codec) = grep { $_->{name} eq 'libheif' } @{ Prima::Image->codecs };
 # 	die "no heif codec" unless $codec;

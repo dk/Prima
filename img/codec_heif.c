@@ -163,6 +163,7 @@ init( PImgCodecInfo * info, void * param)
 				buf[2047] = 0;
 				features[feat++] = duplicate_string(buf);
 				strlcpy( default_plugin, shrt, sizeof(default_plugin));
+				codec_info.IOFlags |= IMG_SAVE_TO_FILE | IMG_SAVE_TO_STREAM | IMG_SAVE_MULTIFRAME;
 			}
 #else
 			prima_hash_store(encoders, shrt, strlen(shrt), (void*)1);
