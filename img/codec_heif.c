@@ -135,8 +135,6 @@ init( PImgCodecInfo * info, void * param)
 				compstr = "AV1";
 				ext[2] = "avif";
 				break;
-			case heif_compression_JPEG:
-			case heif_compression_JPEG2000:
 			default:
 				continue;
 			}
