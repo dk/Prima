@@ -195,7 +195,7 @@ sub save_dialog
 	my $curr_encoder = 0;
 	my %keys;
 	for ( @{ $codec->{featuresSupported} // [] } ) {
-		next unless m[^encoder\s+(\w+)/(\w+)[^\(]*\((.*)\)$];
+		next unless m[^encoder\s+(\w+)\s(\w+)[^\(]*\((.*)\)$];
 		push @encoders, {
 			compression => $1,
 			text        => "$1/$2",

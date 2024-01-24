@@ -35,7 +35,8 @@ static char * loadOutput[] = {
 	NULL
 };
 
-#define MAX_FEATURES 32
+#define MAX_ENCODERS 32
+#define MAX_FEATURES (MAX_ENCODERS*2)
 static char * features[MAX_FEATURES+1];
 
 static char * mime[] = {
@@ -56,13 +57,13 @@ static ImgCodecInfo codec_info = {
 	features,    /* features  */
 	"Prima::Image::heif",     /* module */
 	"Prima::Image::heif",     /* package */
-	IMG_LOAD_FROM_FILE | IMG_LOAD_FROM_STREAM | IMG_LOAD_MULTIFRAME,
+	0,
 	bpp, /* save types */
 	loadOutput,
 	mime
 };
 
-static enum heif_compression_format default_compression = heif_compression_HEVC;
+static char default_plugin[256] = "";
 
 static HV *
 load_defaults( PImgCodec c)
@@ -77,21 +78,22 @@ load_defaults( PImgCodec c)
 #define HAS_V1_15_API
 #endif
 
-#define GET_DESCRIPTORS compat_get_encoder_descriptors
 static int
-compat_get_encoder_descriptors(enum heif_compression_format format_filter,
-                                 const char* name_filter,
-                                 const struct heif_encoder_descriptor** out_encoders,
-                                 int count)
-{
+get_encoder_descriptors(
+	struct heif_context*_ctx,
+	enum heif_compression_format format_filter,
+	const char* name_filter,
+	const struct heif_encoder_descriptor** out_encoders,
+	int count
+) {
 	int n;
-	struct heif_context*ctx = heif_context_alloc();
+	struct heif_context*ctx = _ctx ? _ctx : heif_context_alloc();
 #ifdef HAS_V1_15_API
 	n = heif_get_encoder_descriptors(format_filter, name_filter, out_encoders, count);
 #else
 	n = heif_context_get_encoder_descriptors(ctx, format_filter, name_filter, out_encoders, count);
 #endif
-	heif_context_free(ctx);
+	if (!_ctx) heif_context_free(ctx);
 	return n;
 }
 
@@ -100,12 +102,14 @@ static void *
 init( PImgCodecInfo * info, void * param)
 {
 	int feat = 0;
+	char hevc_plugin[256] = "";
+	PHash encoders = prima_hash_create();
 	*info = &codec_info;
 	{
 		struct heif_encoder_descriptor *enc[1024];
-		int i, n, got_hevc = 0;
+		int i, n;
 
-		n = GET_DESCRIPTORS(heif_compression_undefined, NULL,
+		n = get_encoder_descriptors(NULL, heif_compression_undefined, NULL,
 			(const struct heif_encoder_descriptor**) enc, 1024);
 		for ( i = 0; i < n; i++) {
 			char buf[2048], *compstr;
@@ -122,7 +126,6 @@ init( PImgCodecInfo * info, void * param)
 			switch ( comp ) {
 			case heif_compression_HEVC:
 				compstr = "HEVC";
-				got_hevc = 1;
 				break;
 			case heif_compression_AVC:
 				compstr = "AVC";
@@ -137,16 +140,18 @@ init( PImgCodecInfo * info, void * param)
 			default:
 				continue;
 			}
-			default_compression = comp;
 
 			name     = heif_encoder_descriptor_get_name(enc[i]);
 			shrt     = heif_encoder_descriptor_get_id_name(enc[i]);
 			lossy    = heif_encoder_descriptor_supports_lossy_compression(enc[i]);
 			lossless = heif_encoder_descriptor_supports_lossless_compression(enc[i]);
 
-			snprintf(buf, 2048, "encoder %s/%s%s%s (%s)",
-				compstr,
+			if ( comp == heif_compression_HEVC )
+				strlcpy( hevc_plugin, shrt, sizeof(hevc_plugin));
+
+			snprintf(buf, 2048, "encoder %s %s%s%s (%s)",
 				shrt,
+				compstr,
 				lossy    ? " lossy"    : "",
 				lossless ? " lossless" : "",
 				name
@@ -156,13 +161,17 @@ init( PImgCodecInfo * info, void * param)
 
 #if !defined(HAS_V1_15_API)
 			if ( heif_have_decoder_for_format(comp)) {
-				snprintf(buf, 2048, "decoder %s/%s", compstr, shrt);
+				snprintf(buf, 2048, "decoder %s (%s)", compstr, shrt);
 				buf[2047] = 0;
 				features[feat++] = duplicate_string(buf);
+				strlcpy( default_plugin, shrt, sizeof(default_plugin));
 			}
+#else
+			prima_hash_store(encoders, shrt, strlen(shrt), (void*)1);
 #endif
 		}
-		if ( got_hevc ) default_compression = heif_compression_HEVC;
+		if ( n > 0 )
+			codec_info.IOFlags |= IMG_LOAD_FROM_FILE | IMG_LOAD_FROM_STREAM | IMG_LOAD_MULTIFRAME;
 	}
 
 #if defined(HAS_V1_15_API)
@@ -186,20 +195,31 @@ init( PImgCodecInfo * info, void * param)
 			if (strstr(shrt, "jpeg") != NULL)
 				continue;
 
-
-			snprintf(buf, 2048, "decoder %s/%s",
+			snprintf(buf, 2048, "decoder %s (%s)",
 				shrt,
 				name
 			);
 			buf[2047] = 0;
 			features[feat++] = duplicate_string(buf);
 
+			if (
+				prima_hash_fetch(encoders, shrt, strlen(shrt)) && (
+					default_plugin[0] == 0 || (
+						hevc_plugin[0] != 0 &&
+						( strcmp( hevc_plugin, shrt ) == 0)
+					)
+				)
+			) {
+				strlcpy( default_plugin, shrt, sizeof(default_plugin));
+			}
 		}
+		if ( n > 0 )
+			codec_info.IOFlags |= IMG_SAVE_TO_FILE | IMG_SAVE_TO_STREAM | IMG_SAVE_MULTIFRAME;
 	}
 #endif
 
-	if ( heif_have_encoder_for_format(default_compression))
-		codec_info.IOFlags |= IMG_SAVE_TO_FILE | IMG_SAVE_TO_STREAM | IMG_SAVE_MULTIFRAME;
+	prima_hash_destroy( encoders, false );
+
 	return (void*)1;
 }
 
@@ -684,13 +704,7 @@ save_defaults( PImgCodec c)
 	struct heif_encoder* encoder = NULL;
 	struct heif_context* ctx;
 
-	switch (default_compression) {
-	case heif_compression_HEVC: pset_c(encoder, "HEVC"); break;
-	case heif_compression_AVC:  pset_c(encoder, "AVC"); break;
-	case heif_compression_AV1:  pset_c(encoder, "AV1"); break;
-	default: break;
-	}
-
+	pset_c(encoder, default_plugin);
 	pset_i(is_primary, 0);
 	pset_c(quality, "50"); /* x265.quality and aom.quality default values are 50 */
 	pset_i(premultiplied_alpha, 0);
@@ -700,7 +714,7 @@ save_defaults( PImgCodec c)
 	if (( ctx = heif_context_alloc()) != NULL) {
 		struct heif_encoder_descriptor *enc[1024];
 		int i, n;
-		n = heif_context_get_encoder_descriptors(ctx, heif_compression_undefined, NULL,
+		n = get_encoder_descriptors(ctx, heif_compression_undefined, NULL,
 			(const struct heif_encoder_descriptor**) enc, 1024);
 		for ( i = 0; i < n; i++) {
 			const char * shrt = heif_encoder_descriptor_get_id_name(enc[i]);
@@ -914,32 +928,26 @@ FAIL:
 }
 
 static Bool
-apply_encoder_options( PImgSaveFileInstance fi, enum heif_compression_format compression, struct heif_encoder* encoder)
+apply_encoder_options( PImgSaveFileInstance fi, char * plugin, struct heif_encoder** encoder)
 {
 	SV **tmp;
 	HV * profile = fi-> extras;
 	SaveRec * l = ( SaveRec *) fi-> instance;
 	const struct heif_encoder_parameter*const* list;
-	const char * shrt = NULL, * enc_name;
-	int i, n_descriptors;
-	struct heif_encoder_descriptor* out_encoders[16];
+	const char * shrt = NULL;
+	struct heif_encoder_descriptor* descr;
 
-	n_descriptors = heif_context_get_encoder_descriptors(
-		l->ctx, compression, NULL,
-		(const struct heif_encoder_descriptor**) out_encoders, 16
-	);
-	enc_name = heif_encoder_get_name(encoder);
-	for ( i = 0; i < n_descriptors; i++) {
-		const char *descr_name = heif_encoder_descriptor_get_name(out_encoders[i]);
-		if ( descr_name && strcmp(descr_name, enc_name) == 0) {
-			shrt = heif_encoder_descriptor_get_id_name(out_encoders[i]);
-			break;
-		}
-	}
-	if ( !shrt )
+	if (get_encoder_descriptors(
+		l->ctx, heif_compression_undefined, plugin,
+		(const struct heif_encoder_descriptor**) &descr, 1
+	) <= 0 )
+		SET_ERROR("cannot find an encoder");
+	if ( !( shrt = heif_encoder_descriptor_get_id_name(descr)))
 		SET_ERROR("cannot find encoder descriptor");
+	CALL heif_context_get_encoder(l->ctx, descr, encoder);
+	CHECK_HEIF_ERROR;
 
-	list = heif_encoder_list_parameters(encoder);
+	list = heif_encoder_list_parameters(*encoder);
 	while ( list && *list) {
 		char buf[128];
 		const char* name = heif_encoder_parameter_get_name(*list);
@@ -955,13 +963,13 @@ apply_encoder_options( PImgSaveFileInstance fi, enum heif_compression_format com
 
 		switch (type) {
 		case heif_encoder_parameter_type_integer:
-			CALL heif_encoder_set_parameter_integer(encoder, name, SvIV(sv));
+			CALL heif_encoder_set_parameter_integer(*encoder, name, SvIV(sv));
 			break;
 		case heif_encoder_parameter_type_boolean:
-			CALL heif_encoder_set_parameter_boolean(encoder, name, SvIV(sv));
+			CALL heif_encoder_set_parameter_boolean(*encoder, name, SvIV(sv));
 			break;
 		case heif_encoder_parameter_type_string:
-			CALL heif_encoder_set_parameter_string(encoder, name, SvPV_nolen(sv));
+			CALL heif_encoder_set_parameter_string(*encoder, name, SvPV_nolen(sv));
 			break;
 		}
 		if (l->error.code != heif_error_Ok) {
@@ -985,7 +993,6 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 	SaveRec * l = ( SaveRec *) fi-> instance;
 	struct heif_encoder* encoder = NULL;
 	HV * profile = fi-> extras;
-	enum heif_compression_format compression;
 	struct heif_image* himg = NULL;
 	PIcon i = ( PIcon) fi-> object;
 	Bool icon;
@@ -994,23 +1001,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 	struct heif_encoding_options* options = NULL;
 	enum heif_colorspace colorspace;
 	enum heif_chroma chroma;
-
-	compression = default_compression;
-	if ( pexist(encoder)) {
-		char * c = pget_c(encoder);
-		if ( strcmp(c, "HEVC") == 0)
-			compression = heif_compression_HEVC;
-		else if ( strcmp(c, "AVC") == 0)
-			compression = heif_compression_AVC;
-		else if ( strcmp(c, "AV1") == 0)
-			compression = heif_compression_AV1;
-		else
-			SET_ERROR("bad encoder, must be one of: HEVC, AVC, AV1");
-	}
-	if ( !heif_have_encoder_for_format(compression))
-		SET_ERROR("encoder is not available");
-	CALL heif_context_get_encoder_for_format(l->ctx, compression, &encoder);
-	CHECK_HEIF_ERROR;
+	char *plugin;
 
 	if ( pexist(quality)) {
 		char * c = pget_c(quality);
@@ -1026,7 +1017,15 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 	}
 	CHECK_HEIF_ERROR;
 
-	if ( !apply_encoder_options(fi, compression, encoder))
+	if ( pexist( encoder )) {
+		plugin = pget_c(encoder);
+		if ( plugin[0] == 0 )
+			plugin = NULL;
+	} else if ( default_plugin[0] != 0 )
+		plugin = default_plugin;
+	else
+		plugin = NULL;
+	if ( !apply_encoder_options(fi, plugin, &encoder))
 		goto FAIL;
 
 	options = heif_encoding_options_alloc();
