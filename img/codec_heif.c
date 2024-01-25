@@ -157,21 +157,10 @@ init( PImgCodecInfo * info, void * param)
 			buf[2047] = 0;
 			features[feat++] = duplicate_string(buf);
 
-#if !defined(HAS_V1_15_API)
-			/* default plugin is always NULL because we cannot say whether
-			something a random encoder creates can be read by a random decoder */
-			if ( heif_have_decoder_for_format(comp)) {
-				snprintf(buf, 2048, "decoder ? %s ()", compstr);
-				buf[2047] = 0;
-				features[feat++] = duplicate_string(buf);
-				codec_info.IOFlags |= IMG_SAVE_TO_FILE | IMG_SAVE_TO_STREAM | IMG_SAVE_MULTIFRAME;
-			}
-#else
 			{
 				intptr_t v = (intptr_t) comp;
 				prima_hash_store(encoders, shrt, strlen(shrt), (void*)v);
 			}
-#endif
 		}
 		if ( n > 0 )
 			codec_info.IOFlags |= IMG_LOAD_FROM_FILE | IMG_LOAD_FROM_STREAM | IMG_LOAD_MULTIFRAME;
@@ -234,6 +223,46 @@ init( PImgCodecInfo * info, void * param)
 		}
 		if ( n > 0 )
 			codec_info.IOFlags |= IMG_SAVE_TO_FILE | IMG_SAVE_TO_STREAM | IMG_SAVE_MULTIFRAME;
+	}
+#else
+	{
+		int i;
+		char * compstr;
+		enum heif_compression_format comp[3] = {
+			heif_compression_HEVC,
+			heif_compression_AVC,
+			heif_compression_AV1
+		};
+		for ( i = 0; i < 3; i++) {
+			switch ( comp[i] ) {
+			case heif_compression_HEVC:
+				compstr = "HEVC";
+				break;
+			case heif_compression_AVC:
+				compstr = "AVC";
+				break;
+			case heif_compression_AV1:
+				compstr = "AV1";
+				break;
+			default:
+				continue;
+			}
+
+			/* default plugin is always NULL because we cannot say whether
+			something a random encoder creates can be read by a random decoder */
+			if ( heif_have_decoder_for_format(comp[i])) {
+				char buf[2048];
+				snprintf(buf, 2048, "decoder ? %s ()", compstr);
+				buf[2047] = 0;
+				codec_info.IOFlags |= IMG_SAVE_TO_FILE | IMG_SAVE_TO_STREAM | IMG_SAVE_MULTIFRAME;
+
+				if ( feat >= MAX_FEATURES) {
+					features[MAX_FEATURES] = NULL;
+					break;
+				} else
+					features[feat++] = duplicate_string(buf);
+			}
+		}
 	}
 #endif
 
