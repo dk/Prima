@@ -580,6 +580,9 @@ make_colormap( PRGBColor r, int sz)
 	if ( sz <= 128) psz = 128; else
 		psz = 256;
 	ret = MakeMapObject( psz, NULL);
+#if defined(GIFLIB_MAJOR) && GIFLIB_MAJOR >= 5
+	ret->SortFlag = 0;
+#endif
 	if ( !ret) return NULL;
 	c = ret-> Colors;
 	for ( j = 0; j < sz; j++) {
