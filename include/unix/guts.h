@@ -1931,4 +1931,7 @@ prima_ft_get_glyph_bitmap( FT_Face face, FT_UInt index, FT_Int32 flags, PPoint o
 extern Bool
 prima_ft_text_shaper_harfbuzz( FT_Face face, PTextShapeRec r);
 
+extern void
+prima_ft_detail_tt_font( FT_Face face, PFont font, float mul);
+
 #endif

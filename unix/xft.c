@@ -55,8 +55,6 @@ TO DO
 #ifndef WITH_FREETYPE
 #error "panic: WITH_FREETYPE is not defined"
 #endif
-#include FT_TRUETYPE_TABLES_H
-#include FT_TRUETYPE_TAGS_H
 
 #ifdef WITH_HARFBUZZ
 #include <harfbuzz/hb.h>
@@ -497,27 +495,16 @@ prima_xft_match( Font *font, Matrix matrix, Bool by_size, PCachedFont cf)
 		font->underlinePosition  = -xf-> descent;
 		font->underlineThickness = (font->height > 16) ? font->height / 16 : 1;
 
-		if ( font->pitch != fpFixed) {
-			/* get TTF and OTF metrics so these match win32 ones more or less */
+		{
 			FT_Face f;
 			XftFont *x = kf_base ? kf_base->xft : xf;
 			if ( ( f = XftLockFace(x)) != NULL) {
-				TT_OS2 *os2;
-				TT_HoriHeader *hori;
-				float mul = (float) font->height / f-> height;
-				if ( ( hori = (TT_HoriHeader*) FT_Get_Sfnt_Table(f, ft_sfnt_hhea))) {
-					font->externalLeading = hori->Line_Gap * mul + .5;
-					XFTdebug("set external leading: %d", font->externalLeading);
-				}
-				if ( ( os2  = (TT_OS2*) FT_Get_Sfnt_Table(f, ft_sfnt_os2 ))) {
-					font->width           = os2->xAvgCharWidth * mul + .5;
-					font->internalLeading = (f-> height - f-> units_per_EM) * mul + .5;
-					XFTdebug("set width: %d and internal leading: %d", font->width, font->internalLeading);
-				}
+				prima_ft_detail_tt_font( f, font, (float) font->height / f-> height );
 				XftUnlockFace(x);
 			}
-		} else
-			font->width = font->maximalWidth;
+			if ( font->pitch == fpFixed)
+				font->width = font->maximalWidth;
+		}
 	} else
 		font-> width = ( requested_font.width > 0 ) ? requested_font.width : base_width;
 

@@ -7,9 +7,6 @@ check memory leaks
 
 #ifdef USE_FONTQUERY
 
-#include FT_TRUETYPE_TABLES_H
-#include FT_TRUETYPE_TAGS_H
-
 #define FQdebug(...) if (pguts->debug & DEBUG_FONTS) prima_debug2("fq", __VA_ARGS__)
 
 #define MY_MATRIX (PDrawable(self)->current_state.matrix)
@@ -116,21 +113,11 @@ fill_synthetic_fields( FT_Face f, PFont font, Bool by_size)
 	font->descent         = font->height - font->ascent;
 	font->internalLeading = (f-> height - f-> units_per_EM) * mul + .5;
 	font->maximalWidth    = f-> max_advance_width * mul + .5;
+
 	font->width           = font->height; /* XXX bitmap fonts? */
 	font->externalLeading = (f-> bbox.yMax - f->bbox.yMin - f-> height) * mul + .5;
-
-	{
-		/* get TTF and OTF metrics so these match win32 ones more or less */
-		TT_OS2 *os2;
-		TT_HoriHeader *hori;
-		if ( ( hori = (TT_HoriHeader*) FT_Get_Sfnt_Table(f, ft_sfnt_hhea))) {
-			font->externalLeading = hori->Line_Gap * mul + .5;
-		}
-		if ( ( os2  = (TT_OS2*) FT_Get_Sfnt_Table(f, ft_sfnt_os2 ))) {
-			font->width           = os2->xAvgCharWidth * mul + .5;
-			font->internalLeading = (f-> height - f-> units_per_EM) * mul + .5;
-		}
-	}
+	prima_ft_detail_tt_font( f, font, mul );
+	printf("2: %s %d %d\n", font->name, font->width, font->height);
 
 	if ( font->externalLeading < 0 )
 		font->externalLeading = 0;
@@ -245,25 +232,10 @@ prima_fq_match( PFont font, Bool by_size, PCachedFont kf)
 		font->size = font-> height = request_size;
 	}
 	fill_synthetic_fields( kf->ft_face, font, by_size);
+	prima_ft_detail_tt_font( kf->ft_face, font, (float) font->height / kf->ft_face-> height );
 	if ( width > 0 )
 		font->width = width;
-	else if ( font->pitch != fpFixed) {
-		/* see comment about detailing font width in xft.c */
-		FcChar32 c;
-		int num = 0, sum = 0;
-		for ( c = 63; c < 126; c += 4 ) {
-			FT_UInt ix;
-			if (( ix = FcFreeTypeCharIndex( kf->ft_face, c)) == 0)
-				continue;
-			if ( FT_Load_Glyph( kf->ft_face, ix, FT_LOAD_IGNORE_TRANSFORM | FT_LOAD_NO_BITMAP))
-				continue;
-			sum += FT266_to_short(kf->ft_face->glyph->metrics.width);
-			num++;
-		}
-
-		font->width = (num > 10) ? ((float) sum / num + .5) : font->maximalWidth;
-		FQdebug("set width: %d based off %d samples", font->width, num);
-	} else
+	else if ( font->pitch == fpFixed)
 		font->width = font->maximalWidth;
 
 	strcpy( font->encoding, encoding);
