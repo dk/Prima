@@ -75,7 +75,7 @@ load_defaults( PImgCodec c)
 }
 
 #if LIBHEIF_NUMERIC_VERSION >= ((1<<24) | (15<<16) | (0<<8) | 0)
-//#define HAS_V1_15_API
+#define HAS_V1_15_API
 #endif
 
 static int
