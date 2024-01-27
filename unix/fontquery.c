@@ -117,7 +117,6 @@ fill_synthetic_fields( FT_Face f, PFont font, Bool by_size)
 	font->width           = font->height; /* XXX bitmap fonts? */
 	font->externalLeading = (f-> bbox.yMax - f->bbox.yMin - f-> height) * mul + .5;
 	prima_ft_detail_tt_font( f, font, mul );
-	printf("2: %s %d %d\n", font->name, font->width, font->height);
 
 	if ( font->externalLeading < 0 )
 		font->externalLeading = 0;
