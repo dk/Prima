@@ -2170,7 +2170,7 @@ Please follow the instructions in README file.
 
 NOCODECS
 		$END .= <<LIBHEIF if $Win32 and not $cygwin and grep {/heif/} @warn_codecs;
-Get libheif binary from http://prima.eu.org/download/libheif-1.12.0-win64.zip
+Get libheif binary from http://prima.eu.org/download/libheif-1.17.6-win64.zip
 LIBHEIF
 		$END .= <<LIBWEBP if $Win32 and not $cygwin and grep {/webp/} @warn_codecs;
 Get libwebp binary from http://prima.eu.org/download/libwebp-1.0.2-win64.zip

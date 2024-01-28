@@ -107,7 +107,7 @@ sub test_multiframe_codec
 		my $ok = 0;
 		my $info = Prima::Image->has_codec('HEIF') or goto FAIL;
 		goto FAIL unless length $info->{saveInput}->{encoder}; # codec cannot suggest a good plugin that can both load and save
-		$ok = 0;
+		$ok = 1;
 	FAIL:
 		unless ($ok) {
 			$info //= {};

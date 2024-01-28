@@ -77,7 +77,7 @@ Install these:
 
    - http://prima.eu.org/download/libfribidi-1.0.10-win64.zip
    - http://prima.eu.org/download/libthai-0.1.29-win64.zip
-   - http://prima.eu.org/download/libheif-1.12.0-win64.zip
+   - http://prima.eu.org/download/libheif-1.17.6-win64.zip
    - http://prima.eu.org/download/libwebp-1.0.2-win64.zip
 
 Win32-ActiveState

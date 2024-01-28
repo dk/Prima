@@ -97,6 +97,45 @@ get_encoder_descriptors(
 	return n;
 }
 
+static char*
+describe_compression(int v, char *shrt)
+{
+	static char buf[4], *compstr;
+
+	if (
+		(strstr(shrt, "jpeg") != NULL) ||
+		(strstr(shrt, "png") != NULL) ||
+		(strcmp(shrt, "mask") == 0)
+	)
+		return NULL;
+
+	switch (v) {
+	case heif_compression_undefined:
+		compstr = "any";
+		break;
+	case heif_compression_HEVC:
+		compstr = "HEVC";
+		break;
+	case heif_compression_AVC:
+		compstr = "AVC";
+		break;
+	case heif_compression_AV1:
+		compstr = "AV1";
+		break;
+	default:
+		if ( strcmp( shrt, "dav1d" ) == 0 )
+			compstr = "AV1";
+		else if (
+			(strcmp( shrt, "ffmpeg" ) == 0) ||
+			(strcmp( shrt, "libde265" ) == 0) 
+		)
+			compstr = "HEVC";
+		else
+			snprintf(compstr = buf, sizeof(buf), "%d", v);
+	}
+
+	return compstr;
+}
 
 static void *
 init( PImgCodecInfo * info, void * param)
@@ -123,28 +162,25 @@ init( PImgCodecInfo * info, void * param)
 			}
 
 			comp     = heif_encoder_descriptor_get_compression_format(enc[i]);
-			switch ( comp ) {
-			case heif_compression_HEVC:
-				compstr = "HEVC";
-				break;
-			case heif_compression_AVC:
-				compstr = "AVC";
-				ext[2] = "avif";
-				break;
-			case heif_compression_AV1:
-				compstr = "AV1";
-				ext[2] = "avif";
-				break;
-			default:
-				continue;
-			}
-
 			name     = heif_encoder_descriptor_get_name(enc[i]);
 			shrt     = heif_encoder_descriptor_get_id_name(enc[i]);
 			lossy    = heif_encoder_descriptor_supports_lossy_compression(enc[i]);
 			lossless = heif_encoder_descriptor_supports_lossless_compression(enc[i]);
 
-			if ( comp == heif_compression_HEVC )
+			if ( !( compstr = describe_compression(comp, (char*) shrt)))
+				continue;
+
+			switch ( comp ) {
+			case heif_compression_AVC:
+				ext[2] = "avif";
+				break;
+			case heif_compression_AV1:
+				ext[2] = "avif";
+				break;
+			default:
+			}
+
+			if ( strcmp(compstr, "HEVC") == 0)
 				strlcpy( hevc_plugin, shrt, sizeof(hevc_plugin));
 
 			snprintf(buf, 2048, "encoder %s %s%s%s (%s)",
@@ -175,7 +211,7 @@ init( PImgCodecInfo * info, void * param)
 			(const struct heif_decoder_descriptor**) dec, 1024);
 		for ( i = 0; i < n; i++) {
 			char buf[2048];
-			const char *name, *shrt, *compstr = "?";
+			const char *name, *shrt, *compstr;
 			intptr_t v;
 
 			if ( feat >= MAX_FEATURES) {
@@ -185,26 +221,10 @@ init( PImgCodecInfo * info, void * param)
 
 			name     = heif_decoder_descriptor_get_name(dec[i]);
 			shrt     = heif_decoder_descriptor_get_id_name(dec[i]);
-			if (strstr(shrt, "jpeg") != NULL)
-				continue;
 
 			v = (intptr_t) prima_hash_fetch(encoders, shrt, strlen(shrt));
-			switch ((int) v) {
-			case heif_compression_HEVC:
-				compstr = "HEVC";
-				break;
-			case heif_compression_AVC:
-				compstr = "AVC";
-				break;
-			case heif_compression_AV1:
-				compstr = "AV1";
-				break;
-			default:
-				if ( strcmp( shrt, "dav1d" ) == 0 )
-					compstr = "AV1";
-				else if ( strcmp( shrt, "ffmpeg" ) == 0 )
-					compstr = "HEVC";
-			}
+			if ( !( compstr = describe_compression(v, (char*) shrt)))
+				continue;
 
 			snprintf(buf, 2048, "decoder %s %s (%s)", shrt, compstr, name);
 			buf[2047] = 0;
