@@ -1,10 +1,7 @@
 use strict;
 use warnings;
-use open ':std', ':encoding(utf8)';
-
 use Test::More;
-use Prima::sys::Test;
-use Prima::Application;
+use Prima::sys::Test qw(noX11);
 use open ':std', ':encoding(utf8)';
 
 my $x;
@@ -85,9 +82,9 @@ my $bad_guys = qr/(
 	Pebble            # no glyphs in the font?
 )/x;
 
-$x = Prima::DeviceBitmap-> create( type => dbt::Bitmap, width => 8, height => 8);
+$x = Prima::Image->new;
 my @fonts;
-for my $f ( @{$::application->fonts} ) {
+for my $f ( @{$x->fonts} ) {
 	next if $f->{name} =~ /$bad_guys/;
 	next unless $f->{name} =~ /$filter/;
 	push @fonts, $f;
@@ -96,7 +93,7 @@ for my $f ( @{$::application->fonts} ) {
 plan tests => scalar(@fonts) * 7;
 
 for my $f ( @fonts ) {
-	if (!t($f) && Prima::Application-> get_system_info-> {apc} == apc::Unix) {
+	if (!t($f) && $^O !~ /win32/i) {
 		Prima::options(debug => 'f');
 		t($f);
 		Prima::options(debug => '0');
