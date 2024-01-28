@@ -23,12 +23,13 @@ sub t
 	       $x-> font( $_ => $x-> font-> $_() * 3 + 12);
 	       my $fx2 = $x-> font-> $_();
 	       SKIP: {
-	           if ( $fx2 == $fx || $x->font->name ne $f->{name}) {
-	               skip "$_", 1;
-	               next;
-	           }
-	           $x-> font( $_ => $fx);
-	           $ok &= is( $x-> font-> $_(), $fx, "$_ / $f->{name}");
+			if ( $fx2 == $fx || $x->font->name ne $f->{name}) {
+				skip "$_ / $f->{name}", 1;
+				next;
+			}
+			$x-> font( $_ => $fx);
+			$fx = int( $fx + .5 ) if $^O =~ /win32/i && $_ eq 'size';
+			$ok &= is( $x-> font-> $_(), $fx, "$_ / $f->{name}");
 	       };
 	}
 
@@ -58,7 +59,7 @@ sub t
 	my $fx2 = $x-> font-> style;
 	SKIP : {
 	    if ( $fx2 == $fx || $x->font->name ne $f->{name}) {
-	        skip "style", 1;
+	        skip "style / $f->{name}", 1;
 	    }
 	    $x-> font( style => $fx);
 	    is( $x-> font-> style, $fx, "style / $f->{name}");
@@ -69,7 +70,7 @@ sub t
 		$x-> font-> height( 16);
 		my ($a,$b,$c) = @{$x->get_font_abc(ord('e'),ord('e'))};
 		my $w = $a + $b + $c;
-		skip "text wrap $f->{name}", 1 if $w <= 1; # some non-latin or symbol font
+		skip "text wrap / $f->{name}", 1 if $w <= 1; # some non-latin or symbol font
 		cmp_ok( scalar @{$x-> text_wrap( "eeee eeee eeee eeee eeee", $w * 5)}, '>', 4, "text wrap $f->{name}");
 	}
 
