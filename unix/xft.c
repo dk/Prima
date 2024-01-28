@@ -497,13 +497,10 @@ prima_xft_match( Font *font, Matrix matrix, Bool by_size, PCachedFont cf)
 
 		{
 			FT_Face f;
-			XftFont *x = kf_base ? kf_base->xft : xf;
-			if ( ( f = XftLockFace(x)) != NULL) {
+			if ( ( f = XftLockFace(xf)) != NULL) {
 				prima_ft_detail_tt_font( f, font, (float) font->height / f-> height );
-				XftUnlockFace(x);
+				XftUnlockFace(xf);
 			}
-			if ( font->pitch == fpFixed)
-				font->width = font->maximalWidth;
 		}
 	} else
 		font-> width = ( requested_font.width > 0 ) ? requested_font.width : base_width;

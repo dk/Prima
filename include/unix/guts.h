@@ -1790,6 +1790,10 @@ prima_pen_picture(Handle self);
 
 #ifdef USE_FONTQUERY
 
+#define FT266_TRUNC(x)    ((x) >> 6)
+#define FT266_ROUND(x)    (((x)+32) & -64)
+#define FT266_to_short(x) ((short)(FT266_TRUNC(FT266_ROUND(x))))
+
 extern void
 prima_fc_init(void);
 

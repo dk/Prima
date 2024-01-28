@@ -11,10 +11,6 @@ check memory leaks
 
 #define MY_MATRIX (PDrawable(self)->current_state.matrix)
 
-#define FT266_TRUNC(x)    ((x) >> 6)
-#define FT266_ROUND(x)    (((x)+32) & -64)
-#define FT266_to_short(x) ((short)(FT266_TRUNC(FT266_ROUND(x))))
-
 void
 prima_fq_build_key( PFontKey key, PFont f)
 {
@@ -115,11 +111,8 @@ fill_synthetic_fields( FT_Face f, PFont font, Bool by_size)
 	font->maximalWidth    = f-> max_advance_width * mul + .5;
 
 	font->width           = font->height; /* XXX bitmap fonts? */
-	font->externalLeading = (f-> bbox.yMax - f->bbox.yMin - f-> height) * mul + .5;
 	prima_ft_detail_tt_font( f, font, mul );
 
-	if ( font->externalLeading < 0 )
-		font->externalLeading = 0;
 	font->xDeviceRes      = font->yDeviceRes = 72;
 	/* XXX FT_Face reports very strange values */
 	font->underlinePosition  = -font-> descent;

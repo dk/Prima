@@ -345,14 +345,41 @@ prima_ft_detail_tt_font( FT_Face face, PFont font, float mul)
 	if ( ( hori = (TT_HoriHeader*) FT_Get_Sfnt_Table(face, ft_sfnt_hhea))) {
 		font->externalLeading = hori->Line_Gap * mul + .5;
 		FTdebug("set external leading: %d", font->externalLeading);
+	} else {
+		font->externalLeading = (face-> bbox.yMax - face->bbox.yMin - face-> height) * mul + .5;
 	}
+	if ( font->externalLeading < 0 )
+		font->externalLeading = 0;
 
-	if ( ( os2  = (TT_OS2*) FT_Get_Sfnt_Table(face, ft_sfnt_os2 ))) {
+	if ( font->pitch == fpFixed)
+		font->width = font->maximalWidth;
+	else if ( ( os2  = (TT_OS2*) FT_Get_Sfnt_Table(face, ft_sfnt_os2 ))) {
 		if ( os2-> xAvgCharWidth > 0 ) {
 			font->width = os2->xAvgCharWidth * mul + .5;
 			FTdebug("set width: %d", font->width);
+		} else
+			goto APPROXIMATE;
+	} else {
+		FcChar32 c;
+		int num, sum;
+	APPROXIMATE:
+		for ( c = 63, num = sum = 0; c < 126; c += 4 ) {
+			FT_UInt ix;
+			if (( ix = FcFreeTypeCharIndex( face, c)) == 0)
+				continue;
+			if ( FT_Load_Glyph( face, ix, FT_LOAD_IGNORE_TRANSFORM | FT_LOAD_NO_BITMAP))
+				continue;
+			sum += FT266_to_short(face->glyph->metrics.width);
+			num++;
 		}
+		if ( num > 10 ) {
+			font->width = ((float) sum / num) + .5;
+			FTdebug("approximated width: %d", font->width);
+		} else
+			font->width = font->maximalWidth;
 	}
+	if ( font->width <= 0 )
+		font->width = 1;
 }
 
 #endif
