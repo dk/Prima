@@ -341,14 +341,17 @@ prima_ft_detail_tt_font( FT_Face face, PFont font, float mul)
 	/* get TTF and OTF metrics so these match win32 ones more or less */
 	TT_OS2 *os2;
 	TT_HoriHeader *hori;
+
 	if ( ( hori = (TT_HoriHeader*) FT_Get_Sfnt_Table(face, ft_sfnt_hhea))) {
 		font->externalLeading = hori->Line_Gap * mul + .5;
 		FTdebug("set external leading: %d", font->externalLeading);
-	} else
-		font->externalLeading = -1;
+	}
+
 	if ( ( os2  = (TT_OS2*) FT_Get_Sfnt_Table(face, ft_sfnt_os2 ))) {
-		font->width           = os2->xAvgCharWidth * mul + .5;
-		FTdebug("set width: %d", font->width);
+		if ( os2-> xAvgCharWidth > 0 ) {
+			font->width = os2->xAvgCharWidth * mul + .5;
+			FTdebug("set width: %d", font->width);
+		}
 	}
 }
 

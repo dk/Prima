@@ -231,7 +231,6 @@ prima_fq_match( PFont font, Bool by_size, PCachedFont kf)
 		font->size = font-> height = request_size;
 	}
 	fill_synthetic_fields( kf->ft_face, font, by_size);
-	prima_ft_detail_tt_font( kf->ft_face, font, (float) font->height / kf->ft_face-> height );
 	if ( width > 0 )
 		font->width = width;
 	else if ( font->pitch == fpFixed)
