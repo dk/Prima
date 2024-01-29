@@ -724,7 +724,7 @@ image_destroy_cache( Handle self)
 	sys s. image. cache. cache_type = BM_NONE;
 }
 
-void
+Bool
 image_query_bits( Handle self, Bool forceNewImage)
 {
 	PImage i = ( PImage) self;
@@ -737,13 +737,13 @@ image_query_bits( Handle self, Bool forceNewImage)
 	if ( forceNewImage) {
 		ops = sys ps;
 		if ( !ops) {
-			if ( !( sys ps = dc_alloc())) return;
+			if ( !( sys ps = dc_alloc())) return false;
 		}
 	}
 
 	if ( !GetObject( sys bm, sizeof( BITMAP), ( LPSTR) &bitmap)) {
 		apiErr;
-		return;
+		return false;
 		// if GetObject fails to get even BITMAP, there will be no good in farther run for sure.
 	}
 
@@ -785,6 +785,8 @@ image_query_bits( Handle self, Bool forceNewImage)
 		}
 		sys ps = ops;
 	}
+
+	return true;
 }
 
 static Handle ctx_rop2R4[] = {

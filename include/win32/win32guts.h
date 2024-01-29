@@ -745,7 +745,7 @@ extern HPALETTE     image_create_palette( Handle self);
 extern void         image_destroy_cache( Handle self);
 extern void         image_fill_bitmap_cache( Handle self, int bm_type, Handle optimize_for_surface);
 extern BITMAPINFO*  image_fill_bitmap_info( Handle self, XBITMAPINFO * bi, int bm_type);
-extern void         image_query_bits( Handle self, Bool forceNewImage);
+extern Bool         image_query_bits( Handle self, Bool forceNewImage);
 extern Bool         is_dwm_enabled(void);
 extern void         mod_free( BYTE * modState);
 extern BYTE *       mod_select( int mod);

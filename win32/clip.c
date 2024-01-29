@@ -200,7 +200,9 @@ clipboard_get_data(int cfid, PClipboardDataRec c, void * p1, void * p2)
 					GlobalUnlock( p1);
 					return false;
 				}
+				dsys(i) s. image. argb_bits = ((Byte*)bi) + sizeof(BITMAPINFOHEADER);
 				image_argb_query_bits((Handle) i);
+				dsys(i) s. image. argb_bits = NULL;
 			} else if (
 				bi-> header.biBitCount == 1 ||
 				bi-> header.biBitCount == 4 ||
@@ -244,6 +246,7 @@ clipboard_get_data(int cfid, PClipboardDataRec c, void * p1, void * p2)
 			HPALETTE op = NULL, p = (HPALETTE) p2;
 			HBITMAP obm;
 			HDC dc, ops;
+			Bool ok;
 
 			self = (Handle) create_object("Prima::Image", "");
 			obm = sys bm;
@@ -260,15 +263,16 @@ clipboard_get_data(int cfid, PClipboardDataRec c, void * p1, void * p2)
 				op = SelectPalette( dc, p, 1);
 				RealizePalette( dc);
 			}
-			image_query_bits(self, true);
-			if ( p)
+			ok = image_query_bits(self, true);
+			if ( ok && p)
 				SelectPalette( dc, op, 1);
 			DeleteDC( dc);
 			dc_free();
 			sys ps = ops;
 			sys bm = obm;
-			c->image = self;
-			return true;
+			if ( ok )
+				c->image = self;
+			return ok;
 		}
 		case CF_UNICODETEXT: {
 			WCHAR *ptr;
@@ -354,12 +358,12 @@ apc_clipboard_set_data( Handle self, Handle id, PClipboardDataRec c)
 			{
 				HPALETTE p = palette_create( c-> image);
 				HBITMAP b  = image_create_bitmap_by_type( c-> image, p, NULL, BM_AUTO);
-
 				if ( b == NULL) {
 					if ( p) DeleteObject( p);
 					apiErrRet;
 				}
-				if ( !SetClipboardData( CF_BITMAP,  b)) apiErr;
+				if ( !SetClipboardData( CF_BITMAP,  b))
+					apiErrRet;
 				if ( p)
 					if ( !SetClipboardData( CF_PALETTE, p)) apiErr;
 			}
@@ -375,12 +379,13 @@ apc_clipboard_set_data( Handle self, Handle id, PClipboardDataRec c)
 					if (( ptr = GlobalLock( glob))) {
 						MultiByteToWideChar(CP_UTF8, 0, (LPSTR)c-> data, c-> length, ptr, ulen);
 						GlobalUnlock( glob);
-						if ( !SetClipboardData( CF_UNICODETEXT, glob)) apiErr;
+						if ( !SetClipboardData( CF_UNICODETEXT, glob))
+							apiErrRet;
 					} else {
 						GlobalFree( glob);
-						apiErr;
+						apiErrRet;
 					}
-				} else apiErr;
+				} else apiErrRet;
 			}
 			return true;
 		case CF_TEXT:
@@ -412,14 +417,14 @@ apc_clipboard_set_data( Handle self, Handle id, PClipboardDataRec c)
 					CharToOemBuff(( LPCTSTR) ptr, ( LPTSTR) oemptr, ulen + cr + 1);
 					GlobalUnlock( oemptr);
 					GlobalUnlock( ptr);
-					if ( !SetClipboardData( CF_TEXT, glob)) apiErr;
-					if ( !SetClipboardData( CF_OEMTEXT, oemglob)) apiErr;
+					if ( !SetClipboardData( CF_TEXT, glob)) apiErrRet;
+					if ( !SetClipboardData( CF_OEMTEXT, oemglob)) apiErrRet;
 				} else {
-					apiErr;
 					if ( ptr) GlobalUnlock( ptr);
 					if ( oemptr) GlobalUnlock( oemptr);
 					if ( glob) GlobalFree( glob);
 					if ( oemglob) GlobalFree( oemglob);
+					apiErrRet;
 				}
 			}
 			return true;
@@ -428,15 +433,16 @@ apc_clipboard_set_data( Handle self, Handle id, PClipboardDataRec c)
 			{
 				char* ptr;
 				HGLOBAL glob = GlobalAlloc( GMEM_DDESHARE, c-> length);
-				if ( !glob) apiErrRet;
+				if ( !glob)
+					apiErrRet;
 				if ( !( ptr = ( char *) GlobalLock( glob))) {
-					apiErr;
 					GlobalFree( glob);
-					return false;
+					apiErrRet;
 				}
 				memcpy( ptr, c-> data, c-> length);
 				GlobalUnlock( glob);
-				if ( !SetClipboardData( id, glob)) apiErrRet;
+				if ( !SetClipboardData( id, glob))
+					apiErrRet;
 				return true;
 			}
 	}
