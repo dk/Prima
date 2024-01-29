@@ -70,10 +70,12 @@ if ( $^O =~ /win32/i) {
 ok( $c-> register_format("Mumbo-Jumbo"), "register user-defined format");
 %rc = map { $_ => 1 } $c-> get_registered_formats;
 try { $c-> store( "Mumbo-Jumbo", pack( 'C*', 0,1,2,3,4,5,6,7,8,9)) } 3;
-try { $c->open } 3;
+try { $c->open } 5;
 $res = $c-> fetch( "Mumbo-Jumbo");
 %fm = map { $_ => 1 } $c-> get_formats;
-ok(exists $rc{"Mumbo-Jumbo"} && exists $fm{"Mumbo-Jumbo"} && defined $res, "exists user-defined format" );
+ok(exists $rc{"Mumbo-Jumbo"}, "user-defined format registered ok" );
+ok(exists $fm{"Mumbo-Jumbo"}, "user-defined format exists as data" );
+ok(defined $res, "user-defined format fetched something" );
 is( $res, pack( 'C*', 0,1,2,3,4,5,6,7,8,9), "user-defined format data ok");
 $c-> deregister_format("Mumbo-Jumbo");
 $c->close;
