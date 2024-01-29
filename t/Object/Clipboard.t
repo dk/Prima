@@ -5,7 +5,6 @@ use Test::More;
 use Prima::sys::Test;
 use Prima::Application;
 
-plan tests => 11;
 my $c = $::application-> Clipboard;
 ok( $c && $c-> alive, "alive");
 
@@ -45,11 +44,18 @@ is( $res, 'jabba dabba du', "text is correct" );
 $c->close;
 
 my $i = Prima::Image-> create( width => 32, height => 32);
-try { $c-> store( "Image", $i) } 7;
-try { $c->open } 7;
-$i = $c-> fetch( 'Image');
+try { $c->open } 10;
+try { $c-> store( "Image", $i) } 10;
 %fm = map { $_ => 1 } $c-> get_formats;
-ok( exists $fm{Image} && defined $i && $i-> alive, "image exists");
+ok( exists $fm{Image}, "image just stored ok");
+$c->close;
+
+try { $c->open } 9;
+%fm = map { $_ => 1 } $c-> get_formats;
+$i = $c-> fetch( 'Image');
+ok( exists $fm{Image}, "image format persists");
+ok( defined $i, "image returned");
+ok( defined $i && $i-> alive, "image is ok");
 skip "no image", 6 unless $i;
 is( $i-> width, 32, "image width ok" );
 is( $i-> height, 32, "image height ok" );
@@ -79,3 +85,5 @@ my @f = $c-> get_formats;
 is( scalar(@f), 0, "clear");
 $c->close;
 }
+
+done_testing;
