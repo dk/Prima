@@ -1022,8 +1022,8 @@ apply_fill_pattern_offset( Handle self )
 	o.y = sys last_size.y - o.y;
 	o.x -= sys transform2.x;
 	o.y -= sys transform2.y;
-	while (o.x < 0) o.x += w;
-	while (o.y < 0) o.y += h;
+	if ( o.x < 0 ) o.x = w - (-o.x % w);
+	if ( o.y < 0 ) o.y = h - (-o.y % h);
 	o.x %= w;
 	o.y %= h;
 

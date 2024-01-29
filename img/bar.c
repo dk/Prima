@@ -1122,58 +1122,14 @@ img_bar_stipple_alpha( Handle dest, int x, int y, int w, int h, PImgPaintContext
 	return ok;
 }
 
-Bool
-img_bar( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
+static Bool
+img_bar_pattern( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 {
 	PImage i     = (PImage) dest;
 	int pixSize  = (i->type & imBPP) / 8;
 	Byte blt_buffer[BLT_BUFSIZE];
 	int j, k, blt_bytes, blt_step;
 	Bool solid;
-
-	/* check boundaries */
-	if ( ctx->rop == ropNoOper) return true;
-
-	if ( x < 0 ) {
-		w += x;
-		x = 0;
-	}
-	if ( y < 0 ) {
-		h += y;
-		y = 0;
-	}
-	if ( x + w > i->w ) w = i->w - x;
-	if ( y + h > i->h ) h = i->h - y;
-	if ( w <= 0 || h <= 0 ) return true;
-
-	if ( ctx-> tile ) {
-		int W = PImage(ctx->tile)->w;
-		int H = PImage(ctx->tile)->h;
-		while ( ctx->patternOffset.x < 0 ) ctx-> patternOffset.x += W;
-		while ( ctx->patternOffset.y < 0 ) ctx-> patternOffset.y += H;
-		ctx-> patternOffset.x %= W;
-		ctx-> patternOffset.y %= H;
-
-		if ( PImage(ctx->tile)->type == imBW && !kind_of(ctx->tile, CIcon)) {
-			if ( ctx-> rop & ropConstantAlpha)
-				return img_bar_stipple_alpha( dest, x, y, w, h, ctx);
-			else if (( i->type & imBPP ) == 1)
-				return img_bar_stipple_1bit( dest, x, y, w, h, ctx);
-			else
-				return img_bar_stipple_generic( dest, x, y, w, h, ctx);
-		} else {
-			if ( ctx-> rop & ropConstantAlpha)
-				return img_bar_tile_alpha( dest, x, y, w, h, ctx);
-			else
-				return img_bar_tile( dest, x, y, w, h, ctx);
-		}
-	}
-
-	while ( ctx->patternOffset.x < 0 ) ctx-> patternOffset.x += FILL_PATTERN_SIZE;
-	while ( ctx->patternOffset.y < 0 ) ctx-> patternOffset.y += FILL_PATTERN_SIZE;
-
-	if ( ctx-> rop & ropConstantAlpha )
-		return img_bar_alpha(dest, x, y, w, h, ctx);
 
 	if ( memcmp( ctx->pattern, fillPatterns[fpSolid], sizeof(FillPattern)) == 0) {
 		/* do nothing */
@@ -1314,6 +1270,61 @@ img_bar( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 	}
 
 	return true;
+}
+
+Bool
+img_bar( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
+{
+	PImage i     = (PImage) dest;
+	int W, H;
+
+	/* check boundaries */
+	if ( ctx->rop == ropNoOper) return true;
+
+	if ( x < 0 ) {
+		w += x;
+		x = 0;
+	}
+	if ( y < 0 ) {
+		h += y;
+		y = 0;
+	}
+	if ( x + w > i->w ) w = i->w - x;
+	if ( y + h > i->h ) h = i->h - y;
+	if ( w <= 0 || h <= 0 ) return true;
+
+	if ( ctx-> tile ) {
+		W = PImage(ctx->tile)->w;
+		H = PImage(ctx->tile)->h;
+	} else
+		W = H = FILL_PATTERN_SIZE;
+	if ( ctx->patternOffset.x < 0 )
+		ctx-> patternOffset.x = W - (-ctx-> patternOffset.x % W);
+	ctx-> patternOffset.x %= W;
+	if ( ctx->patternOffset.y < 0 )
+		ctx-> patternOffset.y = H - (-ctx-> patternOffset.y % H);
+	ctx-> patternOffset.y %= H;
+
+	if ( ctx-> tile ) {
+		if ( PImage(ctx->tile)->type == imBW && !kind_of(ctx->tile, CIcon)) {
+			if ( ctx-> rop & ropConstantAlpha)
+				return img_bar_stipple_alpha( dest, x, y, w, h, ctx);
+			else if (( i->type & imBPP ) == 1)
+				return img_bar_stipple_1bit( dest, x, y, w, h, ctx);
+			else
+				return img_bar_stipple_generic( dest, x, y, w, h, ctx);
+		} else {
+			if ( ctx-> rop & ropConstantAlpha)
+				return img_bar_tile_alpha( dest, x, y, w, h, ctx);
+			else
+				return img_bar_tile( dest, x, y, w, h, ctx);
+		}
+	}
+
+	if ( ctx-> rop & ropConstantAlpha )
+		return img_bar_alpha(dest, x, y, w, h, ctx);
+	else
+		return img_bar_pattern( dest, x, y, w, h, ctx);
 }
 
 #ifdef __cplusplus

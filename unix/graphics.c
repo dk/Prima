@@ -106,8 +106,8 @@ prima_get_fill_pattern_offsets( Handle self, int * x, int * y )
 
 	*x = XX->fill_pattern_offset.x + XX->btransform.x;
 	*y = Y - XX->fill_pattern_offset.y - XX->btransform.y;
-	while (*x < 0) *x += w;
-	while (*y < 0) *y += h;
+	if ( *x < 0 ) *x = w - (*x % w);
+	if ( *y < 0 ) *y = h - (*y % h);
 	*x %= w;
 	*y %= h;
 }
