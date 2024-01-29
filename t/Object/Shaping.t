@@ -523,9 +523,10 @@ sub test_glyphs_wrap
 		skip("no arabic font", 1) unless find_shaping_font( xtr('|/%'));
 		$w->font->size(12);
 		glyphs "|/%";
-		skip("arabic shaping is not available", 1) unless glyphs_fully_resolved;
-		# that is tested already, rely on that: t2('/|', '%', [r(0)], 'arabic ligation');
+		skip("arabic glyphs are not available", 1) unless glyphs_fully_resolved;
 		$z = $w-> text_shape(xtr('|/|'), polyfont => 0); # 2 glyphs, | and /|, visually /| is on the left
+		skip("arabic shaping is not available for font ".$w->font->name, 1)
+			unless $z && $z->glyphs && 2 == @{ $z->glyphs };
 		$r = $w-> text_wrap($z, 0, tw::ReturnChunks);
 		is_deeply($r, [0,1 , 1,1], "ligature wrap, chunks");
 		$r = $w-> text_wrap($z, 0, 0);
