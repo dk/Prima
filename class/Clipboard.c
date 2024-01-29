@@ -263,6 +263,7 @@ Clipboard_store( Handle self, char * format, SV * data)
 		first_that( self, (void*) reset_written, NULL);
 		apc_clipboard_clear( self);
 	}
+	fr-> success = false;
 	fr-> server( self, fr, cefStore, data);
 	my-> close( self);
 	return fr-> success;
