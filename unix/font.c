@@ -41,7 +41,7 @@ prima_font_init_subsystem(void)
 #ifdef USE_FONTQUERY
 	prima_fc_init();
 	if ( do_freetype)
-		do_freetype = prima_ft_init();
+		guts.use_freetype = do_freetype = prima_ft_init();
 #endif
 	guts. use_harfbuzz  = do_harfbuzz;
 	return true;
@@ -262,7 +262,7 @@ prima_font_cleanup_subsystem( void)
 
 	}
 #ifdef USE_FONTQUERY
-	if (do_freetype) prima_ft_done();
+	if (guts.use_freetype) prima_ft_done();
 	prima_fc_done();
 #endif
 	if (guts.font_hash) {
@@ -878,7 +878,7 @@ Bool
 apc_font_begin_query( Handle self )
 {
 #ifdef USE_FONTQUERY
-	if ( !do_freetype)
+	if ( !guts.use_freetype)
 		return false;
 	return prima_fq_begin_query(self);
 #endif

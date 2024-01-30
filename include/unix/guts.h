@@ -791,6 +791,7 @@ typedef struct _UnixGuts
 	int                          use_gtk;
 	int                          use_quartz;
 	Bool                         use_harfbuzz;
+	Bool                         use_freetype;
 	Bool                         is_xwayland;
 	/* DND: Common */
 	Handle                       xdnd_clipboard;
