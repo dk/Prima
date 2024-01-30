@@ -15,7 +15,7 @@ my $z;
 		my $cb = shift;
 		my $ok = $cb->(@_);
 		return $ok if $ok;
-		diag('font: [', $w->font->name, ']');
+		diag('font: [', $w->font->name, ']') if $w;
 		return 0;
 	}
 	my $is_deeply = \&is_deeply;
