@@ -266,7 +266,7 @@ prima_ft_get_glyph_bitmap( FT_Face face, FT_UInt index, FT_Int32 flags, PPoint o
 			size->y   = b->rows;
 			if ( advance ) {
 				FT_Fixed a = face->glyph->linearHoriAdvance;
-				*advance = (a >> 16) + (((a & 0xffff) > 0x7ffff) ? 1 : 0);
+				*advance = (a >> 16) + (((a & 0xffff) > 0x7fff) ? 1 : 0);
 			}
 		}
 	}
