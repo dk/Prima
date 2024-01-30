@@ -701,7 +701,7 @@ apc_system_action( const char *s)
 			if ( guts. use_harfbuzz ) strcat(shaper, "harfbuzz ");
 #endif
 #ifdef WITH_FREETYPE
-			if ( guts. use_harfbuzz ) strcat(shaper, "freetype ");
+			if ( guts. use_freetype ) strcat(shaper, "freetype ");
 #endif
 			shaper[strlen(shaper)-1] = 0;
 			return duplicate_string(shaper);
