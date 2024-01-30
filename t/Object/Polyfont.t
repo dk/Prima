@@ -1,10 +1,9 @@
 use strict;
 use warnings;
 use Test::More;
-use Prima::sys::Test;
-use Prima::Application;
+use Prima::sys::Test qw(noX11);
        
-my $w = Prima::DeviceBitmap-> create( type => dbt::Pixmap, width => 132, height => 32);
+my $w = Prima::Image-> create( type => dbt::Pixmap, width => 132, height => 32);
 
 SKIP: {
 	$w->font->vector(1);
