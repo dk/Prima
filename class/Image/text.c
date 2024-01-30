@@ -284,6 +284,7 @@ add_font_direction( Handle self, Matrix matrix)
 			m2[1] =  c.x;
 			m2[2] = -c.x;
 			m2[3] =  c.y;
+			m2[4] = m2[5] = 0.0;
 			prima_matrix_multiply( VAR_MATRIX, m2, matrix );
 		} else
 			COPY_MATRIX( VAR_MATRIX, matrix);
