@@ -116,7 +116,11 @@ if ( $build) {
 		my @ctx;
 		my $cut;
 		my $cow = 1;
+		my $got_pod;
+
 		while (defined($_ = <W>)) {
+			$got_pod = 1 if m/^=\w/;
+
 			if ( m/^=for\s*podview\s*(.*)/) {
 				my $spec = $1;
 				chomp $spec;
@@ -201,6 +205,7 @@ if ( $build) {
 			push @ctx, $_ unless $cut;
 		}
 		close W;
+		next unless $got_pod;
 
 		my $ffn = $fn;
 		if ( $cow) {
