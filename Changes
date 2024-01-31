@@ -1,6 +1,6 @@
 Revision history for Perl module Prima
 
-1.72 202X-XX-XX
+1.72 2024-01-31
  - Major rehaul of ROP constants with API compatibility break:
    -- rop(R), put_image(X,Y,I) will not use rop R but rop::Default instead
    -- rop::Blend and rop::CopyPut are no longer equal. rop::XorPut and rop::Xor
@@ -9,6 +9,10 @@ Revision history for Perl module Prima
       Other text- and font- related method work too.
  - Pod parsing and rendering moved to Prima::Drawable::Pod
    -- added utils/pod2pdf that works without needing a X11 server
+ - Font.underlinePosition and Font.underlineThickness are added
+ - Image.has_codec added
+ - Prima::Image::Loader and per-frame image loading and saving is added
+ - Utils.sound is removed
 
 1.71 2023-10-29
  - Add Prima::Image::webp filter dialog
