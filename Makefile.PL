@@ -2815,7 +2815,8 @@ WriteMakefile(
 	META_MERGE        => {
 		resources => {
 			homepage   => 'http://www.prima.eu.org/',
-			repository => 'http://github.com/dk/Prima',
+			repository => 'https://github.com/dk/Prima',
+			bugtracker => 'https://github.com/dk/Prima/issues',
 		},
 		no_index  => {
 			directory  => [qw(include t img unix win32)],
