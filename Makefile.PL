@@ -2819,7 +2819,7 @@ WriteMakefile(
 			bugtracker => 'https://github.com/dk/Prima/issues',
 		},
 		no_index  => {
-			directory  => [qw(include t img unix win32)],
+			directory  => [qw(include t img unix win32 api class xt)],
 			file       => [qw(Makefile.PL ms_install.pl)],
 		},
 	},
