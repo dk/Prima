@@ -836,6 +836,7 @@ int
 main()
 {
 	${ type} foo;
+	(void)foo;
 	return 0;
 }
 EOF
