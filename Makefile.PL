@@ -464,7 +464,9 @@ sub setup_environment
 	$DISTNAME = "Prima-$ver1.$ver2-$flavor-$REVISION.$PATCHLEVEL.$SUBVERSION";
 	printlog "Build: $DISTNAME\n";
 
-	$cygwin_fake_Slib = 'SlibPrima' . ( $Config{lib_ext} || '.a' );
+	$cygwin_fake_Slib = 'SlibPrima' . ( $Config{lib_ext} || '.a' )
+		if $^O eq 'cygwin';
+
 	$PKGCONFIG = 'pkg-config';
 }
 
@@ -2760,10 +2762,11 @@ sub install
 	my $self = shift;
 	my $t = $self->SUPER::install(@_);
 	my $q = $SHQUOTE;
+	my $slib = defined($cygwin_fake_Slib) ? "slib=$cygwin_fake_Slib" : '';
 	my $n = $t =~ s[
 		(pure_\w+_install.*?)                       # 1
-		(INST_ARCHLIB\)"?\s+"?)\$\(DEST(\w+)\)(.*?)     # 2,3,4
-		(INST_BIN\)"?\s+"?)\$\(DEST(\w+)\)(.*?)         # 5,6,7
+		(INST_ARCHLIB\)"?\s+"?)\$\(DEST(\w+)\)(.*?) # 2,3,4
+		(INST_BIN\)"?\s+"?)\$\(DEST(\w+)\)(.*?)     # 5,6,7
 		(.*?)                                       # 8
 		\n\n
 	][
@@ -2771,7 +2774,7 @@ sub install
 		"$2\$(DEST$3)$4".
 		"$5\$(DEST$6)$7$8".
 		"\n\t\$(NOECHO) \$(ABSPERL) $0 --postinstall ".
-			"${q}dest=\$(DEST$3)$q ${q}bin=\$($6)$q slib=$cygwin_fake_Slib\n\n"
+			"${q}dest=\$(DEST$3)$q ${q}bin=\$($6)$q $slib\n\n"
 	]xgse;
 
 	$END .= <<BAD_MAKEFILE if $n != 3;
