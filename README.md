@@ -269,7 +269,7 @@ Copyright
 
 (c) 1997-2003 The Protein Laboratory, University of Copenhagen
 
-(c) 1997-2023 Dmitry Karasik
+(c) 1997-2024 Dmitry Karasik
 
 Author
 ======
