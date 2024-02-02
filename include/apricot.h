@@ -298,7 +298,7 @@ strlcpy(char * dst, const char * src, size_t dstsize);
 extern void *
 prima_mallocz( size_t sz);
 
-typedef I32 Bool;
+typedef int Bool;
 #if PTRSIZE==LONGSIZE
 typedef unsigned long Handle;
 #define PR_HANDLE "lx"
