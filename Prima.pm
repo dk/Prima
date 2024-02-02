@@ -534,7 +534,7 @@ L<Prima::IniFile> - support of Windows-like initialization files
 
 L<podview> - POD viewer
 
-L<pod2pdf> - POD printer
+L<prima-pod2pdf> - POD printer
 
 L<Prima::StdBitmap> - shared access to the standard bitmaps
 

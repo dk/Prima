@@ -19,7 +19,7 @@ sub usage
 
 $0 - convert pod file to a pdf document
 
-format: pod2pdf [options] input.pod [output.pdf|-]
+format: prima-pod2pdf [options] input.pod [output.pdf|-]
 
 options:
 	--help|-h
@@ -99,11 +99,11 @@ if ( $ok ) {
 
 =head1 NAME
 
-pod2pdf - convert pod file to a pdf document
+prima-pod2pdf - convert pod file to a pdf document
 
 =head1 SYNOPSIS
 
-format: pod2pdf [options] input.pod [output.pdf|-]
+format: prima-pod2pdf [options] input.pod [output.pdf|-]
 
 =head1 SEE ALSO
 
