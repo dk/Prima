@@ -293,7 +293,12 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 
 	/* read pixels */
 	icon = kind_of( fi-> object, CIcon) && curr->has_alpha;
-	output_buffer->colorspace = fi->blending ? MODE_bgrA : MODE_BGRA;
+	output_buffer->colorspace = fi->blending ?
+#if (BYTEORDER==0x4321) || (BYTEORDER==0x87654321)
+		MODE_Argb : MODE_ARGB;
+#else
+		MODE_bgrA : MODE_BGRA;
+#endif
 	if (( status = WebPDecode(curr->fragment.bytes, curr->fragment.size, config)) != VP8_STATUS_OK) {
 		format_load_error(fi, status);
 		goto EXIT;
