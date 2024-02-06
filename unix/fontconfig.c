@@ -573,6 +573,7 @@ prima_fc_fonts( PFont array, const char *facename, const char * encoding, int *r
 	PFont newarray, f;
 	PHash names = NULL;
 	CharSetInfo * csi = NULL;
+	size_t newsize;
 	int i;
 
 	if ( encoding) {
@@ -598,8 +599,8 @@ prima_fc_fonts( PFont array, const char *facename, const char * encoding, int *r
 	}
 
 	/* make dynamic */
-	i = sizeof(Font) * (*retCount + s-> nfont * ALL_CHARSETS);
-	newarray = array ? realloc(array,i) : malloc(i);
+	newsize = sizeof(Font) * (*retCount + s-> nfont * ALL_CHARSETS);
+	newarray = array ? realloc(array,newsize) : malloc(newsize);
 	if ( !newarray) {
 		FcFontSetDestroy(s);
 		return array;
