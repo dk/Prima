@@ -618,6 +618,8 @@ apc_fonts( Handle self, const char *facename, const char * encoding, int *retCou
 {
 	PFont fmtx;
 
+	*retCount = 0;
+
 #ifdef USE_FONTQUERY
 	if ( is_opt(optInFontQuery) )
 		return prima_fc_fonts( NULL, facename, encoding, retCount);
