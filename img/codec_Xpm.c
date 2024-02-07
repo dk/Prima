@@ -20,6 +20,8 @@
 #undef FUNC
 #include "Icon.h"
 
+typedef I32 Prima_Bool; /* xpm.h mangles normal bool */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -131,7 +133,7 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
 	return l;
 }
 
-static Bool
+static Prima_Bool
 load( PImgCodec instance, PImgLoadFileInstance fi)
 {
 	LoadRec * l = ( LoadRec *) fi-> instance;
@@ -397,7 +399,7 @@ prepare_xpm_color( void * value, int keyLen, Color * color_ptr, CalcData * cd)
 	return false;
 }
 
-static Bool
+static Prima_Bool
 save( PImgCodec instance, PImgSaveFileInstance fi)
 {
 	dPROFILE;
