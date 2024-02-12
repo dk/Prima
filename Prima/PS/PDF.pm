@@ -96,7 +96,7 @@ sub change_transform
 	$self-> emit_content('Q') unless $gsave;
 	$self-> emit_content('q');
 
-	$self-> emit_content("h @pm re W n");
+	$self-> emit_content("@pm re W n");
 
 	my $m = $self-> get_matrix;
 	if ( $self->{reversed}) {
