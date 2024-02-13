@@ -93,6 +93,7 @@ sub get_outline
 			$first_move = $hsbw[0];
 		}
 	} else {
+		$code = $self->int32($abc[0] + $abc[1] + $abc[2]);
 		$first_move = 0;
 	}
 
