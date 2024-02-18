@@ -177,6 +177,7 @@ init( PImgCodecInfo * info, void * param)
 			case heif_compression_AV1:
 				ext[2] = "avif";
 				break;
+			default:;
 			}
 
 			if ( strcmp(compstr, "HEVC") == 0)
