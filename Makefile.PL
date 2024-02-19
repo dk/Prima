@@ -2396,6 +2396,8 @@ sub command_postinstall
 		close F;
 	}
 
+	$opt{dest} = $ENV{PERL_INSTALL_ROOT} . $opt{dest} if defined $ENV{PERL_INSTALL_ROOT};
+
 	my $fn_cfg = "$opt{dest}/Prima/Config.pm";
 	print "Updating config $fn_cfg\n";
 	open F, $fn_cfg or die "cannot open $fn_cfg:$!\n";
