@@ -864,19 +864,19 @@ open_save( PImgCodec instance, PImgSaveFileInstance fi)
 	return l;
 }
 
-static void
-j_write_extras( j_compress_ptr j, int marker, SV * data)
+static Bool
+j_write_extras( PImgSaveFileInstance fi, j_compress_ptr j, int marker, SV * data)
 {
-	int i, w;
 	STRLEN len;
 	char * p;
 
 	p = SvPV( data, len);
-	for ( i = 0; i < len; i += 65533) {
-		w = len - i;
-		if ( w > 65533) w = 65533;
-		jpeg_write_marker( j, marker, ( unsigned char *) p + i, w);
+	if ( len > 65535 ) {
+		strcpy( fi-> errbuf, "appdata length must be less than 65536 bytes");
+		return false;
 	}
+	jpeg_write_marker( j, marker, ( unsigned char *) p, len);
+	return true;
 }
 
 static Bool
@@ -938,7 +938,8 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 
 	/* write extras */
 	if ( pexist( comment))
-		j_write_extras( &l-> c, JPEG_COM, pget_sv( comment));
+		if ( !j_write_extras( fi, &l-> c, JPEG_COM, pget_sv( comment)))
+			return false;
 
 	if ( appdata) {
 		int marker;
@@ -946,7 +947,8 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 		for ( marker = 1; marker < 16; marker++) {
 			sv = av_fetch( appdata, marker, 0);
 			if ( sv && *sv && SvOK( *sv))
-	     			j_write_extras( &l-> c, JPEG_APP0 + marker, *sv);
+	     			if ( !j_write_extras( fi, &l-> c, JPEG_APP0 + marker, *sv))
+					return false;
 		}
 	}
 
