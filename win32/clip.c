@@ -200,7 +200,7 @@ clipboard_get_data(int cfid, PClipboardDataRec c, void * p1, void * p2)
 					GlobalUnlock( p1);
 					return false;
 				}
-				dsys(i) s. image. argb_bits = ((Byte*)bi) + sizeof(BITMAPINFOHEADER);
+				dsys(i) s. image. argb_bits = (uint32_t*) ((Byte*)bi) + sizeof(BITMAPINFOHEADER);
 				image_argb_query_bits((Handle) i);
 				dsys(i) s. image. argb_bits = NULL;
 			} else if (
