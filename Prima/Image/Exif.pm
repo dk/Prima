@@ -261,6 +261,8 @@ our %tags = (
 	0xa302	=> 'CFAPattern',
 );
 
+our %revtags;
+
 sub read_ifd
 {
 	my ($self, $section) = @_;
@@ -494,6 +496,120 @@ sub compile_all
 	return 1;
 }
 
+##############
+
+sub read_jpeg
+{
+	my ($class, $i, %opt) = @_;
+
+	my $data;
+	return (undef, "no jpeg exif data") unless
+		($i->codec // '') eq 'JPEG' and
+		exists $i->{extras}->{appdata} and
+		$data = $i->{extras}->{appdata}->[1];
+
+	my ( $res, $error) = $class->parse($data);
+	if ( ref($res) ) {
+		if ( $res->{thumbnail} && $opt{load_thumbnail} ) {
+			open my $f, "<", \$res->{thumbnail};
+			binmode $f;
+			my $t = Prima::Image->load( $f );
+			$res->{thumbnail} = $t // $@;
+			close $f;
+		}
+		if ( $opt{tag_as_string}) {
+			for my $k ( supported_ifds() ) {
+				my $ifd = $res->{$k};
+				next unless (ref($ifd // '') // '') eq 'ARRAY';
+				for my $e ( @$ifd ) {
+					$e->[0] = $tags{ $e->[0] } if exists $tags{ $e->[0] };
+				}
+			}
+		}
+	}
+	return $res, $error;
+}
+
+sub read_extras
+{
+	my ( $class, $i, %opt ) = @_;
+	my $c = $i->codec // '';
+	if ( $c eq 'JPEG') {
+		return $class->read_jpeg($i, %opt);
+	} else {
+		return (undef, "not supported");
+	}
+}
+
+sub write_jpeg
+{
+	my ($class, $i, $data) = @_;
+
+	return undef, "jpeg is not supported" unless $i->codec('JPEG');
+
+	my $e = $i->{extras};
+	my %data = %$data;
+	if ( $data{thumbnail} && ref($data{thumbnail})) {
+		my $t = '';
+		open my $f, ">", \$t;
+		binmode $f;
+		my $ok = $data{thumbnail}->save($f, codecID => Prima::Image->has_codec('JPEG')->{codecID});
+		close $f;
+		return (undef, $@) unless $ok;
+		$data{thumbnail} = $t;
+	}
+
+	my $ii = $data{image} //= [];
+	my $found_compression;
+	for my $entry ( @$ii ) {
+		next if $entry->[0] != 0x103;
+		$entry->[2] = 6;
+		$found_compression = 1;
+		last;
+	}
+	push @$ii, [ 0x103, 'uint16', 6 ] unless $found_compression;
+
+	my ($compiled, $error) = $class->compile(\%data);
+	return (undef, $error) if !defined $compiled;
+	$i->{extras}->{appdata}->[1] = $compiled;
+	return 1;
+}
+
+sub supported_ifds { qw(image photo gpsinfo) }
+
+sub revtags
+{
+	%revtags = reverse %tags unless scalar keys %revtags;
+	return \%revtags;
+}
+
+sub write_extras
+{
+	my ($class, $i, @data) = @_;
+	my $c = $i->codec // '';
+
+	my $data = ( @data == 1 ) ? $data[0] : { @data };
+
+	my $revtags;
+	for my $k ( supported_ifds ) {
+		next unless (ref($data->{$k} // '') // '') eq 'ARRAY';
+		for my $v ( @{ $data->{$k} } ) {
+			if ( $v->[0] =~ /^[A-Za-z]/ ) {
+				$revtags //= revtags;
+				return (undef, "don't know tag ID for `$v->[0]`, use a numeric value")
+					unless exists $revtags->{ $v->[0] };
+				$v->[0] = $revtags->{ $v->[0] };
+			}
+		}
+	}
+
+	if ( $c eq 'JPEG' ) {
+		return $class->write_jpeg($i, $data);
+	} else {
+		return (undef, "not supported");
+	}
+}
+
 1;
 
 =pod
@@ -516,38 +632,25 @@ extra appdata hash field.
 	my $jpeg = Prima::Image->load($ARGV[0], loadExtras => 1);
 	die $@ unless $jpeg;
 
-	my $tags = \%Prima::Image::Exif::tags;
-	my $exif = {};
-	my $appid = 0;
+	my ( $data, $error ) = Prima::Image::Exif->read_extras($jpeg,
+		load_thumbnail => 1,
+		tag_as_string  => 1
+	);
+	die "cannot read exif: $error\n" if defined $error;
 
-	# parse markers APP0..APPX, but usually it is only in APP1
-	if ( my $appdata = $jpeg->{extras}->{appdata}) {
-		for my $appdatum ( @$appdata ) {
-			if ( !defined $appdatum ) {
-				$appid++;
-				next;
-			}
-
-			my ( $parsed, $error ) = Prima::Image::Exif->parse( $appdatum );
-			if ( !defined $parsed ) {
-				print "APP$appid: $error\n";
+	for my $k ( sort keys %$data ) {
+		my $v = $data->{$k};
+		if ( $k eq 'thumbnail' ) {
+			if ( ref($v)) {
+				print "thumbnail ", $v->width, 'x', $v->height, "\n";
 			} else {
-				for my $name ( sort keys %$parsed ) {
-					if ( $name eq 'thumbnail') {
-						print "thumbnail: ". length($parsed->{$name}) . " bytes\n";
-						next;
-					}
-
-					print "> $name\n";
-					for ( @{ $parsed->{$name} } ) {
-						my ( $tag, $format, @data ) = @$_;
-						$tag = $tags->{$tag} if exists $tags->{$tag};
-						print "$tag $format @data\n";
-					}
-				}
-				$exif = $parsed;
+				print "error loading thumbnail: $v\n";
 			}
-			$appid++;
+			next;
+		}
+		for my $dir ( @$v ) {
+			my ( $tag, $name, @data ) = @$dir;
+			print "$k.$tag $name @data\n";
 		}
 	}
 
@@ -555,25 +658,18 @@ extra appdata hash field.
 	$jpeg->size(300,300);
 
 	# create a thumbnail - not too big as jpeg appdata max length is 64k
-	my $t = $jpeg->dup;
-	delete $t->{extras};
-	$t->size(150,150);
-	open F, ">", \my $thumbnail;
-	binmode F;
-	$t->save(\*F, codecID => $jpeg->{extras}->{codecID} );
-	close F;
+	my $thumbnail = $jpeg->dup;
+	delete $thumbnail->{extras};
+	$thumbnail->size(150,150);
 
 	# compile an exif chunk
-	my ($compiled, $error) = Prima::Image::Exif->compile({
-		image     => [[ 0x103, 'uint16', 6 ]], # jpeg compression=6
+	my $ok;
+	($ok, $error) = Prima::Image::Exif->write_extras($jpeg,
 		thumbnail => $thumbnail,
-		gpsinfo   => $exif->{gpsinfo},
-	});
-	die $error unless $compiled;
-	print length($compiled), "\n";
+		gpsinfo   => $data->{gpsinfo},
+	);
+	die "cannot create exif data: $error\n" unless $ok;
 
-	# save the image, keep only APP1
-	$jpeg->{extras} = { appdata => [ undef, $compiled ] };
 	$jpeg->save('new.jpg') or die $@;
 
 =head1 API
@@ -594,11 +690,37 @@ raw image data. Each tag is an array in the following format: [ tag, format,
 The module recognized some common tags that can be accessed via
 C<%Prima::Image::Exif::tags>.
 
+=head2 read_extras $CLASS, $IMAGE, %OPTIONS
+
+Given a loaded Prima image, loads exif data from extras; returns two
+scalar, a data reference and an error.
+
+Options supported:
+
+=over
+
+=item load_thumbnail
+
+If set, tries to load thumbnail as a Prima image. In this case,
+replaces the thumbnail raw data with the image loaded, or in case of an error, with
+an error string
+
+=item tag_as_string
+
+If set, replaces known tag numeric values with their string names
+
+=back
+
 =head2 compile $CLASS, $DATA
 
 Accepts DATA in the format described above, creates an exif string.
 Returns two scalars, am exif string and an error. If the string
 is not defined, the error is.
+
+=head2 write_extras $CLASS, $IMAGE, %DATA
+
+Checks if image codec is supported, creates Exif data and saves these in
+C<< $IMAGE->{extras} >> . Return two scalars, a success flag and an error.
 
 =head1 SEE ALSO
 

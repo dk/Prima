@@ -379,6 +379,15 @@ See also: F<examples/layered.pl>.
 
 =over
 
+=item codec $NAME
+
+In the get-call, returns the codec name that loaded the image, given
+the extras were loaded using the C<< loadExtras => 1 >> options. Returns
+undef if cannot detect the codec.
+
+In the set-call, assigns the codec to the image extras, so that
+a C<save> call can use that to save in the desired format.
+
 =item colormap @PALETTE
 
 The color palette is used for representing 1, 4, and 8-bit bitmaps when the
@@ -434,6 +443,11 @@ pixels, aligned to a 4-byte boundary. On the set-call, stores the provided data
 with the same 4-byte alignment. The alignment can be altered by submitting the
 write-only C<lineSize> flag to the set-call. The ordering of scan lines can be
 altered by setting the write-only C<reverse> flag ( see L<Data access> ).
+
+=item exif HASH
+
+A shortcut to the Exif parser and compiler, C< Prima::Image::Exif >, to operate
+on the image extras.
 
 =item height INTEGER
 
@@ -813,6 +827,10 @@ Returns the bit depth of the pixel format. Same as C<::type & im::BPP>.
 =item get_handle
 
 Returns the system handle of the image object.
+
+=item has_codec $MATCH
+
+Returns true if Prima supports the codec. Can be called on a package.
 
 =item load (FILENAME or FILEGLOB) [ %PARAMETERS ]
 

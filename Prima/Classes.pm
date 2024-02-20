@@ -994,6 +994,32 @@ sub has_codec
 	return wantarray ? @ret : $ret[0];
 }
 
+sub codec
+{
+	if ( $#_ ) {
+		my ( $self, $name ) = @_;
+		for my $c ( @{ Prima::Image->codecs }) {
+			next unless $c->{fileShortType} eq $name;
+			$self->{extras}->{codecID} = $c->{codecID};
+			return 1;
+		}
+	} else {
+		my ($self, $id) = (shift);
+		return unless defined ($id = $self->{extras}->{codecID});
+		for my $c ( @{ Prima::Image->codecs }) {
+			next unless $id == $c->{codecID};
+			return $c->{fileShortType};
+		}
+	}
+	return;
+}
+
+sub exif
+{
+	require Prima::Image::Exif;
+	[ $#_ ? Prima::Image::Exif->write_extras(@_) : Prima::Image::Exif->read_extras(@_) ]->[0]
+}
+
 package Prima::Icon;
 use vars qw( @ISA);
 @ISA = qw(Prima::Image);
