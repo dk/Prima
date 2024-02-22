@@ -1017,7 +1017,10 @@ sub codec
 sub exif
 {
 	require Prima::Image::Exif;
-	[ $#_ ? Prima::Image::Exif->write_extras(@_) : Prima::Image::Exif->read_extras(@_) ]->[0]
+	[ $#_ ?
+		Prima::Image::Exif->write_extras(@_) :
+		Prima::Image::Exif->read_extras($_[0], tag_as_string => 1)
+	]->[0]
 }
 
 package Prima::Icon;
