@@ -3,6 +3,8 @@ package Prima::Image::Exif;
 use strict;
 use warnings;
 
+our $XMP_HEADER = "http://ns.adobe.com/xap/1.0/\0";
+
 sub parse
 {
 	my %c = (
@@ -991,6 +993,9 @@ sub read_jpeg
 		exists $i->{extras}->{appdata} and
 		$data = $i->{extras}->{appdata}->[1];
 
+	return ( $2, "XMP data" )
+		if $data =~ /^($XMP_HEADER)(.*)/s;
+
 	my ( $res, $error) = $class->parse($data);
 	if ( ref($res) ) {
 		if ( $res->{thumbnail} && $opt{load_thumbnail} ) {
@@ -1119,6 +1124,22 @@ extra appdata hash field.
 		load_thumbnail => 1,
 		tag_as_string  => 1
 	);
+
+	if ( $error eq 'XMP data' && defined $data ) {
+		require XML::LibXML;
+		my $xml = XML::LibXML->load_xml(string => $data);
+		for my $node ($xml->findnodes('//*')) {
+			my @p = $node->childNodes;
+			next unless @p == 1;
+			my $p = $node->nodePath;
+			$p =~ s{\/\b[-\w]+\:}{.}g;
+			$p =~ s{\.(xmpmeta|rdf)}{}ig;
+			$p =~ s{^\.}{};
+			print "$p: $p[0]\n";
+		}
+		($data, $error) = ({}, undef);
+	}
+
 	die "cannot read exif: $error\n" if defined $error;
 
 	for my $k ( sort keys %$data ) {
@@ -1211,6 +1232,9 @@ L<Prima::image-load>
 
 The module does not provide comprehensive support for tags and their values.
 For a more thorough dive see these modules: L<Image::ExifTool>, L<Image::EXIF>.
+
+The module doesn't parse XMP records but warns if get supplied these.
+The XMP records are easily parsed by any XML parser, f ex L<XML::LibXML>.
 
 =head1 AUTHOR
 
