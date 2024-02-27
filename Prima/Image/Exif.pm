@@ -801,6 +801,8 @@ sub read_header
 
 	my $header = $self->_read(10) // return 0;
 	use bytes;
+	return $self->error('this is xmp, not exif data')
+		if $header =~ m[^http://ns\.];
 	return $self->error('no exif header') unless $header =~ m/^
 		Exif
 		\x{00}\x{00}
