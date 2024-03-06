@@ -1167,12 +1167,12 @@ See L<Prima::Drawable/Raster operations>
 
 12 Porter-Duff operators
 
-        rop::Clear       # = 0
-        rop::Xor         # = src ( 1 - dstA ) + dst ( 1 - srcA )
+        rop::Clear       # same as rop::Blackness, = 0
+        rop::XorOver     # = src ( 1 - dstA ) + dst ( 1 - srcA )
         rop::SrcOver     # = src srcA + dst (1 - srcA)
         rop::DstOver     # = dst srcA + src (1 - dstA)
-        rop::SrcCopy     # = src
-        rop::DstCopy     # = dst
+        rop::SrcCopy     # same as rop::CopyPut,   = src
+        rop::DstCopy     # same as rop::NoOper,    = dst
         rop::SrcIn       # = src dstA
         rop::DstIn       # = dst srcA
         rop::SrcOut      # = src ( 1 - dstA )
@@ -1200,18 +1200,18 @@ Photoshop operators
 	rop::Difference
 	rop::Exclusion
 
-Constant alpha flags
+Special flags
 
-        rop::SrcAlpha
-        rop::SrcAlphaShift
-        rop::DstAlpha
-        rop::DstAlphaShift
-	rop::ConstantAlpha
+        rop::ConstantAlpha      # This flag signals that there is present a
+        rop::SrcAlpha           # combination of these four flags that
+        rop::SrcAlphaShift      # may encode extra source and destination
+        rop::DstAlpha           # alpha values in cases either where there is none
+        rop::DstAlphaShift      # in the images, or as additional blend factors.
 
-Others
+        rop::AlphaCopy          # source image is treated a 8-bit grayscale alpha
+        rop::ConstantColor      # foreground color is used to fill the color bits
 
-        rop::AlphaCopy
-	rop::ConstantColor
+        rop::Default            # rop::SrcOver for ARGB destinations, rop::CopyPut otherwise
 
 ROP functions
 
