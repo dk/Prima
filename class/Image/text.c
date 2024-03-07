@@ -123,16 +123,16 @@ draw_line( Handle self, int y, int w, Matrix matrix, ImgPaintContext *ctx, Bool 
 	poly[0].x = 0;
 	poly[1].x = w;
 	poly[0].y = poly[1].y = y;
+	if ( use_bar && var->font.underlineThickness > 1 ) {
+		poly[0].y -= (var->font.underlineThickness - 1 ) / 2;
+		poly[1].y += var->font.underlineThickness / 2;
+	}
 	prima_matrix_apply2_int_to_int( matrix, poly, poly, 2);
 	if ( use_1px)
 		img_polyline(self, 2, poly, ctx);
-	else if ( use_bar ) {
-		if ( var->font.underlineThickness > 1 ) {
-			poly[0].y -= (var->font.underlineThickness - 1 ) / 2;
-			poly[1].y += var->font.underlineThickness / 2;
-		}
+	else if ( use_bar )
 		img_bar( self, poly[0].x, poly[0].y, w, poly[1].y - poly[0].y + 1, ctx);
-	} else
+	else
 		Image_draw_primitive( self, 0, "siiii", "line", poly[0].x, poly[0].y, poly[1].x, poly[1].y);
 }
 
