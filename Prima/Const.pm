@@ -1202,11 +1202,12 @@ Photoshop operators
 
 Special flags
 
-        rop::ConstantAlpha      # This flag signals that there is present a
-        rop::SrcAlpha           # combination of these four flags that
+        rop::SrcAlpha           # The combination of these four flags
         rop::SrcAlphaShift      # may encode extra source and destination
         rop::DstAlpha           # alpha values in cases either where there is none
         rop::DstAlphaShift      # in the images, or as additional blend factors.
+	                        #
+        rop::ConstantAlpha      # (same as rop::SrcAlpha|rop::DstAlpha)
 
         rop::AlphaCopy          # source image is treated a 8-bit grayscale alpha
         rop::ConstantColor      # foreground color is used to fill the color bits
