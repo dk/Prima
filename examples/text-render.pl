@@ -155,7 +155,7 @@ my ($w,$h) = $i->size;
 my @ascii;
 if ( $opt{ascii}) {
 	@ascii = (' ', '^', 'v', 'X');
-} elsif ( ($ENV{LANG} // '') =~ /utf8/i) {
+} elsif ( ($ENV{LANG} // '') =~ /utf\-?8/i) {
 	@ascii = (' ', chr(0x2580), chr(0x2584), chr(0x2588) );
 	binmode STDOUT, ":utf8";
 } else {
