@@ -195,7 +195,15 @@ paint_background(
 	Color bc;
 	double d = var->font.direction;
 	var->font.direction = 0;
-	Drawable_get_glyphs_box(self, t, p);
+	if ( t->advances)
+		Drawable_get_glyphs_box(self, t, p);
+	else {
+		Point *pp;
+		if ( !( pp = apc_gp_get_glyphs_box( self, t)))
+			return;
+		memcpy(p, pp, sizeof(p));
+		free(pp);
+	}
 	var->font.direction = d;
 
 	bc = my->get_backColor(self);
