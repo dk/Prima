@@ -26,7 +26,7 @@ use Getopt::Long;
 
 my %opt = (
 	help      => 0,
-	shaping   => 1,
+	shaping   => 2,
 	direction => 0,
 	box       => 0,
 	polyfont  => 1,
