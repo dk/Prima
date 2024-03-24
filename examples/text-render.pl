@@ -76,6 +76,7 @@ usage if $opt{help};
 usage if $opt{shaping} > 3;
 usage if $opt{rtl} !~ /^(0|1|default)$/;
 usage if $opt{pitch} !~ /^(variable|fixed|default)$/;
+usage if @ARGV < 2;
 my %font;
 if ( $ARGV[0] =~ m/^(\d+)\.(.+)$/) {
 	%font = ( size => $1, name => $2 );
