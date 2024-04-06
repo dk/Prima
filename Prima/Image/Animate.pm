@@ -147,6 +147,27 @@ sub total
 
 sub get_extras { shift->{image}->{extras} // {} }
 
+sub close
+{
+	my $self = shift;
+	return unless $self->{loader};
+	$self->{loader}->close;
+	$self->{suspended} = 1;
+}
+
+sub suspended { $_[0]->{suspended} }
+
+sub reload
+{
+	my $self = shift;
+	return 1 unless $self->{loader};
+	delete $self->{suspended};
+	my ($ok) = $self->{loader}->reload;
+	return 0 unless $ok;
+	$self->reset;
+	return 1;
+}
+
 sub reset
 {
 	my $self = shift;
@@ -197,6 +218,8 @@ sub load_next_image
 sub advance_frame
 {
 	my $self = shift;
+
+	return 0 if $self->{suspended};
 
 	my ( $oimg, $oinfo) = delete @{$self}{qw(image info)};
 	my $curr = $self->{current};
@@ -331,12 +354,14 @@ sub next
 {
 	my $self = shift;
 	my %ret;
+	return 0 if $self->{suspended};
 
 	# dispose from the previous frame and calculate the changed rect
 	my $info = $self->{info};
 	my @sz = ( $self-> {screenWidth}, $self-> {screenHeight});
 
 	# dispose from the previous frame and calculate the changed rect
+	warn $info;
 	if ( $info-> {disposalMethod} == DISPOSE_CLEAR) {
 		$self-> {canvas}-> backColor( 0);
 		$self-> {canvas}-> clear;
@@ -517,6 +542,7 @@ sub next
 	my $self = shift;
 	my $info = $self->{info} or return;
 	my %ret;
+	return 0 if $self->{suspended};
 
 	if ( $info-> {disposalMethod} eq 'restore') {
 		# cut to the previous frame, that we expect to be saved for us
@@ -699,6 +725,15 @@ Returns the background color specified by the sequence as the preferred
 color to use when there is no specific background to superimpose the
 animation on.
 
+=head2 close
+
+Releases eventual image file handle for loader-based animations. Sets the
+C<{suspended}> flag so that all image operations are suspended. A later call
+to C<reload> restores the status quo execpt the current frame prior to the C<close>
+call.
+
+Has no effect on animations loaded with the C<loadAll> option.
+
 =head2 current
 
 Returns the index of the current frame
@@ -759,6 +794,11 @@ Time in seconds how long the frame is expected to be displayed
 
 =back
 
+=head2 reload
+
+Reloads the animation after a C<close> call.
+Returns the success flag.
+
 =head2 reset
 
 Resets the animation sequence. This call is necessary either when the image
@@ -767,6 +807,10 @@ sequence was altered, or when the sequence display restart is needed.
 =head2 size
 
 Returns the width and height of the composite frame
+
+=head2 suspended
+
+Returns true if a call to the C<close> method was made.
 
 =head2 total
 

@@ -28,6 +28,14 @@ sub new
 	return $self;
 }
 
+sub close
+{
+	delete $_[0]->{image};
+	delete $_[0]->{extras};
+	delete $_[0]->{frames};
+	delete $_[0]->{current};
+}
+
 sub reload
 {
 	my $self = shift;
@@ -192,6 +200,10 @@ Returns either a new loader object, or C<undef> and the error string.
 Note that it is possible to supply the C<onHeaderReady> and C<onDataReady>
 callbacks in the options, however, note that the first arguments in these
 callbacks will the newly created image.
+
+=item close
+
+Releases the image file handle. The image can be reopened again by calling C<reload>.
 
 =item current INDEX
 
