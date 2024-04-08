@@ -361,7 +361,6 @@ sub next
 	my @sz = ( $self-> {screenWidth}, $self-> {screenHeight});
 
 	# dispose from the previous frame and calculate the changed rect
-	warn $info;
 	if ( $info-> {disposalMethod} == DISPOSE_CLEAR) {
 		$self-> {canvas}-> backColor( 0);
 		$self-> {canvas}-> clear;
