@@ -419,17 +419,19 @@ sub DESTROY {}
 sub _debug
 {
 	my $f = shift;
-	printf STDERR "%d.%s [%dx%d]",
+	my $noprint = shift;
+	my $r = sprintf "%d.%s [%dx%d]",
 		@{$f}{qw(size name width height)};
-	print STDERR " thin"   if $f->{style} & fs::Thin;
-	print STDERR " bold"   if $f->{style} & fs::Bold;
-	print STDERR " italic" if $f->{style} & fs::Italic;
-	print STDERR " fixed"  if $f->{pitch} == fp::Fixed;
-	print STDERR " B"      if $f->{vector} == fv::Bitmap;
+	$r .= " thin"   if $f->{style} & fs::Thin;
+	$r .= " bold"   if $f->{style} & fs::Bold;
+	$r .= " italic" if $f->{style} & fs::Italic;
+	$r .= " fixed"  if $f->{pitch} == fp::Fixed;
+	$r .= " bitmap" if $f->{vector} == fv::Bitmap;
 
-	printf STDERR " dir=%g", $f->{direction} if $f->{direction} != 0.0;
-	printf STDERR " %s",     $f->{encoding};
-	print STDERR "\n";
+	$r .= sprintf " dir=%g", $f->{direction} if $f->{direction} != 0.0;
+	$r .= sprintf " %s",     $f->{encoding};
+	return $r if $noprint;
+	print STDERR "$f\n";
 }
 
 package Prima::Matrix;

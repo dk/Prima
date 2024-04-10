@@ -43,13 +43,13 @@ sub usage
 $0 - render fonts in terminal
 
 format:
-	render-text [options] font-name text [text...]
+	render-text [options] [font-name=12.Default] text [text...]
 
 * font-name: [size=12.][BIOUTS.]name
 * use x{04A0} as a unicode codepoint
 
 options:
-       --shaping=0-3     use shaping (0-none, 1-glyphs, 2-full, 3-bytes)
+       --shaping=0-3     use shaping (0-none, 1-glyphs, 2-full (default), 3-bytes)
        --direction=ANGLE
        --box             draw text inside a box
        --polyfont=1
@@ -76,16 +76,20 @@ usage if $opt{help};
 usage if $opt{shaping} > 3;
 usage if $opt{rtl} !~ /^(0|1|default)$/;
 usage if $opt{pitch} !~ /^(variable|fixed|default)$/;
-usage if @ARGV < 2;
+usage if @ARGV < 1;
 my %font;
-if ( $ARGV[0] =~ m/^(\d+)\.(.+)$/) {
-	%font = ( size => $1, name => $2 );
+if ( @ARGV > 1 ) {
+	if ( $ARGV[0] =~ m/^(\d+)\.(.+)$/) {
+		%font = ( size => $1, name => $2 );
+	} else {
+		%font = ( name => $ARGV[0], size => 12 );
+	}
+	shift @ARGV;
 } else {
-	%font = ( name => $ARGV[0], size => 12 );
+	%font = ( size => 12 );
 }
 $font{direction} = $opt{direction};
-shift @ARGV;
-if ( $font{name} =~ m/^([BIOUTS]+)\.(.+)$/) {
+if ( ($font{name} // '') =~ m/^([BIOUTS]+)\.(.+)$/) {
 	$font{name} = $2;
 	$font{style} = 0;
 	for ( split //, $1 ) {
@@ -110,6 +114,7 @@ my $i = Prima::Image->new(
 	scaling => ist::None,
 	textOutBaseline => 1,
 );
+print "font: ", $i->font->_debug(1), "\n";
 if ( $opt{box}) {
 	$i->set(
 		textOpaque => 1,
@@ -127,7 +132,7 @@ if ( $opt{shaping} ) {
 	$xopt{language} = $opt{lang} if $opt{lang} ne 'default';
 	$xopt{pitch} = $font{pitch} if exists $font{pitch};
 	$text = $i->text_shape($text, %xopt);
-	$text->_debug if ref($text);
+	print $text->_debug(1) if ref($text);
 }
 my @box = @{$i->get_text_box($text)};
 my ($xmin,$ymin,$xmax,$ymax) = (0,0,1,1);
