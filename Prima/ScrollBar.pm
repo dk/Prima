@@ -28,7 +28,7 @@ sub profile_default
 		growMode      => gm::GrowHiX,
 		height        => $stdMetrics[1],
 		min           => 0,
-		minThumbSize  => 21 * $::application->uiScaling,
+		minThumbSize  => int( 21 * $::application->uiScaling + .5),
 		max           => 100,
 		pageStep      => 10,
 		partial       => 10,
@@ -795,7 +795,7 @@ sub set_min_thumb_size
 	my ( $self, $mts) = @_;
 	$mts = 1 if $mts < 0;
 	return if $mts == $self-> {minThumbSize};
-	$self-> {minThumbSize} = $mts;
+	$self-> {minThumbSize} = int($mts + .5);
 	$self-> reset;
 	$self-> repaint;
 }
