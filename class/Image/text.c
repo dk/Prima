@@ -128,11 +128,13 @@ draw_line( Handle self, int y, int w, Matrix matrix, ImgPaintContext *ctx, Bool 
 		poly[1].y += var->font.underlineThickness / 2;
 	}
 	prima_matrix_apply2_int_to_int( matrix, poly, poly, 2);
-	if ( use_1px)
-		img_polyline(self, 2, poly, ctx);
-	else if ( use_bar )
-		img_bar( self, poly[0].x, poly[0].y, w, poly[1].y - poly[0].y + 1, ctx);
-	else
+	if ( use_1px) {
+		ImgPaintContext c = *ctx;
+		img_polyline(self, 2, poly, &c);
+	} else if ( use_bar ) {
+		ImgPaintContext c = *ctx;
+		img_bar( self, poly[0].x, poly[0].y, w, poly[1].y - poly[0].y + 1, &c);
+	} else
 		Image_draw_primitive( self, 0, "siiii", "line", poly[0].x, poly[0].y, poly[1].x, poly[1].y);
 }
 
@@ -140,13 +142,13 @@ static void
 draw_lines(
 	Handle self,
 	int w, Matrix matrix, Bool straight,
-	Bool monochrome, Color color, ImgPaintContext *ctx,
+	Bool monochrome, Bool emulate_mono_alpha,
+	Color color, ImgPaintContext *ctx,
 	Bool *gp_save
 ) {
 	Bool aa = my->get_antialias(self);
 	Bool use_1px =
 		var-> font.underlineThickness <= 1 && (
-			monochrome ||
 			straight ||
 			!aa
 		)
@@ -160,16 +162,18 @@ draw_lines(
 		memset( ctx->pattern, 0xff, sizeof(FillPattern));
 	} else {
 		if ( !*gp_save ) {
-			*gp_save = my-> graphic_context_push(self);
-			prima_matrix_set_identity(VAR_MATRIX);
-			apc_gp_set_text_matrix( self, VAR_MATRIX);
+			if ( !( *gp_save = my-> graphic_context_push(self)))
+				return;
 		}
+		prima_matrix_set_identity(VAR_MATRIX);
+		apc_gp_set_text_matrix( self, VAR_MATRIX);
 		my-> set_color(self, color);
 		my-> set_lineWidth( self, var->font.underlineThickness + (aa ? -1 : 1));
 		my-> set_lineEnd( self, sv_2mortal(newSViv(leFlat)) );
 		apc_gp_set_line_pattern(self, lpSolid, strlen((char*) lpSolid));
-		if ( monochrome )
+		if ( monochrome || emulate_mono_alpha )
 			my-> set_antialias( self, false );
+		my->set_rop( self, ctx->rop);
 	}
 
 	if ( var-> font.style & fsStruckOut )
@@ -187,7 +191,7 @@ draw_lines(
 
 static void
 paint_background(
-	Handle self, PGlyphsOutRec t, Bool monochrome,
+	Handle self, PGlyphsOutRec t, Bool monochrome, Bool emulate_mono_alpha,
 	Point o, int dy, Bool straight, Matrix matrix,
 	ImgPaintContext *ctx, Bool *gp_save
 ) {
@@ -208,16 +212,18 @@ paint_background(
 
 	bc = my->get_backColor(self);
 	if ( p[0].x == p[1].x && p[0].y == p[2].y && straight) {
+		ImgPaintContext c = *ctx;
 		if ( !monochrome) {
 			int a = var->alpha;
 			var->alpha = 255;
-			bc = Image_premultiply_color(self, ctx->rop, bc);
+			bc = Image_premultiply_color(self, c.rop, bc);
 			var->alpha = a;
 		}
-		Image_color2pixel( self, bc, ctx->color);
-		memset(ctx->pattern, 0xff, sizeof(FillPattern));
-		img_bar( self, o.x + p[1].x, o.y + p[1].y - dy, p[2].x - p[1].x + 1, p[2].y - p[1].y + 1, ctx);
+		Image_color2pixel( self, bc, c.color);
+		memset(c.pattern, 0xff, sizeof(FillPattern));
+		img_bar( self, o.x + p[1].x, o.y + p[1].y - dy, p[2].x - p[1].x + 1, p[2].y - p[1].y + 1, &c);
 	} else {
+		Matrix m;
 		SV * sv1  = prima_array_new(sizeof(Point) * 4);
 		SV * sv2  = sv_2mortal( prima_array_tie(sv1, sizeof(p[0].x), "i"));
 		Point *p2 = (Point*) SvPV(sv1, PL_na);
@@ -231,16 +237,20 @@ paint_background(
 		p2[3].y = p[2].y - dy;
 		prima_matrix_apply2_int_to_int( matrix, p2, p2, 4);
 		if ( !*gp_save) {
-			*gp_save = my-> graphic_context_push(self);
-			prima_matrix_set_identity(VAR_MATRIX);
-			apc_gp_set_text_matrix( self, VAR_MATRIX);
+			if ( !( *gp_save = my-> graphic_context_push(self)))
+				return;
 		}
+		COPY_MATRIX( VAR_MATRIX, m );
+		prima_matrix_set_identity(VAR_MATRIX);
+		apc_gp_set_text_matrix( self, VAR_MATRIX);
 		apc_gp_set_fill_pattern( self, fillPatterns[fpSolid]);
 		my-> set_rop(self, ropCopyPut);
 		my-> set_color(self, bc);
-		if ( monochrome )
+		if ( monochrome || emulate_mono_alpha )
 			my-> set_antialias( self, false );
 		Image_draw_primitive( self, 1, "sS", "line", sv2 );
+		COPY_MATRIX( m, VAR_MATRIX );
+		apc_gp_set_text_matrix( self, VAR_MATRIX);
 	}
 }
 
@@ -305,7 +315,7 @@ static Bool
 plot_next_glyph(
 	Handle self,
 	PGlyphsOutRec t, int i,
-	unsigned int flags, Point *o, int *advance,
+	unsigned int flags, Bool downgrade_glyph, Point *o, int *advance,
 	Bool straight, Matrix matrix, Matrix pos_matrix,
 	ImgPaintContext *ctx, SaveFont *savefont
 ) {
@@ -318,6 +328,8 @@ plot_next_glyph(
 		if ( !Drawable_switch_font(self, savefont, t->fonts[i]))
 			return true;
 
+	if ( downgrade_glyph )
+		flags &= ~ggoMonochrome;
 	if ( !( arena = apc_font_get_glyph_bitmap(
 		self, t->glyphs[i], flags,
 		&offset, &size,
@@ -348,6 +360,14 @@ plot_next_glyph(
 		img_fill_dummy( &src_dummy, size.x, size.y,
 			imGrayScale | ((flags & ggoMonochrome) ? 1 : 8),
 			arena, NULL);
+		if ( downgrade_glyph ) {
+			register Byte *s = arena;
+			register unsigned int i = src_dummy.dataSize;
+			while (i--) {
+				*s = (*s < 127) ? 0 : 255;
+				s++;
+			}
+		}
 		img_plot_glyph( self, &src_dummy, glyph.left, glyph.bottom, ctx);
 	}
 	free(arena);
@@ -377,11 +397,34 @@ plot_glyphs( Handle self, PGlyphsOutRec t, int x, int y )
 	ImgPaintContext ctx;
 	Color           color;
 	Bool            gp_save = false;
+	Bool            emulate_mono_alpha = false;
 	SaveFont        savefont;
 
 	flags = ggoUseHints;
 	if (((var->type & imBPP) == 1) || !var->antialias)
 		flags |= ggoMonochrome;
+
+	bzero(&ctx, sizeof(ImgPaintContext));
+	ctx.region = var-> regionData;
+	i = apply_color_and_rop( self, flags & ggoMonochrome, &color, &ctx);
+	if ( i < 0 )
+		return true;
+	else if ( i == 0 ) {
+		if ( flags & ggoMonochrome )
+			return false;
+		/* downgrade for ROPs */
+		flags |= ggoMonochrome;
+	}
+
+	if (
+		(flags & ggoMonochrome) &&
+		var->alpha != 255 &&
+		( ctx.rop > ropWhiteness || ctx.rop == ropCopyPut )
+	) {
+		emulate_mono_alpha = true;
+		if ( ctx.rop == ropCopyPut || ctx.rop == ropDefault )
+			ctx.rop = ropSrcOver | ropSrcAlpha | (var->alpha << ropSrcAlphaShift);
+	}
 
 	if ( !(flags & ggoMonochrome) && var->type != imByte && var->type != imRGB) {
 		ImagePreserveTypeRec p;
@@ -394,12 +437,6 @@ plot_glyphs( Handle self, PGlyphsOutRec t, int x, int y )
 		}
 	}
 
-	bzero(&ctx, sizeof(ImgPaintContext));
-	ctx.region = var-> regionData;
-
-	if (( i = apply_color_and_rop( self, flags & ggoMonochrome, &color, &ctx)) < 1 )
-		return i != 0;
-
 	if ( !apc_gp_get_text_out_baseline( self)) {
 		dy = var-> font. descent;
 		y += dy;
@@ -411,24 +448,26 @@ plot_glyphs( Handle self, PGlyphsOutRec t, int x, int y )
 	COPY_MATRIX_WITHOUT_TRANSLATION(matrix, pos_matrix);
 
 	if ( my->get_textOpaque(self))
-		paint_background( self, t, flags & ggoMonochrome, o, dy, straight, matrix, &ctx, &gp_save);
+		paint_background( self, t, flags & ggoMonochrome, emulate_mono_alpha, o, dy, straight, matrix, &ctx, &gp_save);
 
-	/* img_plot_glyph doesn't use var->alpha, but Prima primitives do */
-	if ( !( flags & ggoMonochrome)) {
+	if ( (flags & ggoMonochrome) && ctx.rop <= ropWhiteness && ctx.rop != ropCopyPut ) {
+		/* don't use alpha */
+		Image_color2pixel( self, color, ctx.color);
+	} else {
+		/* img_plot_glyph doesn't use var->alpha, but Prima primitives do */
 		int a = var->alpha;
 		Color c;
 		var->alpha = 255;
 		c = Image_premultiply_color(self, ctx.rop, color);
 		var->alpha = a;
 		Image_color2pixel( self, c, ctx.color);
-	} else
-		Image_color2pixel( self, color, ctx.color);
+	}
 
 	Drawable_save_font( self, &savefont );
 	for ( i = 0; i < t->len; i++) {
 		if ( !plot_next_glyph(
 			self, t,
-			i, flags, &o, &advance, straight, matrix, pos_matrix,
+			i, flags, emulate_mono_alpha, &o, &advance, straight, matrix, pos_matrix,
 			&ctx, &savefont
 		)) {
 			Drawable_restore_font( self, &savefont );
@@ -438,7 +477,7 @@ plot_glyphs( Handle self, PGlyphsOutRec t, int x, int y )
 	Drawable_restore_font( self, &savefont );
 
 	if ( var-> font.style & (fsUnderlined|fsStruckOut) )
-		draw_lines( self, advance, matrix, straight, flags & ggoMonochrome, color, &ctx, &gp_save);
+		draw_lines( self, advance, matrix, straight, flags & ggoMonochrome, emulate_mono_alpha, color, &ctx, &gp_save);
 
 	if ( gp_save )
 		my-> graphic_context_pop(self);
