@@ -715,9 +715,8 @@ gtk_openfile( Bool open)
 						c++;
 					}
 					iter = iter-> next;
-					*(ptr++) = ' ';
+					*(ptr++) = iter ? ' ' : 0;
 				}
-				*(ptr - 1) = 0;
 			} else {
 				warn("gtk_openfile: cannot allocate %d bytes of memory", size);
 			}

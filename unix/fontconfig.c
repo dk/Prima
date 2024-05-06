@@ -786,10 +786,11 @@ prima_fc_get_font_languages( FcPattern *pat)
 		int len = strlen((char*)s);
 		if ( p - ret + len + 1 + 1 > size ) {
 			char * p2;
+			ptrdiff_t diff = p - ret;
 			size *= 2;
 			if ( !( p2 = realloc(ret, size)))
 				goto FAIL;
-			p   = p2 + (p - ret);
+			p   = p2 + diff;
 			ret = p2;
 		}
 		strcpy( p, (char*) s );
