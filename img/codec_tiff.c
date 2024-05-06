@@ -227,7 +227,7 @@ my_tiff_close( thandle_t h)
 static toff_t
 my_tiff_size( thandle_t h)
 {
-	return 0;
+	return UINT_MAX;
 }
 
 static int
