@@ -1,5 +1,10 @@
 Revision history for Perl module Prima
 
+1.73 2024-05-07
+ - add Prima::Image::Exif, support jpeg tags
+ - better compatibility for text rendering outside paint
+ - add examples/text-render.pl, inspired by hb_view
+
 1.72 2024-01-31
  - Major rehaul of ROP constants with API compatibility break:
    -- rop(R), put_image(X,Y,I) will not use rop R but rop::Default instead
