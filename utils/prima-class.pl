@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!perl
 # dumps hierarchy of widget classes.
 #
 # Used by podview ( see File/Run/p-class )
