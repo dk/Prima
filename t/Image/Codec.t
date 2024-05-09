@@ -62,7 +62,7 @@ SKIP : {
 		$cid++;
 		my $ci = $_;
 		SKIP : {
-			skip "can't save, hence skipping". $names[ $cid ], 1,  unless $ci-> {canSave};
+			skip "can't save, hence skipping ". $names[ $cid ], 1,  unless $ci-> {canSave};
 			my $name = "./test.test." . $ci-> {fileExtensions}->[0];
 
 			my $xi = $i-> dup;

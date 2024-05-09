@@ -199,7 +199,7 @@ init( PImgCodecInfo * info, void * param)
 			}
 		}
 		if ( n > 0 )
-			codec_info.IOFlags |= IMG_LOAD_FROM_FILE | IMG_LOAD_FROM_STREAM | IMG_LOAD_MULTIFRAME;
+			codec_info.IOFlags |= IMG_SAVE_TO_FILE | IMG_SAVE_TO_STREAM | IMG_SAVE_MULTIFRAME;
 	}
 
 #if defined(HAS_V1_15_API)
@@ -242,7 +242,7 @@ init( PImgCodecInfo * info, void * param)
 			}
 		}
 		if ( n > 0 )
-			codec_info.IOFlags |= IMG_SAVE_TO_FILE | IMG_SAVE_TO_STREAM | IMG_SAVE_MULTIFRAME;
+			codec_info.IOFlags |= IMG_LOAD_FROM_FILE | IMG_LOAD_FROM_STREAM | IMG_LOAD_MULTIFRAME;
 	}
 #else
 	{
@@ -274,7 +274,7 @@ init( PImgCodecInfo * info, void * param)
 				char buf[2048];
 				snprintf(buf, 2048, "decoder ? %s ()", compstr);
 				buf[2047] = 0;
-				codec_info.IOFlags |= IMG_SAVE_TO_FILE | IMG_SAVE_TO_STREAM | IMG_SAVE_MULTIFRAME;
+				codec_info.IOFlags |= IMG_LOAD_FROM_FILE | IMG_LOAD_FROM_STREAM | IMG_LOAD_MULTIFRAME;
 
 				if ( feat >= MAX_FEATURES) {
 					features[MAX_FEATURES] = NULL;
