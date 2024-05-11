@@ -401,7 +401,7 @@ img_polyline( Handle dest, int n_points, Point * points, PImgPaintContext ctx)
 		delta_y = b.y - a.y;
 		delta_x = b.x - a.x;
 		if (abs(delta_y) > abs(delta_x)) dir = 1;
-		
+
 		if (dir) {
 			curr_maj = a.y;
 			curr_min = a.x;
@@ -413,22 +413,22 @@ img_polyline( Handle dest, int n_points, Point * points, PImgPaintContext ctx)
 			curr_min = a.y;
 			to_maj = b.x;
 			delta_maj = delta_x;
-			delta_min = delta_y;   
+			delta_min = delta_y;
 		}
 
 		if (delta_maj != 0)
 			inc_maj = (abs(delta_maj)==delta_maj ? 1 : -1);
 		else
 			inc_maj = 0;
-		
+
 		if (delta_min != 0)
 			inc_min = (abs(delta_min)==delta_min ? 1 : -1);
 		else
 			inc_min = 0;
-		
+
 		delta_maj = abs(delta_maj);
 		delta_min = abs(delta_min);
-		
+
 		d      = (delta_min << 1) - delta_maj;
 		d_inc1 = (delta_min << 1);
 		d_inc2 = ((delta_min - delta_maj) << 1);
@@ -437,10 +437,10 @@ img_polyline( Handle dest, int n_points, Point * points, PImgPaintContext ctx)
 		while(1) {
 			ox = x;
 			if (dir) {
-				x = curr_min;	 
+				x = curr_min;
 				y = curr_maj;
 			} else {
-				x = curr_maj;	 
+				x = curr_maj;
 				y = curr_min;
 			}
 			if ( acc_y != y ) {
@@ -449,7 +449,6 @@ img_polyline( Handle dest, int n_points, Point * points, PImgPaintContext ctx)
 				acc_x = x;
 				acc_y = y;
 			}
-	
 			if (curr_maj == to_maj) break;
 			curr_maj += inc_maj;
 			if (d < 0) {
