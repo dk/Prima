@@ -686,6 +686,11 @@ FreeStorage(
         pSLLBlock = tmpSLLBlock;
     }
 }
+ 
+ /* number of points to buffer before sending them off
+ * to scanlines() :  Must be an even number
+ */
+#define NUMPTSTOBUFFER 200
 
 /*
 
@@ -698,8 +703,9 @@ FreeStorage(
    pts->x = pAET->bres.minor_axis,  pts->y = y;       \
    DEBUG("+p %d %d\n", pts->x, pts->y);               \
    pts++, curPtBlock->size++;                         \
-   if (curPtBlock->size == NUMPTSTOBUFFER) {          \
-       tmpPtBlock = malloc(sizeof(PolyPointBlock));       \
+   if (curPtBlock->size == curr_max_size) {           \
+       curr_max_size *= 2;                            \
+       tmpPtBlock = malloc(sizeof(PolyPointBlock) + (curr_max_size - 1) * sizeof(Point)); \
        tmpPtBlock->next = NULL;                       \
        tmpPtBlock->size = 0   ;                       \
        curPtBlock->next = tmpPtBlock;                 \
@@ -727,6 +733,7 @@ poly_poly2points(
     PolyPointBlock *FirstPtBlock, *curPtBlock; /* PtBlock buffers    */
     PolyPointBlock *tmpPtBlock;
     Bool outline, winding;
+    unsigned long curr_max_size = NUMPTSTOBUFFER;
 
     outline = (rule & fmOverlay) ? 1 : 0;
     winding = (rule & fmWinding) ? 1 : 0;
@@ -738,7 +745,7 @@ poly_poly2points(
     if (! (pETEs = malloc(Count * sizeof(EdgeTableEntry))))
 	return NULL;
 
-    if ( !( FirstPtBlock = malloc(sizeof(PolyPointBlock)))) {
+    if ( !( FirstPtBlock = malloc(sizeof(PolyPointBlock) + ( curr_max_size - 1 ) * sizeof(Point)))) {
         free(pETEs);
 	return NULL;
     }

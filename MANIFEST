@@ -150,6 +150,7 @@ examples/tiger.eps
 examples/transparent.pl
 examples/triangle.pl
 examples/windowstate.pl
+img/aafill.c
 img/bar.c
 img/codec_bmp.c
 img/codec_jpeg.c
@@ -172,6 +173,7 @@ img/type.c
 img/palette.c
 img/region.c
 img/rotate.c
+img/polyfill.c
 img/put.c
 img/rop.c
 img/scale.c
