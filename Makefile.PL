@@ -782,6 +782,7 @@ int
 main()
 {
     void * ixi = $funcname;
+    (void)ixi;
     return 0;
 }
 EOF
@@ -1165,6 +1166,7 @@ int test( void ) { return 1; }
 
 XS(boot_pmts$n1) {
    dXSARGS;
+   (void)items;
    XSRETURN(1);
 }
 D
@@ -1181,6 +1183,7 @@ extern int test ( void );
 
 XS(boot_pmts$n2) {
    dXSARGS;
+   (void)items;
    test();
    XSRETURN(1);
 }
@@ -1851,6 +1854,7 @@ sub setup_libthai
 #include <thai/thwbrk.h>
 int main() {
 	void * ixi = th_brk_wc_find_breaks;
+	(void)ixi;
 	return 0;
 }
 LIBTHAI
@@ -2110,6 +2114,7 @@ int main() {
 	printf("%s\n", GIF_LIB_VERSION);
 	p = MakeMapObject; /* observed some linking failures on the function in v4.1 */
 #endif
+	(void)p;
 	return 0;
 }
 VER
