@@ -375,6 +375,27 @@ extern PRegionRec img_region_polygon( Point *pts, int count, int rule);
 extern PRegionRec img_region_mask( Handle mask);
 extern void img_region_offset( PRegionRec region, int dx, int dy);
 
+/* polygon renderer */
+
+/*
+ * number of points to buffer before sending them off
+ * to scanlines() :  Must be an even number
+ */
+#undef NUMPTSTOBUFFER
+#define NUMPTSTOBUFFER 200
+/*
+ * used to allocate buffers for points and link
+ * the buffers together
+ */
+typedef struct _PolyPointBlock {
+	Point pts[NUMPTSTOBUFFER];
+	struct _PolyPointBlock *next;
+	unsigned int size;
+} PolyPointBlock;
+
+extern PolyPointBlock* poly_poly2points(Point *pts, int count, int rule);
+extern void            poly_free_blocks( PolyPointBlock * first );
+
 /* istXXX function */
 typedef double FilterFunc( const double x );
 typedef struct {
