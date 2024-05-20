@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include "img_conv.h"
+#include "Icon.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -319,6 +320,21 @@ STOP:
 	DEBUG("%d: BLANY %d - %d\n", y, x, maplen - x + offset);
 }
 
+static Bool
+intersect_1box_region( RegionRec *region, Rect *clip)
+{
+	Rect r2;
+	r2.left   = region-> boxes[0].x;
+	r2.bottom = region-> boxes[0].y;
+	r2.right  = r2.left   + region-> boxes[0].width  - 1;
+	r2.top    = r2.bottom + region-> boxes[0].height - 1;
+	if ( !intersect(clip, &r2))
+		return false;
+	DEBUG("BOX1: %d %d %d %d\n",
+		clip->left, clip->bottom, clip->right, clip->top);
+	return true;
+}
+
 Bool
 img_aafill( Handle self, NPoint *pts, int n_pts, int rule, PImgPaintContext ctx)
 {
@@ -332,6 +348,7 @@ img_aafill( Handle self, NPoint *pts, int n_pts, int rule, PImgPaintContext ctx)
 	FillRec fill_rec;
 	FillProc *fill_proc;
 	Rect clip, aa_extents;
+	int bpp;
 
 	if (n_pts < 2)
 		return false;
@@ -344,6 +361,25 @@ img_aafill( Handle self, NPoint *pts, int n_pts, int rule, PImgPaintContext ctx)
 		return true;
 	if ( !img_find_blend_proc(ctx->rop, &fill_rec.blend1, &fill_rec.blend2))
 		return false;
+	if ( ctx->transparent && (memcmp( ctx->pattern, fillPatterns[fpEmpty], sizeof(FillPattern)) == 0))
+		return true;
+
+	bpp = ( PImage(self)->type & imGrayScale) ? imByte : imRGB;
+	if (PImage(self)-> type != bpp || ( kind_of( self, CIcon) && PIcon(self)->maskType != imbpp8 )) {
+		Bool ok;
+		ImagePreserveTypeRec p;
+		CImage(self)-> begin_preserve_type( self, &p );
+		if ( PImage(self)->type != bpp ) {
+			img_resample_colors( self, bpp, ctx );
+			CIcon(self)-> set_type( self, bpp );
+		}
+		if ( kind_of(self, CIcon) && PIcon(self)->maskType != imbpp8 )
+			CIcon(self)-> set_maskType( self, imbpp8 );
+		ok = img_aafill( self, pts, n_pts, rule, ctx);
+		CImage(self)-> end_preserve_type( self, &p );
+		return ok;
+	}
+
 	fill_proc = fill_solid_color_byte;
 
 	clip.left  = clip.bottom = 0;
@@ -353,18 +389,9 @@ img_aafill( Handle self, NPoint *pts, int n_pts, int rule, PImgPaintContext ctx)
 		switch ( ctx-> region-> n_boxes ) {
 		case 0:
 			return true;
-		case 1: {
-			Rect r2;
-			r2.left   = ctx->region-> boxes[0].x;
-			r2.bottom = ctx->region-> boxes[0].y;
-			r2.right  = r2.left   + ctx->region-> boxes[0].width  - 1;
-			r2.top    = r2.bottom + ctx->region-> boxes[0].height - 1;
-			if ( !intersect(&clip, &r2))
+		case 1:
+			if (!intersect_1box_region( ctx-> region, &clip))
 				return true;
-			DEBUG("BOX1: %d %d %d %d\n",
-				clip.left, clip.bottom, clip.right, clip.top);
-			break;
-		}
 		default:
 			if (( complex_clip = poly_region2points( ctx->region, &clip)) == NULL)
 				goto FAIL;
