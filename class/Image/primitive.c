@@ -595,7 +595,6 @@ Image_fillpoly( Handle self, SV * points)
 	else if ( var->antialias ) {
 		int n_pts;
 		NPoint *pts;
-		ImgPaintContext ctx;
 		Bool ok, matrix_needed, do_free = true;
 
 		matrix_needed = prima_matrix_is_identity( VAR_MATRIX );
@@ -604,14 +603,14 @@ Image_fillpoly( Handle self, SV * points)
 			return false;
 		if ( matrix_needed )
 			prima_matrix_apply2( VAR_MATRIX, pts, pts, n_pts);
-		prepare_fill_context(self, &ctx);
-		ok = img_aafill( self, pts, n_pts, my->get_fillMode(self) & fmWinding, &ctx );
+		ok = img_aafill( self, pts, n_pts, my->get_fillMode(self) & fmWinding );
 		if ( do_free )
 			free(pts);
 		return ok;
 	} else
 		return Image_draw_primitive( self, 1, "sS", "line", points );
 }
+
 
 Bool
 Image_fill_sector( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)

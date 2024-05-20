@@ -155,67 +155,6 @@ fill( int startx, int y, Byte *map, unsigned int maplen, ScanlinePtr* ptrs)
 	}
 }
 
-typedef struct {
-	PImage i;
-	PImgPaintContext ctx;
-	BlendFunc *blend1, *blend2;
-} FillRec;
-
-typedef void FillProc( Byte *scanline, unsigned int w, int src_x, int y, FillRec *fr);
-typedef FillProc *PFillProc;
-
-static void
-fill_solid_color_byte( Byte *scanline, unsigned int w, int src_x, int y, FillRec *fr)
-{
-	Byte *dst = fr->i->data + y * fr->i->lineSize + src_x;
-	Byte dummy_alpha = 255;
-	fr->blend1(
-		fr->ctx->color, 0,
-		scanline, 1,
-		dst,
-		&dummy_alpha, 0,
-		w
-	);
-}
-
-/* call fill procedure over the parts that are to be painted, skip the others */
-static void
-execute( FillRec *fill_rec, FillProc * fill_proc, Byte *scanline, int w, int src_x, int y)
-{
-#ifdef _DEBUG
-	{
-		int z = w;
-		Byte *p = scanline;
-		printf("%d: ", y);
-		while (z--) {
-			printf("%02x ", *(p++));
-		}
-		printf("\n");
-	}
-#endif
-
-	/* don't check boundaries as this is delegated to a common cliprect routine */
-	while ( w > 0 ) {
-		if ( *scanline ) {
-			Byte *next;
-			if (( next = memchr( scanline, 0, w )) == NULL) {
-				fill_proc( scanline, w, src_x, y, fill_rec);
-				return;
-			} else {
-				register unsigned int dx = next - scanline;
-				fill_proc( scanline, dx, src_x, y, fill_rec);
-				scanline += dx;
-				src_x    += dx;
-				w        -= dx;
-			}
-		} else {
-			scanline++;
-			src_x++;
-			w--;
-		}
-	}
-}
-
 static Bool
 intersect( PRect src, PRect clip)
 {
@@ -270,134 +209,26 @@ prepare_points_and_clip( NPoint *pts, unsigned int n_pts, Rect *aa_extents)
 	return pXpts;
 }
 
-static Bool
-skip_to_y( ScanlinePtr *ptr, int y)
-{
-	while ( ptr-> block ) {
-		Point *last = ptr->block->pts + ptr->block->size;
-		while ( ptr->point != last ) {
-			if ( ptr->point->y >= y )
-				return ptr->point->y == y;
-			ptr->point += 2;
-		}
-		if (( ptr-> block = ptr->block->next) == NULL) {
-			ptr-> point = NULL;
-			return false;
-		}
-		ptr-> point = ptr->block->pts;
-	}
-	return false;
-}
-
-static void
-mask( ScanlinePtr *ptr, Byte *map, unsigned int maplen, int offset )
-{
-	int x = offset, y = ptr->point->y;
-
-	DEBUG("BLANKING %d %d\n", y, offset);
-	while ( ptr-> block ) {
-		Point *last = ptr->block->pts + ptr->block->size;
-		while ( ptr->point != last ) {
-			register Point *p = ptr->point;
-			if ( p->y > y )
-				goto STOP;
-			if ( x < p->x ) {
-				bzero( map + x - offset, p->x - x );
-				DEBUG("%d: BLANK %d - %d\n", y, x, p->x - 1);
-			}
-			x = p[1].x + 1;
-			ptr->point += 2;
-		}
-		if (( ptr-> block = ptr->block->next) == NULL) {
-			ptr-> point = NULL;
-			break;
-		}
-		ptr-> point = ptr->block->pts;
-	}
-STOP:
-	if ( maplen - x + offset > 0 )
-		bzero( map + x - offset, maplen - x + offset);
-	DEBUG("%d: BLANY %d - %d\n", y, x, maplen - x + offset);
-}
-
-static Bool
-intersect_1box_region( RegionRec *region, Rect *clip)
-{
-	Rect r2;
-	r2.left   = region-> boxes[0].x;
-	r2.bottom = region-> boxes[0].y;
-	r2.right  = r2.left   + region-> boxes[0].width  - 1;
-	r2.top    = r2.bottom + region-> boxes[0].height - 1;
-	if ( !intersect(clip, &r2))
-		return false;
-	DEBUG("BOX1: %d %d %d %d\n",
-		clip->left, clip->bottom, clip->right, clip->top);
-	return true;
-}
-
 Bool
-img_aafill( Handle self, NPoint *pts, int n_pts, int rule, PImgPaintContext ctx)
+img_aafill( Handle self, NPoint *pts, int n_pts, int rule)
 {
 	int y_curr, y_lim, y_scan, xmin_px, xmax_px;
 	unsigned int maplen;
 	Bool ok = false, map_is_dirty;
 	Point *pXpts = NULL;
-	PolyPointBlock *first = NULL, *curr = NULL, *complex_clip = NULL;
+	PolyPointBlock *first = NULL, *curr = NULL;
 	Byte *map = NULL;
-	ScanlinePtr scanline_ptr[AAY], clip_ptr = { NULL, NULL };
-	FillRec fill_rec;
-	FillProc *fill_proc;
+	ScanlinePtr scanline_ptr[AAY];
 	Rect clip, aa_extents;
-	int bpp;
 
 	if (n_pts < 2)
 		return false;
-
-	fill_rec.i   = (PImage) self;
-	fill_rec.ctx = ctx;
-	if ( ctx->rop < ropMinPDFunc || ctx->rop > ropMaxPDFunc )
-		ctx->rop = ropSrcOver;
-	if ( ctx-> rop == ropDstCopy)
-		return true;
-	if ( !img_find_blend_proc(ctx->rop, &fill_rec.blend1, &fill_rec.blend2))
+	if (PImage(self)->type != imByte)
 		return false;
-	if ( ctx->transparent && (memcmp( ctx->pattern, fillPatterns[fpEmpty], sizeof(FillPattern)) == 0))
-		return true;
-
-	bpp = ( PImage(self)->type & imGrayScale) ? imByte : imRGB;
-	if (PImage(self)-> type != bpp || ( kind_of( self, CIcon) && PIcon(self)->maskType != imbpp8 )) {
-		Bool ok;
-		ImagePreserveTypeRec p;
-		CImage(self)-> begin_preserve_type( self, &p );
-		if ( PImage(self)->type != bpp ) {
-			img_resample_colors( self, bpp, ctx );
-			CIcon(self)-> set_type( self, bpp );
-		}
-		if ( kind_of(self, CIcon) && PIcon(self)->maskType != imbpp8 )
-			CIcon(self)-> set_maskType( self, imbpp8 );
-		ok = img_aafill( self, pts, n_pts, rule, ctx);
-		CImage(self)-> end_preserve_type( self, &p );
-		return ok;
-	}
-
-	fill_proc = fill_solid_color_byte;
 
 	clip.left  = clip.bottom = 0;
-	clip.right = fill_rec.i->w - 1;
-	clip.top   = fill_rec.i->h - 1;
-	if ( ctx->region ) {
-		switch ( ctx-> region-> n_boxes ) {
-		case 0:
-			return true;
-		case 1:
-			if (!intersect_1box_region( ctx-> region, &clip))
-				return true;
-		default:
-			if (( complex_clip = poly_region2points( ctx->region, &clip)) == NULL)
-				goto FAIL;
-			DEBUG("COMPLEX REGION\n");
-		}
-	}
+	clip.right = PImage(self)->w - 1;
+	clip.top   = PImage(self)->h - 1;
 
 	if (( pXpts = prepare_points_and_clip( pts, n_pts, &aa_extents)) == NULL)
 		return false;
@@ -420,10 +251,8 @@ img_aafill( Handle self, NPoint *pts, int n_pts, int rule, PImgPaintContext ctx)
 	free( pXpts );
 	pXpts = NULL;
 
-	if (( map = malloc(maplen)) == NULL)
-		goto FAIL;
-
 	y_curr = aa_extents.bottom;
+	map    = PImage(self)->data + PImage(self)->lineSize * ( y_curr >> AAY_SHIFT ) + xmin_px;
 	y_lim  = y_curr + AAY - 1;
 	y_scan = y_curr;
 	bzero( map, maplen );
@@ -431,11 +260,6 @@ img_aafill( Handle self, NPoint *pts, int n_pts, int rule, PImgPaintContext ctx)
 	bzero( scanline_ptr, sizeof(scanline_ptr));
 	scanline_ptr[0].block = curr;
 	scanline_ptr[0].point = curr->pts;
-	if ( complex_clip ) {
-		clip_ptr.block = complex_clip;
-		clip_ptr.point = complex_clip->pts;
-		skip_to_y( &clip_ptr, y_curr >> AAY_SHIFT );
-	}
 
 	/*
 
@@ -457,14 +281,7 @@ img_aafill( Handle self, NPoint *pts, int n_pts, int rule, PImgPaintContext ctx)
 				register int scanline;
 				if ( p-> y > y_lim ) {
 					fill( xmin_px, y_curr, map, maplen, scanline_ptr);
-					if ( complex_clip ) {
-						if ( skip_to_y( &clip_ptr, y_curr >> AAY_SHIFT ))
-							mask( &clip_ptr, map, maplen, xmin_px );
-						else
-							goto SKIP1;
-					}
-					execute( &fill_rec, fill_proc, map, maplen, xmin_px, y_curr >> AAY_SHIFT);
-				SKIP1:
+					map += PImage(self)->lineSize;
 					bzero( map, maplen );
 					bzero( scanline_ptr, sizeof(scanline_ptr));
 					map_is_dirty = false;
@@ -479,35 +296,22 @@ img_aafill( Handle self, NPoint *pts, int n_pts, int rule, PImgPaintContext ctx)
 				scanline_ptr[scanline].block = curr;
 				scanline_ptr[scanline].point = p;
 			}
-			DEBUG("SET.%ld(%d.%d) @ %d\n", p - curr->pts, p->x, p->y, (p->x - aa_extents.left) >> AAX_SHIFT);
+			DEBUG("SET.%d(%d.%d) @ %d\n", (int)(p - curr->pts), p->x, p->y, (p->x - aa_extents.left) >> AAX_SHIFT);
 			map[ ( p-> x - aa_extents.left ) >> AAX_SHIFT ] = 1;
 			map_is_dirty = true;
 			p++;
 		}
 		curr = curr->next;
 	}
-	if ( map_is_dirty ) {
+	if ( map_is_dirty )
 		fill( xmin_px, y_curr, map, maplen, scanline_ptr);
-		if ( complex_clip ) {
-			if ( skip_to_y( &clip_ptr, y_curr >> AAY_SHIFT ))
-				mask( &clip_ptr, map, maplen, xmin_px );
-			else
-				goto SKIP2;
-		}
-		execute( &fill_rec, fill_proc, map, maplen, xmin_px, y_curr >> AAY_SHIFT);
-	SKIP2:;
-	}
 
 	ok = true;
 FAIL:
-	if ( map )
-		free( map );
 	if ( pXpts ) 
 		free( pXpts );
 	if ( first )
 		poly_free_blocks( first );
-	if ( complex_clip )
-		poly_free_blocks( complex_clip );
 	return ok;
 }
 
