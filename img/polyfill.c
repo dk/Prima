@@ -981,9 +981,9 @@ poly_free_blocks( PolyPointBlock * first )
 {
 	PolyPointBlock * curPtBlock;
 	for (curPtBlock = first; curPtBlock != NULL; ) {
-			PolyPointBlock *tmpPtBlock = curPtBlock->next;
-			free(curPtBlock);
-			curPtBlock = tmpPtBlock;
+		PolyPointBlock *tmpPtBlock = curPtBlock->next;
+		free(curPtBlock);
+		curPtBlock = tmpPtBlock;
 	}
 }
 
