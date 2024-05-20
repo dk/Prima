@@ -415,6 +415,29 @@ InsertEdgeInET(
     }
 }
 
+static void
+init_edge_table(
+    EdgeTable *ET,
+    EdgeTableEntry *AET,
+    ScanLineListBlock   *pSLLBlock)
+{
+    /*
+     *  initialize the Active Edge Table
+     */
+    AET->next = (EdgeTableEntry *)NULL;
+    AET->back = (EdgeTableEntry *)NULL;
+    AET->nextWETE = (EdgeTableEntry *)NULL;
+    AET->bres.minor_axis = SMALL_COORDINATE;
+
+    /*
+     *  initialize the Edge Table.
+     */
+    ET->scanlines.next = (ScanLineList *)NULL;
+    ET->ymax = SMALL_COORDINATE;
+    ET->ymin = LARGE_COORDINATE;
+    pSLLBlock->next = (ScanLineListBlock *)NULL;
+}
+
 /*
  *     CreateEdgeTable
  *
@@ -454,22 +477,7 @@ CreateETandAET(
     int iSLLBlock = 0;
     int dy;
 
-    /*
-     *  initialize the Active Edge Table
-     */
-    AET->next = (EdgeTableEntry *)NULL;
-    AET->back = (EdgeTableEntry *)NULL;
-    AET->nextWETE = (EdgeTableEntry *)NULL;
-    AET->bres.minor_axis = SMALL_COORDINATE;
-
-    /*
-     *  initialize the Edge Table.
-     */
-    ET->scanlines.next = (ScanLineList *)NULL;
-    ET->ymax = SMALL_COORDINATE;
-    ET->ymin = LARGE_COORDINATE;
-    pSLLBlock->next = (ScanLineListBlock *)NULL;
-
+    init_edge_table(ET, AET, pSLLBlock);
     PrevPt = &pts[count-1];
 
     /*
@@ -491,12 +499,12 @@ CreateETandAET(
 #endif
         if (PrevPt->y > CurrPt->y)
         {
-            bottom = PrevPt, top = CurrPt;
+            top = PrevPt, bottom = CurrPt;
             pETEs->ClockWise = 0;
         }
         else
         {
-            bottom = CurrPt, top = PrevPt;
+            top = CurrPt, bottom = PrevPt;
             pETEs->ClockWise = 1;
         }
 
@@ -505,15 +513,15 @@ CreateETandAET(
          */
         if (bottom->y != top->y)
         {
-            pETEs->ymax = bottom->y - 1;  /* -1 so we don't get last scanline */
+            pETEs->ymax = top->y - 1;  /* -1 so we don't get last scanline */
 
             /*
              *  initialize integer edge algorithm
              */
-            dy = bottom->y - top->y;
-            BRESINITPGONSTRUCT(dy, top->x, bottom->x, pETEs->bres);
+            dy = top->y - bottom->y;
+            BRESINITPGONSTRUCT(dy, bottom->x, top->x, pETEs->bres);
 
-            InsertEdgeInET(ET, pETEs, top->y, &pSLLBlock, &iSLLBlock);
+            InsertEdgeInET(ET, pETEs, bottom->y, &pSLLBlock, &iSLLBlock);
 
 	    if (PrevPt->y > ET->ymax)
 		ET->ymax = PrevPt->y;
@@ -523,6 +531,53 @@ CreateETandAET(
         }
 
         PrevPt = CurrPt;
+    }
+}
+
+static void
+CreateETandAET_Boxes(
+    register int count,
+    register Box *boxes,
+    EdgeTable *ET,
+    EdgeTableEntry *AET,
+    register EdgeTableEntry *pETEs,
+    ScanLineListBlock   *pSLLBlock)
+{
+    int iSLLBlock = 0;
+    init_edge_table(ET, AET, pSLLBlock);
+
+    while ( count-- ) {
+        int x, y;
+
+#define INSERT_EDGE                                                         \
+        pETEs->ymax = boxes->y + boxes->height - 1;  /* we actually do get last scanline for a box */ \
+        BRESINITPGONSTRUCT(boxes->height, x, x, pETEs->bres);               \
+        InsertEdgeInET(ET, pETEs, boxes->y, &pSLLBlock, &iSLLBlock);        \
+	if (y > ET->ymax) ET->ymax = y;                                     \
+	if (y < ET->ymin) ET->ymin = y;                                     \
+        pETEs++;
+
+        pETEs->ClockWise = 1;
+	x = boxes->x;
+	y = boxes->y;
+#ifdef _DEBUG
+	pETEs->p1.x = pETEs->p2.x = x;
+	pETEs->p1.y = boxes->y;
+	pETEs->p2.y = boxes->y + boxes->height - 1;
+#endif
+	INSERT_EDGE;
+
+        pETEs->ClockWise = 0;
+	x = boxes->x + boxes->width  - 1;
+	y = boxes->y + boxes->height;
+#ifdef _DEBUG
+	pETEs->p1.x = pETEs->p2.x = x;
+	pETEs->p1.y = boxes->y;
+	pETEs->p2.y = boxes->y + boxes->height - 1;
+#endif
+	INSERT_EDGE;
+
+    	boxes++;
     }
 }
 
@@ -699,25 +754,42 @@ FreeStorage(
 
  */
 
-#define ADD_POINT                                     \
-   pts->x = pAET->bres.minor_axis,  pts->y = y;       \
-   DEBUG("+p %d %d\n", pts->x, pts->y);               \
-   pts++, curPtBlock->size++;                         \
-   if (curPtBlock->size == curr_max_size) {           \
-       curr_max_size *= 2;                            \
+#define ADD_POINT                                                 \
+   pts->x = pAET->bres.minor_axis,  pts->y = y;                   \
+   if (clip != NULL && (curPtBlock->size % 2) == 1) {             \
+        if (                                                      \
+	   pts[-1].x > clip-> right  ||                           \
+	   pts->x    < clip-> left   ||                           \
+	   pts->y    < clip-> bottom ||                           \
+	   pts->y    > clip-> top                                 \
+	) {                                                       \
+	   DEBUG("SKIP.%d %d-%d/%d-%d %d/%d-%d\n", curPtBlock->size, pts[-1].x, pts->x, clip->left, clip->right, pts->y, clip->bottom, clip->top);\
+	   pts              -= 2;                                 \
+	   curPtBlock->size -= 2;                                 \
+	} else {                                                  \
+	   if (pts[-1].x < clip->left  ) pts[-1].x = clip->left;  \
+	   if (pts->x    > clip->right ) pts->x    = clip->right; \
+	   DEBUG("ADD.%d %d-%d %d\n", curPtBlock->size, pts[-1].x, pts->x, pts->y);\
+	}                                                         \
+   }                                                              \
+   DEBUG("+p %d %d\n", pts->x, pts->y);                           \
+   pts++, curPtBlock->size++;                                     \
+   if (curPtBlock->size == curr_max_size) {                       \
+       curr_max_size *= 2;                                        \
        tmpPtBlock = malloc(sizeof(PolyPointBlock) + (curr_max_size - 1) * sizeof(Point)); \
-       tmpPtBlock->next = NULL;                       \
-       tmpPtBlock->size = 0   ;                       \
-       curPtBlock->next = tmpPtBlock;                 \
-       curPtBlock = tmpPtBlock;                       \
-       pts = curPtBlock->pts;                         \
+       tmpPtBlock->next = NULL;                                   \
+       tmpPtBlock->size = 0   ;                                   \
+       curPtBlock->next = tmpPtBlock;                             \
+       curPtBlock = tmpPtBlock;                                   \
+       pts = curPtBlock->pts;                                     \
    }
 
 PolyPointBlock*
 poly_poly2points(
     Point     *Pts,                  /* the pts                 */
     int       Count,                 /* number of pts           */
-    int       rule                   /* winding and outline     */
+    int       rule,                  /* winding and outline     */
+    PRect     clip
 ) {
     register EdgeTableEntry *pAET;   /* Active Edge Table       */
     register int y;                  /* current scanline        */
@@ -829,6 +901,72 @@ poly_poly2points(
             }
             (void) InsertionSort(&AET);
         }
+    }
+    FreeStorage(SLLBlock.next);
+    free(pETEs);
+
+    return FirstPtBlock;
+}
+
+PolyPointBlock*
+poly_region2points(
+    PRegionRec rgn,
+    PRect     clip
+) {
+    register EdgeTableEntry *pAET;   /* Active Edge Table       */
+    register int y;                  /* current scanline        */
+    register ScanLineList *pSLL;     /* current scanLineList    */
+    register Point *pts;             /* output buffer           */
+    EdgeTableEntry *pPrevAET;        /* ptr to previous AET     */
+    EdgeTable ET;                    /* header node for ET      */
+    EdgeTableEntry AET;              /* header node for AET     */
+    EdgeTableEntry *pETEs;           /* EdgeTableEntries pool   */
+    ScanLineListBlock SLLBlock;      /* header for scanlinelist */
+    PolyPointBlock *FirstPtBlock, *curPtBlock; /* PtBlock buffers    */
+    PolyPointBlock *tmpPtBlock;
+    unsigned long curr_max_size = NUMPTSTOBUFFER;
+    unsigned int Count = rgn->n_boxes * 2;
+
+    if ( Count < 2 )
+        return NULL;
+
+    if (! (pETEs = malloc(Count * sizeof(EdgeTableEntry))))
+	return NULL;
+
+    if ( !( FirstPtBlock = malloc(sizeof(PolyPointBlock) + ( curr_max_size - 1 ) * sizeof(Point)))) {
+        free(pETEs);
+	return NULL;
+    }
+    FirstPtBlock->next = NULL;
+    FirstPtBlock->size = 0;
+
+    pts = FirstPtBlock->pts;
+    CreateETandAET_Boxes(rgn->n_boxes, rgn->boxes, &ET, &AET, pETEs, &SLLBlock);
+    pSLL = ET.scanlines.next;
+    curPtBlock = FirstPtBlock;
+
+    DEBUG("for %d <=> %d\n", ET.ymin, ET.ymax);
+    for (y = ET.ymin; y < ET.ymax; y++) {
+        DEBUG("== %d ==\n", y);
+        /*
+         *  Add a new edge to the active edge table when we
+         *  get to the next edge.
+         */
+        if (pSLL != NULL && y == pSLL->scanline) {
+            loadAET(&AET, pSLL->edgelist);
+            pSLL = pSLL->next;
+        }
+        pPrevAET = &AET;
+        pAET = AET.next;
+
+        /*
+         *  for each active edge
+         */
+        while (pAET) {
+    	ADD_POINT;
+            EVALUATEEDGEEVENODD(pAET, pPrevAET, y);
+        }
+        (void) InsertionSort(&AET);
     }
     FreeStorage(SLLBlock.next);
     free(pETEs);
