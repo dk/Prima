@@ -385,7 +385,8 @@ typedef struct _PolyPointBlock {
 	Point pts[1];
 } PolyPointBlock;
 
-extern PolyPointBlock* poly_poly2points(Point *pts, int count, int rule);
+extern PolyPointBlock* poly_poly2points(Point *pts, int count, int rule, PRect clip);
+extern PolyPointBlock* poly_region2points(PRegionRec rgn, PRect clip);
 extern void            poly_free_blocks( PolyPointBlock * first );
 
 /* istXXX function */
