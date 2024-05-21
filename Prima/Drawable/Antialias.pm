@@ -61,12 +61,13 @@ sub polyline
 		$solid_line = 1;
 	}
 
+	my $render = $canvas->new_path->line($poly);
 	if ( $solid_line ) {
 		my $c = $canvas->color;
 		$canvas->color($canvas->backColor);
-		my $lines = $canvas->new_path(antialias => 1)-> line($poly)-> widen(linePattern => lp::Solid, antialias => 1)->points;
+		my $lines = $render->widen(linePattern => lp::Solid, antialias => 1)->points;
 		for my $line ( @$lines ) {
-			my $v = $canvas->render_polyline( $line, filled => 1, antialias => 1) or goto FALLBACK;
+			my $v = $canvas->render_polyline( $line, aafill => 1) or goto FALLBACK;
 			my ($x, $y, $bitmap) = @$v;
 			goto FALLBACK unless defined $bitmap;
 			$self->apply_surface($x, $y, $bitmap);
@@ -74,9 +75,9 @@ sub polyline
 		$canvas->color($c);
 	}
 
-	my $lines = $canvas->new_path(antialias => 1)-> line($poly)-> widen(antialias => 1)->points;
+	my $lines = $render->widen(antialias => 1)->points;
 	for my $line ( @$lines ) {
-		my $v = $canvas->render_polyline( $line, filled => 1, antialias => 1) or goto FALLBACK;
+		my $v = $canvas->render_polyline( $line, aafill => 1) or goto FALLBACK;
 		my ($x, $y, $bitmap) = @$v;
 		goto FALLBACK unless defined $bitmap;
 		$self->apply_surface($x, $y, $bitmap);
@@ -94,7 +95,7 @@ sub fillpoly
 	goto FALLBACK unless $self->{can_aa};
 
 	my $canvas = $self->{canvas};
-	my $v = $canvas->render_polyline( $poly, filled => 1, antialias => 1) or goto FALLBACK;
+	my $v = $canvas->render_polyline( $poly, aafill => 1) or goto FALLBACK;
 	my ($x, $y, $bitmap) = @$v;
 	return 0 unless defined $bitmap;
 

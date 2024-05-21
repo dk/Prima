@@ -2458,14 +2458,15 @@ Performs calculations on the POLYLINE, defined by OPTIONS. The following options
 
 =over
 
-=item matrix A,B,C,D,U,V
+=item aafill BOOLEAN
 
-If supplied, performs matrix transformation on each polyline vertex:
+If set, renders a 8-bit grayscale image with antialiased filled polygon.
+The polygon is automatically adjusted so its lower and left boundaries
+and on the resulting image's lower and left boundaries. Also the image
+size corresponds to the polygon size.
 
-	X' = AX + CY + U
-	Y' = BX + DY + V
-
-and returns the new polyline
+Return three scalars: first two are the X and Y polygon offsets, and
+the first is the image itself.
 
 =item box BOOLEAN
 
@@ -2478,6 +2479,15 @@ and returns 4 numerics for left, bottom, width, and height of the box enclosure.
 By default, the result is returned as a set of floating point numerics, however,
 if integer results are needed, the results are transformed to integers using
 the I<< int = float + ((float < 0) ? -0.5 : 0.5) >> formula.
+
+=item matrix A,B,C,D,U,V
+
+If supplied, performs matrix transformation on each polyline vertex:
+
+	X' = AX + CY + U
+	Y' = BX + DY + V
+
+and returns the new polyline
 
 =item path BOOLEAN
 
