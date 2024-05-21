@@ -592,22 +592,7 @@ Image_fillpoly( Handle self, SV * points)
 {
 	if ( opt_InPaint)
 		return inherited fillpoly(self, points);
-	else if ( var->antialias ) {
-		int n_pts;
-		NPoint *pts;
-		Bool ok, matrix_needed, do_free = true;
-
-		matrix_needed = prima_matrix_is_identity( VAR_MATRIX );
-		pts = prima_read_array( points, "fillpoly", 'd', 2, 2, -1, &n_pts, matrix_needed ? NULL : &do_free);
-		if ( pts == NULL )
-			return false;
-		if ( matrix_needed )
-			prima_matrix_apply2( VAR_MATRIX, pts, pts, n_pts);
-		ok = img_aafill( self, pts, n_pts, my->get_fillMode(self) & fmWinding );
-		if ( do_free )
-			free(pts);
-		return ok;
-	} else
+	else
 		return Image_draw_primitive( self, 1, "sS", "line", points );
 }
 

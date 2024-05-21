@@ -687,16 +687,9 @@ sub _arc
 	}
 }
 
-sub acquire
-{
-	my $c = $_[0]->{canvas};
-	$_[0]->{subpixel} = $c->antialias;
-}
-
 sub stroke
 {
 	return 0 unless $_[0]->{canvas};
-	$_[0]->acquire;
 	my $emulated_aa = $_[0]->{antialias} && !$_[0]->{canvas}->antialias;
 	for ( $_[0]->points ) {
 		next if 4 > @$_;
@@ -713,7 +706,6 @@ sub fill
 {
 	my ( $self, $fillMode ) = @_;
 	return 0 unless my $c = $self->{canvas};
-	$self->acquire;
 	my $ok = 1;
 	my $save;
 	if ( defined $fillMode ) {
@@ -1099,7 +1091,6 @@ sub poly2patterns
 sub widen_old
 {
 	my ( $self, %opt ) = @_;
-	$self->acquire;
 
 	my $dst = ref($self)->new( undef,
 		%$self,
@@ -1305,7 +1296,6 @@ sub widen_old
 sub widen_new
 {
 	my ( $self, %opt ) = @_;
-	$self->acquire;
 
 	my $dst = ref($self)->new( undef,
 		%$self,
