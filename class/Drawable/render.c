@@ -1041,7 +1041,7 @@ calc_extents( double *buffer, unsigned int count, register double *box, Bool as_
 }
 
 static SV*
-render_filled_polygon( NPoint* buffer, unsigned int count, int mode, Bool antialias)
+render_filled_polygon( NPoint* buffer, unsigned int count, int mode)
 {
 	Handle image;
 	int i, w, h;
@@ -1050,7 +1050,6 @@ render_filled_polygon( NPoint* buffer, unsigned int count, int mode, Bool antial
 	NPoint *p;
 	Point d;
 
-	/* XXX ignore AA so far */
 	calc_extents((double*) buffer, count, box, false);
 	d.x = floor(box[0]);
 	d.y = floor(box[1]);
@@ -1133,9 +1132,8 @@ Drawable_render_polyline( SV * obj, SV * points, HV * profile)
 		self = gimme_the_mate(obj);
 		ret = convert_line_to_path(self, profile, buffer, count, as_integer);
 		goto EXIT;
-	} else if (pexist(filled) && pget_B(filled)) {
+	} else if (pexist(aafill) && pget_B(aafill)) {
 		int  mode;
-		Bool aa;
 		if ( !free_buffer ) {
 			double *b;
 			if ( !( b = malloc(sizeof(NPoint) * count)))
@@ -1144,10 +1142,13 @@ Drawable_render_polyline( SV * obj, SV * points, HV * profile)
 			buffer = b;
 			free_buffer = true;
 		}
-		self = gimme_the_mate(obj);
-		mode = pexist(mode)      ? pget_i(mode)      : (self ? my->get_fillMode(self)  : fmWinding);
-		aa   = pexist(antialias) ? pget_B(antialias) : (self ? my->get_antialias(self) : false);
-		ret  = render_filled_polygon(( NPoint*) buffer, count, mode, aa);
+		if ( pexist(mode))
+			mode = pget_i(mode);
+		else if (( self = gimme_the_mate(obj)) != NULL_HANDLE)
+			mode = my->get_fillMode(self);
+		else
+			mode = fmWinding;
+		ret = render_filled_polygon(( NPoint*) buffer, count, mode);
 		goto EXIT;
 	}
 
