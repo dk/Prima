@@ -64,7 +64,7 @@ sub polyline
 	if ( $solid_line ) {
 		my $c = $canvas->color;
 		$canvas->color($canvas->backColor);
-		my $lines = $canvas->new_path(subpixel => 1)-> line($poly)-> widen(linePattern => lp::Solid, subpixel => 1)->points;
+		my $lines = $canvas->new_path(antialias => 1)-> line($poly)-> widen(linePattern => lp::Solid, antialias => 1)->points;
 		for my $line ( @$lines ) {
 			my $v = $canvas->render_polyline( $line, filled => 1, antialias => 1) or goto FALLBACK;
 			my ($x, $y, $bitmap) = @$v;
@@ -74,7 +74,7 @@ sub polyline
 		$canvas->color($c);
 	}
 
-	my $lines = $canvas->new_path(subpixel => 1)-> line($poly)-> widen(subpixel => 1)->points;
+	my $lines = $canvas->new_path(antialias => 1)-> line($poly)-> widen(antialias => 1)->points;
 	for my $line ( @$lines ) {
 		my $v = $canvas->render_polyline( $line, filled => 1, antialias => 1) or goto FALLBACK;
 		my ($x, $y, $bitmap) = @$v;
