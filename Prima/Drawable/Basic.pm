@@ -407,7 +407,7 @@ sub stroke_imgaa_primitive
 	my $aa = $self->new_aa_surface;
 	return 0 unless $aa->can_aa;
 
-	my $path = $self->new_path;
+	my $path = $self->new_path( antialias => 1 );
 	$path->matrix( $self-> matrix );
 	$path->$request(@_);
 	$path = $path->widen(
@@ -436,7 +436,7 @@ sub fill_imgaa_primitive
 	return 0 unless $aa->can_aa;
 
 	my $ok = 1;
-	my $path = $self->new_path;
+	my $path = $self->new_path( antialias => 1 );
 	my $m = $self->get_matrix;
 	$path->matrix($m);
 	$path->$request(@_);

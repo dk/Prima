@@ -20,25 +20,13 @@ sub new
 
 sub can_aa { $#_ ? $_[0]->{can_aa} = $_[1] : $_[0]->{can_aa} }
 
-sub alloc_surface
-{
-	my ( $self, @sz ) = @_;
-	my $surface = Prima::Image->new(
-		type      => im::Byte,
-		size      => [ map { $_ * $self->{factor} } @sz ],
-		color     => cl::Black,
-		scaling   => ist::Triangle,
-	) or return;
-	$surface->bar(0,0,$surface->size);
-	$surface->color($self->{alpha} * 0x10101);
-	return $surface;
-}
-
 sub apply_surface
 {
 	my ( $self, $x, $y, $alpha, $colors ) = @_;
 
 	return 0 unless $self->{can_aa};
+	return 1 if $self->{alpha} == 0;
+	$alpha->premultiply_alpha($self->{alpha}) if $self->{alpha} < 255;
 
 	my $canvas = $self->{canvas};
 	if ( $colors ) {
@@ -73,7 +61,20 @@ sub polyline
 		$solid_line = 1;
 	}
 
-	my $lines = $canvas->new_path(subpixel => 1)-> line($poly)-> widen( subpixel => 1)->points;
+	if ( $solid_line ) {
+		my $c = $canvas->color;
+		$canvas->color($canvas->backColor);
+		my $lines = $canvas->new_path(subpixel => 1)-> line($poly)-> widen(linePattern => lp::Solid, subpixel => 1)->points;
+		for my $line ( @$lines ) {
+			my $v = $canvas->render_polyline( $line, filled => 1, antialias => 1) or goto FALLBACK;
+			my ($x, $y, $bitmap) = @$v;
+			goto FALLBACK unless defined $bitmap;
+			$self->apply_surface($x, $y, $bitmap);
+		}
+		$canvas->color($c);
+	}
+
+	my $lines = $canvas->new_path(subpixel => 1)-> line($poly)-> widen(subpixel => 1)->points;
 	for my $line ( @$lines ) {
 		my $v = $canvas->render_polyline( $line, filled => 1, antialias => 1) or goto FALLBACK;
 		my ($x, $y, $bitmap) = @$v;
@@ -82,31 +83,6 @@ sub polyline
 	}
 	return 1;
 
-	#if ( $solid_line ) {
-	#	my $solid = $bitmap->new_path->
-	#		scale($self->{factor})->
-	#		translate(-$x, -$y)->
-	#		line($poly)->
-	#		widen(
-	#			lineWidth   => $self->{factor} * ($canvas-> lineWidth - 1),
-	#			map { $_ => $canvas->$_() } qw(
-	#				lineJoin lineEnd miterLimit
-	#			)
-	#		)->
-	#		region(fm::Winding);
-
-	#	my $base = $self->alloc_surface( $w, $h ) or goto FALLBACK;
-	#	$solid->combine($line, rgnop::Xor);
-	#	$base->region($solid);
-	#	my $c = $canvas->color;
-	#	$canvas->color($canvas->backColor);
-	#	$base->bar( 0, 0, $base->size);
-	#	my $ok = $self->apply_surface($x, $y, $base);
-	#	$canvas->color($c);
-	#	return 0 unless $ok;
-	#}
-	#$bitmap->region($line);
-	#$bitmap->bar( 0, 0, $bitmap->size);
 
 FALLBACK:
 	return $self->{canvas}->polyline($poly);
@@ -165,8 +141,14 @@ sub fillpoly
 		my @fp = $canvas->fillPatternOffset;
 		$fp[0] -= $x;
 		$fp[1] -= $y;
-		$bitmap->fillPattern($fp);
-		$bitmap->fillPatternOffset(@fp);
+		$bitmap-> set(
+			fillPattern       => $fp,
+			fillPatternOffset => \@fp,
+			color             => 0xffffff,
+			backColor         => 0x000000,
+			rop               => rop::AndPut,
+			rop2              => rop::CopyPut,
+		);
 		$bitmap->bar( 0, 0, $bitmap->size);
 	}
 
