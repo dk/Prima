@@ -1138,16 +1138,16 @@ Drawable_render_polyline( SV * obj, SV * points, HV * profile)
 		Bool aa;
 		if ( !free_buffer ) {
 			double *b;
-			free_buffer = true;
 			if ( !( b = malloc(sizeof(NPoint) * count)))
 				goto EXIT;
 			memcpy( b, buffer, sizeof(NPoint) * count);
-			b = buffer;
+			buffer = b;
+			free_buffer = true;
 		}
 		self = gimme_the_mate(obj);
 		mode = pexist(mode)      ? pget_i(mode)      : (self ? my->get_fillMode(self)  : fmWinding);
 		aa   = pexist(antialias) ? pget_B(antialias) : (self ? my->get_antialias(self) : false);
-		ret = render_filled_polygon(( NPoint*) buffer, count, mode, aa);
+		ret  = render_filled_polygon(( NPoint*) buffer, count, mode, aa);
 		goto EXIT;
 	}
 
