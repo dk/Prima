@@ -343,5 +343,78 @@ is_pict($i, "bar with matrix",
 	"     "
 );
 
+# test AA fills
+sub is_pict8
+{
+	my ( $i, $name, $pict ) = @_;
+	my $ok = 1;
+	ALL: for ( my $y = 0; $y < $i->height; $y++) {
+		for ( my $x = 0; $x < $i->width; $x++) {
+			my $actual   = $i->pixel($x,$y);
+			$actual = ($actual < 128 ? 64 : 192) if $actual > 0 && $actual < 255;
+			my $expected = substr($pict, ($i->height-$y-1) * $i->width + $x, 1);
+			if ( $expected eq ' ') {
+				$expected = 0;
+			} elsif ( $expected eq '*') {
+				$expected = 255;
+			} elsif ( $expected eq '.') {
+				$expected = 64;
+			} else {
+				$expected = 192;
+			}
+			next if $actual == $expected;
+			$ok = 0;
+			last ALL;
+		}
+	}
+	ok( $ok, $name );
+	return 1 if $ok;
+	warn "# Actual vs expected:\n";
+	for ( my $y = 0; $y < $i->height; $y++) {
+		my $actual   = join '', map {
+			my $px = $i->pixel($_,$i->height-$y-1);
+			if ( $px == 0 ) {
+				$px = ' ';
+			} elsif ( $px == 255 ) {
+				$px = '*';
+			} elsif ( $px < 128 ) {
+				$px = '.';
+			} else {
+				$px = '+';
+			}
+			$px;
+		} 0..$i->width-1;
+		my $expected = substr($pict, $y * $i->width, $i->width);
+		warn "$actual  | $expected\n";
+	}
+	return 0;
+}
+$i = Prima::Image->create(
+	width     => 5,
+	height    => 5,
+	antialias => 1,
+	type      => im::Byte,
+	color     => cl::White,
+	backColor => cl::Black,
+);
+$i->clear;
+$i->fillpoly([1,1,3.9,1,2.5,3]);
+is_pict8($i, "aa fill",
+	"     ".
+	"     ".
+	" .+. ".
+	" +*+ ".
+	"     "
+);
+
+$i->clear;
+$i->fillpoly([-10, -10, 10, -10, 2.75, 2]);
+is_pict8($i, "aa fill oob",
+	"     ".
+	"     ".
+	"     ".
+	" .+. ".
+	".+*+."
+);
 
 done_testing;
