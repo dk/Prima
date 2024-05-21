@@ -604,21 +604,37 @@ sub test_drawing
 	$w-> backColor(cl::Black);
 	$w-> color(cl::White);
 	$w-> font-> set( height => 25, style => fs::Underlined );
+
 	$w-> clear;
-	$w-> text_out( "12", 5, 5 );
+	$w-> text_out( "1", 5, 5 );
 	my $i = $w->image;
 	$i->type(im::Byte);
 	my $sum1 = $i->sum;
 	skip("text drawing on bitmap is not available", 1) unless $sum1;
+	my $z = $w-> text_shape('1', polyfont => 0);
+	skip("shaping is not available", 1) unless $z;
+	$w-> clear;
+	$w-> text_out( $z, 5, 5 );
+	$i = $w->image;
+	$i->type(im::Byte);
+	my $sum2 = $i->sum;
+	skip("bad font or rendering, cannot test", 1) if $sum2 != $sum1;
 
-	my $z = $w-> text_shape('12', polyfont => 0);
+	$w-> clear;
+	$w-> text_out( "12", 5, 5 );
+	$i = $w->image;
+	$i->type(im::Byte);
+	$sum1 = $i->sum;
+	skip("text drawing on bitmap is not available", 1) unless $sum1;
+
+	$z = $w-> text_shape('12', polyfont => 0);
 	skip("shaping is not available", 1) unless $z;
 
 	$w-> clear;
 	$w-> text_out( $z, 5, 5 );
 	$i = $w->image;
 	$i->type(im::Byte);
-	my $sum2 = $i->sum;
+	$sum2 = $i->sum;
 	is($sum2, $sum1, "glyphs plotting");
 
 	$w-> clear;
