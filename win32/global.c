@@ -814,7 +814,9 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
 			if (ev. key. repeat == 0) ev. key. repeat = 1;
 
 			// VK validations
-			if ( extended) {
+			if ( mp1 >= VK_SCROLL && ( mp1 < 0xC3 || mp1 > 0xDA ) ) /* VK_GAMEPAD_XXX */ {
+				extended = false;
+			} else if ( extended) {
 				int ks = ev. key. key;
 				ev. key. key = ctx_remap_def( ks, ctx_kb2VK3, true, ks);
 				if ( ev. key. key != ks)

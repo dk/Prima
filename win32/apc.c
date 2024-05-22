@@ -724,6 +724,26 @@ Handle ctx_kb2VK[] = {
 	kbSelect      ,   VK_SELECT         ,
 	kbExecute     ,   VK_EXECUTE        ,
 	kbSysRq       ,   VK_SNAPSHOT       ,
+
+	kbBrowserBack       , VK_BROWSER_BACK        ,
+	kbBrowserForward    , VK_BROWSER_FORWARD     ,
+	kbBrowserRefresh    , VK_BROWSER_REFRESH     ,
+	kbBrowserStop       , VK_BROWSER_STOP        ,
+	kbBrowserSearch     , VK_BROWSER_SEARCH      ,
+	kbBrowserFavorites  , VK_BROWSER_FAVORITES   ,
+	kbBrowserHome       , VK_BROWSER_HOME        ,
+	kbVolumeMute        , VK_VOLUME_MUTE         ,
+	kbVolumeDown        , VK_VOLUME_DOWN         ,
+	kbVolumeUp          , VK_VOLUME_UP           ,
+	kbMediaNextTrack    , VK_MEDIA_NEXT_TRACK    ,
+	kbMediaPrevTrack    , VK_MEDIA_PREV_TRACK    ,
+	kbMediaStop         , VK_MEDIA_STOP          ,
+	kbMediaPlay         , VK_MEDIA_PLAY_PAUSE    ,
+	kbLaunchMail        , VK_LAUNCH_MAIL         ,
+	kbLaunchMediaSelect , VK_LAUNCH_MEDIA_SELECT ,
+	kbLaunchApp1        , VK_LAUNCH_APP1         ,
+	kbLaunchApp2        , VK_LAUNCH_APP2         ,
+
 	endCtx
 };
 

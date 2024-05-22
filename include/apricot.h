@@ -1211,6 +1211,46 @@ KB(R9)
 KB(F30)
 #define kbR10           kbF30
 KB(R10)
+
+#define kbBrowserBack        0x00090000
+KB(BrowserBack)
+#define kbBrowserForward     0x00090100
+KB(BrowserForward)
+#define kbBrowserRefresh     0x00090200
+KB(BrowserRefresh)
+#define kbBrowserStop        0x00090300
+KB(BrowserStop)
+#define kbBrowserSearch      0x00090400
+KB(BrowserSearch)
+#define kbBrowserFavorites   0x00090500
+KB(BrowserFavorites)
+#define kbBrowserHome        0x00090600
+KB(BrowserHome)
+#define kbVolumeMute         0x00090700
+KB(VolumeMute)
+#define kbVolumeDown         0x00090800
+KB(VolumeDown)
+#define kbVolumeUp           0x00090900
+KB(VolumeUp)
+#define kbMediaNextTrack     0x00090a00
+KB(MediaNextTrack)
+#define kbMediaPrevTrack     0x00090b00
+KB(MediaPrevTrack)
+#define kbMediaStop          0x00090c00
+KB(MediaStop)
+#define kbMediaPlay          0x00090d00
+KB(MediaPlay)
+#define kbMediaPause         0x00090e00
+KB(MediaPause)
+#define kbLaunchMail         0x00090f00
+KB(LaunchMail)
+#define kbLaunchMediaSelect  0x00091000
+KB(LaunchMediaSelect)
+#define kbLaunchApp1         0x00091100
+KB(LaunchApp1)
+#define kbLaunchApp2         0x00091200
+KB(LaunchApp2)
+
 END_TABLE(kb,UV)
 #undef KB
 
