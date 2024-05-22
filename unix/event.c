@@ -13,6 +13,10 @@
 #define XK_LATIN1
 #define XK_XKB_KEYS
 #include <X11/keysymdef.h>
+#ifdef HAVE_X11_XF86KEYSYM_H
+#include <X11/XF86keysym.h>
+#endif
+
 
 #define SELF_MESSAGE(_eventrec) {\
 guts.currentFocusTime=guts.last_time;\
@@ -545,6 +549,158 @@ prima_keysym_to_keycode( KeySym keysym, XKeyEvent *ev, U8 character )
 	case XK_F29:          keycode = kbF29;        break;
 	case XK_F30:          keycode = kbF30;        break;
 	case XK_space:        keycode = kbSpace;      break;
+
+#ifdef HAVE_X11_XF86KEYSYM_H
+	case XF86XK_Back              : keycode = kbBrowserBack;        break;
+	case XF86XK_Forward           : keycode = kbBrowserForward;     break;
+	case XF86XK_Refresh           : keycode = kbBrowserRefresh;     break;
+	case XF86XK_Stop              : keycode = kbBrowserStop;        break;
+	case XF86XK_Search            : keycode = kbBrowserSearch;      break;
+	case XF86XK_Favorites         : keycode = kbBrowserFavorites;   break;
+	case XF86XK_HomePage          : keycode = kbBrowserHome;        break;
+	case XF86XK_AudioMute         : keycode = kbVolumeMute;         break;
+	case XF86XK_AudioLowerVolume  : keycode = kbVolumeDown;         break;
+	case XF86XK_AudioRaiseVolume  : keycode = kbVolumeUp;           break;
+	case XF86XK_AudioNext         : keycode = kbMediaNextTrack;     break;
+	case XF86XK_AudioPrev         : keycode = kbMediaPrevTrack;     break;
+	case XF86XK_AudioStop         : keycode = kbMediaStop;          break;
+	case XF86XK_AudioPlay         : keycode = kbMediaPlay;          break;
+	case XF86XK_AudioPause        : keycode = kbMediaPause;         break;
+	case XF86XK_Mail              : keycode = kbLaunchMail;         break;
+	case XF86XK_Select            : keycode = kbLaunchMediaSelect;  break;
+	case XF86XK_Launch0           : keycode = kbLaunchApp1;         break;
+	case XF86XK_Launch1           : keycode = kbLaunchApp2;         break;
+
+	case XF86XK_AddFavorite       : keycode = kbAddFavorite;        break;
+	case XF86XK_ApplicationLeft   : keycode = kbApplicationLeft;    break;
+	case XF86XK_ApplicationRight  : keycode = kbApplicationRight;   break;
+	case XF86XK_AudioCycleTrack   : keycode = kbAudioCycleTrack;    break;
+	case XF86XK_AudioForward      : keycode = kbAudioForward;       break;
+	case XF86XK_AudioMicMute      : keycode = kbAudioMicMute;       break;
+	case XF86XK_AudioPreset       : keycode = kbAudioPreset;        break;
+	case XF86XK_AudioRandomPlay   : keycode = kbAudioRandomPlay;    break;
+	case XF86XK_AudioRecord       : keycode = kbAudioRecord;        break;
+	case XF86XK_AudioRepeat       : keycode = kbAudioRepeat;        break;
+	case XF86XK_AudioRewind       : keycode = kbAudioRewind;        break;
+	case XF86XK_Away              : keycode = kbAway;               break;
+	case XF86XK_BackForward       : keycode = kbBackForward;        break;
+	case XF86XK_Battery           : keycode = kbBattery;            break;
+	case XF86XK_Blue              : keycode = kbBlue;               break;
+	case XF86XK_Bluetooth         : keycode = kbBluetooth;          break;
+	case XF86XK_Book              : keycode = kbBook;               break;
+	case XF86XK_BrightnessAdjust  : keycode = kbBrightnessAdjust;   break;
+	case XF86XK_Calculater        : keycode = kbCalculater;         break;
+	case XF86XK_Calculator        : keycode = kbCalculator;         break;
+	case XF86XK_Calendar          : keycode = kbCalendar;           break;
+	case XF86XK_CD                : keycode = kbCD;                 break;
+	case XF86XK_Close             : keycode = kbClose;              break;
+	case XF86XK_Community         : keycode = kbCommunity;          break;
+	case XF86XK_ContrastAdjust    : keycode = kbContrastAdjust;     break;
+	case XF86XK_Copy              : keycode = kbCopy;               break;
+	case XF86XK_Cut               : keycode = kbCut;                break;
+	case XF86XK_CycleAngle        : keycode = kbCycleAngle;         break;
+	case XF86XK_Display           : keycode = kbDisplay;            break;
+	case XF86XK_Documents         : keycode = kbDocuments;          break;
+	case XF86XK_DOS               : keycode = kbDOS;                break;
+	case XF86XK_Eject             : keycode = kbEject;              break;
+	case XF86XK_Excel             : keycode = kbExcel;              break;
+	case XF86XK_Explorer          : keycode = kbExplorer;           break;
+	case XF86XK_Finance           : keycode = kbFinance;            break;
+	case XF86XK_FrameBack         : keycode = kbFrameBack;          break;
+	case XF86XK_FrameForward      : keycode = kbFrameForward;       break;
+	case XF86XK_FullScreen        : keycode = kbFullScreen;         break;
+	case XF86XK_Game              : keycode = kbGame;               break;
+	case XF86XK_Go                : keycode = kbGo;                 break;
+	case XF86XK_Green             : keycode = kbGreen;              break;
+	case XF86XK_Hibernate         : keycode = kbHibernate;          break;
+	case XF86XK_History           : keycode = kbHistory;            break;
+	case XF86XK_HotLinks          : keycode = kbHotLinks;           break;
+	case XF86XK_iTouch            : keycode = kbiTouch;             break;
+	case XF86XK_KbdBrightnessDown : keycode = kbKbdBrightnessDown;  break;
+	case XF86XK_KbdBrightnessUp   : keycode = kbKbdBrightnessUp;    break;
+	case XF86XK_KbdLightOnOff     : keycode = kbKbdLightOnOff;      break;
+	case XF86XK_LightBulb         : keycode = kbLightBulb;          break;
+	case XF86XK_LogOff            : keycode = kbLogOff;             break;
+	case XF86XK_MailForward       : keycode = kbMailForward;        break;
+	case XF86XK_Market            : keycode = kbMarket;             break;
+	case XF86XK_Meeting           : keycode = kbMeeting;            break;
+	case XF86XK_Memo              : keycode = kbMemo;               break;
+	case XF86XK_MenuKB            : keycode = kbMenuKB;             break;
+	case XF86XK_MenuPB            : keycode = kbMenuPB;             break;
+	case XF86XK_Messenger         : keycode = kbMessenger;          break;
+	case XF86XK_MonBrightnessCycle: keycode = kbMonBrightnessCycle; break;
+	case XF86XK_MonBrightnessDown : keycode = kbMonBrightnessDown;  break;
+	case XF86XK_MonBrightnessUp   : keycode = kbMonBrightnessUp;    break;
+	case XF86XK_Music             : keycode = kbMusic;              break;
+	case XF86XK_MyComputer        : keycode = kbMyComputer;         break;
+	case XF86XK_MySites           : keycode = kbMySites;            break;
+	case XF86XK_New               : keycode = kbNew;                break;
+	case XF86XK_News              : keycode = kbNews;               break;
+	case XF86XK_OfficeHome        : keycode = kbOfficeHome;         break;
+	case XF86XK_Open              : keycode = kbOpen;               break;
+	case XF86XK_OpenURL           : keycode = kbOpenURL;            break;
+	case XF86XK_Option            : keycode = kbOption;             break;
+	case XF86XK_Paste             : keycode = kbPaste;              break;
+	case XF86XK_Phone             : keycode = kbPhone;              break;
+	case XF86XK_Pictures          : keycode = kbPictures;           break;
+	case XF86XK_PowerDown         : keycode = kbPowerDown;          break;
+	case XF86XK_PowerOff          : keycode = kbPowerOff;           break;
+	case XF86XK_Q                 : keycode = kbQ;                  break;
+	case XF86XK_Red               : keycode = kbRed;                break;
+	case XF86XK_Reload            : keycode = kbReload;             break;
+	case XF86XK_Reply             : keycode = kbReply;              break;
+	case XF86XK_RFKill            : keycode = kbRFKill;             break;
+	case XF86XK_RockerDown        : keycode = kbRockerDown;         break;
+	case XF86XK_RockerEnter       : keycode = kbRockerEnter;        break;
+	case XF86XK_RockerUp          : keycode = kbRockerUp;           break;
+	case XF86XK_RotateWindows     : keycode = kbRotateWindows;      break;
+	case XF86XK_RotationKB        : keycode = kbRotationKB;         break;
+	case XF86XK_RotationLockToggle: keycode = kbRotationLockToggle; break;
+	case XF86XK_RotationPB        : keycode = kbRotationPB;         break;
+	case XF86XK_Save              : keycode = kbSave;               break;
+	case XF86XK_ScreenSaver       : keycode = kbScreenSaver;        break;
+	case XF86XK_ScrollClick       : keycode = kbScrollClick;        break;
+	case XF86XK_ScrollDown        : keycode = kbScrollDown;         break;
+	case XF86XK_ScrollUp          : keycode = kbScrollUp;           break;
+	case XF86XK_Send              : keycode = kbSend;               break;
+	case XF86XK_Shop              : keycode = kbShop;               break;
+	case XF86XK_Sleep             : keycode = kbSleep;              break;
+	case XF86XK_Spell             : keycode = kbSpell;              break;
+	case XF86XK_SplitScreen       : keycode = kbSplitScreen;        break;
+	case XF86XK_Standby           : keycode = kbStandby;            break;
+	case XF86XK_Subtitle          : keycode = kbSubtitle;           break;
+	case XF86XK_Support           : keycode = kbSupport;            break;
+	case XF86XK_Suspend           : keycode = kbSuspend;            break;
+	case XF86XK_TaskPane          : keycode = kbTaskPane;           break;
+	case XF86XK_Terminal          : keycode = kbTerminal;           break;
+	case XF86XK_Time              : keycode = kbTime;               break;
+	case XF86XK_ToDoList          : keycode = kbToDoList;           break;
+	case XF86XK_Tools             : keycode = kbTools;              break;
+	case XF86XK_TopMenu           : keycode = kbTopMenu;            break;
+	case XF86XK_TouchpadOff       : keycode = kbTouchpadOff;        break;
+	case XF86XK_TouchpadOn        : keycode = kbTouchpadOn;         break;
+	case XF86XK_TouchpadToggle    : keycode = kbTouchpadToggle;     break;
+	case XF86XK_Travel            : keycode = kbTravel;             break;
+	case XF86XK_User1KB           : keycode = kbUser1KB;            break;
+	case XF86XK_User2KB           : keycode = kbUser2KB;            break;
+	case XF86XK_UserPB            : keycode = kbUserPB;             break;
+	case XF86XK_UWB               : keycode = kbUWB;                break;
+	case XF86XK_VendorHome        : keycode = kbVendorHome;         break;
+	case XF86XK_Video             : keycode = kbVideo;              break;
+	case XF86XK_View              : keycode = kbView;               break;
+	case XF86XK_WakeUp            : keycode = kbWakeUp;             break;
+	case XF86XK_WebCam            : keycode = kbWebCam;             break;
+	case XF86XK_WheelButton       : keycode = kbWheelButton;        break;
+	case XF86XK_WLAN              : keycode = kbWLAN;               break;
+	case XF86XK_Word              : keycode = kbWord;               break;
+	case XF86XK_WWAN              : keycode = kbWWAN;               break;
+	case XF86XK_WWW               : keycode = kbWWW;                break;
+	case XF86XK_Xfer              : keycode = kbXfer;               break;
+	case XF86XK_Yellow            : keycode = kbYellow;             break;
+	case XF86XK_ZoomIn            : keycode = kbZoomIn;             break;
+	case XF86XK_ZoomOut           : keycode = kbZoomOut;            break;
+#endif
+
 	default:              keycode = kbNoKey;
 	}
 

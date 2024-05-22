@@ -1212,6 +1212,7 @@ KB(F30)
 #define kbR10           kbF30
 KB(R10)
 
+/* extre keys recognized by both xorg and win32 */
 #define kbBrowserBack        0x00090000
 KB(BrowserBack)
 #define kbBrowserForward     0x00090100
@@ -1250,6 +1251,264 @@ KB(LaunchMediaSelect)
 KB(LaunchApp1)
 #define kbLaunchApp2         0x00091200
 KB(LaunchApp2)
+
+/* extre keys recognized by xorg */
+#define kbAddFavorite        0x00092000
+KB(AddFavorite)
+#define kbApplicationLeft    0x00092100
+KB(ApplicationLeft)
+#define kbApplicationRight   0x00092200
+KB(ApplicationRight)
+#define kbAudioCycleTrack    0x00092300
+KB(AudioCycleTrack)
+#define kbAudioForward       0x00092400
+KB(AudioForward)
+#define kbAudioMicMute       0x00092500
+KB(AudioMicMute)
+#define kbAudioPreset        0x00092600
+KB(AudioPreset)
+#define kbAudioRandomPlay    0x00092700
+KB(AudioRandomPlay)
+#define kbAudioRecord        0x00092800
+KB(AudioRecord)
+#define kbAudioRepeat        0x00092900
+KB(AudioRepeat)
+#define kbAudioRewind        0x00092a00
+KB(AudioRewind)
+#define kbAway               0x00092b00
+KB(Away)
+#define kbBackForward        0x00092c00
+KB(BackForward)
+#define kbBattery            0x00092d00
+KB(Battery)
+#define kbBlue               0x00092e00
+KB(Blue)
+#define kbBluetooth          0x00092f00
+KB(Bluetooth)
+#define kbBook               0x00093000
+KB(Book)
+#define kbBrightnessAdjust   0x00093100
+KB(BrightnessAdjust)
+#define kbCalculater         0x00093200
+KB(Calculater)
+#define kbCalculator         0x00093300
+KB(Calculator)
+#define kbCalendar           0x00093400
+KB(Calendar)
+#define kbCD                 0x00093500
+KB(CD)
+#define kbClose              0x00093600
+KB(Close)
+#define kbCommunity          0x00093700
+KB(Community)
+#define kbContrastAdjust     0x00093800
+KB(ContrastAdjust)
+#define kbCopy               0x00093900
+KB(Copy)
+#define kbCut                0x00093a00
+KB(Cut)
+#define kbCycleAngle         0x00093b00
+KB(CycleAngle)
+#define kbDisplay            0x00093c00
+KB(Display)
+#define kbDocuments          0x00093d00
+KB(Documents)
+#define kbDOS                0x00093e00
+KB(DOS)
+#define kbEject              0x00093f00
+KB(Eject)
+#define kbExcel              0x00094000
+KB(Excel)
+#define kbExplorer           0x00094100
+KB(Explorer)
+#define kbFinance            0x00094200
+KB(Finance)
+#define kbFrameBack          0x00094300
+KB(FrameBack)
+#define kbFrameForward       0x00094400
+KB(FrameForward)
+#define kbFullScreen         0x00094500
+KB(FullScreen)
+#define kbGame               0x00094600
+KB(Game)
+#define kbGo                 0x00094700
+KB(Go)
+#define kbGreen              0x00094800
+KB(Green)
+#define kbHibernate          0x00094900
+KB(Hibernate)
+#define kbHistory            0x00094a00
+KB(History)
+#define kbHotLinks           0x00094b00
+KB(HotLinks)
+#define kbiTouch             0x00094c00
+KB(iTouch)
+#define kbKbdBrightnessDown  0x00094d00
+KB(KbdBrightnessDown)
+#define kbKbdBrightnessUp    0x00094e00
+KB(KbdBrightnessUp)
+#define kbKbdLightOnOff      0x00094f00
+KB(KbdLightOnOff)
+#define kbLightBulb          0x00095000
+KB(LightBulb)
+#define kbLogOff             0x00095100
+KB(LogOff)
+#define kbMailForward        0x00095200
+KB(MailForward)
+#define kbMarket             0x00095300
+KB(Market)
+#define kbMeeting            0x00095400
+KB(Meeting)
+#define kbMemo               0x00095500
+KB(Memo)
+#define kbMenuKB             0x00095600
+KB(MenuKB)
+#define kbMenuPB             0x00095700
+KB(MenuPB)
+#define kbMessenger          0x00095800
+KB(Messenger)
+#define kbMonBrightnessCycle 0x00095900
+KB(MonBrightnessCycle)
+#define kbMonBrightnessDown  0x00095a00
+KB(MonBrightnessDown)
+#define kbMonBrightnessUp    0x00095b00
+KB(MonBrightnessUp)
+#define kbMusic              0x00095c00
+KB(Music)
+#define kbMyComputer         0x00095d00
+KB(MyComputer)
+#define kbMySites            0x00095e00
+KB(MySites)
+#define kbNew                0x00095f00
+KB(New)
+#define kbNews               0x00096000
+KB(News)
+#define kbOfficeHome         0x00096100
+KB(OfficeHome)
+#define kbOpen               0x00096200
+KB(Open)
+#define kbOpenURL            0x00096300
+KB(OpenURL)
+#define kbOption             0x00096400
+KB(Option)
+#define kbPaste              0x00096500
+KB(Paste)
+#define kbPhone              0x00096600
+KB(Phone)
+#define kbPictures           0x00096700
+KB(Pictures)
+#define kbPowerDown          0x00096800
+KB(PowerDown)
+#define kbPowerOff           0x00096900
+KB(PowerOff)
+#define kbQ                  0x00096a00
+KB(Q)
+#define kbRed                0x00096b00
+KB(Red)
+#define kbReload             0x00096c00
+KB(Reload)
+#define kbReply              0x00096d00
+KB(Reply)
+#define kbRFKill             0x00096e00
+KB(RFKill)
+#define kbRockerDown         0x00096f00
+KB(RockerDown)
+#define kbRockerEnter        0x00097000
+KB(RockerEnter)
+#define kbRockerUp           0x00097100
+KB(RockerUp)
+#define kbRotateWindows      0x00097200
+KB(RotateWindows)
+#define kbRotationKB         0x00097300
+KB(RotationKB)
+#define kbRotationLockToggle 0x00097400
+KB(RotationLockToggle)
+#define kbRotationPB         0x00097500
+KB(RotationPB)
+#define kbSave               0x00097600
+KB(Save)
+#define kbScreenSaver        0x00097700
+KB(ScreenSaver)
+#define kbScrollClick        0x00097800
+KB(ScrollClick)
+#define kbScrollDown         0x00097900
+KB(ScrollDown)
+#define kbScrollUp           0x00097a00
+KB(ScrollUp)
+#define kbSend               0x00097b00
+KB(Send)
+#define kbShop               0x00097c00
+KB(Shop)
+#define kbSleep              0x00097d00
+KB(Sleep)
+#define kbSpell              0x00097e00
+KB(Spell)
+#define kbSplitScreen        0x00097f00
+KB(SplitScreen)
+#define kbStandby            0x00098000
+KB(Standby)
+#define kbSubtitle           0x00098100
+KB(Subtitle)
+#define kbSupport            0x00098200
+KB(Support)
+#define kbSuspend            0x00098300
+KB(Suspend)
+#define kbTaskPane           0x00098400
+KB(TaskPane)
+#define kbTerminal           0x00098500
+KB(Terminal)
+#define kbTime               0x00098600
+KB(Time)
+#define kbToDoList           0x00098700
+KB(ToDoList)
+#define kbTools              0x00098800
+KB(Tools)
+#define kbTopMenu            0x00098900
+KB(TopMenu)
+#define kbTouchpadOff        0x00098a00
+KB(TouchpadOff)
+#define kbTouchpadOn         0x00098b00
+KB(TouchpadOn)
+#define kbTouchpadToggle     0x00098c00
+KB(TouchpadToggle)
+#define kbTravel             0x00098d00
+KB(Travel)
+#define kbUser1KB            0x00098e00
+KB(User1KB)
+#define kbUser2KB            0x00098f00
+KB(User2KB)
+#define kbUserPB             0x00099000
+KB(UserPB)
+#define kbUWB                0x00099100
+KB(UWB)
+#define kbVendorHome         0x00099200
+KB(VendorHome)
+#define kbVideo              0x00099300
+KB(Video)
+#define kbView               0x00099400
+KB(View)
+#define kbWakeUp             0x00099500
+KB(WakeUp)
+#define kbWebCam             0x00099600
+KB(WebCam)
+#define kbWheelButton        0x00099700
+KB(WheelButton)
+#define kbWLAN               0x00099800
+KB(WLAN)
+#define kbWord               0x00099900
+KB(Word)
+#define kbWWAN               0x00099a00
+KB(WWAN)
+#define kbWWW                0x00099b00
+KB(WWW)
+#define kbXfer               0x00099c00
+KB(Xfer)
+#define kbYellow             0x00099d00
+KB(Yellow)
+#define kbZoomIn             0x00099e00
+KB(ZoomIn)
+#define kbZoomOut            0x00099f00
+KB(ZoomOut)
 
 END_TABLE(kb,UV)
 #undef KB
