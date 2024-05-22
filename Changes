@@ -3,6 +3,7 @@ Revision history for Perl module Prima
 1.74 2024-XX-XX
  - implement antialiased polygon fill in C, use it in the
    AA emulation in Prima::Drawable::Alntialias instead of the old algorithm
+ - add kb:: definitions for internet keyboards
 
 1.73 2024-05-07
  - add Prima::Image::Exif, support jpeg tags
