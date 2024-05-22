@@ -608,7 +608,9 @@ prima_keysym_to_keycode( KeySym keysym, XKeyEvent *ev, U8 character )
 	case XF86XK_Finance           : keycode = kbFinance;            break;
 	case XF86XK_FrameBack         : keycode = kbFrameBack;          break;
 	case XF86XK_FrameForward      : keycode = kbFrameForward;       break;
+#ifdef XF86XK_FullScreen
 	case XF86XK_FullScreen        : keycode = kbFullScreen;         break;
+#endif
 	case XF86XK_Game              : keycode = kbGame;               break;
 	case XF86XK_Go                : keycode = kbGo;                 break;
 	case XF86XK_Green             : keycode = kbGreen;              break;
@@ -628,9 +630,11 @@ prima_keysym_to_keycode( KeySym keysym, XKeyEvent *ev, U8 character )
 	case XF86XK_MenuKB            : keycode = kbMenuKB;             break;
 	case XF86XK_MenuPB            : keycode = kbMenuPB;             break;
 	case XF86XK_Messenger         : keycode = kbMessenger;          break;
+#ifdef XF86XK_MonBrightnessCycle
 	case XF86XK_MonBrightnessCycle: keycode = kbMonBrightnessCycle; break;
 	case XF86XK_MonBrightnessDown : keycode = kbMonBrightnessDown;  break;
 	case XF86XK_MonBrightnessUp   : keycode = kbMonBrightnessUp;    break;
+#endif
 	case XF86XK_Music             : keycode = kbMusic;              break;
 	case XF86XK_MyComputer        : keycode = kbMyComputer;         break;
 	case XF86XK_MySites           : keycode = kbMySites;            break;
@@ -655,7 +659,9 @@ prima_keysym_to_keycode( KeySym keysym, XKeyEvent *ev, U8 character )
 	case XF86XK_RockerUp          : keycode = kbRockerUp;           break;
 	case XF86XK_RotateWindows     : keycode = kbRotateWindows;      break;
 	case XF86XK_RotationKB        : keycode = kbRotationKB;         break;
+#ifdef XF86XK_RotationLockToggle
 	case XF86XK_RotationLockToggle: keycode = kbRotationLockToggle; break;
+#endif
 	case XF86XK_RotationPB        : keycode = kbRotationPB;         break;
 	case XF86XK_Save              : keycode = kbSave;               break;
 	case XF86XK_ScreenSaver       : keycode = kbScreenSaver;        break;
