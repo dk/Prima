@@ -775,10 +775,11 @@ handle_key_event( Handle self, XKeyEvent *ev, Event *e, KeySym * sym, Bool relea
 	if ( ev-> state & ControlMask)  e-> key. mod |= kmCtrl;
 	if ( ev-> state & Mod1Mask)     e-> key. mod |= kmAlt;
 	if ( P_APPLICATION-> wantUnicodeInput) {
-		e-> key. mod  |= kmUnicode;
 		e-> key. code = KeySymToUcs4( keysym);
 		if (( ev-> state & ControlMask) && isalpha( e-> key. code))
 			e-> key. code = toupper( e-> key. code) - '@';
+		if ( e-> key. code > 0)
+			e-> key. mod |= kmUnicode;
 	} else {
 		e-> key. code = keycode & kbCharMask;
 	}
