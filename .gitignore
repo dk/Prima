@@ -39,6 +39,7 @@ utils/prima-gencls
 utils/prima-class
 utils/podview
 utils/prima-tmlink
+utils/prima-pod2pdf
 Prima.def
 makepl.log
 *.swp
