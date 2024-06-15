@@ -1061,16 +1061,16 @@ sub update_prelight_and_pointer
 	}
 
 	if ( join('.', @prelight ) ne join('.', @old)) {
-		$self->redraw_cell( @old ) if $old[0]      >= 0;
+		my @redraw;
+		push @redraw, \@old if $old[0] >= 0;
 		if ( $prelight[0] >= 0 ) {
-			$self->{prelight} = \@prelight;
-			$self-> redraw_cell( @prelight );
-			$self-> fader_in_mouse_enter unless defined $self->{prelight};
+			push @redraw, $self->{prelight} = \@prelight;
 		} elsif ( $fade ) {
 			$self-> fader_out_mouse_leave;
 		} else {
 			$self-> {prelight} = undef;
 		}
+		$self->redraw_cell( @$_ ) for @redraw;
 	}
 }
 
