@@ -41,6 +41,7 @@ sub profile_default
 		minTabWidth => 2,
 		vertical    => 0,
 		selectable  => 0,
+		syncPaint   => 1,
 	);
 	@$def{keys %prf} = values %prf;
 	return $def;
