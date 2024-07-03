@@ -191,22 +191,29 @@ sub glyph
 	my $size = scalar(@$outline);
 	my @p;
 	my $fill = delete $opt{fill};
+	my @anchor;
+	my $do_anchor;
 	for ( my $i = 0; $i < $size; ) {
 		my $cmd = $outline->[$i++];
 		my $pts = $outline->[$i++] * 2;
 		my @pts = map { $outline->[$i++] / 64.0 } 0 .. $pts - 1;
 		if ( $cmd == ggo::Move ) {
 			$self->close unless $fill;
-			$self->moveto(@pts);
+			$self->moveto(@anchor = @pts);
+			$do_anchor = 0;
 		} elsif ( $cmd == ggo::Line ) {
 			$self->line([ @p, @pts ]);
+			$do_anchor = 1;
 		} elsif ( $cmd == ggo::Conic ) {
 			$self->spline([ @p, @pts ]);
+			$do_anchor = 1;
 		} elsif ( $cmd == ggo::Cubic ) {
 			$self->spline([ @p, @pts ], degree => 3 );
+			$do_anchor = 1;
 		}
 		@p = @pts[-2,-1];
 	}
+	$self->line(@anchor) if $do_anchor && @anchor;
 	$self->close;
 }
 
