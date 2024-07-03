@@ -5,6 +5,8 @@ use strict;
 use warnings;
 use Prima;
 
+sub reset_matrix { shift->set_matrix( $Prima::matrix::identity ) }
+
 sub rect3d
 {
 	my ( $self, $x, $y, $x1, $y1, $width, $lColor, $rColor, $backColor) = @_;
@@ -333,7 +335,7 @@ sub stroke_img_primitive
 	return $self->graphic_context( sub {
 		# paths produce floating point coordinates and line end arcs,
 		# here we need internal pixel-wise plotting
-		$self-> set_matrix( $Prima::matrix::identity );
+		$self-> reset_matrix;
 		$self-> lineWidth(0);
 		return $path->stroke;
 	}) if $self->lineWidth < 1.5;
@@ -350,12 +352,11 @@ sub stroke_img_primitive
 	my $region2 = $self->region;
 	my $path2   = $path->widen(%widen);
 	my $region1 = $path2->region(fm::Winding | fm::Overlay);
-	my @box = $region1->box;
-	$box[$_+2] += $box[$_] for 0,1;
+	my @rect    = $region1->rect;
 
 	return unless $self->graphic_context_push;
 	$self->fillPattern(fp::Solid);
-	$self->set_matrix( $Prima::matrix::identity );
+	$self->reset_matrix;
 	if ( $self-> rop2 == rop::CopyPut && $self->linePattern ne lp::Solid && $self->linePattern ne lp::Null ) {
 		$self->color($self->backColor);
 		my $path3 = $path->widen( linePattern => lp::Solid );
@@ -363,12 +364,12 @@ sub stroke_img_primitive
 		$region3->combine( $region1, rgnop::Diff);
 		$region3->combine($region2, rgnop::Intersect) if $region2;
 		$self->region($region3);
-		$ok = $self->bar(@box);
+		$ok = $self->bar(@rect);
 	}
 
 	$region1->combine($region2, rgnop::Intersect) if $region2;
 	$self->region($region1);
-	$ok &&= $self->$method(@box);
+	$ok &&= $self->$method(@rect);
 	$self->graphic_context_pop;
 	return $ok;
 }
@@ -385,12 +386,11 @@ sub fill_img_primitive
 	my $region1 = $path->region( $self-> fillMode);
 	my $region2 = $self->region;
 	$region1->combine($region2, rgnop::Intersect) if $region2;
-	my @box = $region1->box;
-	$box[$_+2] += $box[$_] for 0,1;
+	my @rect = $region1->rect;
 	$self->region($region1);
 
-	$self->set_matrix($Prima::matrix::identity);
-	my $ok = $self->bar(@box);
+	$self->reset_matrix;
+	my $ok = $self->bar(@rect);
 
 	$self->graphic_context_pop;
 
@@ -417,7 +417,7 @@ sub stroke_imgaa_primitive
 	return unless $self->graphic_context_push;
 	$self->fillPattern(fp::Solid);
 	$self->fillMode(fm::Winding | fm::Overlay);
-	$self->set_matrix($Prima::matrix::identity);
+	$self->reset_matrix;
 	$self->color($self->backColor) if $lp eq lp::Null;
 	my $ok = 1;
 	for ($path->points(fill => 1)) {
@@ -446,7 +446,7 @@ sub fill_imgaa_primitive
 		$ok = 0;
 		last;
 	}
-	$self->set_matrix($Prima::matrix::identity);
+	$self->reset_matrix;
 	return $ok;
 }
 
