@@ -79,24 +79,17 @@ object Prima::Drawable ( Prima::Component)
 	method Bool  graphic_context_pop();
 
 	# operators
-	method Bool  arc( double x, double y, double dX, double dY, double startAngle, double endAngle);
 	method Bool  bar(double x1, double y1, double x2, double y2);
 	method Bool  bar_alpha(int alpha, int x1=-1, int y1=-1, int x2=-1, int y2=-1)        => apc_gp_alpha;
 	method Bool  bars(SV * rects);
-	method Bool  chord( double x, double y, double dX, double dY, double startAngle, double endAngle);
 	method Bool  clear(double x1=-1, double y1=-1, double x2=-1, double y2=-1);
-	method Bool  ellipse(double x, double y, double dX, double dY);
-	method Bool  fill_chord( double x, double y, double dX, double dY, double startAngle, double endAngle);
-	method Bool  fill_ellipse(double x, double y, double dX, double dY);
 	method Bool  fillpoly( SV * points);
-	method Bool  fill_sector( double x, double y, double dX, double dY, double startAngle, double endAngle);
 	method Bool  flood_fill( int x, int y, Color color, Bool singleBorder = 1) => apc_gp_flood_fill;
 	method Bool  line(double x1, double y1, double x2, double y2);
 	method Bool  lines( SV * points);
 	method Bool  polyline( SV * points);
 	method Bool  put_image_indirect( Handle image, int x, int y, int xFrom, int yFrom, int xDestLen, int yDestLen, int xLen, int yLen, int rop = ropDefault);
 	method Bool  rectangle(double x1, double y1, double x2, double y2);
-	method Bool  sector( double x, double y, double dX, double dY, double startAngle, double endAngle);
 	method Bool  text_out( SV * text, int x, int y, int from = 0, int len = -1);
 	method SV*   text_shape( SV * text, HV * profile);
 	method SV*   text_wrap( SV * text, int width, int options = twDefault, int tabIndent = 8, int from = 0, int len = -1, SV * glyphs = NULL_SV);

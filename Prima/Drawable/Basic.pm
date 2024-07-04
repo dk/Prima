@@ -440,7 +440,7 @@ sub fill_imgaa_primitive
 	my $m = $self->get_matrix;
 	$path->matrix($m);
 	$path->$request(@_);
-	$self->matrix($Prima::matrix::identity);
+	$self->reset_matrix;
 	for ($path->points(fill => 1)) {
 		next if $aa->fillpoly($_);
 		$ok = 0;
@@ -448,6 +448,17 @@ sub fill_imgaa_primitive
 	}
 	$self->reset_matrix;
 	return $ok;
+}
+
+sub execute_img_primitive
+{
+	my ( $self, $act, $request ) = (shift, shift, shift);
+	my $ps = $self->get_paint_state;
+	return $self->can($act . '_primitive')->($self, $request, @_) if $ps == ps::Enabled;
+	return 1 if $ps == ps::Information;
+
+	$act .= '_img' . ( $self->antialias ? 'aa' : '') . '_primitive';
+	return $self->$act($request, @_);
 }
 
 sub stroke_primitive

@@ -787,6 +787,14 @@ sub stretch_image {
 
 sub has_alpha_layer { 0 }
 
+sub arc          { shift->stroke_primitive( arc     => @_ ) }
+sub chord        { shift->stroke_primitive( chord   => @_ ) }
+sub ellipse      { shift->stroke_primitive( ellipse => @_ ) }
+sub sector       { shift->stroke_primitive( sector  => @_ ) }
+sub fill_chord   { shift->fill_primitive  ( chord   => @_ ) }
+sub fill_ellipse { shift->fill_primitive  ( ellipse => @_ ) }
+sub fill_sector  { shift->fill_primitive  ( sector  => @_ ) }
+
 sub spline
 {
 	my $self = shift;
@@ -886,6 +894,14 @@ sub profile_check_in
 
 	$self-> SUPER::profile_check_in( $p, $default);
 }
+
+sub arc          { shift->execute_img_primitive( stroke => arc     => @_ ) }
+sub chord        { shift->execute_img_primitive( stroke => chord   => @_ ) }
+sub ellipse      { shift->execute_img_primitive( stroke => ellipse => @_ ) }
+sub sector       { shift->execute_img_primitive( stroke => sector  => @_ ) }
+sub fill_chord   { shift->execute_img_primitive( fill   => chord   => @_ ) }
+sub fill_ellipse { shift->execute_img_primitive( fill   => ellipse => @_ ) }
+sub fill_sector  { shift->execute_img_primitive( fill   => sector  => @_ ) }
 
 sub rangeLo      { return shift-> stats( is::RangeLo , @_); }
 sub rangeHi      { return shift-> stats( is::RangeHi , @_); }

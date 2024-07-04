@@ -38,7 +38,6 @@ object Prima::Image( Prima::Drawable)
 
 	# methods
 	method UV     add_notification( char * name, SV * subroutine, Handle referer = NULL_HANDLE, int index = -1);
-	method Bool   arc( double x, double y, double dX, double dY, double startAngle, double endAngle);
 	method Bool   bar(double x1, double y1, double x2, double y2);
 	method Bool   bar_alpha(int alpha, int x1=-1, int y1=-1, int x2=-1, int y2=-1);
 	method Bool   bars(SV * rects);
@@ -47,22 +46,17 @@ object Prima::Image( Prima::Drawable)
 	method Bool   begin_paint();
 	method Bool   begin_paint_info();
 	method Bool   can_draw_alpha();
-	method Bool   chord( double x, double y, double dX, double dY, double startAngle, double endAngle);
 	static SV   * codecs( SV * dummy, int codecID = -1);
 	method Handle convert_to_icon( int maskType, SV * mask_fill );
 	method Bool   clear(double x1=-1, double y1=-1, double x2=-1, double y2=-1);
 	c_only void   create_empty( int width, int height, int type);
 	method void   done();
 	method Handle dup();
-	method Bool   ellipse(double x, double y, double dX, double dY);
 	c_only void   end_font_query();
 	method void   end_paint();
 	method void   end_paint_info();
 	method Handle extract( int x, int y, int width, int height);
-	method Bool   fill_chord( double x, double y, double dX, double dY, double startAngle, double endAngle);
-	method Bool   fill_ellipse(double x, double y, double dX, double dY);
 	method Bool   fillpoly( SV * podoubles);
-	method Bool   fill_sector( double x, double y, double dX, double dY, double startAngle, double endAngle);
 	method Bool   flood_fill( int x, int y, Color color, Bool singleBorder = 1);
 	static Font*  font_match( SV * dummy, Font * source, Font * dest, Bool pick = true);
 	method SV*    fonts( char * name = "", char * encoding = "");
@@ -92,7 +86,6 @@ object Prima::Image( Prima::Drawable)
 	method Bool   rectangle(double x1, double y1, double x2, double y2);
 	method void   resample( double srcLo, double srcHi, double dstLo, double dstHi);
 	weird  int    save( SV *className, SV *filename, HV * profile);
-	method Bool   sector( double x, double y, double dX, double dY, double startAngle, double endAngle);
 	method void   set( HV * profile);
 	method void   set_font( Font font);
 	c_only void   reset( int type, RGBColor * palette, int palSize);

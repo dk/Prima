@@ -351,14 +351,6 @@ Image_draw_primitive( Handle self, Bool fill, char * method, ...)
 }
 
 Bool
-Image_arc( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
-{
-	if ( opt_InPaint) return inherited arc(self, x, y, dX, dY, startAngle, endAngle);
-	while ( startAngle > endAngle ) endAngle += 360.0;
-	return Image_draw_primitive( self, 0, "snnnnnn", "arc", x, y, dX, dY, startAngle, endAngle);
-}
-
-Bool
 Image_bar( Handle self, double x1, double y1, double x2, double y2)
 {
 	Bool ok;
@@ -484,13 +476,6 @@ Image_bars( Handle self, SV * rects)
 }
 
 Bool
-Image_chord( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
-{
-	if ( opt_InPaint) return inherited chord(self, x, y, dX, dY, startAngle, endAngle);
-	return Image_draw_primitive( self, 0, "snnnnnn", "chord", x, y, dX, dY, startAngle, endAngle);
-}
-
-Bool
 Image_clear(Handle self, double x1, double y1, double x2, double y2)
 {
 	Bool ok;
@@ -567,41 +552,12 @@ Image_clear(Handle self, double x1, double y1, double x2, double y2)
 }
 
 Bool
-Image_ellipse( Handle self, double x, double y,  double dX, double dY)
-{
-	if ( opt_InPaint) return inherited ellipse(self, x, y, dX, dY);
-	return Image_draw_primitive( self, 0, "snnnn", "ellipse", x, y, dX, dY);
-}
-
-Bool
-Image_fill_chord( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
-{
-	if ( opt_InPaint) return inherited fill_chord(self, x, y, dX, dY, startAngle, endAngle);
-	return Image_draw_primitive( self, 1, "snnnnnn", "chord", x, y, dX, dY, startAngle, endAngle);
-}
-
-Bool
-Image_fill_ellipse( Handle self, double x, double y,  double dX, double dY)
-{
-	if ( opt_InPaint) return inherited fill_ellipse(self, x, y, dX, dY);
-	return Image_draw_primitive( self, 1, "snnnn", "ellipse", x, y, dX, dY);
-}
-
-Bool
 Image_fillpoly( Handle self, SV * points)
 {
 	if ( opt_InPaint)
 		return inherited fillpoly(self, points);
 	else
 		return Image_draw_primitive( self, 1, "sS", "line", points );
-}
-
-
-Bool
-Image_fill_sector( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
-{
-	if ( opt_InPaint) return inherited fill_sector(self, x, y, dX, dY, startAngle, endAngle);
-	return Image_draw_primitive( self, 1, "snnnnnn", "sector", x, y, dX, dY, startAngle, endAngle);
 }
 
 Bool
@@ -718,14 +674,6 @@ Image_rectangle(Handle self, double x1, double y1, double x2, double y2)
 		return Image_draw_primitive( self, 0, "snnnn", "rectangle", x1, y1, x2, y2);
 	}
 }
-
-Bool
-Image_sector( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
-{
-	if ( opt_InPaint) return inherited sector(self, x, y, dX, dY, startAngle, endAngle);
-	return Image_draw_primitive( self, 0, "snnnnnn", "sector", x, y, dX, dY, startAngle, endAngle);
-}
-
 
 #ifdef __cplusplus
 }

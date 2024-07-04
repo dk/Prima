@@ -37,28 +37,6 @@ primitive( Handle self, Bool fill, char * method, ...)
 
 
 Bool
-Drawable_arc( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
-{
-	gpCHECK(false);
-	while ( startAngle > endAngle ) endAngle += 360.0;
-	return primitive( self, 0, "snnnnnn", "arc", x, y, dX, dY, startAngle, endAngle);
-}
-
-Bool
-Drawable_chord( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
-{
-	gpCHECK(false);
-	return primitive( self, 0, "snnnnnn", "chord", x, y, dX, dY, startAngle, endAngle);
-}
-
-Bool
-Drawable_ellipse( Handle self, double x, double y,  double dX, double dY)
-{
-	gpCHECK(false);
-	return primitive( self, 0, "snnnn", "ellipse", x, y, dX, dY);
-}
-
-Bool
 Drawable_bar( Handle self, double x1, double y1, double x2, double y2)
 {
 	NRect nrect = {x1,y1,x2,y2};
@@ -199,27 +177,6 @@ Drawable_clear( Handle self, double x1, double y1, double x2, double y2)
 	}
 	my->graphic_context_pop(self);
 	return ok;
-}
-
-Bool
-Drawable_fill_chord( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
-{
-	gpCHECK(false);
-	return primitive( self, 1, "snnnnnn", "chord", x, y, dX, dY, startAngle, endAngle);
-}
-
-Bool
-Drawable_fill_ellipse( Handle self, double x, double y,  double dX, double dY)
-{
-	gpCHECK(false);
-	return primitive( self, 1, "snnnn", "ellipse", x, y, dX, dY);
-}
-
-Bool
-Drawable_fill_sector( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
-{
-	gpCHECK(false);
-	return primitive( self, 1, "snnnnnn", "sector", x, y, dX, dY, startAngle, endAngle);
 }
 
 Bool
@@ -372,13 +329,6 @@ Drawable_rectangle( Handle self, double x1, double y1, double x2, double y2)
 		poly[4] = poly[0];
 		return apc_gp_draw_poly( self, 5, poly);
 	}
-}
-
-Bool
-Drawable_sector( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
-{
-	gpCHECK(false);
-	return primitive( self, 0, "snnnnnn", "sector", x, y, dX, dY, startAngle, endAngle);
 }
 
 #ifdef __cplusplus
