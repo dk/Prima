@@ -512,13 +512,13 @@ points2region( PolyPointBlock *block, int outline)
 		rects->y = pts->y;
 		rects->width  = pts[1].x - pts-> x + outline;
 		rects->height = pts[1].y - pts-> y + 1;
-		if ( rects-> width < 0 ) {
-				rects->x += rects->width;
-			rects->width = -rects->width;
+		if ( rects-> width < 0  ) {
+			rects->x     +=  rects-> width;
+			rects->width  = -rects-> width;
 		}
 		if ( rects-> height < 0 ) {
-			rects->y += rects->height;
-			rects->height = -rects->height;
+			rects->y     +=  rects-> height;
+			rects->height = -rects-> height;
 		}
 		DEBUG("insert x=%d y=%d w=%d h=%d\n", rects->x, rects->y, rects->width, rects->height);
 	}

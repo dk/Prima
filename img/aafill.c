@@ -265,8 +265,10 @@ img_aafill( Handle self, NPoint *pts, int n_pts, int rule)
 
 	{
 		Point *p = block->pts;
-		int n = block->size;
+		int n = block->size, delta = 0;
 		while (n--) {
+			register int x = (p->x - delta - aa_extents.left) >> AAX_SHIFT;
+			delta = !delta; /* last pixel of a line end, used by fmOutline but not by AA fills */
 			if ( p-> y != y_scan ) {
 				register int scanline;
 				if ( p-> y > y_lim ) {
@@ -285,8 +287,8 @@ img_aafill( Handle self, NPoint *pts, int n_pts, int rule)
 				scanline = p-> y - y_curr;
 				scanline_ptr.point[scanline] = p;
 			}
-			DEBUG("SET.%d(%d.%d) @ %d\n", (int)(p - block->pts), p->x, p->y, (p->x - aa_extents.left) >> AAX_SHIFT);
-			map[ ( p-> x - aa_extents.left ) >> AAX_SHIFT ] = 1;
+			DEBUG("SET.%d(%d-%d.%d) @ %d\n", (int)(p - block->pts), p->x, delta, p->y, x);
+			map[x] = 1;
 			map_is_dirty = true;
 			p++;
 		}

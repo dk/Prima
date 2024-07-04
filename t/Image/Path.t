@@ -408,7 +408,7 @@ is_pict8($i, "aa fill",
 );
 
 $i->clear;
-$i->fillpoly([-10, -10, 10, -10, 2.75, 2]);
+$i->fillpoly([-10, -10, 15, -10, 2.5, 2]);
 is_pict8($i, "aa fill oob",
 	"     ".
 	"     ".
