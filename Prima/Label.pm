@@ -671,6 +671,6 @@ Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
 
 =head1 SEE ALSO
 
-L<Prima>, L<Prima::Widget>, L<Prima::Drawable::Markup>, L<Prima::Widget::Links>, F<examples/label.pl>
+L<Prima>, L<Prima::Widget>, L<Prima::Drawable::Markup>, L<Prima::Widget::Link>, F<examples/label.pl>
 
 =cut
