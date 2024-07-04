@@ -534,52 +534,6 @@ CreateETandAET(
 	}
 }
 
-static void
-CreateETandAET_Boxes(
-	register int count,
-	register Box *boxes,
-	EdgeTable *ET,
-	EdgeTableEntry *AET,
-	register EdgeTableEntry *pETEs,
-	ScanLineListBlock   *pSLLBlock)
-{
-	int iSLLBlock = 0;
-	init_edge_table(ET, AET, pSLLBlock);
-
-	while ( count-- ) {
-		int x, y;
-
-#define INSERT_EDGE                                                          \
- 		pETEs->ymax = boxes->y + boxes->height - 1;  /* we actually do get last scanline for a box */ \
- 		BRESINITPGONSTRUCT(boxes->height, x, x, pETEs->bres);        \
- 		InsertEdgeInET(ET, pETEs, boxes->y, &pSLLBlock, &iSLLBlock); \
- 		if (y > ET->ymax) ET->ymax = y;                              \
- 		if (y < ET->ymin) ET->ymin = y;                              \
- 		pETEs++;
-
-		pETEs->ClockWise = 1;
-		x = boxes->x;
-		y = boxes->y;
-#ifdef _DEBUG
-		pETEs->p1.x = pETEs->p2.x = x;
-		pETEs->p1.y = boxes->y;
-		pETEs->p2.y = boxes->y + boxes->height - 1;
-#endif
-		INSERT_EDGE;
-
-		pETEs->ClockWise = 0;
-		x = boxes->x + boxes->width  - 1;
-		y = boxes->y + boxes->height;
-#ifdef _DEBUG
-		pETEs->p1.x = pETEs->p2.x = x;
-		pETEs->p1.y = boxes->y;
-		pETEs->p2.y = boxes->y + boxes->height - 1;
-#endif
-		INSERT_EDGE;
-
-			boxes++;
-	}
-}
 
 /*
  *     loadAET
@@ -741,11 +695,6 @@ FreeStorage(
 		pSLLBlock = tmpSLLBlock;
 	}
 }
- 
- /* number of points to buffer before sending them off
- * to scanlines() :  Must be an even number
- */
-#define NUMPTSTOBUFFER 200
 
 /*
 
@@ -754,37 +703,45 @@ FreeStorage(
 
  */
 
+static Bool
+realloc_pt_block(PolyPointBlock **block, unsigned long *size)
+{
+	PolyPointBlock *tmp;
+        *size *= 2;
+        tmp = realloc(*block, sizeof(PolyPointBlock) + (*size - 1) * sizeof(Point));
+	if ( tmp == NULL )
+		return false;
+	*block = tmp;
+	return true;
+}
+
 #define ADD_POINT                                               \
         pts->x = pAET->bres.minor_axis,  pts->y = y;            \
-        if (clip != NULL && (curPtBlock->size % 2) == 1) {      \
+        if (clip != NULL && (ret->size % 2) == 1) {             \
                 if (                                            \
                         pts[-1].x > clip-> right  ||            \
                         pts->x    < clip-> left   ||            \
                         pts->y    < clip-> bottom ||            \
                         pts->y    > clip-> top                  \
                 ) {                                             \
-                        DEBUG("SKIP.%d %d-%d/%d-%d %d/%d-%d\n", curPtBlock->size, pts[-1].x, pts->x, clip->left, clip->right, pts->y, clip->bottom, clip->top);\
-                        pts              -= 2;                  \
-                        curPtBlock->size -= 2;                  \
+                        DEBUG("SKIP.%ld %d-%d/%d-%d %d/%d-%d\n", ret->size, pts[-1].x, pts->x, clip->left, clip->right, pts->y, clip->bottom, clip->top);\
+                        pts       -= 2;                         \
+                        ret->size -= 2;                         \
                 } else {                                        \
                         if (pts[-1].x < clip->left  )           \
                                 pts[-1].x = clip->left;         \
                         if (pts->x    > clip->right )           \
                                 pts->x    = clip->right;        \
-                        DEBUG("ADD.%d %d-%d %d\n", curPtBlock->size, pts[-1].x, pts->x, pts->y);\
+                        DEBUG("ADD.%ld %d-%d %d\n", ret->size, pts[-1].x, pts->x, pts->y);\
                 }                                               \
         }                                                       \
         DEBUG("+p %d %d\n", pts->x, pts->y);                    \
-        pts++, curPtBlock->size++;                              \
-        if (curPtBlock->size == curr_max_size) {                \
-                curr_max_size *= 2;                             \
-                tmpPtBlock = malloc(sizeof(PolyPointBlock) + (curr_max_size - 1) * sizeof(Point)); \
-                tmpPtBlock->next = NULL;                        \
-                tmpPtBlock->size = 0   ;                        \
-                curPtBlock->next = tmpPtBlock;                  \
-                curPtBlock = tmpPtBlock;                        \
-                pts = curPtBlock->pts;                          \
-        }
+        pts++, ret->size++;                                     \
+        if (ret->size == curr_max_size) {                       \
+		if (!realloc_pt_block(&ret, &curr_max_size))    \
+			goto FAIL;                              \
+		pts = ret->pts + ret->size;                     \
+	}
 
 PolyPointBlock*
 poly_poly2points(
@@ -804,10 +761,9 @@ poly_poly2points(
 	EdgeTableEntry *pETEs;           /* EdgeTableEntries pool   */
 	ScanLineListBlock SLLBlock;      /* header for scanlinelist */
 	int fixWAET = 0;
-	PolyPointBlock *FirstPtBlock, *curPtBlock; /* PtBlock buffers    */
-	PolyPointBlock *tmpPtBlock;
+	PolyPointBlock *ret;
 	Bool outline, winding;
-	unsigned long curr_max_size = NUMPTSTOBUFFER;
+	unsigned long curr_max_size;
 
 	outline = (rule & fmOverlay) ? 1 : 0;
 	winding = (rule & fmWinding) ? 1 : 0;
@@ -819,17 +775,17 @@ poly_poly2points(
 	if (! (pETEs = malloc(Count * sizeof(EdgeTableEntry))))
 		return NULL;
 
-	if ( !( FirstPtBlock = malloc(sizeof(PolyPointBlock) + ( curr_max_size - 1 ) * sizeof(Point)))) {
+	CreateETandAET(Count, Pts, &ET, &AET, pETEs, &SLLBlock);
+	pSLL = ET.scanlines.next;
+
+	curr_max_size = (ET.ymax - ET.ymin) * 4; /* also must be an even number */
+	if ( !( ret = malloc(sizeof(PolyPointBlock) + ( curr_max_size - 1 ) * sizeof(Point)))) {
 		free(pETEs);
 		return NULL;
 	}
-	FirstPtBlock->next = NULL;
-	FirstPtBlock->size = 0;
+	ret->size = 0;
 
-	pts = FirstPtBlock->pts;
-	CreateETandAET(Count, Pts, &ET, &AET, pETEs, &SLLBlock);
-	pSLL = ET.scanlines.next;
-	curPtBlock = FirstPtBlock;
+	pts = ret->pts;
 
 	if (winding) {
 		/*
@@ -907,84 +863,13 @@ poly_poly2points(
 	FreeStorage(SLLBlock.next);
 	free(pETEs);
 
-	return FirstPtBlock;
-}
+	return ret;
 
-PolyPointBlock*
-poly_region2points(
-	PRegionRec rgn,
-	PRect     clip
-) {
-	register EdgeTableEntry *pAET;   /* Active Edge Table       */
-	register int y;                  /* current scanline        */
-	register ScanLineList *pSLL;     /* current scanLineList    */
-	register Point *pts;             /* output buffer           */
-	EdgeTableEntry *pPrevAET;        /* ptr to previous AET     */
-	EdgeTable ET;                    /* header node for ET      */
-	EdgeTableEntry AET;              /* header node for AET     */
-	EdgeTableEntry *pETEs;           /* EdgeTableEntries pool   */
-	ScanLineListBlock SLLBlock;      /* header for scanlinelist */
-	PolyPointBlock *FirstPtBlock, *curPtBlock; /* PtBlock buffers    */
-	PolyPointBlock *tmpPtBlock;
-	unsigned long curr_max_size = NUMPTSTOBUFFER;
-	unsigned int Count = rgn->n_boxes * 2;
-
-	if ( Count < 2 )
-		return NULL;
-
-	if (! (pETEs = malloc(Count * sizeof(EdgeTableEntry))))
-		return NULL;
-
-	if ( !( FirstPtBlock = malloc(sizeof(PolyPointBlock) + ( curr_max_size - 1 ) * sizeof(Point)))) {
-		free(pETEs);
-		return NULL;
-	}
-	FirstPtBlock->next = NULL;
-	FirstPtBlock->size = 0;
-
-	pts = FirstPtBlock->pts;
-	CreateETandAET_Boxes(rgn->n_boxes, rgn->boxes, &ET, &AET, pETEs, &SLLBlock);
-	pSLL = ET.scanlines.next;
-	curPtBlock = FirstPtBlock;
-
-	DEBUG("for %d <=> %d\n", ET.ymin, ET.ymax);
-	for (y = ET.ymin; y < ET.ymax; y++) {
-		DEBUG("== %d ==\n", y);
-		/*
-		 *  Add a new edge to the active edge table when we
-		 *  get to the next edge.
-		 */
-		if (pSLL != NULL && y == pSLL->scanline) {
-			loadAET(&AET, pSLL->edgelist);
-			pSLL = pSLL->next;
-		}
-		pPrevAET = &AET;
-		pAET = AET.next;
-
-		/*
-		 *  for each active edge
-		 */
-		while (pAET) {
-			ADD_POINT;
-			EVALUATEEDGEEVENODD(pAET, pPrevAET, y);
-		}
-		(void) InsertionSort(&AET);
-	}
+FAIL:
+	free(ret);
 	FreeStorage(SLLBlock.next);
 	free(pETEs);
-
-	return FirstPtBlock;
-}
-
-void
-poly_free_blocks( PolyPointBlock * first )
-{
-	PolyPointBlock * curPtBlock;
-	for (curPtBlock = first; curPtBlock != NULL; ) {
-		PolyPointBlock *tmpPtBlock = curPtBlock->next;
-		free(curPtBlock);
-		curPtBlock = tmpPtBlock;
-	}
+	return NULL;
 }
 
 #ifdef __cplusplus

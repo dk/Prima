@@ -21,15 +21,16 @@ extern "C" {
 
 typedef struct {
 	PolyPointBlock *block;
-	Point *point;
+	Point *point[AAY];
 } ScanlinePtr;
 
 /* advance AAY pointers until x, subsample AA pixel value if needed */
 static Byte
-skipto( ScanlinePtr* ptrs, int x, Bool subsample_last_pixel)
+skipto( ScanlinePtr* scan, int x, Bool subsample_last_pixel)
 {
 	int i, x_from, x_to;
 	unsigned int y_collector = 0;
+	PolyPointBlock *b = scan->block;
 
 	x *= AAX;
 	if ( subsample_last_pixel ) {
@@ -37,54 +38,43 @@ skipto( ScanlinePtr* ptrs, int x, Bool subsample_last_pixel)
 		x_to   = x - 1;
 	}
 
-	for ( i = 0; i < AAY; i++, ptrs++) {
-		int y;
-		Byte x_collector = 0;
+	for ( i = 0; i < AAY; i++) {
+		int    y;
+		Byte   x_collector = 0;
+		Point *p = scan->point[i], *last;
 
-		if ( ptrs-> point )
-			y = ptrs->point->y;
-		else
+		if ( p != NULL ) {
+			y    = p->y;
+			last = b->pts + b->size;
+		} else
 			continue;
 
-		while (1) {
-			Point          *p    = ptrs->point;
-			PolyPointBlock *b    = ptrs->block;
-			Point          *last = b->pts + b->size - 0;
+		while ( p != last ) {
+			if ( y != p->y ) {
+				scan->point[i] = NULL;
+				goto NEXT;
+			}
 
-			while ( p != last ) {
-				if ( y != p->y ) {
-					ptrs->point = NULL;
-					ptrs->block = NULL;
-					goto NEXT;
-				}
-
-				if ( subsample_last_pixel) {
-					register int x1 = p->x;
-					register int x2 = p[1].x;
-					if ( x1 <= x_to && x2 >= x_from ) {
-						if ( x1 < x_from ) x1 = x_from;
-						if ( x2 > x_to   ) x2 = x_to;
-						x_collector += x2 - x1 + 1;
-						DEBUG(":%d[%d]: %d %d\n", y, i, x1, x2);
-					}
-				}
-
-				if ( p[1].x < x ) {
-					DEBUG("%d.%d: %d-%d =\n", x, i, p->x, p[1].x);
-					p += 2;
-				} else {
-					ptrs->point = p;
-					goto NEXT;
+			if ( subsample_last_pixel) {
+				register int x1 = p->x;
+				register int x2 = p[1].x;
+				if ( x1 <= x_to && x2 >= x_from ) {
+					if ( x1 < x_from ) x1 = x_from;
+					if ( x2 > x_to   ) x2 = x_to;
+					x_collector += x2 - x1 + 1;
+					DEBUG(":%d[%d]: %d %d\n", y, i, x1, x2);
 				}
 			}
 
-			if (( ptrs->block = b = b->next) == NULL) {
-				ptrs->point = NULL;
-				break;
+			if ( p[1].x < x ) {
+				DEBUG("%d.%d: %d-%d =\n", x, i, p->x, p[1].x);
+				p += 2;
+			} else {
+				scan->point[i] = p;
+				goto NEXT;
 			}
-
-			ptrs->point = b->pts;
 		}
+		scan->point[i] = NULL;
 
 	NEXT:
 		y_collector += x_collector;
@@ -100,7 +90,7 @@ into a properly subsampled AA scanline
 
 */
 static void
-fill( int startx, int y, Byte *map, unsigned int maplen, ScanlinePtr* ptrs)
+fill( int startx, int y, Byte *map, unsigned int maplen, ScanlinePtr* scan)
 {
 	Byte *scanned;
 	unsigned int advance;
@@ -130,7 +120,7 @@ fill( int startx, int y, Byte *map, unsigned int maplen, ScanlinePtr* ptrs)
 		/* this is a beginning or an end to an edge, we don't care which
 		because in the AxA square there can be both types. What's more important
 		that this pixel value needs always to be calculated */
-		*(map++) = skipto( ptrs, ++startx, true );
+		*(map++) = skipto( scan, ++startx, true );
 		DEBUG("Y:%d L=%02x (%d)\n", y, map[-1], maplen);
 		if ( --maplen <= 0 ) return;
 		if ( *map ) continue; /* next pixel is also intersected by an edge, so just do that again */
@@ -144,12 +134,12 @@ fill( int startx, int y, Byte *map, unsigned int maplen, ScanlinePtr* ptrs)
 		/* now, the next pixel is not intersected by any edge, so whatever its value going to
 		be, this pixel and its neighbours will share it until the edge end. This is the whole 
 		point of no-AA optimization, in order to not subsample identical values. */
-		replicator = skipto( ptrs, startx + 1, true );
+		replicator = skipto( scan, startx + 1, true );
 		DEBUG("Y:%d R=%02x\n", y, replicator);
 		if ( replicator > 0 )
 			memset( map, replicator, advance );
 		if ( advance > 1 )
-			skipto( ptrs, startx + advance - 1, false);
+			skipto( scan, startx + advance - 1, false);
 		startx += advance;
 		map    += advance;
 	}
@@ -216,9 +206,9 @@ img_aafill( Handle self, NPoint *pts, int n_pts, int rule)
 	unsigned int maplen;
 	Bool ok = false, map_is_dirty;
 	Point *pXpts = NULL;
-	PolyPointBlock *first = NULL, *curr = NULL;
+	PolyPointBlock *block = NULL;
 	Byte *map = NULL;
-	ScanlinePtr scanline_ptr[AAY];
+	ScanlinePtr scanline_ptr;
 	Rect clip, aa_extents;
 
 	if (n_pts < 2)
@@ -246,7 +236,7 @@ img_aafill( Handle self, NPoint *pts, int n_pts, int rule)
 	maplen  = xmax_px - xmin_px + 1;
 	DEBUG("EXTENTS %d-%d/%d-%d = %d-%d = %d\n", aa_extents.left, aa_extents.right, aa_extents.bottom, aa_extents.top, xmin_px, xmax_px , maplen);
 
-	if (( first = curr = poly_poly2points(pXpts, n_pts, rule, &clip)) == NULL )
+	if (( block = poly_poly2points(pXpts, n_pts, rule, &clip)) == NULL )
 		goto FAIL;
 	free( pXpts );
 	pXpts = NULL;
@@ -257,9 +247,9 @@ img_aafill( Handle self, NPoint *pts, int n_pts, int rule)
 	y_scan = y_curr;
 	bzero( map, maplen );
 	map_is_dirty = false;
-	bzero( scanline_ptr, sizeof(scanline_ptr));
-	scanline_ptr[0].block = curr;
-	scanline_ptr[0].point = curr->pts;
+	bzero( &scanline_ptr, sizeof(scanline_ptr));
+	scanline_ptr.block    = block;
+	scanline_ptr.point[0] = block->pts;
 
 	/*
 
@@ -273,17 +263,17 @@ img_aafill( Handle self, NPoint *pts, int n_pts, int rule)
 
 	*/
 
-	while ( curr != NULL ) {
-		Point *p = curr->pts;
-		int n = curr->size;
+	{
+		Point *p = block->pts;
+		int n = block->size;
 		while (n--) {
 			if ( p-> y != y_scan ) {
 				register int scanline;
 				if ( p-> y > y_lim ) {
-					fill( xmin_px, y_curr, map, maplen, scanline_ptr);
+					fill( xmin_px, y_curr, map, maplen, &scanline_ptr);
 					map += PImage(self)->lineSize;
 					bzero( map, maplen );
-					bzero( scanline_ptr, sizeof(scanline_ptr));
+					bzero( scanline_ptr.point, sizeof(scanline_ptr.point));
 					map_is_dirty = false;
 					while ( p->y > y_lim ) {
 						y_lim  += AAY;
@@ -293,25 +283,23 @@ img_aafill( Handle self, NPoint *pts, int n_pts, int rule)
 
 				y_scan = p-> y;
 				scanline = p-> y - y_curr;
-				scanline_ptr[scanline].block = curr;
-				scanline_ptr[scanline].point = p;
+				scanline_ptr.point[scanline] = p;
 			}
-			DEBUG("SET.%d(%d.%d) @ %d\n", (int)(p - curr->pts), p->x, p->y, (p->x - aa_extents.left) >> AAX_SHIFT);
+			DEBUG("SET.%d(%d.%d) @ %d\n", (int)(p - block->pts), p->x, p->y, (p->x - aa_extents.left) >> AAX_SHIFT);
 			map[ ( p-> x - aa_extents.left ) >> AAX_SHIFT ] = 1;
 			map_is_dirty = true;
 			p++;
 		}
-		curr = curr->next;
 	}
 	if ( map_is_dirty )
-		fill( xmin_px, y_curr, map, maplen, scanline_ptr);
+		fill( xmin_px, y_curr, map, maplen, &scanline_ptr);
 
 	ok = true;
 FAIL:
-	if ( pXpts ) 
+	if ( pXpts )
 		free( pXpts );
-	if ( first )
-		poly_free_blocks( first );
+	if ( block )
+		free( block );
 	return ok;
 }
 

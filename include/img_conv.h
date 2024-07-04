@@ -375,19 +375,11 @@ extern PRegionRec img_region_polygon( Point *pts, int count, int rule);
 extern PRegionRec img_region_mask( Handle mask);
 extern void img_region_offset( PRegionRec region, int dx, int dy);
 
-/*
- * used to allocate buffers for points and link
- * the buffers together
- */
-typedef struct _PolyPointBlock {
-	struct _PolyPointBlock *next;
-	unsigned int size;
+typedef struct {
+	unsigned long size;
 	Point pts[1];
 } PolyPointBlock;
-
 extern PolyPointBlock* poly_poly2points(Point *pts, int count, int rule, PRect clip);
-extern PolyPointBlock* poly_region2points(PRegionRec rgn, PRect clip);
-extern void            poly_free_blocks( PolyPointBlock * first );
 
 /* istXXX function */
 typedef double FilterFunc( const double x );

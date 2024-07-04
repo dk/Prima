@@ -472,64 +472,55 @@ compress_region( PRegionRec region)
 }
 
 static PRegionRec
-points2region( PolyPointBlock *first, int outline)
+points2region( PolyPointBlock *block, int outline)
 {
 	register Box  *rects;
 	register Point *pts;
 	register int i;
-	PolyPointBlock *curr;
 	int numRects;
 	PRegionRec reg;
 
-	numRects = 0;
-	curr = first;
-	while (curr != NULL) {
-		numRects += curr->size;
-		curr = curr->next;
-	}
+	numRects = block->size;
 	if ( !( reg = img_region_new(numRects * 2 + outline)))
 		return NULL;
 
 	rects = reg->boxes - 1;
 	numRects = 0;
-	curr = first;
-	while ( curr != NULL ) {
-		/* the loop uses 2 points per iteration */
-		i = curr->size >> 1;
-		for (pts = curr->pts; i--; pts += 2) {
-			DEBUG("i=%d %d.%d - %d.%d\n", i, pts->x, pts->y, pts[1].x, pts[1].y);
-			if (numRects &&
-				pts->x == rects->x &&
-				pts->y == rects->y + rects->height - 1 &&
-				pts[1].x == rects->x + rects->width - 1 &&
-				(
-					numRects == 1 ||
-					rects[-1].y != rects->y
-				) && (
-					i && pts[2].y > pts[1].y
-				)
-			) {
-				rects->height = pts[1].y - rects->y + 1;
-				DEBUG("update x=%d y=%d w=%d h=%d\n", rects->x, rects->y, rects->width, rects->height);
-				continue;
-			}
-			numRects++;
-			rects++;
-			rects->x = pts->x;
-			rects->y = pts->y;
-			rects->width  = pts[1].x - pts-> x + outline;
-			rects->height = pts[1].y - pts-> y + 1;
-			if ( rects-> width < 0 ) {
-					rects->x += rects->width;
-				rects->width = -rects->width;
-			}
-			if ( rects-> height < 0 ) {
-				rects->y += rects->height;
-				rects->height = -rects->height;
-			}
-			DEBUG("insert x=%d y=%d w=%d h=%d\n", rects->x, rects->y, rects->width, rects->height);
+
+	/* the loop uses 2 points per iteration */
+	i = block->size >> 1;
+	for (pts = block->pts; i--; pts += 2) {
+		DEBUG("i=%d %d.%d - %d.%d\n", i, pts->x, pts->y, pts[1].x, pts[1].y);
+		if (numRects &&
+			pts->x == rects->x &&
+			pts->y == rects->y + rects->height - 1 &&
+			pts[1].x == rects->x + rects->width - 1 &&
+			(
+				numRects == 1 ||
+				rects[-1].y != rects->y
+			) && (
+				i && pts[2].y > pts[1].y
+			)
+		) {
+			rects->height = pts[1].y - rects->y + 1;
+			DEBUG("update x=%d y=%d w=%d h=%d\n", rects->x, rects->y, rects->width, rects->height);
+			continue;
 		}
-		curr = curr->next;
+		numRects++;
+		rects++;
+		rects->x = pts->x;
+		rects->y = pts->y;
+		rects->width  = pts[1].x - pts-> x + outline;
+		rects->height = pts[1].y - pts-> y + 1;
+		if ( rects-> width < 0 ) {
+				rects->x += rects->width;
+			rects->width = -rects->width;
+		}
+		if ( rects-> height < 0 ) {
+			rects->y += rects->height;
+			rects->height = -rects->height;
+		}
+		DEBUG("insert x=%d y=%d w=%d h=%d\n", rects->x, rects->y, rects->width, rects->height);
 	}
 
 	reg->n_boxes = numRects;
@@ -569,7 +560,7 @@ img_region_polygon( Point *pts, int count, int rule)
 	if (( pt_block = poly_poly2points(pts, count, rule, NULL)) == NULL )
 		return NULL;
 	region = points2region(pt_block, outline);
-	poly_free_blocks( pt_block );
+	free( pt_block );
 
 	if (outline) {
 		PRegionRec new = superimpose_outline(region, pts, count);
