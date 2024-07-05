@@ -446,7 +446,7 @@ sub fill_imgaa_primitive
 		$ok = 0;
 		last;
 	}
-	$self->reset_matrix;
+	$self->set_matrix($m);
 	return $ok;
 }
 
