@@ -87,13 +87,13 @@ get_encoder_descriptors(
 	int count
 ) {
 	int n;
-	struct heif_context*ctx = _ctx ? _ctx : heif_context_alloc();
 #ifdef HAS_V1_15_API
 	n = heif_get_encoder_descriptors(format_filter, name_filter, out_encoders, count);
 #else
+	struct heif_context*ctx = _ctx ? _ctx : heif_context_alloc();
 	n = heif_context_get_encoder_descriptors(ctx, format_filter, name_filter, out_encoders, count);
-#endif
 	if (!_ctx) heif_context_free(ctx);
+#endif
 	return n;
 }
 
