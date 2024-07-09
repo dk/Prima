@@ -237,7 +237,7 @@ typedef struct _RotatedFont {
 	struct        RotatedFont *next;
 } RotatedFont, *PRotatedFont;
 
-#define MAX_CACHED_FONTS 50
+#define MAX_CACHED_FONTS 512
 
 typedef struct CachedFont {
 	Byte         type;
