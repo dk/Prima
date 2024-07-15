@@ -2909,6 +2909,7 @@ sub cursorX         {($#_)?($_[0]-> set_cursor    ($_[1],$_[0]-> {cursorY})):ret
 sub cursorY         {($#_)?($_[0]-> set_cursor    ($_[0]-> {q(cursorX)},$_[1])):return $_[0]-> {cursorY}    }
 sub cursorWrap      {($#_)?($_[0]-> {cursorWrap     }=$_[1])                :return $_[0]-> {cursorWrap     }}
 sub topLine         {($#_)?($_[0]-> set_top_line (   $_[1]))               :return $_[0]-> {topLine }    }
+sub numLines        { 1 + $_[0]->{maxLine} }
 sub hiliteNumbers   {($#_)?$_[0]-> set_hilite_numbers ($_[1])               :return $_[0]-> {hiliteNumbers} }
 sub hiliteQStrings  {($#_)?$_[0]-> set_hilite_q_strings($_[1])              :return $_[0]-> {hiliteQStrings} }
 sub hiliteQQStrings {($#_)?$_[0]-> set_hilite_qq_strings($_[1])             :return $_[0]-> {hiliteQQStrings} }
@@ -3197,6 +3198,10 @@ See also: L<add_marker>, L<delete_marker>
 
 A boolean flag that shows if the text was modified. Can be used externally,
 to check if the text is to be saved to a file, for example.
+
+=item numLines INTEGER
+
+Returns the number of lines
 
 =item offset INTEGER
 
