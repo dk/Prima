@@ -33,6 +33,7 @@ skipto( ScanlinePtr* scan, int x, Bool subsample_last_pixel)
 	PolyPointBlock *b = scan->block;
 
 	x *= AAX;
+	DEBUG("SKIPTO %d\n", x);
 	if ( subsample_last_pixel ) {
 		x_from = x - AAX;
 		x_to   = x - 1;
@@ -62,7 +63,7 @@ skipto( ScanlinePtr* scan, int x, Bool subsample_last_pixel)
 					if ( x1 < x_from ) x1 = x_from;
 					if ( x2 > x_to   ) x2 = x_to;
 					x_collector += x2 - x1 + 1;
-					DEBUG(":%d[%d]: %d %d\n", y, i, x1, x2);
+					DEBUG(":%d[%d]: %d %d = %d\n", y, i, x1, x2, x_collector);
 				}
 			}
 
@@ -79,6 +80,7 @@ skipto( ScanlinePtr* scan, int x, Bool subsample_last_pixel)
 	NEXT:
 		y_collector += x_collector;
 	}
+	DEBUG("<< %d > %02x\n", y_collector, (y_collector > 0) ? (y_collector << AA_RES_SHIFT) - 1 : 0);
 
 	return (y_collector > 0) ? (y_collector << AA_RES_SHIFT) - 1 : 0;
 }
@@ -96,9 +98,12 @@ fill( int startx, int y, Byte *map, unsigned int maplen, ScanlinePtr* scan)
 	unsigned int advance;
 
 #ifdef _DEBUG
+	Byte *oldmap = map;
+	unsigned int oldmaplen = maplen;
 	{
 		int z = maplen;
 		Byte *p = map;
+		printf("< ");
 		while (z--) {
 			printf("%02x ", *(p++));
 		}
@@ -106,9 +111,15 @@ fill( int startx, int y, Byte *map, unsigned int maplen, ScanlinePtr* scan)
 	}
 #endif
 
+#ifdef _DEBUG
+#define BAILOUT goto BAIL
+#else
+#define BAILOUT return
+#endif
+
 	/* advance after the first edge or quit if there are none */
 	if (( scanned = (Byte*) memchr( map, 1, maplen )) == NULL)
-		return;
+		BAILOUT;
 	advance  = scanned - map;
 	map      = scanned;
 	maplen  -= advance;
@@ -121,13 +132,13 @@ fill( int startx, int y, Byte *map, unsigned int maplen, ScanlinePtr* scan)
 		because in the AxA square there can be both types. What's more important
 		that this pixel value needs always to be calculated */
 		*(map++) = skipto( scan, ++startx, true );
-		DEBUG("Y:%d L=%02x (%d)\n", y, map[-1], maplen);
-		if ( --maplen <= 0 ) return;
+		DEBUG("Y:%d.%d L=%02x (%d)\n", startx - 1, y, map[-1], maplen);
+		if ( --maplen <= 0 ) BAILOUT;
 		if ( *map ) continue; /* next pixel is also intersected by an edge, so just do that again */
 
 		/* last edge? quit early */
 		if (( scanned = (Byte*) memchr( map, 1, maplen)) == NULL)
-			return;
+			BAILOUT;
 		advance = scanned - map; /* that's how many pixels we can replicate! */
 		maplen -= advance;
 
@@ -143,6 +154,18 @@ fill( int startx, int y, Byte *map, unsigned int maplen, ScanlinePtr* scan)
 		startx += advance;
 		map    += advance;
 	}
+
+#ifdef _DEBUG
+	BAIL: {
+		int z = oldmaplen;
+		Byte *p = oldmap;
+		printf("> ");
+		while (z--) {
+			printf("%02x ", *(p++));
+		}
+		printf(":%d\n", oldmaplen);
+	}
+#endif
 }
 
 static Bool
@@ -202,7 +225,7 @@ prepare_points_and_clip( NPoint *pts, unsigned int n_pts, Rect *aa_extents)
 Bool
 img_aafill( Handle self, NPoint *pts, int n_pts, int rule)
 {
-	int y_curr, y_lim, y_scan, xmin_px, xmax_px;
+	int y_curr, y_lim, y_scan, xmin_px, xmax_px, dx;
 	unsigned int maplen;
 	Bool ok = false, map_is_dirty;
 	Point *pXpts = NULL;
@@ -233,6 +256,7 @@ img_aafill( Handle self, NPoint *pts, int n_pts, int rule)
 
 	xmin_px = aa_extents.left   / AAX;
 	xmax_px = aa_extents.right  / AAX;
+	dx      = xmin_px * AAX;
 	maplen  = xmax_px - xmin_px + 1;
 	DEBUG("EXTENTS %d-%d/%d-%d = %d-%d = %d\n", aa_extents.left, aa_extents.right, aa_extents.bottom, aa_extents.top, xmin_px, xmax_px , maplen);
 
@@ -267,7 +291,13 @@ img_aafill( Handle self, NPoint *pts, int n_pts, int rule)
 		Point *p = block->pts;
 		int n = block->size, delta = 0;
 		while (n--) {
-			register int x = (p->x - delta - aa_extents.left) >> AAX_SHIFT;
+			register int x;
+			if ( n > 0 && p->x == p[1].x && p->y == p[1].y ) {
+				p += 2;
+				n--;
+				continue;
+			}
+			x = (p->x - delta - dx) >> AAX_SHIFT;
 			delta = !delta; /* last pixel of a line end, used by fmOutline but not by AA fills */
 			if ( p-> y != y_scan ) {
 				register int scanline;
@@ -287,7 +317,7 @@ img_aafill( Handle self, NPoint *pts, int n_pts, int rule)
 				scanline = p-> y - y_curr;
 				scanline_ptr.point[scanline] = p;
 			}
-			DEBUG("SET.%d(%d-%d.%d) @ %d\n", (int)(p - block->pts), p->x, delta, p->y, x);
+			DEBUG("SET.%d(%d-%d.%d) @ %d\n", (int)(p - block->pts), p->x, !delta, p->y, x);
 			map[x] = 1;
 			map_is_dirty = true;
 			p++;
