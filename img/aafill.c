@@ -58,7 +58,7 @@ skipto( ScanlinePtr* scan, int x, Bool subsample_last_pixel)
 
 			if ( subsample_last_pixel) {
 				register int x1 = p->x;
-				register int x2 = p[1].x;
+				register int x2 = p[1].x - 1; /* see comment below about fmOutline, the same reason for -1 */
 				if ( x1 <= x_to && x2 >= x_from ) {
 					if ( x1 < x_from ) x1 = x_from;
 					if ( x2 > x_to   ) x2 = x_to;
@@ -146,7 +146,7 @@ fill( int startx, int y, Byte *map, unsigned int maplen, ScanlinePtr* scan)
 		be, this pixel and its neighbours will share it until the edge end. This is the whole 
 		point of no-AA optimization, in order to not subsample identical values. */
 		replicator = skipto( scan, startx + 1, true );
-		DEBUG("Y:%d R=%02x\n", y, replicator);
+		DEBUG("Y:%d R=%02x x %d\n", y, replicator, advance);
 		if ( replicator > 0 )
 			memset( map, replicator, advance );
 		if ( advance > 1 )
