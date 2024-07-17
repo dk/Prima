@@ -434,19 +434,20 @@ sub fill_imgaa_primitive
 	my $aa = $self->new_aa_surface;
 	return 0 unless $aa->can_aa;
 
-	return $aa->fillpoly($_[0], matrix => $self->get_matrix)
-		if $request eq 'line';
-
 	my $ok = 1;
-	my $path = $self->new_path( antialias => 1 );
 	my $m = $self->get_matrix;
-	$path->matrix($m);
-	$path->$request(@_);
 	$self->reset_matrix;
-	for ($path->points(fill => 1)) {
-		next if $aa->fillpoly($_);
-		$ok = 0;
-		last;
+	if ($request eq 'line') {
+		$ok = $aa->fillpoly($_[0], matrix => $m);
+	} else {
+		my $path = $self->new_path( antialias => 1 );
+		$path->matrix($m);
+		$path->$request(@_);
+		for ($path->points(fill => 1)) {
+			next if $aa->fillpoly($_);
+			$ok = 0;
+			last;
+		}
 	}
 	$self->set_matrix($m);
 	return $ok;
