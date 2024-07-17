@@ -3597,6 +3597,12 @@ in multi-change calls. When the internal lock count hits zero, the C<Change> not
 Maps visual X,Y coordinates to the logical coordinate system.
 Returns the same values when L<wordWrap> is 0.
 
+=item logical_to_physical X, Y
+
+Maps logical X,Y coordinates to the physical text offset relative to the Y line
+
+Returns the same values when L<wordWrap> is 0.
+
 =item logical_to_visual X, Y
 
 Maps logical X,Y coordinates to the visual coordinate system.
