@@ -159,7 +159,7 @@ sub fillpoly
 	return $ok;
 
 FALLBACK:
-	return $self->{canvas}->fillpoly($poly);
+	return $self->{canvas}->graphic_context( antialias => 0, sub { $self->{canvas}->fillpoly($poly) } );
 }
 
 1;

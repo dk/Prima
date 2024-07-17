@@ -779,7 +779,14 @@ poly_poly2points(
 	pSLL = ET.scanlines.next;
 
 	curr_max_size = (ET.ymax - ET.ymin) * 4; /* also must be an even number */
-	if ( !( ret = malloc(sizeof(PolyPointBlock) + ( curr_max_size - 1 ) * sizeof(Point)))) {
+	if ( (ET.ymax == SMALL_COORDINATE) || (ET.ymin == LARGE_COORDINATE) ) {
+		/* not an error */
+		PolyPointBlock *p = malloc(sizeof(PolyPointBlock));
+		bzero(p, sizeof(PolyPointBlock));
+		free(pETEs);
+		return p;
+	}
+	if (!( ret = malloc(sizeof(PolyPointBlock) + ( curr_max_size - 1 ) * sizeof(Point)))) {
 		free(pETEs);
 		return NULL;
 	}
