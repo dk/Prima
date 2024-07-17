@@ -67,7 +67,8 @@ sub polyline
 		$canvas->color($canvas->backColor);
 		my $lines = $render->widen(linePattern => lp::Solid)->points;
 		for my $line ( @$lines ) {
-			my $v = $canvas->render_polyline( $line, aafill => 1) or goto FALLBACK;
+			my $v = $canvas->render_polyline( $line, aafill => 1, mode => fm::Winding)
+				or goto FALLBACK;
 			my ($x, $y, $bitmap) = @$v;
 			goto FALLBACK unless defined $bitmap;
 			$self->apply_surface($x, $y, $bitmap);
@@ -91,11 +92,11 @@ FALLBACK:
 
 sub fillpoly
 {
-	my ( $self, $poly, $mode ) = @_;
+	my ( $self, $poly, %opt ) = @_;
 	goto FALLBACK unless $self->{can_aa};
 
 	my $canvas = $self->{canvas};
-	my $v = $canvas->render_polyline( $poly, aafill => 1) or goto FALLBACK;
+	my $v = $canvas->render_polyline( $poly, %opt, aafill => 1) or goto FALLBACK;
 	my ($x, $y, $bitmap) = @$v;
 	return 0 unless defined $bitmap;
 

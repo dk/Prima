@@ -2465,6 +2465,10 @@ The polygon is automatically adjusted so its lower and left boundaries
 and on the resulting image's lower and left boundaries. Also the image
 size corresponds to the polygon size.
 
+The filling mode can be specificed with the C<mode> option, or the current
+C<fillMode> will be used. Note the the option only accepts the C<fm::Winding>
+and C<fm::Alternate> constants, and ignores C<fm::Overlay>.
+
 Return three scalars: first two are the X and Y polygon offsets, and
 the first is the image itself.
 
@@ -2488,6 +2492,10 @@ If supplied, performs matrix transformation on each polyline vertex:
 	Y' = BX + DY + V
 
 and returns the new polyline
+
+=item mode fm::Windings | fm::Alternate
+
+See C<aafill> above.
 
 =item path BOOLEAN
 

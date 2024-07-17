@@ -16,7 +16,7 @@ extern "C" {
 
 
 static Bool
-primitive( Handle self, Bool fill, char * method, ...)
+stroke( Handle self, char * method, ...)
 {
 	Bool r;
 	SV * ret;
@@ -27,7 +27,7 @@ primitive( Handle self, Bool fill, char * method, ...)
 	SAVETMPS;
 	strcpy(format, "<");
 	strncat(format, method, 255);
-	ret = call_perl_indirect( self, fill ? "fill_primitive" : "stroke_primitive", format, true, false, args);
+	ret = call_perl_indirect( self, "stroke_primitive", format, true, false, args);
 	va_end( args);
 	r = ret ? SvTRUE( ret) : false;
 	FREETMPS;
@@ -242,7 +242,7 @@ Drawable_line(Handle self, double x1, double y1, double x2, double y2)
 {
 	gpCHECK(false);
 	if (EMULATED_LINE)
-		return primitive( self, 0, "snnnn", "line", x1, y1, x2, y2);
+		return stroke( self, "snnnn", "line", x1, y1, x2, y2);
 
 	prima_matrix_apply( VAR_MATRIX, &x1, &y1);
 	prima_matrix_apply( VAR_MATRIX, &x2, &y2);
@@ -294,7 +294,7 @@ Drawable_lines(Handle self, SV * lines)
 	gpCHECK(false);
 
 	if (EMULATED_LINE)
-		return primitive( self, 0, "sS", "lines", lines);
+		return stroke( self, "sS", "lines", lines);
 	else
 		return read_polypoints( self, lines, "Drawable::lines", 2, apc_gp_draw_poly2);
 }
@@ -304,7 +304,7 @@ Drawable_polyline(Handle self, SV * lines)
 {
 	gpCHECK(false);
 	if (EMULATED_LINE)
-		return primitive( self, 0, "sS", "line", lines);
+		return stroke( self, "sS", "line", lines);
 	else
 		return read_polypoints( self, lines, "Drawable::polyline", 2, apc_gp_draw_poly);
 }
@@ -317,7 +317,7 @@ Drawable_rectangle( Handle self, double x1, double y1, double x2, double y2)
 
 	gpCHECK(false);
 	if ( EMULATED_LINE )
-		return primitive( self, 0, "snnnn", "rectangle", x1,y1,x2,y2);
+		return stroke( self, "snnnn", "rectangle", x1,y1,x2,y2);
 
 	if ( prima_matrix_is_square_rectangular( VAR_MATRIX, &nrect, npoly)) {
 		Rect r;

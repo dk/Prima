@@ -386,11 +386,10 @@ sub fill_img_primitive
 	my $region1 = $path->region( $self-> fillMode);
 	my $region2 = $self->region;
 	$region1->combine($region2, rgnop::Intersect) if $region2;
-	my @rect = $region1->rect;
 	$self->region($region1);
 
 	$self->reset_matrix;
-	my $ok = $self->bar(@rect);
+	my $ok = $self->bar($region1->rect);
 
 	$self->graphic_context_pop;
 
@@ -434,6 +433,9 @@ sub fill_imgaa_primitive
 
 	my $aa = $self->new_aa_surface;
 	return 0 unless $aa->can_aa;
+
+	return $aa->fillpoly($_[0], matrix => $self->get_matrix)
+		if $request eq 'line';
 
 	my $ok = 1;
 	my $path = $self->new_path( antialias => 1 );
