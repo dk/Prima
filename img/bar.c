@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#define FILL_PATTERN_SIZE 8
+#define FILL_PATTERN_SIZE sizeof(FillPattern)
 #define BLT_BUFSIZE ((MAX_SIZEOF_PIXEL * FILL_PATTERN_SIZE * FILL_PATTERN_SIZE) * 2)
 
 static void

@@ -479,7 +479,6 @@ Image_fillpoly( Handle self, SV * points)
 		prepare_fill_context(self, &ctx);
 		if (
 			ctx.tile == NULL_HANDLE &&
-			memcmp(ctx.pattern, fillPatterns[fpSolid], sizeof(FillPattern)) == 0 &&
 			ctx.region == NULL &&
 			(
 				ctx.rop == ropDefault ||

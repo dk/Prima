@@ -223,7 +223,7 @@ prepare_points_and_clip( NPoint *pts, unsigned int n_pts, Rect *aa_extents)
 }
 
 typedef struct {
-	int             y_curr, y_lim, y_scan, xmin_px, dx, saved_x, y;
+	int             y_curr, y_lim, y_scan, x, dx, saved_x, y;
 	unsigned int    maplen, curr_count;
 	Bool            map_is_dirty;
 	PolyPointBlock *block;
@@ -253,11 +253,11 @@ aafill_init( NPoint *pts, int n_pts, int rule, Rect clip, PAAFillRec ctx)
 		return -1;
 	}
 
-	ctx->xmin_px = aa_extents.left   / AAX;
+	ctx->x       = aa_extents.left   / AAX;
 	xmax_px      = aa_extents.right  / AAX;
-	ctx->dx      = ctx->xmin_px * AAX;
-	ctx->maplen  = xmax_px - ctx->xmin_px + 1;
-	DEBUG("EXTENTS %d-%d/%d-%d = %d-%d = %d\n", aa_extents.left, aa_extents.right, aa_extents.bottom, aa_extents.top, ctx->xmin_px, xmax_px , ctx->maplen);
+	ctx->dx      = ctx->x * AAX;
+	ctx->maplen  = xmax_px - ctx->x + 1;
+	DEBUG("EXTENTS %d-%d/%d-%d = %d-%d = %d\n", aa_extents.left, aa_extents.right, aa_extents.bottom, aa_extents.top, ctx->x, xmax_px , ctx->maplen);
 
 	ctx->block = poly_poly2points(pXpts, n_pts, rule, &clip);
 	free( pXpts );
@@ -347,7 +347,7 @@ aafill_next_scanline( PAAFillRec ctx, Byte *map)
 		if ( p-> y != ctx->y_scan ) {
 			register int scanline;
 			if ( p-> y > ctx->y_lim ) {
-				fill( ctx->xmin_px, ctx->y_curr, map, ctx->maplen, &ctx->scanline_ptr);
+				fill( ctx->x, ctx->y_curr, map, ctx->maplen, &ctx->scanline_ptr);
 				ctx->saved_x = x;
 				ctx->y++;
 				return true;
@@ -367,7 +367,7 @@ aafill_next_scanline( PAAFillRec ctx, Byte *map)
 
 	if ( ctx->map_is_dirty ) {
 		ctx->map_is_dirty = false;
-		fill( ctx->xmin_px, ctx->y_curr, map, ctx->maplen, &ctx->scanline_ptr);
+		fill( ctx->x, ctx->y_curr, map, ctx->maplen, &ctx->scanline_ptr);
 		ctx->y++;
 		return true;
 	}
@@ -381,15 +381,12 @@ aafill_done(PAAFillRec ctx)
 	free( ctx-> block );
 }
 
-Bool
-img_aafill( Handle self, NPoint *pts, int n_pts, int rule, PImgPaintContext ctx)
+static Bool
+aafill_inplace( Handle self, NPoint *pts, int n_pts, int rule)
 {
-	Byte *dst, *map;
+	Byte *map;
 	Rect clip;
 	AAFillRec aa;
-	Bool ok = false;
-	Byte alpha;
-	BlendFunc *blend;
 
 	if (PImage(self)->type != imByte)
 		return false;
@@ -402,46 +399,131 @@ img_aafill( Handle self, NPoint *pts, int n_pts, int rule, PImgPaintContext ctx)
 		case -1: return false;
 		case  0: return true ;
 	}
-	dst = PImage(self)->data + PImage(self)->lineSize * aa.y + aa.xmin_px;
+	map = PImage(self)->data + PImage(self)->lineSize * aa.y + aa.x;
 
-	if ( ctx != NULL ) {
-		int rop;
-		if ( !( map = malloc( aa.maplen ))) {
+	while ( aafill_next_scanline( &aa, map)) 
+		map += PImage(self)->lineSize;
+	aafill_done(&aa);
+	return true;
+}
+
+#define FILL_PATTERN_SIZE sizeof(FillPattern)
+
+static void
+xmul_alpha( register Byte *p, register unsigned int n, register Byte alpha)
+{
+	while (n--) {
+		*p = (alpha * *p) / 255.0 + .5;
+		p++;
+	}
+}
+
+static Bool
+xmul_pattern( register Byte *dst, PAAFillRec aa, PImgPaintContext ctx, Bool inverted)
+{
+	FillPattern stencil;
+	unsigned int pat, bytes;
+	Byte yes = inverted ? 0 : 0xff;
+	Byte no  = inverted ? 0xff : 0;
+
+	pat = (unsigned int) ctx->pattern[(aa->y + FILL_PATTERN_SIZE - ctx->patternOffset.y) % FILL_PATTERN_SIZE];
+	if ( pat == 0 ) return false;
+	pat = (((pat << 8) | pat) >> ((ctx->patternOffset.x + 8 - (aa->x % 8)) % FILL_PATTERN_SIZE)) & 0xff;
+
+	stencil[7] = (pat & 0x80) ? yes : no;
+	stencil[6] = (pat & 0x40) ? yes : no;
+	stencil[5] = (pat & 0x20) ? yes : no;
+	stencil[4] = (pat & 0x10) ? yes : no;
+	stencil[3] = (pat & 0x08) ? yes : no;
+	stencil[2] = (pat & 0x04) ? yes : no;
+	stencil[1] = (pat & 0x02) ? yes : no;
+	stencil[0] = (pat & 0x01) ? yes : no;
+
+	bytes = aa-> maplen;
+	while ( bytes > 0 ) {
+		register Byte *src = stencil;
+		register int n = (bytes > FILL_PATTERN_SIZE) ? FILL_PATTERN_SIZE : bytes;
+		bytes -= n;
+		while (n--) *(dst++) &= *(src++);
+	}
+
+	return true;
+}
+
+Bool
+img_aafill( Handle self, NPoint *pts, int n_pts, int rule, PImgPaintContext ctx)
+{
+	Byte *src, *dst, *map;
+	Rect clip;
+	AAFillRec aa;
+	Bool ok = false, pattern, dual_pattern;
+	int rop, bpp;
+	Byte alpha, fg_gray, bg_gray;
+	BlendFunc *blend;
+
+	if ( ctx == NULL )
+		return aafill_inplace(self, pts, n_pts, rule);
+
+	if ( PImage(self)->type != imByte )
+		return false;
+	bpp = ( PImage(self)->type & imBPP ) / 8;
+
+	fg_gray = ctx->color[0];
+	bg_gray = ctx->backColor[0];
+	if ( memcmp(ctx->pattern, fillPatterns[fpEmpty], sizeof(FillPattern)) == 0) {
+		if ( !ctx->transparent )
+			return true;
+		fg_gray = bg_gray;
+		pattern = false;
+	} else
+		pattern = memcmp(ctx->pattern, fillPatterns[fpSolid], sizeof(FillPattern)) != 0;
+	dual_pattern = pattern ? !ctx->transparent : false;
+
+	clip.left  = clip.bottom = 0;
+	clip.right = PImage(self)->w - 1;
+	clip.top   = PImage(self)->h - 1;
+
+	switch (aafill_init( pts, n_pts, rule, clip, &aa)) {
+		case -1: return false;
+		case  0: return true ;
+	}
+	dst = PImage(self)->data + PImage(self)->lineSize * aa.y + aa.x;
+
+	{
+		unsigned int size = (aa.maplen / sizeof(void*)) * sizeof(void*);
+		if ( !( map = malloc( size * 2 ))) {
 			warn("img_aafill: no memory");
 			goto EXIT;
 		}
-		rop   = ctx->rop & ropPorterDuffMask;
-		alpha = (ctx-> rop & ropSrcAlpha) ? (( ctx->rop >> ropSrcAlphaShift ) & 0xff ) : 255;
-		if ( !img_find_blend_proc( rop, &blend, NULL)) {
-			warn("img_aafill: blend not supported");
-			goto EXIT;
-		}
-	} else {
-		map = dst;
-		alpha = 255;
+		src = map + size;
+	}
+
+	rop   = ctx->rop & ropPorterDuffMask;
+	alpha = (ctx-> rop & ropSrcAlpha) ? (( ctx->rop >> ropSrcAlphaShift ) & 0xff ) : 255;
+	if ( !img_find_blend_proc( rop, &blend, NULL)) {
+		warn("img_aafill: blend not supported");
+		goto EXIT;
 	}
 
 	while ( aafill_next_scanline( &aa, map)) {
-		if ( ctx == NULL ) {
-			map += PImage(self)->lineSize;
-		} else {
-			Byte dummy;
-			if ( alpha != 255 ) {
-				register Byte *p = map;
-				register unsigned int n = aa.maplen;
-				while (n--) {
-					*p = (alpha * *p) / 255.0 + .5;
-					p++;
-				}
+		Byte dummy;
+		if ( alpha != 255 )
+			xmul_alpha(map, aa.maplen, alpha);
+		if ( pattern ) {
+			if ( dual_pattern ) {
+				memcpy( src, map, aa.maplen );
+				if (xmul_pattern(src, &aa, ctx, true))
+					blend( &bg_gray, 0, src, 1, dst, &dummy, 0, aa.maplen);
 			}
-			blend( ctx->color, 0, map, 1, dst, &dummy, 0, aa.maplen);
-			dst += PImage(self)->lineSize;
+			if (!xmul_pattern(map, &aa, ctx, false))
+				goto NEXT;
 		}
+		blend( &fg_gray, 0, map, 1, dst, &dummy, 0, aa.maplen);
+	NEXT:
+		dst += PImage(self)->lineSize;
 	}
 
-	if ( ctx != NULL )
-		free(map);
-
+	free(map);
 	ok = true;
 
 EXIT:
