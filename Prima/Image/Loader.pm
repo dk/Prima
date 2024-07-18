@@ -169,8 +169,8 @@ Prima::Image::Loader - progressive loading and saving for multiframe images
 
 =head1 DESCRIPTION
 
-The toolkit provides functionality for session-based loadign and saving of
-multiframe images to that is is not needed to store all images in memory at
+The toolkit provides functionality for session-based loading and saving of
+multiframe images so that it is not needed to store all image frames in memory at
 once. Instead, the C<Prima::Image::Loader> and C<Prima::Image::Saver> classes
 provide the API for operating on a single frame at a time.
 
@@ -190,16 +190,16 @@ provide the API for operating on a single frame at a time.
 =item new FILENAME|FILEHANDLE, %OPTIONS
 
 Opens a filename or a file handle, tries to deduce if the toolkit can recognize
-the image, and creates an image loading handler. The C<%OPTIONS> are same as
+the image, and creates an image loading handler. The C<%OPTIONS> are the same as
 recognized by L<Prima::Image/load> except C<map>, C<loadAll>, and C<profiles>.
-The other options apply to each frame that will be coonsequently loaded, but these
+The other options apply to each frame that will be consequently loaded, but these
 options could be overridden by supplying parameters to the C<next> call.
 
-Returns either a new loader object, or C<undef> and the error string.
+Returns either a new loader object or C<undef> and an error string.
 
 Note that it is possible to supply the C<onHeaderReady> and C<onDataReady>
 callbacks in the options, however, note that the first arguments in these
-callbacks will the newly created image.
+callbacks will point to the newly created image, not the loader object.
 
 =item close
 
@@ -213,39 +213,40 @@ the INDEXth image.
 
 =item eof
 
-Return the boolean flag is the end of the file is reached.
+Returns the boolean flag if the end of the file is reached.
 
 =item extras
 
-Returns the hash of extra file data filled by the codec
+Returns the hash of the extra file data as filled by the codec
 
 =item frames
 
-Returns number of frames in the file
+Returns the number of frames in the file
 
 =item next %OPTIONS
 
 Loads the next image frame.
 
-Returns either a newly loaded image, or C<undef> and the error string.
+Returns either a newly loaded image or C<undef> and an error string.
 
 =item reload
 
-In case an animation file is defect, and cannot be loaded in full, the toolkit
+In case an animation file is defective and cannot be loaded in full, the toolkit
 will not allow to continue the loading session and will close it automatically.
 If it is desired to work around this limitation, a new session must be opened.
 The C<reload> method does this by reopening the loading session with all the
-parameters supplied to C<new>. The programmer thus has a chance to record how
-many successful frames were loaded, and only navigate these after the reload.
+parameters supplied to the initial C<new> call. The programmer thus has a
+chance to record how many successful frames were loaded, and only navigate
+these after the reload.
 
 =item rescue BOOLEAN
 
-If set, reopens the input stream or file on ever new frame.
+If set, reopens the input stream or file on every new frame.
 This may help recover broken frames.
 
 =item source
 
-Return the filename or the file handle passed to the C<new> call.
+Returns the filename or the file handle passed to the C<new> call.
 
 =back
 
@@ -266,12 +267,12 @@ Return the filename or the file handle passed to the C<new> call.
 
 =item new FILENAME|FILEHANDLE, %OPTIONS
 
-Opens a filename or a file handle and an image saving handler. The C<%OPTIONS>
-are same as recognized by L<Prima::Image/save> except C<images>.  The other
-options apply to each frame that will be coonsequently saved, but these options
-could be overridden by supplying parameters to the C<save> call.
+Opens a filename or a file handle. The C<%OPTIONS> are the same as recognized by
+L<Prima::Image/save> except the C<images> option.  The other options apply to
+each frame that will be consequently saved, but these options could also be
+overridden by supplying parameters to the C<save> call.
 
-Returns either a new saver object, or C<undef> and the error string.
+Returns either a new saver object or C<undef> and an error string.
 
 =item save %OPTIONS
 
@@ -287,6 +288,6 @@ Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
 
 =head1 SEE ALSO
 
-L<Prima::Dialog::Animate>.
+L<Prima::Image::Animate>.
 
 =cut
