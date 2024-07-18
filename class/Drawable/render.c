@@ -1070,7 +1070,7 @@ render_filled_polygon( NPoint* buffer, unsigned int count, int mode)
 		p->y -= d.y;
 	}
 
-	if ( !img_aafill( image, buffer, count, mode )) {
+	if ( !img_aafill( image, buffer, count, mode, NULL )) {
 		Object_destroy(image);
 		return NULL_SV;
 	}

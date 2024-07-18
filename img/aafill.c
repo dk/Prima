@@ -222,58 +222,97 @@ prepare_points_and_clip( NPoint *pts, unsigned int n_pts, Rect *aa_extents)
 	return pXpts;
 }
 
-Bool
-img_aafill( Handle self, NPoint *pts, int n_pts, int rule)
+typedef struct {
+	int             y_curr, y_lim, y_scan, xmin_px, dx, saved_x, y;
+	unsigned int    maplen, curr_count;
+	Bool            map_is_dirty;
+	PolyPointBlock *block;
+	ScanlinePtr     scanline_ptr;
+	Point          *curr_point;
+} AAFillRec, *PAAFillRec;
+
+static int
+aafill_init( NPoint *pts, int n_pts, int rule, Rect clip, PAAFillRec ctx)
 {
-	int y_curr, y_lim, y_scan, xmin_px, xmax_px, dx;
-	unsigned int maplen;
-	Bool ok = false, map_is_dirty;
+	int    xmax_px;
 	Point *pXpts = NULL;
-	PolyPointBlock *block = NULL;
-	Byte *map = NULL;
-	ScanlinePtr scanline_ptr;
-	Rect clip, aa_extents;
+	Rect   aa_extents;
 
 	if (n_pts < 2)
-		return false;
-	if (PImage(self)->type != imByte)
-		return false;
-
-	clip.left  = clip.bottom = 0;
-	clip.right = PImage(self)->w - 1;
-	clip.top   = PImage(self)->h - 1;
+		return -1;
 
 	if (( pXpts = prepare_points_and_clip( pts, n_pts, &aa_extents)) == NULL)
-		return false;
+		return 0;
+
 	clip.left   *= AAX;
 	clip.right  = (clip.right + 1 ) * AAX - 1;
 	clip.bottom *= AAY;
 	clip.top    = (clip.top + 1 ) * AAY - 1;
 	if ( !intersect(&aa_extents, &clip)) {
-		ok = true;
-		goto FAIL;
+		free( pXpts );
+		return -1;
 	}
 
-	xmin_px = aa_extents.left   / AAX;
-	xmax_px = aa_extents.right  / AAX;
-	dx      = xmin_px * AAX;
-	maplen  = xmax_px - xmin_px + 1;
-	DEBUG("EXTENTS %d-%d/%d-%d = %d-%d = %d\n", aa_extents.left, aa_extents.right, aa_extents.bottom, aa_extents.top, xmin_px, xmax_px , maplen);
+	ctx->xmin_px = aa_extents.left   / AAX;
+	xmax_px      = aa_extents.right  / AAX;
+	ctx->dx      = ctx->xmin_px * AAX;
+	ctx->maplen  = xmax_px - ctx->xmin_px + 1;
+	DEBUG("EXTENTS %d-%d/%d-%d = %d-%d = %d\n", aa_extents.left, aa_extents.right, aa_extents.bottom, aa_extents.top, ctx->xmin_px, xmax_px , ctx->maplen);
 
-	if (( block = poly_poly2points(pXpts, n_pts, rule, &clip)) == NULL )
-		goto FAIL;
+	ctx->block = poly_poly2points(pXpts, n_pts, rule, &clip);
 	free( pXpts );
-	pXpts = NULL;
+	if ( ctx->block == NULL )
+		return 0;
 
-	y_curr = aa_extents.bottom;
-	map    = PImage(self)->data + PImage(self)->lineSize * ( y_curr >> AAY_SHIFT ) + xmin_px;
-	y_lim  = y_curr + AAY - 1;
-	y_scan = y_curr;
-	bzero( map, maplen );
-	map_is_dirty = false;
-	bzero( &scanline_ptr, sizeof(scanline_ptr));
-	scanline_ptr.block    = block;
-	scanline_ptr.point[0] = block->pts;
+	ctx->y_curr                = aa_extents.bottom;
+	ctx->y_lim                 = ctx->y_curr + AAY - 1;
+	ctx->y_scan                = ctx->y_curr;
+	ctx->y                     = ctx->y_scan >> AAY_SHIFT;
+	bzero( &ctx->scanline_ptr, sizeof(ctx->scanline_ptr));
+	ctx->scanline_ptr.block    = ctx->block;
+	ctx->scanline_ptr.point[0] = ctx->block->pts;
+	ctx->curr_count            = ctx->block->size;
+	ctx->curr_point            = ctx->block->pts;
+	ctx->saved_x               = -1;
+
+	return 1;
+}
+
+static Bool
+aafill_next_scanline( PAAFillRec ctx, Byte *map)
+{
+	int delta = 0;
+
+	if (ctx->curr_count == 0 && !ctx->map_is_dirty )
+		return false;
+
+	ctx->map_is_dirty = false;
+	bzero( map, ctx->maplen );
+	if ( ctx->curr_point != ctx->block->pts)
+		bzero( ctx->scanline_ptr.point, sizeof(ctx->scanline_ptr.point));
+
+	if ( ctx-> saved_x >= 0 ) {
+		int scanline;
+		register Point *p = ctx->curr_point;
+
+		while ( p->y > ctx->y_lim ) {
+			ctx->y_lim  += AAY;
+			ctx->y_curr += AAY;
+		}
+		ctx->y_scan = p->y;
+
+		scanline = p->y - ctx->y_curr;
+		ctx->scanline_ptr.point[scanline] = p;
+		DEBUG("SET.%d(%d-0.%d) @ %d\n", (int)(p - ctx->block->pts), p->x, p->y, ctx->saved_x);
+
+		map[ ctx-> saved_x ] = 1;
+		ctx-> saved_x = -1;
+
+		ctx-> map_is_dirty = true;
+		ctx-> curr_point++;
+		ctx-> curr_count--;
+		delta = 1;
+	}
 
 	/*
 
@@ -287,51 +326,126 @@ img_aafill( Handle self, NPoint *pts, int n_pts, int rule)
 
 	*/
 
-	{
-		Point *p = block->pts;
-		int n = block->size, delta = 0;
-		while (n--) {
-			register int x;
-			if ( n > 0 && p->x == p[1].x && p->y == p[1].y ) {
-				p += 2;
-				n--;
-				continue;
-			}
-			x = (p->x - delta - dx) >> AAX_SHIFT;
-			delta = !delta; /* last pixel of a line end, used by fmOutline but not by AA fills */
-			if ( p-> y != y_scan ) {
-				register int scanline;
-				if ( p-> y > y_lim ) {
-					fill( xmin_px, y_curr, map, maplen, &scanline_ptr);
-					map += PImage(self)->lineSize;
-					bzero( map, maplen );
-					bzero( scanline_ptr.point, sizeof(scanline_ptr.point));
-					map_is_dirty = false;
-					while ( p->y > y_lim ) {
-						y_lim  += AAY;
-						y_curr += AAY;
-					}
-				}
+	while (ctx->curr_count > 0) {
+		register int x;
+		register Point *p = ctx->curr_point;
 
-				y_scan = p-> y;
-				scanline = p-> y - y_curr;
-				scanline_ptr.point[scanline] = p;
+		if ( ctx->curr_count > 1 && p->x == p[1].x && p->y == p[1].y ) {
+			if ( ctx-> curr_count == 1 ) {
+				ctx-> curr_count = 0;
+				break;
 			}
-			DEBUG("SET.%d(%d-%d.%d) @ %d\n", (int)(p - block->pts), p->x, !delta, p->y, x);
-			map[x] = 1;
-			map_is_dirty = true;
-			p++;
+			ctx->curr_point += 2;
+			ctx->curr_count -= 2;
+			continue;
+		}
+
+		if ( p-> y != ctx->y_scan ) delta = 0;
+		x = (p->x - delta - ctx->dx) >> AAX_SHIFT;
+		delta = !delta; /* last pixel of a line end, used by fmOutline but not by AA fills */
+
+		if ( p-> y != ctx->y_scan ) {
+			register int scanline;
+			if ( p-> y > ctx->y_lim ) {
+				fill( ctx->xmin_px, ctx->y_curr, map, ctx->maplen, &ctx->scanline_ptr);
+				ctx->saved_x = x;
+				ctx->y++;
+				return true;
+			}
+
+			ctx->y_scan = p-> y;
+			scanline = p-> y - ctx->y_curr;
+			ctx->scanline_ptr.point[scanline] = p;
+		}
+
+		DEBUG("SET.%d(%d-%d.%d) @ %d\n", (int)(p - ctx->block->pts), p->x, !delta, p->y, x);
+		map[x] = 1;
+		ctx->map_is_dirty = true;
+		ctx->curr_point++;
+		ctx->curr_count--;
+	}
+
+	if ( ctx->map_is_dirty ) {
+		ctx->map_is_dirty = false;
+		fill( ctx->xmin_px, ctx->y_curr, map, ctx->maplen, &ctx->scanline_ptr);
+		ctx->y++;
+		return true;
+	}
+
+	return false;
+}
+
+static void
+aafill_done(PAAFillRec ctx)
+{
+	free( ctx-> block );
+}
+
+Bool
+img_aafill( Handle self, NPoint *pts, int n_pts, int rule, PImgPaintContext ctx)
+{
+	Byte *dst, *map;
+	Rect clip;
+	AAFillRec aa;
+	Bool ok = false;
+	Byte alpha;
+	BlendFunc *blend;
+
+	if (PImage(self)->type != imByte)
+		return false;
+
+	clip.left  = clip.bottom = 0;
+	clip.right = PImage(self)->w - 1;
+	clip.top   = PImage(self)->h - 1;
+
+	switch (aafill_init( pts, n_pts, rule, clip, &aa)) {
+		case -1: return false;
+		case  0: return true ;
+	}
+	dst = PImage(self)->data + PImage(self)->lineSize * aa.y + aa.xmin_px;
+
+	if ( ctx != NULL ) {
+		int rop;
+		if ( !( map = malloc( aa.maplen ))) {
+			warn("img_aafill: no memory");
+			goto EXIT;
+		}
+		rop   = ctx->rop & ropPorterDuffMask;
+		alpha = (ctx-> rop & ropSrcAlpha) ? (( ctx->rop >> ropSrcAlphaShift ) & 0xff ) : 255;
+		if ( !img_find_blend_proc( rop, &blend, NULL)) {
+			warn("img_aafill: blend not supported");
+			goto EXIT;
+		}
+	} else {
+		map = dst;
+		alpha = 255;
+	}
+
+	while ( aafill_next_scanline( &aa, map)) {
+		if ( ctx == NULL ) {
+			map += PImage(self)->lineSize;
+		} else {
+			Byte dummy;
+			if ( alpha != 255 ) {
+				register Byte *p = map;
+				register unsigned int n = aa.maplen;
+				while (n--) {
+					*p = (alpha * *p) / 255.0 + .5;
+					p++;
+				}
+			}
+			blend( ctx->color, 0, map, 1, dst, &dummy, 0, aa.maplen);
+			dst += PImage(self)->lineSize;
 		}
 	}
-	if ( map_is_dirty )
-		fill( xmin_px, y_curr, map, maplen, &scanline_ptr);
+
+	if ( ctx != NULL )
+		free(map);
 
 	ok = true;
-FAIL:
-	if ( pXpts )
-		free( pXpts );
-	if ( block )
-		free( block );
+
+EXIT:
+	aafill_done(&aa);
 	return ok;
 }
 

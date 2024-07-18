@@ -473,8 +473,37 @@ Image_fillpoly( Handle self, SV * points)
 {
 	if ( opt_InPaint)
 		return inherited fillpoly(self, points);
-	else
-		return Image_draw_primitive( self, 1, "sS", "line", points );
+
+	if ( var->type == imByte && var-> antialias ) {
+		ImgPaintContext ctx;
+		prepare_fill_context(self, &ctx);
+		if (
+			ctx.tile == NULL_HANDLE &&
+			memcmp(ctx.pattern, fillPatterns[fpSolid], sizeof(FillPattern)) == 0 &&
+			ctx.region == NULL &&
+			(
+				ctx.rop == ropDefault ||
+				ctx.rop == ropCopyPut ||
+				(ctx.rop & ropPorterDuffMask) != 0
+			)
+		) {
+			int n, mode;
+			void *p;
+			Bool do_free, ok;
+			if ((( p = prima_read_array( points, "fillpoly", 'd', 2, 2, -1, &n, &do_free))) == NULL)
+				return false;
+			mode = ( my-> fillMode == Drawable_fillMode) ?
+				apc_gp_get_fill_mode(self) :
+				my-> get_fillMode(self);
+			if ( ctx.rop == ropDefault || ctx.rop == ropCopyPut )
+				ctx.rop = ropSrcOver | ropSrcAlpha | ( var->alpha << ropSrcAlphaShift );
+			ok = img_aafill( self, (NPoint*) p, n, mode, &ctx);
+			if ( do_free ) free(p);
+			return ok;
+		}
+	}
+
+	return Image_draw_primitive( self, 1, "sS", "line", points );
 }
 
 Bool
