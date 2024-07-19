@@ -409,71 +409,361 @@ aafill_inplace( Handle self, NPoint *pts, int n_pts, int rule)
 
 #define FILL_PATTERN_SIZE sizeof(FillPattern)
 
-static void
-xmul_alpha( register Byte *p, register unsigned int n, register Byte alpha)
+typedef struct {
+	Byte alpha, bpp;
+	BlendFunc *blend1, *blend2;
+	Byte *fg, *bg;
+	Byte *dst;
+	unsigned int pixels, bytes;
+	int x, y;
+} RenderContext, *PRenderContext;
+
+typedef int   RenderGetSize(PImgPaintContext ctx, PRenderContext render);
+typedef Bool  RenderInit   (PImgPaintContext ctx, PRenderContext render, void *self);
+typedef Byte* RenderFunc   (PImgPaintContext ctx, PRenderContext render, void *self, Byte* src);
+typedef void  RenderDone   (void *self);
+typedef struct {
+	RenderGetSize *GetSize;
+	RenderInit    *Init;
+	RenderFunc    *Render;
+	RenderDone    *Done;
+	void          *self;
+	unsigned int   offset;
+} RenderObject, *PRenderObject;
+
+static int
+render_acquire_map_get_size( PImgPaintContext ctx, PRenderContext render)
 {
+	return render-> pixels;
+}
+
+static RenderObject obj_render_acquire_map = {
+	render_acquire_map_get_size
+};
+
+static Byte*
+render_apply_alpha(PImgPaintContext ctx, PRenderContext render, void *self, Byte* src)
+{
+	register Byte *p        = src;
+	register Byte alpha     = render->alpha;
+	register unsigned int n = render->pixels;
 	while (n--) {
 		*p = (alpha * *p) / 255.0 + .5;
 		p++;
 	}
+	return src;
+}
+
+static RenderObject obj_render_apply_alpha = {
+	NULL,
+	NULL,
+	render_apply_alpha
+};
+
+static Byte*
+render_solid_gray(PImgPaintContext ctx, PRenderContext render, void *self, Byte *src)
+{
+	Byte dummy = 0;
+	render->blend1( render->fg, 0, src, 1, render->dst, &dummy, 0, render->pixels);
+	return render->dst;
+}
+
+static RenderObject obj_render_blend_solid_gray = {
+	NULL,
+	NULL,
+	render_solid_gray
+};
+
+static int
+render_apply_transparent_pattern_get_size( PImgPaintContext ctx, PRenderContext render)
+{
+	return FILL_PATTERN_SIZE * 8 * 2;
+}
+
+static void
+fill_gray_pattern( PImgPaintContext ctx, Byte *dst, Byte fg, Byte bg)
+{
+	Byte i, *ppat = ctx->pattern;
+	ctx->patternOffset.y %= FILL_PATTERN_SIZE;
+	ctx->patternOffset.x %= FILL_PATTERN_SIZE;
+	for ( i = 0; i < FILL_PATTERN_SIZE; i++) {
+		Byte *xdst = dst;
+		register Byte pat = *(ppat++);
+		*(dst++) = (pat & 0x80) ? fg : bg;
+		*(dst++) = (pat & 0x40) ? fg : bg;
+		*(dst++) = (pat & 0x20) ? fg : bg;
+		*(dst++) = (pat & 0x10) ? fg : bg;
+		*(dst++) = (pat & 0x08) ? fg : bg;
+		*(dst++) = (pat & 0x04) ? fg : bg;
+		*(dst++) = (pat & 0x02) ? fg : bg;
+		*(dst++) = (pat & 0x01) ? fg : bg;
+		memcpy( dst, xdst, FILL_PATTERN_SIZE);
+		dst += FILL_PATTERN_SIZE;
+	}
 }
 
 static Bool
-xmul_pattern( register Byte *dst, PAAFillRec aa, PImgPaintContext ctx, Bool inverted)
+render_apply_transparent_pattern_init( PImgPaintContext ctx, PRenderContext render, void *self)
 {
-	FillPattern stencil;
-	unsigned int pat, bytes;
-	Byte yes = inverted ? 0 : 0xff;
-	Byte no  = inverted ? 0xff : 0;
+	fill_gray_pattern( ctx, (Byte*) self, 0xff, 0);
+	return true;
+}
 
-	pat = (unsigned int) ctx->pattern[(aa->y + FILL_PATTERN_SIZE - ctx->patternOffset.y) % FILL_PATTERN_SIZE];
-	if ( pat == 0 ) return false;
-	pat = (((pat << 8) | pat) >> ((ctx->patternOffset.x + 8 - (aa->x % 8)) % FILL_PATTERN_SIZE)) & 0xff;
+static Byte*
+render_apply_transparent_pattern(PImgPaintContext ctx, PRenderContext render, void *self, Byte *src)
+{
+	Byte *pat = (Byte*) self;
+	register Byte *p = src;
+	unsigned int bytes = render->pixels;
 
-	stencil[7] = (pat & 0x80) ? yes : no;
-	stencil[6] = (pat & 0x40) ? yes : no;
-	stencil[5] = (pat & 0x20) ? yes : no;
-	stencil[4] = (pat & 0x10) ? yes : no;
-	stencil[3] = (pat & 0x08) ? yes : no;
-	stencil[2] = (pat & 0x04) ? yes : no;
-	stencil[1] = (pat & 0x02) ? yes : no;
-	stencil[0] = (pat & 0x01) ? yes : no;
+	pat += ((render->y + FILL_PATTERN_SIZE - ctx->patternOffset.y) % FILL_PATTERN_SIZE) * FILL_PATTERN_SIZE * 2;
+	pat +=  (render->x + FILL_PATTERN_SIZE - ctx->patternOffset.x) % FILL_PATTERN_SIZE;
 
-	bytes = aa-> maplen;
 	while ( bytes > 0 ) {
-		register Byte *src = stencil;
+		register Byte *s = pat;
 		register int n = (bytes > FILL_PATTERN_SIZE) ? FILL_PATTERN_SIZE : bytes;
 		bytes -= n;
-		while (n--) *(dst++) &= *(src++);
+		while (n--) *(p++) &= *(s++);
+
 	}
 
+	return src;
+}
+
+static RenderObject obj_render_apply_transparent_pattern = {
+	render_apply_transparent_pattern_get_size,
+	render_apply_transparent_pattern_init,
+	render_apply_transparent_pattern
+};
+
+static Bool
+render_opaque_gray_pattern_init( PImgPaintContext ctx, PRenderContext render, void *self)
+{
+	fill_gray_pattern( ctx, (Byte*) self, render->fg[0], render->bg[0]);
 	return true;
+}
+
+static Byte*
+render_opaque_pattern(PImgPaintContext ctx, PRenderContext render, void *self, Byte *src)
+{
+	unsigned int bytes = render->bytes;
+	Byte *pat = (Byte*) self, dummy = 0, *s = src, *d = render->dst;
+	int sz = FILL_PATTERN_SIZE * render->bpp;
+
+	pat += ((render->y + FILL_PATTERN_SIZE - ctx->patternOffset.y) % FILL_PATTERN_SIZE) * sz * 2;
+	pat += ((render->x + FILL_PATTERN_SIZE - ctx->patternOffset.x) % FILL_PATTERN_SIZE) * render->bpp;
+
+	while ( bytes > 0 ) {
+		int n = (bytes > sz) ? sz : bytes;
+		render->blend1(pat, 1, s, 1, d, &dummy, 0, n);
+		s     += n;
+		d     += n;
+		bytes -= n;
+	}
+
+	return src;
+}
+
+static RenderObject obj_render_opaque_gray_pattern = {
+	render_apply_transparent_pattern_get_size,
+	render_opaque_gray_pattern_init,
+	render_opaque_pattern
+};
+
+static int
+render_map_to_rgb_get_size( PImgPaintContext ctx, PRenderContext render)
+{
+	return render->bytes;
+}
+
+static Byte*
+render_map_to_rgb(PImgPaintContext ctx, PRenderContext render, void *self, Byte *src)
+{
+	bc_graybyte_rgb( src, (Byte*) self, render->pixels);
+	return (Byte*) self;
+}
+
+static RenderObject obj_render_map_to_rgb = {
+	render_map_to_rgb_get_size,
+	NULL,
+	render_map_to_rgb
+};
+
+static int
+render_solid_rgb_get_size( PImgPaintContext ctx, PRenderContext render)
+{
+	return render->bytes;
+}
+
+static Bool
+render_solid_rgb_init( PImgPaintContext ctx, PRenderContext render, void *self)
+{
+	unsigned int n = render->pixels;
+	register Byte* line  = (Byte*) self;
+	register Byte* color = ctx->color;
+	if ( n > 12 ) {
+		Byte stencil[12];
+		stencil[0] = stencil[3] = stencil[6] = stencil[ 9] = color[0];
+		stencil[1] = stencil[4] = stencil[7] = stencil[10] = color[1];
+		stencil[2] = stencil[5] = stencil[8] = stencil[11] = color[2];
+		while ( n > 4 ) {
+			memcpy( line, stencil, 12 );
+			line += 12;
+			n -= 4;
+		}
+	}
+	while ( n-- ) {
+		*(line++) = color[0];
+		*(line++) = color[1];
+		*(line++) = color[2];
+	}
+	return true;
+}
+
+static Byte*
+render_solid_rgb(PImgPaintContext ctx, PRenderContext render, void *self, Byte *src)
+{
+	Byte dummy = 0;
+	render->blend1((Byte*) self, 1, src, 1, render->dst, &dummy, 0, render->bytes);
+	return render->dst;
+}
+
+static RenderObject obj_render_blend_solid_rgb = {
+	render_solid_rgb_get_size,
+	render_solid_rgb_init,
+	render_solid_rgb
+};
+
+static int
+render_opaque_rgb_pattern_get_size( PImgPaintContext ctx, PRenderContext render)
+{
+	return FILL_PATTERN_SIZE * 8 * 2 * 3;
+}
+
+static Bool
+render_opaque_rgb_pattern_init( PImgPaintContext ctx, PRenderContext render, void *self)
+{
+	Byte i, *ppat = ctx->pattern, *dst = (Byte*) self;
+	ctx->patternOffset.y %= FILL_PATTERN_SIZE;
+	ctx->patternOffset.x %= FILL_PATTERN_SIZE;
+	for ( i = 0; i < FILL_PATTERN_SIZE; i++) {
+		Byte *xdst = dst;
+		register Byte pat = *(ppat++), *color;
+#define APPLY(x) \
+	color = (pat & x) ? ctx->color : ctx->backColor; \
+	*(dst++) = color[0];  \
+	*(dst++) = color[1];  \
+	*(dst++) = color[2]
+		APPLY(0x80);
+		APPLY(0x40);
+		APPLY(0x20);
+		APPLY(0x10);
+		APPLY(0x08);
+		APPLY(0x04);
+		APPLY(0x02);
+		APPLY(0x01);
+#undef APPLY
+		memcpy( dst, xdst, FILL_PATTERN_SIZE * 3);
+		dst += FILL_PATTERN_SIZE * 3;
+	}
+	return true;
+}
+
+static RenderObject obj_render_opaque_rgb_pattern = {
+	render_opaque_rgb_pattern_get_size,
+	render_opaque_rgb_pattern_init,
+	render_opaque_pattern
+};
+
+static void
+render_done( PRenderObject *pipeline, int n_renders)
+{
+	int i;
+	Byte *arena = pipeline[0]->self;
+	for ( i = 0; i < n_renders; i++) {
+		RenderDone *f = pipeline[i]->Done;
+		if (f && pipeline[i]->self)
+			f(pipeline[i]->self);
+		pipeline[i]->self = NULL;
+	}
+	if (arena)
+		free(arena);
+}
+
+static void*
+render_init( PRenderObject *pipeline, int n_renders, PImgPaintContext ctx, PRenderContext render)
+{
+	int i;
+	Byte *arena, *ptr;
+	unsigned int arena_size = 0;
+
+	for ( i = 0; i < n_renders; i++) {
+		unsigned int sz;
+		RenderGetSize *f = pipeline[i]->GetSize;
+		if ( f ) {
+			sz = f(ctx, render);
+			sz = ((sz / sizeof(void*)) + (sz % sizeof(void*))) * sizeof(void*);
+			pipeline[i]->offset = sz;
+			arena_size += sz;
+		} else
+			pipeline[i]->offset = 0;
+		pipeline[i]->self = NULL;
+	}
+
+	if ( !( arena = malloc( arena_size ))) {
+		warn("no memory");
+		return NULL;
+	}
+
+	ptr = arena;
+	for ( i = 0; i < n_renders; i++) {
+		RenderInit *f = pipeline[i]->Init;
+		if (f && !f(ctx, render, ptr)) {
+			render_done(pipeline, i - 1);
+			return NULL;
+		}
+		pipeline[i]->self = ptr;
+		ptr += pipeline[i]->offset;
+	}
+
+	return arena;
+}
+
+static void
+render_run( PRenderObject *pipeline, int n_renders, PImgPaintContext ctx, PRenderContext render)
+{
+	int i;
+	Byte *ptr = pipeline[0]->self;
+	for ( i = 0; i < n_renders; i++) {
+		RenderFunc *f = pipeline[i]->Render;
+		if (f)
+			ptr = f(ctx, render, pipeline[i]->self, ptr);
+	}
 }
 
 Bool
 img_aafill( Handle self, NPoint *pts, int n_pts, int rule, PImgPaintContext ctx)
 {
-	Byte *src, *dst, *map;
 	Rect clip;
 	AAFillRec aa;
 	Bool ok = false, pattern, dual_pattern;
-	int rop, bpp;
-	Byte alpha, fg_gray, bg_gray;
-	BlendFunc *blend;
+	int rop, n_renders = 0;
+	RenderContext render;
+	PRenderObject pipeline[6];
 
 	if ( ctx == NULL )
 		return aafill_inplace(self, pts, n_pts, rule);
 
-	if ( PImage(self)->type != imByte )
+	if ( PImage(self)->type != imByte && PImage(self)->type != imRGB )
 		return false;
-	bpp = ( PImage(self)->type & imBPP ) / 8;
+	render.bpp = ( PImage(self)->type & imBPP ) / 8;
 
-	fg_gray = ctx->color[0];
-	bg_gray = ctx->backColor[0];
+	render.fg  = ctx->color;
+	render.bg  = ctx->backColor;
 	if ( memcmp(ctx->pattern, fillPatterns[fpEmpty], sizeof(FillPattern)) == 0) {
 		if ( !ctx->transparent )
 			return true;
-		fg_gray = bg_gray;
+		render.fg = render.bg;
 		pattern = false;
 	} else
 		pattern = memcmp(ctx->pattern, fillPatterns[fpSolid], sizeof(FillPattern)) != 0;
@@ -482,48 +772,50 @@ img_aafill( Handle self, NPoint *pts, int n_pts, int rule, PImgPaintContext ctx)
 	clip.left  = clip.bottom = 0;
 	clip.right = PImage(self)->w - 1;
 	clip.top   = PImage(self)->h - 1;
-
 	switch (aafill_init( pts, n_pts, rule, clip, &aa)) {
 		case -1: return false;
 		case  0: return true ;
 	}
-	dst = PImage(self)->data + PImage(self)->lineSize * aa.y + aa.x;
 
-	{
-		unsigned int size = (aa.maplen / sizeof(void*)) * sizeof(void*);
-		if ( !( map = malloc( size * 2 ))) {
-			warn("img_aafill: no memory");
-			goto EXIT;
-		}
-		src = map + size;
-	}
-
-	rop   = ctx->rop & ropPorterDuffMask;
-	alpha = (ctx-> rop & ropSrcAlpha) ? (( ctx->rop >> ropSrcAlphaShift ) & 0xff ) : 255;
-	if ( !img_find_blend_proc( rop, &blend, NULL)) {
+	rop          = ctx->rop & ropPorterDuffMask;
+	render.alpha = (ctx-> rop & ropSrcAlpha) ? (( ctx->rop >> ropSrcAlphaShift ) & 0xff ) : 255;
+	if ( !img_find_blend_proc( rop, &render.blend1, &render.blend2)) {
 		warn("img_aafill: blend not supported");
 		goto EXIT;
 	}
+	render.x      = aa.x;
+	render.dst    = PImage(self)->data + PImage(self)->lineSize * aa.y + aa.x * render.bpp;
+	render.pixels = aa.maplen;
+	render.bytes  = render.pixels * render.bpp;
 
-	while ( aafill_next_scanline( &aa, map)) {
-		Byte dummy;
-		if ( alpha != 255 )
-			xmul_alpha(map, aa.maplen, alpha);
-		if ( pattern ) {
-			if ( dual_pattern ) {
-				memcpy( src, map, aa.maplen );
-				if (xmul_pattern(src, &aa, ctx, true))
-					blend( &bg_gray, 0, src, 1, dst, &dummy, 0, aa.maplen);
-			}
-			if (!xmul_pattern(map, &aa, ctx, false))
-				goto NEXT;
-		}
-		blend( &fg_gray, 0, map, 1, dst, &dummy, 0, aa.maplen);
-	NEXT:
-		dst += PImage(self)->lineSize;
+	pipeline[n_renders++] = &obj_render_acquire_map;
+	if ( render.alpha != 255 )
+		pipeline[n_renders++] = &obj_render_apply_alpha;
+	if ( !dual_pattern && pattern )
+		pipeline[n_renders++] = &obj_render_apply_transparent_pattern;
+	if ( render.bpp == 3 ) {
+		pipeline[n_renders++] = &obj_render_map_to_rgb;
+		if ( dual_pattern )
+			pipeline[n_renders++] = &obj_render_opaque_rgb_pattern;
+		else
+			pipeline[n_renders++] = &obj_render_blend_solid_rgb;
+	} else {
+		if ( dual_pattern )
+			pipeline[n_renders++] = &obj_render_opaque_gray_pattern;
+		else
+			pipeline[n_renders++] = &obj_render_blend_solid_gray;
 	}
 
-	free(map);
+	if ( !render_init(pipeline, n_renders, ctx, &render))
+		goto EXIT;
+
+	while ( aafill_next_scanline( &aa, pipeline[0]->self)) {
+		render.y = aa.y;
+		render_run(pipeline, n_renders, ctx, &render);
+		render.dst += PImage(self)->lineSize;
+	}
+
+	render_done(pipeline, n_renders);
 	ok = true;
 
 EXIT:

@@ -474,7 +474,7 @@ Image_fillpoly( Handle self, SV * points)
 	if ( opt_InPaint)
 		return inherited fillpoly(self, points);
 
-	if ( var->type == imByte && var-> antialias ) {
+	if (( var->type == imByte || var->type == imRGB) && var-> antialias ) {
 		ImgPaintContext ctx;
 		prepare_fill_context(self, &ctx);
 		if (
@@ -487,17 +487,18 @@ Image_fillpoly( Handle self, SV * points)
 			)
 		) {
 			int n, mode;
-			void *p;
-			Bool do_free, ok;
-			if ((( p = prima_read_array( points, "fillpoly", 'd', 2, 2, -1, &n, &do_free))) == NULL)
+			NPoint *p;
+			Bool ok;
+			if ((( p = (NPoint*) prima_read_array( points, "fillpoly", 'd', 2, 2, -1, &n, NULL))) == NULL)
 				return false;
 			mode = ( my-> fillMode == Drawable_fillMode) ?
 				apc_gp_get_fill_mode(self) :
 				my-> get_fillMode(self);
 			if ( ctx.rop == ropDefault || ctx.rop == ropCopyPut )
 				ctx.rop = ropSrcOver | ropSrcAlpha | ( var->alpha << ropSrcAlphaShift );
-			ok = img_aafill( self, (NPoint*) p, n, mode, &ctx);
-			if ( do_free ) free(p);
+			if ( !prima_matrix_is_identity(VAR_MATRIX))
+				prima_matrix_apply2(VAR_MATRIX, p, p, n);
+			ok = img_aafill( self, p, n, mode, &ctx);
 			return ok;
 		}
 	}
