@@ -8,15 +8,6 @@ extern "C" {
 #define FILL_PATTERN_SIZE sizeof(FillPattern)
 #define BLT_BUFSIZE ((MAX_SIZEOF_PIXEL * FILL_PATTERN_SIZE * FILL_PATTERN_SIZE) * 2)
 
-static void
-multiply( Byte * src, Byte * alpha, int alpha_step, Byte * dst, int bytes)
-{
-	while (bytes--) {
-		*(dst++) = *(src++) * *alpha / 255.0 + .5;
-		alpha += alpha_step;
-	}
-}
-
 typedef struct {
 	int bpp, als, dls, step, pat_x_offset;
 	Byte * dst, *dstMask, *pattern_buf, *adbuf;
@@ -75,7 +66,7 @@ img_bar_alpha_single_opaque( int x, int y, int w, int h, ImgBarAlphaCallbackRec 
 
 		if ( a ) {
 			if ( ptr->dst_alpha_mul < 255 )
-				multiply( a, &ptr->dst_alpha_mul, 0, a, w);
+				img_multiply_alpha( a, &ptr->dst_alpha_mul, 0, a, w);
 			ptr->blend2(
 				&ptr->src_alpha, 0,
 				&ptr->src_alpha, 0,
@@ -122,7 +113,7 @@ img_bar_alpha_single_transparent( int x, int y, int w, int h, ImgBarAlphaCallbac
 				blt_bytes);
 			if ( a ) {
 				if ( ptr->dst_alpha_mul < 255 )
-					multiply( a, &ptr->dst_alpha_mul, 0, a, w);
+					img_multiply_alpha( a, &ptr->dst_alpha_mul, 0, a, w);
 				ptr->blend2(
 					&ptr->src_alpha, 0,
 					&ptr->src_alpha, 0,
@@ -764,7 +755,7 @@ alpha_tiler( int x, int y, int w, int h, TileCallbackRec* ptr)
 		if ( !ptr->use_dst_alpha ) {
 			img_fill_alpha_buf( ptr->adbuf, a, w, bpp);
 			if ( ptr-> dst_alpha_mul < 255 )
-				multiply( ptr->adbuf, &ptr->dst_alpha_mul, 0, ptr->adbuf, bytes);
+				img_multiply_alpha( ptr->adbuf, &ptr->dst_alpha_mul, 0, ptr->adbuf, bytes);
 		}
 
 		/*
@@ -787,7 +778,7 @@ alpha_tiler( int x, int y, int w, int h, TileCallbackRec* ptr)
 
 		if (a != NULL) {
 			if ( ptr->dst_alpha_mul < 255 )
-				multiply( a, &ptr->dst_alpha_mul, 0, a, w);
+				img_multiply_alpha( a, &ptr->dst_alpha_mul, 0, a, w);
 			ptr->blend2(
 				ptr->use_src_alpha ? &ptr->src_alpha_mul : m,
 				ptr->use_src_alpha ? 0 : 1,

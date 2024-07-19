@@ -155,6 +155,17 @@ img_fill_alpha_buf( Byte * dst, Byte * src, int width, int bpp)
 		memcpy( dst, src, width * bpp);
 }
 
+void
+img_multiply_alpha( Byte * src, Byte * alpha, int alpha_step, Byte * dst, int bytes)
+{
+	if ( alpha_step == 0 ) {
+		while (bytes--)
+			*(dst++) = *(src++) * *(alpha  ) / 255.0 + .5;
+	} else {
+		while (bytes--)
+			*(dst++) = *(src++) * *(alpha++) / 255.0 + .5;
+	}
+}
 
 #ifdef __cplusplus
 }

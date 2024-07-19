@@ -254,7 +254,7 @@ prepare_fill_context(Handle self, PImgPaintContext ctx)
 	bzero(ctx, sizeof(ImgPaintContext));
 
 	ctx-> rop = var-> extraROP;
-	if ( ctx->rop >= ropMinPDFunc && ctx->rop <= ropMaxPDFunc ) {
+	if ( ctx->rop >= ropMinPDFunc && ctx->rop <= ropMaxPDFunc) {
 		ctx->rop &= ~(0xff << ropSrcAlphaShift);
 		ctx->rop |= ropSrcAlpha | ( var-> alpha << ropSrcAlphaShift );
 	}
@@ -474,21 +474,12 @@ Image_fillpoly( Handle self, SV * points)
 	if ( opt_InPaint)
 		return inherited fillpoly(self, points);
 
-	if (( var->type == imByte || var->type == imRGB) && var-> antialias ) {
+	if (var-> antialias ) {
 		ImgPaintContext ctx;
 		prepare_fill_context(self, &ctx);
-		if (
-			ctx.tile == NULL_HANDLE &&
-			ctx.region == NULL &&
-			(
-				ctx.rop == ropDefault ||
-				ctx.rop == ropCopyPut ||
-				(ctx.rop & ropPorterDuffMask) != 0
-			)
-		) {
+		if (ctx.tile == NULL_HANDLE && ctx.region == NULL) {
 			int n, mode;
 			NPoint *p;
-			Bool ok;
 			if ((( p = (NPoint*) prima_read_array( points, "fillpoly", 'd', 2, 2, -1, &n, NULL))) == NULL)
 				return false;
 			mode = ( my-> fillMode == Drawable_fillMode) ?
@@ -498,8 +489,7 @@ Image_fillpoly( Handle self, SV * points)
 				ctx.rop = ropSrcOver | ropSrcAlpha | ( var->alpha << ropSrcAlphaShift );
 			if ( !prima_matrix_is_identity(VAR_MATRIX))
 				prima_matrix_apply2(VAR_MATRIX, p, p, n);
-			ok = img_aafill( self, p, n, mode, &ctx);
-			return ok;
+			return img_aafill( self, p, n, mode, &ctx);
 		}
 	}
 

@@ -340,6 +340,7 @@ extern PBitBltProc img_find_blt_proc( int rop );
 extern Bool img_find_blend_proc( int rop, BlendFunc ** blend1, BlendFunc ** blend2 );
 extern Bool img_resample_colors( Handle dest, int bpp, PImgPaintContext ctx);
 extern void img_fill_alpha_buf( Byte * dst, Byte * src, int width, int bpp);
+extern void img_multiply_alpha( Byte * src, Byte * alpha, int alpha_step, Byte * dst, int bytes);
 extern Bool img_plot_glyph( Handle self, PImage glyph, int x, int y, PImgPaintContext ctx);
 extern Bool img_aafill( Handle self, NPoint *pts, int n_pts, int rule, PImgPaintContext ctx);
 

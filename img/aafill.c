@@ -410,10 +410,10 @@ aafill_inplace( Handle self, NPoint *pts, int n_pts, int rule)
 #define FILL_PATTERN_SIZE sizeof(FillPattern)
 
 typedef struct {
-	Byte alpha, bpp;
+	Byte alpha, dst_a, bpp;
 	BlendFunc *blend1, *blend2;
 	Byte *fg, *bg;
-	Byte *dst;
+	Byte *dst, *mask;
 	unsigned int pixels, bytes;
 	int x, y;
 } RenderContext, *PRenderContext;
@@ -444,13 +444,7 @@ static RenderObject obj_render_acquire_map = {
 static Byte*
 render_apply_alpha(PImgPaintContext ctx, PRenderContext render, void *self, Byte* src)
 {
-	register Byte *p        = src;
-	register Byte alpha     = render->alpha;
-	register unsigned int n = render->pixels;
-	while (n--) {
-		*p = (alpha * *p) / 255.0 + .5;
-		p++;
-	}
+	img_multiply_alpha( src, &render->alpha, 0, src, render->pixels);
 	return src;
 }
 
@@ -534,6 +528,28 @@ static RenderObject obj_render_apply_transparent_pattern = {
 	render_apply_transparent_pattern_get_size,
 	render_apply_transparent_pattern_init,
 	render_apply_transparent_pattern
+};
+
+static Byte*
+render_mask(PImgPaintContext ctx, PRenderContext render, void *self, Byte *src)
+{
+	if ( render->dst_a != 255 ) {
+		register int n = render->pixels;
+		register Byte *s = src, *d = render->mask;
+		while (n--) {
+			if ( *s++ )
+				*d = *d * render->dst_a / 255.0 + .5;
+			d++;
+		}
+	}
+	render->blend2(src, 1, src, 1, render->mask, render->mask, 1, render->pixels);
+	return src;
+}
+
+static RenderObject obj_render_mask = {
+	NULL,
+	NULL,
+	render_mask
 };
 
 static Bool
@@ -744,9 +760,10 @@ render_run( PRenderObject *pipeline, int n_renders, PImgPaintContext ctx, PRende
 Bool
 img_aafill( Handle self, NPoint *pts, int n_pts, int rule, PImgPaintContext ctx)
 {
+	PIcon i = (PIcon) self;
 	Rect clip;
 	AAFillRec aa;
-	Bool ok = false, pattern, dual_pattern;
+	Bool ok = false, pattern, dual_pattern, is_icon;
 	int rop, n_renders = 0;
 	RenderContext render;
 	PRenderObject pipeline[6];
@@ -754,10 +771,28 @@ img_aafill( Handle self, NPoint *pts, int n_pts, int rule, PImgPaintContext ctx)
 	if ( ctx == NULL )
 		return aafill_inplace(self, pts, n_pts, rule);
 
-	if ( PImage(self)->type != imByte && PImage(self)->type != imRGB )
-		return false;
-	render.bpp = ( PImage(self)->type & imBPP ) / 8;
+	/* align types and geometry - can only operate over imByte and imRGB and 8-bit icons */
+	is_icon = kind_of(self, CIcon);
+	{
+		int bpp = ( i->type & imGrayScale) ? imByte : imRGB;
+		if (i-> type != bpp || ( is_icon && i->maskType != imbpp8 )) {
+			Bool ok;
+			ImagePreserveTypeRec p;
 
+			i->self-> begin_preserve_type( self, &p );
+			if ( i->type != bpp ) {
+				img_resample_colors( self, bpp, ctx );
+				i->self-> set_type( self, bpp );
+			}
+			if ( is_icon && i->maskType != imbpp8 )
+				i->self->set_maskType( self, imbpp8 );
+			ok = img_aafill( self, pts, n_pts, rule, ctx);
+			i-> self-> end_preserve_type( self, &p );
+			return ok;
+		}
+	}
+
+	render.bpp = ( i->type & imBPP ) / 8;
 	render.fg  = ctx->color;
 	render.bg  = ctx->backColor;
 	if ( memcmp(ctx->pattern, fillPatterns[fpEmpty], sizeof(FillPattern)) == 0) {
@@ -770,8 +805,8 @@ img_aafill( Handle self, NPoint *pts, int n_pts, int rule, PImgPaintContext ctx)
 	dual_pattern = pattern ? !ctx->transparent : false;
 
 	clip.left  = clip.bottom = 0;
-	clip.right = PImage(self)->w - 1;
-	clip.top   = PImage(self)->h - 1;
+	clip.right = i->w - 1;
+	clip.top   = i->h - 1;
 	switch (aafill_init( pts, n_pts, rule, clip, &aa)) {
 		case -1: return false;
 		case  0: return true ;
@@ -784,27 +819,36 @@ img_aafill( Handle self, NPoint *pts, int n_pts, int rule, PImgPaintContext ctx)
 		goto EXIT;
 	}
 	render.x      = aa.x;
-	render.dst    = PImage(self)->data + PImage(self)->lineSize * aa.y + aa.x * render.bpp;
 	render.pixels = aa.maplen;
 	render.bytes  = render.pixels * render.bpp;
+	render.dst    = i->data + i->lineSize * aa.y + aa.x * render.bpp;
+	if ( is_icon ) {
+		render.mask  = i->mask + i->maskLine * aa.y + aa.x;
+		render.dst_a = ( ctx->rop & ropDstAlpha ) ? ((ctx->rop >> ropDstAlphaShift) & 0xff) : 0xff;
+	} else
+		render.mask  = NULL;
 
-	pipeline[n_renders++] = &obj_render_acquire_map;
+#define PUSH(x) pipeline[n_renders++] = &x
+	PUSH(obj_render_acquire_map);
 	if ( render.alpha != 255 )
-		pipeline[n_renders++] = &obj_render_apply_alpha;
+		PUSH(obj_render_apply_alpha);
 	if ( !dual_pattern && pattern )
-		pipeline[n_renders++] = &obj_render_apply_transparent_pattern;
+		PUSH(obj_render_apply_transparent_pattern);
+	if ( render.mask )
+		PUSH(obj_render_mask);
 	if ( render.bpp == 3 ) {
-		pipeline[n_renders++] = &obj_render_map_to_rgb;
+		PUSH(obj_render_map_to_rgb);
 		if ( dual_pattern )
-			pipeline[n_renders++] = &obj_render_opaque_rgb_pattern;
+			PUSH(obj_render_opaque_rgb_pattern);
 		else
-			pipeline[n_renders++] = &obj_render_blend_solid_rgb;
+			PUSH(obj_render_blend_solid_rgb);
 	} else {
 		if ( dual_pattern )
-			pipeline[n_renders++] = &obj_render_opaque_gray_pattern;
+			PUSH(obj_render_opaque_gray_pattern);
 		else
-			pipeline[n_renders++] = &obj_render_blend_solid_gray;
+			PUSH(obj_render_blend_solid_gray);
 	}
+#undef PUSH
 
 	if ( !render_init(pipeline, n_renders, ctx, &render))
 		goto EXIT;
@@ -812,7 +856,9 @@ img_aafill( Handle self, NPoint *pts, int n_pts, int rule, PImgPaintContext ctx)
 	while ( aafill_next_scanline( &aa, pipeline[0]->self)) {
 		render.y = aa.y;
 		render_run(pipeline, n_renders, ctx, &render);
-		render.dst += PImage(self)->lineSize;
+		render.dst += i->lineSize;
+		if ( render.mask )
+			render.mask += i->maskLine;
 	}
 
 	render_done(pipeline, n_renders);
