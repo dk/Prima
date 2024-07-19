@@ -478,8 +478,6 @@ static void
 fill_gray_pattern( PImgPaintContext ctx, Byte *dst, Byte fg, Byte bg)
 {
 	Byte i, *ppat = ctx->pattern;
-	ctx->patternOffset.y %= FILL_PATTERN_SIZE;
-	ctx->patternOffset.x %= FILL_PATTERN_SIZE;
 	for ( i = 0; i < FILL_PATTERN_SIZE; i++) {
 		Byte *xdst = dst;
 		register Byte pat = *(ppat++);
@@ -518,7 +516,6 @@ render_apply_transparent_pattern(PImgPaintContext ctx, PRenderContext render, vo
 		register int n = (bytes > FILL_PATTERN_SIZE) ? FILL_PATTERN_SIZE : bytes;
 		bytes -= n;
 		while (n--) *(p++) &= *(s++);
-
 	}
 
 	return src;
@@ -660,8 +657,6 @@ static Bool
 render_opaque_rgb_pattern_init( PImgPaintContext ctx, PRenderContext render, void *self)
 {
 	Byte i, *ppat = ctx->pattern, *dst = (Byte*) self;
-	ctx->patternOffset.y %= FILL_PATTERN_SIZE;
-	ctx->patternOffset.x %= FILL_PATTERN_SIZE;
 	for ( i = 0; i < FILL_PATTERN_SIZE; i++) {
 		Byte *xdst = dst;
 		register Byte pat = *(ppat++), *color;
@@ -689,6 +684,148 @@ static RenderObject obj_render_opaque_rgb_pattern = {
 	render_opaque_rgb_pattern_get_size,
 	render_opaque_rgb_pattern_init,
 	render_opaque_pattern
+};
+
+static int
+render_apply_stipple_get_size( PImgPaintContext ctx, PRenderContext render)
+{
+	return PImage(ctx->tile)->w * 8;
+}
+
+static void
+render_apply_1bit_mask(PImgPaintContext ctx, PRenderContext render, Byte *pat, unsigned int stride, Byte *buffer, Byte *dst)
+{
+	PImage stipple = (PImage) ctx->tile;
+	Byte   colorref[2] = {255,0};
+	unsigned int x, n;
+
+	pat += ((render->y + stipple->h - ctx->patternOffset.y) % stipple->h) * stride;
+	bc_mono_byte_cr( pat, buffer, stipple->w, colorref);
+
+	x = (render->x + stipple->w - ctx->patternOffset.x) % stipple->w;
+	n = render->pixels;
+
+	while ( n > 0 ) {
+		register Byte *s = buffer + x;
+		register Byte *d = dst;
+		register unsigned int bytes = stipple-> w - x;
+		if ( bytes > n ) bytes = n;
+		n -= bytes;
+		while (bytes--) *d++ &= *s++;
+	}
+}
+
+static Byte*
+render_apply_stipple(PImgPaintContext ctx, PRenderContext render, void *self, Byte *src)
+{
+	PImage stipple = (PImage) ctx->tile;
+	render_apply_1bit_mask(ctx, render, stipple->data, stipple->lineSize, (Byte*) self, src);
+	return src;
+}
+
+static RenderObject obj_render_apply_stipple = {
+	render_apply_stipple_get_size,
+	NULL,
+	render_apply_stipple
+};
+
+static int
+render_stipple_get_size( PImgPaintContext ctx, PRenderContext render)
+{
+	return render->bytes;
+}
+
+static void
+render_generic_tile(PImgPaintContext ctx, PRenderContext render, Byte *src, Byte *alpha)
+{
+	unsigned int x, n, w;
+	Byte *dst = render->dst, bpp = render->bpp;
+
+	w = PImage(ctx->tile)-> w;
+	x = (render->x + w - ctx->patternOffset.x) % w;
+	n = render->pixels;
+
+	while ( n > 0 ) {
+		Byte dummy = 0;
+		unsigned int pixels = w - x;
+		if ( pixels > n ) pixels = n;
+		n -= pixels;
+		pixels *= bpp;
+		render->blend1( src + x * bpp, 1, alpha, 1, dst, &dummy, 0, pixels);
+		dst   += pixels;
+		alpha += pixels;
+		x = 0;
+	}
+}
+
+static Byte*
+render_opaque_gray_stipple(PImgPaintContext ctx, PRenderContext render, void *self, Byte *src)
+{
+	PImage stipple = (PImage) ctx->tile;
+	Byte      *pat = stipple->data, colorref[2] = {render->fg[0],render->bg[0]};
+
+	pat += ((render->y + stipple->h - ctx->patternOffset.y) % stipple->h) * stipple->lineSize;
+	bc_mono_byte_cr( pat, (Byte*)self, stipple->w, colorref);
+	render_generic_tile( ctx, render, (Byte*) self, src);
+	return src;
+}
+
+static RenderObject obj_render_opaque_gray_stipple = {
+	render_stipple_get_size,
+	NULL,
+	render_opaque_gray_stipple
+};
+
+static Byte*
+render_opaque_rgb_stipple(PImgPaintContext ctx, PRenderContext render, void *self, Byte *src)
+{
+	PImage stipple = (PImage) ctx->tile;
+	Byte      *pat = stipple->data;
+	RGBColor colorref[2];
+
+	memcpy( &colorref[0], render->fg, 3);
+	memcpy( &colorref[1], render->bg, 3);
+	pat += ((render->y + stipple->h - ctx->patternOffset.y) % stipple->h) * stipple->lineSize;
+	bc_mono_rgb( pat, (Byte*)self, stipple->w, colorref);
+
+	render_generic_tile( ctx, render, (Byte*) self, src);
+	return src;
+}
+
+static RenderObject obj_render_opaque_rgb_stipple = {
+	render_stipple_get_size,
+	NULL,
+	render_opaque_rgb_stipple
+};
+
+static Byte*
+render_tile(PImgPaintContext ctx, PRenderContext render, void *self, Byte *src)
+{
+	PImage stipple = (PImage) ctx->tile;
+	Byte      *pat = stipple->data;
+	pat += ((render->y + stipple->h - ctx->patternOffset.y) % stipple->h) * stipple->lineSize;
+	render_generic_tile( ctx, render, pat, src);
+	return src;
+}
+
+static RenderObject obj_render_tile = {
+	NULL,
+	NULL,
+	render_tile
+};
+
+static Byte*
+render_apply_tile_mask(PImgPaintContext ctx, PRenderContext render, void *self, Byte *src)
+{
+	PIcon stipple = (PIcon) ctx->tile;
+	render_apply_1bit_mask(ctx, render, stipple->mask, stipple->maskLine, (Byte*) self, src);
+	return src;
+}
+
+static RenderObject obj_render_apply_tile_mask = {
+	render_apply_stipple_get_size,
+	NULL,
+	render_apply_tile_mask
 };
 
 static void
@@ -763,10 +900,10 @@ img_aafill( Handle self, NPoint *pts, int n_pts, int rule, PImgPaintContext ctx)
 	PIcon i = (PIcon) self;
 	Rect clip;
 	AAFillRec aa;
-	Bool ok = false, pattern, dual_pattern, is_icon;
+	Bool ok = false, pattern, dual_pattern, is_icon, tile_is_icon;
 	int rop, n_renders = 0;
 	RenderContext render;
-	PRenderObject pipeline[6];
+	PRenderObject pipeline[10];
 
 	if ( ctx == NULL )
 		return aafill_inplace(self, pts, n_pts, rule);
@@ -795,14 +932,37 @@ img_aafill( Handle self, NPoint *pts, int n_pts, int rule, PImgPaintContext ctx)
 	render.bpp = ( i->type & imBPP ) / 8;
 	render.fg  = ctx->color;
 	render.bg  = ctx->backColor;
-	if ( memcmp(ctx->pattern, fillPatterns[fpEmpty], sizeof(FillPattern)) == 0) {
-		if ( !ctx->transparent )
-			return true;
-		render.fg = render.bg;
-		pattern = false;
-	} else
-		pattern = memcmp(ctx->pattern, fillPatterns[fpSolid], sizeof(FillPattern)) != 0;
-	dual_pattern = pattern ? !ctx->transparent : false;
+	if ( ctx->tile == NULL_HANDLE ) {
+		if ( memcmp(ctx->pattern, fillPatterns[fpEmpty], sizeof(FillPattern)) == 0) {
+			if ( !ctx->transparent )
+				return true;
+			render.fg = render.bg;
+			pattern = false;
+		} else
+			pattern = memcmp(ctx->pattern, fillPatterns[fpSolid], sizeof(FillPattern)) != 0;
+		dual_pattern = pattern ? !ctx->transparent : false;
+		ctx->patternOffset.y %= FILL_PATTERN_SIZE;
+		ctx->patternOffset.x %= FILL_PATTERN_SIZE;
+		tile_is_icon = false;
+	} else {
+		ctx->patternOffset.y %= PImage(ctx->tile)->h;
+		ctx->patternOffset.x %= PImage(ctx->tile)->w;
+		dual_pattern = pattern = false;
+
+		/* can only do tiles that match bpp and type */
+		if ( PImage(ctx->tile)->type != i->type ) {
+			Bool ok;
+			ImagePreserveTypeRec p;
+
+			CImage(ctx->tile)-> begin_preserve_type( ctx->tile, &p );
+			CImage(ctx->tile)-> set_type( ctx->tile, i->type );
+			ok = img_aafill( self, pts, n_pts, rule, ctx);
+			CImage(ctx->tile)-> end_preserve_type( ctx->tile, &p );
+
+			return ok;
+		}
+		tile_is_icon = kind_of( ctx->tile, CIcon );
+	}
 
 	clip.left  = clip.bottom = 0;
 	clip.right = i->w - 1;
@@ -834,16 +994,39 @@ img_aafill( Handle self, NPoint *pts, int n_pts, int rule, PImgPaintContext ctx)
 		PUSH(obj_render_apply_alpha);
 	if ( !dual_pattern && pattern )
 		PUSH(obj_render_apply_transparent_pattern);
+	if ( ctx->tile ) {
+		if ( tile_is_icon ) {
+			if (PIcon(ctx->tile)->maskType == 1)
+				PUSH(obj_render_apply_tile_mask);
+		} else if ( PImage(ctx->tile)->type == imBW && ctx->transparent)
+			PUSH(obj_render_apply_stipple);
+	}
 	if ( render.mask )
 		PUSH(obj_render_mask);
 	if ( render.bpp == 3 ) {
 		PUSH(obj_render_map_to_rgb);
-		if ( dual_pattern )
+		if ( ctx->tile ) {
+			if ( PImage(ctx->tile)->type == imBW && !tile_is_icon) {
+				if ( ctx->transparent )
+					PUSH(obj_render_blend_solid_rgb);
+				else
+					PUSH(obj_render_opaque_rgb_stipple);
+			} else
+				PUSH(obj_render_tile);
+		} else if ( dual_pattern )
 			PUSH(obj_render_opaque_rgb_pattern);
 		else
 			PUSH(obj_render_blend_solid_rgb);
 	} else {
-		if ( dual_pattern )
+		if ( ctx->tile ) {
+			if ( PImage(ctx->tile)->type == imBW && !tile_is_icon) {
+				if ( ctx->transparent )
+					PUSH(obj_render_blend_solid_gray);
+				else
+					PUSH(obj_render_opaque_gray_stipple);
+			} else
+				PUSH(obj_render_tile);
+		} else if ( dual_pattern )
 			PUSH(obj_render_opaque_gray_pattern);
 		else
 			PUSH(obj_render_blend_solid_gray);

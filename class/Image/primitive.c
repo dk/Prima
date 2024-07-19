@@ -477,7 +477,7 @@ Image_fillpoly( Handle self, SV * points)
 	if (var-> antialias ) {
 		ImgPaintContext ctx;
 		prepare_fill_context(self, &ctx);
-		if (ctx.tile == NULL_HANDLE && ctx.region == NULL) {
+		if (ctx.region == NULL) {
 			int n, mode;
 			NPoint *p;
 			if ((( p = (NPoint*) prima_read_array( points, "fillpoly", 'd', 2, 2, -1, &n, NULL))) == NULL)
