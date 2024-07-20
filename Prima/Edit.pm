@@ -1516,7 +1516,7 @@ sub set_selection
 			if ( $ey == $oey) {
 				if ( $sx == $osx) {
 					$start = $end = $ey;
-					$sx = $osx = length $self->get_chunk($start) if $ey != $sy;
+					$sx = $osx = 0 if $ey != $sy;
 				} elsif ( $ex == $oex) {
 					$start = $end = $sy;
 					$ex = $oex = length $self->get_chunk($start) if $ey != $sy;
