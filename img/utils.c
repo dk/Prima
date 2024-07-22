@@ -159,8 +159,11 @@ void
 img_multiply_alpha( Byte * src, Byte * alpha, int alpha_step, Byte * dst, int bytes)
 {
 	if ( alpha_step == 0 ) {
-		while (bytes--)
-			*(dst++) = *(src++) * *(alpha  ) / 255.0 + .5;
+		if ( *alpha < 255 ) {
+			while (bytes--)
+				*(dst++) = *(src++) * *(alpha  ) / 255.0 + .5;
+		} else if ( src != dst )
+			memcpy( dst, src, bytes);
 	} else {
 		while (bytes--)
 			*(dst++) = *(src++) * *(alpha++) / 255.0 + .5;
