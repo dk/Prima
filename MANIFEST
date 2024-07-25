@@ -413,6 +413,7 @@ Prima/VB/VB.gif
 Prima/VB/VB.pl
 Prima/VB/VBControls.pm
 Prima/VB/VBLoader.pm
+t/Image/AAFill.t
 t/Image/Bar.t
 t/Image/Basic.t
 t/Image/Bitmaps.t
