@@ -2347,13 +2347,13 @@ sub insert_empty_line
 		$self-> font-> height, $self-> get_active_area,
 	);
 	if (
-		$y < $tl + $rc + $yt - 1 &&
-		$y + $len > $tl &&
+		$ly < $tl + $rc + $yt - 1 &&
+		$ly + $len > $tl &&
 		$y <= $maxY &&
 		!$self-> has_selection
 	) {
 		$self-> scroll( 0, -$fh * $len,
-			confineRect => [ @a[0..2], $a[3] - $fh * ( $y - $tl)]);
+			confineRect => [ @a[0..2], $a[3] - $fh * ( $ly - $tl)]);
 	}
 	$self->reset_scrolls;
 	return $ly;
