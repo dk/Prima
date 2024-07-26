@@ -377,23 +377,9 @@ sub stroke_img_primitive
 sub fill_img_primitive
 {
 	my ( $self, $request, @p ) = @_;
-
-	return unless $self->graphic_context_push;
 	my $path = $self->new_path;
-	$path->matrix( $self->get_matrix);
 	$path->$request(@p);
-
-	my $region1 = $path->region( $self-> fillMode);
-	my $region2 = $self->region;
-	$region1->combine($region2, rgnop::Intersect) if $region2;
-	$self->region($region1);
-
-	$self->reset_matrix;
-	my $ok = $self->bar($region1->rect);
-
-	$self->graphic_context_pop;
-
-	return $ok;
+	return $path->fill;
 }
 
 sub stroke_imgaa_primitive
@@ -427,32 +413,6 @@ sub stroke_imgaa_primitive
 	return $ok;
 }
 
-sub fill_imgaa_primitive
-{
-	my ( $self, $request ) = (shift, shift);
-
-	my $aa = $self->new_aa_surface;
-	return 0 unless $aa->can_aa;
-
-	my $ok = 1;
-	my $m = $self->get_matrix;
-	$self->reset_matrix;
-	if ($request eq 'line') {
-		$ok = $aa->fillpoly($_[0], matrix => $m);
-	} else {
-		my $path = $self->new_path( antialias => 1 );
-		$path->matrix($m);
-		$path->$request(@_);
-		for ($path->points(fill => 1)) {
-			next if $aa->fillpoly($_);
-			$ok = 0;
-			last;
-		}
-	}
-	$self->set_matrix($m);
-	return $ok;
-}
-
 sub execute_img_primitive
 {
 	my ( $self, $act, $request ) = (shift, shift, shift);
@@ -460,7 +420,8 @@ sub execute_img_primitive
 	return $self->can($act . '_primitive')->($self, $request, @_) if $ps == ps::Enabled;
 	return 1 if $ps == ps::Information;
 
-	$act .= '_img' . ( $self->antialias ? 'aa' : '') . '_primitive';
+	my $suffix = ($act eq 'fill' || !$self->antialias) ? '' : 'aa';
+	$act .= '_img' . $suffix . '_primitive';
 	return $self->$act($request, @_);
 }
 

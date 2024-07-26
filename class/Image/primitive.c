@@ -359,7 +359,7 @@ fill_noaapoly( Handle self, int n_pts, NPoint *pts)
 	Point i_pts_buf[1024];
 	semistatic_t pi_pts_buf;
 
-	if ( n_pts < 4 )
+	if ( n_pts < 2 )
 		return false;
 
 	mode = ( my-> fillMode == Drawable_fillMode) ?
