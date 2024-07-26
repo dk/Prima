@@ -364,7 +364,7 @@ img_bar_single( int x, int y, int w, int h, ImgBarCallbackRec * ptr)
 				pat_ptr = ptr->buf;
 			break;
 		default:
-			pat_ptr = ptr->buf + dx * ptr->bpp / 8;
+			pat_ptr = ptr->buf + dx * ptr->count;
 			if ( dx > 0 || blt_step + FILL_PATTERN_SIZE * ptr->count > BLT_BUFSIZE )
 				blt_step -= FILL_PATTERN_SIZE * ptr->count;
 		}
@@ -1167,18 +1167,20 @@ img_bar_pattern( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 
 	/* render a 8x8xPIXEL matrix with pattern, then horizontally
 	replicate it over blt_buffer as much as possible, to streamline
-	byte operations */
+	byte operations. Make sure that blt_step can adapt at least two
+	set of replcated patterns, as the later code may shift the point of
+	reference one pattern to the left */
 	switch ( i->type & imBPP) {
 	case imbpp1:
-		blt_bytes = (( x + w - 1) >> 3) - (x >> 3) + 1;
+		blt_bytes = (( x + w + 8 - 1) >> 3) - (x >> 3) + 1;
 		if ( blt_bytes < FILL_PATTERN_SIZE ) blt_bytes = FILL_PATTERN_SIZE;
 		break;
 	case imbpp4:
-		blt_bytes = (( x + w - 1) >> 1) - (x >> 1) + 1;
+		blt_bytes = (( x + w + 8 - 1) >> 1) - (x >> 1) + 1;
 		if ( blt_bytes < FILL_PATTERN_SIZE / 2 ) blt_bytes = FILL_PATTERN_SIZE / 2;
 		break;
 	default:
-		blt_bytes = w * pixSize;
+		blt_bytes = (w + 8) * pixSize;
 		if ( blt_bytes < FILL_PATTERN_SIZE * pixSize ) blt_bytes = FILL_PATTERN_SIZE * pixSize;
 	}
 	blt_bytes *= FILL_PATTERN_SIZE;
