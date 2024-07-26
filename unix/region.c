@@ -399,10 +399,10 @@ apc_region_copy_rects( Handle self)
 		return NULL;
 
 	ret-> n_boxes = region-> numRects;
-	src = region->rects;
+	src = region->rects + region->numRects - 1;
 	dst = ret-> boxes;
 	aperture = pAPERTURE;
-	for ( i = 0; i < ret->n_boxes; i++, src++, dst++) {
+	for ( i = 0; i < ret->n_boxes; i++, src--, dst++) {
 		dst-> x = src-> x1;
 		dst-> y = aperture - src-> y2;
 		dst-> width  = src-> x2 - src->x1;

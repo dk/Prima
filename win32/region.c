@@ -302,10 +302,10 @@ apc_region_copy_rects( Handle self)
 		return NULL;
 
 	ret-> n_boxes = rgndata->rdh. nCount;
-	src = (RECT*) &(rgndata->Buffer);
+	src = (RECT*) &(rgndata->Buffer) + ret->n_boxes - 1;
 	dst = ret-> boxes;
 	aperture = APERTURE;
-	for ( i = 0; i < ret->n_boxes; i++, src++, dst++) {
+	for ( i = 0; i < ret->n_boxes; i++, src--, dst++) {
 		dst-> x = src-> left;
 		dst-> y = aperture - src-> bottom;
 		dst-> width  = src-> right - src->left;

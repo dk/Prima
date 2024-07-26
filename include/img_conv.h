@@ -362,6 +362,13 @@ extern NPolyPolyline* img_polyline2patterns(
 /* regions */
 typedef Bool RegionCallbackFunc( int x, int y, int w, int h, void * param);
 
+typedef struct {
+	PRegionRec region;
+	int y;
+	unsigned int null_index, head, current;
+	unsigned int list[1];
+} RegionScanlineIterator, *PRegionScanlineIterator;
+
 extern Box img_region_box(PRegionRec region);
 #define img_region_new(sz) img_region_alloc(NULL,sz)
 extern PRegionRec img_region_alloc(PRegionRec old_region, int n_size);
@@ -375,6 +382,10 @@ extern Bool img_point_in_region( int x, int y, PRegionRec region);
 extern PRegionRec img_region_polygon( Point *pts, int count, int rule);
 extern PRegionRec img_region_mask( Handle mask);
 extern void img_region_offset( PRegionRec region, int dx, int dy);
+extern void img_region_sort( PRegionRec region );
+extern PRegionScanlineIterator img_region_iterate_scanline( PRegionRec region );
+extern Bool img_region_next_scanline(PRegionScanlineIterator i);
+extern void img_region_fill_scanline_map(PRegionScanlineIterator i, Byte *map, int map_offset, int map_width);
 
 typedef struct {
 	unsigned long size;

@@ -205,6 +205,139 @@ img_region_offset( PRegionRec region, int dx, int dy)
 	}
 }
 
+static int
+region_cmp( const void * a, const void * b)
+{
+	if ( ((PBox)a)->y > ((PBox)b)->y)
+		return 1;
+	else if ( ((PBox)a)->y < ((PBox)b)->y)
+		return -1;
+	if ( ((PBox)a)->x > ((PBox)b)->x)
+		return 1;
+	else if ( ((PBox)a)->x < ((PBox)b)->x)
+		return -1;
+	else
+		return 0;
+}
+
+void
+img_region_sort( PRegionRec region )
+{
+	if ( region->flags & rgnSorted ) 
+		return;
+	qsort( region-> boxes, region-> n_boxes, sizeof(Box), region_cmp);
+	region->flags |= rgnSorted;
+}
+
+/*
+In the list, each entry is 2 indexes to prev and next box that cross the current scanline.
+Each new scanline updates the list by rearranging these indexes
+*/
+PRegionScanlineIterator
+img_region_iterate_scanline( PRegionRec region )
+{
+	PRegionScanlineIterator ret;
+
+	if ( region == NULL || region->n_boxes == 0 )
+		return NULL;
+
+	if ( !( ret = malloc( sizeof(RegionScanlineIterator) + sizeof(unsigned int) * 2 * region->n_boxes))) {
+		warn("no memory");
+		return NULL;
+	}
+
+	ret->region     = region;
+	ret->y          = region->boxes[0].y - 1;
+	ret->null_index = region->n_boxes;
+	ret->head       = ret->null_index;
+	ret->current    = 0;
+
+	img_region_sort(region);
+	DEBUG("ITER %d FROM %d\n", region->n_boxes, ret->y);
+
+	return ret;
+}
+
+Bool
+img_region_next_scanline(PRegionScanlineIterator i)
+{
+	PRegionRec r  = i->region;
+	int     oy = i->y, ny = i->y + 1;
+	unsigned int next;
+
+	DEBUG("NEXT FROM: %d->%d @ %d\n", oy, ny, i->current);
+
+	/* advance the boxes in the linked list, remove if needed */
+	next = i->head;
+	while ( next != i->null_index ) {
+		Box *b = r->boxes + next;
+		if ( b->y + b->height - 1 == oy ) {
+			/* leave old box */
+			unsigned int j    = next * 2;
+			unsigned int prev = i->list[j];
+			DEBUG("OLD BOX[%d] -> %d\n", next, i->list[j+1]);
+			next = i->list[j+1];
+			if ( prev == i-> null_index )
+				i->head = next;
+			else
+				i->list[prev * 2 + 1] = next;
+			if ( next != i-> null_index )
+				i->list[j] = prev;
+		} else
+			next = i->list[ next * 2 + 1 ];
+	}
+
+	/* scan for new boxes to enter the linked list */
+	while ( 1 ) {
+		Box * b;
+		if ( i->current >= r->n_boxes ) {
+			if ( i->head == i->null_index ) {
+				DEBUG("STOP\n");
+				return false;
+			}
+			i->y++;
+			DEBUG("EOL2 > %d\n", i->y+1);
+			return true;
+		}
+
+		b = r->boxes + i->current;
+		if ( b->y == ny ) {
+			/* enter new box - inverse sorted by X */
+			unsigned int j = i->current * 2;
+			i->list[j  ] = i->null_index; /* prev */
+			i->list[j+1] = i->head;       /* next */
+			i->head      = i->current;
+			DEBUG("NEW BOX[%d]\n", i->current);
+		} else if ( b->y > oy ) {
+			i->y++;
+			DEBUG("EOL > %d, curr=%d\n", i->y, i->current);
+			return true;
+		}
+		i->current++;
+		b++;
+		DEBUG("CURR %d @ %d\n", i->current, b->y);
+	}
+}
+
+void
+img_region_fill_scanline_map(PRegionScanlineIterator i, Byte *map, int map_offset, int map_width)
+{
+	unsigned int ptr = i->head;
+
+	bzero(map, map_width);
+	while ( ptr != i-> null_index ) {
+		Box *b = i->region->boxes + ptr;
+		int l  = b->x - map_offset;
+		int r  = l + b->width + 1;
+		if ( l < map_width && r > 0 ) {
+			if ( l < 0 ) l = 0;
+			if ( r > map_width ) r = map_width + 1;
+			if ( r - l > 1 ) memset( map + l, 0xff, r - l - 1);
+		}
+		ptr = i->list[ ptr * 2 + 1 ];
+	}
+}
+
 #ifndef MAX
 #define MAX(a,b) (((a) > (b)) ? (a) : (b))
 #endif

@@ -270,7 +270,7 @@ aafill_init( NPoint *pts, int n_pts, int rule, Rect clip, PAAFillRec ctx)
 	ctx->y_curr                = aa_extents.bottom;
 	ctx->y_lim                 = ctx->y_curr + AAY - 1;
 	ctx->y_scan                = ctx->y_curr;
-	ctx->y                     = ctx->y_scan >> AAY_SHIFT;
+	ctx->y                     = (ctx->y_scan >> AAY_SHIFT) - 1;
 	bzero( &ctx->scanline_ptr, sizeof(ctx->scanline_ptr));
 	ctx->scanline_ptr.block    = ctx->block;
 	ctx->scanline_ptr.point[0] = ctx->block->pts;
@@ -290,13 +290,10 @@ aafill_next_scanline( PAAFillRec ctx, Byte *map)
 	if (ctx->curr_count == 0 && !ctx->map_is_dirty )
 		return false;
 
-	if ( ctx->first_call )
-		ctx-> first_call = false;
-	else
-		ctx->y++;
+	ctx->y++;
 
 	ctx->map_is_dirty = false;
-	bzero( map, ctx->maplen );
+	if ( map ) bzero( map, ctx->maplen );
 	if ( ctx->curr_point != ctx->block->pts)
 		bzero( ctx->scanline_ptr.point, sizeof(ctx->scanline_ptr.point));
 
@@ -314,7 +311,7 @@ aafill_next_scanline( PAAFillRec ctx, Byte *map)
 		ctx->scanline_ptr.point[scanline] = p;
 		DEBUG("SET.%d(%d-0.%d) @ %d\n", (int)(p - ctx->block->pts), p->x, p->y, ctx->saved_x);
 
-		map[ ctx-> saved_x ] = 1;
+		if ( map ) map[ ctx-> saved_x ] = 1;
 		ctx-> saved_x = -1;
 
 		ctx-> map_is_dirty = true;
@@ -356,7 +353,8 @@ aafill_next_scanline( PAAFillRec ctx, Byte *map)
 		if ( p-> y != ctx->y_scan ) {
 			register int scanline;
 			if ( p-> y > ctx->y_lim ) {
-				fill( ctx->x, ctx->y_curr, map, ctx->maplen, &ctx->scanline_ptr);
+				if ( map )
+					fill( ctx->x, ctx->y_curr, map, ctx->maplen, &ctx->scanline_ptr);
 				ctx->saved_x = x;
 				return true;
 			}
@@ -367,7 +365,7 @@ aafill_next_scanline( PAAFillRec ctx, Byte *map)
 		}
 
 		DEBUG("SET.%d(%d-%d.%d) @ %d\n", (int)(p - ctx->block->pts), p->x, !delta, p->y, x);
-		if ( x >= 0 && x < ctx->maplen ) map[x] = 1;
+		if ( map && x >= 0 && x < ctx->maplen ) map[x] = 1;
 		ctx->map_is_dirty = true;
 		ctx->curr_point++;
 		ctx->curr_count--;
@@ -375,7 +373,8 @@ aafill_next_scanline( PAAFillRec ctx, Byte *map)
 
 	if ( ctx->map_is_dirty ) {
 		ctx->map_is_dirty = false;
-		fill( ctx->x, ctx->y_curr, map, ctx->maplen, &ctx->scanline_ptr);
+		if ( map )
+			fill( ctx->x, ctx->y_curr, map, ctx->maplen, &ctx->scanline_ptr);
 		return true;
 	}
 
@@ -406,7 +405,7 @@ aafill_inplace( Handle self, NPoint *pts, int n_pts, int rule)
 		case -1: return false;
 		case  0: return true ;
 	}
-	map = PImage(self)->data + PImage(self)->lineSize * aa.y + aa.x;
+	map = PImage(self)->data + PImage(self)->lineSize * (aa.y + 1) + aa.x;
 
 	while ( aafill_next_scanline( &aa, map)) 
 		map += PImage(self)->lineSize;
@@ -751,6 +750,19 @@ dRENDER(render_mixdown)
 	}
 }
 
+static void
+advance_pointers(PIcon i, PRenderContext render)
+{
+	if ( render->color_target == render->color_dst ) {
+		render->color_dst    += i->lineSize;
+		render->color_target += i->lineSize;
+	}
+	if ( render->icon_target && render->icon_target == render->icon_dst ) {
+		render->icon_target += i->maskLine;
+		render->icon_dst    += i->maskLine;
+	}
+}
+
 Bool
 img_aafill( Handle self, NPoint *pts, int n_pts, int rule, PImgPaintContext ctx)
 {
@@ -761,7 +773,9 @@ img_aafill( Handle self, NPoint *pts, int n_pts, int rule, PImgPaintContext ctx)
 	int rop, n_renders = 0;
 	RenderContext render;
 	PRenderFunc pipeline[10];
-	Byte *arena = NULL;
+	Byte *arena = NULL, *rgn_map = NULL;
+	PRegionScanlineIterator rgn = NULL;
+	PBitBltProc rgn_puncher = NULL;
 
 	if ( ctx == NULL )
 		return aafill_inplace(self, pts, n_pts, rule);
@@ -836,28 +850,36 @@ img_aafill( Handle self, NPoint *pts, int n_pts, int rule, PImgPaintContext ctx)
 		case  0: return true ;
 	}
 
+	if ( ctx->region != NULL ) {
+		if (( rgn = img_region_iterate_scanline( ctx->region )) == NULL)
+			goto EXIT;
+		rgn_puncher = img_find_blt_proc(ropAndPut);
+	}
+
 	rop                 = ctx->rop & ropPorterDuffMask;
 	if ( !img_find_blend_proc( rop, &render.blend1, &render.blend2)) {
 		warn("img_aafill: blend not supported");
 		goto EXIT;
 	}
 	render.x            = aa.x;
+	render.y            = aa.y;
 	render.pixels       = aa.maplen;
 	render.bytes        = render.pixels * render.bpp;
-	render.color_target = i->data + i->lineSize * aa.y + aa.x * render.bpp;
+	render.color_target = i->data + i->lineSize * (aa.y + 1) + aa.x * render.bpp;
 	render.src_alpha    = (ctx->rop & ropSrcAlpha) ? ((ctx->rop >> ropSrcAlphaShift) & 0xff) : 0xff;
 	render.dst_alpha    = (ctx->rop & ropDstAlpha) ? ((ctx->rop >> ropDstAlphaShift) & 0xff) : 0xff;
 	if ( is_icon )
-		render.icon_target = i->mask + i->maskLine * aa.y + aa.x;
+		render.icon_target = i->mask + i->maskLine * (aa.y + 1) + aa.x;
 
 	{
 #define ROUND_MEM(x) sizeof(void*) * ((x / sizeof(void*)) + ((x % sizeof(void*)) ? 1 : 0))
-		unsigned int sz_color, sz_icon, sz_pat, sz_tile;
+		unsigned int sz_color, sz_icon, sz_pat, sz_tile, sz_rgn;
 		int need_extra_mask = (is_icon && render.bpp == 3) ? 1 : 0;
 		Byte *last;
 		sz_color = ROUND_MEM(render.bytes);
 		sz_icon  = is_icon ? ROUND_MEM(render.pixels) : 0;
 		sz_pat   = pattern ? ROUND_MEM(FILL_PATTERN_SIZE * FILL_PATTERN_SIZE * render.bpp * 2) : 0;
+		sz_rgn   = ctx->region ? render.pixels : 0;
 		sz_tile  = (
 				ctx->tile != NULL_HANDLE && (
 					(tile_is_icon && (tile->maskType == 1)) ||
@@ -870,6 +892,7 @@ img_aafill( Handle self, NPoint *pts, int n_pts, int rule, PImgPaintContext ctx)
 			sz_color * 4 +
 			sz_icon  * (2 + 2 * need_extra_mask) +
 			sz_pat +
+			sz_rgn +
 			sz_tile
 		))) {
 			warn("not enough memory");
@@ -885,6 +908,8 @@ img_aafill( Handle self, NPoint *pts, int n_pts, int rule, PImgPaintContext ctx)
 		}
 		if ( sz_pat > 0 )
 			last = (render.color_pat = last) + sz_pat;
+		if ( sz_rgn > 0 )
+			last = (rgn_map = last) + sz_pat;
 		if ( sz_tile > 0 )
 			last = (render.tile_buffer = last) + sz_tile;
 
@@ -989,8 +1014,37 @@ img_aafill( Handle self, NPoint *pts, int n_pts, int rule, PImgPaintContext ctx)
 	PUSH(render_mixdown);
 #undef PUSH
 
-	while ( aafill_next_scanline( &aa, render.icon_alpha)) {
+	if ( rgn ) {
+		while ( rgn->y < aa.y ) {
+			if ( !img_region_next_scanline(rgn)) {
+				ok = true;
+				goto EXIT;
+			}
+		}
+	}
+
+	while ( 1 ) {
 		int i;
+		Bool fast_skip = false;
+		if ( rgn ) {
+			if (rgn->y <= aa.y ) {
+				if (!img_region_next_scanline(rgn))
+					break;
+				img_region_fill_scanline_map(rgn, rgn_map, render.x, render.pixels);
+				DEBUG_MIXDOWN('R', rgn_map, render.pixels);
+				if (memchr(rgn_map, 0xff, render.pixels) == NULL)
+					fast_skip = true;
+			} else
+				fast_skip = true;
+		}
+		if ( !aafill_next_scanline( &aa, fast_skip ? NULL : render.icon_alpha))
+			break;
+		if ( fast_skip ) {
+			advance_pointers((PIcon)self, &render);
+			continue;
+		}
+		if ( rgn )
+			rgn_puncher(rgn_map, render.icon_alpha, render.pixels);
 		render.y = aa.y;
 		for ( i = 0; i < n_renders; i++)
 			pipeline[i]((PIcon)self,ctx,&render);
@@ -1000,6 +1054,7 @@ img_aafill( Handle self, NPoint *pts, int n_pts, int rule, PImgPaintContext ctx)
 
 EXIT:
 	if ( arena ) free(arena);
+	if ( rgn )   free(rgn);
 	aafill_done(&aa);
 	return ok;
 }

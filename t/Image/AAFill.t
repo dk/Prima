@@ -178,8 +178,36 @@ sub test_target
 	check_both( $z, "fpX+8.noopaque"   , "  ++", "  ++", alpha =>   0, %fill);
 }
 
+sub test_region
+{
+	$i = Prima::Image->create(
+		size      => [6,6],
+		type      => im::Byte,
+	);
+	$i->region( Prima::Region->new( box => [
+		-5,-2,10,2,
+		-5,-1,10,2,
+		-5,2,10,1,
+		1,4,1,1,
+		3,4,10,3,
+	]));
+	$i->color(0xffffff);
+	$i->antialias(1);
+	$i->fillpoly([0,0,0,6,6,6,6,0]);
+	is_pict($i, "region",
+		"###   ".
+		"# #   ".
+		"######".
+		"     #".
+		"######".
+		"     #"
+	);
+}
+
 for my $type ( im::Byte, im::RGB ) {
 	test_target($type);
 }
+
+test_region;
 
 done_testing;

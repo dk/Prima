@@ -14,7 +14,7 @@ extern "C" {
 #define var (( PRegion) self)
 
 static Box*
-rgn_rect( HV * profile, Bool is_box, int * n_boxes )
+rgn_rect( HV * profile, Bool is_box, unsigned int * n_boxes )
 {
 	char *t;
 	SV ** box_entry;
@@ -25,7 +25,7 @@ rgn_rect( HV * profile, Bool is_box, int * n_boxes )
 	if (( boxes = (Box*) prima_read_array(
 		*box_entry, "Region::new", 'i',
 		4, 1, -1,
-		n_boxes, NULL
+		(int*) n_boxes, NULL
 	)) == NULL) {
 		*n_boxes = 0;
 		return NULL;
@@ -101,6 +101,7 @@ Region_init( Handle self, HV * profile)
 
 	inherited-> init( self, profile);
 
+	r.flags = 0;
 	if ( pexist(rect)) {
 		r.boxes = rgn_rect(profile, 0, &r.n_boxes);
 	} else if (pexist(box)) {
@@ -224,6 +225,7 @@ Region_update_change( Handle self, Bool disown)
 		}
 		opt_clear( optDirtyRegion);
 		var->rects = apc_region_copy_rects(self);
+		img_region_sort(var->rects);
 	}
 	if ( disown && var->rects ) {
 		PRegionRec ret = var->rects;

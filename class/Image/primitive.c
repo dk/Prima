@@ -473,27 +473,23 @@ Image_fillpoly( Handle self, SV * points)
 {
 	if ( opt_InPaint)
 		return inherited fillpoly(self, points);
-
-	if (var-> antialias ) {
+	else if (var-> antialias ) {
+		int n, mode;
+		NPoint *p;
 		ImgPaintContext ctx;
 		prepare_fill_context(self, &ctx);
-		if (ctx.region == NULL) {
-			int n, mode;
-			NPoint *p;
-			if ((( p = (NPoint*) prima_read_array( points, "fillpoly", 'd', 2, 2, -1, &n, NULL))) == NULL)
-				return false;
-			mode = ( my-> fillMode == Drawable_fillMode) ?
-				apc_gp_get_fill_mode(self) :
-				my-> get_fillMode(self);
-			if ( ctx.rop == ropDefault || ctx.rop == ropCopyPut )
-				ctx.rop = ropSrcOver | ropSrcAlpha | ( var->alpha << ropSrcAlphaShift );
-			if ( !prima_matrix_is_identity(VAR_MATRIX))
-				prima_matrix_apply2(VAR_MATRIX, p, p, n);
-			return img_aafill( self, p, n, mode, &ctx);
-		}
-	}
-
-	return Image_draw_primitive( self, 1, "sS", "line", points );
+		if ((( p = (NPoint*) prima_read_array( points, "fillpoly", 'd', 2, 2, -1, &n, NULL))) == NULL)
+			return false;
+		mode = ( my-> fillMode == Drawable_fillMode) ?
+			apc_gp_get_fill_mode(self) :
+			my-> get_fillMode(self);
+		if ( ctx.rop == ropDefault || ctx.rop == ropCopyPut )
+			ctx.rop = ropSrcOver | ropSrcAlpha | ( var->alpha << ropSrcAlphaShift );
+		if ( !prima_matrix_is_identity(VAR_MATRIX))
+			prima_matrix_apply2(VAR_MATRIX, p, p, n);
+		return img_aafill( self, p, n, mode, &ctx);
+	} else
+		return Image_draw_primitive( self, 1, "sS", "line", points );
 }
 
 Bool
