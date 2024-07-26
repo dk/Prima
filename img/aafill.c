@@ -763,6 +763,47 @@ advance_pointers(PIcon i, PRenderContext render)
 	}
 }
 
+static Bool
+conversion_needed( Handle self, NPoint *pts, int n_pts, int rule, PImgPaintContext ctx, Bool *ok)
+{
+	PIcon i = (PIcon) self;
+	int bpp = ( i->type & imGrayScale) ? imByte : imRGB;
+	Bool is_icon = kind_of(self, CIcon);
+	ImagePreserveTypeRec p;
+
+	if (i-> type != bpp || ( is_icon && i->maskType != imbpp8 )) {
+		i->self-> begin_preserve_type( self, &p );
+		if ( i->type != bpp ) {
+			img_resample_colors( self, bpp, ctx );
+			i->self-> set_type( self, bpp );
+		}
+		if ( is_icon && i->maskType != imbpp8 )
+			i->self->set_maskType( self, imbpp8 );
+		*ok = img_aafill( self, pts, n_pts, rule, ctx);
+		i-> self-> end_preserve_type( self, &p );
+		return true;
+	}
+
+	if ( ctx->tile != NULL_HANDLE ) {
+		PIcon tile = (PIcon) ctx->tile;
+		Bool tile_is_icon = kind_of( ctx->tile, CIcon );
+
+		/* can only do mono non-icon tiles or those that match bpp and type */
+		if (
+			tile->type != i->type &&
+			(tile_is_icon || tile->type != imBW)
+		) {
+			CImage(ctx->tile)-> begin_preserve_type( ctx->tile, &p );
+			CImage(ctx->tile)-> set_type( ctx->tile, i->type );
+			*ok = img_aafill( self, pts, n_pts, rule, ctx);
+			CImage(ctx->tile)-> end_preserve_type( ctx->tile, &p );
+			return true;
+		}
+	}
+
+	return false;
+}
+
 Bool
 img_aafill( Handle self, NPoint *pts, int n_pts, int rule, PImgPaintContext ctx)
 {
@@ -781,25 +822,10 @@ img_aafill( Handle self, NPoint *pts, int n_pts, int rule, PImgPaintContext ctx)
 		return aafill_inplace(self, pts, n_pts, rule);
 
 	/* align types and geometry - can only operate over imByte and imRGB and 8-bit icons */
-	is_icon = kind_of(self, CIcon);
-	{
-		int bpp = ( i->type & imGrayScale) ? imByte : imRGB;
-		if (i-> type != bpp || ( is_icon && i->maskType != imbpp8 )) {
-			Bool ok;
-			ImagePreserveTypeRec p;
+	if ( conversion_needed(self, pts, n_pts, rule, ctx, &ok))
+		return ok;
 
-			i->self-> begin_preserve_type( self, &p );
-			if ( i->type != bpp ) {
-				img_resample_colors( self, bpp, ctx );
-				i->self-> set_type( self, bpp );
-			}
-			if ( is_icon && i->maskType != imbpp8 )
-				i->self->set_maskType( self, imbpp8 );
-			ok = img_aafill( self, pts, n_pts, rule, ctx);
-			i-> self-> end_preserve_type( self, &p );
-			return ok;
-		}
-	}
+	is_icon = kind_of(self, CIcon);
 
 	bzero(&render, sizeof(render));
 	render.bpp = ( i->type & imBPP ) / 8;
@@ -824,22 +850,6 @@ img_aafill( Handle self, NPoint *pts, int n_pts, int rule, PImgPaintContext ctx)
 		ctx->patternOffset.y %= PImage(ctx->tile)->h;
 		ctx->patternOffset.x %= PImage(ctx->tile)->w;
 		dual_pattern = pattern = false;
-
-		/* can only do mono non-icon tiles or those that match bpp and type */
-		if (
-			tile->type != i->type &&
-			(tile_is_icon || tile->type != imBW)
-		) {
-			Bool ok;
-			ImagePreserveTypeRec p;
-
-			CImage(ctx->tile)-> begin_preserve_type( ctx->tile, &p );
-			CImage(ctx->tile)-> set_type( ctx->tile, i->type );
-			ok = img_aafill( self, pts, n_pts, rule, ctx);
-			CImage(ctx->tile)-> end_preserve_type( ctx->tile, &p );
-
-			return ok;
-		}
 	}
 
 	clip.left  = clip.bottom = 0;

@@ -184,6 +184,7 @@ sub test_region
 		size      => [6,6],
 		type      => im::Byte,
 	);
+	$i->clear;
 	$i->region( Prima::Region->new( box => [
 		-5,-2,10,2,
 		-5,-1,10,2,
@@ -191,16 +192,15 @@ sub test_region
 		1,4,1,1,
 		3,4,10,3,
 	]));
-	$i->color(0xffffff);
 	$i->antialias(1);
 	$i->fillpoly([0,0,0,6,6,6,6,0]);
 	is_pict($i, "region",
-		"###   ".
-		"# #   ".
-		"######".
-		"     #".
-		"######".
-		"     #"
+		"   ###".
+		" # ###".
+		"      ".
+		"##### ".
+		"      ".
+		"##### "
 	);
 }
 
