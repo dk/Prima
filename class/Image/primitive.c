@@ -4,6 +4,7 @@
 #include <limits.h>
 #include <math.h>
 #include "apricot.h"
+#include "Region.h"
 #include "Image.h"
 #include "Image_private.h"
 #include "img_conv.h"
@@ -327,7 +328,7 @@ prepare_line_context( Handle self, unsigned char * lp, ImgPaintContext * ctx)
 }
 
 Bool
-Image_draw_primitive( Handle self, Bool fill, char * method, ...)
+Image_stroke_primitive( Handle self, char * method, ...)
 {
 	Bool r;
 	SV * ret;
@@ -338,16 +339,102 @@ Image_draw_primitive( Handle self, Bool fill, char * method, ...)
 	SAVETMPS;
 	strcpy(format, "<");
 	strncat(format, method, 255);
-	ret = call_perl_indirect( self, 
-		var->antialias ?
-			(fill ? "fill_imgaa_primitive" : "stroke_imgaa_primitive") :
-			(fill ? "fill_img_primitive"   : "stroke_img_primitive"),
+	ret = call_perl_indirect( self,
+		var->antialias ? "stroke_imgaa_primitive" : "stroke_img_primitive",
 		format, true, false, args);
 	va_end( args);
 	r = ret ? SvTRUE( ret) : false;
 	FREETMPS;
 	LEAVE;
 	return r;
+}
+
+static Bool
+fill_noaapoly( Handle self, int n_pts, NPoint *pts)
+{
+	Bool ok = false;
+	int mode;
+	PRegionRec rgn = NULL;
+	ImgPaintContext ctx;
+	Point i_pts_buf[1024];
+	semistatic_t pi_pts_buf;
+
+	if ( n_pts < 4 )
+		return false;
+
+	mode = ( my-> fillMode == Drawable_fillMode) ?
+		apc_gp_get_fill_mode(self) :
+		my-> get_fillMode(self);
+	prepare_fill_context(self, &ctx);
+
+	semistatic_init(&pi_pts_buf, &i_pts_buf, sizeof(Point), 1024);
+	if ( !semistatic_expand(&pi_pts_buf, n_pts)) {
+		warn("no memory");
+		goto EXIT;
+	}
+
+	prima_matrix_apply2_to_int(VAR_MATRIX, pts, (Point*)pi_pts_buf.heap, n_pts);
+	if ( !( rgn = img_region_polygon( (Point*)pi_pts_buf.heap, n_pts, mode)))
+		goto EXIT;
+
+	if ( ctx.region != NULL ) {
+		Bool is_empty;
+		Handle rgn1 = Region_create_from_data( NULL_HANDLE, rgn );
+		Handle rgn2 = Region_create_from_data( NULL_HANDLE, ctx.region );
+
+		free(rgn);
+		Region_combine(rgn1, rgn2, rgnopIntersect);
+
+		is_empty = apc_region_is_empty(rgn1);
+		rgn = is_empty ? NULL : apc_region_copy_rects(rgn1);
+		Object_destroy(rgn1);
+		Object_destroy(rgn2);
+		if ( is_empty ) {
+			ok = true;
+			goto EXIT;
+		}
+	}
+	ctx.region = rgn;
+	if ( rgn->n_boxes > 0 ) {
+		Box box = img_region_box(ctx.region);
+		ok = img_bar( self, box.x, box.y, box.width, box.height, &ctx);
+	} else
+		ok = true;
+EXIT:
+	if ( rgn ) free( rgn );
+	semistatic_done(&pi_pts_buf);
+	return ok;
+}
+
+static Bool
+fill_aapoly( Handle self, int n_pts, NPoint *pts)
+{
+	int mode;
+	ImgPaintContext ctx;
+	prepare_fill_context(self, &ctx);
+	mode = ( my-> fillMode == Drawable_fillMode) ?
+		apc_gp_get_fill_mode(self) :
+		my-> get_fillMode(self);
+	if ( ctx.rop == ropDefault || ctx.rop == ropCopyPut )
+		ctx.rop = ropSrcOver | ropSrcAlpha | ( var->alpha << ropSrcAlphaShift );
+	if ( !prima_matrix_is_identity(VAR_MATRIX))
+		prima_matrix_apply2(VAR_MATRIX, pts, pts, n_pts);
+	return img_aafill( self, pts, n_pts, mode, &ctx);
+}
+
+Bool
+Image_fill_poly( Handle self, int n_pts, NPoint *pts)
+{
+	return var->antialias ?
+		fill_aapoly( self, n_pts, pts) :
+		fill_noaapoly( self, n_pts, pts);
+}
+
+Bool
+Image_fill_rect( Handle self, double x1, double y1, double x2, double y2)
+{
+	NPoint p[4] = {{x1,y1},{x2,y1},{x2,y2},{x1,y2}};
+	return Image_fill_poly( self, 4, p);
 }
 
 Bool
@@ -358,11 +445,11 @@ Image_bar( Handle self, double x1, double y1, double x2, double y2)
 	NRect nrect = {x1,y1,x2,y2};
 	NPoint npoly[4];
 
-	if (opt_InPaint) {
+	if (opt_InPaint)
 		return inherited bar( self, x1, y1, x2, y2);
-	} else if ( var-> antialias || !prima_matrix_is_square_rectangular( VAR_MATRIX, &nrect, npoly)) {
-		ok = Image_draw_primitive( self, 1, "snnnn", "rectangle", x1, y1, x2, y2);
-	} else {
+	else if ( var-> antialias || !prima_matrix_is_square_rectangular( VAR_MATRIX, &nrect, npoly))
+		ok = Image_fill_rect( self, x1, y1, x2, y2);
+	else {
 		Rect r;
 		prima_array_convert( 4, &nrect, 'd', &r, 'i');
 		prepare_fill_context(self, &ctx);
@@ -398,14 +485,14 @@ Image_bars( Handle self, SV * rects)
 
 	for ( i = 0, r = p; i < count; i++, r++) {
 		NRect nrect = *r;
-		if ( var-> antialias || !prima_matrix_is_square_rectangular( VAR_MATRIX, &nrect, npoly)) {
-			ok = Image_draw_primitive( self, 1, "snnnn", "rectangle",
+		if ( var-> antialias || !prima_matrix_is_square_rectangular( VAR_MATRIX, &nrect, npoly))
+			ok = Image_fill_rect( self,
 				r->left,
 				r->bottom,
 				r->right,
 				r->top
 			);
-		} else {
+		else {
 			Rect r;
 			ImgPaintContext ctx2;
 			if ( !got_ctx ) {
@@ -442,7 +529,7 @@ Image_clear(Handle self, double x1, double y1, double x2, double y2)
 		if ( !my->graphic_context_push(self)) return false;
 		apc_gp_set_color(self, apc_gp_get_back_color(self));
 		apc_gp_set_fill_pattern(self, fillPatterns[fpSolid]);
-		ok = Image_draw_primitive( self, 1, "snnnn", "rectangle", x1, y1, x2, y2);
+		ok = Image_fill_rect( self, x1, y1, x2, y2);
 		my->graphic_context_pop(self);
 	} else {
 		Rect r;
@@ -473,23 +560,16 @@ Image_fillpoly( Handle self, SV * points)
 {
 	if ( opt_InPaint)
 		return inherited fillpoly(self, points);
-	else if (var-> antialias ) {
-		int n, mode;
+	else {
+		int n;
+		Bool ok;
 		NPoint *p;
-		ImgPaintContext ctx;
-		prepare_fill_context(self, &ctx);
 		if ((( p = (NPoint*) prima_read_array( points, "fillpoly", 'd', 2, 2, -1, &n, NULL))) == NULL)
 			return false;
-		mode = ( my-> fillMode == Drawable_fillMode) ?
-			apc_gp_get_fill_mode(self) :
-			my-> get_fillMode(self);
-		if ( ctx.rop == ropDefault || ctx.rop == ropCopyPut )
-			ctx.rop = ropSrcOver | ropSrcAlpha | ( var->alpha << ropSrcAlphaShift );
-		if ( !prima_matrix_is_identity(VAR_MATRIX))
-			prima_matrix_apply2(VAR_MATRIX, p, p, n);
-		return img_aafill( self, p, n, mode, &ctx);
-	} else
-		return Image_draw_primitive( self, 1, "sS", "line", points );
+		ok = Image_fill_poly( self, n, p);
+		free(p);
+		return ok;
+	}
 }
 
 Bool
@@ -526,7 +606,7 @@ Image_line(Handle self, double x1, double y1, double x2, double y2)
 		prepare_line_context( self, lp, &ctx);
 		return img_polyline(self, 2, poly, &ctx);
 	} else {
-		return Image_draw_primitive( self, 0, "snnnn", "line", x1, y1, x2, y2);
+		return Image_stroke_primitive( self, "snnnn", "line", x1, y1, x2, y2);
 	}
 }
 
@@ -554,7 +634,7 @@ Image_lines( Handle self, SV * points)
 		if (do_free) free(lines);
 		return ok;
 	} else {
-		return Image_draw_primitive( self, 0, "sS", "lines", points );
+		return Image_stroke_primitive( self, "sS", "lines", points );
 	}
 }
 
@@ -584,7 +664,7 @@ Image_polyline( Handle self, SV * points)
 		free( lines );
 		return ok;
 	} else {
-		return Image_draw_primitive( self, 0, "sS", "line", points );
+		return Image_stroke_primitive( self, "sS", "line", points );
 	}
 }
 
@@ -603,7 +683,7 @@ Image_rectangle(Handle self, double x1, double y1, double x2, double y2)
 		prepare_line_context( self, lp, &ctx);
 		return img_polyline(self, 5, dst, &ctx);
 	} else {
-		return Image_draw_primitive( self, 0, "snnnn", "rectangle", x1, y1, x2, y2);
+		return Image_stroke_primitive( self, "snnnn", "rectangle", x1, y1, x2, y2);
 	}
 }
 

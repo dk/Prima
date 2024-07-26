@@ -30,7 +30,13 @@ Color
 Image_premultiply_color( Handle self, int rop, Color color);
 
 Bool
-Image_draw_primitive( Handle self, Bool fill, char * method, ...);
+Image_stroke_primitive( Handle self, char * method, ...);
+
+Bool
+Image_fill_rect( Handle self, double x1, double y1, double x2, double y2);
+
+Bool
+Image_fill_poly( Handle self, int n_pts, NPoint *pts);
 
 SV*
 Application_fonts( Handle self, char * name, char * encoding);

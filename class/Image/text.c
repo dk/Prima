@@ -135,7 +135,7 @@ draw_line( Handle self, int y, int w, Matrix matrix, ImgPaintContext *ctx, Bool 
 		ImgPaintContext c = *ctx;
 		img_bar( self, poly[0].x, poly[0].y, w, poly[1].y - poly[0].y + 1, &c);
 	} else
-		Image_draw_primitive( self, 0, "siiii", "line", poly[0].x, poly[0].y, poly[1].x, poly[1].y);
+		Image_stroke_primitive( self, "siiii", "line", poly[0].x, poly[0].y, poly[1].x, poly[1].y);
 }
 
 static void
@@ -223,10 +223,8 @@ paint_background(
 		memset(c.pattern, 0xff, sizeof(FillPattern));
 		img_bar( self, o.x + p[1].x, o.y + p[1].y - dy, p[2].x - p[1].x + 1, p[2].y - p[1].y + 1, &c);
 	} else {
+		NPoint p2[4];
 		Matrix m;
-		SV * sv1  = prima_array_new(sizeof(Point) * 4);
-		SV * sv2  = sv_2mortal( prima_array_tie(sv1, sizeof(p[0].x), "i"));
-		Point *p2 = (Point*) SvPV(sv1, PL_na);
 		p2[0].x = p[0].x;
 		p2[0].y = p[0].y - dy;
 		p2[1].x = p[1].x;
@@ -235,7 +233,7 @@ paint_background(
 		p2[2].y = p[3].y - dy;
 		p2[3].x = p[2].x;
 		p2[3].y = p[2].y - dy;
-		prima_matrix_apply2_int_to_int( matrix, p2, p2, 4);
+		prima_matrix_apply2( matrix, p2, p2, 4);
 		if ( !*gp_save) {
 			if ( !( *gp_save = my-> graphic_context_push(self)))
 				return;
@@ -248,7 +246,7 @@ paint_background(
 		my-> set_color(self, bc);
 		if ( monochrome || emulate_mono_alpha )
 			my-> set_antialias( self, false );
-		Image_draw_primitive( self, 1, "sS", "line", sv2 );
+		Image_fill_poly(self, 4, p2);
 		COPY_MATRIX( m, VAR_MATRIX );
 		apc_gp_set_text_matrix( self, VAR_MATRIX);
 	}
