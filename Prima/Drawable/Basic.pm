@@ -381,11 +381,7 @@ sub stroke_imgaa_primitive
 	my $lp = $self->linePattern;
 	return 1 if $lp eq lp::Null && $self->rop2 == rop::NoOper;
 
-	my $aa = $self->new_aa_surface;
-	return 0 unless $aa->can_aa;
-
 	my $path = $self->new_path( antialias => 1 );
-	$path->matrix( $self-> matrix );
 	$path->$request(@_);
 	$path = $path->widen(
 		linePattern => ( $lp eq lp::Null) ? lp::Solid : $lp
@@ -394,13 +390,8 @@ sub stroke_imgaa_primitive
 	return unless $self->graphic_context_push;
 	$self->fillPattern(fp::Solid);
 	$self->fillMode(fm::Winding | fm::Overlay);
-	$self->reset_matrix;
 	$self->color($self->backColor) if $lp eq lp::Null;
-	my $ok = 1;
-	for ($path->points(fill => 1)) {
-		$ok &= $aa->fillpoly($_);
-		last unless $ok;
-	}
+	my $ok = $path->fill;
 	$self->graphic_context_pop;
 	return $ok;
 }
