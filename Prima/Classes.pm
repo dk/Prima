@@ -895,13 +895,10 @@ sub profile_check_in
 	$self-> SUPER::profile_check_in( $p, $default);
 }
 
-sub arc          { shift->execute_img_primitive( stroke => arc     => @_ ) }
-sub chord        { shift->execute_img_primitive( stroke => chord   => @_ ) }
-sub ellipse      { shift->execute_img_primitive( stroke => ellipse => @_ ) }
-sub sector       { shift->execute_img_primitive( stroke => sector  => @_ ) }
-sub fill_chord   { shift->execute_img_primitive( fill   => chord   => @_ ) }
-sub fill_ellipse { shift->execute_img_primitive( fill   => ellipse => @_ ) }
-sub fill_sector  { shift->execute_img_primitive( fill   => sector  => @_ ) }
+sub arc          { shift->execute_img_primitive( arc     => @_ ) }
+sub chord        { shift->execute_img_primitive( chord   => @_ ) }
+sub ellipse      { shift->execute_img_primitive( ellipse => @_ ) }
+sub sector       { shift->execute_img_primitive( sector  => @_ ) }
 
 sub rangeLo      { return shift-> stats( is::RangeLo , @_); }
 sub rangeHi      { return shift-> stats( is::RangeHi , @_); }

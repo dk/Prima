@@ -374,14 +374,6 @@ sub stroke_img_primitive
 	return $ok;
 }
 
-sub fill_img_primitive
-{
-	my ( $self, $request, @p ) = @_;
-	my $path = $self->new_path;
-	$path->$request(@p);
-	return $path->fill;
-}
-
 sub stroke_imgaa_primitive
 {
 	my ( $self, $request ) = (shift, shift);
@@ -415,13 +407,13 @@ sub stroke_imgaa_primitive
 
 sub execute_img_primitive
 {
-	my ( $self, $act, $request ) = (shift, shift, shift);
+	my ( $self, $request ) = (shift, shift);
 	my $ps = $self->get_paint_state;
-	return $self->can($act . '_primitive')->($self, $request, @_) if $ps == ps::Enabled;
+	return $self->stroke_primitive($request, @_) if $ps == ps::Enabled;
 	return 1 if $ps == ps::Information;
 
-	my $suffix = ($act eq 'fill' || !$self->antialias) ? '' : 'aa';
-	$act .= '_img' . $suffix . '_primitive';
+	my $suffix = $self->antialias ? 'aa' : '';
+	my $act .= 'stroke_img' . $suffix . '_primitive';
 	return $self->$act($request, @_);
 }
 
@@ -458,21 +450,10 @@ sub stroke_primitive
 
 sub fill_primitive
 {
-	my ( $self, $request ) = (shift, shift);
+	my ( $self, $request, @p ) = @_;
 	my $path = $self->new_path;
-
-	return unless $self->graphic_context_push;
-	my $ok = 1;
-	$path->matrix( $self-> matrix );
-	$path->$request(@_);
-	$self-> matrix-> identity;
-	for ($path->points(fill => 1)) {
-		next if $self->fillpoly($_);
-		$ok = 0;
-		last;
-	}
-	$self->graphic_context_pop;
-	return $ok;
+	$path->$request(@p);
+	return $path->fill;
 }
 
 sub text_shape_out
