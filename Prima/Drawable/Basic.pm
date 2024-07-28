@@ -358,6 +358,7 @@ sub stroke_img_primitive
 	$self->fillPattern(fp::Solid);
 	$self->reset_matrix;
 	if ( $self-> rop2 == rop::CopyPut && $self->linePattern ne lp::Solid && $self->linePattern ne lp::Null ) {
+		my $c = $self->color;
 		$self->color($self->backColor);
 		my $path3 = $path->widen( linePattern => lp::Solid );
 		my $region3 = $path3->region;
@@ -365,6 +366,7 @@ sub stroke_img_primitive
 		$region3->combine($region2, rgnop::Intersect) if $region2;
 		$self->region($region3);
 		$ok = $self->bar(@rect);
+		$self->color($c);
 	}
 
 	$region1->combine($region2, rgnop::Intersect) if $region2;
@@ -383,15 +385,24 @@ sub stroke_imgaa_primitive
 
 	my $path = $self->new_path( antialias => 1 );
 	$path->$request(@_);
-	$path = $path->widen(
+	my $path2 = $path->widen(
 		linePattern => ( $lp eq lp::Null) ? lp::Solid : $lp
 	);
 
 	return unless $self->graphic_context_push;
+
 	$self->fillPattern(fp::Solid);
 	$self->fillMode(fm::Winding | fm::Overlay);
+	if ( $self-> rop2 == rop::CopyPut && $self->linePattern ne lp::Solid && $self->linePattern ne lp::Null ) {
+		my $c = $self->color;
+		$self->color($self->backColor);
+		my $path3 = $path->widen( linePattern => lp::Solid);
+		$path3->fill;
+		$self->color($c);
+	}
+
 	$self->color($self->backColor) if $lp eq lp::Null;
-	my $ok = $path->fill;
+	my $ok = $path2->fill;
 	$self->graphic_context_pop;
 	return $ok;
 }
@@ -425,7 +436,7 @@ sub stroke_primitive
 		return $path->stroke;
 	} ) if !$self->antialias && $self->alpha == 255 && $self->lineWidth < 1.5;
 
-	$path = $path->widen(
+	my $path2 = $path->widen(
 		linePattern => ( $lp eq lp::Null) ? lp::Solid : $lp,
 		(!$self->antialias && $self->lineWidth == 0) ? (lineWidth => 1) : (),
 	);
@@ -433,8 +444,18 @@ sub stroke_primitive
 	$self-> matrix-> identity;
 	$self->fillPattern(fp::Solid);
 	$self->fillMode(fm::Winding | fm::Overlay);
+	if ( $self-> rop2 == rop::CopyPut && $self->linePattern ne lp::Solid && $self->linePattern ne lp::Null ) {
+		my $c = $self->color;
+		$self->color($self->backColor);
+		my $path3 = $path->widen(
+			linePattern => lp::Solid,
+			(!$self->antialias && $self->lineWidth == 0) ? (lineWidth => 1) : (),
+		);
+		$path3->fill;
+		$self->color($c);
+	}
 	$self->color($self->backColor) if $lp eq lp::Null;
-	my $ok = $path->fill;
+	my $ok = $path2->fill;
 	$self->graphic_context_pop;
 	return $ok;
 }

@@ -856,8 +856,8 @@ img_aafill( Handle self, NPoint *pts, int n_pts, int rule, PImgPaintContext ctx)
 	clip.right = i->w - 1;
 	clip.top   = i->h - 1;
 	switch (aafill_init( pts, n_pts, rule, clip, &aa)) {
-		case -1: return false;
-		case  0: return true ;
+		case -1: return true;
+		case  0: return false ;
 	}
 
 	if ( ctx->region != NULL ) {
