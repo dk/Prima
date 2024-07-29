@@ -426,7 +426,7 @@ sub stroke_primitive
 	my $lp = $self->linePattern;
 	return 1 if $lp eq lp::Null && $self->rop2 == rop::NoOper;
 
-	my $path = $self->new_path;
+	my $path = $self->new_path( antialias => 1 );
 	$path->matrix( $self-> matrix );
 	$path->$request(@_);
 
@@ -440,6 +440,7 @@ sub stroke_primitive
 		linePattern => ( $lp eq lp::Null) ? lp::Solid : $lp,
 		(!$self->antialias && $self->lineWidth == 0) ? (lineWidth => 1) : (),
 	);
+	$path2->antialias( $self-> antialias );
 	return unless $self->graphic_context_push;
 	$self-> matrix-> identity;
 	$self->fillPattern(fp::Solid);
@@ -451,6 +452,7 @@ sub stroke_primitive
 			linePattern => lp::Solid,
 			(!$self->antialias && $self->lineWidth == 0) ? (lineWidth => 1) : (),
 		);
+		$path3->antialias( $self-> antialias );
 		$path3->fill;
 		$self->color($c);
 	}
