@@ -326,7 +326,7 @@ sub stroke_img_primitive
 	return 1 if $self->rop == rop::NoOper;
 	return 1 if $self->linePattern eq lp::Null && $self->rop2 == rop::NoOper;
 
-	my $path = $self->new_path;
+	my $path = $self->new_path( antialias => 1 );
 	my $matrix = $self-> get_matrix;
 	$path->matrix( $matrix );
 	$path->$request(@_);
