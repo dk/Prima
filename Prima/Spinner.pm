@@ -196,7 +196,7 @@ sub update_value
 	my $self = shift;
 	$self->{angle1} = (360 + $self->{start_angle} - $self->{value} * 360 / 100) % 360;
 	$self->{angle2} = $self->{start_angle};
-	$self->{angle2} += 360 if $self->{value} >= 100.0;
+	$self->{angle2} += 360 if $self->{value} >= 100.0 || $self->{angle1} > $self->{angle2};
 }
 
 sub value
