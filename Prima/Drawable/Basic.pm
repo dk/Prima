@@ -326,7 +326,8 @@ sub stroke_img_primitive
 	return 1 if $self->rop == rop::NoOper;
 	return 1 if $self->linePattern eq lp::Null && $self->rop2 == rop::NoOper;
 
-	my $path = $self->new_path( antialias => 1 );
+	my $single_pixel = $self->lineWidth < 1.5;
+	my $path = $self->new_path( antialias => !$single_pixel);
 	my $matrix = $self-> get_matrix;
 	$path->matrix( $matrix );
 	$path->$request(@_);
@@ -338,7 +339,7 @@ sub stroke_img_primitive
 		$self-> reset_matrix;
 		$self-> lineWidth(0);
 		return $path->stroke;
-	}) if $self->lineWidth < 1.5;
+	}) if $single_pixel;
 
 	my %widen;
 	my $method;
@@ -426,7 +427,8 @@ sub stroke_primitive
 	my $lp = $self->linePattern;
 	return 1 if $lp eq lp::Null && $self->rop2 == rop::NoOper;
 
-	my $path = $self->new_path( antialias => 1 );
+	my $single_pixel = !$self->antialias && $self->alpha == 255 && $self->lineWidth < 1.5;
+	my $path = $self->new_path( antialias => !$single_pixel);
 	$path->matrix( $self-> matrix );
 	$path->$request(@_);
 
@@ -434,7 +436,7 @@ sub stroke_primitive
 		$self-> lineWidth(0);
 		$self-> matrix-> identity;
 		return $path->stroke;
-	} ) if !$self->antialias && $self->alpha == 255 && $self->lineWidth < 1.5;
+	} ) if $single_pixel;
 
 	my $path2 = $path->widen(
 		linePattern => ( $lp eq lp::Null) ? lp::Solid : $lp,

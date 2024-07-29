@@ -207,7 +207,7 @@ for my $aa ( 0, 1) {
 	check( fillPattern => $fpx1, $fpx2, act => sub { $d->bar(0,0,7,7); });
 	$d-> fillPattern(fp::Solid);
 
-	$d->lineWidth(5);
+	$d->lineWidth(4);
 	$d->lineEnd(le::Square);
 	check( lineJoin => lj::Miter,  lj::Round, act => sub { $d->polyline([0,2,5,2,5,7]); });
 	check( lineEnd  => le::Square, le::Round, act => sub { $d->polyline([2,2,6,2,6,6]) });
