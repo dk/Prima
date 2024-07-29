@@ -25,12 +25,12 @@ use constant Y => 5;
 sub new
 {
 	my ( $class, $canvas, %opt ) = @_;
+	Carp::cluck("Option 'antialias' is deprecated, use 'subpixel' instead") if exists $opt{antialias};
 	return bless {
 		canvas          => $canvas,
 		commands        => [],
 		precision       => undef,
-		subpixel        => $opt{antialias} // (($canvas && ref($canvas)) ? $canvas->antialias : 0),
-		antialias       => 0,
+		subpixel        => $opt{subpixel} // (($canvas && ref($canvas)) ? $canvas->antialias : 0),
 		%opt
 	}, $class;
 }
@@ -76,7 +76,8 @@ sub moveto           { shift->cmd('moveto', shift, shift, 0) }
 sub rmoveto          { shift->cmd('moveto', shift, shift, 1) }
 sub restore          { shift->cmd('restore') } # no checks for underflow here, to allow append paths
 sub precision        { shift->cmd(set => precision => shift) }
-sub antialias        { $#_ ? $_[0]->{antialias} = $_[1] : $_[0]->{antialias} }
+sub subpixel         { $#_ ? $_[0]->{subpixel} = $_[1] : $_[0]->{subpixel} }
+sub antialias        { Carp::cluck("Property 'antialias' is deprecated, use 'subpixel' instead") }
 
 sub reset
 {
@@ -697,14 +698,9 @@ sub _arc
 sub stroke
 {
 	return 0 unless $_[0]->{canvas};
-	my $emulated_aa = $_[0]->{antialias} && !$_[0]->{canvas}->antialias;
 	for ( $_[0]->points ) {
 		next if 4 > @$_;
-		if ( $emulated_aa ) {
-			return 0 unless $_[0]->{canvas}->new_aa_surface->polyline($_);
-		} else {
-			return 0 unless $_[0]->{canvas}->polyline($_);
-		}
+		return 0 unless $_[0]->{canvas}->polyline($_);
 	}
 	return 1;
 }
@@ -721,11 +717,7 @@ sub fill
 	}
 	for ( $self->points ) {
 		next if 4 > @$_;
-		if ( $self->{antialias} && !$_[0]->{canvas}->antialias) {
-			last unless $ok &= $c->new_aa_surface->fillpoly($_);
-		} else {
-			last unless $ok &= $c->fillpoly($_);
-		}
+		last unless $ok &= $c->fillpoly($_);
 	}
 	$c->fillMode($save) if defined $save;
 	return $ok;
@@ -1577,12 +1569,6 @@ When applied to 2D coordinates, the transformed coordinates are calculated as
 
 Selects current precision for splines and arcs. See L<Prima::Drawable/spline>, C<precision> entry.
 
-=item antialias BOOLEAN
-
-Turns on and off slow but more visually pleasant antialiased drawing mode.
-
-Default: false
-
 =item restore
 
 Pops the stack entry and replaces the current matrix and graphic properties with it.
@@ -1607,7 +1593,7 @@ Adds scaling to the current matrix
 
 Turns on and off slow but more precise floating-point calculation mode
 
-Default: depends on canvas antialiasing mode
+Default: depends on the canvas antialiasing mode
 
 =item translate X, Y = X
 

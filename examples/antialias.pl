@@ -36,7 +36,7 @@ $w = Prima::MainWindow->new(
 		my ( $self, $canvas) = @_;
 		$canvas-> clear;
 		$canvas-> fillPattern(fp::CloseDot);
-		$canvas-> new_path(antialias => 1)-> ellipse(100,100,100)->fill;
+		$canvas-> new_path(subpixel => 1)-> ellipse(100,100,100)->fill;
 		$canvas-> fillPattern(fp::Solid);
 		$canvas->lineWidth(5);
 		$canvas-> graphic_context(

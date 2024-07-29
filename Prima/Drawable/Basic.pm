@@ -327,7 +327,7 @@ sub stroke_img_primitive
 	return 1 if $self->linePattern eq lp::Null && $self->rop2 == rop::NoOper;
 
 	my $single_pixel = $self->lineWidth < 1.5;
-	my $path = $self->new_path( antialias => !$single_pixel);
+	my $path = $self->new_path( subpixel => !$single_pixel);
 	my $matrix = $self-> get_matrix;
 	$path->matrix( $matrix );
 	$path->$request(@_);
@@ -384,7 +384,7 @@ sub stroke_imgaa_primitive
 	my $lp = $self->linePattern;
 	return 1 if $lp eq lp::Null && $self->rop2 == rop::NoOper;
 
-	my $path = $self->new_path( antialias => 1 );
+	my $path = $self->new_path( subpixel => 1 );
 	$path->$request(@_);
 	my $path2 = $path->widen(
 		linePattern => ( $lp eq lp::Null) ? lp::Solid : $lp
@@ -428,7 +428,7 @@ sub stroke_primitive
 	return 1 if $lp eq lp::Null && $self->rop2 == rop::NoOper;
 
 	my $single_pixel = !$self->antialias && $self->alpha == 255 && $self->lineWidth < 1.5;
-	my $path = $self->new_path( antialias => !$single_pixel);
+	my $path = $self->new_path( subpixel => !$single_pixel);
 	$path->matrix( $self-> matrix );
 	$path->$request(@_);
 
@@ -442,7 +442,7 @@ sub stroke_primitive
 		linePattern => ( $lp eq lp::Null) ? lp::Solid : $lp,
 		(!$self->antialias && $self->lineWidth == 0) ? (lineWidth => 1) : (),
 	);
-	$path2->antialias( $self-> antialias );
+	$path2->subpixel( $self-> antialias );
 	return unless $self->graphic_context_push;
 	$self-> matrix-> identity;
 	$self->fillPattern(fp::Solid);
@@ -454,7 +454,7 @@ sub stroke_primitive
 			linePattern => lp::Solid,
 			(!$self->antialias && $self->lineWidth == 0) ? (lineWidth => 1) : (),
 		);
-		$path3->antialias( $self-> antialias );
+		$path3->subpixel( $self-> antialias );
 		$path3->fill;
 		$self->color($c);
 	}

@@ -61,7 +61,7 @@ sub polyline
 		$solid_line = 1;
 	}
 
-	my $render = $canvas->new_path(antialias => 1)->line($poly);
+	my $render = $canvas->new_path(subpixel => 1)->line($poly);
 	if ( $solid_line ) {
 		my $c = $canvas->color;
 		$canvas->color($canvas->backColor);
@@ -168,7 +168,7 @@ FALLBACK:
 
 =head1 NAME
 
-Prima::Drawable::Antialias - plot antialiased shapes
+Prima::Drawable::Antialias - alternative API for antialiased shapes
 
 =head1 DESCRIPTION
 
@@ -179,11 +179,16 @@ The module augments the C<Prima::Drawable> drawing functionality by adding the
 C<new_aa_surface> function, which features two plotting methods, C<polyline>
 and C<fillpoly>, identical to the ones in C<Prima::Drawable>.
 
+The emulation method in the module used to be the backend and the only
+implementation of antialiased shapes, but as Prima now supports that
+internally, this module is not used anymore. It is still functional though and
+can be used as an alternative.
+
 =head1 SYNOPSIS
 
 	$canvas-> new_aa_surface-> polyline([0, 0, 100, 100]);
 
-	$canvas-> new_path(antialias => 1)-> ellipse(100,100,100)->fill;
+	$canvas-> new_path(subpixel => 1)-> ellipse(100,100,100)->fill;
 
 =for podview <img src="Prima/aa.gif">
 

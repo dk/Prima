@@ -438,7 +438,7 @@ L<Prima::Dialog::PrintDialog> - standard printer setup dialog
 
 =item Drawing helpers
 
-L<Prima::Drawable::Antialias> - plot antialiased shapes
+L<Prima::Drawable::Antialias> - alternative API for antialiased shapes
 
 L<Prima::Drawable::CurvedText> - fit text to path
 
