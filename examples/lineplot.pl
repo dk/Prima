@@ -91,6 +91,7 @@ $mw = Prima::MainWindow->new(
 			[ '@closed'    => '~Closed'    => sub{shift->repaint} ],
 			[ '@*hairline' => '~Hairline'  => sub{shift->repaint} ],
 			[ '@aa'        => '~Antialias' => sub{shift->repaint} ],
+			[ '@curve'     => 'C~urve'     => sub{shift->repaint} ],
 			[],
 			[ 'E~xit' => sub { $_[0]->destroy } ],
 		]],
@@ -156,6 +157,11 @@ $mw = Prima::MainWindow->new(
 			$self->menu->checked('closed') ?
 			((@points < 6) ? ( 100, 100, @points, 100, 100 ) : @points[0..$#points,0,1]):
 			( 30, 30, @points, $w - 30, $h - 30);
+
+		if ( $self-> menu->checked('curve')) {
+			@xpoints = @{ $canvas->render_spline(\@xpoints) }
+		}
+
 
 		$canvas->color(cl::LightRed);
 		$canvas->lineWidth($opt{lw});
