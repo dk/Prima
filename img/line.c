@@ -747,7 +747,7 @@ img_polyline2patterns( NPoint * points, int n_points, Byte *lj_hints, double lin
 	if ( closed && pattern[0] > 1.0 && strokelen > 1.0 && curr != dst ) {
 		NPolyPolyline *p = dst;
 		dst = dst->next;
-		if ( curr->n_points > curr-> size - p-> n_points) {
+		if ( p->n_points > curr-> size - curr-> n_points) {
 			if ( !( curr = nppl_alloc(curr, lj_hints != NULL, curr->size + p-> n_points)))
 				goto EXIT;
 		}
