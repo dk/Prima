@@ -550,7 +550,6 @@ img_polyline2patterns( NPoint * points, int n_points, Byte *lj_hints, double lin
 	float pattern_buf[256], *pattern, sqrt_table[1024];
 	semistatic_t pattern_array;
 	Bool ok = false, closed, strokecolor, new_point, new_stroke, black, joiner;
-	Bool pivot_detected, pivot_registered;
 	int step;
 	float advance, strokelen, pixlen, draw, plotted;
 	double dx, dy;
@@ -579,7 +578,7 @@ img_polyline2patterns( NPoint * points, int n_points, Byte *lj_hints, double lin
 
 	closed = points[0].x == points[n_points-1].x && points[0].y == points[n_points-1].y;
 	i = step = 0;
-	strokecolor = joiner = pivot_detected = pivot_registered = false;
+	strokecolor = joiner = false;
 	new_point = new_stroke = true;
 	advance = strokelen = 0.0;
 	last_a = a = points[0];
@@ -614,7 +613,6 @@ img_polyline2patterns( NPoint * points, int n_points, Byte *lj_hints, double lin
 				/* printf("NEW (%p) <- %p [%p]\n", curr->prev, curr, dst); */
 				last_a = a;
 				last_b = b;
-				pivot_registered = false;
 			}
 		}
 
@@ -671,14 +669,6 @@ img_polyline2patterns( NPoint * points, int n_points, Byte *lj_hints, double lin
 			black = strokecolor;
 		}
 		next_seg_advance = black ? line_width - 1.0 : 1.0;
-		if ( pivot_detected ) {
-			if ( !pivot_registered ) {
-				last_b = b;
-				/* printf("pivot %g.%g\n", b.x, b.y); */
-				pivot_registered = true;
-			}
-			pivot_detected = false;
-		}
 
 #define ADD_POINT_ENTRY(xx)                                                \
 	if ( curr->n_points == 0 ||                                        \
@@ -720,7 +710,7 @@ img_polyline2patterns( NPoint * points, int n_points, Byte *lj_hints, double lin
 		} else if ( draw == pixlen ) {
 			/* exact match that ends line by pattern end */
 			ADD_POINT(a1,b);
-			new_stroke = new_point = pivot_detected = true;
+			new_stroke = new_point = true;
 			advance += (advance > 0.0) ? -draw : next_seg_advance;
 			joiner = black;
 		} else if ( black && draw == 1.0 && pixlen <= 0 ) {
