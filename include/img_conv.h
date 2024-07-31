@@ -369,23 +369,20 @@ typedef struct {
 	unsigned int list[1];
 } RegionScanlineIterator, *PRegionScanlineIterator;
 
-extern Box img_region_box(PRegionRec region);
-#define img_region_new(sz) img_region_alloc(NULL,sz)
-extern PRegionRec img_region_alloc(PRegionRec old_region, int n_size);
-extern PRegionRec img_region_extend(PRegionRec region, int x, int y, int width, int height);
-extern Bool img_region_foreach(
-	PRegionRec region, 
-	int x, int y, int w, int h,
-	RegionCallbackFunc *cb, void *param
-);
-extern Bool img_point_in_region( int x, int y, PRegionRec region);
-extern PRegionRec img_region_polygon( Point *pts, int count, int rule);
-extern PRegionRec img_region_mask( Handle mask);
-extern void img_region_offset( PRegionRec region, int dx, int dy);
-extern void img_region_sort( PRegionRec region );
+extern Box                     img_region_box(PRegionRec region);
+#define                        img_region_new(sz) img_region_alloc(NULL,sz)
+extern PRegionRec              img_region_alloc(PRegionRec old_region, int n_size);
+extern PRegionRec              img_region_extend(PRegionRec region, int x, int y, int width, int height);
+extern Bool                    img_region_foreach( PRegionRec region, int x, int y, int w, int h, RegionCallbackFunc *cb, void *param);
+extern Bool                    img_point_in_region( int x, int y, PRegionRec region);
+extern PRegionRec              img_region_polygon( Point *pts, int count, int rule);
+extern PRegionRec              img_region_mask( Handle mask);
+extern void                    img_region_offset( PRegionRec region, int dx, int dy);
+extern void                    img_region_sort( PRegionRec region );
 extern PRegionScanlineIterator img_region_iterate_scanline( PRegionRec region );
-extern Bool img_region_next_scanline(PRegionScanlineIterator i);
-extern void img_region_fill_scanline_map(PRegionScanlineIterator i, Byte *map, int map_offset, int map_width);
+extern Bool                    img_region_next_scanline(PRegionScanlineIterator i);
+extern void                    img_region_fill_scanline_map(PRegionScanlineIterator i, Byte *map, int map_offset, int map_width);
+extern PRegionRec              img_region_combine( PRegionRec rgn1, PRegionRec rgn2, int rop);
 
 typedef struct {
 	unsigned long size;

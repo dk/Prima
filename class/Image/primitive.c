@@ -378,22 +378,20 @@ fill_noaapoly( Handle self, int n_pts, NPoint *pts)
 		goto EXIT;
 
 	if ( ctx.region != NULL ) {
-		Bool is_empty;
-		Handle rgn1 = Region_create_from_data( NULL_HANDLE, rgn );
-		Handle rgn2 = Region_create_from_data( NULL_HANDLE, ctx.region );
-
-		free(rgn);
-		Region_combine(rgn1, rgn2, rgnopIntersect);
-
-		is_empty = apc_region_is_empty(rgn1);
-		rgn = is_empty ? NULL : apc_region_copy_rects(rgn1);
-		Object_destroy(rgn1);
-		Object_destroy(rgn2);
-		if ( is_empty ) {
-			ok = true;
+		PRegionRec rgn3;
+		if (( rgn3 = img_region_combine(rgn, ctx.region, rgnopIntersect)) == NULL)
 			goto EXIT;
+		free(rgn);
+		rgn = rgn3;
+#if 0
+		{
+			int i;
+			Box *b = rgn->boxes;
+			for ( i = 0; i < rgn->n_boxes; i++, b++) printf("> %d %d %d %d\n", b->x, b->y, b->width, b->height);
 		}
+#endif
 	}
+
 	ctx.region = rgn;
 	if ( rgn->n_boxes > 0 ) {
 		Box box = img_region_box(ctx.region);
