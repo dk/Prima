@@ -2182,7 +2182,6 @@ img_render_icon_on_picture( Handle self, Handle image, PutImageRequest * req, Bo
 
 	picture = prima_render_create_picture(pixmap, 32);
 	RENDER_APPLY_TRANSFORM(picture);
-	printf("%d %d\n", req->rop,PIcon(image)->maskType);
 	RENDER_COMPOSITE( ofs,
 		(req-> rop == ropCopyPut && PIcon(image)->maskType == imbpp8) ? PictOpSrc : PictOpOver,
 		picture);
@@ -2284,12 +2283,10 @@ img_render_picture_on_pixmap( Handle self, Handle image, PutImageRequest * req, 
  	PDrawableSysData YY = X(image);
 	PImage img          = (PImage) image;
 	Pixmap pixmap       = (Pixmap) 0;
-	GC gc               = (GC) 0;
 	Bool quick          = false;
-	XGCValues gcv;
 	Picture picture;
 
-	if ( req->w != img->w || req->h != img->h) {
+	if ( !from_layered || req->w != img->w || req->h != img->h) {
 		/* When a matrix is skewed, it is not possible to
 		render a strict parallelogram because the compositor will peek
 		into neighboring pixels, and will plot them where the dst
@@ -2308,15 +2305,14 @@ img_render_picture_on_pixmap( Handle self, Handle image, PutImageRequest * req, 
 		pixmap = XCreatePixmap( DISP, guts.root, req->w, req->h,
 			from_layered ? guts.argb_visual.depth : guts.visual.depth
 		);
-		gcv. graphics_exposures = false;
-		gc = XCreateGC( DISP, pixmap, GCGraphicsExposures, &gcv);
-		XCopyArea( DISP, YY->gdrawable, pixmap, gc,
-			req-> src_x, req-> src_y,
-			req-> w, req-> h,
-			0, 0
-		);
-
 		picture = prima_render_create_picture(pixmap, from_layered ? 32 : 0);
+		XRenderComposite(
+			DISP, PictOpSrc,
+			YY->argb_picture, 0, picture,
+			req->src_x, req->src_y, 0, 0,
+			0, 0, req->w, req->h
+		);
+		req->rop = ropBlend;
 	} else {
 	QUICK:
 		picture = YY->argb_picture;
@@ -2328,7 +2324,6 @@ img_render_picture_on_pixmap( Handle self, Handle image, PutImageRequest * req, 
 
 	if ( !quick ) {
 		RENDER_FREE(picture);
-		XFreeGC( DISP, gc);
 		XFreePixmap( DISP, pixmap );
 	} else
 		RENDER_RESTORE_TRANSFORM(picture);
@@ -2347,7 +2342,7 @@ img_render_layered_on_pixmap( Handle self, Handle image, PutImageRequest * req)
 }
 
 static Bool
-img_render_pixmap_or_widget_on_pixmap_or_widget( Handle self, Handle image, PutImageRequest * req)
+img_render_pixmap_on_pixmap_or_widget( Handle self, Handle image, PutImageRequest * req)
 {
 	req-> rop = ropCopyPut;
 	return img_render_picture_on_pixmap(self, image, req, false);
@@ -2373,7 +2368,7 @@ PutImageFunc (*img_render_on_bitmap[SRC_NUM]) = {
 
 PutImageFunc (*img_render_on_pixmap[SRC_NUM]) = {
 	img_render_bitmap_on_picture,
-	img_render_pixmap_or_widget_on_pixmap_or_widget,
+	img_render_pixmap_on_pixmap_or_widget,
 	img_render_image_on_pixmap,
 	NULL,
 	img_render_argb_on_pixmap_or_widget,
@@ -2382,7 +2377,7 @@ PutImageFunc (*img_render_on_pixmap[SRC_NUM]) = {
 
 PutImageFunc (*img_render_on_widget[SRC_NUM]) = {
 	img_render_bitmap_on_picture,
-	img_render_pixmap_or_widget_on_pixmap_or_widget,
+	img_render_pixmap_on_pixmap_or_widget,
 	img_render_image_on_widget,
 	NULL,
 	img_render_argb_on_pixmap_or_widget,
@@ -2391,7 +2386,7 @@ PutImageFunc (*img_render_on_widget[SRC_NUM]) = {
 
 PutImageFunc (*img_render_on_layered[SRC_NUM]) = {
 	img_render_bitmap_on_picture,
-	img_render_pixmap_or_widget_on_pixmap_or_widget,
+	img_render_pixmap_on_pixmap_or_widget,
 	img_render_image_on_layered,
 	NULL,
 	img_put_argb_on_layered,
@@ -3302,7 +3297,7 @@ apc_gp_stretch_image( Handle self, Handle image,
 		case ropNoOper:
 			return true;
 		case ropCopyPut:
-			if ( X(image)->flags.layered)
+			if (X(image)->flags.layered || X(image)->type.pixmap)
 				break;
 		default:
 			goto FALLBACK;
