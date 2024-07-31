@@ -388,7 +388,7 @@ typedef struct {
 	unsigned long size;
 	Point pts[1];
 } PolyPointBlock;
-extern PolyPointBlock* poly_poly2points(Point *pts, int count, int rule, PRect clip);
+extern PolyPointBlock* poly_poly2points(Point *pts, int count, Bool winding, PRect clip);
 
 /* istXXX function */
 typedef double FilterFunc( const double x );

@@ -1122,7 +1122,7 @@ img_region_polygon( Point *pts, int count, int rule)
 		return rect_region(&single);
 	}
 
-	if (( pt_block = poly_poly2points(pts, count, rule, NULL)) == NULL )
+	if (( pt_block = poly_poly2points(pts, count, rule & fmWinding, NULL)) == NULL )
 		return NULL;
 	region = points2region(pt_block, outline);
 	free( pt_block );

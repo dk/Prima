@@ -60,7 +60,7 @@ skipto( ScanlinePtr* scan, int x, Bool subsample_last_pixel)
 
 			if ( subsample_last_pixel) {
 				register int x1 = p->x;
-				register int x2 = p[1].x;
+				register int x2 = p[1].x - 1;
 				if ( x1 <= x_to && x2 >= x_from ) {
 					if ( x1 < x_from ) x1 = x_from;
 					if ( x2 > x_to   ) x2 = x_to;
@@ -248,7 +248,11 @@ aafill_init( NPoint *pts, int n_pts, int rule, Rect clip, PAAFillRec ctx)
 
 	clip.left   *= AAX;
 	clip.bottom *= AAY;
-	clip.right  = (clip.right + 1) * AAX - 1; /* convert to exclusive-inclusive coordinates */
+	/* convert to exclusive-inclusive coordinates, however, add extra pixel to the right
+	because poly_poly2points always returns that extra pixel since it is may be needed
+	for superimpose_outline() later on.
+	*/
+	clip.right  = (clip.right + 1) * AAX - 1 + 1;
 	clip.top    = (clip.top   + 1) * AAY - 1;
 	if ( !intersect(&aa_extents, &clip)) {
 		free( pXpts );
@@ -262,7 +266,7 @@ aafill_init( NPoint *pts, int n_pts, int rule, Rect clip, PAAFillRec ctx)
 
 	DEBUG("EXTENTS %d-%d/%d-%d = %d-%d = %d\n", aa_extents.left, aa_extents.right, aa_extents.bottom, aa_extents.top, ctx->x, xmax_px , ctx->maplen);
 
-	ctx->block = poly_poly2points(pXpts, n_pts, rule, &clip);
+	ctx->block = poly_poly2points(pXpts, n_pts, rule & fmWinding, &clip);
 	free( pXpts );
 	if ( ctx->block == NULL )
 		return 0;

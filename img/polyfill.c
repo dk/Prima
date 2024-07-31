@@ -747,7 +747,7 @@ PolyPointBlock*
 poly_poly2points(
 	Point     *Pts,                  /* the pts                 */
 	int       Count,                 /* number of pts           */
-	int       rule,                  /* winding and outline     */
+	Bool      winding,
 	PRect     clip
 ) {
 	register EdgeTableEntry *pAET;   /* Active Edge Table       */
@@ -762,12 +762,9 @@ poly_poly2points(
 	ScanLineListBlock SLLBlock;      /* header for scanlinelist */
 	int fixWAET = 0;
 	PolyPointBlock *ret;
-	Bool outline, winding;
 	unsigned long curr_max_size;
 
-	outline = (rule & fmOverlay) ? 1 : 0;
-	winding = (rule & fmWinding) ? 1 : 0;
-	DEBUG("init: %s %s\n", winding ? "wind" : "alt", outline ? "outl" : "raw");
+	DEBUG("init: %s\n", winding ? "wind" : "alt");
 
 	if ( Count < 2 )
 		return NULL;
