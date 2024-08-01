@@ -55,6 +55,8 @@ my $w = Prima::MainWindow-> create(
 
 		my $spline = $canvas-> render_spline( [ @points, @points[0,1]]);
 		$canvas-> fillpoly( $spline);
+
+		$canvas->antialias(0);
 		if ( defined $capture) {
 			$canvas-> fill_ellipse(
 				$points[$capture], $points[$capture+1],
