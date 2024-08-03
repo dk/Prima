@@ -720,13 +720,12 @@ dRENDER(render_mixdown)
 	DEBUG_MIXDOWN('=', render->color_dst, render->bytes);
 	if ( render->color_target == render->color_dst ) {
 		render->color_dst    += i->lineSize;
-		render->color_target += i->lineSize;
 	} else {
 		DEBUG_MIXDOWN('*', render->color_mask, render->bytes);
 		mixdown( render->color_dst, render->color_mask, render->color_target, render->bytes );
 		DEBUG_MIXDOWN('=', render->color_dst, render->bytes);
-		render->color_target += i->lineSize;
 	}
+	render->color_target += i->lineSize;
 
 	if ( render->icon_target ) {
 		DEBUG_MIXDOWN('M', render->icon_src,   render->pixels);
@@ -742,26 +741,25 @@ dRENDER(render_mixdown)
 		DEBUG_MIXDOWN('=', render->icon_dst, render->pixels);
 
 		if ( render->icon_target == render->icon_dst ) {
-			render->icon_target += i->maskLine;
 			render->icon_dst    += i->maskLine;
 		} else {
 			DEBUG_MIXDOWN('*', render->icon_mask, render->pixels);
 			mixdown( render->icon_dst, render->icon_mask, render->icon_target, render->pixels );
 			DEBUG_MIXDOWN('=', render->icon_dst, render->pixels);
-			render->icon_target += i->lineSize;
 		}
+		render->icon_target += i->maskLine;
 	}
 }
 
 static void
 advance_pointers(PIcon i, PRenderContext render)
 {
-	if ( render->color_target == render->color_dst ) {
+	if ( render->color_target == render->color_dst )
 		render->color_dst    += i->lineSize;
-		render->color_target += i->lineSize;
-	}
-	if ( render->icon_target && render->icon_target == render->icon_dst ) {
-		render->icon_target += i->maskLine;
+	render->color_target += i->lineSize;
+	if ( render->icon_target ) {
+		if ( render->icon_target == render->icon_dst )
+			render->icon_target += i->maskLine;
 		render->icon_dst    += i->maskLine;
 	}
 }
