@@ -1030,7 +1030,7 @@ sub set_text_ref
 	$self-> {capLen} = length( $$ref) || 0;
 	$#{$self-> {lines}} = $self-> {capLen} / 40;
 	@{$self-> {lines}} = ();
-	@{$self-> {lines}} = split( "\n", $$ref // '');
+	@{$self-> {lines}} = split( "\n", $$ref // '', -1);
 	$self-> {maxLine} = scalar @{$self-> {lines}} - 1;
 	$self-> reset_shaping_caches;
 	$self-> reset_syntax;
@@ -2699,7 +2699,7 @@ sub copy_block
 	$self-> lock_change(0);
 	$self-> lock;
 	$self-> begin_undo_group;
-	my @lines = split "\n", $self->get_selected_text;
+	my @lines = split "\n", $self->get_selected_text, -1;
 	if ( $self-> {blockType} == bt::Horizontal) {
 		$self-> insert_line( $self-> cursorY, @lines);
 	} else {
@@ -2735,7 +2735,7 @@ sub overtype_block
 	$self-> lock_change(0);
 	$self-> lock;
 	$self-> begin_undo_group;
-	my @lines = split "\n", $self->get_selected_text;
+	my @lines = split "\n", $self->get_selected_text, -1;
 	my @cs    = $self-> cursor;
 	if ( $self-> {blockType} == bt::Horizontal) {
 		for ( my $i = $cs[1]; $i < $cs[1] + scalar @lines; $i++) {
