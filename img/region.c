@@ -1007,35 +1007,6 @@ EXIT:
 	return region;
 }
 
-/* compress region vertically */
-static PRegionRec
-compress_region( PRegionRec region)
-{
-	int i, n;
-	Box *prev, *curr;
-	for (
-		i = 1, n = region-> n_boxes, prev = region->boxes, curr = prev + 1;
-		i < n;
-		i++, curr++
-	) {
-		if (
-			curr->x == prev->x &&
-			curr->y == prev->y + prev->height &&
-			curr->width == prev->width
-		) {
-			prev->height += curr->height;
-			region-> n_boxes--;
-		} else {
-			if ( curr - prev > 1 ) {
-				memmove( prev + 1, curr, sizeof(Box) * (n - i));
-				curr = prev + 1;
-			}
-			prev = curr;
-		}
-	}
-	return region;
-}
-
 static PRegionRec
 points2region( PolyPointBlock *block, int outline)
 {
@@ -1131,7 +1102,8 @@ img_region_polygon( Point *pts, int count, int rule)
 		PRegionRec new = superimpose_outline(region, pts, count);
 		if (new) region = new;
 	}
-	return compress_region(region);
+	img_region_compress(region);
+	return region;
 }
 
 #ifdef __cplusplus
