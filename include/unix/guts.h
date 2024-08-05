@@ -988,7 +988,7 @@ typedef struct _drawable_sys_data
 #define XF_IN_PAINT(x)  ((x)->flags.paint)
 #define XF_LAYERED(x)  ((x)->flags.layered)
 #define XFLUSH          if (XX->flags.force_flush) XFlush(DISP)
-#define XRENDER_SYNC    if (XX->flags.xrender_sync) XSync(DISP, XX->flags.xrender_sync = false)
+#define XRENDER_SYNC    if (XX->flags.xrender_sync) { XFlush(DISP); XX->flags.xrender_sync = false; }
 #define XRENDER_SYNC_NEEDED XX->flags.xrender_sync = true
 
 typedef struct _PaintState
