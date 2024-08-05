@@ -2052,7 +2052,7 @@ descendants of C<Prima::AbstractListViewer>.
 If 1, allows the items to be dragged interactively by pressing the Control key
 together with the left mouse button. If 0, item dragging is disabled.
 
-Default value: 1
+Default value: 0
 
 =item drawGrid BOOLEAN
 
