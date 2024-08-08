@@ -1142,7 +1142,9 @@ Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
 
 =head1 SEE ALSO
 
-L<Prima>, L<Prima::Drawable>, L<Prima::image-load>, L<Prima::codecs>.
+L<Prima>, L<Prima::Drawable>, L<Prima::image-load>, L<Prima::codecs>,
+L<Prima::Image::Animate>, L<Prima::Image::Loader>, L<Prima::Image::Exif>,
+L<Prima::Image::base64>.
 
 L<PDL>, L<PDL::PrimaImage>, L<IPA>
 
