@@ -2325,6 +2325,9 @@ process_file_events(Bool * x_events_pending, struct timeval * t)
 		*x_events_pending = 0;
 	if ( !prima_guts.application ) return 0;
 
+	if ( !t || t->tv_sec > 0 || t->tv_usec > 0)
+		XFlush(DISP);
+
 	read_set  = guts.read_set;
 	write_set = guts.write_set;
 	excpt_set = guts.excpt_set;
