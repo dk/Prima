@@ -449,15 +449,27 @@ apc_gp_aa_bars( Handle self, int nr, NRect *rr)
 		XRenderCompositeTrapezoids(DISP, PictOpOver, pen, XX->argb_picture, format, 0, 0, xt0, nt);
 	}
 
-	if ( nx > 0 ) {
-		XRenderColor xc = {
-			COLOR_R(XX->fore.color) * 256 * XX->alpha / 255,
-			COLOR_G(XX->fore.color) * 256 * XX->alpha / 255,
-			COLOR_B(XX->fore.color) * 256 * XX->alpha / 255,
-			XX->alpha << 8
-		};
+	if ( nx > 0 && XX->rop != ropNoOper ) {
+		Color c;
+		XRenderColor xc;
+		switch ( XX-> rop) {
+		case ropNotPut:
+			c = ~XX->fore.color;
+			break;
+		case ropBlackness:
+			c = 0x000000;
+		case ropWhiteness:
+			c = 0xffffff;
+		default:
+			c = XX->fore.color;
+		}
+		xc.red   = COLOR_R16(c) * XX->alpha / 255;
+		xc.green = COLOR_G16(c) * XX->alpha / 255;
+		xc.blue  = COLOR_B16(c) * XX->alpha / 255;
+		xc.alpha = XX->alpha << 8;
 		XRenderFillRectangles(DISP, PictOpOver, XX->argb_picture, &xc, xr0, nx);
 	}
+
 	free(arena);
 
 	XRENDER_SYNC_NEEDED;
