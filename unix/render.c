@@ -362,9 +362,11 @@ apc_gp_aa_bars( Handle self, int nr, NRect *rr)
 {
 	DEFXX;
 	int ok = true, i;
-	Picture pen;
-	XRenderPictFormat *format;
 	XTrapezoid *xt0, *xt1;
+	XRectangle *xr0, *xr1;
+	int nt = 0, nx = 0;
+	Byte *arena;
+	Bool may_use_rects, may_use_traps;
 
 	if ( PObject( self)-> options. optInDrawInfo) return false;
 	if ( !XF_IN_PAINT(XX)) return false;
@@ -385,27 +387,78 @@ apc_gp_aa_bars( Handle self, int nr, NRect *rr)
 		}
 	}
 
-	pen = prima_pen_picture(self);
-	format = XX->flags.antialias ? guts.xrender_a8_format : guts.xrender_a1_format;
-	if ( !( xt0 = (XTrapezoid*) malloc( sizeof(XTrapezoid) * nr)))
-		return false;
+	may_use_rects = !(
+		XX-> fp_stipple ||
+		XX-> fp_tile    ||
+		prima_get_hatch( &XX-> fill_pattern)
+	);
+	may_use_traps = XX->flags.antialias || !may_use_rects;
 
-	for (i = 0, xt1 = xt0; i < nr; i++, rr++) {
+	if ( !( arena = malloc(
+		(
+			(may_use_traps ? sizeof(XTrapezoid) : 0) +
+			(may_use_rects ? sizeof(XRectangle) : 0)
+		) * nr
+	)))
+		return false;
+	xt0 = (XTrapezoid*) arena;
+	xr0 = (XRectangle*) (arena + (may_use_traps ? sizeof(XTrapezoid) : 0) * nr);
+
+	for (i = 0, xt1 = xt0, xr1 = xr0; i < nr; i++, rr++) {
 		double x1, y1, x2, y2;
+		int    ix1, iy1, ix2, iy2;
 		x1 = rr->left  + XX-> btransform.x;
 		y1 = REVERT(rr->bottom + XX-> btransform. y) + 1;
 		x2 = rr->right + XX-> btransform.x + 1;
 		y2 = REVERT(rr->top + XX-> btransform. y);
 		RANGE2(x1, y1);
 		RANGE2(x2, y2);
-		xt1->left.p1.x  = xt1->left.p2.x  = XDoubleToFixed(x1);
-		xt1->right.p1.x = xt1->right.p2.x = XDoubleToFixed(x2);
-		xt1->top        = xt1->left.p2.y  = xt1->right.p2.y = XDoubleToFixed(y2);
-		xt1->bottom     = xt1->left.p1.y  = xt1->right.p1.y = XDoubleToFixed(y1);
-		xt1++;
+		ix1 = floor( x1 + .5 );
+		iy1 = floor( y1 + .5 );
+		ix2 = floor( x2 + .5 );
+		iy2 = floor( y2 + .5 );
+		if (
+			may_use_rects && (
+				!may_use_traps || (
+					(double) ix1 == x1 &&
+					(double) iy1 == y1 &&
+					(double) ix2 == x2 &&
+					(double) iy2 == y2
+				)
+			)
+		) {
+			xr1->x = x1;
+			xr1->y = y2;
+			xr1->width = x2 - x1;
+			xr1->height = y1 - y2;
+			xr1++;
+			nx++;
+		} else {
+			xt1->left.p1.x  = xt1->left.p2.x  = XDoubleToFixed(x1);
+			xt1->right.p1.x = xt1->right.p2.x = XDoubleToFixed(x2);
+			xt1->top        = xt1->left.p2.y  = xt1->right.p2.y = XDoubleToFixed(y2);
+			xt1->bottom     = xt1->left.p1.y  = xt1->right.p1.y = XDoubleToFixed(y1);
+			xt1++;
+			nt++;
+		}
 	}
 
-	XRenderCompositeTrapezoids(DISP, PictOpOver, pen, XX->argb_picture, format, 0, 0, xt0, nr);
+	if ( nt > 0 ) {
+		Picture pen = prima_pen_picture(self);
+		XRenderPictFormat *format = XX->flags.antialias ? guts.xrender_a8_format : guts.xrender_a1_format;
+		XRenderCompositeTrapezoids(DISP, PictOpOver, pen, XX->argb_picture, format, 0, 0, xt0, nt);
+	}
+
+	if ( nx > 0 ) {
+		XRenderColor xc = {
+			COLOR_R(XX->fore.color) * 256 * XX->alpha / 255,
+			COLOR_G(XX->fore.color) * 256 * XX->alpha / 255,
+			COLOR_B(XX->fore.color) * 256 * XX->alpha / 255,
+			XX->alpha << 8
+		};
+		XRenderFillRectangles(DISP, PictOpOver, XX->argb_picture, &xc, xr0, nx);
+	}
+	free(arena);
 
 	XRENDER_SYNC_NEEDED;
 	XCHECKPOINT;
