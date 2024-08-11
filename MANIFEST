@@ -140,6 +140,7 @@ examples/sheet.pl
 examples/socket.pl
 examples/socket_anyevent1.pl
 examples/socket_anyevent2.pl
+examples/sorting-quiz.pl
 examples/spinner.pl
 examples/spline.pl
 examples/star_and_ring.pl
