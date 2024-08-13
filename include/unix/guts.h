@@ -1014,7 +1014,6 @@ typedef struct _PaintState
 	FillPattern fill_pattern;
 	Font font;
 	unsigned char *dashes;
-	Matrix matrix;
 
 	unsigned int user_data_size;
 	GCStorageFunction * user_destructor;

@@ -213,11 +213,9 @@ Drawable_graphic_context_push(Handle self)
 Bool
 Drawable_graphic_context_pop(Handle self)
 {
-	DrawablePaintState state;
-	if ( !apc_gp_pop(self, &state))
+	if ( !apc_gp_pop(self, &GS))
 		return false;
-	Drawable_line_end_refcnt(&state, -1);
-	GS = state;
+	Drawable_line_end_refcnt(&GS, -1);
 	if ( var-> fillPatternImage && PObject(var-> fillPatternImage)->stage != csNormal) {
 		unprotect_object(var-> fillPatternImage);
 		var-> fillPatternImage = NULL_HANDLE;
