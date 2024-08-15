@@ -925,6 +925,37 @@ GLIBC
 	$DEFINES{HAS_GLIBC} = 1 if $rc;
 }
 
+sub find_setjmp
+{
+	printlog "Checking for setjmp... ";
+	my $response = 'no';
+	my $rc = compile( <<'SET1');
+#ifdef __MINGW32__
+#	include <setjmp.h>
+#	include <intrin.h>
+#endif
+int main() { return 0; }
+SET1
+	if ( !$rc ) {
+		$rc = compile( <<'SET2');
+#include <setjmp.h>
+#ifdef __MINGW32__
+#	include <setjmp.h>
+#	define USE_NO_MINGW_SETJMP_TWO_ARGS
+#	include <intrin.h>
+#endif
+int main() { return 0; }
+SET2
+		if ( $rc ) {
+			$DEFINES{USE_NO_MINGW_SETJMP_TWO_ARGS} = 1;
+			$response = 'two-args hack';
+		}
+	} else {
+		$response = 'yes';
+	}
+	printlog "$response\n";
+}
+
 sub setup_compiler
 {
 	printlog "Compiler: $compiler_type\n";
@@ -1136,6 +1167,7 @@ sub setup_defines
 	}
 	find_inline();
 	find_glibc;
+	find_setjmp if $^O =~ /win32/i;
 }
 
 sub setup_dl_loadflags

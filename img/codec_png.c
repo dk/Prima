@@ -7,7 +7,6 @@ and _setjmp is not equivaluent to setjmp anymore
 #pragma push_macro("setjmp")
 #pragma push_macro("longjmp")
 #endif
-#define USE_NO_MINGW_SETJMP_TWO_ARGS
 #include "generic/config.h"
 #define Z_PREFIX
 #include <png.h>
