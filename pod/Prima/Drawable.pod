@@ -213,7 +213,7 @@ which turns on the following effects:
 
 =item *
 
-All primitives except images, C<pixel>, and C<bar_alpha> are plotted with
+All primitives except images, C<pixel>, and C<bar_alpha> can be plotted with
 antialiased edges (text is always antialiased when possible)
 
 =item *
@@ -299,8 +299,7 @@ is set.
 
 For the cases where the system does not support antialiasing, Prima provides
 the L<Prima::Drawable::Antialias> emulation class, available through the
-C<new_aa_surface> call. Internal image painting routines use this facility as
-well.
+C<new_aa_surface> call.
 
 To see if alpha and antialiasing are supported on the system, check the
 C<sv::Antialias> value. To see if a particular drawable supports alpha
