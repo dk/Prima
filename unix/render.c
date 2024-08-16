@@ -839,7 +839,7 @@ my_XRenderCompositeDoublePoly (Display		    *dpy,
     edges = (Edge *) malloc (npoints * sizeof (Edge) +
 			      ((npoints * npoints + 1) * sizeof (XTrapezoid)));
     if (!edges) {
-        warn("XRenderCompositeDoublePoly: not enough memory (%d vertices, %ld bytes)\n",
+        warn("XRenderCompositeDoublePoly: not enough memory (%d vertices, %d bytes)\n",
 		npoints, npoints * sizeof (Edge) + ((npoints * npoints + 1) * sizeof (XTrapezoid)));
 	return 0;
     }
