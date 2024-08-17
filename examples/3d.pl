@@ -287,6 +287,23 @@ my $w = Prima::MainWindow->new(
 		elsif ( $key == kb::Up	  ) { walk(3*$seconds);	     }
 		elsif ( $key == kb::Down  ) { walk(-3*$seconds);     }
 	},
+	onMouseMove => sub {
+		my ( $self, $mod, $x, $y ) = @_;
+		return unless $self->get_mouse_state;
+		if ($self->{alarm} && !$self->{simulation}) {
+			$self->{alarm}->destroy;
+			undef $self->{alarm};
+		}
+		my $w = $self->width / 2;
+		my $h = $self->height / 2;
+		rotate( $pi * ($x - $w) / $w * $seconds);
+		walk( ($y - $h) / $h * 3 * $seconds);
+		$self->{alarm} //= Prima::Utils::alarm(60, sub {
+			delete $self->{alarm};
+			local $self->{simulation} = 1;
+			$self->mouse_move($mod, $x, $y);
+		});
+	},
 	onPaint => sub {
 		my ( $self, $canvas ) = @_;
 		draw_sky($canvas);
