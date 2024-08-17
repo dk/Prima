@@ -563,6 +563,7 @@ sub test_combining { SKIP: {
 		$z = $w-> text_shape( "\x{100}\x{300}", polyfont => 0 )->advances;
 		skip($w->font->name . " does not create advances table", 1) unless $z; 
 	}
+	skip("No combining services, skip ", 1) unless $z;
 	ok( $z->[0] != 0, "'A' has non-zero advance");
 	if ( $xp ) {
 		if ($z->[1] == 0 ) {
