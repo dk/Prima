@@ -261,10 +261,8 @@ Utils_last_error()
 {
 	SV * ret = NULL_SV;
 	char * p = apc_last_error();
-	if ( p ) {
+	if ( p )
 		ret = newSVpv( p, 0);
-		free(p);
-	}
 	return ret;
 }
 
