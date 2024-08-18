@@ -213,10 +213,25 @@ terminate_screenshot_app(void)
 }
 
 static void
+restore_signal(int sig)
+{
+	struct sigaction sa;
+	bzero(&sa, sizeof(sa));
+	sa.sa_handler = SIG_DFL;
+	sigemptyset(&sa.sa_mask);
+	sigaction(sig, &sa, NULL);
+}
+
+static void
 run_screenshot_app(void)
 {
 	int s = gtk_screenshot_sockets[1];
 	int buf[20];
+
+	restore_signal(SIGINT);
+	restore_signal(SIGKILL);
+	restore_signal(SIGQUIT);
+
 	while (1) {
 		int n = read( s, buf, sizeof(int) * 4 );
 		if ( n < sizeof(int) * 4 ) {
