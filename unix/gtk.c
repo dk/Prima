@@ -228,9 +228,21 @@ run_screenshot_app(void)
 	int s = gtk_screenshot_sockets[1];
 	int buf[20];
 
-	restore_signal(SIGINT);
-	restore_signal(SIGKILL);
-	restore_signal(SIGQUIT);
+	{
+#ifndef NSIG
+# if defined(_NSIG)
+#  define NSIG _NSIG            /* For BSD/SysV */
+# elif defined(_SIGMAX)
+#  define NSIG (_SIGMAX + 1)    /* For QNX */
+# else
+#  define NSIG 64               /* Use a reasonable default value */
+# endif
+#endif
+		int i;
+		for (i = 0; i < NSIG; i++)
+			restore_signal(i);
+
+	}
 
 	while (1) {
 		int n = read( s, buf, sizeof(int) * 4 );
