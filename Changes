@@ -1,11 +1,12 @@
 Revision history for Perl module Prima
 
-1.74 2024-XX-XX
+1.74 2024-08-15
  - implement antialiased polygon fill in C, use it in the
    AA emulation in Prima::Drawable::Antialias instead of the old algorithm
  - all AA plotting is supported internally, Prima::Drawable::Antialias is
    not used for the emulated AA drawing
  - add kb:: definitions for the internet keyboards
+ - fixes for Strawberry Perl 5.40
 
 1.73 2024-05-07
  - add Prima::Image::Exif, support jpeg tags
