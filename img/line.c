@@ -278,7 +278,7 @@ img_polyline( Handle dest, int n_points, Point * points, PImgPaintContext ctx)
 	PIcon i = (PIcon) dest;
 	int j;
 	ImgSegmentedLineRec rec;
-	RegionRec dummy_region;
+	RegionRec dummy_region, *save_region;
 	Box dummy_region_box, *pbox;
 	Point* pp;
 	Rect  enclosure;
@@ -314,6 +314,7 @@ img_polyline( Handle dest, int n_points, Point * points, PImgPaintContext ctx)
 	rec.current_segment  = 0;
 	rec.segment_offset   = 0;
 	rec.segment_is_fg    = 1;
+	save_region = ctx->region;
 	if ( ctx->region == NULL ) {
 		dummy_region.n_boxes = 1;
 		dummy_region.boxes = &dummy_region_box;
@@ -461,6 +462,7 @@ img_polyline( Handle dest, int n_points, Point * points, PImgPaintContext ctx)
 		if ( acc_y > INT_MIN)
 			segmented_hline( &rec, acc_x, x, acc_y, visibility);
 	}
+	ctx->region = save_region;
 	return true;
 }
 
