@@ -296,33 +296,22 @@ $image-> destroy;
 sub text_out_test
 {
 	my $x = shift;
-	$x-> color( cl::White);
-	$x-> bar( 0, 0, 7, 7);
 	$x-> color( cl::Black);
-	$x-> font-> height( 8);
+	$x-> bar( 0, 0, $x->size);
+	$x-> color( cl::White);
+	$x-> font-> height( 20 );
 	$x-> text_out( "xyz", 0, 0);
 	my $xi = $x-> image;
 	$xi->type(im::BW);
-	my ( $i, $j);
-	my ( $wh, $bl) = ( 0, 0);
-	for ( $i = 0; $i < 8; $i++) {
-		for ( $j = 0; $j < 8; $j++) {
-			$xi-> pixel( $i,$j) == 0 ?
-				$bl++ : $wh++;
-		}
-	}
-	return $bl;
+	$xi->type(im::Byte);
+	return $xi->sum / 255;
 }
 
-my $bl = text_out_test($x);
-if ( $bl == 0 ) {
-	# did we hit this bug? https://gitlab.freedesktop.org/xorg/xserver/issues/87
-	my $x = Prima::DeviceBitmap-> create( type => dbt::Pixmap, width => 8, height => 8);
-	$bl = text_out_test($x);
+{
+	my $x = Prima::DeviceBitmap-> create( type => dbt::Pixmap, width => 20, height => 20);
+	my $bl = text_out_test($x);
+	cmp_ok( $bl, '>', 25, "text_out");
 }
-
-	
-cmp_ok( $bl, '>', 5, "text_out");
 
 # 21
 my $y = Prima::DeviceBitmap-> create( type => dbt::Bitmap, width => 2, height => 2);
