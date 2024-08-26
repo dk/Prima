@@ -27,6 +27,11 @@ my $i = Prima::Image->load( $ARGV[0], loadExtras => 1 ) or die "Cannot load $ARG
 my ($e, $ok) = Prima::Image::Exif->read_extras($i, tag_as_string => 1, load_thumbnail => 1);
 die "Cannot read exif data in $ARGV[0]: $ok\n" unless $e;
 
+if ( $ok eq 'XMP data') {
+	print $e;
+	exit;
+}
+
 for my $k ( sort keys %$e ) {
 	if ( $k eq 'thumbnail' ) {
 		my $i = $e->{$k};
