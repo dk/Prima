@@ -993,9 +993,28 @@ sub read_jpeg
 		exists $i->{extras}->{appdata} and
 		$data = $i->{extras}->{appdata}->[1];
 
-	return ( $2, "XMP data" )
-		if $data =~ /^($XMP_HEADER)(.*)/s;
+	if (ref($data) ne 'ARRAY') {
+		return { "XMP data" => $2 }
+			if $data =~ /^($XMP_HEADER)(.*)/s;
+		return parse_datum( $class, $data, %opt );
+	} else {
+		my %res;
+		for my $datum ( @$data ) {
+			if ($datum =~ /^($XMP_HEADER)(.*)/s) {
+				$res{"XMP data"} = $2;
+			} else {
+				my ($r, $e) = parse_datum( $class, $datum, %opt );
+				return ($r, $e) unless ref $r;
+				%res = (%res, %$r);
+			}
+		}
+		return \%res;
+	}
+}
 
+sub parse_datum
+{
+	my ( $class, $data, %opt ) = @_;
 	my ( $res, $error) = $class->parse($data);
 	if ( ref($res) ) {
 		if ( $res->{thumbnail} && $opt{load_thumbnail} ) {
@@ -1037,6 +1056,16 @@ sub write_jpeg
 
 	my $e = $i->{extras};
 	my %data = %$data;
+	my $xmp;
+
+	if ( exists $data{"XMP data"}) {
+		$xmp = delete $data{"XMP data"};
+		unless ( keys %data ) {
+			$i->{extras}->{appdata}->[1] = $xmp;
+			return 1;
+		}
+	}
+
 	if ( $data{thumbnail} && ref($data{thumbnail})) {
 		my $t = '';
 		open my $f, ">", \$t;
@@ -1059,6 +1088,9 @@ sub write_jpeg
 
 	my ($compiled, $error) = $class->compile(\%data);
 	return (undef, $error) if !defined $compiled;
+
+	$compiled = [$compiled, $xmp] if defined $xmp;
+
 	$i->{extras}->{appdata}->[1] = $compiled;
 	return 1;
 }
@@ -1125,9 +1157,9 @@ extra appdata hash field.
 		tag_as_string  => 1
 	);
 
-	if ( $error eq 'XMP data' && defined $data ) {
+	if ( $data && exists $data->{'XMP data') {
 		require XML::LibXML;
-		my $xml = XML::LibXML->load_xml(string => $data);
+		my $xml = XML::LibXML->load_xml(string => $data->{'XMP data'});
 		for my $node ($xml->findnodes('//*')) {
 			my @p = $node->childNodes;
 			next unless @p == 1;
@@ -1137,7 +1169,8 @@ extra appdata hash field.
 			$p =~ s{^\.}{};
 			print "$p: $p[0]\n";
 		}
-		($data, $error) = ({}, undef);
+		delete $data->{'XMP data'};
+		undef $error;
 	}
 
 	die "cannot read exif: $error\n" if defined $error;
@@ -1233,7 +1266,7 @@ L<Prima::image-load>
 The module does not provide comprehensive support for tags and their values.
 For a more thorough dive see these modules: L<Image::ExifTool>, L<Image::EXIF>.
 
-The module doesn't parse XMP records but warns if get supplied these.
+The module doesn't parse XMP records but returns them as raw strings.
 The XMP records are easily parsed by any XML parser, f ex L<XML::LibXML>.
 
 =head1 AUTHOR

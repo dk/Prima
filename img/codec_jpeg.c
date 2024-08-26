@@ -269,7 +269,18 @@ j_read_profile(j_decompress_ptr jpeg_info)
 		}
 	}
 
-	av_store( av, marker, newSVpv( name, length));
+	if (( sv = av_fetch( av, marker, 0)) != NULL) {
+		AV *av2;
+		if ( SvROK( *sv) && SvTYPE( SvRV( *sv)) == SVt_PVAV)
+			av2 = (AV*) SvRV( *sv);
+		else {
+			av2 = newAV();
+			av_push(av2, newSVsv( *sv));
+			av_store( av, marker, newRV_noinc((SV*) av2));
+		}
+		av_push(av2, newSVpv( name, length));
+	} else
+		av_store( av, marker, newSVpv( name, length));
 
 	free( name);
 	return true;
@@ -449,29 +460,51 @@ exif_find_angle_tag( unsigned char * c, STRLEN len, int wipe)
 	return 1;
 }
 
+static Bool
+exif_extract_orientation(SV *sv, Bool wipe, int *ret)
+{
+	STRLEN len;
+	int orientation;
+	unsigned char * c;
+	c = (unsigned char *) SvPV( sv, len );
+	if ((orientation = exif_find_orientation_tag( c, len, wipe )) > 0) {
+		if ( *ret == 0 ) *ret = orientation;
+		if ( !wipe ) return true;
+	}
+	if ((orientation = exif_find_angle_tag( c, len, wipe )) > 0) {
+		if ( *ret == 0 ) *ret = orientation;
+		if ( !wipe ) return true;
+	}
+	return false;
+}
+
 static int
 exif_detect_orientation( HV * fp, int wipe )
 {
-	int i, orientation, ret = 0;
+	int i, ret = 0;
 	AV * av;
 	SV ** sv = hv_fetch( fp, "appdata", 7, 0);
 	if ( !( sv && SvROK( *sv) && SvTYPE( SvRV( *sv)) == SVt_PVAV)) return 1;
 	av = (AV*) SvRV(*sv);
 	for ( i = 0; i <= av_len(av); i++) {
-		unsigned char * c;
-		STRLEN len;
 		SV ** ssv = av_fetch( av, i, 0);
-		if ( !ssv || !SvPOK( *ssv)) continue;
-		c = (unsigned char *) SvPV( *ssv, len );
-		if ((orientation = exif_find_orientation_tag( c, len, wipe )) > 0) {
-			if ( ret == 0 ) ret = orientation;
-			if ( !wipe ) break;
-		}
-		if ((orientation = exif_find_angle_tag( c, len, wipe )) > 0) {
-			if ( ret == 0 ) ret = orientation;
-			if ( !wipe ) break;
+		if ( !ssv ) continue;
+
+		if ( SvROK( *ssv) && SvTYPE( SvRV( *ssv)) == SVt_PVAV) {
+			int j;
+			AV *av2 = (AV*)(SvRV(*ssv));
+			for ( j = 0; j <= av_len(av2); j++) {
+				ssv = av_fetch( av2, j, 0);
+				if ( !ssv || !SvPOK(*ssv)) continue;
+				if ( exif_extract_orientation(*ssv, wipe, &ret))
+					goto STOP;
+			}
+		} else if ( SvPOK(*ssv)) {
+			if ( exif_extract_orientation(*ssv, wipe, &ret))
+				break;
 		}
 	}
+STOP:
 	return ret;
 }
 
@@ -945,9 +978,22 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 		SV ** sv;
 		for ( marker = 1; marker < 16; marker++) {
 			sv = av_fetch( appdata, marker, 0);
-			if ( sv && *sv && SvOK( *sv))
+			if ( !( sv && *sv && SvOK( *sv)))
+				continue;
+			if ( SvROK( *sv) && SvTYPE( SvRV( *sv)) == SVt_PVAV) {
+				int i;
+				AV *av2 = (AV*)(SvRV(*sv));
+				for ( i = 0; i <= av_len(av2); i++) {
+					sv = av_fetch( av2, i, 0);
+					if ( !( sv && *sv && SvOK( *sv)))
+						continue;
+					if ( !j_write_extras( fi, &l-> c, JPEG_APP0 + marker, *sv))
+						return false;
+				}
+			} else {
 	     			if ( !j_write_extras( fi, &l-> c, JPEG_APP0 + marker, *sv))
 					return false;
+			}
 		}
 	}
 
