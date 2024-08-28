@@ -1196,6 +1196,7 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
 		SetBkMode( sys ps, GetBkMode( dc ));
 		SetROP2( sys ps, GetROP2( dc ));
 		SetStretchBltMode( sys ps, GetStretchBltMode( dc ));
+		SetGraphicsMode( sys ps, GetGraphicsMode( dc ));
 
 		flag = exception_block(true);
 		CWidget( owner)-> notify( owner, "sH", "Paint", owner);
