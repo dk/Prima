@@ -30,10 +30,16 @@ sub open(*;$*)
 {
 	my ( $handle, @p ) = @_;
 	goto NATIVE unless @p;
-	$p[0] =~ m/^([\<\>\|\-\+\=\&]*])(.*)/ if 1 == @p;
+	if (1 == @p) {
+		if ( $p[0] =~ m/^([\<\>\|\-\+\=\&]+)(.*)/) {
+			@p = ($1, $2);
+		} else {
+			@p = ('<', $p[0]);
+		}
+	}
 	my ( $mode, $what, @rest) = @p;
 	goto NATIVE if !defined($what) || ref($what);
-	goto NATIVE if $what =~ /[\-\|\=\&]/;
+	goto NATIVE if $mode =~ /^[<>+]&/ || $mode =~ /^[-|]/ || $what =~ /[-|]$/;
 
 	my $flags;
 	my @layers;
@@ -80,6 +86,7 @@ sub open(*;$*)
 	return $ok;
 
 NATIVE:
+	use Data::Dumper; print STDERR Dumper(	\@_);
 	goto &CORE::open;
 }
 
