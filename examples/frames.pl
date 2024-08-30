@@ -14,7 +14,7 @@ use strict;
 use warnings;
 use Prima qw(Buttons FrameSet Application);
 
-my $w = Prima::MainWindow-> create(
+my $w = Prima::MainWindow-> new(
 	text   => "Frames example",
 	size => [ map { $_ - 128} $::application-> size],
 );

@@ -471,7 +471,7 @@ The C<Prima::Component::post_message> method posts a message through the system 
 and returns immediately; when the message arrives, the C<onPostMessage> notification is triggered:
 
    use Prima qw(Application);
-   my $w = Prima::MainWindow-> create( onPostMessage => sub { shift; print "@_\n" });
+   my $w = Prima::MainWindow-> new( onPostMessage => sub { shift; print "@_\n" });
    $w-> post_message(1,2);
    print "3 4 ";
    run Prima;

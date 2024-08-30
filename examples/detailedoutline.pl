@@ -14,7 +14,7 @@ use strict;
 use warnings;
 use Prima qw(Application DetailedOutline);
 
-my $Main = Prima::MainWindow-> create(
+my $Main = Prima::MainWindow-> new(
 	name   => 'Main',
 	text   => 'DetailedOutline Test',
 	origin => [50,50],

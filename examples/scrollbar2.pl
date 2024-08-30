@@ -19,7 +19,7 @@ use Prima::Application name => 'rtc', skin => 'flat';
 
 package UserInit;
 
-my $w = Prima::MainWindow-> create(
+my $w = Prima::MainWindow-> new(
 	text=> "Scrollbar",
 	origin => [ 200, 200],
 	size   => [ 250, 300],
@@ -40,7 +40,7 @@ $w-> insert( "ScrollBar",
 	pack => { pady => 60, padx => 60, fill => 'both', expand => 1 },
 	size => [ 150, 150],
 	onCreate => sub {
-		Prima::Timer-> create(
+		Prima::Timer-> new(
 			timeout=> 1000,
 			timeout=> 200,
 			owner  => $_[0],

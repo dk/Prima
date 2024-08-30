@@ -348,7 +348,7 @@ the 1-scalar syntax, the scalar value is the name of the separator item.
 
 As an example of all the above, here's an example of a menu tree:
 
-   $img = Prima::Image-> create( ... );
+   $img = Prima::Image-> new( ... );
    ...
    $menu-> items( [
       [ "~File" => [
@@ -366,7 +366,7 @@ As an example of all the above, here's an example of a menu tree:
          ...
          [ "Pa~ste" => sub { $_[0]->foc_action('paste')} ],
          ...
-         ["~Duplicate menu"=>sub{ TestWindow->create( menu=>$_[0]->menu)}],
+         ["~Duplicate menu"=>sub{ TestWindow->new( menu=>$_[0]->menu)}],
       ]],
       ...
       [],                             # divisor in the main menu opens

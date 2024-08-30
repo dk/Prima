@@ -17,7 +17,7 @@ use warnings;
 
 use Prima qw(Buttons StdBitmap Application);
 
-my $w = Prima::MainWindow-> create(
+my $w = Prima::MainWindow-> new(
 	text=> "Handmade buttons",
 	size => [ 300, 200],
 	centered => 1,
@@ -82,7 +82,7 @@ $w-> insert( Button =>
 	onClick    => sub {
 		my $self = $_[0];
 		unless ( $self-> get_shift_state & km::Ctrl) {
-			my $i = Prima::Image-> create(
+			my $i = Prima::Image-> new(
 				width  => $self-> width,
 				height => $self-> height,
 				font   => $self-> font,

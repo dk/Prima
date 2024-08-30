@@ -239,7 +239,7 @@ sub on_destroy
 sub new_window
 {
 	my $self = $_[0];
-	my $ww = EditorWindow-> create(
+	my $ww = EditorWindow-> new(
 		size   => [$self-> size],
 		left   => $self-> left + 10,
 		bottom => $self-> bottom - 10,
@@ -255,7 +255,7 @@ sub open_file
 	my $self = $_[0];
 	my $f = Prima::open_file;
 	if ( defined $f) {
-		my $ww = EditorWindow-> create(
+		my $ww = EditorWindow-> new(
 			size     => [$self-> size],
 			left     => $self-> left + 10,
 			bottom   => $self-> bottom - 10,
@@ -347,7 +347,7 @@ sub find_dialog
 	my @props = qw(findText options scope);
 	push( @props, q(replaceText)) unless $findStyle;
 	if ( $fd) { for( @props) { $prf{$_} = $fd-> {$_}}}
-	$findDialog = Prima::Dialog::FindDialog-> create unless $findDialog;
+	$findDialog = Prima::Dialog::FindDialog-> new unless $findDialog;
 	$findDialog-> set( %prf, findStyle => $findStyle);
 	$findDialog-> Find-> items($fd-> {findItems});
 	$findDialog-> Replace-> items($fd-> {replaceItems}) unless $findStyle;
@@ -431,7 +431,7 @@ my $fontDialog;
 sub setfont
 {
 	my $self = $_[0];
-	$fontDialog = Prima::Dialog::FontDialog-> create() unless $fontDialog;
+	$fontDialog = Prima::Dialog::FontDialog-> new() unless $fontDialog;
 	$fontDialog-> logFont( $self-> font);
 	return unless $fontDialog-> execute;
 	$self-> font( $fontDialog-> logFont);
@@ -443,7 +443,7 @@ my @fn = @ARGV;
 @fn = (undef) unless scalar @fn;
 
 for ( @fn) {
-my $w = EditorWindow-> create(
+my $w = EditorWindow-> new(
         origin => [ 10, 100],
         size   => [ $::application-> width - 820, $::application-> height - 150],
 	fileName => $_,

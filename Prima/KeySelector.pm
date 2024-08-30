@@ -731,7 +731,7 @@ of key combinations between various representations.
 
 =head1 SYNOPSIS
 
-	my $ks = Prima::KeySelector-> create( );
+	my $ks = Prima::KeySelector-> new( );
 	$ks-> key( km::Alt | ord('X'));
 	print Prima::KeySelector::describe( $ks-> key );
 

@@ -16,7 +16,7 @@ use Prima qw(Application Grids);
 
 my $scaling = $::application->uiScaling;
 
-my $w = Prima::MainWindow-> create(
+my $w = Prima::MainWindow-> new(
 	text => "Periodic table of elements",
 	size => [ map { $scaling * $_ } 45 * 14 + 5, 45 * 14 + 5],
 );

@@ -16,7 +16,7 @@ use strict;
 use warnings;
 use Prima qw(Application);
 
-my $i = Prima::Image-> create(
+my $i = Prima::Image-> new(
 	preserveType => 1,
 	type => im::BW,
 	font => { size => 100, style => fs::Bold|fs::Italic },
@@ -48,7 +48,7 @@ if ( $i->font->{vector}) {
 
 my ($g1, $g2);
 
-my $w = Prima::MainWindow-> create(
+my $w = Prima::MainWindow-> new(
 	size   => [ @is],
 	centered => 1,
 	buffered => 1,

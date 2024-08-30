@@ -2237,7 +2237,7 @@ Prima::Outlines - tree view widgets
 =head1 SYNOPSIS
 
 	use Prima qw(Outlines Application);
-	my $outline = Prima::StringOutline-> create(
+	my $outline = Prima::StringOutline-> new(
 		items => [
 			[ 'Simple item' ],
 			[ 'Embedded items', [['#1'], ['#2']]],
@@ -2250,7 +2250,7 @@ Prima::Outlines - tree view widgets
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/outline.gif">
 
-	my $outline = Prima::StringOutline-> create(
+	my $outline = Prima::StringOutline-> new(
 		iconStyle => 'triangle',
 		...
 	);

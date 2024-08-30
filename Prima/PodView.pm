@@ -823,7 +823,7 @@ Prima::PodView - POD browser widget
 
 	use Prima qw(Application PodView);
 
-	my $window = Prima::MainWindow-> create;
+	my $window = Prima::MainWindow-> new;
 	my $podview = $window-> insert( 'Prima::PodView',
 		pack => { fill => 'both', expand => 1 }
 	);

@@ -40,7 +40,7 @@ Prima::File is a descendant of Prima::Component.  Objects of the Prima::File
 class must be bounded to a valid file handle object before the associated
 events can occur:
 
-  my $f = Prima::File-> create();
+  my $f = Prima::File-> new();
   $f-> file( *STDIN);
 
 When a file handle bound via the C<::file> property becomes readable, writable,

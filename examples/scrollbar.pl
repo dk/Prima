@@ -39,7 +39,7 @@ sub Timer1_Tick
 
 package UserInit;
 
-my $w = MyWindow-> create(
+my $w = MyWindow-> new(
 	text => "Scrollbar & timer example",
 	left    => 100,
 	bottom  => 100,

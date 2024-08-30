@@ -129,7 +129,7 @@ return $r[0], $r[1], @rs;
 };
 
 my $a = 1;
-my $w = Prima::MainWindow-> create
+my $w = Prima::MainWindow-> new
 (
 text => 'Rotating line',
 font => { pitch => fp::Fixed, style => fs::Bold },

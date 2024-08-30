@@ -16,7 +16,7 @@ use Prima qw(InputLine Edit Application sys::AnyEvent);
 use AnyEvent::Socket;
 use Socket qw(inet_aton inet_ntoa);
 
-my $w = Prima::MainWindow-> create(
+my $w = Prima::MainWindow-> new(
 	size      => [ $::application-> width * 0.6, $::application-> height * 0.6],
 	text      => 'AnyEvent demo',
 );

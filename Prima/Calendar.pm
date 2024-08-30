@@ -525,7 +525,7 @@ Prima::Calendar - standard calendar widget
 =head1 SYNOPSIS
 
 	use Prima qw(Calendar Application);
-	my $cal = Prima::Calendar-> create(
+	my $cal = Prima::Calendar-> new(
 		useLocale => 1,
 		size      => [ 150, 150 ],
 		onChange  => sub {

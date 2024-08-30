@@ -56,8 +56,8 @@ sub recalc_coordinates
 }
 
 
-my $w = Prima::MainWindow-> create(
-#my $w = Window-> create(
+my $w = Prima::MainWindow-> new(
+#my $w = Window-> new(
 	text   => $::application-> name,
 	left   => 200,
 	bottom => 300,

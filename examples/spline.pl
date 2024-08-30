@@ -44,7 +44,7 @@ my @rgb_vectors = (
 my $capture;
 my $aperture = 6 * $::application-> uiScaling;
 
-my $w = Prima::MainWindow-> create(
+my $w = Prima::MainWindow-> new(
 	text => 'Spline demo',
 	antialias => (( $ARGV[0] // '' ) eq 'aa'),
 	backColor => cl::Black,

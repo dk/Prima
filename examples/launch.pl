@@ -52,8 +52,8 @@ sub destroy
 package Generic;
 
 sub start {
-	$myApp = $::application = MyApp-> create( name => "Launcher");
-	$dlg = MyOpenDialog-> create(
+	$myApp = $::application = MyApp-> new( name => "Launcher");
+	$dlg = MyOpenDialog-> new(
 		name   => 'Launcher',
 		filter => [
 			['Scripts' => '*.pl'],
@@ -80,10 +80,10 @@ sub start {
 
 package Prima::Application;
 
-sub create
+sub new
 {
 	my $x = shift;
-	return $myApp ? $myApp : $x-> SUPER::create( @_);
+	return $myApp ? $myApp : $x-> SUPER::new( @_);
 }
 
 package Launcher;

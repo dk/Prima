@@ -16,7 +16,7 @@ use strict;
 use warnings;
 use Prima 'Dialog::ColorDialog', 'Application';
 
-my $p = Prima::Dialog::ColorDialog-> create(
+my $p = Prima::Dialog::ColorDialog-> new(
 	value => 0x3030F0,
 	visible => 1,
 	quality => 1,

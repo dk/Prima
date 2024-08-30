@@ -11,7 +11,7 @@ Prima::Window - top-level window management
    my $main = Prima::MainWindow-> new( text => 'Hello world' );
 
    # this is a modal window
-   my $dialog = Prima::Dialog->create( size => [ 100, 100 ]);
+   my $dialog = Prima::Dialog->new( size => [ 100, 100 ]);
    my $result = $dialog-> execute;
    $dialog-> destroy;
 

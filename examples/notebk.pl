@@ -84,7 +84,7 @@ sub init
 
 package Generic;
 
-my $w = Bla-> create(
+my $w = Bla-> new(
 	size => [ 600, 300],
 	y_centered  => 1,
 	designScale => [7, 16],

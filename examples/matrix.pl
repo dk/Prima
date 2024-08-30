@@ -136,7 +136,7 @@ sub resetfs
 }
 
 
-my $w = Prima::MainWindow-> create(
+my $w = Prima::MainWindow-> new(
 	palette => [@spal],
 	font => { name => 'Courier New', size => $basicfsize, },
 	backColor => 0x002000,

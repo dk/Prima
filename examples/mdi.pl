@@ -29,7 +29,7 @@ sub icons
 	$w-> borderIcons( $bi);
 }
 
-my $wwx = Prima::MDIWindowOwner-> create(
+my $wwx = Prima::MDIWindowOwner-> new(
 	size => [ 300, 300],
 	text => 1,
 	name => 1,
@@ -68,7 +68,7 @@ my $wwx = Prima::MDIWindowOwner-> create(
 	],
 );
 
-$w = Prima::MDI-> create(
+$w = Prima::MDI-> new(
 	owner => $wwx,
 	clipOwner => 0,
 	size => [200, 200],
@@ -78,7 +78,7 @@ $w = Prima::MDI-> create(
 );
 
 
-my $i = Prima::Image-> create;
+my $i = Prima::Image-> new;
 $i-> load('Hand.gif');
 
 $w-> client-> insert( ImageViewer =>

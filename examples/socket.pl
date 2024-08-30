@@ -19,7 +19,7 @@ use Prima qw(InputLine Edit Application);
 use Socket;
 
 
-my $w = Prima::MainWindow-> create(
+my $w = Prima::MainWindow-> new(
 	size => [ $::application-> width * 0.8, $::application-> height * 0.8],
 	text => 'Socket demo',
 );
@@ -51,7 +51,7 @@ sub parse
 }
 
 my $data;
-my $watcher = Prima::File-> create(
+my $watcher = Prima::File-> new(
 	onRead => sub {
 		my ($me,$fh) = @_;
 		my ($d,$l);

@@ -401,7 +401,7 @@ my $re_size = sub {
 	$w-> SizeList-> set_focused_item($i);
 };
 
-$w = Prima::MainWindow-> create( text => "Font Window",
+$w = Prima::MainWindow-> new( text => "Font Window",
 	origin => [ 200, 200],
 	size   => [ 500, 590],
 	designScale => [7,16],
@@ -412,7 +412,7 @@ sub create_info_window
 {
 	my $w = shift;
 	my $f = $w-> Example-> font;
-	my $ww = Prima::Window-> create(
+	my $ww = Prima::Window-> new(
 		size => [ 500, $f-> height * 3 + $f-> externalLeading + $f-> descent + 482 ],
 		font => $f,
 		text => $f-> size.'.['.$f-> height.'x'.$f-> width.']'.$f-> name,

@@ -17,9 +17,9 @@ use Prima::ComboBox;
 use Prima::Dialog::FileDialog;
 
 package UserInit;
-$::application = Prima::Application-> create( name => "DriveCombo");
+$::application = Prima::Application-> new( name => "DriveCombo");
 
-my $w = Prima::MainWindow-> create(
+my $w = Prima::MainWindow-> new(
 	text   => "Combo box",
 	left   => 100,
 	bottom => 300,

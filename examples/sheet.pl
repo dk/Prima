@@ -18,7 +18,7 @@ use Prima qw(DetailedList Application);
 
 package Sheet;
 
-my $w = Prima::MainWindow-> create( packPropagate => 0);
+my $w = Prima::MainWindow-> new( packPropagate => 0);
 
 my @items;
 my $fname;

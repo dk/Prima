@@ -42,7 +42,7 @@ use strict;
 use warnings;
 use Prima qw(InputLine Label MsgBox Application);
 
-my $w = Prima::MainWindow-> create(
+my $w = Prima::MainWindow-> new(
 	size => [ 600, 200],
 	text => "Static texts",
 	designScale => [7, 16],

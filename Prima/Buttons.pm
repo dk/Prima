@@ -1498,7 +1498,7 @@ Prima::Buttons - buttons, checkboxes, radios
 
 	use Prima qw(Application Buttons StdBitmap);
 
-	my $window = Prima::MainWindow-> create;
+	my $window = Prima::MainWindow-> new;
 	Prima::Button-> new(
 		owner => $window,
 		text  => 'Simple button',

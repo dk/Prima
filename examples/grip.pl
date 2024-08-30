@@ -38,7 +38,7 @@ sub xordraw
 	);
 }
 
-my $w = Prima::MainWindow-> create(
+my $w = Prima::MainWindow-> new(
 	size => [ 200, 200],
 	menuItems => [
 		[ "~Grip" => sub {

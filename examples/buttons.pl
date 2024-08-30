@@ -71,7 +71,7 @@ sub set_style
 	$_[0]->repaint;
 }
 
-my $w = Prima::MainWindow-> create(
+my $w = Prima::MainWindow-> new(
 	text   => "Button example",
 	centered  => 1,
 	height    => 300,

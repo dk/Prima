@@ -15,7 +15,7 @@ use warnings;
 
 use Prima 'InputLine', 'Application';
 
-my $w = Prima::MainWindow->create( size => [ 700, 300]);
+my $w = Prima::MainWindow->new( size => [ 700, 300]);
 
 my $l = $w->insert( InputLine =>
 	text        => '0:::1234 5678 90ab cdef ghij klmn oprq stuv:1::1234 5678 90ab cdef ghij klmn oprq stuv:2::1234 5678 90ab cdef ghij klmn oprq stuv:3::1234 5678 90ab cdef ghij klmn oprq stuv:4::1234 5678 90ab cdef ghij klmn oprq stuv::End',

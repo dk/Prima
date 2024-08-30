@@ -34,7 +34,7 @@ sub reshape
 	for (0,1) {
 	$sz[$_] = 5 if $sz[$_] < 5;
 	}
-	my $i = Prima::Image-> create(
+	my $i = Prima::Image-> new(
 		width  => $sz[0],
 		height => $sz[1],
 		type   => im::BW,
@@ -57,7 +57,7 @@ sub reshape
 
 my $m;
 
-my $x = Prima::MainWindow-> create(
+my $x = Prima::MainWindow-> new(
 	visible  => 0,
 	buffered  => 1,
 	color     => cl::Black,

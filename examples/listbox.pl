@@ -98,7 +98,7 @@ sub PrintAll
 }
 
 
-my $w = TestWindow-> create(
+my $w = TestWindow-> new(
 	name    =>  "Window1",
 	origin  => [ 100, 100],
 	size    => [ 600, 230],

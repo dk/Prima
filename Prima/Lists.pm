@@ -2433,7 +2433,7 @@ the standard workhorse listbox widget.
 
 =head2 Synopsis
 
-	my $lb = Prima::ListBox-> create(
+	my $lb = Prima::ListBox-> new(
 		items       => [qw(First Second Third)],
 		focusedItem => 2,
 		onClick     => sub {

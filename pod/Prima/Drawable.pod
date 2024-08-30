@@ -49,7 +49,7 @@ values are preserved, but when the object is back to the disabled state, the
 graphic context is restored to the values last assigned before entering the
 enabled state. The code example below illustrates the idea:
 
-   $d = Prima::Drawable-> create;
+   $d = Prima::Drawable-> new;
    $d-> lineWidth( 5);
    $d-> begin_paint_info;
    # lineWidth is 5 here
@@ -68,7 +68,7 @@ This function can be unsuccessful because the object binds with system resources
 during this stage, and allocation of those may fail. Only after the enabled state is entered,
 the canvas is accessible:
 
-   $d = Prima::Image-> create( width => 100, height => 100);
+   $d = Prima::Image-> new( width => 100, height => 100);
    if ( $d-> begin_paint) {
       $d-> color( cl::Black);
       $d-> bar( 0, 0, $d-> size);
@@ -94,14 +94,14 @@ obtain it inside the information state. A notable example is the
 get_text_width() method, which returns the length of a text string in pixels.
 It works in both enabled and information states, but code
 
-   $d = Prima::Image-> create( width => 10000, height => 10000);
+   $d = Prima::Image-> new( width => 10000, height => 10000);
    $d-> begin_paint;
    $x = $d-> get_text_width('A');
    $d-> end_paint;
 
 is much more expensive than
 
-   $d = Prima::Image-> create( width => 10000, height => 10000);
+   $d = Prima::Image-> new( width => 10000, height => 10000);
    $d-> begin_paint_info;
    $x = $d-> get_text_width('A');
    $d-> end_paint_info;

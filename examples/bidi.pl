@@ -25,7 +25,7 @@ my $font_dialog;
 
 $::application->textDirection(1);
 
-$w = Prima::MainWindow-> create(
+$w = Prima::MainWindow-> new(
 	size => [ 530, 250],
 	designScale => [7, 16],
 	text => "Bidirectional texts",
@@ -40,7 +40,7 @@ $w = Prima::MainWindow-> create(
 				$pod->format( keep_offset => 1 );
 			} ],
 			[ "~Set font" => sub {
-				$font_dialog //= Prima::Dialog::FontDialog-> create(logFont => $w->font);
+				$font_dialog //= Prima::Dialog::FontDialog-> new(logFont => $w->font);
 				$w->font($font_dialog-> logFont) if $font_dialog-> execute == mb::OK;
 			} ],
 		]],

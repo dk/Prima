@@ -920,7 +920,7 @@ Prima::FrameSet - frameset widget
 
 	use Prima qw(Application Buttons FrameSet);
 
-	my $w = Prima::MainWindow->create( size => [300, 150] );
+	my $w = Prima::MainWindow->new( size => [300, 150] );
 
 	my $frame = $w-> insert( 'FrameSet' =>
 		pack          => { fill => 'both', expand => 1 },

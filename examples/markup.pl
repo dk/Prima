@@ -31,7 +31,7 @@ use Prima::Drawable::Markup q(M);
     Prima::Icon->load("$Bin/Hand.gif")
 );
 
-my $Main = Prima::MainWindow->create(
+my $Main = Prima::MainWindow->new(
 	name   => 'Main',
 	text   => 'Markup test',
 	size   => [500,500],

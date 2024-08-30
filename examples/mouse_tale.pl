@@ -80,7 +80,7 @@ my @indents = (
 my ( $w, $t);
 my $initfs = 20;
 
-$w = Prima::MainWindow-> create(
+$w = Prima::MainWindow-> new(
 	name => 'Mouse tale',
 	packPropagate => 0,
 	menuItems => [
@@ -99,7 +99,7 @@ $w = Prima::MainWindow-> create(
 	],
 );
 
-$t = Prima::TextView-> create(
+$t = Prima::TextView-> new(
 	owner => $w,
 	text     => join( "\n", @tale),
 	pack     => { expand => 1, fill => 'both' },

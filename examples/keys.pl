@@ -42,7 +42,7 @@ my $propagate = 1;
 my $repeat    = 0;
 my $fontDialog;
 
-my $w = Prima::MainWindow-> create(
+my $w = Prima::MainWindow-> new(
 	size => [500,250],
 	text => 'Keyboard events checker',
 	menuItems => [['~Options' => [
@@ -54,7 +54,7 @@ my $w = Prima::MainWindow-> create(
 		],
 		[],
 		["Set ~font..." => "Ctrl+F" => '^F' => sub {
-			my $d =  $fontDialog ? $fontDialog : Prima::Dialog::FontDialog-> create(
+			my $d =  $fontDialog ? $fontDialog : Prima::Dialog::FontDialog-> new(
 				logFont => $_[0]-> Label1-> font,
 			);
 			$fontDialog = $d;

@@ -37,7 +37,7 @@ $d =~ s/([s-z])/q(f)x(ord($1)-ord('s'))/ge;
 $d =~ s/(..)/chr hex qq(0x$1)/ge;
 #
 my $sc = $::application-> uiScaling;
-my @images = map { Prima::Image-> create(
+my @images = map { Prima::Image-> new(
 	width    => 40,
 	height   => 40,
 	type     => im::BW,
@@ -89,7 +89,7 @@ my @pointer= map {
 } sv::XPointer, sv::YPointer;
 $pointer[$_] = ( $pointer[$_] - 40 * $sc ) / 2 for 0,1;
 
-my $w = Prima::MainWindow-> create(
+my $w = Prima::MainWindow-> new(
 	name => 'Chess puzzle',
 	size => [ 360 * $sc, 360 * $sc],
 	font => { style => fs::Bold, size => 11,},

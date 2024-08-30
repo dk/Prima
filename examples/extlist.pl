@@ -16,7 +16,7 @@ use Prima;
 use Prima::ExtLists;
 use Prima::Application;
 
-my $w = Prima::MainWindow-> create(
+my $w = Prima::MainWindow-> new(
 	size => [ 200, 200],
 	designScale => [7,16],
 );

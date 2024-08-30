@@ -154,7 +154,7 @@ sub open_dockmanaging
 	my $self = $_[0];
 	my $i = $self-> instance;
 	return if $i-> interactiveDrag;
-	my $wpanel = Prima::Window-> create(
+	my $wpanel = Prima::Window-> new(
 		name => 'Customize tools',
 		size => [ 400, 200],
 		onClose => sub {
@@ -345,7 +345,7 @@ sub on_paint
 package X;
 
 # createing the docking instance with predefined command state
-my $i = Prima::DockManager-> create(
+my $i = Prima::DockManager-> new(
 	commands  => {
 		'Edit::OK' => 0,
 		'Edit::Cancel' => 0,
@@ -398,7 +398,7 @@ my $resFile = Prima::Utils::path('demo_dock');
 
 # after all that, creating window ( the window itself is of small importance...)
 
-my $ww = Prima::Dock::BasicWindow -> create(
+my $ww = Prima::Dock::BasicWindow -> new(
 	instance => $i,
 	onClose => sub {
 		if ( open F, "> $resFile") {

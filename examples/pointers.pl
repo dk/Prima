@@ -20,7 +20,7 @@ package UserInit;
 my $ph = Prima::Application-> get_system_value(sv::YPointer);
 my $sc = $::application-> uiScaling;
 $ph = $::application->font->height * 2 if $ph < $::application->font->height * 2;
-my $w = Prima::MainWindow-> create(
+my $w = Prima::MainWindow-> new(
 	size    => [ 350 * $sc, 20 + ($ph+8)*15],
 	left    => 200,
 	text    => 'Pointers',
@@ -61,7 +61,7 @@ my $color_pointer = $::application->get_system_value(sv::ColorPointer);
 
 my @mapset = map {
 	my ($x,$r) = $ptr-> split;
-	my $j = Prima::Icon-> create;
+	my $j = Prima::Icon-> new;
 	$x-> begin_paint;
 	$x-> text_out( $_, 3, 3);
 	$x-> end_paint;

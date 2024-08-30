@@ -21,7 +21,7 @@ use Prima::Grids;
 
 
 my $g;
-my $w = Prima::MainWindow-> create(
+my $w = Prima::MainWindow-> new(
 	text => 'Grid example',
 	packPropagate => 0,
 	menuItems => [

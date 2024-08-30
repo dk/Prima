@@ -1749,7 +1749,7 @@ $logo = Prima::StdBitmap::icon(0);
 $bitmap-> set( conversion => ict::None, type => im::BW);
 $bitmap = $bitmap-> bitmap;
 
-my $w = Prima::MainWindow-> create(
+my $w = Prima::MainWindow-> new(
 text => 'Canvas demo',
 menuItems => [
 	['~Object' => [
@@ -1911,18 +1911,18 @@ sub insert
 		$profile{anchor} = [50,50];
 	}
 	if ( $obj eq 'Button') {
-		$profile{widget} = Prima::Button-> create( owner => $c);
+		$profile{widget} = Prima::Button-> new( owner => $c);
 		$obj = 'Widget';
 	}
 	if ( $obj eq 'InputLine') {
-		$profile{widget} = Prima::InputLine-> create( owner => $c);
+		$profile{widget} = Prima::InputLine-> new( owner => $c);
 		$profile{scalable} = 0;
 		$obj = 'Widget';
 	}
 	if ( $obj eq 'Widget') {
 		$profile{widget}-> popupItems( $widget_popup);
 	}
-	$profile{text} = "use Prima qw(Application);\nMainWindow-> create();\nrun Prima;"
+	$profile{text} = "use Prima qw(Application);\nMainWindow-> new();\nrun Prima;"
 		if $obj eq 'Text';
 	$c-> focused_object( $c-> insert_object( "Prima::Canvas::$obj", %profile));
 }
@@ -1954,7 +1954,7 @@ sub set_color
 	my $obj;
 	return unless $obj = $self-> Canvas-> focused_object;
 	return unless $obj->can($property);
-	$colordialog = Prima::Dialog::ColorDialog-> create unless $colordialog;
+	$colordialog = Prima::Dialog::ColorDialog-> new unless $colordialog;
 	$colordialog-> value( $obj-> $property());
 	$obj-> $property( $colordialog-> value) if $colordialog-> execute != mb::Cancel;
 }
@@ -1964,7 +1964,7 @@ sub set_font
 	my ( $self, $property) = @_;
 	my $obj;
 	return unless $obj = $self-> Canvas-> focused_object;
-	$fontdialog = Prima::Dialog::FontDialog-> create unless $fontdialog;
+	$fontdialog = Prima::Dialog::FontDialog-> new unless $fontdialog;
 	$fontdialog-> logFont( $obj-> font);
 	$obj-> font( $fontdialog-> logFont) if $fontdialog-> execute != mb::Cancel;
 }

@@ -33,9 +33,9 @@ for ( $i = 0; $i < 33; $i++) {
 };
 
 
-my $aimg = Prima::Image-> create();
-my $bimg = Prima::Image-> create();
-my $cimg = Prima::Image-> create();
+my $aimg = Prima::Image-> new();
+my $bimg = Prima::Image-> new();
+my $cimg = Prima::Image-> new();
 
 if ( $useImages) {
 $aimg-> load('winnt256.bmp');
@@ -45,7 +45,7 @@ $cimg-> load('baba.bmp'); $cimg-> type( im::bpp8);
 
 @spal = (@{$aimg-> palette}, @{$bimg-> palette}, @{$cimg-> palette}) if $useImages;
 
-my $w = Prima::MainWindow-> create(
+my $w = Prima::MainWindow-> new(
 	size    => [ 100, 33 * 8],
 	palette => [ @spal],
 	buffered => 1,

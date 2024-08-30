@@ -16,7 +16,7 @@ use strict;
 use warnings;
 use Prima qw(Lists Label MsgBox PS::Printer PS::PDF);
 
-$::application = Prima::Application-> create( name => "Generic.pm");
+$::application = Prima::Application-> new( name => "Generic.pm");
 my $p = $::application-> get_printer;
 my $curr;
 my @printers;
@@ -84,7 +84,7 @@ sub print_sample
 {
 	if ( $curr == $::application) {
 		$wDisplay-> destroy if $wDisplay;
-		$wDisplay = Prima::Window-> create(
+		$wDisplay = Prima::Window-> new(
 			text    => 'DISPLAY',
 			onPaint => sub {
 				my ( $self, $canvas) = @_;
@@ -105,7 +105,7 @@ sub print_sample
 		return;
 	}
 
-	my $ww = Prima::Window-> create(
+	my $ww = Prima::Window-> new(
 		borderIcons => 0,
 		borderStyle => bs::None,
 		size        => [300, 100],
@@ -147,7 +147,7 @@ sub refresh
 	$w-> menu-> A1-> enabled( scalar @printers);
 }
 
-$w = Prima::MainWindow-> create(
+$w = Prima::MainWindow-> new(
 	text   => 'Print example',
 	size      => [400, 200],
 	centered  => 1,

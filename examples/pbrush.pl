@@ -39,7 +39,7 @@ sub init
 {
 	my $self = shift;
 	my %profile = $self-> SUPER::init(@_);
-	my $i = $self-> {image} = Prima::Image-> create(
+	my $i = $self-> {image} = Prima::Image-> new(
 		width  => $profile{limitX},
 		height => $profile{limitY},
 		type   => im::RGB,
@@ -168,7 +168,7 @@ sub on_mouseclick
 	$index += int(( $x - 1) / $cdx);
 	my $d = $self-> {colorDlg} ?
 		$self-> {colorDlg} :
-		Prima::Dialog::ColorDialog-> create(
+		Prima::Dialog::ColorDialog-> new(
 			centered => 1,
 			visible  => 0,
 			name     => 'Edit color',
@@ -244,7 +244,7 @@ sub init
 
 package Editor;
 
-my $w = ImageEdit::EditorWindow-> create(
+my $w = ImageEdit::EditorWindow-> new(
 	text    => 'Edit sample',
 	size       => [ 400, 400],
 	centered   => 1,

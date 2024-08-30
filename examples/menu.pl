@@ -116,7 +116,7 @@ sub create_custom_menu
 	} ];
 }
 
-my $img = Prima::Image-> create;
+my $img = Prima::Image-> new;
 $0 =~ /^(.*)(\\|\/)[^\\\/]+$/;
 $img-> load(( $1 || '.') . '/Hand.gif');
 
@@ -276,7 +276,7 @@ sub BorderMode
 
 package UserInit;
 
-my $w = TestWindow-> create(
+my $w = TestWindow-> new(
 	text      => "Menu and input line example",
 	size      => [ 360, 160],
 	menuItems => TestWindow::create_menu,

@@ -19,7 +19,7 @@ perl -MPrima::Themes program
 
 my ( $tab );
 
-my $w = Prima::MainWindow-> create(
+my $w = Prima::MainWindow-> new(
 	text => 'Theme selector',
 	designScale => [7, 16],
 	menuItems => [

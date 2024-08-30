@@ -23,7 +23,7 @@ use Prima::Const;
 use Prima::Application name => 'Generic.pm';
 
 
-my $w = Prima::MainWindow-> create(
+my $w = Prima::MainWindow-> new(
 	size => [ 300, 300],
 	borderStyle => bs::Dialog,
 	backColor => cl::Green,
@@ -73,7 +73,7 @@ $w-> insert(
 
 goto NOSHAPE unless $::application-> get_system_value( sv::ShapeExtension);
 my $string = "Hello from Prima::OnScreenDisplay!";
-my $tt = Prima::Widget-> create(
+my $tt = Prima::Widget-> new(
 	name => 'W1',
 	backColor => cl::LightRed,
 	onMouseDown => sub {
@@ -101,7 +101,7 @@ my $font = $tt-> font;
 $tt-> width( $tt-> get_text_width( $string));
 $tt-> end_paint_info;
 
-my $i = Prima::Image-> create( width => $tt-> width, height => $tt-> height,
+my $i = Prima::Image-> new( width => $tt-> width, height => $tt-> height,
 type => im::RGB, conversion => ict::None);
 $i-> begin_paint;
 $i-> color( cl::Black);

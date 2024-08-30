@@ -1297,7 +1297,7 @@ Prima::TextView - rich text browser widget
  use warnings;
  use Prima qw(TextView Application);
 
- my $w = Prima::MainWindow-> create(
+ my $w = Prima::MainWindow-> new(
      name => 'TextView example',
  );
 

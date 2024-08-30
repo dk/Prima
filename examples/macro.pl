@@ -70,7 +70,7 @@ sub msave
 }
 
 
-my $w = Prima::MainWindow-> create(
+my $w = Prima::MainWindow-> new(
 	text => $wtx,
 	size => [ 436, 54],
 	designScale => [ 7, 16 ],

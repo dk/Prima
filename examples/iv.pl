@@ -43,7 +43,7 @@ use warnings;
 use Prima qw(ImageViewer Dialog::ImageDialog MsgBox sys::GUIException);
 use Prima::Application name => "IV";
 
-my $ico = Prima::Icon-> create;
+my $ico = Prima::Icon-> new;
 $ico = 0 unless $ico-> load( 'hand.gif');
 
 
@@ -157,7 +157,7 @@ my $imgdlg;
 sub create_image_dialog
 {
 	return $imgdlg if $imgdlg;
-	$imgdlg  = Prima::Dialog::ImageOpenDialog-> create();
+	$imgdlg  = Prima::Dialog::ImageOpenDialog-> new();
 }
 
 sub fdopen
@@ -193,7 +193,7 @@ sub freopen
 sub newwindow
 {
 	my ( $self, $filename, $i) = @_;
-	my $w = Prima::Window-> create(
+	my $w = Prima::Window-> new(
 		onDestroy => \&iv_destroy,
 		menuItems => $self-> menuItems,
 		onMouseWheel => sub { iv_mousewheel( shift-> IV, @_)},
@@ -258,7 +258,7 @@ sub fsave
 sub fsaveas
 {
 	my $iv = $_[0]-> IV;
-	my $dlg  = Prima::Dialog::ImageSaveDialog-> create( image => $iv-> image);
+	my $dlg  = Prima::Dialog::ImageSaveDialog-> new( image => $iv-> image);
 	$iv-> {fileName} = $dlg-> fileName if $dlg-> save( $iv-> image);
 	$dlg-> destroy;
 }
@@ -352,7 +352,7 @@ sub iv_destroy
 	$::application-> close unless $winCount;
 }
 
-my $w = Prima::Window-> create(
+my $w = Prima::Window-> new(
 	size => [ 300, 300],
 	onDestroy => \&iv_destroy,
 	onMouseWheel => sub { iv_mousewheel( shift-> IV, @_)},

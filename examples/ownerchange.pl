@@ -16,7 +16,7 @@ use strict;
 use warnings;
 use Prima qw(Buttons Application);
 
-my $w = Prima::Window-> create(
+my $w = Prima::Window-> new(
 	name       => "D1",
 	text    => "Window Number One",
 	origin     =>  [ 100, 300],
@@ -33,7 +33,7 @@ my $w = Prima::Window-> create(
 	},
 );
 
-my $w2 = Prima::Window-> create(
+my $w2 = Prima::Window-> new(
 	name      => "D2",
 	text   => "Window Number Two",
 	designScale => [7, 16],

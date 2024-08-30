@@ -21,7 +21,7 @@ my $loop = AnyEvent->condvar;
 my $impl = AnyEvent::detect;
 print "AnyEvent implementation is $impl\n";
 
-my $w = Prima::MainWindow-> create(
+my $w = Prima::MainWindow-> new(
 	size      => [ $::application-> width * 0.6, $::application-> height * 0.6],
 	text      => 'AnyEvent demo',
 	onDestroy => sub {

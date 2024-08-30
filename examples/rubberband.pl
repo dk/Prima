@@ -25,7 +25,7 @@ sub xordraw
 	);
 }
 
-Prima::MainWindow-> create(
+Prima::MainWindow-> new(
 	text => 'Click and drag!',
 	onMouseDown => sub {
 		my ( $self, $btn, $mod, $x, $y) = @_;

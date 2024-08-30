@@ -4,7 +4,7 @@ Prima::Timer - programmable periodical events
 
 =head1 SYNOPSIS
 
-    my $timer = Prima::Timer-> create(
+    my $timer = Prima::Timer-> new(
         timeout => 1000, # milliseconds
         onTick  => sub {
            print "tick!\n";
@@ -25,7 +25,7 @@ objects at one time, spawning events simultaneously.
 The Prima::Timer class is a descendant of the Prima::Component class.
 Objects of the Prima::Timer class are created in the standard fashion:
 
-  my $t = Prima::Timer-> create(
+  my $t = Prima::Timer-> new(
      timeout => 1000,
      onTick  => sub { print "tick\n"; },
   );

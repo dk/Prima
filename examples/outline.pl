@@ -14,7 +14,7 @@ use strict;
 use warnings;
 use Prima qw(Application Outlines);
 
-my $w = Prima::MainWindow-> create(
+my $w = Prima::MainWindow-> new(
 	size => [ 200, 200],
 	designScale => [7, 16],
 );

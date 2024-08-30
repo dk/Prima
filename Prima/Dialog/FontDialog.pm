@@ -453,7 +453,7 @@ Prima::Dialog::FontDialog - standard font dialog
 =head1 SYNOPSIS
 
 	use Prima qw(Application Dialog::FontDialog);
-	my $f = Prima::Dialog::FontDialog-> create;
+	my $f = Prima::Dialog::FontDialog-> new;
 	return unless $f-> execute == mb::OK;
 	$f = $f-> logFont;
 	print "$_:$f->{$_}\n" for sort keys %$f;
