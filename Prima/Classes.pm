@@ -1719,7 +1719,7 @@ sub parse_markup { Prima::Drawable::Markup::M( $_[2] ) }
 sub __tk_dash_map
 {
 	my %ret;
-	my %hash = @_;
+	my %hash = (1 == @_ && ref($_[0]) eq 'HASH') ? %{$_[0]} : @_;
 	while ( my ( $k, $v ) = each %hash ) {
 		$k =~ s/^-//;
 		$ret{$k} = $v;
