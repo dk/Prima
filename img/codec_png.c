@@ -64,6 +64,7 @@ static int    pngbpp[] = {
 	imbpp8 | imGrayScale, imbpp8,
 	imbpp4 | imGrayScale, imbpp4,
 	imbpp1 | imGrayScale, imbpp1,
+	imShort,
 	0
 };
 static char * features[] = {
@@ -358,13 +359,18 @@ process_header( PImgLoadFileInstance fi, Bool use_subloader )
 		&interlace_type, &compression_type, &filter);
 	channels = l->m_channels;
 	type     = l->m_type;
-	
+
 	switch ( bit_depth) {
 	case 2:
 		png_set_packing(png_ptr);
 		break;
 	case 16:
-		png_set_strip_16(png_ptr);
+		if ( color_type != PNG_COLOR_TYPE_GRAY )
+#if PNG_LIBPNG_VER >= 10504
+			png_set_scale_16(png_ptr);
+#else
+			png_set_strip_16(png_ptr);
+#endif
 		break;
 	}
 
@@ -563,7 +569,7 @@ header_available(PImgLoadFileInstance fi)
 		l->want_nibbles = true;
 		break;
 	case 16:
-		l->m_type = 8;
+		l->m_type = (color_type == PNG_COLOR_TYPE_GRAY) ? imShort : 8;
 		break;
 	default:
 		sprintf( fi-> errbuf, "Bit depth %d is not supported", bit_depth);
@@ -1434,6 +1440,9 @@ write_IHDR(PImgSaveFileInstance fi)
 	if (( i-> type & imBPP) == 24) {
 		bit_depth = 8;
 		color_type = PNG_COLOR_TYPE_RGB;
+	} else if ( !s->icon && i->type == imShort ) {
+		color_type = PNG_COLOR_TYPE_GRAY;
+		bit_depth = 16;
 	} else {
 		color_type = ( i-> type & imGrayScale) ?
 			PNG_COLOR_TYPE_GRAY : PNG_COLOR_TYPE_PALETTE;

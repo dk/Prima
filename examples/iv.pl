@@ -279,6 +279,8 @@ sub setconv
 sub icvt
 {
 	my $im = $_[0]-> IV-> image;
+	$im->resample( $im->rangeLo, $im->rangeHi, 0, 255)
+		if $im->type & im::GrayScale && $im->get_bpp != 8;
 	$im-> set(
 		conversion => $_[0]-> {conversion},
 		type       => $_[1],
