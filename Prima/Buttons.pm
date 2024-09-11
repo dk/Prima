@@ -95,7 +95,7 @@ sub skin
 {
 	return $_[0]->SUPER::skin unless $#_;
 	my $self = shift;
-	$self->SUPER::skin($_[1]);
+	$self->SUPER::skin($_[0]);
 	if ($self->SUPER::skin eq 'flat') {
 		$self->update_shape if $self->autoShaping;
 	} else {
