@@ -6,7 +6,7 @@
 
 =head1 NAME
 
-examples/merkup.pl - merkup in widgets
+examples/markup.pl - markup in widgets
 
 =head1 FEATURES
 
