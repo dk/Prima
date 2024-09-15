@@ -307,6 +307,8 @@ sub setup_files
 		"img/*$Config{_o}",
 		"api/*$Config{_o}",
 		"$platform/*$Config{_o}",
+		qw(img/codecs.c Prima/Config.pm),
+		qw(makefile.log makefile.log.old makepl.log utils/par.txt),
 	);
 
 	# I still like to have my scripts as .pl, but installed without
