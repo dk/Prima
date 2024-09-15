@@ -2304,6 +2304,8 @@ sub _quote
 
 sub _quotepath { _quote(@_) }
 
+sub maybe_quote { $_[0] =~ /\s/ ? $SHQUOTE.$_[0].$SHQUOTE : $_[0] }
+
 sub create_config_pm
 {
 	my $cwd = cwd;
@@ -2314,11 +2316,11 @@ sub create_config_pm
 	$ip[0] = "$cwd${ifs}include";
 	$ip[1] = "$cwd${ifs}include${ifs}generic";
 	my $ipp = join(',', map {"\'$_\'"} @ip);
-	my $inc    = join(' ', map { "-I$_" } @ip);
+	my $inc    = join(' ', map maybe_quote("-I$_"), @ip);
 	$ip[0] = '$(lib)' . "/Prima/CORE";
 	$ip[1] = '$(lib)' . "/Prima/CORE/generic";
 	my $ippi = join(',', map {"\'$_\'"} @ip);
-	my $inci = join(' ', map { "-I$_" } @ip);
+	my $inci = join(' ', map maybe_quote("-I$_"), @ip);
 
 	# libs
 	my @libpath = @LIBPATH;
@@ -2336,10 +2338,10 @@ sub create_config_pm
 
 	my ($libs, $libsi) = ('','');
 	if ( $cygwin) {
-		$libs  = "-L$cwd/blib/arch/auto/Prima -lPrima";
-		$libsi = '-L$(lib)/auto/Prima -lPrima';
+		$libs  = maybe_quote("-L$cwd/blib/arch/auto/Prima")." -lPrima";
+		$libsi = maybe_quote("-L$(lib)/auto/Prima").' -lPrima';
 	} elsif ( $Win32) {
-		$libs  = "$cwd/blib/arch/auto/Prima/${LIB_PREFIX}Prima$LIB_EXT";
+		$libs  = maybe_quote("$cwd/blib/arch/auto/Prima/${LIB_PREFIX}Prima$LIB_EXT");
 		$libsi = '$(lib)' . "/auto/Prima/${LIB_PREFIX}Prima$LIB_EXT";
 	}
 
@@ -2441,12 +2443,13 @@ sub command_postinstall
 		s/\//\\/g for values %vars;
 	}
 
+	(my $bin = $opt{bin}) =~ s#"#\\"#g; # q() not robust to whacky dirnames
 	print $fh2 <<HEADER;
 # This file was automatically generated.
 package Prima::Config;
 use vars qw(\%Config);
 
-my \$bin = q($opt{bin});
+my \$bin = "$bin";
 
 # Determine lib based on the location of this module
 use File::Basename qw(dirname);
@@ -2466,7 +2469,7 @@ HEADER
 			} elsif ( m/^\s*(\S+)\s*/ ) {
 				my $k = $1;
 				s/\$\((\w+)\)/\$$1/g;
-				s/'/"/g;
+				s/'([^']*)'/qq{$1}/g;
 				s{\\}{\\\\}g;
 				$ci{$k} = $_;
 			}
