@@ -486,13 +486,13 @@ sub _find_file
 	my ( $pathname, $found);
 	$pathname = "$dir/$fname";
 	return $pathname if $pathname !~ /\.\./ && -e $pathname;
-	opendir D, $dir or die "Cannot open dir $dir: $!";
+	opendir my $dh, $dir or die "Cannot open dir $dir: $!";
 	my @entries =
 		map { "$dir/$_"}
 		grep { !/^blib/ }
 		grep { /^[^.]/ && -d "$dir/$_"}
-		readdir D;
-	closedir D;
+		readdir $dh;
+	closedir $dh;
 	foreach my $entry ( @entries) {
 		$pathname = _find_file( $fname, $entry);
 		next unless defined $pathname;
@@ -532,9 +532,8 @@ sub find_cdeps
 	$alldeps{ $cfile} = [];
 	return () unless -f $cfile;
 
-	local *CF;
-	open CF, "<$cfile" or die "Cannot open $cfile: $!";
-	while ( <CF>) {
+	open my $cf, "<", $cfile or die "Cannot open $cfile: $!";
+	while ( <$cf>) {
 		chomp;
 		next unless /^\s*\#\s*include\s+"([^\"]+)"/;
 		my $incfile = $1;
@@ -550,7 +549,7 @@ sub find_cdeps
 		push @{ $deps->{ $cfile}}, @subdeps;
 		push @{ $alldeps{ $cfile}}, @subdeps;
 	}
-	close CF;
+	close $cf;
 	return @{ $deps->{ $cfile}};
 }
 
@@ -627,13 +626,12 @@ sub restore_output
 	close OLDSTDERR;
 
 	if ( -f $NULLDEV ) {
-		if ( open MAKEFILELOG, '<', $NULLDEV) {
-			binmode MAKEFILELOG;
-			seek MAKEFILELOG, $offset_makefile_log, 0;
+		if ( open my $mffh, '<', $NULLDEV) {
+			binmode $mffh;
+			seek $mffh, $offset_makefile_log, 0;
 			local $/;
-			$captured_makefile_log = <MAKEFILELOG>;
+			$captured_makefile_log = <$mffh>;
 			print "\n", $captured_makefile_log if $cmd_options{VERBOSE};
-			close MAKEFILELOG;
 		}
 	}
 }
@@ -660,9 +658,9 @@ sub compile
 	$tmpextras[1] =~ s/\.[^\.+]$/.pdb/;
 	unlink @tmpextras; # leftovers are toxic to msvc
 
-	open TMPSRC, ">$tmpsrc" or die "Creation of temporary file $tmpsrc failed";
-	print TMPSRC $text;
-	close TMPSRC;
+	open my $fh, ">", $tmpsrc or die "Creation of temporary file $tmpsrc failed";
+	print $fh $text;
+	close $fh;
 
 	null_output;
 	my $cc = cc_command_line( $tmpsrc, $tmpo, $tmpexe, $compile_only || 0);
@@ -688,9 +686,9 @@ sub compile_and_run
 	$tmpextras[1] =~ s/\.[^\.+]$/.pdb/;
 	unlink @tmpextras; # leftovers are toxic to msvc
 
-	open TMPSRC, ">$tmpsrc" or die "Creation of temporary file $tmpsrc failed";
-	print TMPSRC $text;
-	close TMPSRC;
+	open my $fh, ">", $tmpsrc or die "Creation of temporary file $tmpsrc failed";
+	print $fh $text;
+	close $fh;
 
 	null_output;
 	my $cc = cc_command_line( $tmpsrc, $tmpo, $tmpexe, 0);
@@ -806,8 +804,8 @@ sub have_define
 	my $tmpsrc = tempfile( "pmts%04d.c");
 	my $tmpo = $tmpsrc;
 	$tmpo =~ s/\.c$/\.$Config{_o}/;
-	open TMPSRC, ">$tmpsrc" or die "Creation of temporary file $tmpsrc failed";
-	print TMPSRC <<EOF;
+	open my $fh, ">", $tmpsrc or die "Creation of temporary file $tmpsrc failed";
+	print $fh <<EOF;
 int
 main()
 {
@@ -818,7 +816,7 @@ return 0;
 #endif
 }
 EOF
-	close TMPSRC;
+	close $fh;
 	null_output;
 	my $ccrc = system( "$Config{cc} -c $tmpsrc");
 	restore_output;
@@ -1190,8 +1188,8 @@ sub setup_dl_loadflags
 	my $dl2 = "$TMPDIR/pmts$n2.$Config{dlext}";
 	my @ex = map { "$TMPDIR/pmts$_"} map { ("$n1$_", "$n2$_") } ('.ilk', '.pdb');
 
-	open TMPSRC, ">$c1" or die "Creation of temporary file $c1 failed";
-	print TMPSRC <<D;
+	open my $fh, ">", $c1 or die "Creation of temporary file $c1 failed";
+	print $fh <<D;
 #include <EXTERN.h>
 #include <perl.h>
 #include <XSUB.h>
@@ -1204,11 +1202,11 @@ XS(boot_pmts$n1) {
    XSRETURN(1);
 }
 D
-	close TMPSRC;
+	close $fh;
 
 	my $c2  = tempfile( "$TMPDIR/pmts%04d.c");
-	open TMPSRC, ">$c2" or die "Creation of temporary file $c2 failed";
-	print TMPSRC <<D;
+	open my $fh2, ">", $c2 or die "Creation of temporary file $c2 failed";
+	print $fh2 <<D;
 #include <EXTERN.h>
 #include <perl.h>
 #include <XSUB.h>
@@ -1222,7 +1220,7 @@ XS(boot_pmts$n2) {
    XSRETURN(1);
 }
 D
-	close TMPSRC;
+	close $fh2;
 
 	my $cc1 = cc_command_line( $c1, $o1, $dl1, 1, 1);
 	my $cc2 = cc_command_line( $c2, $o2, $dl2, 1, 1);
@@ -1920,27 +1918,26 @@ LIBTHAI
 
 sub generate_win32_def
 {
-	open PRIMADEF, ">$DEFFILE" or die "Cannot create $DEFFILE: $!";
-	print PRIMADEF <<EOF;
+	open my $primadeffh, ">", $DEFFILE or die "Cannot create $DEFFILE: $!";
+	print $primadeffh <<EOF;
 LIBRARY Prima
 EXPORTS
 EOF
 	if ( $compiler_type eq 'bcc32') {
-		print PRIMADEF map { "\t_$_\n\t$_=_$_\n"} @Prima_exports;
+		print $primadeffh map { "\t_$_\n\t$_=_$_\n"} @Prima_exports;
 	}
 	else {
-		print PRIMADEF map { "\t$_\n\t_$_ = $_\n"} @Prima_exports;
+		print $primadeffh map { "\t$_\n\t_$_ = $_\n"} @Prima_exports;
 	}
-	close PRIMADEF;
 }
 
 sub suck_symbols
 {
 	my $fn = shift;
-	open F, $fn or die "Cannot open $fn:$!\n";
+	open my $fh, "<", $fn or die "Cannot open $fn:$!\n";
 	local $/;
-	my $x = <F>;
-	close F;
+	my $x = <$fh>;
+	close $fh;
 	return ( $x =~ m/\bextern\s+\w+(?:\s*\*\s*)?\s+(\w+)\s*\(.*?;/gs );
 }
 
@@ -2048,11 +2045,11 @@ sub setup_codecs
 			}
 		}
 
-		next unless open F, $fn;
-		while(<F>) {
+		next unless open my $fh, "<", $fn;
+		while(<$fh>) {
 			push @inc, $_ if m/^\s*#include\s*\</;
 		}
-		close F;
+		close $fh;
 
 		# do we have a versioned inc/lib from dependency hell?
 		my $version = '';
@@ -2237,12 +2234,12 @@ sub finish_setup
 sub create_codecs_c
 {
 	printlog "Creating img/codecs.c\n";
-	open F, "> img/codecs.c" or die "cannot open img/codecs.c:$!\n";
+	open my $fh, ">", "img/codecs.c" or die "cannot open img/codecs.c:$!\n";
 
 	my $def1 = join("\n", map { "extern void apc_img_codec_$_(void);"} @ACTIVE_CODECS);
 	my $def2 = join("\n", map { "\tapc_img_codec_$_();"} @ACTIVE_CODECS);
 
-	print F <<CONTENT;
+	print $fh <<CONTENT;
 /*
   This file was automatically generated.
   Do not edit, you'll loose your changes anyway.
@@ -2274,8 +2271,6 @@ $def2
 #endif
 
 CONTENT
-
-	close F;
 }
 
 sub create_config_h
@@ -2286,19 +2281,18 @@ sub create_config_h
 	unless ( -d "$config_dir") {
 		mkdir $config_dir, 0777;
 	}
-	open CONFIG, ">$config_h" or die "Creation of $config_h failed: $!";
-	print CONFIG <<EOF;
+	open my $configfh, ">", $config_h or die "Creation of $config_h failed: $!";
+	print $configfh <<EOF;
 #ifndef __GENERIC_CONFIG_H__
 #define __GENERIC_CONFIG_H__
 EOF
 	foreach my $define ( sort keys %DEFINES) {
-		print CONFIG "#undef $define\n";
-		print CONFIG "#define $define $DEFINES{ $define}\n" if defined $DEFINES{ $define};
+		print $configfh "#undef $define\n";
+		print $configfh "#define $define $DEFINES{ $define}\n" if defined $DEFINES{ $define};
 	}
-	print CONFIG <<EOF;
+	print $configfh <<EOF;
 #endif
 EOF
-	close CONFIG;
 }
 
 sub _quote
@@ -2351,8 +2345,8 @@ sub create_config_pm
 
 	my $cc_openmp = $cmd_options{WITH_OPENMP} ? $CC_OPENMP : '';
 
-	open F, "> Prima/Config.pm" or die "cannot open Prima/Config.pm:$!\n";
-	print F <<CONFIG;
+	open my $fh, ">", "Prima/Config.pm" or die "cannot open Prima/Config.pm:$!\n";
+	print $fh <<CONFIG;
 # This file was automatically generated.
 # Do not edit, you'll loose your changes anyway.
 package Prima::Config;
@@ -2408,20 +2402,18 @@ use vars qw(%Config %Config_inst);
 
 1;
 CONFIG
-	close F;
 }
 
 sub create_par_list
 {
-	open F, ">", "utils/par.txt" or die "Cannot open utils/par.txt:$!";
+	open my $fh, ">", "utils/par.txt" or die "Cannot open utils/par.txt:$!";
 	find( sub {
 		return unless -f;
 		return if /\.p[lm]$/i || /^(VB|prima-cfgmaint)$/;
 		my $d = $File::Find::dir;
 		return if $d =~ /examples/;
-		print F "$d/$_\n";
+		print $fh "$d/$_\n";
 	}, 'Prima');
-	close F;
 }
 
 # executed from inside makefiles
@@ -2432,16 +2424,15 @@ sub command_postinstall
 
 	if ( $opt{slib} ) {
 		my $f = "$opt{dest}/auto/Prima/$opt{slib}";
-		open F, ">", $f or warn "** warning: Cannot write to a fake lib '$f': Prima extensions won't build\n";
-		close F;
+		open my $fh, ">", $f or warn "** warning: Cannot write to a fake lib '$f': Prima extensions won't build\n";
 	}
 
 	$opt{dest} = $ENV{PERL_INSTALL_ROOT} . $opt{dest} if defined $ENV{PERL_INSTALL_ROOT};
 
 	my $fn_cfg = "$opt{dest}/Prima/Config.pm";
 	print "Updating config $fn_cfg\n";
-	open F, $fn_cfg or die "cannot open $fn_cfg:$!\n";
-	open FF, "> $fn_cfg.tmp" or die "cannot open $fn_cfg.tmp:$!\n";
+	open my $fh, "<", $fn_cfg or die "cannot open $fn_cfg:$!\n";
+	open my $fh2, ">", "$fn_cfg.tmp" or die "cannot open $fn_cfg.tmp:$!\n";
 	my ( $c_state, $ci_state) = (0,0);
 	my (%ci, %vars);
 
@@ -2450,7 +2441,7 @@ sub command_postinstall
 		s/\//\\/g for values %vars;
 	}
 
-	print FF <<HEADER;
+	print $fh2 <<HEADER;
 # This file was automatically generated.
 package Prima::Config;
 use vars qw(\%Config);
@@ -2464,7 +2455,7 @@ my \$lib = File::Spec->catfile(dirname(__FILE__), '..');
 
 %Config = (
 HEADER
-	while ( <F>) {
+	while ( <$fh>) {
 		if ( $ci_state == 0) {
 			if ( m/\%Config_inst = \(/) {
 				$ci_state = 1;
@@ -2489,20 +2480,20 @@ HEADER
 				$c_state = 0;
 			} else {
 				if ( m/^\s*(\S+)\s*/ && exists $ci{$1}) {
-					print FF $ci{$1};
+					print $fh2 $ci{$1};
 				} else {
-					print FF $_;
+					print $fh2 $_;
 				}
 			}
 		}
 	}
-print FF <<FOOTER;
+print $fh2 <<FOOTER;
 );
 
 1;
 FOOTER
-	close FF;
-	close F;
+	close $fh2;
+	close $fh;
 	unlink $fn_cfg;
 	rename "$fn_cfg.tmp", $fn_cfg;
 }
@@ -2512,10 +2503,10 @@ sub command_dl
 	$DL_LOAD_FLAGS = shift;
 	my $f = "blib/lib/Prima.pm";
 
-	open F, $f or die "cannot open $f:$!\n";
+	open my $fh, "<", $f or die "cannot open $f:$!\n";
 	local $/;
-	my $ct = <F>;
-	close F;
+	my $ct = <$fh>;
+	close $fh;
 
 	$ct =~ m/dl_load_flags\s*\{\s*0x0(\d)/;
 	return if $1 eq $DL_LOAD_FLAGS;
@@ -2523,9 +2514,9 @@ sub command_dl
 	print "Setting dl_load_flags=$DL_LOAD_FLAGS in $f\n";
 	$ct =~ s/(dl_load_flags\s*\{\s*)0x00/${1}0x0$DL_LOAD_FLAGS/;
 	# open_rw(\*F, $f);
-	open F, "> $f.tmp" or die "Cannot open $f.tmp:$!";
-	print F $ct;
-	close F;
+	open my $fh2, ">", "$f.tmp" or die "Cannot open $f.tmp:$!";
+	print $fh2 $ct;
+	close $fh2;
 	unlink $f;
 	rename "$f.tmp", $f;
 }
@@ -2559,8 +2550,8 @@ sub command_bindist
 	my %dirs;
 	my @files;
 
-	open MAN, "<", "MANIFEST" or die "Cannot open MANIFEST:$!\n";
-	for my $path (<MAN>) {
+	open my $manfh, "<", "MANIFEST" or die "Cannot open MANIFEST:$!\n";
+	for my $path (<$manfh>) {
 		chomp $path;
 		my ( $d, $f );
 		if ( $path =~ m[^(.+)/([^\/]+)$]) {
@@ -2598,8 +2589,8 @@ sub command_bindist
 	if ($^O eq 'cygwin') {
 		system "strip $DISTNAME/auto/Prima/Prima.$Config{dlext}" ; # it's 27 MB!
 		$cygwin_fake_Slib = 'SlibPrima' . ( $Config{lib_ext} || '.a' );
-		open F, '>', "$DISTNAME/auto/Prima/$cygwin_fake_Slib";
-		close F;
+		open my $fh, '>', "$DISTNAME/auto/Prima/$cygwin_fake_Slib";
+		close $fh;
 	}
 
 	my $zipname = "$DISTNAME.zip";
@@ -2614,12 +2605,12 @@ sub command_cpbin
 {
 	my ($from, $to) = @_;
 	local $/;
-	open FROM, '<', $from or die "Cannot open $from:$!\n";
-	open TO, '>',   $to or die "Cannot open $to:$!\n";
-	print TO "#!$Config{perlpath} -w\n";
-	print TO <FROM>;
-	close TO;
-	close FROM;
+	open my $fromfh, '<', $from or die "Cannot open $from:$!\n";
+	open my $tofh, '>',   $to or die "Cannot open $to:$!\n";
+	print $tofh "#!$Config{perlpath} -w\n";
+	print {$tofh} <$fromfh>;
+	close $tofh;
+	close $fromfh;
 	chmod 0755, $to;
 }
 
