@@ -2345,7 +2345,7 @@ sub on_paint
 	$self-> common_paint($canvas);
 }
 
-package Prima::VB::Grid;
+package Prima::VB::AbstractGrid;
 use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::CommonControl Prima::VB::BiScroller);
@@ -2393,7 +2393,6 @@ sub prf_types
 		upoint  => [qw(focusedCell)],
 		color   => [qw(gridColor indentCellBackColor indentCellColor)],
 		urect   => [qw(cellIndents)],
-		multiItems  => ['cells'],
 		string  => ['scrollBarClass',],
 	);
 	$_[0]-> prf_types_add( $pt, \%de);
@@ -2405,6 +2404,22 @@ sub prf_adjust_default
 	my ( $self, $p, $pf) = @_;
 	$self-> SUPER::prf_adjust_default( $p, $pf);
 	delete $pf-> {$_} for qw (offset);
+}
+
+
+package Prima::VB::Grid;
+use strict;
+use vars qw(@ISA);
+@ISA = qw(Prima::VB::AbstractGrid);
+
+sub prf_types
+{
+	my $pt = $_[ 0]-> SUPER::prf_types;
+	my %de = (
+		multiItems  => ['cells'],
+	);
+	$_[0]-> prf_types_add( $pt, \%de);
+	return $pt;
 }
 
 sub on_paint
@@ -2462,6 +2477,7 @@ sub prf_cells
 
 sub prf_columns { $_[0]-> prf_cells( $_[0]-> prf('cells')); }
 sub prf_rows    { $_[0]-> prf_cells( $_[0]-> prf('cells')); }
+
 
 1;
 
