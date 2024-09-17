@@ -893,21 +893,17 @@ sub indeterminate    {
 
 	# Create the timer for the motion in indeterminate mode
 	# if it is not still created
-	unless ( $self->{timer} ) {
-		$self->{timer} = $self->insert( Timer =>
+	$self->{timer} //= $self->insert( Timer =>
 		name	    => 'Timer',
 		timeout     => 25,
 		delegations => ['Tick'],
-		);
-	}
+	);
 
 	# When the style property is changed, reset the timer frequency
 	# and the start_angle and for style circle the end_angle, too
 	if ( $indeterminate) {
 		$self->{timer}->start;
-	}
-
-	else {
+	} else {
 		$self->{timer}->stop;
 	}
 	$self->{indeterminate} = $indeterminate;
@@ -2988,6 +2984,11 @@ Selects the width of the border around the widget.
 
 Default value: 1
 
+=item indeterminate BOOLEAN
+
+If set, the gauge doesn't show the percentage, but shows a moving color strip,
+to hint that there's no know percentage. The strip width is C<sliderLength> percents.
+
 =item max INTEGER
 
 Sets the upper limit for C<value>.
@@ -2999,6 +3000,10 @@ Default value: 100.
 Sets the lower limit for C<value>.
 
 Default value: 0
+
+=item sliderLength INTEGER
+
+See L<indeterminate>.
 
 =item relief INTEGER
 
@@ -3026,6 +3031,8 @@ Selects the integer value between C<min> and C<max>, reflected in the progress b
 eventual text.
 
 Default value: 0.
+
+See also: L<indeterminate>
 
 =item vertical BOOLEAN
 
