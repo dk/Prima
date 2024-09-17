@@ -363,8 +363,8 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 		GIF_CALL DGifGetRecordType( l-> gft, &l-> grt);
 		if ( GIF_CALL_FAILED ) {
 			/* handle premature EOF gracefully */
-			if ( fi-> frameCount < 0 && l-> passed < fi-> frame)
-				fi-> frameCount = l-> passed;
+			if ( fi-> frameCount < 0 && l-> passed <= fi-> frame)
+				fi-> frameCount = l-> passed + 1;
 			out(l->gft);
 		}
 
