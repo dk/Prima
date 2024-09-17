@@ -5,18 +5,6 @@ use warnings;
 use Prima;
 use Prima::Const;
 
-package
-    fra; # Frame arragement constants.
-
-use constant Vertical => 0;
-use constant Horizontal => 1;
-
-package
-    frr; # Frame resize method constants.
-
-use constant Simple => 0;
-use constant Proportional => 1; # XXX Yet to be implemented.
-
 package Prima::FrameSet::Frame;
 use strict;
 use warnings;
@@ -52,9 +40,9 @@ sub minFrameWidth
 	if (@_ > 0) {
 		return if defined ($me-> {minFrameWidth}) && $me-> {minFrameWidth} == $_[0];
 		if (defined $_[0]) {
-				$me-> {minFrameWidth} = $_[0] < 0 ? 0 : $_[0];
+			$me-> {minFrameWidth} = $_[0] < 0 ? 0 : $_[0];
 		} else {
-				undef $me-> {minFrameWidth};
+			undef $me-> {minFrameWidth};
 		}
 	} else {
 		return $me-> {minFrameWidth};
@@ -67,9 +55,9 @@ sub maxFrameWidth
 	if (@_ > 0) {
 		return if defined($me-> {maxFrameWidth}) && ($me-> {maxFrameWidth} == $_[0]);
 		if (defined $_[0]) {
-				$me-> {maxFrameWidth} = $_[0] < 0 ? 0 : $_[0];
+			$me-> {maxFrameWidth} = $_[0] < 0 ? 0 : $_[0];
 		} else {
-				undef $me-> {maxFrameWidth};
+			undef $me-> {maxFrameWidth};
 		}
 	} else {
 		return $me-> {maxFrameWidth};
@@ -91,7 +79,7 @@ sub profile_default
 {
 	return {
 		%{$_[0]-> SUPER::profile_default},
-		vertical	=> 0,
+		vertical	=> 1,
 		thickness	=> 4,
 		growMode	=> gm::GrowHiX | gm::GrowLoX,
 		frame1          => undef,
@@ -115,9 +103,11 @@ sub init
 	my $me = shift;
 	my %profile = $me-> SUPER::init(@_);
 
+	$me->{no_adjust_sizes} = 1;
 	foreach my $prop (qw(thickness vertical frame1 frame2 sliderIndex)) {
 		$me-> $prop($profile{$prop});
 	}
+	delete $me->{no_adjust_sizes};
 
 	$me-> adjust_sizes;
 
@@ -227,14 +217,9 @@ sub on_mousemove
 			$fmin = $me-> frame1;
 			$fmax = $me-> frame2;
 		}
-		my ($fminWidth, $fmaxWidth);
-		if ($me-> {vertical}) {
-			$fminWidth = $fmin-> width;
-			$fmaxWidth = $fmax-> width;
-		} else {
-			$fminWidth = $fmin-> height;
-			$fmaxWidth = $fmax-> height;
-		}
+		my ($fminWidth, $fmaxWidth) = $me->{vertical} ? 
+			( $fmin->width, $fmax->width ) :
+			( $fmin->height, $fmax->height );
 		$delta = ($fminWidth - $fmin-> {minFrameWidth}) * ($delta < 0 ? -1 : 1)
 				if defined($fmin-> {minFrameWidth})
 					&& (($fminWidth - abs($delta)) < $fmin-> {minFrameWidth});
@@ -276,15 +261,11 @@ sub on_keydown
 sub adjust_sizes
 {
 	my $me = shift;
-	my ($w, $h);
+	return if $me->{no_adjust_sizes};
 	my $owner = $me-> owner;
-	if ($me-> {vertical}) {
-		$h = $owner-> height;
-		$w = $me-> {thickness};
-	} else {
-		$h = $me-> {thickness};
-		$w = $owner-> width;
-	}
+	my ($w, $h) = $me-> {vertical} ?
+		( $me->{thickness}, $owner->height ) :
+		( $owner->width, $me->{thickness} );
 	$me-> size($w, $h);
 }
 
@@ -329,17 +310,13 @@ sub stop_dragging
 # Properties
 sub vertical
 {
-	my $me = shift;
-	if (@_ > 0) {
-		return if exists($me-> {vertical}) && $me-> {vertical} == $_[0];
-		$me-> {vertical} = $_[0];
-		$me-> pointerType($_[0] ? cr::SizeWE : cr::SizeNS);
-		$me-> adjust_sizes;
-		$me-> repaint;
-	}
-	else {
-		return $me-> {vertical};
-	}
+	return $_[0]->{vertical} unless $#_;
+	my ($me, $v) = @_;
+	return if exists($me-> {vertical}) && $me-> {vertical} == $_[0];
+	$me-> {vertical} = $v;
+	$me-> pointerType($v ? cr::SizeWE : cr::SizeNS);
+	$me-> adjust_sizes;
+	$me-> repaint;
 }
 
 sub thickness
@@ -402,20 +379,20 @@ sub profile_default
 {
 	return {
 		%{ $_[0]-> SUPER::profile_default},
-		arrangement => fra::Horizontal,		# Vertical or horizontal insertion of frames.
-		frameCount => 2,			# Number of frames, no less than 2.
-		flexible => 1,				# Frame can be resized by user at any time at any place.
-		sliders => [qw(1)],			# Where resize sliders must be located. Array size depends on number of frames and must be (nframes+1) long.
-		sliderWidth => 4,
-		separatorWidth => 1,			# Separator is an immovable slider.
-		frameSizes => [qw(50% *)],		# Sizes of frames in percents, pixel or '*' for automatic.
-		growMode => gm::Client,
-		origin => [0, 0],
-		opaqueResize => 0,
-		resizeMethod => frr::Simple,
-		frameClass    => 'Prima::FrameSet::Frame',
-		frameProfile  => {},
-		frameProfiles => [],
+		frameCount     => 2,              # Number of frames, no less than 2.
+		flexible       => 1,              # Frame can be resized by user at any time at any place.
+		frameSizes     => [qw(50% *)],    # Sizes of frames in percents, pixel or '*' for automatic.
+		growMode       => gm::Client,
+		origin         => [0, 0],
+		opaqueResize   => 0,
+		separatorWidth => 1,              # Separator is an immovable slider.
+		sliders        => [qw(1)],        # Where resize sliders must be located. Array size depends on number of frames and must be (nframes+1) long.
+		sliderWidth    => 4,
+		vertical       => 0,              # Vertical or horizontal insertion of frames.
+
+		frameClass     => 'Prima::FrameSet::Frame',
+		frameProfile   => {},
+		frameProfiles  => [],
 		sliderClass    => 'Prima::FrameSet::Slider',
 		sliderProfile  => {},
 		sliderProfiles => [],
@@ -441,8 +418,7 @@ sub init
 
 	$me-> {frameSizes} = $profile{frameSizes};
 
-	foreach my $prop (qw(frameCount arrangement sliderWidth separatorWidth
-				flexible opaqueResize resizeMethod)) {
+	foreach my $prop (qw(frameCount vertical sliderWidth separatorWidth flexible opaqueResize )) {
 		$me-> $prop($profile{$prop});
 	}
 
@@ -453,7 +429,7 @@ sub init
 			ref($profile{frameProfiles}-> [$i]) eq 'HASH';
 		my $frame = $me-> insert(
 			$profile{frameClass} =>
-			name => "Frame$i",
+			name          => "Frame$i",
 			packPropagate => 0,
 			%xp,
 		);
@@ -468,23 +444,21 @@ sub init
 		%xp = ( %xp, %{$profile{sliderProfiles}-> [$sn]})
 			if $profile{sliderProfiles}-> [$sn] &&
 			ref($profile{sliderProfiles}-> [$sn]) eq 'HASH';
-		my $slider = $me-> insert(
-				$profile{sliderClass} =>
-				name => "Slider#$sn",
-				$moveable ?
-					(
-					thickness => $profile{sliderWidth},
-					enabled => 1,
-					) : (
-					thickness => $profile{separatorWidth},
-					enabled => 0,
-					),
-# Horizontal arrangement of frames means we need a vertically oriented slider.
-				vertical => $me-> {arrangement} == fra::Horizontal,
-				frame1 => $me-> {frames}-> [$sn],
-				frame2 => $me-> {frames}-> [$sn + 1],
-				sliderIndex => $sn,
-				%xp,
+		my $slider = $me-> insert( $profile{sliderClass},
+			$moveable ?  (
+				thickness => $profile{sliderWidth},
+				enabled   => 1,
+			) : (
+				thickness => $profile{separatorWidth},
+				enabled   => 0,
+			),
+
+			name        => "Slider#$sn",
+			vertical    => !$me-> {vertical},
+			frame1      => $me-> {frames}-> [$sn],
+			frame2      => $me-> {frames}-> [$sn + 1],
+			sliderIndex => $sn,
+			%xp,
 		);
 		push @{$me-> {sliders}}, $slider;
 	}
@@ -514,7 +488,7 @@ sub on_paint
 {
 	my ($me, $canvas) = @_;
 
-	$canvas->rop2(rop::CopyPut);
+	$canvas-> rop2(rop::CopyPut);
 	$canvas-> fillPattern(fp::Interleave);
 	$canvas-> bar(0, 0, $me-> size);
 }
@@ -531,13 +505,13 @@ sub recalc_frames
 	if ($profile{initial}) {
 
 		my @frameSizes = @{$me-> {frameSizes}};
-		my $asterixCount = 0;
+		my $asteriskCount = 0;
 		my $percents = 0;
 		my $pixels = 0;
 
 		foreach my $fsz (@frameSizes) {
 			if ($fsz eq '*') {
-				$asterixCount++;
+				$asteriskCount++;
 				next;
 			}
 
@@ -552,13 +526,7 @@ sub recalc_frames
 			}
 		}
 
-		my $totalSize;	# Total width or height depending on arrangement.
-		if ($me-> {arrangement} == fra::Vertical) {
-			$totalSize = $me-> height;
-		} else {
-			$totalSize = $me-> width;
-		}
-
+		my $totalSize = $me->{vertical} ? $me-> height : $me->width;
 		my $size = $totalSize - $pixels; # Size left after discounting all pixel-based and sliders sizes.
 
 		foreach my $slider (@{$me-> {sliders}}) {
@@ -567,7 +535,7 @@ sub recalc_frames
 
 		my $percentSize = ($size * $percents / 100.);
 
-		my $autoSize = $asterixCount ? ($size - $percentSize) / $asterixCount : 0; # Size of an automaticly-sized frame.
+		my $autoSize = $asteriskCount ? ($size - $percentSize) / $asteriskCount : 0; # Size of an automaticly-sized frame.
 
 		@sizes = (0) x $me-> {frameCount};
 		my $frac = 0;
@@ -599,50 +567,47 @@ sub recalc_frames
 
 	} elsif ($profile{resize}) {
 
-		my $idx = $me-> {arrangement} == fra::Horizontal ? 0 : 1;
+		my $idx = $me-> {vertical} ? 1 : 0;
 		my $old_size = @{$profile{sizes}}[$idx];
 		my $new_size = @{$profile{sizes}}[$idx + 2];
 		return if ($old_size == $new_size);
 
 		my $virtual_sizes = $me-> {virtual_sizes} || [];
 
-		if ($me-> {resizeMethod} == frr::Simple) {
-			my $i;
-			for ($i = 0; $i < ($me-> {frameCount} - 1); $i++) {
-				$old_size -= $me-> {sliders}-> [$i]-> {thickness};
-				$new_size -= $me-> {sliders}-> [$i]-> {thickness};
-			}
-			my (@nsizes, @vsizes);
-			my $newTotal = 0;
-			my $ratio = ($old_size && $new_size) ? ( $new_size / $old_size ) : 1;
-			my ($f, $ns);
-			for ($i = 0; $i < ($me-> {frameCount} - 1); $i++) {
-				$f = $me-> {frames}-> [$i];
-				$ns = $virtual_sizes-> [$i] * $ratio;
-				$vsizes[$i] = $ns;
-				$ns = int( $ns + 0.5 );
-				$ns = $f-> {minFrameWidth}
-					if defined($f-> {minFrameWidth}) && ($ns < $f-> {minFrameWidth});
-				$ns = $f-> {maxFrameWidth}
-					if defined($f-> {maxFrameWidth}) && ($ns > $f-> {maxFrameWidth});
-				$nsizes[$i] = $ns;
-				$newTotal += $ns;
-			}
-# Calculate for the last frame.
+		my $i;
+		for ($i = 0; $i < ($me-> {frameCount} - 1); $i++) {
+			$old_size -= $me-> {sliders}-> [$i]-> {thickness};
+			$new_size -= $me-> {sliders}-> [$i]-> {thickness};
+		}
+		my (@nsizes, @vsizes);
+		my $newTotal = 0;
+		my $ratio = ($old_size && $new_size) ? ( $new_size / $old_size ) : 1;
+		my ($f, $ns);
+		for ($i = 0; $i < ($me-> {frameCount} - 1); $i++) {
 			$f = $me-> {frames}-> [$i];
-			$ns = $new_size - $newTotal;
+			$ns = $virtual_sizes-> [$i] * $ratio;
 			$vsizes[$i] = $ns;
-			$ns = 1 if $ns < 1;
+			$ns = int( $ns + 0.5 );
 			$ns = $f-> {minFrameWidth}
 				if defined($f-> {minFrameWidth}) && ($ns < $f-> {minFrameWidth});
 			$ns = $f-> {maxFrameWidth}
 				if defined($f-> {maxFrameWidth}) && ($ns > $f-> {maxFrameWidth});
 			$nsizes[$i] = $ns;
-
-			$me-> {sizes} = \@nsizes;
-			$me-> {virtual_sizes} = \@vsizes;
+			$newTotal += $ns;
 		}
+# Calculate for the last frame.
+		$f = $me-> {frames}-> [$i];
+		$ns = $new_size - $newTotal;
+		$vsizes[$i] = $ns;
+		$ns = 1 if $ns < 1;
+		$ns = $f-> {minFrameWidth}
+			if defined($f-> {minFrameWidth}) && ($ns < $f-> {minFrameWidth});
+		$ns = $f-> {maxFrameWidth}
+			if defined($f-> {maxFrameWidth}) && ($ns > $f-> {maxFrameWidth});
+		$nsizes[$i] = $ns;
 
+		$me-> {sizes} = \@nsizes;
+		$me-> {virtual_sizes} = \@vsizes;
 	}
 	return (wantarray ? @sizes : \@sizes);
 }
@@ -654,8 +619,8 @@ sub reset
 	return unless $me-> owner;
 
 	my $origin = [0, 0];
-	my $end = [$me-> {arrangement} == fra::Vertical ? ($me-> width, 1) : (1, $me-> height)];
-	my $idx = $me-> {arrangement} == fra::Vertical ? 1 : 0; # What element of origin/size array we change.
+	my $end = [$me-> {vertical} ? ($me-> width, 1) : (1, $me-> height)];
+	my $idx = $me-> {vertical} ? 1 : 0; # What element of origin/size array we change.
 	my @sliders = @{$me-> {sliders}};
 
 	for (my $i = 0; $i < $me-> {frameCount}; $i++) {
@@ -677,82 +642,68 @@ sub slider_moved
 
 	my $si = $slider-> sliderIndex;
 
-	if ($me-> {resizeMethod} == frr::Simple) {
-		my $frame1 = $slider-> frame1;
-		my $frame2 = $slider-> frame2;
+	my $frame1 = $slider-> frame1;
+	my $frame2 = $slider-> frame2;
 
-		my ($w1, $w2);
-		if ($me-> {arrangement} == fra::Horizontal) {
-			$w1 = $frame1-> width;
-			$w2 = $frame2-> width;
-		} else {
-			$w1 = $frame1-> height;
-			$w2 = $frame2-> height;
-		}
+	my ($w1, $w2) = $me->{vertical} ?
+		($frame1->height, $frame2->height) :
+		($frame1->width, $frame2->width);
 
 # Adjust delta in a way it doesn't clash with frame's min/max sizes.
-		my $nw1 = $w1 + $delta;
-		if (defined $frame1-> minFrameWidth && $nw1 < $frame1-> minFrameWidth) {
-			$nw1 = $frame1-> minFrameWidth;
-		} elsif (defined $frame1-> maxFrameWidth && $nw1 > $frame1-> maxFrameWidth) {
-			$nw1 = $frame1-> maxFrameWidth;
-		}
-		$delta = $nw1 - $w1;
-		my $nw2 = $w2 - $delta;
-		if (defined $frame2-> minFrameWidth && $nw2 < $frame2-> minFrameWidth) {
-			$nw2 = $frame2-> minFrameWidth;
-		} elsif (defined $frame2-> maxFrameWidth && $nw2 > $frame2-> maxFrameWidth) {
-			$nw2 = $frame2-> maxFrameWidth;
-		}
-		$delta = $w2 - $nw2;
-		$nw1 = $w1 + $delta;
-
-		my @rect;
-		if ($me-> {arrangement} == fra::Horizontal) {
-			$frame1-> width($nw1);
-			@rect = $slider-> rect;
-			$rect[0] += $delta;
-			$rect[2] += $delta;
-			$slider-> rect(@rect);
-			@rect = $frame2-> rect;
-			$rect[0] += $delta;
-		} else {
-			$frame1-> height($nw1);
-			@rect = $slider-> rect;
-			$rect[1] += $delta;
-			$rect[3] += $delta;
-			$slider-> rect(@rect);
-			@rect = $frame2-> rect;
-			$rect[1] += $delta;
-		}
-		$frame2-> rect(@rect);
-		$frame1-> update_view;
-		$frame2-> update_view;
-
-		$me-> {virtual_sizes}-> [$si]     = $me-> {sizes}-> [$si]     = $nw1;
-		$me-> {virtual_sizes}-> [$si + 1] = $me-> {sizes}-> [$si + 1] = $nw2;
+	my $nw1 = $w1 + $delta;
+	if (defined $frame1-> minFrameWidth && $nw1 < $frame1-> minFrameWidth) {
+		$nw1 = $frame1-> minFrameWidth;
+	} elsif (defined $frame1-> maxFrameWidth && $nw1 > $frame1-> maxFrameWidth) {
+		$nw1 = $frame1-> maxFrameWidth;
 	}
+	$delta = $nw1 - $w1;
+	my $nw2 = $w2 - $delta;
+	if (defined $frame2-> minFrameWidth && $nw2 < $frame2-> minFrameWidth) {
+		$nw2 = $frame2-> minFrameWidth;
+	} elsif (defined $frame2-> maxFrameWidth && $nw2 > $frame2-> maxFrameWidth) {
+		$nw2 = $frame2-> maxFrameWidth;
+	}
+	$delta = $w2 - $nw2;
+	$nw1 = $w1 + $delta;
+
+	my @rect;
+	if ($me-> {vertical}) {
+		$frame1-> height($nw1);
+		@rect = $slider-> rect;
+		$rect[1] += $delta;
+		$rect[3] += $delta;
+		$slider-> rect(@rect);
+		@rect = $frame2-> rect;
+		$rect[1] += $delta;
+	} else {
+		$frame1-> width($nw1);
+		@rect = $slider-> rect;
+		$rect[0] += $delta;
+		$rect[2] += $delta;
+		$slider-> rect(@rect);
+		@rect = $frame2-> rect;
+		$rect[0] += $delta;
+	}
+	$frame2-> rect(@rect);
+	$frame1-> update_view;
+	$frame2-> update_view;
+
+	$me-> {virtual_sizes}-> [$si]     = $me-> {sizes}-> [$si]     = $nw1;
+	$me-> {virtual_sizes}-> [$si + 1] = $me-> {sizes}-> [$si + 1] = $nw2;
 }
 
 # Properties
-sub arrangement
+sub vertical
 {
-	my $me = shift;
-	if (@_ > 0) {
-		my $haveIt = exists($me-> {arrangement});
-		return if $haveIt && ($me-> {arrangement} == $_[0]);
-		$me-> {arrangement} = $_[0];
-		if ($me-> {sliders}) {
-			for (my $i = 0; $i < ($me-> {frameCount} - 1); $i++) {
-				$me-> {sliders}-> [$i]-> vertical($_[0] == fra::Horizontal);
-			}
-		}
-		if ($haveIt) {
-			$me-> recalc_frames;
-			$me-> reset;
-		}
-	} else {
-		return $me-> {arrangement};
+	return $_[0]->{vertical} unless $#_;
+	my ( $me, $v) = @_;
+	my $haveIt = defined $me->{vertical};
+	return if $haveIt && $me-> {vertical} == $v;
+	$me-> {vertical} = $v;
+	$_->vertical($v) for @{ $me-> {sliders} // [] };
+	if ($haveIt) {
+		$me-> recalc_frames;
+		$me-> reset;
 	}
 }
 
@@ -856,17 +807,6 @@ sub opaqueResize
 	}
 }
 
-sub resizeMethod
-{
-	my $me = shift;
-	if (@_ > 0) {
-		return if exists($me-> {resizeMethod}) && $me-> {resizeMethod} == $_[0];
-		$me-> {resizeMethod} = $_[0];
-	} else {
-		return $me-> {resizeMethod};
-	}
-}
-
 # User interface
 sub firstFrame
 {
@@ -906,8 +846,6 @@ sub insert_to_frame
 	return wantarray ? @ctrls : $ctrls[0];
 }
 
-
-
 1;
 
 =pod
@@ -944,9 +882,6 @@ Prima::FrameSet - frameset widget
 Provides the standard frameset widget. The frameset divides its surface among
 groups of children and allows interactive change of the surface by dragging
 the frame bars with the mouse.
-
-This module defines the C<fra::> and C<frr::> constants used by the
-L<arrangement> and L<resizeMethod> properties, respectively.
 
 =head1 AUTHOR
 

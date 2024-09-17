@@ -44,7 +44,7 @@ for (my $i = 0; $i < 6; $i++) {
 my $subframe = $frame-> insert_to_frame(
 	4,
 	FrameSet =>
-	arrangement => fra::Vertical,
+	vertical => 1,
 	size => [$frame-> frames-> [4]-> size],
 	origin => [0, 0],
 	opaqueResize => 0,
