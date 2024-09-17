@@ -220,6 +220,41 @@ sub classes
 			RTModule => 'Prima::DetailedOutline',
 			module   => 'Prima::VB::CoreClasses',
 		},
+		'Prima::Widget::Date' => {
+			icon     => 'VB::classes.gif:36',
+			page     => 'Additional',
+			class    => 'Prima::VB::Date',
+			RTModule => 'Prima::Widget::Date',
+			module   => 'Prima::VB::CoreClasses',
+		},
+		'Prima::CheckList' => {
+			icon     => 'VB::classes.gif:37',
+			page     => 'Additional',
+			class    => 'Prima::VB::CheckList',
+			RTModule => 'Prima::ExtLists',
+			module   => 'Prima::VB::CoreClasses',
+		},
+		'Prima::KeySelector' => {
+			icon     => 'VB::classes.gif:38',
+			page     => 'Additional',
+			class    => 'Prima::VB::KeySelector',
+			RTModule => 'Prima::KeySelector',
+			module   => 'Prima::VB::CoreClasses',
+		},
+		'Prima::FrameSet' => {
+			icon     => 'VB::classes.gif:39',
+			page     => 'Sliders',
+			class    => 'Prima::VB::FrameSet',
+			RTModule => 'Prima::FrameSet',
+			module   => 'Prima::VB::CoreClasses',
+		},
+		'Prima::Widget::Time' => {
+			icon     => 'VB::classes.gif:40',
+			page     => 'Additional',
+			class    => 'Prima::VB::Time',
+			RTModule => 'Prima::Widget::Time',
+			module   => 'Prima::VB::CoreClasses',
+		},
 	);
 }
 
@@ -2478,6 +2513,109 @@ sub prf_cells
 sub prf_columns { $_[0]-> prf_cells( $_[0]-> prf('cells')); }
 sub prf_rows    { $_[0]-> prf_cells( $_[0]-> prf('cells')); }
 
+package Prima::VB::DateTime;
+use base qw(Prima::VB::InputLine);
+
+sub profile_default
+{
+	my $def = $_[ 0]-> SUPER::profile_default;
+	my %prf = (
+		mainEvent => 'onChange',
+	);
+	@$def{keys %prf} = values %prf;
+	return $def;
+}
+
+sub prf_types
+{
+	my $pt = $_[ 0]-> SUPER::prf_types;
+	my %de = ( string  => ['format']);
+	$_[0]-> prf_types_add( $pt, \%de);
+	return $pt;
+}
+
+sub prf_adjust_default
+{
+	my ( $self, $p, $pf) = @_;
+	$self-> SUPER::prf_adjust_default( $p, $pf);
+	delete @{$pf}{qw(
+		insertMode autoSelect autoTab firstChar charOffset textDirection selection text
+		caseSensitive clipChildren focusedItem hScroll hScrollBarProfile vScroll vScrollBarProfile
+		gridColor integralHeight itemWidth listVisible wordDelimiters multiSelect drawGrid
+		extendedSelect autoHScroll autoVScroll integralWidth listDelegations listHeight listClass
+		items maxLen multiColumn offset readOnly align buttonClass buttonDelegations editClass
+		editDelegations editHeight literal scrollBarClass selectedItems textLigation topItem 
+		writeOnly passwordChar
+	)};
+}
+
+sub on_paint
+{
+	my ( $self, $canvas) = @_;
+	local $self->{default}->{writeOnly} = 0;
+	local $self->{default}->{passwordChar} = '';
+	$self->text($self->prf('format'));
+	$self->SUPER::on_paint($canvas);
+}
+
+sub prf_format { $_[0]-> repaint }
+
+package Prima::VB::Date;
+use base qw(Prima::VB::DateTime);
+package Prima::VB::Time;
+use base qw(Prima::VB::DateTime);
+
+package Prima::VB::CheckList;
+use strict;
+use vars qw(@ISA);
+@ISA = qw( Prima::VB::ListBox);
+
+sub prf_types
+{
+	my $pt = $_[ 0]-> SUPER::prf_types;
+	my %de = ( uiv  => ['vector']);
+	$_[0]-> prf_types_add( $pt, \%de);
+	return $pt;
+}
+
+package Prima::VB::KeySelector;
+use base qw(Prima::VB::CommonControl);
+
+sub prf_types
+{
+	my $pt = $_[ 0]-> SUPER::prf_types;
+	my %de = ( text => ['key'] );
+	$_[0]-> prf_types_add( $pt, \%de);
+	return $pt;
+}
+
+sub on_paint
+{
+	my ( $self, $canvas) = @_;
+	$canvas-> clear;
+	$canvas-> draw_text( 
+		"NoKey\n[ ] Ctrl\n[ ] Shift\n[ ] Alt\n___________________\nPress shortcut key",
+		10, 10, $self->width - 10, $self->height - 10,
+		dt::NoWordWrap | dt::NewLineBreak | dt::Left | dt::Top | dt::UseClip
+	);
+	$self-> common_paint($canvas);
+}
+
+package Prima::VB::FrameSet;
+use base qw(Prima::VB::CommonControl);
+
+sub prf_types
+{
+	my $pt = $_[ 0]-> SUPER::prf_types;
+	my %de = (
+		text => ['key'],
+		uiv => [qw(frameCount sliderWidth separatorWidth)],
+		bool => [qw(flexible opaqueResize vertical)],
+		items => [qw(sliders frameSizes)]
+	);
+	$_[0]-> prf_types_add( $pt, \%de);
+	return $pt;
+}
 
 1;
 

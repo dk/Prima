@@ -270,6 +270,42 @@ sub classes
 		RTModule => 'Prima::DetailedOutline',
 		module   => 'Prima::VB::CoreClasses',
 	},
+	'Prima::Widget::Date' => {
+		icon     => 'VB::classes.gif:36',
+		page     => 'Additional',
+		class    => 'Prima::VB::Date',
+		RTModule => 'Prima::Widget::Date',
+		module   => 'Prima::VB::CoreClasses',
+	},
+	'Prima::CheckList' => {
+		icon     => 'VB::classes.gif:37',
+		page     => 'Additional',
+		class    => 'Prima::VB::CheckList',
+		RTModule => 'Prima::ExtLists',
+		module   => 'Prima::VB::CoreClasses',
+	},
+	'Prima::KeySelector' => {
+		icon     => 'VB::classes.gif:38',
+		page     => 'Additional',
+		class    => 'Prima::VB::KeySelector',
+		RTModule => 'Prima::KeySelector',
+		module   => 'Prima::VB::CoreClasses',
+	},
+	'Prima::FrameSet' => {
+		icon     => 'VB::classes.gif:39',
+		page     => 'Sliders',
+		class    => 'Prima::VB::FrameSet',
+		RTModule => 'Prima::FrameSet',
+		module   => 'Prima::VB::CoreClasses',
+	},
+	'Prima::Widget::Time' => {
+		icon     => 'VB::classes.gif:40',
+		page     => 'Additional',
+		class    => 'Prima::VB::Time',
+		RTModule => 'Prima::Widget::Time',
+		module   => 'Prima::VB::CoreClasses',
+	},
+
 	);
 }
 

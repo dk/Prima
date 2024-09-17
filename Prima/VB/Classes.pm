@@ -1016,6 +1016,7 @@ sub prf_adjust_default
 		fillPattern
 		fillPatternOffset
 		fillMode
+		matrix
 		miterLimit
 		region
 		rop
@@ -1271,10 +1272,12 @@ sub prf_adjust_default
 	my ( $self, $p, $pf) = @_;
 	$self-> SUPER::prf_adjust_default( $p, $pf);
 	delete $pf-> {$_} for qw (
+		autoEnableChildren
 		briefKeys
 		cursorPos
 		cursorSize
 		cursorVisible
+		deepChildLookup
 		pointer
 		pointerType
 		pointerHotSpot
