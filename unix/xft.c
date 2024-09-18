@@ -1248,10 +1248,11 @@ prima_xft_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 	XCHECKPOINT;
 
 	if ( PDrawable( self)-> font. style & (fsUnderlined|fsStruckOut)) {
+		int l;
 		Point ovx;
 		t-> flags |= toAddOverhangs;
-		overstrike(self, x, y, &ovx, prima_xft_get_glyphs_width(
-			self, XX-> font, t, &ovx) - 1);
+		l = prima_xft_get_glyphs_width( self, XX-> font, t, &ovx);
+		overstrike(self, x, y, &ovx, l - ovx.x - ovx.y - 1);
 	}
 	XFLUSH;
 
