@@ -318,6 +318,7 @@ Credits
  - Zsban Ambrus
  - Max Maischein
  - Reinier Maliepaard
+ - Ed J
 
 Thanks to
 =========
