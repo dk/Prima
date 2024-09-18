@@ -2443,7 +2443,7 @@ sub command_postinstall
 		s/\//\\/g for values %vars;
 	}
 
-	(my $bin = $opt{bin}) =~ s#"#\\"#g; # q() not robust to whacky dirnames
+	(my $bin = $opt{bin}) =~ s[(["\\])][\\$1]g; # q() not robust to whacky dirnames
 	print $fh2 <<HEADER;
 # This file was automatically generated.
 package Prima::Config;
