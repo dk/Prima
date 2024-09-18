@@ -626,6 +626,7 @@ sub test_drawing
 	$i = $w->image;
 	$i->type(im::Byte);
 	$sum1 = $i->sum;
+	my $data1 = $i;
 	skip("text drawing on bitmap is not available", 1) unless $sum1;
 
 	$z = $w-> text_shape('12', polyfont => 0);
@@ -637,6 +638,10 @@ sub test_drawing
 	$i->type(im::Byte);
 	$sum2 = $i->sum;
 	is($sum2, $sum1, "glyphs plotting");
+	if ( $sum2 != $sum1 ) {
+		dump_bitmap('1', $data1);
+		dump_bitmap('2', $i);
+	}
 
 	$w-> clear;
 	$w-> text_out( $z->glyphs, 5, 5 );
@@ -651,7 +656,6 @@ sub test_drawing
 	$i = $w->image;
 	$i->type(im::Byte);
 	$sum1 = $i->sum;
-	my $data1 = $i;
 
 	$z = $w-> text_shape('12', polyfont => 0, level => ts::Glyphs);
 	$w-> clear;
@@ -660,7 +664,7 @@ sub test_drawing
 	$i->type(im::Byte);
 	$sum2 = $i->sum;
 	is($sum2, $sum1, "glyphs plotting 45 degrees");
-	if ( $sum2 ne $sum1 ) {
+	if ( $sum2 != $sum1 ) {
 		dump_bitmap('1', $data1);
 		dump_bitmap('2', $i);
 	}
