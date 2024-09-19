@@ -1573,8 +1573,10 @@ apc_font_pick( Handle self, PFont source, PFont dest)
 	if ( dest != NULL ) {
 		Drawable_font_add( NULL_HANDLE, source, dest );
 		source = dest;
-	} else
+	} else {
 		dest = source;
+		Drawable_font_add( NULL_HANDLE, source, dest );
+	}
 	if ( self && is_opt(optInFontQuery))
 		res.x = res.y = 72;
 	else

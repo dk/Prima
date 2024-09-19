@@ -589,10 +589,9 @@ prima_font_pick( PFont source, Matrix matrix, PFont dest, unsigned int selection
 	if ( selection == 0 )
 		selection = FONTKEY_DEFAULT;
 
-	if ( dest != NULL )
-		Drawable_font_add( NULL_HANDLE, source, dest );
-	else
+	if ( dest == NULL )
 		dest = source;
+	Drawable_font_add( NULL_HANDLE, source, dest );
 
 #ifdef USE_FONTQUERY
 	if ( selection & FONTKEY_FREETYPE )
