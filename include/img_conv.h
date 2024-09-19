@@ -385,7 +385,7 @@ extern void                    img_region_offset( PRegionRec region, int dx, int
 extern void                    img_region_sort( PRegionRec region );
 extern PRegionScanlineIterator img_region_iterate_scanline( PRegionRec region );
 extern Bool                    img_region_next_scanline(PRegionScanlineIterator i);
-extern void                    img_region_fill_scanline_map(PRegionScanlineIterator i, Byte *map, int map_offset, int map_width);
+extern Bool                    img_region_fill_scanline_map(PRegionScanlineIterator i, Byte *map, int map_offset, int map_width);
 extern PRegionRec              img_region_combine( PRegionRec rgn1, PRegionRec rgn2, int rop);
 
 typedef struct {

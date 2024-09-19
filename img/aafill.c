@@ -1041,10 +1041,9 @@ img_aafill( Handle self, NPoint *pts, int n_pts, int rule, PImgPaintContext ctx)
 			if (rgn->y <= aa.y ) {
 				if (!img_region_next_scanline(rgn))
 					break;
-				img_region_fill_scanline_map(rgn, rgn_map, render.x, render.pixels);
-				DEBUG_MIXDOWN('R', rgn_map, render.pixels);
-				if (memchr(rgn_map, 0xff, render.pixels) == NULL)
+				if (!img_region_fill_scanline_map(rgn, rgn_map, render.x, render.pixels))
 					fast_skip = true;
+				DEBUG_MIXDOWN('R', rgn_map, render.pixels);
 			} else
 				fast_skip = true;
 		}

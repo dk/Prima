@@ -389,9 +389,10 @@ img_region_next_scanline(PRegionScanlineIterator i)
 #define SCAN_NEXT(i)  SCAN_PTR(i) = i->list[ SCAN_PTR(i) * 2 + 1 ]
 #define SCAN_CURR(i)  (i->region->boxes + SCAN_PTR(i))
 
-void
+Bool
 img_region_fill_scanline_map(PRegionScanlineIterator i, Byte *map, int map_offset, int map_width)
 {
+	Bool is_empty = true;
 	dSCAN_ITER(i);
 
 	bzero(map, map_width);
@@ -402,10 +403,14 @@ img_region_fill_scanline_map(PRegionScanlineIterator i, Byte *map, int map_offse
 		if ( l < map_width && r > 0 ) {
 			if ( l < 0 ) l = 0;
 			if ( r > map_width ) r = map_width + 1;
-			if ( r - l > 1 ) memset( map + l, 0xff, r - l - 1);
+			if ( r - l > 1 ) {
+				memset( map + l, 0xff, r - l - 1);
+				is_empty = false;
+			}
 		}
 		SCAN_NEXT(i);
 	}
+	return !is_empty;
 }
 
 static PRegionRec
