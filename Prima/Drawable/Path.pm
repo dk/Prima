@@ -378,7 +378,7 @@ sub round_rect
 	$dx = $maxd if $dx > $maxd;
 	$dy = $maxd if $dy > $maxd;
 	my $d = ( $dx < $dy ) ? $dx : $dy;
-	my $r = $self->{subpixel} ? $d/2 : ((int($d/4) * 2) + 1);
+	my $r = $d/2;
 #  plots roundrect:
 # A'        B'
 #  /------\
