@@ -1609,8 +1609,11 @@ apc_window_execute( Handle self, Handle insert_before)
 	while ( prima_one_loop_round( WAIT_IF_NONE, true) && XX-> flags.modal)
 		;
 
-	if ( toplevel) XSetTransientForHint( DISP, X_WINDOW, None);
-	if ( X_WINDOW) NETWM_SET_MODAL( X_WINDOW, XX-> flags.modal);
+	if ( PObject(self)->stage == csNormal ) {
+		if ( toplevel) XSetTransientForHint( DISP, X_WINDOW, None);
+		if ( X_WINDOW) NETWM_SET_MODAL( X_WINDOW, XX-> flags.modal);
+	}
+
 	unprotect_object( self);
 	return true;
 }
