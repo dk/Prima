@@ -323,6 +323,7 @@ Credits
 Thanks to
 =========
 
+ - BSD.dk for hosting
  - SourceForge for hosting
  - Github for hosting and CI
  - Grammarly for free proofreading service
