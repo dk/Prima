@@ -1001,8 +1001,10 @@ superimpose_outline( PRegionRec region, Point *pts, int count)
 			if (!( region = union_hline( region, scanline2box, a.x, a.y, b.x - a.x + 1)))
 				goto EXIT;
 		} else {
-			DEBUG("vertex %d.%d\n", a.x,a.y);
-			if (!( region = union_hline( region, scanline2box, a.x, a.y, 1)))
+			int n = (abs(a.x-b.x)+1) / (abs(a.y-b.y)+1);
+			if ( n < 1 ) n = 1;
+			DEBUG("vertex %d.%d %d\n", a.x,a.y, n);
+			if (!( region = union_hline( region, scanline2box, a.x, a.y, n)))
 				goto EXIT;
 		}
 	}
