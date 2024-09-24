@@ -134,6 +134,7 @@ my ($bits1, $bits2);
 
 sub check
 {
+	local $Test::Builder::Level = $Test::Builder::Level + 1;
 	my ( $method, $value1, $value2, %opt) = @_;
 	my $xaa = $d->antialias ? '.aa' : '';
 	$d->$method($value1);
@@ -157,6 +158,7 @@ $d->antialias(0);
 
 for my $aa ( 0, 1) {
 	next if $aa && !$can_antialias;
+	$d->rop2(rop::NoOper);
 	$d->antialias($aa);
 	$d->clipRect(0,0,8,8);
 	my $xaa = $aa ? '.aa' : '';
