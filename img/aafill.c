@@ -6,10 +6,31 @@
 extern "C" {
 #endif
 
+/*
+
+This aafill implementation uses 8x8 sampling grid, however this can be adjusted
+to other dimensions, and not necssarily where X and Y are equal.  F.ex. for a
+2x2 sampling grid, set AAX=AAY to 2, AA_RES_SHIFT to 6.  4x4 needs AA_RES_SHIFT
+set to 4, 16x16 to 0, 8x2 to 4, etc . The difference both in quality, speed,
+and memory usage is though microscopic, except for a 2x2 grid where it's bad
+without any speed/memory win. That's why the sampling grid size is not exposed
+as a Prima::Drawable property.
+
+The overall idea is to take polygon vertices and multiply their coordinates by
+AAX and AAY, creating a larger polygon. Then run the standard polyfill
+algorithm over these, that returns a set of horizontal edges for each scanline
+to fill. Instead of filling these immediately though, run an extra loop for AAY
+scanlines, advancing each edge from 0 to WIDTH-1 in such a way that at any
+moment one can get an averaged value over the AAX*AAY grid, as a pixel value in
+the 0-255 range. Again, do not run that loop over each and every pixel, which
+would be fairly expensive, but only over the pixels where the edges cross the
+scanline, and reuse that value for either skipping non-polygon empty space, or
+filling the inner parts of the polygon. See fill() below on the details.
+
+*/
+
 #define AAX          8
 #define AAY          8
-#define AAX_SHIFT    3
-#define AAY_SHIFT    3
 #define AA_RES_SHIFT 2 /* log2(256/(AAX*AAY)) */
 
 #if 0
@@ -273,7 +294,7 @@ aafill_init( NPoint *pts, int n_pts, int rule, Rect clip, PAAFillRec ctx)
 	ctx->y_curr                = aa_extents.bottom;
 	ctx->y_lim                 = ctx->y_curr + AAY - 1;
 	ctx->y_scan                = ctx->y_curr;
-	ctx->y                     = (ctx->y_scan >> AAY_SHIFT) - 1;
+	ctx->y                     = (ctx->y_scan / AAY) - 1;
 	bzero( &ctx->scanline_ptr, sizeof(ctx->scanline_ptr));
 	ctx->scanline_ptr.block    = ctx->block;
 	ctx->scanline_ptr.point[0] = ctx->block->pts;
@@ -350,7 +371,7 @@ aafill_next_scanline( PAAFillRec ctx, Byte *map)
 		}
 
 		if ( p-> y != ctx->y_scan ) delta = 0;
-		x = (p->x - delta - ctx->dx) >> AAX_SHIFT;
+		x = (p->x - delta - ctx->dx) / AAX;
 		delta = !delta; /* last pixel of a line end, used by fmOutline but not by AA fills */
 
 		if ( p-> y != ctx->y_scan ) {
