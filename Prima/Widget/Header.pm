@@ -37,7 +37,7 @@ sub profile_default
 		pressed     => -1,
 		clickable   => 1,
 		scalable    => 1,
-		dragable    => 1,
+		draggable   => 1,
 		minTabWidth => 2,
 		vertical    => 0,
 		selectable  => 0,
@@ -47,10 +47,20 @@ sub profile_default
 	return $def;
 }
 
+sub profile_check_in
+{
+	my ( $self, $p, $default) = @_;
+	if ( exists $p->{dragable} ) {
+		warn "Property `dragable` is renamed to `draggable`, please adapt your code";
+		$p->{draggable} = delete $p->{dragable};
+	}
+	$self-> SUPER::profile_check_in( $p, $default);
+}
+
 sub init
 {
 	my $self = shift;
-	$self-> {$_} = 0 for qw(offset count maxWidth clickable scalable minTabWidth vertical dragable);
+	$self-> {$_} = 0 for qw(offset count maxWidth clickable scalable minTabWidth vertical draggable);
 	$self-> {$_} = -1 for qw(pressed);
 	$self-> {widths} = [];
 	$self-> {items} = [];
@@ -58,7 +68,7 @@ sub init
 	$self-> {fontHeight} = $self-> font-> height;
 	$self-> {resetDisabled} = 1;
 	$self-> $_( $profile{$_})
-		for ( qw( vertical minTabWidth items widths offset pressed clickable scalable dragable));
+		for ( qw( vertical minTabWidth items widths offset pressed clickable scalable draggable));
 	if ( scalar @{$profile{widths}} == 0) {
 		$self-> autowidths;
 		$self-> repaint;
@@ -182,7 +192,7 @@ sub point2area
 {
 	my ( $self, $x, $y, $useBorders) = @_;
 	my $i;
-	my $pressable = $self-> {clickable} || $self-> {dragable};
+	my $pressable = $self-> {clickable} || $self-> {draggable};
 	return if !$self-> {scalable} && !$pressable;
 	my $lim;
 	if ( $self-> {vertical}) {
@@ -306,7 +316,7 @@ sub on_mousemove
 			my $ptr;
 			if ( defined $p && $p < 0) {
 				$ptr = $self-> {vertical} ? cr::SizeNS : cr::SizeWE;
-			} elsif ( $self-> {dragable} && !$self-> {clickable} && defined $p) {
+			} elsif ( $self-> {draggable} && !$self-> {clickable} && defined $p) {
 				$ptr = cr::Move;
 			} else {
 				$ptr = cr::Default;
@@ -332,7 +342,7 @@ sub on_mousemove
 			( $x >= $a[0] && $x < $a[2] && $y >= $a[1] && $y < $a[3]) ?
 			$self-> {tabId} : -1
 		);
-		return unless $self-> {dragable};
+		return unless $self-> {draggable};
 		my @ppos = $self-> pointerPos;
 		if ( $self-> {clickable} && !$self-> {pointerSet}) {
 			my @p = @{$self-> {pointerPos}};
@@ -503,10 +513,10 @@ sub scalable
 	$_[0]-> {scalable} = $_[1];
 }
 
-sub dragable
+sub draggable
 {
-	return $_[0]-> {dragable} unless $#_;
-	$_[0]-> {dragable} = $_[1];
+	return $_[0]-> {draggable} unless $#_;
+	$_[0]-> {draggable} = $_[1];
 }
 
 sub minTabWidth
@@ -650,7 +660,7 @@ Selects if the user is allowed to click the tabs.
 
 Default value: 1
 
-=item dragable BOOLEAN
+=item draggable BOOLEAN
 
 Selects if the user is allowed to move the tabs.
 

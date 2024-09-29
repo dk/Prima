@@ -148,7 +148,7 @@ sub profile_default
 	my %prf = (
 		autoHeight     => 1,
 		extendedSelect => 0,
-		dragable       => 1,
+		draggable      => 1,
 		drawLines      => undef,
 		focusedItem    => -1,
 		iconCollapsed  => undef,
@@ -173,6 +173,10 @@ sub profile_default
 sub profile_check_in
 {
 	my ( $self, $p, $default) = @_;
+	if ( exists $p->{dragable} ) {
+		warn "Property `dragable` is renamed to `draggable`, please adapt your code";
+		$p->{draggable} = delete $p->{dragable};
+	}
 	$self-> SUPER::profile_check_in( $p, $default);
 	$p-> { autoHeight} = 0 if
 		exists $p-> { itemHeight}
@@ -192,7 +196,7 @@ sub init
 		{ $self-> {$_} = -1; }
 	for ( qw( scrollTransaction dx dy 
 		offset count autoHeight multiSelect extendedSelect
-		rows maxWidth hintActive showItemHint dragable))
+		rows maxWidth hintActive showItemHint draggable))
 		{ $self-> {$_} = 0; }
 	for ( qw( itemHeight indent))
 		{ $self-> {$_} = 1; }
@@ -201,7 +205,7 @@ sub init
 	my %profile = $self-> SUPER::init(@_);
 	$self-> setup_indents;
 	for ( qw( offset itemHeight autoHeight 
-		indent items focusedItem topItem showItemHint dragable multiSelect extendedSelect
+		indent items focusedItem topItem showItemHint draggable multiSelect extendedSelect
 		iconStyle skin iconCollapsed iconExpanded drawLines
 	))
 		{ $self-> $_( $profile{ $_}); }
@@ -567,7 +571,7 @@ sub on_mousedown
 	}
 
 	$self-> {mouseTransaction} =
-		(( $mod & ( km::Alt | ($self-> {multiSelect} ? 0 : km::Ctrl))) && $self-> {dragable}) ? 2 : 1;
+		(( $mod & ( km::Alt | ($self-> {multiSelect} ? 0 : km::Ctrl))) && $self-> {draggable}) ? 2 : 1;
 	$self-> focusedItem( $item >= 0 ? $item : 0);
 	$self-> {mouseTransaction} = 1 if $self-> focusedItem < 0;
 	if ( $self-> {mouseTransaction} == 2) {
@@ -1427,10 +1431,10 @@ sub showItemHint
 	$self-> makehint(0) if !$sh && $self-> {hintActive};
 }
 
-sub dragable
+sub draggable
 {
-	return $_[0]-> {dragable} unless $#_;
-	$_[0]-> {dragable} = $_[1];
+	return $_[0]-> {draggable} unless $#_;
+	$_[0]-> {draggable} = $_[1];
 }
 
 sub drawLines
@@ -1894,7 +1898,7 @@ sub profile_default
 	return {
 		%{$_[ 0]-> SUPER::profile_default},
 		path           => '',
-		dragable       => 0,
+		draggable      => 0,
 		openedGlyphs   => 1,
 		closedGlyphs   => 1,
 		openedIcon     => undef,
@@ -2331,7 +2335,7 @@ changes value to 0.
 
 Default value: 1
 
-=item dragable BOOLEAN
+=item draggable BOOLEAN
 
 If 1, allows the items to be dragged interactively by pressing the Control key
 together with the left mouse button. If 0, item dragging is disabled.

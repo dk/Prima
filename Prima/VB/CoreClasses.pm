@@ -1618,7 +1618,7 @@ sub prf_types
 {
 	my $pt = $_[ 0]-> SUPER::prf_types;
 	my %de = (
-		bool    => [ qw(autoHScroll autoVScroll vScroll hScroll dragable autoHeight showItemHint)],
+		bool    => [ qw(autoHScroll autoVScroll vScroll hScroll draggable autoHeight showItemHint)],
 		uiv     => [ qw(itemHeight itemWidth focusedItem offset topItem indent
 				openedGlyphs closedGlyphs)],
 		uiv_undef=>[ qw(borderWidth)],
@@ -1809,7 +1809,7 @@ sub prf_adjust_default
 {
 	my ( $self, $p, $pf) = @_;
 	$self-> SUPER::prf_adjust_default( $p, $pf);
-	delete $pf-> {$_} for qw ( items dragable );
+	delete $pf-> {$_} for qw ( items draggable );
 }
 
 sub on_paint
@@ -2214,7 +2214,7 @@ sub prf_types
 		items => ['items', 'widths'],
 		uiv   => ['offset', 'minTabWidth'],
 		iv    => ['pressed'],
-		bool  => ['clickable', 'dragable', 'vertical', 'scalable'],
+		bool  => ['clickable', 'draggable', 'vertical', 'scalable'],
 	);
 	$_[0]-> prf_types_add( $pt, \%de);
 	return $pt;
@@ -2270,7 +2270,7 @@ sub prf_types
 		multiItems  => ['items'],
 		uiv    => ['mainColumn', 'columns', 'minTabWidth', 'offset'],
 		string => ['headerClass'],
-		bool   => ['clickable', 'dragable', 'vertical', 'scalable'],
+		bool   => ['clickable', 'draggable', 'vertical', 'scalable'],
 	);
 	$_[0]-> prf_types_delete( $pt, qw(items));
 	$_[0]-> prf_types_add( $pt, \%de);

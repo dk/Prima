@@ -45,7 +45,7 @@ my @years = (
 my $lb = $mw-> insert(ListBox =>
 	origin      => [15,  150],
 	size        => [500, 100],
-	dragable    => 1,
+	draggable    => 1,
 	items       => [ @events[3,0,2,1] ],
 );
 

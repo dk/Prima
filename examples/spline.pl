@@ -8,7 +8,7 @@ examples/spline.pl - spline rendering demo
 
 Demonstrates parabolic splines as graphic primitives.
 The points arount the filled shapes are the spline vertexes
-which are dragable by the mouse.
+which are draggable by the mouse.
 
 =cut
 

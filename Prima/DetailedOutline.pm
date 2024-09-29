@@ -20,7 +20,7 @@ use vars qw(@ISA @images @imageSize);
 my %hdrProps = (
 	clickable   => 1,
 	scalable    => 1,
-	dragable    => 1,
+	draggable   => 1,
 	minTabWidth => 1,
 );
 

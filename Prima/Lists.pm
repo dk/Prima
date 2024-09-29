@@ -53,7 +53,7 @@ sub profile_default
 		autoHeight     => 1,
 		extendedSelect => 0,
 		drawGrid       => 1,
-		dragable       => 0,
+		draggable      => 0,
 		focusedItem    => -1,
 		gridColor      => cl::Black,
 		integralHeight => 0,
@@ -77,6 +77,10 @@ sub profile_default
 sub profile_check_in
 {
 	my ( $self, $p, $default) = @_;
+	if ( exists $p->{dragable} ) {
+		warn "Property `dragable` is renamed to `draggable`, please adapt your code";
+		$p->{draggable} = delete $p->{dragable};
+	}
 	$self-> SUPER::profile_check_in( $p, $default);
 	$p-> { multiSelect} = 1 if
 		exists $p-> { extendedSelect} &&
@@ -105,7 +109,7 @@ sub init
 	for ( qw(
 		scrollTransaction gridColor dx dy 
 		itemWidth offset multiColumn count autoHeight multiSelect
-		extendedSelect dragable ))
+		extendedSelect draggable ))
 		{ $self-> {$_} = 0; }
 	for ( qw( drawGrid itemHeight integralWidth integralHeight vertical align))
 		{ $self-> {$_} = 1; }
@@ -116,7 +120,7 @@ sub init
 	for ( qw(
 		gridColor offset multiColumn
 		itemHeight autoHeight itemWidth multiSelect extendedSelect integralHeight
-		integralWidth focusedItem topItem selectedItems dragable
+		integralWidth focusedItem topItem selectedItems draggable
 		vertical drawGrid align))
 		{ $self-> $_( $profile{ $_}); }
 	$self-> reset;
@@ -547,7 +551,7 @@ sub on_mousedown
 	}
 
 	$self-> {mouseTransaction} =
-		(( $mod & ( km::Alt | ($self-> {multiSelect} ? 0 : km::Ctrl))) && $self-> {dragable}) ?
+		(( $mod & ( km::Alt | ($self-> {multiSelect} ? 0 : km::Ctrl))) && $self-> {draggable}) ?
 			2 : 1;
 	if ( $self-> {mouseTransaction} == 2) {
 		$self-> {dragItem} = $foc;
@@ -1017,10 +1021,10 @@ sub colorIndex
 		( $self-> SUPER::colorIndex( $index, $color));
 }
 
-sub dragable
+sub draggable
 {
-	return $_[0]-> {dragable} unless $#_;
-	$_[0]-> {dragable} = $_[1];
+	return $_[0]-> {draggable} unless $#_;
+	$_[0]-> {draggable} = $_[1];
 }
 
 sub set_draw_grid
@@ -2047,7 +2051,7 @@ is tied to the item storage organization, and hence the possibility of changing
 the number of items, this property is often declared as read-only in
 descendants of C<Prima::AbstractListViewer>.
 
-=item dragable BOOLEAN
+=item draggable BOOLEAN
 
 If 1, allows the items to be dragged interactively by pressing the Control key
 together with the left mouse button. If 0, item dragging is disabled.
