@@ -334,8 +334,13 @@ sub setup_files
 			$_ => '$(INST_LIBDIR)/' . $k
 		} @pod_files ),
 		# examples
-		( map { $_ => '$(INST_LIBDIR)/Prima/' . $_ } <examples/*> ),
+		( map { $_ => '$(INST_LIBDIR)/Prima/' . $_ } (
+			<examples/*.pl>,
+			<examples/*.gif>,
+			<examples/*.eps>,
+		)),
 	);
+
 	%ALL_MAN_INSTALL = (
 		map {
 			my $target = $_;
