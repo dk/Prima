@@ -1668,9 +1668,9 @@ C<lineEnd>, C<lineJoin>, and C<linePattern> are read from C<%OPTIONS>, or from
 the attached canvas when available. Supports the C<miterLimit> option with
 values from 0 to 20.
 
-Note: if the intention is to immediately render lines, decrease lineWidth by 1
-(they are 1 pixel wider because paths are built around the assumption that pixel size is 0,
-which makes them scalable).
+Note: if the intention is to immediately render non-antialiased lines, decrease
+lineWidth by 1 (they are 1 pixel wider because paths are built around the
+assumption that pixel size is 0, which makes them scalable).
 
 =back
 
