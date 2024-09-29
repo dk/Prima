@@ -90,11 +90,13 @@ use Prima qw(Calendar);
 
 sub profile_default
 {
+	my $d = $_[0]->SUPER::profile_default;
 	return {
-		%{ $_[0]->SUPER::profile_default },
+		%$d,
 		date      => $_[0]->time2date(time),
 		format    => $_[0]->default_format,
 		style     => cs::DropDown,
+		height    => $d->{editHeight},
 		editClass => 'Prima::Widget::Date::Input',
 		listClass => 'Prima::Widget::Date::List',
 	};

@@ -504,11 +504,11 @@ use vars qw(@ISA @images);
 
 sub profile_default
 {
-	my %sup = %{$_[ 0]-> SUPER::profile_default};
+	my $sup = $_[ 0]-> SUPER::profile_default;
 	return {
-		%sup,
+		%$sup,
 		style            => cs::DropDownList,
-		height           => $sup{ editHeight},
+		height           => $sup->{editHeight},
 		firstDrive       => 'A:',
 		drive            => 'C:',
 		editClass        => 'Prima::DriveComboBox::InputLine',
