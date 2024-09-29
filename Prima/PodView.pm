@@ -989,6 +989,6 @@ Called after new content is loaded
 
 =head1 SEE ALSO
 
-L<Prima::Drawable::Pod>, L<Prima::Drawable::TextView>
+L<Prima::Drawable::Pod>, L<Prima::TextView>
 
 =cut

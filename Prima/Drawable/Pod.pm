@@ -1634,7 +1634,7 @@ Prima::Drawable::Pod - POD parser and renderer
 =head1 DESCRIPTION
 
 Prima::Drawable::Pod contains a formatter ( in terms of L<perlpod> ) and a
-renderer of the POD content. The POD text is converted in I<model>, a set of
+renderer of the POD content. The POD text is converted into a I<model>, a set of
 text blocks in format described in L<Prima::Drawable::TextBlock>. The model
 blocks are not directly usable though, and would need to be rendered to another
 set of text blocks, that in turn can be drawn on the screen, a printer, etc.
