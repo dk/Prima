@@ -243,6 +243,10 @@ Same as the C<group> property.
 
 Is used to replace the default checkmark bitmap on a menu item
 
+=item hint SCALAR
+
+Can be used to display a hint when menu item is highlighted
+
 =item onMeasure MENUITEM, REF
 
 Required when the custom painting is requested. It is called when the system

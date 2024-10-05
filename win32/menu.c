@@ -254,6 +254,7 @@ add_item( Bool menuType, Handle menu, PMenuItemReg i)
 		mii.fType   |= ( i-> text              ) ? MFT_STRING       : 0;
 		mii.fType   |= ( i-> flags. rightAdjust) ? MFT_RIGHTJUSTIFY : 0;
 		mii.fType   |= ( i-> flags. custom_draw) ? MFT_OWNERDRAW    : 0;
+		mii.fType   |= ( i-> group > 0         ) ? MFT_RADIOCHECK   : 0;
 
 		mii.fState   = 0;
 		mii.fState  |= ( i-> flags. checked    ) ? MFS_CHECKED      : 0;

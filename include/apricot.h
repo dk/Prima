@@ -795,6 +795,8 @@ CM(MenuItemMeasure)
 CM(MenuItemPaint)
 #define cmClipboard      0x0000002F                /* called on X11 to precise type of data to be pasted */
 CM(Clipboard)
+#define cmMenuSelect     0x00000030                /* window notification to menu highlight */
+CM(MenuSelect)
 
 #define cmMenuCmd        0x00000050                /* interactive menu command */
 CM(MenuCmd)
@@ -2852,6 +2854,7 @@ typedef struct _MenuItemReg {   /* Menu item registration record */
 	Handle bitmap;               /* bitmap if not NULL */
 	SV *   code;                 /* code if not NULL */
 	SV *   options;              /* use options if not NULL */
+	SV *   hint;                 /* hint if not NULL */
 	Handle icon;                 /* custom checked bitmap */
 	int    group;                /* radio group */
 	struct _MenuItemReg* down;   /* pointer to submenu */

@@ -499,9 +499,19 @@ void Widget_handle_event( Handle self, PEvent event)
 			break;
 		case cmMenu:
 			if ( event-> gen. H) {
+				if ( event-> gen.i >= 0 ) {
+					char buffer[16], *context;
+					context = ((( PAbstractMenu) event-> gen. H)-> self)-> make_id_context( event-> gen. H, event-> gen. i, buffer);
+					my-> notify( self, "<sHs", "Menu", event-> gen. H, context);
+				} else
+					my-> notify( self, "<sHS", "Menu", event-> gen. H, &PL_sv_undef);
+			}
+			break;
+		case cmMenuSelect:
+			if ( event-> gen. H) {
 				char buffer[16], *context;
-				context = ((( PAbstractMenu) event-> gen. H)-> self)-> make_id_context( event-> gen. H, event-> gen. i, buffer);
-				my-> notify( self, "<sHs", "Menu", event-> gen. H, context);
+				context = ((( PAbstractMenu) event->gen.H)-> self)-> make_id_context( event->gen.H, event->gen.i, buffer);
+				my-> notify( self, "<sHs", "MenuSelect", event->gen.H, context);
 			}
 			break;
 		case cmMouseClick:

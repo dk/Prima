@@ -8,6 +8,7 @@ object Prima::AbstractMenu ( Prima::Component)
 	property Bool   checked( char * varName);
 	property Handle icon   ( char * varName);
 	property int    group  ( char * varName);
+	property SV   * hint   ( char * varName);
 	property SV   * options( char * varName);
 	property Bool   enabled( char * varName);
 	property Handle image  ( char * varName);

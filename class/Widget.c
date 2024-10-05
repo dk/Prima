@@ -13,6 +13,8 @@ extern "C" {
 
 #undef  set_text
 #undef  get_text
+#undef  set_hint
+#undef  get_hint
 #undef  my
 #define inherited CDrawable
 #define enter_method PWidget_vmt selfvmt = ((( PWidget) self)-> self)

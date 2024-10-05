@@ -1254,6 +1254,7 @@ my %RNT = (
 	KeyUp          => nt::Command,
 	Leave          => nt::Default,
 	Menu           => nt::Default,
+	MenuSelect     => nt::Default,
 	MouseClick     => nt::Command,
 	MouseDown      => nt::Command,
 	MouseUp        => nt::Command,
@@ -2122,7 +2123,6 @@ sub effect
 	}
 }
 
-
 package Prima::Dialog;
 use vars qw(@ISA);
 @ISA = qw(Prima::Window);
@@ -2207,6 +2207,7 @@ sub key     { my $self = shift;return $self-> {menu}-> key    ( $self-> {id}, @_
 sub submenu { my $self = shift;return $self-> {menu}-> submenu( $self-> {id}, @_);}
 sub text    { my $self = shift;return $self-> {menu}-> text   ( $self-> {id}, @_);}
 sub group   { my $self = shift;return $self-> {menu}-> group  ( $self-> {id}, @_);}
+sub hint    { my $self = shift;return $self-> {menu}-> hint   ( $self-> {id}, @_);}
 sub items   { my $i = shift; ( @_) ? $i-> { menu}-> set_items  ( $i-> { id}, @_):return $i-> {menu}-> get_items  ( $i-> { id}); }
 sub enable  { $_[0]-> {menu}-> enabled( $_[0]-> { id}, 1) };
 sub disable { $_[0]-> {menu}-> enabled( $_[0]-> { id}, 0) };

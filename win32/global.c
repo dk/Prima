@@ -1019,6 +1019,37 @@ handle_widget_wm_menuchar(dWM_HANDLER)
 	return false;
 }
 
+static void
+handle_widget_wm_menuselect( dWM_HANDLER )
+{
+	MENUITEMINFOW m;
+	HMENU hmenu;
+
+	if ( !sys last_menu )
+		return;
+
+	if ( HIWORD(mp1) == 0xffff && mp2 == 0 ) {
+		ev-> cmd   = cmMenu;
+		ev-> gen.H = sys last_menu;
+		ev-> gen.i = -1;
+		return;
+	}
+
+	bzero(&m, sizeof(m));
+	m.cbSize = sizeof(m);
+	m.fMask = MIIM_ID | MIIM_STATE;
+	hmenu = GetSubMenu( (HMENU) mp2, LOWORD(mp1));
+	if ( !GetMenuItemInfoW(( HMENU ) mp2, LOWORD(mp1), hmenu != NULL, &m))
+		return;
+
+	if ( m.wID <= MENU_ID_AUTOSTART)
+		return;
+	ev-> cmd   = cmMenuSelect;
+	ev-> gen.H = sys last_menu;
+	ev-> gen.i = m.wID - MENU_ID_AUTOSTART;
+}
+
+
 static Bool
 handle_widget_mouse_events(dWM_HANDLER, UINT msg)
 {
@@ -1399,6 +1430,9 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
 		if ( handle_widget_wm_menuchar(cWM_HANDLER))
 			return MAKELONG( 0, MNC_CLOSE);
 		break;
+	case WM_MENUSELECT:
+		handle_widget_wm_menuselect(cWM_HANDLER);
+		break;
 	case WM_SYNCMOVE:
 		handle_wm_syncmove(cWM_HANDLER);
 		break;
@@ -1725,6 +1759,7 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
 	case WM_INITMENU:
 	case WM_MEASUREITEM:
 	case WM_MENUCHAR:
+	case WM_MENUSELECT:
 	case WM_KEYDOWN:
 	case WM_KEYUP:
 	case WM_SETVISIBLE:

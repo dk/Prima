@@ -24,12 +24,13 @@ Check out the implementation of "Edit/Kill menu"
 
 use strict;
 use warnings;
-use Prima qw( InputLine Label Application StdBitmap );
+use Prima qw( InputLine Label Application StdBitmap);
 use Prima::Menus;
 
 package TestWindow;
 use vars qw(@ISA);
 @ISA = qw(Prima::MainWindow);
+use Prima::Drawable::Markup q(M);
 
 sub create_images_menu
 {
@@ -113,6 +114,7 @@ sub create_custom_menu
 				$x1 + (( $isz > $i-> width ) ? ( $menu-> check_icon_size - $i-> width) / 2 : 0),
 				($y2 + $y1 - $i->height) / 2, $i);
 		},
+		hint    => M 'Hints can be B<bold> and I<italic>',
 	} ];
 }
 
@@ -175,7 +177,7 @@ sub create_menu
 			}],
 			["~Duplicate menu"=>sub{ TestWindow-> new( menu=>$_[0]-> menu)}],
 		]],
-		[ "~Input line" => [
+		[ il => "~Input line" => [
 			[ "Print ~text" => "Text"],
 			[ "Print ~selected" => "Selected"],
 			[ "Try \"selText\"" => "SelText"],
@@ -186,7 +188,7 @@ sub create_menu
 			[ coexistentor => "Coexistentor"=> ""],
 		]],
 		[],                             # divisor in main menu opens
-		[ "~Clusters" => [              # right-adjacent part
+		[ cl => "~Clusters" => [              # right-adjacent part
 		[ "*".checker =>  "Checking Item"   => "Check"     ],
 		[ "@" =>  "Auto Checking Item"   => sub {print "new state: $_[2]\n" } ],
 		[],
@@ -273,6 +275,22 @@ sub BorderMode
 	$e-> borderWidth (( $e-> borderWidth == 1) ? 0 : 1);
 }
 
+sub on_menuselect
+{
+	my ( $self, $menu, $item ) = @_;
+	$self->Hint->text( $menu->hint($item) // '' );
+	my $r = $menu->hint($item) // '';
+}
+
+sub on_menu
+{
+	my ( $self, $menu, $item ) = @_;
+	if ( defined $item ) {
+		$self->Hint->{saved} //= $self->Hint->text;
+	} else {
+		$self->Hint->text( delete $self->Hint->{saved} );
+	}
+}
 
 package UserInit;
 
@@ -282,6 +300,9 @@ my $w = TestWindow-> new(
 	menuItems => TestWindow::create_menu,
 	designScale => [ 7, 16 ],
 );
+$w->menu->ef->hint("This is menu containing editing commands");
+$w->menu->il->hint("Do stuff with the input line");
+$w->menu->cl->hint("Various selectors");
 
 $w-> insert( "Prima::Menu::Bar",
 	pack  => { pady => 20, padx => 20, fill => 'x', expand => 1},
@@ -300,11 +321,13 @@ $w-> insert( "InputLine",
 );
 
 $w-> insert( "Label",
+	name      => 'Hint',
 	pack      => { pady => 20, padx => 20, fill => 'both', expand => 1},
 	text   => "Type here something",
 	backColor => cl::Green,
 	valignment => ta::Center,
 	focusLink => $w-> InputLine1,
 );
+$w-> popupItems( $w-> menuItems);
 
 run Prima;

@@ -443,6 +443,11 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level, void * _avt)
 					r-> group = pget_i(group);
 					pdelete(group);
 				}
+				if ( pexist( hint )) {
+					r-> hint = pget_sv(hint);
+					r-> hint = newSVsv(r->hint);
+					pdelete(hint);
+				}
 			}
 			r-> options = newSVsv( *holder);
 		}
@@ -500,6 +505,37 @@ AbstractMenu_set( Handle self, HV * profile)
 	}
 	inherited set( self, profile);
 	if ( select) my-> set_selected( self, true);
+}
+
+static SV *
+new_options( PMenuItemReg m )
+{
+	dPROFILE;
+	SV * sv;
+	HV * profile, *dst;
+	if ( !m->options && m->group == 0 && m->icon == NULL_HANDLE && m->hint == NULL )
+		return NULL;
+
+	dst = profile = newHV();
+	if ( m->group > 0 ) pset_i ( group, m->group );
+	if ( m->icon      ) pset_H ( icon,  m->icon );
+	if ( m->hint      ) pset_sv( hint,  m->hint );
+
+	profile = m->options ? (HV*) SvRV(m->options) : NULL;
+	if ( profile && pexist( onMeasure )) {
+		sv = pget_sv(onMeasure);
+		profile = dst;
+		pset_sv(onMeasure, sv);
+	}
+
+	profile = m->options ? (HV*) SvRV(m->options) : NULL;
+	if ( profile && pexist( onPaint )) {
+		sv = pget_sv(onPaint);
+		profile = dst;
+		pset_sv(onPaint, sv);
+	}
+
+	return (SV*) profile;
 }
 
 static SV *
@@ -585,8 +621,11 @@ new_av_entry(  PMenuItemReg m, int level, Bool fullTree)
 			av_push( loc, newSVpv( "", 0));
 		}
 
-		if ( m-> options)
-			av_push( loc, newSVsv(m->options));
+		{
+			SV* options = new_options(m);
+			if ( options )
+				av_push( loc, newRV_noinc(options));
+		}
 	} else {
 		/* divider */
 		if ( m-> variable) {
@@ -816,7 +855,7 @@ AbstractMenu_accel( Handle self, Bool set, char * varName, SV * accel)
 	if ( m-> id > 0) {
 		if ( var-> stage <= csNormal && var-> system)
 			apc_menu_item_set_accel( self, m);
-		notify( self, "<ssUS", "Change", "accel", 
+		notify( self, "<ssUi", "Change", "accel",
 			m->variable ? m-> variable      : varName, 
 			m->variable ? m-> flags.utf8_variable : 0, 
 			accel);
@@ -878,7 +917,7 @@ AbstractMenu_autoToggle( Handle self, Bool set, char * varName, Bool autotoggle)
 	if ( m-> id > 0) {
 		if ( var-> stage <= csNormal && var-> system)
 			apc_menu_item_set_autotoggle( self, m);
-		notify( self, "<ssUi", "Change", "autoToggle", 
+		notify( self, "<ssUi", "Change", "autoToggle",
 			m->variable ? m-> variable      : varName, 
 			m->variable ? m-> flags.utf8_variable : 0,
 			autotoggle);
@@ -938,13 +977,28 @@ AbstractMenu_group( Handle self, Bool set, char * varName, int group)
 	if ( !set) return m-> group;
 	if ( m-> group == group ) return group;
 	m-> group = group;
-	notify( self, "<ssUS", "Change", "group",
+	notify( self, "<ssUi", "Change", "group",
 		m->variable ? m-> variable      : varName,
 		m->variable ? m-> flags.utf8_variable : 0,
 		group);
 	return group;
 }
 
+SV*
+AbstractMenu_hint( Handle self, Bool set, char * varName, SV* hint)
+{
+	PMenuItemReg m;
+	if ( var-> stage > csFrozen) return 0;
+	m = find_menuitem( self, varName, true);
+	if ( m == NULL) return 0;
+	if ( !set) return m-> hint ? newSVsv(m->hint) : &PL_sv_undef;
+	m-> hint = (hint && SvOK(hint)) ? newSVsv(hint) : NULL;
+	notify( self, "<ssUS", "Change", "hint",
+		m->variable ? m-> variable      : varName,
+		m->variable ? m-> flags.utf8_variable : 0,
+		m->hint ? m->hint : &PL_sv_undef);
+	return m->hint;
+}
 
 Bool
 AbstractMenu_enabled( Handle self, Bool set, char * varName, Bool enabled)
@@ -961,7 +1015,7 @@ AbstractMenu_enabled( Handle self, Bool set, char * varName, Bool enabled)
 	if ( m-> id > 0) {
 		if ( var-> stage <= csNormal && var-> system)
 			apc_menu_item_set_enabled( self, m);
-		notify( self, "<ssUi", "Change", "enabled", 
+		notify( self, "<ssUi", "Change", "enabled",
 			m->variable ? m-> variable      : varName, 
 			m->variable ? m-> flags.utf8_variable : 0,
 			enabled);
@@ -1023,7 +1077,7 @@ AbstractMenu_image( Handle self, Bool set, char * varName, Handle image)
 	if ( m-> id > 0) {
 		if ( var-> stage <= csNormal && var-> system)
 			apc_menu_item_set_image( self, m);
-		notify( self, "<ssUH", "Change", "image", 
+		notify( self, "<ssUH", "Change", "image",
 			m->variable ? m-> variable      : varName, 
 			m->variable ? m-> flags.utf8_variable : 0,
 			image);
@@ -1040,13 +1094,8 @@ AbstractMenu_options( Handle self, Bool set, char * varName, SV * options)
 	m = find_menuitem( self, varName, true);
 	if ( m == NULL) return NULL_SV;
 	if ( !set) {
-		HV * profile;
-		if ( m->options )
-			return newSVsv( m-> options);
-		profile = newHV();
-		if ( m-> icon )       pset_H(icon,  m->icon);
-		if ( m-> group != 0 ) pset_i(group, m->group);
-		return newRV_noinc((SV*)profile);
+		SV *options = new_options(m);
+		return options ? newRV_noinc(options) : &PL_sv_undef;
 	}
 
 	if (!SvOK( SvRV( options))) {
@@ -1073,7 +1122,14 @@ AbstractMenu_options( Handle self, Bool set, char * varName, SV * options)
 				warn("Cannot set group on a divider item");
 			else
 				my->group(self, true, varName, pget_i(group));
-			pdelete(icon);
+			pdelete(group);
+		}
+		if ( pexist(hint)) {
+			if ( m-> flags. divider )
+				warn("Cannot set hint on a divider item");
+			else
+				my->hint(self, true, varName, pget_sv(hint));
+			pdelete(hint);
 		}
 	}
 	notify( self, "<ssUS", "Change", "options",
@@ -1102,7 +1158,7 @@ AbstractMenu_submenu( Handle self, Bool set, char * varName, SV * submenu)
 	m-> down = ( PMenuItemReg) my-> new_menu( self, submenu, 1, NULL);
 	if ( var-> stage <= csNormal && var-> system)
 		apc_menu_update( self, m-> down, m-> down);
-	notify( self, "<ssU", "Change", "submenu", 
+	notify( self, "<ssU", "Change", "submenu",
 		m->variable ? m-> variable      : varName, 
 		m->variable ? m-> flags.utf8_variable : 0);
 
@@ -1129,7 +1185,7 @@ AbstractMenu_text( Handle self, Bool set, char * varName, SV * text)
 	if ( m-> id > 0) {
 		if ( var-> stage <= csNormal && var-> system)
 			apc_menu_item_set_text( self, m);
-		notify( self, "<ssUS", "Change", "text", 
+		notify( self, "<ssUs", "Change", "text",
 			m->variable ? m-> variable      : varName, 
 			m->variable ? m-> flags.utf8_variable : 0,
 			text);
@@ -1152,7 +1208,7 @@ AbstractMenu_key( Handle self, Bool set, char * varName, SV * key)
 	if ( m-> id > 0) {
 		if ( var-> stage <= csNormal && var-> system)
 			apc_menu_item_set_key( self, m);
-		notify( self, "<ssUi", "Change", "key", 
+		notify( self, "<ssUi", "Change", "key",
 			m->variable ? m-> variable      : varName, 
 			m->variable ? m-> flags.utf8_variable : 0,
 			m->key);
@@ -1168,8 +1224,8 @@ AbstractMenu_set_variable( Handle self, char * varName, SV * newName)
 	m = find_menuitem( self, varName, true);
 	if ( m == NULL) return;
 
-	notify( self, "<ssUS", "Change", "rename", 
-		m->variable ? m-> variable      : varName, 
+	notify( self, "<ssUS", "Change", "rename",
+		m->variable ? m-> variable      : varName,
 		m->variable ? m-> flags.utf8_variable : 0,
 		newName);
 
@@ -1331,7 +1387,7 @@ AbstractMenu_remove( Handle self, char * varName)
 	if ( prev) prev-> next = m-> next;
 	if ( m == var-> tree) var-> tree = m-> next;
 	m-> next = NULL;
-	notify( self, "<ssU", "Change", "remove", 
+	notify( self, "<ssU", "Change", "remove",
 			m->variable ? m-> variable      : varName, 
 			m->variable ? m-> flags.utf8_variable : 0);
 	my-> dispose_menu( self, m);
