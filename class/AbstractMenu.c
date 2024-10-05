@@ -756,7 +756,7 @@ AbstractMenu_set_items( Handle self, SV * items)
 	PMenuItemReg oldBranch = var-> tree;
 	if ( var-> stage > csFrozen) return;
 	var-> tree = ( PMenuItemReg) my-> new_menu( self, items, 0, NULL);
-	if ( var-> stage <= csNormal && var-> system)
+	if ( var-> stage == csNormal && var-> system)
 		apc_menu_update( self, oldBranch, var-> tree);
 	my-> dispose_menu( self, oldBranch);
 	notify( self, "<sss", "Change", "items", "");
