@@ -677,9 +677,31 @@ menu_item_size( PMenuSysData XX, PMenuWindow w, int index)
 	return ret;
 }
 
-static void
-menu_select_item( PMenuSysData XX, PMenuWindow w, int index)
+static Bool
+send_command( Handle self, PMenuItemReg m, int cmd)
 {
+	Event ev;
+	Handle owner = PComponent( self)-> owner;
+	bzero( &ev, sizeof( ev));
+	ev. cmd = cmd;
+	ev. gen. H = self;
+	ev. gen. i = m ? m-> id : 0;
+	CComponent(owner)-> message( owner, &ev);
+	if (
+		PComponent( owner)-> stage == csDead ||
+		PComponent( self)->  stage == csDead
+	)
+		return false;
+	if ( self != guts. currentMenu) return false;
+	return true;
+}
+
+#define send_cmMenu(s,m) send_command(s,m,cmMenu)
+
+static void
+menu_select_item( Handle self, PMenuWindow w, int index)
+{
+	DEFMM;
 	if ( index != w-> selected) {
 		XRectangle r;
 		Point p1 = menu_item_offset( XX, w, index);
@@ -702,26 +724,17 @@ menu_select_item( PMenuSysData XX, PMenuWindow w, int index)
 		w-> selected = ( index < 0) ? -100 : index;
 		XClearArea( DISP, w-> w, r.x, r.y, r.width, r.height, true);
 		XX-> paint_pending = true;
-	}
-}
 
-static Bool
-send_cmMenu( Handle self, PMenuItemReg m)
-{
-	Event ev;
-	Handle owner = PComponent( self)-> owner;
-	bzero( &ev, sizeof( ev));
-	ev. cmd = cmMenu;
-	ev. gen. H = self;
-	ev. gen. i = m ? m-> id : 0;
-	CComponent(owner)-> message( owner, &ev);
-	if (
-		PComponent( owner)-> stage == csDead ||
-		PComponent( self)->  stage == csDead
-	)
-		return false;
-	if ( self != guts. currentMenu) return false;
-	return true;
+		if (index >= 0) {
+			PMenuItemReg m = w->m;
+			while (index--) m = m->next;
+			send_command( self, m, cmMenuSelect );
+		} else if (index == -100) {
+			MenuItemReg m;
+			m.id = -1;
+			send_cmMenu(self, &m);
+		}
+	}
 }
 
 static Bool
@@ -1629,7 +1642,7 @@ handle_menu_motion( XEvent *ev, XWindow win, Handle self)
 
 	w = get_menu_window( self, win);
 	px = menu_point2item( XX, w, ev-> xmotion.x, ev-> xmotion.y, NULL);
-	menu_select_item( XX, w, px);
+	menu_select_item( self, w, px);
 	m = w-> m;
 	if ( px >= 0) {
 		int x = px;
@@ -1641,7 +1654,7 @@ handle_menu_motion( XEvent *ev, XWindow win, Handle self)
 		}
 	}
 	while ( w-> next) {
-		menu_select_item( XX, w-> next, -1);
+		menu_select_item( self, w-> next, -1);
 		w = w-> next;
 	}
 }
@@ -1703,7 +1716,7 @@ handle_menu_button( XEvent *ev, XWindow win, Handle self)
 		return;
 	if ( !first && ( ev-> type == ButtonPress)) return;
 	apc_timer_stop( MENU_TIMER);
-	menu_select_item( XX, w, px);
+	menu_select_item( self, w, px);
 	if ( !ev-> xbutton. send_event) {
 		if ( !menu_enter_item( XX, w, px, ( ev-> type == ButtonPress) ? 0 : 1))
 			return;
@@ -1809,7 +1822,7 @@ handle_menu_key( XEvent *ev, XWindow win, Handle self)
 			}
 			if ( m-> down || w-> selected == w-> last + 1) {
 				if ( menu_enter_item( XX, w, w-> selected, 1) && w-> next)
-					menu_select_item( XX, w-> next, 0);
+					menu_select_item( self, w-> next, 0);
 			} else if ( w-> prev == &XX-> wstatic) {
 				menu_window_delete_downlinks( XX, XX-> w);
 				piles = 1;
@@ -1831,7 +1844,7 @@ handle_menu_key( XEvent *ev, XWindow win, Handle self)
 			}
 			if ( m-> down || w-> selected == w-> last + 1) {
 				if ( menu_enter_item( XX, w, w-> selected, 1) && w-> next)
-					menu_select_item( XX, w-> next, 0);
+					menu_select_item( self, w-> next, 0);
 			}
 		} else
 			d++;
@@ -1868,11 +1881,11 @@ handle_menu_key( XEvent *ev, XWindow win, Handle self)
 			z = sel;
 			while ( z--) m = m-> next;
 			if ( sel == w-> last + 1 || !m-> flags. divider) {
-				menu_select_item( XX, w, sel);
+				menu_select_item( self, w, sel);
 				menu_window_delete_downlinks( XX, w);
 				if ( piles) {
 					if ( menu_enter_item( XX, w, sel, 0) && w-> next)
-						menu_select_item( XX, w-> next, 0);
+						menu_select_item( self, w-> next, 0);
 				}
 				break;
 			}
@@ -1911,7 +1924,7 @@ NEXT_STAGE:
 				int z = CAbstractMenu(self)->translate_accel(NULL_HANDLE, m->text);
 				if ( z == c) {
 					if ( menu_enter_item( XX, w, i, 1) && w-> next)
-						menu_select_item( XX, w, i);
+						menu_select_item( self, w, i);
 					return;
 				}
 			}
@@ -2057,7 +2070,7 @@ prima_handle_menu_shortcuts( Handle self, XEvent * ev, KeySym keysym)
 					ev. xbutton. send_event = true;
 					prima_handle_menu_event( &ev, w-> w, PWindow(self)-> menu);
 					if ( menu_enter_item( XX, w, i, 1) && w-> next)
-						menu_select_item( XX, w, i);
+						menu_select_item( self, w, i);
 					return 1;
 				}
 				m = m-> next;
@@ -2106,7 +2119,7 @@ prima_end_menu(void)
 		XX-> w = NULL;
 	} else {
 		XX-> w-> next = NULL;
-		menu_select_item( XX, XX-> w, -100);
+		menu_select_item( guts.currentMenu, XX-> w, -100);
 	}
 	guts. currentMenu = NULL_HANDLE;
 	XFlush(DISP);
