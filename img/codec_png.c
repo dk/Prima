@@ -486,10 +486,11 @@ process_header( PImgLoadFileInstance fi, Bool use_subloader )
 	l->has_alpha = false;
 	if ( l->icon) {
 		if ( color_type & PNG_COLOR_MASK_ALPHA ) {
+			HV * profile = fi->frameProperties;
+			pset_i( hasAlpha, 1 );
 			l->has_alpha = true;
 			i-> autoMasking = amNone;
 			i-> self-> set_maskType((Handle) i, imbpp8 );
-			pset_i( hasAlpha, 1 );
 		} else if ( l->m_alpha_size < 0) {
 			i-> maskColor = l-> m_transparent_color;
 			i-> autoMasking = amMaskColor;
