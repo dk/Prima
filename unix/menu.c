@@ -891,7 +891,17 @@ can_antialias( Handle self)
 
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
 static void
-render_fill( PMenuWindow w, MenuDrawRec *draw, Color clr, XPointDouble *pts, int numPts)
+move_pts( XPointDouble* pts, int n_pts, XDouble delta)
+{
+	int i;
+	for ( i = 0; i < n_pts; i++) {
+		pts[i].x += delta;
+		pts[i].y += delta;
+	}
+}
+
+static void
+render_fill( PMenuWindow w, MenuDrawRec *draw, Color clr, XPointDouble *pts, int numPts, int delta)
 {
 	if ( clr != draw->xr_color ) {
 		XRenderColor c;
@@ -904,12 +914,15 @@ render_fill( PMenuWindow w, MenuDrawRec *draw, Color clr, XPointDouble *pts, int
 		c.blue  = COLOR_B16(clr);
 		draw->xr_brush = XRenderCreateSolidFill (DISP, &c);
 	}
+	if ( delta != 0 ) move_pts( pts, numPts, delta);
 	my_XRenderCompositeDoublePoly(
 		DISP, PictOpOver, draw->xr_brush, draw->picture,
 		guts.xrender_a8_format,
 		0, 0, 0, 0, pts, numPts, WindingRule
 	);
+	if ( delta != 0 ) move_pts( pts, numPts, -delta);
 }
+
 #endif
 
 #define DECL_DRAW(name) \
@@ -1057,18 +1070,9 @@ DECL_DRAW(submenu)
 			pts[i].x = p[i].x;
 			pts[i].y = p[i].y;
 		}
-		if ( m-> flags. disabled && !selected) {
-			for ( i = 0; i < 3; i++) {
-				pts[i].x++;
-				pts[i].y++;
-			}
-			render_fill( w, draw, XX->rgb[ciLight3DColor], pts, 3);
-			for ( i = 0; i < 3; i++) {
-				pts[i].x--;
-				pts[i].y--;
-			}
-		}
-		render_fill( w, draw, clr, pts, 3);
+		if ( m-> flags. disabled && !selected)
+			render_fill( w, draw, XX->rgb[ciLight3DColor], pts, 3, 1);
+		render_fill( w, draw, clr, pts, 3, 0);
 #endif
 	} else {
 		if ( m-> flags. disabled && !selected) {
@@ -1090,6 +1094,45 @@ DECL_DRAW(submenu)
 	return true;
 }
 
+DECL_DRAW(radio)
+{
+	int ax = x + MENU_XOFFSET;
+	int d = MENU_CHECK_XOFFSET / 3;
+
+	XPoint pts[4] = {
+		{ax, y + (ix->height/2) - 1},
+		{d,-d},
+		{d,d},
+		{-d,d}
+	};
+
+	if ( can_antialias(self)) {
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+		int i;
+		DEFMM;
+		XPointDouble xpts[4] = {{pts[0].x, pts[0].y}};
+		for ( i = 1; i < 4; i++) {
+			xpts[i].x = xpts[i-1].x + pts[i].x;
+			xpts[i].y = xpts[i-1].y + pts[i].y;
+		}
+		if ( m-> flags. disabled && !selected)
+			render_fill( w, draw, XX->rgb[ciLight3DColor], xpts, 4, 1);
+		render_fill( w, draw, clr, xpts, 4, 0);
+#endif
+	} else {
+		if ( m-> flags. disabled && !selected) {
+			XSetForeground( DISP, draw->gc, draw->c[ciLight3DColor]);
+			pts[0].x++; pts[0].y++;
+			XFillPolygon( DISP, win, draw->gc, pts, 4, Convex, CoordModePrevious);
+			pts[0].x--; pts[0].y--;
+		}
+		XSetForeground( DISP, draw->gc, clr);
+		XFillPolygon( DISP, win, draw->gc, pts, 4, Convex, CoordModePrevious);
+	}
+
+	return true;
+}
+
 DECL_DRAW(check)
 {
 	int bottom = y + ix->height - MENU_ITEM_GAP - ix-> height * 0.2;
@@ -1108,21 +1151,9 @@ DECL_DRAW(check)
 		};
 		/* 2 155 7 157 12 152 10 156 7 161 6 159 - very good results */
 
-		if ( m-> flags. disabled && !selected) {
-			int i;
-			XDouble dx = 1.0;
-
-			for ( i = 0; i < 6; i++) {
-				pts[i].x += dx;
-				pts[i].y += dx;
-			}
-			render_fill( w, draw, XX->rgb[ciLight3DColor], pts, 6);
-			for ( i = 0; i < 6; i++) {
-				pts[i].x -= dx;
-				pts[i].y -= dx;
-			}
-		}
-		render_fill( w, draw, clr, pts, 6);
+		if ( m-> flags. disabled && !selected)
+			render_fill( w, draw, XX->rgb[ciLight3DColor], pts, 6, 1);
+		render_fill( w, draw, clr, pts, 6, 0);
 #endif
 	} else {
 		XGCValues gcv;
@@ -1508,8 +1539,12 @@ handle_menu_expose( XEvent *ev, XWindow win, Handle self)
 				/* don't draw check marks on horizontal menus - they look ugly */
 				if ( m-> icon )
 					DRAW(icon);
-				else if ( m-> flags. checked)
-					DRAW(check);
+				else if ( m-> flags. checked) {
+					if ( m-> group > 0 )
+						DRAW(radio);
+					else
+						DRAW(check);
+				}
 				else if ( m-> flags. autotoggle)
 					DRAW(checkbox);
 			}
