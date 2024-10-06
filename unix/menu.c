@@ -678,7 +678,7 @@ menu_item_size( PMenuSysData XX, PMenuWindow w, int index)
 }
 
 static Bool
-send_command( Handle self, PMenuItemReg m, int cmd)
+send_command( Handle self, int cmd, PMenuItemReg m)
 {
 	Event ev;
 	Handle owner = PComponent( self)-> owner;
@@ -695,8 +695,6 @@ send_command( Handle self, PMenuItemReg m, int cmd)
 	if ( self != guts. currentMenu) return false;
 	return true;
 }
-
-#define send_cmMenu(s,m) send_command(s,m,cmMenu)
 
 static void
 menu_select_item( Handle self, PMenuWindow w, int index)
@@ -728,12 +726,9 @@ menu_select_item( Handle self, PMenuWindow w, int index)
 		if (index >= 0) {
 			PMenuItemReg m = w->m;
 			while (index--) m = m->next;
-			send_command( self, m, cmMenuSelect );
-		} else if (index == -100) {
-			MenuItemReg m;
-			m.id = -1;
-			send_cmMenu(self, &m);
-		}
+			send_command( self, cmMenuSelect, m );
+		} else if (index == -100)
+			send_command(self, cmMenuLeave, NULL);
 	}
 }
 
@@ -766,7 +761,7 @@ menu_enter_item( PMenuSysData XX, PMenuWindow w, int index, int type)
 		}
 
 		if ( index != w-> last + 1) {
-			if ( !send_cmMenu( w-> self, m)) return false;
+			if ( !send_command( w-> self, cmMenu, m)) return false;
 			m = m-> down;
 		}
 
@@ -1747,7 +1742,7 @@ handle_menu_button( XEvent *ev, XWindow win, Handle self)
 	}
 	XSetInputFocus( DISP, XX-> w-> w, RevertToNone, CurrentTime);
 	guts. currentMenu = self;
-	if ( first && ( ev-> type == ButtonPress) && ( !send_cmMenu( self, NULL)))
+	if ( first && ( ev-> type == ButtonPress) && ( !send_command( self, cmMenuEnter, NULL)))
 		return;
 	if ( !first && ( ev-> type == ButtonPress)) return;
 	apc_timer_stop( MENU_TIMER);
@@ -2473,7 +2468,7 @@ apc_popup( Handle self, int x, int y, Rect *anchor)
 	prima_end_menu();
 	if (!(m=TREE)) return false;
 	guts. currentMenu = self;
-	if ( !send_cmMenu( self, NULL)) return false;
+	if ( !send_command( self, cmMenuEnter, NULL)) return false;
 	if (!(w = get_window(self,m))) return false;
 	update_menu_window(XX, w);
 	if ( anchor-> left == 0 && anchor-> right == 0 && anchor-> top == 0 && anchor-> bottom == 0) {

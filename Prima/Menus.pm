@@ -486,8 +486,8 @@ sub _export_constants
 {
 my %RNT = (
 	%{Prima::Widget-> notification_types()},
-	Select       => nt::Default,
-	Submenu      => nt::Default,
+	MenuSelect  => nt::Default,
+	Menu        => nt::Default,
 );
 
 sub notification_types { return \%RNT; }
@@ -611,7 +611,7 @@ sub selectedItem
 	$self->invalidate_rect( $self->get_item_rect($old) ) if $old >= 0;
 	$self->invalidate_rect( $self->get_item_rect($i) )   if $i   >= 0;
 	if ( defined ( my $itemid = $self->{cache}->[$i]->[ITEMID] )) {
-		$self->root->notify(qw(Select), $itemid);
+		$self->root->notify(qw(MenuSelect), $itemid);
 	}
 }
 
@@ -637,7 +637,7 @@ sub enter_submenu
 		$index  = $self-> parentIndex + @{ $self->{cache} } - 1;
 	}
 
-	$self->root->notify(qw(Submenu), $itemid);
+	$self->root->notify(qw(Menu), $itemid);
 	return unless $self->alive;
 
 	$self->{submenu_index} = $i;

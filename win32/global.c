@@ -780,9 +780,13 @@ handle_widget_initmenu_events(dWM_HANDLER, UINT msg)
 	if ( mwd && mwd-> menu && ( PAbstractMenu(mwd-> menu)->stage <= csNormal)) {
 		m = ( PMenuItemReg) AbstractMenu_first_that( mwd-> menu, find_oid, INT2PTR(void*,mwd->id), true);
 		hiStage    = true;
-		ev->cmd    = cmMenu;
 		ev->gen. H = mwd-> menu;
-		ev->gen. i = m ? m-> id : 0;
+		if ( m ) {
+			ev->cmd    = cmMenuEnter;
+		} else {
+			ev->cmd    = cmMenu;
+			ev->gen. i = m-> id;
+		}
 	}
 	if (( msg == WM_INITMENUPOPUP) && ( m == NULL))
 		ev->cmd = 0;
@@ -1029,9 +1033,8 @@ handle_widget_wm_menuselect( dWM_HANDLER )
 		return;
 
 	if ( HIWORD(mp1) == 0xffff && mp2 == 0 ) {
-		ev-> cmd   = cmMenu;
+		ev-> cmd   = cmMenuLeave;
 		ev-> gen.H = sys last_menu;
-		ev-> gen.i = -1;
 		return;
 	}
 

@@ -2874,11 +2874,11 @@ Called when the input focus is removed from the widget
 
 See also: C<Enter>, C<focused>, C<selected>
 
-=item Menu MENU VAR_NAME
+=item Menu MENU, ITEM
 
 Called before the user-navigated menu ( pop-up or pull-down ) is about to show
 another level of submenu on the screen. MENU is a Prima::AbstractMenu
-descendant, that is also a direct child to the widget. VAR_NAME is the name of
+descendant, that is also a direct child to the widget. ITEM is the name of
 the menu item that is about to be shown.
 
 Can be used for making dynamic changes in the menu structures, f.ex. enabling
@@ -2886,6 +2886,19 @@ or disabling clipboard commands if there is data in the clipboard that can be
 pasted.
 
 See also: C<popupItems>
+
+=item MenuEnter MENU
+
+Called before the user invokes a menu or a popup
+
+=item MenuLeave MENU
+
+Called after the user ends a menu or a popup session
+
+=item MenuSelect MENU, ITEM
+
+Called when the user selects (but not executes) a menu item.  ITEM is the name
+of the menu item that is about to be shown.
 
 =item MouseClick BUTTON, MOD, X, Y, NTH
 

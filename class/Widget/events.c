@@ -498,14 +498,19 @@ void Widget_handle_event( Handle self, PEvent event)
 				apc_menu_get_font( event-> gen. source, &var-> popupFont);
 			break;
 		case cmMenu:
-			if ( event-> gen. H) {
-				if ( event-> gen.i >= 0 ) {
-					char buffer[16], *context;
-					context = ((( PAbstractMenu) event-> gen. H)-> self)-> make_id_context( event-> gen. H, event-> gen. i, buffer);
-					my-> notify( self, "<sHs", "Menu", event-> gen. H, context);
-				} else
-					my-> notify( self, "<sHS", "Menu", event-> gen. H, &PL_sv_undef);
+			if ( event-> gen. H ) {
+				char buffer[16], *context;
+				context = ((( PAbstractMenu) event-> gen. H)-> self)-> make_id_context( event-> gen. H, event-> gen. i, buffer);
+				my-> notify( self, "<sHs", "Menu", event-> gen. H, context);
 			}
+			break;
+		case cmMenuEnter:
+			if ( event-> gen. H)
+				my-> notify( self, "<sH", "MenuEnter", event-> gen. H);
+			break;
+		case cmMenuLeave:
+			if ( event-> gen. H)
+				my-> notify( self, "<sH", "MenuLeave", event-> gen. H);
 			break;
 		case cmMenuSelect:
 			if ( event-> gen. H) {
@@ -727,6 +732,9 @@ void Widget_on_enter( Handle self) {}
 void Widget_on_keydown( Handle self, int code , int key , int shiftState, int repeat ) {}
 void Widget_on_keyup( Handle self, int code , int key , int shiftState ) {}
 void Widget_on_menu( Handle self, Handle menu, char * variable) {}
+void Widget_on_menuselect( Handle self, Handle menu, char * variable) {}
+void Widget_on_menuenter( Handle self, Handle menu) {}
+void Widget_on_menuleave( Handle self, Handle menu) {}
 void Widget_on_setup( Handle self) {}
 void Widget_on_size( Handle self, Point oldSize, Point newSize) {}
 void Widget_on_move( Handle self, Point oldPos, Point newPos) {}

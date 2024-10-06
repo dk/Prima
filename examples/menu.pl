@@ -281,14 +281,17 @@ sub on_menuselect
 	$self->Hint->text( $menu->hint($item) // '' );
 }
 
-sub on_menu
+sub on_menuenter
 {
-	my ( $self, $menu, $item ) = @_;
-	if ( defined $item ) {
-		$self->Hint->{saved} //= $self->Hint->text;
-	} else {
-		$self->Hint->text( delete $self->Hint->{saved} );
-	}
+	my ( $self ) = @_;
+	$self->Hint->{saved} = $self->Hint->text;
+}
+
+sub on_menuleave
+{
+	my ( $self ) = @_;
+	warn;
+	$self->Hint->text( delete $self->Hint->{saved} );
 }
 
 package UserInit;
@@ -312,7 +315,7 @@ $w-> insert( "Prima::Menu::Bar",
 	onMenuLeave => sub {
 		$w->Hint->text( delete $w->Hint->{saved} );
 	},
-	onSelect => sub {
+	onMenuSelect => sub {
 		my ( $self, $item ) = @_;
 		$w->Hint->text( $self->menu->hint($item) // '' );
 	},

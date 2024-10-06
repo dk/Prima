@@ -797,6 +797,10 @@ CM(MenuItemPaint)
 CM(Clipboard)
 #define cmMenuSelect     0x00000030                /* window notification to menu highlight */
 CM(MenuSelect)
+#define cmMenuEnter      0x00000031                /* start menu session */
+CM(MenuEnter)
+#define cmMenuLeave      0x00000032                /* stop menu session */
+CM(MenuLeave)
 
 #define cmMenuCmd        0x00000050                /* interactive menu command */
 CM(MenuCmd)
