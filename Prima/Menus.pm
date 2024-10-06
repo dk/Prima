@@ -242,7 +242,7 @@ sub draw
 	my $em = $self-> em;
 	my $y_offset = $self-> y_offset;
 
-	my ($draw_check, $draw_accel, $draw_submenu, $draw_check_aa);
+	my ($draw_check, $draw_accel, $draw_submenu, $draw_check_aa, $draw_radio);
 
 	my $lw = 3;
 	if ( my $icon = $self-> icon ) {
@@ -257,14 +257,21 @@ sub draw
 		$Xw = 3 if $Xw < 3;
 		$Xw /= 2;
 		$Y -= $Xw;
-		$draw_check    = [$X, $Y, $X + $Dx, $Y - $Dy, $X + $Dx * 3, $Y + $Dy];
-		$draw_check_aa = [
-			$X - $Xw, $Y,
-			$X + $Dx, $Y - $Dy - $Xw,
-			$X + $Dx * 3 + $lw, $Y + $Dy,
-			$X + $Dx, $Y - $Dy + $Xw,
-			$X, $Y - $Xw,
-		];
+		if ( $self->group > 0 ) {
+			my $D = $em / 2;
+			$draw_radio =  [
+				$X, $Y, $X + $D, $Y + $D, $X + $D * 2, $Y, $X + $D, $Y - $D
+			];
+		} else {
+			$draw_check    = [$X, $Y, $X + $Dx, $Y - $Dy, $X + $Dx * 3, $Y + $Dy];
+			$draw_check_aa = [
+				$X - $Xw, $Y,
+				$X + $Dx, $Y - $Dy - $Xw,
+				$X + $Dx * 3 + $lw, $Y + $Dy,
+				$X + $Dx, $Y - $Dy + $Xw,
+				$X, $Y - $Xw,
+			];
+		}
 	} elsif ( $autotoggle ) {
 		my $Y  = $y + $h / 2;
 		my $D  = $em * 0.5;
@@ -305,9 +312,9 @@ sub draw
 	}
 	$w -= $em * ($vertical ? 1.5 : 0.5 );
 
-	if ( $draw_check || $draw_accel || $draw_submenu ) {
+	if ( $draw_check || $draw_accel || $draw_submenu || $draw_radio ) {
 		return unless $canvas->graphic_context_push;
-		$canvas->antialias(1) if $draw_check || $draw_submenu;
+		$canvas->antialias(1) if $draw_check || $draw_radio || $draw_submenu;
 		if ($draw_check) {
 			unless ( $canvas-> antialias ) {
 				$canvas->lineWidth($lw);
@@ -324,6 +331,8 @@ sub draw
 				} else {
 					$canvas->polyline($draw_check);
 				}
+			} elsif ( $draw_radio ) {
+				$canvas->fillpoly($draw_radio);
 			}
 			$canvas->text_out( @$draw_accel) if $draw_accel;
 			$canvas->fillpoly($draw_submenu) if $draw_submenu;
@@ -338,6 +347,8 @@ sub draw
 			} else {
 				$canvas->polyline($draw_check);
 			}
+		} elsif ( $draw_radio ) {
+			$canvas->fillpoly($draw_radio);
 		}
 		$canvas->text_out( @$draw_accel ) if $draw_accel;
 		$canvas->fillpoly($draw_submenu)  if $draw_submenu;
@@ -475,8 +486,8 @@ sub _export_constants
 {
 my %RNT = (
 	%{Prima::Widget-> notification_types()},
+	Select       => nt::Default,
 	Submenu      => nt::Default,
-	ItemChanged  => nt::Default,
 );
 
 sub notification_types { return \%RNT; }
@@ -599,6 +610,9 @@ sub selectedItem
 	$self->{selectedItem} = $i;
 	$self->invalidate_rect( $self->get_item_rect($old) ) if $old >= 0;
 	$self->invalidate_rect( $self->get_item_rect($i) )   if $i   >= 0;
+	if ( defined ( my $itemid = $self->{cache}->[$i]->[ITEMID] )) {
+		$self->root->notify(qw(Select), $itemid);
+	}
 }
 
 sub enter_submenu
@@ -623,7 +637,7 @@ sub enter_submenu
 		$index  = $self-> parentIndex + @{ $self->{cache} } - 1;
 	}
 
-	$self->notify(qw(Submenu), $i);
+	$self->root->notify(qw(Submenu), $itemid);
 	return unless $self->alive;
 
 	$self->{submenu_index} = $i;
@@ -1130,6 +1144,7 @@ sub cancel
 {
 	my $self = shift;
 	my $s = $self->{submenu};
+	my $os = $s;
 	while ( $s ) {
 		my $ss = $s->{submenu};
 		$s->destroy;
@@ -1137,7 +1152,7 @@ sub cancel
 	}
 	$self->{submenu} = undef;
 	$self->{selectedItem} = -1;
-	$self-> notify(q(MenuLeave));
+	$self-> notify(q(MenuLeave)) if $os;
 	$self-> hide;
 }
 
@@ -1245,6 +1260,7 @@ sub cancel
 {
 	my $self = shift;
 	my $s = $self->{submenu};
+	my $os = $s;
 	while ( $s ) {
 		my $ss = $s->{submenu};
 		$s->destroy;
@@ -1255,7 +1271,7 @@ sub cancel
 	return unless $self->alive;
 	$self->focused(0);
 	$self->repaint;
-	$self-> notify(q(MenuLeave));
+	$self-> notify(q(MenuLeave)) if $os;
 }
 
 

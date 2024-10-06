@@ -306,6 +306,16 @@ $w->menu->cl->hint("Various selectors");
 $w-> insert( "Prima::Menu::Bar",
 	pack  => { pady => 20, padx => 20, fill => 'x', expand => 1},
 	menu  => $w->menu,
+	onMenuEnter => sub {
+		$w->Hint->{saved} //= $w->Hint->text;
+	},
+	onMenuLeave => sub {
+		$w->Hint->text( delete $w->Hint->{saved} );
+	},
+	onSelect => sub {
+		my ( $self, $item ) = @_;
+		$w->Hint->text( $self->menu->hint($item) // '' );
+	},
 );
 $w-> insert( "InputLine",
 	pack      => { pady => 20, padx => 20, fill => 'x', side => 'bottom'},
