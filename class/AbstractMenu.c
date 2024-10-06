@@ -75,33 +75,6 @@ is_var_id_name( char * name)
 	return ret;
 }
 
-void
-AbstractMenu_dispose_menu( Handle self, void * menu)
-{
-	PMenuItemReg m = ( PMenuItemReg) menu;
-	if  ( m == NULL) return;
-	free( m-> text);
-	free( m-> accel);
-	free( m-> variable);
-	free( m-> perlSub);
-	if ( m-> code) sv_free( m-> code);
-	if ( m-> options) sv_free( m-> options);
-	if ( m-> bitmap) {
-		if ( PObject( m-> bitmap)-> stage < csDead)
-			SvREFCNT_dec( SvRV(( PObject( m-> bitmap))-> mate));
-		unprotect_object( m-> bitmap);
-	}
-	if ( m-> icon) {
-		if ( PObject( m-> icon)-> stage < csDead)
-			SvREFCNT_dec( SvRV(( PObject( m-> icon))-> mate));
-		unprotect_object( m-> icon);
-	}
-	my-> dispose_menu( self, m-> next);
-	my-> dispose_menu( self, m-> down);
-	free( m);
-}
-
-
 static Bool
 register_image(Handle c_object)
 {
@@ -116,6 +89,41 @@ register_image(Handle c_object)
 	SvREFCNT_inc( SvRV(( PObject( c_object))-> mate));
 	return true;
 }
+
+static void
+unregister_image(Handle c_object)
+{
+	if ( PObject( c_object)-> stage < csDead)
+		SvREFCNT_dec( SvRV(( PObject( c_object))-> mate));
+	unprotect_object( c_object);
+}
+
+void
+AbstractMenu_dispose_menu( Handle self, void * menu)
+{
+	PMenuItemReg m = ( PMenuItemReg) menu;
+	if  ( m == NULL) return;
+	free( m-> text);
+	free( m-> accel);
+	free( m-> variable);
+	free( m-> perlSub);
+	if ( m-> code)
+		sv_free( m-> code);
+	if ( m-> hint)
+		sv_free( m-> hint);
+	if ( m-> onMeasure)
+		sv_free( m-> onMeasure);
+	if ( m-> onPaint)
+		sv_free( m-> onPaint);
+	if ( m-> bitmap)
+		unregister_image( m-> bitmap );
+	if ( m-> icon)
+		unregister_image( m-> icon );
+	my-> dispose_menu( self, m-> next);
+	my-> dispose_menu( self, m-> down);
+	free( m);
+}
+
 
 typedef struct {
 	int max_group, curr_group;
@@ -135,6 +143,35 @@ avt_init( Handle self, PMenuItemReg m, AVTraverse * avt)
 		}
 	}
 	return false;
+}
+
+static void
+parse_options( HV * profile, PMenuItemReg r)
+{
+	dPROFILE;
+
+	if ( pexist( icon )) {
+		Handle c_object = pget_H(icon);
+		if ( c_object && register_image(c_object))
+			r-> icon = c_object;
+	}
+
+	if ( pexist( group ))
+		r-> group = pget_i(group);
+
+	if ( pexist( hint )) {
+		r-> hint = pget_sv(hint);
+		r-> hint = newSVsv(r->hint);
+	}
+
+	if ( pexist( onPaint )) {
+		r-> onPaint = pget_sv(onPaint);
+		r-> onPaint = newSVsv(r-> onPaint);
+	}
+	if ( pexist( onMeasure )) {
+		r-> onMeasure = pget_sv(onMeasure);
+		r-> onMeasure = newSVsv(r-> onMeasure);
+	}
 }
 
 void *
@@ -428,28 +465,10 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level, void * _avt)
 				my-> dispose_menu( self, m);
 				return NULL;
 			}
-			if (!( SvOK( *holder) && SvROK( *holder) && SvTYPE( SvRV( *holder)) == SVt_PVHV)) {
+			if (!( SvOK( *holder) && SvROK( *holder) && SvTYPE( SvRV( *holder)) == SVt_PVHV))
 				warn("menu build error: options is not a hashref");
-			} else {
-				dPROFILE;
-				HV * profile = (HV*) SvRV(*holder);
-				if ( pexist( icon )) {
-					Handle c_object = pget_H(icon);
-					if ( register_image(c_object))
-						r-> icon = c_object;
-					pdelete(icon);
-				}
-				if ( pexist( group )) {
-					r-> group = pget_i(group);
-					pdelete(group);
-				}
-				if ( pexist( hint )) {
-					r-> hint = pget_sv(hint);
-					r-> hint = newSVsv(r->hint);
-					pdelete(hint);
-				}
-			}
-			r-> options = newSVsv( *holder);
+			else
+				parse_options( (HV*) SvRV(*holder), r);
 		}
 	}
 	return m;
@@ -510,30 +529,22 @@ AbstractMenu_set( Handle self, HV * profile)
 static SV *
 new_options( PMenuItemReg m )
 {
-	dPROFILE;
-	SV * sv;
-	HV * profile, *dst;
-	if ( !m->options && m->group == 0 && m->icon == NULL_HANDLE && m->hint == NULL )
+	HV * profile;
+	if (
+		m->group     == 0           &&
+		m->icon      == NULL_HANDLE &&
+		m->hint      == NULL        &&
+		m->onPaint   == NULL        &&
+		m->onMeasure == NULL
+	)
 		return NULL;
 
-	dst = profile = newHV();
-	if ( m->group > 0 ) pset_i ( group, m->group );
-	if ( m->icon      ) pset_H ( icon,  m->icon );
-	if ( m->hint      ) pset_sv( hint,  m->hint );
-
-	profile = m->options ? (HV*) SvRV(m->options) : NULL;
-	if ( profile && pexist( onMeasure )) {
-		sv = pget_sv(onMeasure);
-		profile = dst;
-		pset_sv(onMeasure, sv);
-	}
-
-	profile = m->options ? (HV*) SvRV(m->options) : NULL;
-	if ( profile && pexist( onPaint )) {
-		sv = pget_sv(onPaint);
-		profile = dst;
-		pset_sv(onPaint, sv);
-	}
+	profile = newHV();
+	if ( m->group > 0 ) pset_i ( group,     m->group    );
+	if ( m->icon      ) pset_H ( icon,      m->icon     );
+	if ( m->hint      ) pset_sv( hint,      m->hint     );
+	if ( m->onMeasure ) pset_sv( onMeasure, m->onMeasure);
+	if ( m->onPaint   ) pset_sv( onPaint,   m->onPaint  );
 
 	return (SV*) profile;
 }
@@ -871,7 +882,8 @@ AbstractMenu_action( Handle self, Bool set, char * varName, SV * action)
 	m = find_menuitem( self, varName, true);
 	if ( !m) return NULL_SV;
 	if ( !set) {
-		if ( m-> code)    return newSVsv( m-> code);
+		if ( m-> code)
+			return newSVsv( m-> code);
 		if ( m-> perlSub) {
 			SV * sv = newSVpv( m-> perlSub, 0);
 			if ( m-> flags. utf8_perlSub) SvUTF8_on( sv);
@@ -895,7 +907,8 @@ AbstractMenu_action( Handle self, Bool set, char * varName, SV * action)
 	} else {
 		char * line = ( char *) SvPV_nolen( action);
 		free( m-> perlSub);
-		if ( m-> code) sv_free( m-> code);
+		if ( m-> code)
+			sv_free( m-> code);
 		m-> code = NULL;
 		m-> perlSub = duplicate_string( line);
 		m-> flags. utf8_perlSub = prima_is_utf8_sv( action);
@@ -991,12 +1004,12 @@ AbstractMenu_hint( Handle self, Bool set, char * varName, SV* hint)
 	if ( var-> stage > csFrozen) return 0;
 	m = find_menuitem( self, varName, true);
 	if ( m == NULL) return 0;
-	if ( !set) return m-> hint ? newSVsv(m->hint) : &PL_sv_undef;
+	if ( !set) return m-> hint ? newSVsv(m->hint) : NULL_SV;
 	m-> hint = (hint && SvOK(hint)) ? newSVsv(hint) : NULL;
 	notify( self, "<ssUS", "Change", "hint",
 		m->variable ? m-> variable      : varName,
 		m->variable ? m-> flags.utf8_variable : 0,
-		m->hint ? m->hint : &PL_sv_undef);
+		m->hint ? m->hint : NULL_SV);
 	return m->hint;
 }
 
@@ -1038,11 +1051,8 @@ AbstractMenu_icon( Handle self, Bool set, char * varName, Handle icon)
 	}
 	if ( !register_image(icon))
 		return NULL_HANDLE;
-	if ( m-> icon ) {
-		if ( PObject( m-> icon)-> stage < csDead)
-			SvREFCNT_dec( SvRV(( PObject( m-> icon))-> mate));
-		unprotect_object( m-> icon);
-	}
+	if ( m-> icon )
+		unregister_image(m->icon);
 	m-> icon = icon;
 	if ( m-> id > 0) {
 		if ( var-> stage <= csNormal && var-> system)
@@ -1070,9 +1080,7 @@ AbstractMenu_image( Handle self, Bool set, char * varName, Handle image)
 	}
 	if ( !register_image(image))
 		return NULL_HANDLE;
-	if ( PObject( m-> bitmap)-> stage < csDead)
-		SvREFCNT_dec( SvRV(( PObject( m-> bitmap))-> mate));
-	unprotect_object( m-> bitmap);
+	unregister_image(m->bitmap);
 	m-> bitmap = image;
 	if ( m-> id > 0) {
 		if ( var-> stage <= csNormal && var-> system)
@@ -1088,54 +1096,45 @@ AbstractMenu_image( Handle self, Bool set, char * varName, Handle image)
 SV *
 AbstractMenu_options( Handle self, Bool set, char * varName, SV * options)
 {
-	HV * profile;
-	PMenuItemReg m;
+	MenuItemReg *m, n;
 	if ( var-> stage > csFrozen) return NULL_SV;
 	m = find_menuitem( self, varName, true);
 	if ( m == NULL) return NULL_SV;
 	if ( !set) {
 		SV *options = new_options(m);
-		return options ? newRV_noinc(options) : &PL_sv_undef;
+		return options ? newRV(options) : NULL_SV;
 	}
 
-	if (!SvOK( SvRV( options))) {
-		sv_free( m-> options);
-		m-> options = NULL_SV;
+
+	if ( m-> flags. divider ) {
+		warn("Cannot set icon on a divider item");
+		return NULL_SV;
+	}
+
+	if ( !SvOK(options)) {
+		bzero(&n, sizeof(n));
 	} else {
-		dPROFILE;
 		if (!(SvROK( options) && SvTYPE( SvRV( options)) == SVt_PVHV)) {
 			warn("options is not a hashref");
 			return NULL_SV;
 		}
-		sv_free( m-> options);
-		m-> options = newSVsv( options);
-		profile = (HV*)SvRV(options);
-		if ( pexist(icon)) {
-			if ( m-> flags. divider )
-				warn("Cannot set icon on a divider item");
-			else
-				my->icon(self, true, varName, pget_H(icon));
-			pdelete(icon);
-		}
-		if ( pexist(group)) {
-			if ( m-> flags. divider )
-				warn("Cannot set group on a divider item");
-			else
-				my->group(self, true, varName, pget_i(group));
-			pdelete(group);
-		}
-		if ( pexist(hint)) {
-			if ( m-> flags. divider )
-				warn("Cannot set hint on a divider item");
-			else
-				my->hint(self, true, varName, pget_sv(hint));
-			pdelete(hint);
-		}
+		n = *m;
+		parse_options( (HV*)SvRV(options), &n);
 	}
-	notify( self, "<ssUS", "Change", "options",
+
+	if ( n.icon != m->icon && m-> icon )
+		unregister_image(m->icon);
+	if ( n.hint != m->hint && m->hint )
+		sv_free(m->hint);
+	if ( n.onPaint != m->onPaint && m->onPaint )
+		sv_free(m->onPaint);
+	if ( n.onMeasure != m->onMeasure && m->onMeasure )
+		sv_free(m->onMeasure);
+	*m = n;
+
+	notify( self, "<ssU", "Change", "options",
 		m->variable ? m-> variable      : varName,
-		m->variable ? m-> flags.utf8_variable : 0,
-		options);
+		m->variable ? m-> flags.utf8_variable : 0);
 	return NULL_SV;
 }
 

@@ -2853,10 +2853,11 @@ typedef struct _MenuItemReg {   /* Menu item registration record */
 	char * perlSub;              /* sub name */
 	Handle bitmap;               /* bitmap if not NULL */
 	SV *   code;                 /* code if not NULL */
-	SV *   options;              /* use options if not NULL */
 	SV *   hint;                 /* hint if not NULL */
 	Handle icon;                 /* custom checked bitmap */
 	int    group;                /* radio group */
+	SV *   onPaint;              /* callbacks */
+	SV *   onMeasure;
 	struct _MenuItemReg* down;   /* pointer to submenu */
 	struct _MenuItemReg* next;   /* pointer to next item */
 	struct {
