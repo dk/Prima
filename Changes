@@ -4,6 +4,7 @@ Revision history for Perl module Prima
  - FrameSet: rename .arrangement to .vertical, remove .resizeMethod
  - add Date,Time,KeySelector,FrameSet, and CheckList to VB
  - s/dragable/draggable/g
+ - Grouped menu items use a distinct radio style check mark bitmap
 
 1.74 2024-08-24
  - implement antialiased polygon fill in C, use it in the
