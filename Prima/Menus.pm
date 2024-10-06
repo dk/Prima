@@ -259,6 +259,7 @@ sub draw
 		$Y -= $Xw;
 		if ( $self->group > 0 ) {
 			my $D = $em / 2;
+			$Y -= $D / 2;
 			$draw_radio =  [
 				$X, $Y, $X + $D, $Y + $D, $X + $D * 2, $Y, $X + $D, $Y - $D
 			];
