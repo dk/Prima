@@ -1142,7 +1142,7 @@ DECL_DRAW(check)
 		XPointDouble pts[] = {
 			{ax + 1,                      y + ix->height/2 + 2},
 			{ax + MENU_XOFFSET,           bottom - 2},
-			{ax + MENU_CHECK_XOFFSET + 1,  + MENU_ITEM_GAP + ix->height * 0.2 - 1},
+			{ax + MENU_CHECK_XOFFSET + 1, y + MENU_ITEM_GAP + ix->height * 0.2 - 1},
 			{ax + MENU_CHECK_XOFFSET - 2, y + MENU_ITEM_GAP + ix->height * 0.2 + 4},
 			{ax + MENU_XOFFSET,           bottom + 2},
 			{ax + 4,                      y + ix->height/2 + 4}
