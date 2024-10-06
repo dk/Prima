@@ -1130,16 +1130,19 @@ DECL_DRAW(radio)
 
 DECL_DRAW(check)
 {
+	DEFMM;
+	PCachedFont kf = XX->font;
 	int bottom = y + ix->height - MENU_ITEM_GAP - ix-> height * 0.2;
 	int ax = x + MENU_XOFFSET / 2;
+	y -= kf->font.descent/2;
 
 	if ( can_antialias(self)) {
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
 		DEFMM;
 		XPointDouble pts[] = {
-			{ax,                          y + ix->height/2},
+			{ax + 1,                      y + ix->height/2 + 2},
 			{ax + MENU_XOFFSET,           bottom - 2},
-			{ax + MENU_CHECK_XOFFSET,     y + MENU_ITEM_GAP + ix->height * 0.2},
+			{ax + MENU_CHECK_XOFFSET + 1,  + MENU_ITEM_GAP + ix->height * 0.2 - 1},
 			{ax + MENU_CHECK_XOFFSET - 2, y + MENU_ITEM_GAP + ix->height * 0.2 + 4},
 			{ax + MENU_XOFFSET,           bottom + 2},
 			{ax + 4,                      y + ix->height/2 + 4}
@@ -1171,9 +1174,11 @@ DECL_DRAW(check)
 
 DECL_DRAW(checkbox)
 {
+	DEFMM;
+	PCachedFont kf = XX->font;
 	int
 		x1 = x  + MENU_XOFFSET / 2 + 1,
-		y1 = y  + (ix-> height/2) - MENU_CHECK_XOFFSET/2 + 1,
+		y1 = y  + (ix-> height/2) - MENU_CHECK_XOFFSET/2 + 1 - kf->font.descent/2,
 		x2 = x1 + MENU_CHECK_XOFFSET - 2,
 		y2 = y1 + MENU_CHECK_XOFFSET - 2;
 

@@ -325,7 +325,7 @@ $w-> insert( "InputLine",
 	maxLen    => 200,
 	onChange  => sub {
 		$_[0]-> owner-> text( $_[0]-> text);
-		$_[0]-> owner-> Label1-> text( $_[0]-> text);
+		$_[0]-> owner-> Hint-> text( $_[0]-> text);
 		$_[0]-> owner-> menu-> coexistentor-> text( $_[0]-> text)
 			if $_[0]-> owner-> menu-> has_item( 'coexistentor');
 	},
