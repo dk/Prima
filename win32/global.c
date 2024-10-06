@@ -782,10 +782,10 @@ handle_widget_initmenu_events(dWM_HANDLER, UINT msg)
 		hiStage    = true;
 		ev->gen. H = mwd-> menu;
 		if ( m ) {
-			ev->cmd    = cmMenuEnter;
-		} else {
 			ev->cmd    = cmMenu;
 			ev->gen. i = m-> id;
+		} else {
+			ev->cmd    = cmMenuEnter;
 		}
 	}
 	if (( msg == WM_INITMENUPOPUP) && ( m == NULL))
