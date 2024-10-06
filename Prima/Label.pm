@@ -148,9 +148,8 @@ sub on_paint
 sub set_text
 {
 	my $self = $_[0];
-	$self-> SUPER::set_text( $_[1]);
-	$self-> check_auto_size;
 	undef $self->{link_handler};
+	$self-> SUPER::set_text( $_[1]);
 
 	if ( ref($_[1]) ) {
 		my $text = $self->SUPER::text;
@@ -160,6 +159,7 @@ sub set_text
 		) if UNIVERSAL::isa($text, 'Prima::Drawable::Markup');
 	}
 
+	$self-> check_auto_size;
 	$self-> reset_lines;
 	$self-> repaint;
 }

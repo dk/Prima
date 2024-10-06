@@ -279,7 +279,6 @@ sub on_menuselect
 {
 	my ( $self, $menu, $item ) = @_;
 	$self->Hint->text( $menu->hint($item) // '' );
-	my $r = $menu->hint($item) // '';
 }
 
 sub on_menu
