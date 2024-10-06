@@ -290,7 +290,6 @@ sub on_menuenter
 sub on_menuleave
 {
 	my ( $self ) = @_;
-	warn;
 	$self->Hint->text( delete $self->Hint->{saved} );
 }
 
