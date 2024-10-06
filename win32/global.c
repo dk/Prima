@@ -1344,6 +1344,7 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
 	Event   ev;
 	Bool    hiStage   = false;
 	Bool    message_result = true;
+	Bool    protect_menu = false;
 
 	if ( !self || prima_guts.app_is_dead)
 		return DefWindowProcW( win, msg, mp1, mp2);
@@ -1404,6 +1405,7 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
 		if ( HIWORD( mp2)) break; // do not use system popup
 	case WM_INITMENU:
 		hiStage = handle_widget_initmenu_events(cWM_HANDLER, msg);
+		protect_menu = true;
 		break;
 
 	case WM_KILLFOCUS:
@@ -1435,6 +1437,7 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
 		break;
 	case WM_MENUSELECT:
 		handle_widget_wm_menuselect(cWM_HANDLER);
+		protect_menu = true;
 		break;
 	case WM_SYNCMOVE:
 		handle_wm_syncmove(cWM_HANDLER);
@@ -1513,8 +1516,16 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
 		ret = DefWindowProcW( win, msg, mp1, mp2);
 
 	if ( ev. cmd) {
+		Bool flag;
+		if ( protect_menu )
+			flag = exception_block(true);
 		ev. gen. source = self;
 		message_result = CWidget(self)-> message( self, &ev);
+		if ( protect_menu ) {
+			exception_block(flag);
+			if ( exception_charged())
+				EndMenu();
+		}
 	} else
 		ev. cmd = orgMsg;
 
