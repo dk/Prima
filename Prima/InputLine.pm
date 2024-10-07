@@ -46,16 +46,17 @@ sub profile_default
 		passwordChar   => '*',
 		pointerType    => cr::Text,
 		popupItems     => [
-			[ cut        => 'Cu~t'        => 'cut'       ],
-			[ copy       => '~Copy'       => 'copy'      ],
-			[ paste      => '~Paste'      => 'paste'     ],
-			[ delete     => '~Delete'     => 'delete'    ],
+			[ cut        => 'Cu~t'   ,      'Ctrl+X',       '^X'   ,  'cut'         ],
+			[ copy       => '~Copy'  ,      'Ctrl+C',       '^C'   ,  'copy'        ],
+			[ paste      => '~Paste' ,      'Ctrl+V',       '^V'   ,  'paste'       ],
+			[ delete     => '~Delete'                              ,  'delete'      ],
 			[],
-			[select_all  => 'Select ~All' => 'select_all'],
-			[undo        => '~Undo', 'Ctrl+Z', '^Z', 'undo'],
-			[redo        => 'R~edo', 'Ctrl+Y', '^Y', 'redo'],
-			['@rtl'      => '~RTL input', 'Ctrl+Shift+D', '^#D', 'toggle_rtl'],
-			['@ligation' => '~Ligation', 'Ctrl+Shift+L', '^#L', 'toggle_ligation'],
+			[select_all  => 'Select ~All' , 'Ctrl+A',       '^A',  'select_all'     ],
+			[undo        => '~Undo',        'Ctrl+Z',       '^Z',  'undo'           ],
+			[redo        => 'R~edo',        'Ctrl+Y',       '^Y',  'redo'           ],
+			[],
+			['@rtl'      => '~RTL input',   'Ctrl+Shift+D', '^#D', 'toggle_rtl'     ],
+			['@ligation' => '~Ligation',    'Ctrl+Shift+L', '^#L', 'toggle_ligation'],
 		],
 		readOnly       => 0,
 		selection      => [0, 0],
@@ -104,7 +105,6 @@ sub init
 	$self-> {resetDisabled} = 1;
 
 	my %profile = $self-> SUPER::init(@_);
-	$self->init_undo(\%profile);
 
 	for ( qw(
 		textDirection textLigation
@@ -121,6 +121,7 @@ sub init
 
 	$self-> reset;
 	$self-> autoHeight( $profile{autoHeight});
+	$self-> init_undo(\%profile);
 
 	return %profile;
 }
@@ -468,43 +469,11 @@ sub on_keydown
 		return;
 	}
 
-	if ( $key == kb::Insert && ( $mod & ( km::Ctrl|km::Shift)))
-	{
-		if ( $mod & km::Ctrl)
-		{
-			$self-> copy if $p_start != $p_end;
+	if ( $key == kb::Insert && ( $mod & ( km::Ctrl|km::Shift))) {
+		if ( $mod & km::Ctrl) {
+			$self-> copy;
 		} else {
-			$self-> push_group_undo_action('text', $self->text);
 			$self-> paste;
-		}
-		$self-> clear_event;
-		return;
-	}
-
-	if ($code == ord("\cC")) {
-		$self-> copy if $p_start != $p_end;
-		$self-> clear_event;
-		return;
-	} elsif ($code == ord("\cA")) {
-		$self-> select_all;
-		$self-> clear_event;
-		return;
-	} elsif ($code == ord("\cV")) {
-		$self-> push_group_undo_action('text', $self->text);
-		$self-> paste;
-		$self-> clear_event;
-		return;
-	} elsif ($code == ord("\cX")) {
-		if ( !$self-> {readOnly} && $p_start != $p_end) {
-			my $del;
-			$del = substr( $cap, $p_start, $p_end - $p_start);
-			substr( $cap, $p_start, $p_end - $p_start) = '';
-			$self-> begin_undo_group;
-			$self-> set_selection(0,0);
-			$self-> edit_text( $cap);
-			$self-> charOffset( $start);
-			$self-> end_undo_group;
-			$::application-> Clipboard-> text( $del);
 		}
 		$self-> clear_event;
 		return;
@@ -585,13 +554,13 @@ sub copy
 }
 
 sub toggle_rtl
-{	
+{
 	my ( $self, $menu, $value ) = @_;
 	$self-> textDirection($value);
 }
 
 sub toggle_ligation
-{	
+{
 	my ( $self, $menu, $value ) = @_;
 	$self-> textLigation($value);
 }
@@ -610,9 +579,13 @@ sub paste
 		(($self->cursor2text_offset($self->charOffset)) x 2) :
 		$self->selection_strpos;
 	substr( $cap, $p_start, $p_end - $p_start) = $s;
+
+	$self-> begin_undo_group;
 	$self-> selection(0,0);
+	$self-> push_undo_action( 'edit_text', $self->text);
 	$self-> text( $cap);
 	$self-> charOffset( $self->{glyphs}-> index2cluster($p_start + length( $s)));
+	$self-> end_undo_group;
 }
 
 sub delete
@@ -630,17 +603,20 @@ sub delete
 sub cut
 {
 	my $self = $_[0];
+	return $self->copy if $self->{readOnly};
 	my ( $start, $end) = $self-> selection_strpos;
 	return if $start == $end;
 
 	my $cap = $self-> text;
 	my $del = substr( $cap, $start, $end - $start);
 	substr( $cap, $start, $end - $start) = '';
+	$self-> begin_undo_group;
 	$self-> selection(0,0);
-	$self-> text( $cap) unless $self-> {readOnly};
+	$self-> edit_text( $cap);
+	$self-> charOffset( $start);
+	$self-> end_undo_group;
 	$::application-> Clipboard-> text( $del) unless $self-> {writeOnly};
 }
-
 
 sub x2offset
 {
@@ -930,7 +906,7 @@ sub set_char_offset
 	$offset = 0 if $offset < 0;
 	return if $self-> {charOffset} == $offset;
 
-	$self-> push_undo_action( 'charOffset', $offset) unless $self->has_undo_action('charOffset');
+	$self-> push_undo_action( 'charOffset', $self->{charOffset}) unless $self->has_undo_action('charOffset');
 
 	my $border = $self-> {borderWidth};
 	$self-> {charOffset} = $offset;
@@ -976,7 +952,7 @@ sub set_first_char
 		$pos = $self->{n_clusters} - $back if $back + $pos > $self->{n_clusters};
 	}
 	return if $self-> {firstChar} == $pos;
-	$self-> push_undo_action( 'firstChar', $pos);
+	$self-> push_undo_action( 'firstChar', $self->{firstChar});
 	$self-> {firstChar} = $pos;
 	$self-> reset;
 	$self-> repaint;
@@ -1384,13 +1360,13 @@ C<%options> allows the C<backColor> and C<color> entries.
 
 Copies the selected text, if any, to the clipboard.
 
-Default key: Ctrl+Insert
+Default key: Ctrl+Insert and Ctrl+C
 
 =item cut
 
 Cuts the selected text into the clipboard.
 
-Default key: Shift+Delete
+Default key: Shift+Delete and Ctrl+X
 
 =item delete
 
@@ -1402,7 +1378,7 @@ Default key: Delete
 
 Copies text from the clipboard and inserts it in the cursor position.
 
-Default key: Shift+Insert
+Default key: Shift+Insert and Ctrl+V
 
 =item select_all
 

@@ -83,8 +83,8 @@ sub push_group_undo_action
 	$self-> {grouped_undo} = 0;
 }
 
-sub can_undo { scalar shift @{ shift->{undo} } }
-sub can_redo { scalar shift @{ shift->{redo} } }
+sub can_undo { scalar @{ shift->{undo} } }
+sub can_redo { scalar @{ shift->{redo} } }
 
 sub undo
 {
