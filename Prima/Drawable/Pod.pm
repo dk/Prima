@@ -1439,7 +1439,7 @@ sub parse_link
 		} else {
 			$section = $s;
 		}
-		$item = 0 if $section =~ s/^\"(.*?)\"$/$1/;
+		$item = 0 if $section =~ s/^\"(.*?)\"$/$1/ && length($page);
 
 		if ( !length $page) {
 			my $tid = -1;
