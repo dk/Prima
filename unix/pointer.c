@@ -55,7 +55,7 @@ xcursor_map[] = {
         /* crCrosshair       => */   "crosshair",
         /* crUpArrow         => */   "sb_up_arrow",
         /* crQuestionArrow   => */   "question_arrow",
-        /* crHand            => */   "hand"
+        /* crHand            => */   "hand2"
 };
 #endif
 
