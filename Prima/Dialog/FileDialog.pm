@@ -978,6 +978,7 @@ sub init
 		text        => '~Help',
 		size        => [ 96, 36],
 		growMode    => gm::GrowLoX | gm::GrowLoY,
+		delegations => [qw(Click)],
 	) if $self-> {showHelp};
 
 	$self-> Name-> current(1);
@@ -1452,6 +1453,8 @@ sub Open_Click
 	$self-> ok;
 }
 
+sub Help_Click { shift->help }
+
 sub filter
 {
 	if ( $#_) {
@@ -1662,6 +1665,7 @@ sub init
 		name        => 'Help',
 		text        => '~Help',
 		size        => [ 80, 30],
+		delegations => [qw(Click)],
 	) if $self-> {showHelp};
 
 	$self-> {curpaths} = {};
@@ -1716,6 +1720,8 @@ sub OK_Click
 	my $self = $_[0];
 	$self-> ok;
 }
+
+sub Help_Click { shift->help }
 
 sub directory
 {
