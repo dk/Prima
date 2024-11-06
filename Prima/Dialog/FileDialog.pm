@@ -1984,6 +1984,8 @@ Default value: 0
 =item showHelp BOOLEAN
 
 A create-only property. If 1, the 'Help' button is inserted in the dialog.
+When pressed, opens a help section stored in the C<helpContext> property.
+See L<Prima::Widget/help>, L<Prima::Widget/helpContext>
 
 Default value: 0
 
