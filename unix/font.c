@@ -109,7 +109,7 @@ prima_font_init_x11( char * error_buf)
 	Fdebug("widget font: %d.[w=%d,s=%g].%s.%s", DEBUG_FONT(guts.default_widget_font));
 
 	if ( do_msg_font) {
-		XrmPutStringResource( &guts.db, "Prima.message_font", do_widget_font);
+		XrmPutStringResource( &guts.db, "Prima.message_font", do_msg_font);
 		prima_corefont_pp2font( do_msg_font, &guts. default_msg_font);
 		free( do_msg_font);
 		do_msg_font = NULL;
@@ -120,7 +120,7 @@ prima_font_init_x11( char * error_buf)
 	Fdebug("msg font: %d.[w=%d,s=%g].%s.%s", DEBUG_FONT(guts.default_msg_font));
 
 	if ( do_caption_font) {
-		XrmPutStringResource( &guts.db, "Prima.caption_font", do_widget_font);
+		XrmPutStringResource( &guts.db, "Prima.caption_font", do_caption_font);
 		prima_corefont_pp2font( do_caption_font, &guts. default_caption_font);
 		free( do_caption_font);
 		do_caption_font = NULL;
