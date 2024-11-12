@@ -112,7 +112,7 @@ sub message_box
 		scaleChildren => 1,
 		visible       => 0,
 		text          => $title,
-		font          => $::application-> get_message_font,
+		font          => $extras-> {font} || $::application-> get_message_font,
 		owner         => $extras-> {owner} || $::main_window || $::application,
 		onExecute     => sub {
 			Prima::Utils::beep( $options) if $options && !$nosound;
@@ -394,6 +394,11 @@ customizations:
 Selects the default button in the dialog, i.e. the button that reacts on the
 return key. Its value must be to an C<mb::> constant of the desired button. If
 this option is not set, the leftmost button is selected as the default.
+
+=item font FONT
+
+The message boxes use C<Application.get_message_font>, but the C<font> option
+can override that.
 
 =item helpTopic TOPIC
 
