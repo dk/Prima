@@ -60,7 +60,7 @@ sub init
 	$self-> {header} = bless {
 		maxWidth => 0,
 	}, q\Prima::DetailList::DummyHeader\;
-	$self-> {$_} = 0 for qw( mainColumn);
+	$self-> {$_} = 0 for qw( mainColumn multiColumn vertical);
 	%profile = $self-> SUPER::init( %profile);
 
 	my $hh = $self-> {headerInitHeight};
