@@ -48,6 +48,7 @@ sub profile_default
 		headers           => [],
 		aligns            => [],
 		mainColumn        => 0,
+		drawGrid          => 0,
 	};
 }
 
@@ -557,6 +558,13 @@ Manages the number of columns in L<items>. If set-called, and the new number
 is different from the old number, both L<items> and L<headers> are restructured.
 
 Default value: 0
+
+=item drawGrid BOOLEAN
+
+If 1, vertical grid lines between columns are drawn with C<gridColor>.
+
+Default value: 0
+
 
 =item headerClass
 
