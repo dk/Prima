@@ -171,7 +171,7 @@ apc_fetch_resource( const char *className, const char *name,
 			case frFont:
 				prima_corefont_pp2font( s, ( Font *) result);
 #define DEBUG_FONT(font) font.height,font.width,font.size,font.name,font.encoding
-				Xdebug("font: %d.[w=%d,s=%d].%s.%s", DEBUG_FONT((*(( Font *) result))));
+				Xdebug("font: %d.[w=%d,s=%g].%s.%s", DEBUG_FONT((*(( Font *) result))));
 				break;
 			case frUnix_int:
 				*((int*)result) = atoi( s);

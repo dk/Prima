@@ -67,6 +67,7 @@ prima_font_init_x11( char * error_buf)
 		prima_corefont_pp2font( do_default_font, &guts. default_font);
 		free( do_default_font);
 		do_default_font = NULL;
+		guts.skip_gtk_font |= SKIP_GTK_FONT_DEFAULT;
 	} else if ( !apc_fetch_resource( "Prima", "", "Font", "font",
 		NULL_HANDLE, frFont, &guts. default_font)) {
 		prima_fill_default_font( &guts. default_font);
@@ -91,6 +92,7 @@ prima_font_init_x11( char * error_buf)
 		prima_corefont_pp2font( do_menu_font, &guts. default_menu_font);
 		free( do_menu_font);
 		do_menu_font = NULL;
+		guts.skip_gtk_font |= SKIP_GTK_FONT_MENU;
 	} else if ( !apc_fetch_resource( "Prima", "", "Font", "menu_font",
 		NULL_HANDLE, frFont, &guts. default_menu_font)) {
 		memcpy( &guts. default_menu_font, &guts. default_font, sizeof( Font));
@@ -102,6 +104,7 @@ prima_font_init_x11( char * error_buf)
 		prima_corefont_pp2font( do_widget_font, &guts. default_widget_font);
 		free( do_widget_font);
 		do_widget_font = NULL;
+		guts.skip_gtk_font |= SKIP_GTK_FONT_WIDGET;
 	} else if ( !apc_fetch_resource( "Prima", "", "Font", "widget_font",
 		NULL_HANDLE, frFont, &guts. default_widget_font)) {
 		memcpy( &guts. default_widget_font, &guts. default_font, sizeof( Font));
@@ -113,6 +116,7 @@ prima_font_init_x11( char * error_buf)
 		prima_corefont_pp2font( do_msg_font, &guts. default_msg_font);
 		free( do_msg_font);
 		do_msg_font = NULL;
+		guts.skip_gtk_font |= SKIP_GTK_FONT_MSG;
 	} else if ( !apc_fetch_resource( "Prima", "", "Font", "message_font",
 		NULL_HANDLE, frFont, &guts. default_msg_font)) {
 		memcpy( &guts. default_msg_font, &guts. default_font, sizeof( Font));
@@ -124,6 +128,7 @@ prima_font_init_x11( char * error_buf)
 		prima_corefont_pp2font( do_caption_font, &guts. default_caption_font);
 		free( do_caption_font);
 		do_caption_font = NULL;
+		guts.skip_gtk_font |= SKIP_GTK_FONT_CAPTION;
 	} else if ( !apc_fetch_resource( "Prima", "", "Font", "caption_font",
 		NULL_HANDLE, frFont, &guts. default_caption_font)) {
 		memcpy( &guts. default_caption_font, &guts. default_font, sizeof( Font));

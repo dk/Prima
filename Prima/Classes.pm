@@ -431,7 +431,7 @@ sub _debug
 	$r .= sprintf " dir=%g", $f->{direction} if $f->{direction} != 0.0;
 	$r .= sprintf " %s",     $f->{encoding};
 	return $r if $noprint;
-	print STDERR "$f\n";
+	print STDERR "$r\n";
 }
 
 package Prima::Matrix;

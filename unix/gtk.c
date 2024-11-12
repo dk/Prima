@@ -445,7 +445,7 @@ prima_gtk_init(void)
 			f-> undef. width = f-> undef. height = f-> undef. pitch = f-> undef. vector = 1;
 			apc_font_pick( f, NULL );
 #define DEBUG_FONT(font) f->height,f->width,f->size,f->name,f->encoding
-			Fdebug("gtk-font (%s): %d.[w=%d,s=%d].%s.%s", s->name, DEBUG_FONT(f));
+			Fdebug("gtk-font (%s): %d.[w=%d,s=%g].%s.%s", s->name, DEBUG_FONT(f));
 #undef DEBUG_FONT
 		}
 	}
@@ -479,12 +479,16 @@ prima_gtk_init(void)
 #define DEBUG_FONT font.height,font.width,font.size,font.name,font.encoding
 			Fdebug("gtk-font (%s): %d.[w=%d,s=%g].%s.%s", g_value_peek_pointer(&value), DEBUG_FONT);
 #undef DEBUG_FONT
-			guts.default_msg_font     =
-			guts.default_menu_font    =
-			guts.default_widget_font  =
-			guts.default_caption_font =
-			guts.default_font         = font;
-
+			if ( !( guts.skip_gtk_font & SKIP_GTK_FONT_DEFAULT))
+				guts.default_font = font;
+			if ( !( guts.skip_gtk_font & SKIP_GTK_FONT_MSG))
+				guts.default_msg_font = font;
+			if ( !( guts.skip_gtk_font & SKIP_GTK_FONT_WIDGET))
+				guts.default_widget_font = font;
+			if ( !( guts.skip_gtk_font & SKIP_GTK_FONT_CAPTION))
+				guts.default_caption_font = font;
+			if ( !( guts.skip_gtk_font & SKIP_GTK_FONT_MENU))
+				guts.default_menu_font = font;
 			pango_font_description_free(pfd);
 		}
 

@@ -829,6 +829,13 @@ typedef struct _UnixGuts
 	unsigned long int            rotated_font_cache_size;
 	int                          try_fc_monospace_emulation_by_name;
 	int                          force_fc_monospace_emulation;
+
+#define SKIP_GTK_FONT_DEFAULT 1
+#define SKIP_GTK_FONT_MSG     2
+#define SKIP_GTK_FONT_MENU    4
+#define SKIP_GTK_FONT_CAPTION 8
+#define SKIP_GTK_FONT_WIDGET 16
+	int                          skip_gtk_font;
 } UnixGuts;
 
 extern UnixGuts  guts;
