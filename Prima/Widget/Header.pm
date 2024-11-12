@@ -42,6 +42,7 @@ sub profile_default
 		vertical    => 0,
 		selectable  => 0,
 		syncPaint   => 1,
+		gridColor   => cl::Black,
 	);
 	@$def{keys %prf} = values %prf;
 	return $def;
@@ -68,7 +69,7 @@ sub init
 	$self-> {fontHeight} = $self-> font-> height;
 	$self-> {resetDisabled} = 1;
 	$self-> $_( $profile{$_})
-		for ( qw( vertical minTabWidth items widths offset pressed clickable scalable draggable));
+		for ( qw( vertical minTabWidth items widths offset pressed clickable scalable draggable gridColor));
 	if ( scalar @{$profile{widths}} == 0) {
 		$self-> autowidths;
 		$self-> repaint;
@@ -81,9 +82,10 @@ sub on_paint
 	my ( $self, $canvas) = @_;
 	my @size = $canvas-> size;
 	my @c = $self-> enabled ?
-	( $self-> color, $self-> backColor) :
-	( $self-> disabledColor, $self-> disabledBackColor);
+		( $self-> color, $self-> backColor) :
+		( $self-> disabledColor, $self-> disabledBackColor);
 	my @c3d  = ( $self-> light3DColor, $self-> dark3DColor);
+	my @clip = $canvas->clipRect;
 
 	my ($prelightPart, $prelightColor) = (-1);
 	if ( defined $self->{prelight} ) {
@@ -102,7 +104,7 @@ sub on_paint
 		$showlines = 1;
 	}
 	my $v = $self-> {vertical};
-	my ( $x, $y) = ( - $self-> {offset}, ( $size[1] - $self-> {fontHeight}) / 2);
+	my ( $x, $y) = ( - $self-> {offset} + 1, ( $size[1] - $self-> {fontHeight}) / 2);
 	my $i;
 
 	my $pressed = $self-> {pressed};
@@ -110,7 +112,10 @@ sub on_paint
 	my ( $wx, $cx) = ( $self-> {widths}, $self-> {count});
 	my ( $notifier, @notifyParms) = $self-> get_notify_sub(q(DrawItem));
 	$self-> push_event;
-	my ( $d, $lim) = $v ? ( $x, $size[1]) : ( $x, $size[0]);
+	my ( $d, $lim) = $v ? ($x, $size[1]) : ($x, $size[0]);
+	my @grids;
+	my $grid_offset = $flat ? 0 : 1;
+
 	for ( $i = 0; $i < $cx; $i++) {
 		next unless $$wx[$i];
 		if ( $d + $$wx[$i] + 2 < 1) {
@@ -158,12 +163,17 @@ sub on_paint
 		}
 	NO_LINES:
 		$d += $$wx[$i] + 1;
-		$v ?
-			$canvas-> line( 1, $d, $size[0] - 2, $d) :
-			$canvas-> line( $d, 1, $d, $size[1] - 2)
-			if $showlines;
+		push @grids, $v ?
+			( $grid_offset, $d, $size[0] - $grid_offset - 1, $d) :
+			( $d, $grid_offset, $d, $size[1] - $grid_offset - 1)
+				if $showlines;
 		last if $d > $lim - 3;
 		$d++;
+	}
+	if ( @grids ) {
+		$canvas->clipRect(@clip);
+		$canvas->color($self->{gridColor});
+		$canvas->lines(\@grids);
 	}
 	$self-> pop_event;
 }
@@ -388,15 +398,16 @@ sub on_mousemove
 		$self-> {widths}-> [$self-> {tabId}] = $nw;
 		my $o  = $self-> {swidth} + $ow;
 		$self-> {maxWidth} += $nw - $ow;
+		my $go = ($self->skin eq 'flat') ? 0 : 1;
 		$self-> {vertical} ?
 			$self-> scroll(
 				0, $nw - $ow,
-				confineRect => [ 1, $o, $sz[0] - 1, $sz[1] - 1 + abs($nw - $ow)],
-				clipRect    => [ 1, 1, $sz[0]-1, $sz[1]-1],
+				confineRect => [ $go, $o, $sz[0] - $go, $sz[1] - 1 + abs($nw - $ow)],
+				clipRect    => [ $go, 1,  $sz[0] - $go, $sz[1]-1],
 			) : $self-> scroll(
 				$nw - $ow, 0,
-				confineRect => [ $o, 1, $sz[0] - 1 + abs($nw - $ow), $sz[1] - 1],
-				clipRect    => [ 1, 1, $sz[0]-1, $sz[1]-1],
+				confineRect => [ $o, $go, $sz[0] - 1 + abs($nw - $ow), $sz[1] - $go],
+				clipRect    => [ 1,  $go, $sz[0] - 1,                  $sz[1] - $go],
 			);
 		$self-> notify(q(SizeItem), $self-> {tabId}, $ow, $nw);
 	}
@@ -533,6 +544,13 @@ sub minTabWidth
 	$_[0]-> notify(q(SizeItems)) if $changed;
 }
 
+sub gridColor
+{
+	return $_[0]-> {gridColor} unless $#_;
+	$_[0]->{gridColor} = $_[1];
+	$_[0]->repaint;
+}
+
 sub items
 {
 	unless ( $#_) {
@@ -665,6 +683,12 @@ Default value: 1
 Selects if the user is allowed to move the tabs.
 
 Default value: 1
+
+=item gridColor COLOR
+
+Sets the color of the divisor lines
+
+Default value: cl::Black
 
 =item items ARRAY
 

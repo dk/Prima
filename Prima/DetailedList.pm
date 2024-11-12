@@ -68,15 +68,16 @@ sub init
 	my $bw = $self-> borderWidth;
 	my @sz = $self-> size;
 
-	$self-> {header} = $self-> insert( $profile{headerClass} =>
-		name     => 'Header',
-		origin   => [ $bw, $sz[1] - $bw - $hh],
-		size     => [ $sz[0] - $bw * 2, $hh],
-		vertical => 0,
-		growMode => gm::Ceiling,
-		items    => $profile{headers},
-		widths   => $profile{widths},
+	$self-> {header}    = $self-> insert( $profile{headerClass} =>
+		name        => 'Header',
+		origin      => [ $bw, $sz[1] - $bw - $hh],
+		size        => [ $sz[0] - $bw * 2, $hh],
+		vertical    => 0,
+		growMode    => gm::Ceiling,
+		items       => $profile{headers},
+		widths      => $profile{widths},
 		delegations => $profile{headerDelegations},
+		gridColor   => $profile{gridColor},
 		(map { $_ => $profile{$_}} keys %hdrProps),
 		%{$profile{headerProfile}},
 	);
@@ -237,6 +238,22 @@ sub draw_items
 	}
 	if ( @p_selected ) {
 		$self-> draw_item_background( $canvas, @$_, 1, $clrs[3]) for @p_selected;
+	}
+
+	if ( $self->{drawGrid}) {
+		my $x = $xstart - $o + 1;
+		my @a = $self->get_active_area(1);
+		my @l;
+		for ( $ci = 0; $ci < $cols; $ci++) {
+			$x += $widths[ $ci] + 2;
+			push @l, $x, $a[1], $x, $a[3]
+				if $x >= $a[0] && $x <= $a[2];
+		}
+		if (@l) {
+			$self->color($self->{gridColor});
+			$self->lines(\@l);
+			$self->color($clrs[0]);
+		}
 	}
 
 	# draw veil
