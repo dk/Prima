@@ -60,7 +60,8 @@ sub init
 	$self-> {header} = bless {
 		maxWidth => 0,
 	}, q\Prima::DetailList::DummyHeader\;
-	$self-> {$_} = 0 for qw( mainColumn multiColumn vertical);
+	$self-> {$_} = 0 for qw(mainColumn multiColumn );
+	$self-> {$_} = 1 for qw(vertical);
 	%profile = $self-> SUPER::init( %profile);
 
 	my $hh = $self-> {headerInitHeight};
@@ -104,6 +105,8 @@ sub setup_indents
 	$_[0]-> {indents}-> [ 3] += $_[0]-> {headerInitHeight};
 }
 
+sub multiColumn   {($#_)?($_[1]?$_[0]-> raise_ro('multiColumn'):0):$_[0]-> {multiColumn}}
+sub vertical      {($#_)?($_[1]?0:$_[0]-> raise_ro('vertical')):$_[0]-> {vertical}}
 
 sub set_v_scroll
 {
@@ -565,7 +568,6 @@ If 1, vertical grid lines between columns are drawn with C<gridColor>.
 
 Default value: 0
 
-
 =item headerClass
 
 Assigns the header class.
@@ -603,6 +605,14 @@ the user clicks a header tab C<mainColumn> is automatically changed to the
 corresponding column.
 
 Default value: 0
+
+=item multiColumn 0
+
+Read-only property inherited from List
+
+=item vertical 0
+
+Read-only property inherited from List
 
 =back
 
