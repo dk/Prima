@@ -2106,6 +2106,7 @@ sub init
 	$self-> {heights}    = [];
 	my %profile = $self-> SUPER::init(@_);
 	$self-> cells($profile{cells});
+	$self->focusedCell( $profile{focusedCell});
 	return %profile;
 }
 
