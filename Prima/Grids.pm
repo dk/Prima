@@ -1412,8 +1412,12 @@ sub on_paint
 		$$_[4] = $a[3] if $$_[4] > $a[3];
 	}
 
-	$canvas-> color( $self-> {gridColor});
-	$canvas-> lines( \@grid) if @grid;
+	if ( @grid ) {
+		my $c = $canvas->color;
+		$canvas-> color( $self-> {gridColor});
+		$canvas-> lines( \@grid);
+		$canvas-> color( $c );
+	}
 
 	$self-> draw_cells( $canvas, \@colsDraw, \@rowsDraw, \@a);
 }
