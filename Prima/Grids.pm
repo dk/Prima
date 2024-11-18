@@ -1722,10 +1722,10 @@ sub focusedCell
 	my @o = @{$self-> {focusedCell}};
 	return if $o[0] == $f[0] && $o[1] == $f[1];
 
-	$self-> notify(q(SelectCell), @f);
 	my @old = $self-> get_screen_cell_info( @o);
 	my @new = $self-> get_screen_cell_info( @f);
 	@{$self-> {focusedCell}} = @f;
+	$self-> notify(q(SelectCell), @f);
 
 	if ( $new[gsci::V_FULL ]) {
 		# the new cell is fully visible, need no scrolling
