@@ -4,6 +4,8 @@
 #include <usp10.h>
 #include "guts.h"
 #include "win32\win32guts.h"
+#include "DeviceBitmap.h"
+#include "Image.h"
 #include "Widget.h"
 
 #ifdef __cplusplus
@@ -25,7 +27,7 @@ typedef struct {
 	Bool fixed_pitch, orig_fixed_pitch;
 	Handle self;
 	HFONT orig, saved, curr;
-	PDCFont nondefault_font;
+	PDCFont nondefault_font, curr_dc, orig_dc;
 	uint32_t nondefault_fid;
 	uint16_t *fonts;
 } FontContext;
@@ -40,11 +42,14 @@ font_context_init( FontContext * fc, Handle self, PGlyphsOutRec t)
 	fc->len   = t->len;
 	fc->dc    = sys ps;
 	fc->fixed_pitch = fc->orig_fixed_pitch = (sys tmPitchAndFamily & TMPF_FIXED_PITCH) ? 0 : 1;
+	fc->orig_dc     = fc->curr_dc = sys dc_font;
+	fc->orig_dc->refcnt++;
 }
 
 static void
 font_context_done( FontContext * fc )
 {
+	fc->orig_dc->refcnt--;
 	if ( fc-> nondefault_font )
 		font_free(fc-> nondefault_font, false);
 	if ( fc-> saved )
@@ -66,6 +71,7 @@ font_context_next( FontContext * fc )
 	int start, len;
 	HFONT hfont, selected;
 	Bool fixed_pitch;
+	PDCFont dc;
 
 	if ( fc-> stop ) return 0;
 
@@ -94,12 +100,15 @@ font_context_next( FontContext * fc )
 	if ( nfid == 0 ) {
 		hfont       = fc->orig;
 		fixed_pitch = fc->orig_fixed_pitch;
+		dc          = fc->orig_dc;
 	} else if ( nfid == fc->nondefault_fid ) {
 		hfont       = fc->nondefault_font->hfont;
 		fixed_pitch = fc->nondefault_font->font.pitch == fpFixed;
+		dc          = fc->nondefault_font;
 	} else if ( !( _src = prima_font_mapper_get_font(nfid))) {
 		hfont       = fc->orig;
 		fixed_pitch = fc->orig_fixed_pitch;
+		dc          = fc->orig_dc;
 	} else {
 		dst = (( PWidget) fc->self)-> font;
 		src = *_src;
@@ -116,14 +125,17 @@ font_context_next( FontContext * fc )
 			fc->nondefault_fid  = nfid;
 			hfont               = fc->nondefault_font->hfont;
 			fixed_pitch         = fc->nondefault_font->font.pitch == fpFixed;
+			dc                  = fc->nondefault_font;
 		} else {
 			hfont               = fc->orig;
 			fixed_pitch         = fc->orig_fixed_pitch;
+			dc                  = fc->orig_dc;
 		}
 	}
 
-	fc->curr = hfont;
+	fc->curr        = hfont;
 	fc->fixed_pitch = fixed_pitch;
+	fc->curr_dc     = dc;
 	selected = SelectObject(fc->dc, fc->curr);
 	if ( !fc->saved ) fc->saved = selected;
 
@@ -403,7 +415,6 @@ paint_text_background( Handle self, const char * text, int len, int flags)
 	sys alpha_arena_palette = palette;
 }
 
-
 Bool
 apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flags )
 {objCheck false;{
@@ -445,7 +456,7 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flag
 	if ( use_alpha ) {
 		if ( is_apt( aptTextOpaque))
 			paint_text_background(self, (char*)text, len, flags & toUTF8);
-		ok = aa_text_out( self, 0, 0, (void*)text, len, flags & toUTF8);
+		ok = text_aa_text_out( self, 0, 0, (void*)text, len, flags & toUTF8);
 	} else {
 		ok = ( flags & toUTF8 ) ?
 			TextOutW( ps, 0, 0, ( U16*)text, len) :
@@ -506,8 +517,8 @@ fix_combiners_pdx( Handle self, PGlyphsOutRec t, INT *pdx)
 	}
 }
 
-static Bool
-gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y, int * text_advance, Bool fixed_pitch)
+Bool
+text_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y, Bool fixed_pitch)
 {
 	Bool ok;
 	if ( t-> advances ) {
@@ -515,8 +526,6 @@ gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y, int * text_advance, B
 		INT dx[SZ], i, n, *pdx;
 		int16_t *goffsets = t->positions;
 		uint16_t *advances = t->advances;
-
-		if ( text_advance ) *text_advance = 0;
 
 		n = t-> len * 2;
 		if ( n > SZ) {
@@ -531,8 +540,6 @@ gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y, int * text_advance, B
 			int adv    = *(advances++);
 			pdx[i]     = adv;
 			pdx[i + 1] = 0;
-			if ( text_advance )
-				*text_advance += adv;
 
 			if ( i == 0 ) {
 				x += gx;
@@ -552,14 +559,25 @@ gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y, int * text_advance, B
 		#undef SZ
 	} else {
 		ok = ExtTextOutW(sys ps, x, y, ETO_GLYPH_INDEX, NULL, (LPCWSTR) t->glyphs, t->len, NULL);
-		if ( text_advance ) {
-			SIZE sz;
-			if ( !GetTextExtentPointI( sys ps, (WCHAR*) t->glyphs, t->len, &sz)) apiErr;
-			*text_advance += sz.cx;
-		}
 	}
 	if ( !ok ) apiErr;
 	return ok;
+}
+
+static int
+calc_advance( Handle self, PGlyphsOutRec t )
+{
+	int ret = 0;
+	if ( t->advances) {
+		int i;
+		for ( i = 0; i < t->len; i++) 
+			ret += t->advances[i];
+	} else {
+		SIZE sz = {0,0};
+		if ( !GetTextExtentPointI( sys ps, (WCHAR*) t->glyphs, t->len, &sz)) apiErr;
+		ret = sz.cx;
+	}
+	return ret;
 }
 
 Bool
@@ -574,6 +592,7 @@ apc_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 	FontContext fc;
 	float fxx, fyy;
 	NPoint cs = CDrawable(self)->trig_cache(self);
+	Bool want_color = false;
 
 	select_world_transform(self, true);
 	SHIFT_XY(x,y);
@@ -597,13 +616,33 @@ apc_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 	fyy = yy = 0;
 	savelen = t->len;
 	font_context_init(&fc, self, t);
+
+	if ( is_apt( aptTextColored ))
+		want_color = !(
+			( is_apt(aptDeviceBitmap) && ((PDeviceBitmap)self)->type == dbtBitmap) ||
+			( is_apt(aptImage)        && ((PImage)self)-> type == imBW )
+		);
+
 	while (( t-> len = font_context_next(&fc)) > 0 ) {
 		int advance = 0;
-		if ( !( ok = use_alpha ?
-				aa_glyphs_out(self, t, xx, yy, fc.stop ? NULL : &advance, fc.curr) :
-				gp_glyphs_out(self, t, xx, yy, fc.stop ? NULL : &advance, fc.fixed_pitch)
-			))
-			break;
+
+		if ( want_color && dwrite_color_text_out(self, fc.curr_dc, t, xx, yy) ) {
+			if ( !fc.stop )
+				advance = calc_advance(self, t);
+			ok = true;
+		} else {
+			STYLUS_USE_TEXT;
+			if ( use_alpha ) {
+				ok = text_aa_glyphs_out(self, t, xx, yy, fc.stop ? NULL : &advance, fc.curr);
+			} else {
+				ok = text_gp_glyphs_out(self, t, xx, yy, fc.fixed_pitch);
+				if ( !fc.stop )
+					advance = calc_advance(self, t);
+			}
+			if ( !ok )
+				break;
+		}
+
 		if ( !fc.stop ) {
 			fxx += (float)advance * cs.y;
 			fyy -= (float)advance * cs.x;
@@ -2104,6 +2143,21 @@ apc_gp_get_text_out_baseline( Handle self)
 {
 	objCheck 0;
 	return is_apt( aptTextOutBaseline);
+}
+
+Bool
+apc_gp_get_text_colored( Handle self)
+{
+	objCheck false;
+	return is_apt( aptTextColored);
+}
+
+Bool
+apc_gp_set_text_colored( Handle self, Bool colored)
+{
+	objCheck false;
+	apt_assign( aptTextColored, colored);
+	return true;
 }
 
 Bool

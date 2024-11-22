@@ -801,8 +801,8 @@ font_alloc( Font * data)
 		ret = ( PDCFont) malloc( sizeof( DCFont));
 		if ( !ret) return NULL;
 
+		memset( ret, 0, sizeof(DCFont));
 		memcpy( f = &ret-> font, data, sizeof( Font));
-		ret-> refcnt = 0;
 		font_font2logfont( f, &logfont);
 		if ( !( ret-> hfont  = CreateFontIndirectW( &logfont))) {
 			LOGFONTW lf;
@@ -827,6 +827,10 @@ font_free( PDCFont res, Bool permanent)
 	if ( !permanent) {
 		res-> refcnt = 0;
 		return;
+	}
+	if ( res-> dw_colorface) {
+		dwrite_free_face(res->dw_colorface);
+		res->dw_colorface = NULL;
 	}
 	if ( res-> hfont) {
 		DeleteObject( res-> hfont);
@@ -1209,6 +1213,7 @@ typedef struct _FEnumStruc
 	int           fType;
 	Bool          useWidth;
 	Bool          wantOutline;
+	Bool          wantColored;
 	Bool          useVector;
 	Bool          usePitch;
 	Bool          forceSize;
@@ -1242,8 +1247,13 @@ fep( ENUMLOGFONTEXW FAR *e, NEWTEXTMETRICEXW FAR *t, DWORD type, LPARAM _es)
 	}
 
 	if ( font-> vector != fvDefault) {
-		int fvector = (( t-> ntmTm. tmPitchAndFamily & ( TMPF_VECTOR | TMPF_TRUETYPE)) ? fvOutline : fvBitmap);
-		if ( fvector != font-> vector)
+		int src = (( t-> ntmTm. tmPitchAndFamily & ( TMPF_VECTOR | TMPF_TRUETYPE)) ? fvOutline : fvBitmap);
+		if ( es-> wantColored ) {
+			if ( src == fvOutline && !dwrite_logfont_colored( &e->elfLogFont ))
+				return 1;
+			src = fvColorOutline;
+		}
+		if ( src != font-> vector)
 			return 1; // so this font cannot be selected due quality pickup failure
 	}
 
@@ -1336,6 +1346,7 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
 	HDC  dc            = theDC ? theDC : dc_alloc();
 	Bool useNameSubplacing = false;
 	LOGFONTW elf;
+	Font savefont = *font;
 
 	if ( !dc) return fvBitmap;
 
@@ -1343,14 +1354,18 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
 	es. resValue       = es. heiValue = es. widValue = INT_MAX;
 	es. useWidth       = font-> width != 0;
 	es. useVector      = font->vector != fvDefault;
-	es. wantOutline    = (font-> vector == fvDefault && fabs(font-> direction) > 0.0001) || font->vector == fvOutline;
+	es. wantColored    = font->vector == fvColorOutline;
+	es. wantOutline    =
+		(font-> vector == fvDefault && fabs(font-> direction) > 0.0001) ||
+		font->vector == fvOutline ||
+		font->vector == fvColorOutline;
 	es. usePitch       = font-> pitch != fpDefault;
 	es. res            = res;
 	es. forceSize      = forceSize;
 	es. font           = font;
 	es. matchILead     = forceSize ? ( font-> size >= 0) : ( font-> height >= 0);
 
-	useNameSubplacing = es. usePitch || es. useVector;
+	useNameSubplacing  = es. usePitch || es. useVector;
 	if ( font-> height < 0) font-> height *= -1;
 	if ( font-> size   < 0) font-> size   *= -1;
 	memset(&font->undef, 0xff, sizeof(font->undef));
@@ -1465,10 +1480,19 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
 			font_logfontname2font( &lpf, font);
 			font_textmetric2font( &tm, font, true);
 			if ( have_otm ) font_otm2font( &otm, font );
+			if ( es.wantColored && font->vector == fvOutline && dwrite_logfont_colored(&es.lf))
+				font-> vector = fvColorOutline;
 			strlcpy( font-> family, es. family, LF_FULLFACESIZE);
 			font-> is_utf8.family = es.is_utf8_family;
-			out( fvOutline);
+			out( font->vector );
 		}
+	}
+
+	// if colored request is too strict
+	if ( es.wantColored && es.count == 0 ) {
+		*font = savefont;
+		font-> vector = fvOutline;
+		return font_font2gp_internal( font, res, forceSize, theDC);
 	}
 
 	// if strict match not found, use subplacing
@@ -1618,6 +1642,8 @@ fep2( ENUMLOGFONTEXW FAR *e, NEWTEXTMETRICEXW FAR *t, DWORD type, LPARAM _f)
 	if ( !fm) return 1;
 	memset( fm, 0, sizeof(Font));
 	font_textmetric2font(( TEXTMETRICW*) &t-> ntmTm, fm, false);
+	if ( fm->vector == fvOutline && dwrite_logfont_colored(&e->elfLogFont))
+		fm-> vector = fvColorOutline;
 	if ( f-> hash) { /* multi-encoding format */
 		char ** enc = (char**) fm-> encoding;
 		unsigned char * shift = (unsigned char*)enc + sizeof(char *) - 1;
@@ -2046,6 +2072,7 @@ hwnd_enter_paint( Handle self)
 
 	apc_gp_set_alpha( self, sys alpha);
 	apc_gp_set_antialias( self, is_apt( aptGDIPlus));
+	apc_gp_set_text_colored( self, is_apt( aptTextColored));
 	apc_gp_set_text_opaque( self, is_apt( aptTextOpaque));
 	apc_gp_set_text_out_baseline( self, is_apt( aptTextOutBaseline));
 	apc_gp_set_fill_mode( self, sys fill_mode);

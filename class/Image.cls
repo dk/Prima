@@ -98,4 +98,6 @@ object Prima::Image( Prima::Drawable)
 	c_only Bool   assert_drawing_mode( int mode );
 	c_only void   begin_preserve_type( PImagePreserveTypeRec save);
 	c_only void   end_preserve_type( PImagePreserveTypeRec save);
+	c_only void   restore_font( SaveFont *f);
+	c_only Bool   switch_font( SaveFont *f, uint16_t fid);
 }

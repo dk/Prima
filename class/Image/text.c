@@ -50,7 +50,7 @@ Image_font_match( SV * dummy, Font * source, Font * dest, Bool pick)
 Font
 Image_get_font( Handle self)
 {
-	if ( !is_opt(optInFontQuery))
+	if ( !opt_InPaint && !is_opt(optInFontQuery))
 		my-> begin_font_query(self);
 
 	return var-> font;
@@ -67,7 +67,7 @@ Image_set_font( Handle self, Font font)
 		return;
 	}
 
-	if ( !is_opt(optInFontQuery))
+	if ( !opt_InPaint && !is_opt(optInFontQuery))
 		my-> begin_font_query(self);
 
 	inherited set_font(self, font);
@@ -567,6 +567,22 @@ Image_font_encodings( Handle self)
 	if (!opt_InPaint && !my-> begin_font_query(self) )
 		return NULL_SV;
 	return Application_font_encodings( self);
+}
+
+Bool
+Image_switch_font( Handle self, SaveFont *f, uint16_t fid)
+{
+	return Drawable_switch_font_internal(self, f, fid, 
+		Image_set_font == my->set_font && (is_opt(optSystemDrawable) || is_opt(optInFontQuery) )
+	);
+}
+
+void
+Image_restore_font( Handle self, SaveFont *f)
+{
+	Drawable_restore_font_internal(self, f,
+		Image_set_font == my->set_font && (is_opt(optSystemDrawable) || is_opt(optInFontQuery) )
+	);
 }
 
 #ifdef __cplusplus

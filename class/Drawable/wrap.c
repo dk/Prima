@@ -211,7 +211,7 @@ query_abc_range_glyphs( Handle self, GlyphWrapRec * t, unsigned int base)
 		used_fonts[0] = 0x01; /* fid = 0 */
 		key = Drawable_font_key(var->font.name, var->font.style);
 		i = PTR2IV(hash_fetch(font_substitutions, key, strlen(key)));
-		Drawable_save_font(self, &savefont);
+		my->save_font(self, &savefont);
 		if ( i > 0 ) {
 			/* copy ranges from subst table */
 			pfe = PASSIVE_FONT(i);
@@ -250,7 +250,7 @@ query_abc_range_glyphs( Handle self, GlyphWrapRec * t, unsigned int base)
 			used_fonts[fid >> 3] |= 1 << (fid & 7);
 
 			pfe = PASSIVE_FONT(fid);
-			if ( !Drawable_switch_font(self, &savefont, fid))
+			if ( !my->switch_font(self, &savefont, fid))
 				continue;
 
 			if ( !pfe-> ranges_queried )
@@ -273,7 +273,7 @@ query_abc_range_glyphs( Handle self, GlyphWrapRec * t, unsigned int base)
 
 			free(abc2);
 		}
-		Drawable_restore_font( self, &savefont );
+		my->restore_font( self, &savefont );
 	}
 NO_FONT_ABC:
 

@@ -284,7 +284,7 @@ apc_gp_aa_fill_poly( Handle self, int numPts, NPoint * points)
 #define GRAD 57.29577951
 
 void
-aa_free_arena(Handle self, Bool for_reuse)
+text_aa_free_arena(Handle self, Bool for_reuse)
 {
 	if ( !for_reuse && sys alpha_arena_palette ) {
 		free(sys alpha_arena_palette);
@@ -320,7 +320,7 @@ aa_make_arena(Handle self)
 	if ( w < sys alpha_arena_size.x || h < sys alpha_arena_size.y || !sys alpha_arena_dc ) {
 		HDC dc;
 		if ( sys alpha_arena_bitmap ) {
-			aa_free_arena(self, true);
+			text_aa_free_arena(self, true);
 		} else {
 			if (!( sys alpha_arena_dc = CreateCompatibleDC(0)))
 				return false;
@@ -356,8 +356,8 @@ aa_make_arena(Handle self)
 	return true;
 }
 
-static Bool
-aa_render( Handle self, int x, int y, NPoint* delta, ABCFLOAT * abc, int advance, int dx, int dy)
+Bool
+text_aa_end_render( Handle self, int x, int y, NPoint* delta, ABCFLOAT * abc, int advance, int dx, int dy, Bool use_palette)
 {
 	BLENDFUNCTION bf;
 	float xx, yy, shift;
@@ -365,6 +365,7 @@ aa_render( Handle self, int x, int y, NPoint* delta, ABCFLOAT * abc, int advance
 	int i, j, miny, maxy, maxx, minx;
 	Point sz;
 	NPoint cs = CDrawable(self)->trig_cache(self);
+	uint32_t alpha = sys alpha;
 
 	/* replace white to our color + alpha, calculate minimal affected box */
 	p = sys alpha_arena_ptr;
@@ -377,13 +378,29 @@ aa_render( Handle self, int x, int y, NPoint* delta, ABCFLOAT * abc, int advance
 		i++
 	) {
 		Bool match = false;
-		for ( j = 0; j < sys alpha_arena_size.x; j++, p++) {
-			if (1 || *p != 0) {
-				register Byte *argb = (Byte*) p;
-				*p = palette[argb[0] + argb[1] + argb[2]];
-				if ( minx > j ) minx = j;
-				if ( maxx < j ) maxx = j;
-				match = true;
+		if ( use_palette ) {
+			for ( j = 0; j < sys alpha_arena_size.x; j++, p++) {
+				if (*p != 0) {
+					register Byte *argb = (Byte*) p;
+					*p = palette[argb[0] + argb[1] + argb[2]];
+					if ( minx > j ) minx = j;
+					if ( maxx < j ) maxx = j;
+					match = true;
+				}
+			}
+		} else {
+			for ( j = 0; j < sys alpha_arena_size.x; j++, p++) {
+				if (*p != 0xffffffff) {
+					register Byte *argb = (Byte*) p;
+					argb[0] = argb[0] * alpha / 255;
+					argb[1] = argb[1] * alpha / 255;
+					argb[2] = argb[2] * alpha / 255;
+					argb[3] = alpha;
+					if ( minx > j ) minx = j;
+					if ( maxx < j ) maxx = j;
+					match = true;
+				} else
+					*p = 0;
 			}
 		}
 		if ( match ) {
@@ -391,7 +408,6 @@ aa_render( Handle self, int x, int y, NPoint* delta, ABCFLOAT * abc, int advance
 			if ( maxy < i ) maxy = i;
 		}
 	}
-	if ( maxy < miny ) return true;
 
 	/* calculate advance for the next glyph and the position, if needed, for this one */
 	if ( advance >= 0 ) {
@@ -416,6 +432,8 @@ aa_render( Handle self, int x, int y, NPoint* delta, ABCFLOAT * abc, int advance
 	} else {
 		delta->x += shift;
 	}
+
+	if ( maxy < miny ) return true;
 
 	/* calculate the aperture */
 	sz = sys alpha_arena_size;
@@ -453,7 +471,7 @@ aa_render( Handle self, int x, int y, NPoint* delta, ABCFLOAT * abc, int advance
 }
 
 /* precalculate alpha map */
-Bool
+static Bool
 aa_fill_palette(Handle self)
 {
 	int i,j,r,g,b;
@@ -486,7 +504,7 @@ aa_fill_palette(Handle self)
 }
 
 Bool
-aa_text_out( Handle self, int x, int y, void * text, int len, Bool wide)
+text_aa_text_out( Handle self, int x, int y, void * text, int len, Bool wide)
 {
 	int i;
 	NPoint delta = { 0, 0 };
@@ -507,42 +525,66 @@ aa_text_out( Handle self, int x, int y, void * text, int len, Bool wide)
 		} else {
 			if (!TextOutA( sys alpha_arena_dc, sys alpha_arena_size.x/2, sys alpha_arena_size.y/2, ((char *)text) + i, 1)) apiErrRet;
 		}
-		if ( !aa_render(self, x, y, &delta, &abc, -1, 0, 0))
+		if ( !text_aa_end_render(self, x, y, &delta, &abc, -1, 0, 0, true))
 			return false;
 	}
 	return true;
 }
 
 Bool
-aa_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y, int * text_advance, HFONT font)
+text_aa_init( Handle self, HFONT font, Bool use_palette)
 {
-	int i;
-	NPoint delta = { 0, 0 };
-	uint16_t *advances = t->advances;
-	int16_t *positions = t->positions;
 	HFONT f;
-
-	if ( !(aa_fill_palette(self) && aa_make_arena(self)))
+	if ( use_palette && !aa_fill_palette(self))
 		return false;
-
-	if ( text_advance )
-		*text_advance = 0;
+	if ( !aa_make_arena(self))
+		return false;
 
 	f = SelectObject( sys alpha_arena_dc, font );
 	if ( !sys alpha_arena_stock_font )
 		sys alpha_arena_stock_font = f;
 	sys alpha_arena_font_changed = false;
 
+	return true;
+}
+
+void
+text_aa_begin_render( Handle self, Bool use_palette)
+{
+	memset(sys alpha_arena_ptr, use_palette ? 0 : 0xff, sys alpha_arena_size.x * sys alpha_arena_size.y * 4);
+}
+
+Bool
+text_aa_render( Handle self, uint16_t glyph)
+{
+	if ( !ExtTextOutW(sys alpha_arena_dc,
+		sys alpha_arena_size.x/2, sys alpha_arena_size.y/2,
+		ETO_GLYPH_INDEX, NULL, (LPCWSTR)(&glyph), 1, 
+		NULL
+	))
+		apiErrRet;
+	return true;
+}
+
+Bool
+text_aa_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y, int * text_advance, HFONT font)
+{
+	int i;
+	NPoint delta = {0,0};
+	uint16_t *advances = t->advances;
+	int16_t *positions = t->positions;
+
+	if ( !text_aa_init(self, font, true))
+		return false;
+	if ( text_advance )
+		*text_advance = 0;
+
 	for ( i = 0; i < t->len; i++) {
 		ABCFLOAT abc, *pabc;
 		int adv, dx, dy;
-		memset(sys alpha_arena_ptr, 0, sys alpha_arena_size.x * sys alpha_arena_size.y * 4);
-		if ( !ExtTextOutW(sys alpha_arena_dc,
-			sys alpha_arena_size.x/2, sys alpha_arena_size.y/2,
-			ETO_GLYPH_INDEX, NULL, (LPCWSTR)(t->glyphs) + i, 1, 
-			NULL
-		))
-			apiErrRet;
+		text_aa_begin_render(self, true);
+		if ( !text_aa_render( self, t->glyphs[i]))
+			return false;
 
 		if ( advances ) {
 			adv = *(advances++);
@@ -552,7 +594,7 @@ aa_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y, int * text_advance, H
 			dx = *(positions++);
 			dy = *(positions++);
 		} else {
-			ABC abci;
+			ABC abci = {0,0,0};
 			adv = -1;
 			pabc = &abc;
 			dx = dy = 0;
@@ -563,7 +605,7 @@ aa_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y, int * text_advance, H
 			abc.abcfB = abci.abcB;
 			abc.abcfC = abci.abcC;
 		}
-		if ( !aa_render(self, x, y, &delta, pabc, adv, dx, dy))
+		if ( !text_aa_end_render(self, x, y, &delta, pabc, adv, dx, dy, true))
 			return false;
 	}
 

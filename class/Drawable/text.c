@@ -342,10 +342,10 @@ Drawable_get_glyphs_box( Handle self, PGlyphsOutRec t, Point * pt)
 	l = Drawable_get_glyphs_width(self, t, false);
 
 	if ( t->fonts )
-		Drawable_save_font(self, &savefont);
+		my->save_font(self, &savefont);
 
 	if ( t-> fonts )
-		Drawable_switch_font( self, &savefont, t-> fonts[0]);
+		my->switch_font( self, &savefont, t-> fonts[0]);
 
 	if (( abc = Drawable_call_get_font_abc( self, t->glyphs[0], t->glyphs[0], toGlyphs)) != NULL) {
 		int l = t->len - 1;
@@ -363,7 +363,7 @@ Drawable_get_glyphs_box( Handle self, PGlyphsOutRec t, Point * pt)
 	}
 
 	if ( t->fonts )
-		Drawable_restore_font(self, &savefont);
+		my->restore_font(self, &savefont);
 
 	Drawable_calculate_text_box(self, l, text_out_baseline, ovx, pt);
 }

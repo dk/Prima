@@ -399,14 +399,14 @@ Drawable_save_font( Handle self, SaveFont *f)
 }
 
 void
-Drawable_restore_font( Handle self, SaveFont *f)
+Drawable_restore_font_internal( Handle self, SaveFont *f, Bool quick)
 {
 	if ( !f->restore )
 		return;
 
 	f-> last_fid = 0;
 	f->restore   = false;
-	if ( Drawable_set_font == my->set_font && (is_opt(optSystemDrawable) || is_opt(optInFontQuery) )) {
+	if ( quick ) {
 		opt_clear(optFontTrigCache);
 		apc_gp_set_font( self, &f->font);
 	} else
@@ -414,7 +414,7 @@ Drawable_restore_font( Handle self, SaveFont *f)
 }
 
 Bool
-Drawable_switch_font( Handle self, SaveFont *f, uint16_t fid)
+Drawable_switch_font_internal( Handle self, SaveFont *f, uint16_t fid, Bool quick)
 {
 	Font src, dst;
 
@@ -427,22 +427,20 @@ Drawable_switch_font( Handle self, SaveFont *f, uint16_t fid)
 	}
 
 	src = PASSIVE_FONT(fid)->font;
-	if ( Drawable_set_font == my->set_font && (is_opt(optSystemDrawable) || is_opt(optInFontQuery) )) {
-		dst = var->font;
-		src.size         = dst.size;
+	dst = quick ?
+		var->font :
+		my->get_font(self);
+	src.size = dst.size;
+	if ( ( src.undef.size = dst.undef.size )) {
 		src.height       = dst.height;
-		src.undef.size   = dst.undef.size;
 		src.undef.height = dst.undef.height;
+	}
+	if ( quick ) {
 		apc_font_pick( self, &src, &dst);
 		if ( strcmp(dst.name, src.name) != 0 )
 			return false;
 		apc_gp_set_font( self, &dst);
 	} else {
-		dst = my->get_font(self);
-		src.size         = dst.size;
-		src.height       = dst.height;
-		src.undef.size   = dst.undef.size;
-		src.undef.height = dst.undef.height;
 		my->set_font(self, src);
 	}
 	f-> restore = true;
@@ -450,6 +448,21 @@ Drawable_switch_font( Handle self, SaveFont *f, uint16_t fid)
 	return true;
 }
 
+Bool
+Drawable_switch_font( Handle self, SaveFont *f, uint16_t fid)
+{
+	return Drawable_switch_font_internal(self, f, fid, 
+		Drawable_set_font == my->set_font && (is_opt(optSystemDrawable) || is_opt(optInFontQuery) )
+	);
+}
+
+void
+Drawable_restore_font( Handle self, SaveFont *f)
+{
+	Drawable_restore_font_internal(self, f,
+		Drawable_set_font == my->set_font && (is_opt(optSystemDrawable) || is_opt(optInFontQuery) )
+	);
+}
 
 #ifdef __cplusplus
 }

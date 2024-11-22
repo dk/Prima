@@ -431,7 +431,7 @@ shape_unicode(Handle self, PTextShapeRec t, PTextShapeFunc shaper,
 	t-> analysis = analysis;
 	save_fonts = t->fonts;
 	if ( t->fonts ) t-> fonts = fonts;
-	Drawable_save_font(self, &savefont);
+	my->save_font(self, &savefont);
 	while (( run_len = run_next(t, &brr)) > 0) {
 		TextShapeRec run;
 		run_alloc(t, run_offs, run_len, glyph_mapper_only ^ reorder_swaps_rtl, &run);
@@ -448,7 +448,7 @@ shape_unicode(Handle self, PTextShapeRec t, PTextShapeFunc shaper,
 	}
 #endif
 		if ( t-> fonts ) {
-			if ( Drawable_switch_font(self, &savefont, run.fonts[0])) {
+			if ( my->switch_font(self, &savefont, run.fonts[0])) {
 #ifdef _DEBUG
 				printf("%d: set font #%d\n", run_offs, run.fonts[0]);
 #endif
@@ -494,7 +494,7 @@ shape_unicode(Handle self, PTextShapeRec t, PTextShapeFunc shaper,
 	semistatic_done( &p_fonts);
 	semistatic_done( &p_l2v);
 
-	Drawable_restore_font( self, &savefont);
+	my->restore_font( self, &savefont);
 
 	return ok;
 }

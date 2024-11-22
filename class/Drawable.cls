@@ -36,6 +36,7 @@ object Prima::Drawable ( Prima::Component)
 	property     int           rop;
 	property     int           rop2;
 	property     Point         size;
+	property     Bool          textColored;
 	property     Bool          textOpaque;
 	property     Bool          textOutBaseline;
 	property     int           width;
@@ -107,5 +108,7 @@ object Prima::Drawable ( Prima::Component)
 	c_only   void   calculate_text_box( int advance, Bool text_out_baseline, Point overhangs, Point * pt);
 	c_only   int*   do_text_wrap( TextWrapRec * tw, GlyphWrapRec * gw, uint16_t * log2vis);
 	c_only   Bool   assert_drawing_mode( int mode );
-
+	c_only   void   save_font( SaveFont *f);
+	c_only   void   restore_font( SaveFont *f);
+	c_only   Bool   switch_font( SaveFont *f, uint16_t fid);
 }

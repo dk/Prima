@@ -30,7 +30,7 @@ apc_gp_done( Handle self)
 {
 	objCheck false;
 	cleanup_gc_stack(self, 1);
-	aa_free_arena(self, 0);
+	text_aa_free_arena(self, 0);
 	if ( sys bm)
 		if ( !DeleteObject( sys bm)) apiErr;
 	if ( sys pal)
@@ -1284,6 +1284,7 @@ apc_gp_push(Handle self, GCStorageFunction * destructor, void * user_data, unsig
 	state->common.font          = var font;
 	state->common.text_out_baseline = is_apt( aptTextOutBaseline);
 	state->common.text_opaque   = is_apt( aptTextOpaque);
+	state->common.text_colored  = is_apt( aptTextColored);
 	if ( var fillPatternImage )
 		protect_object( state->fill_image = var fillPatternImage );
 	return true;
@@ -1361,6 +1362,7 @@ apc_gp_pop( Handle self, void * user_data)
 	var fillPatternImage = state-> fill_image;
 	apt_assign(aptTextOutBaseline, state->common.text_out_baseline);
 	apt_assign(aptTextOpaque,      state->common.text_opaque);
+	apt_assign(aptTextColored,     state->common.text_colored);
 	if ( sys alpha_arena_palette ) {
 		free(sys alpha_arena_palette);
 		sys alpha_arena_palette = NULL;
