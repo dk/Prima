@@ -898,6 +898,22 @@ fix_combiners_advances( Handle self, PTextShapeRec t, int nglyphs)
 	}
 }
 
+static SCRIPT_CACHE *
+get_script_cache( Handle self, WORD eScript)
+{
+	SCRIPT_CACHE *script_cache;
+	ScriptCacheKey key = { sys dc_font->hfont, eScript };
+
+	if (( script_cache = ( SCRIPT_CACHE*) hash_fetch( mgr_scripts, &key, sizeof(key))) == NULL) {
+		if ((script_cache = malloc(sizeof(SCRIPT_CACHE))) == NULL)
+			return NULL;
+		*script_cache = NULL;
+		hash_store( mgr_scripts, &key, sizeof(key), script_cache);
+	}
+
+	return script_cache;
+}
+
 static Bool
 win32_unicode_shaper( Handle self, PTextShapeRec t)
 {
@@ -958,13 +974,8 @@ win32_unicode_shaper( Handle self, PTextShapeRec t)
 		int j, itemlen, nglyphs;
 
 		SCRIPT_CACHE * script_cache;
-		ScriptCacheKey key = { sys dc_font->hfont, items[item].a.eScript };
-		if (( script_cache = ( SCRIPT_CACHE*) hash_fetch( mgr_scripts, &key, sizeof(key))) == NULL) {
-			if ((script_cache = malloc(sizeof(SCRIPT_CACHE))) == NULL)
-				goto EXIT;
-			*script_cache = NULL;
-			hash_store( mgr_scripts, &key, sizeof(key), script_cache);
-		}
+		if ( !( script_cache = get_script_cache(self,items[item].a.eScript)))
+			goto EXIT;
 
 		itemlen = items[item+1].iCharPos - items[item].iCharPos;
 		items[item].a.fRTL = (t->flags & toRTL) ? 1 : 0;
@@ -1918,6 +1929,33 @@ apc_gp_get_glyph_outline( Handle self, unsigned int index, unsigned int flags, i
 	*buffer = NULL;
 	memset(&matrix, 0, sizeof(matrix));
 	matrix.eM11.value = matrix.eM22.value = 1;
+
+	if (
+		(( flags & (ggoUnicode | ggoGlyphIndex)) == ggoUnicode) &&
+		index > 0xffff
+	) {
+		int n;
+		SCRIPT_VISATTR va[2];
+		WORD out = 0, clusters[2];
+		SCRIPT_CACHE * script_cache;
+		WCHAR in[2] = {
+			0xd800 + ((index - 0x10000) >> 10),
+			0xdc00 + ((index - 0x10000) & 0x3ff)
+		};
+		SCRIPT_ANALYSIS a = {
+			SCRIPT_UNDEFINED,
+			0, 0, 0, 0, 0, 0,
+			{0,0,1,0,0,1,1,0,0,0,0}
+		};
+
+		if ( !( script_cache = get_script_cache(self,SCRIPT_UNDEFINED)))
+			return -1;
+		if ( ScriptShape( sys ps, script_cache, in, 2, 1, &a, &out, clusters, va, &n) != S_OK)
+			return -1;
+		index = out;
+		flags |= ggoGlyphIndex;
+		flags &= ~ggoUnicode;
+	}
 
 	format = GGO_NATIVE;
 	if ( flags & ggoGlyphIndex )       format |= GGO_GLYPH_INDEX;
