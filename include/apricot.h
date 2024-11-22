@@ -6,7 +6,7 @@
 #define POLLUTE_NAME_SPACE 1
 #endif
 
-#define PRIMA_CORE_VERSION 2024111201
+#define PRIMA_CORE_VERSION 2024111801
 
 #define PRIMA_VERSION_BOOTCHECK \
 	if(apc_get_core_version()!=PRIMA_CORE_VERSION) \
@@ -3359,7 +3359,9 @@ FV(Outline)
 FV(Default)
 #define    fvScalableBitmap 0x0003
 FV(ScalableBitmap)
-#define    fvMask           0x0003
+#define    fvColorOutline   0x0005
+FV(ColorOutline)
+#define    fvMask           0x0007
 END_TABLE(fv,UV)
 #undef FV
 
@@ -3840,6 +3842,12 @@ typedef struct {
 	PList    * cache;
 } GlyphWrapRec;
 
+typedef struct {
+	Font     font;
+	Bool     restore;
+	uint16_t last_fid;
+} SaveFont;
+
 /* regions */
 
 #define rgnSorted     0x1
@@ -4152,6 +4160,9 @@ extern Point*
 apc_gp_get_text_box( Handle self, const char * text, int len, int flags);
 
 extern Bool
+apc_gp_get_text_colored( Handle self);
+
+extern Bool
 apc_gp_get_text_opaque( Handle self);
 
 #define TS(const_name) CONSTANT(ts,const_name)
@@ -4227,6 +4238,9 @@ apc_gp_set_rop( Handle self, int rop);
 
 extern Bool
 apc_gp_set_rop2( Handle self, int rop);
+
+extern Bool
+apc_gp_set_text_colored( Handle self, Bool colored);
 
 extern Bool
 apc_gp_set_text_matrix( Handle self, Matrix matrix);

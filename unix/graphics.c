@@ -1511,6 +1511,12 @@ apc_gp_get_text_opaque( Handle self)
 }
 
 Bool
+apc_gp_get_text_colored( Handle self)
+{
+	return X(self)-> flags. text_colored ? true : false;
+}
+
+Bool
 apc_gp_get_text_out_baseline( Handle self)
 {
 	return X(self)-> flags. base_line ? true : false;
@@ -1799,6 +1805,13 @@ apc_gp_set_rop2( Handle self, int rop)
 }
 
 Bool
+apc_gp_set_text_colored( Handle self, Bool colored)
+{
+	X(self)-> flags. colored = !!colored;
+	return true;
+}
+
+Bool
 apc_gp_set_text_opaque( Handle self, Bool opaque)
 {
 	X(self)-> flags. opaque = !!opaque;
@@ -1850,6 +1863,7 @@ apc_gp_push(Handle self, GCStorageFunction * destructor, void * user_data, unsig
 	state->rop2          = XX->rop2;
 	state->text_baseline = XX->flags.base_line;
 	state->text_opaque   = XX->flags.opaque;
+	state->text_colored  = XX->flags.colored;
 	if ( state-> in_paint ) {
 		state->paint.fore    = XX->fore;
 		state->paint.back    = XX->back;
@@ -1909,6 +1923,7 @@ apc_gp_pop( Handle self, void * user_data)
 	XX->rop2              = state->rop2;
 	XX->flags. base_line  = state->text_baseline;
 	XX->flags. opaque     = state->text_opaque;
+	XX->flags. colored    = state->text_colored;
 	if ( state-> in_paint ) {
 		XX->fore = state->paint.fore;
 		XX->back = state->paint.back;

@@ -606,6 +606,7 @@ sub create_info_window
 		itemHeight  => $ih,
 		gridColor   => cl::Back,
 		hScroll     => 1,
+		textColored => 1,
 		onSelectItem => sub {
 			my ( $self, $item, $sel) = @_;
 			if ( defined( my $c = $charmap{$item->[0]} )) {
@@ -633,7 +634,7 @@ sub create_info_window
 			}
 			$self-> draw_item_background( $canvas, $x, $y + 1, $x2, $y2, $prelight );
 			if ( defined( my $c = $charmap{$itemIndex} )) {
-				$canvas-> text_out( chr($c), $x + $ih / 4, $y + $ih / 4);
+				$canvas-> text_shape_out( chr($c), $x + $ih / 4, $y + $ih / 4);
 			}
 			$canvas-> set( color => $cs[0], backColor => $cs[1]) if $focused || $prelight;
 		},

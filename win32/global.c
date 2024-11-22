@@ -424,6 +424,8 @@ window_subsystem_init( char * error_buf)
 	if ( !file_subsystem_init())
 		return false;
 
+	dwrite_font_init();
+
 	return true;
 }
 
@@ -465,6 +467,7 @@ menu_bitmap_cleaner( void * value, int keyLen, void * key, void * dummy)
 void
 window_subsystem_done()
 {
+	dwrite_font_done();
 	if (guts. ole_initialized)
 		OleUninitialize();
 	free( time_defs);

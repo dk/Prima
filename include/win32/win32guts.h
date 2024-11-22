@@ -169,6 +169,7 @@ typedef struct _HandleOptions_ {
 	unsigned aptEnabled              : 1;       // enabled flag
 	unsigned aptTextOpaque           : 1;       // gp text drawing flag
 	unsigned aptTextOutBaseline      : 1;       // gp text drawing flag
+	unsigned aptTextColored          : 1;       // draw color font with colors
 	unsigned aptWinPosDetermined     : 1;       // 0 when size is set, but position is not
 	unsigned aptOnTop                : 1;       // HWND_TOPMOST is set
 	unsigned aptLayered              : 1;       // WS_EX_LAYERED
@@ -352,7 +353,7 @@ typedef struct _PaintSaveData
 	Point          fill_pattern_offset;
 	int            rop, rop2;
 	Font           font;
-	Bool           text_opaque, text_out_baseline;
+	Bool           text_opaque, text_out_baseline, text_colored;
 } PaintSaveData, *PPaintSaveData;
 
 typedef struct
@@ -374,6 +375,8 @@ typedef struct _DCFont
 	Font             font;
 	int              refcnt;
 	HFONT            hfont;
+	void *           dw_colorface;
+	Bool             dw_checked;
 } DCFont, *PDCFont;
 
 #define DCO_PEN           0
@@ -673,9 +676,6 @@ LRESULT CALLBACK    generic_frame_handler    ( HWND win, UINT  msg, WPARAM mp1, 
 LRESULT CALLBACK    layered_frame_handler    ( HWND win, UINT  msg, WPARAM mp1, LPARAM mp2);
 LRESULT CALLBACK    generic_view_handler     ( HWND win, UINT  msg, WPARAM mp1, LPARAM mp2);
 
-extern Bool         aa_text_out( Handle self, int x, int y, void * text, int len, Bool wide);
-extern Bool         aa_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y, int * text_advance, HFONT font);
-extern void         aa_free_arena(Handle self, Bool for_reuse);
 extern WCHAR *      alloc_utf8_to_wchar( const char * utf8, int length, int * mb_len);
 extern WCHAR *      alloc_utf8_to_wchar_visual( const char * utf8, int length, int * mb_len);
 extern WCHAR *      alloc_ascii_to_wchar( const char * text, int *length);
@@ -705,6 +705,11 @@ extern Bool         dnd_clipboard_get_data( Handle id, PClipboardDataRec c);
 extern Bool         dnd_clipboard_has_format( Handle id);
 extern Bool         dnd_clipboard_set_data( Handle id, PClipboardDataRec c);
 extern PList        dnd_clipboard_get_formats();
+extern Bool         dwrite_font_init(void);
+extern void         dwrite_font_done(void);
+extern void         dwrite_free_face(void *face);
+extern Bool         dwrite_logfont_colored( LOGFONTW *lf );
+extern Bool         dwrite_color_text_out(Handle self, PDCFont dc, PGlyphsOutRec t, int x, int y);
 extern void         dpi_change(void);
 extern char *       err_msg( DWORD errId, char * buffer);
 extern char *       err_msg_gplus( GpStatus errId, char * buffer);
@@ -774,6 +779,14 @@ extern void         stylus_release( Handle self );
 extern GpPen*       stylus_gp_get_pen(int line_width, uint32_t color);
 extern HPEN         stylus_get_pen( DWORD style, DWORD line_width, COLORREF color );
 extern HBRUSH       stylus_get_solid_brush( COLORREF color );
+extern Bool         text_aa_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y, int * text_advance, HFONT font);
+extern Bool         text_aa_init( Handle self, HFONT font, Bool use_palette);
+extern void         text_aa_begin_render( Handle self, Bool use_palette);
+extern Bool         text_aa_render( Handle self, uint16_t glyph);
+extern Bool         text_aa_end_render( Handle self, int x, int y, NPoint* delta, ABCFLOAT * abc, int advance, int dx, int dy, Bool use_palette);
+extern Bool         text_aa_text_out( Handle self, int x, int y, void * text, int len, Bool wide);
+extern void         text_aa_free_arena(Handle self, Bool for_reuse);
+extern Bool         text_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y, Bool fixed_pitch);
 extern void         wchar2char( char * dest, WCHAR * src, int lim);
 extern Bool         yield( Bool wait_for_event );
 
