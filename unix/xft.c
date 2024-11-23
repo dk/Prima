@@ -1204,8 +1204,6 @@ prima_xft_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 	int rop = XX-> rop;
 	Point baseline;
 
-	t-> flags |= toAddOverhangs; /* for overstriking etc */
-
 	if ( t->len == 0) return true;
 	t->len = check_width( XX->font, t->len );
 	rop = filter_unsupported_rops( XX, rop, &xftcolor );
@@ -1250,7 +1248,6 @@ prima_xft_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 	if ( PDrawable( self)-> font. style & (fsUnderlined|fsStruckOut)) {
 		int l;
 		Point ovx;
-		t-> flags |= toAddOverhangs;
 		l = prima_xft_get_glyphs_width( self, XX-> font, t, toAddOverhangs, &ovx);
 		overstrike(self, x, y, &ovx, l - ovx.x - ovx.y - 1);
 	}
