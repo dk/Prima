@@ -1511,7 +1511,7 @@ apc_gp_get_text_opaque( Handle self)
 }
 
 Bool
-apc_gp_get_text_colored( Handle self)
+apc_gp_is_font_colored( Handle self)
 {
 	return false;
 }
