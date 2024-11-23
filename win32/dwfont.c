@@ -7,6 +7,8 @@
 #include <dwrite.h>
 #include <dwrite_3.h>
 
+#include "DeviceBitmap.h"
+#include "Image.h"
 #include "Widget.h"
 
 #ifdef __cplusplus
@@ -68,20 +70,35 @@ dwrite_font_done(void)
 }
 
 Bool
-dwrite_logfont_colored( LOGFONTW *lf )
+dwrite_is_font_colored( Handle self, PDCFont dcfont)
 {
 	HRESULT hr;
+	LOGFONTW lf;
 	IDWriteFont2 *font;
 	Bool ok = false;
 
-	if (!dw_ok) return ok;
+	if (!dw_ok) return false;
 
-	hr = gdi->lpVtbl->CreateFontFromLOGFONT(gdi, lf, (IDWriteFont**) &font);
-	if ( hr != S_OK )
+	if (
+		dcfont->dw_is_color_font < 0 ||
+		( is_apt(aptDeviceBitmap) && ((PDeviceBitmap)self)->type == dbtBitmap) ||
+		( is_apt(aptImage)        && ((PImage)self)-> type == imBW )
+	)
+		return false;
+	else if ( dcfont->dw_is_color_font > 0 )
+		return true;
+
+	font_font2logfont( &dcfont->font, &lf);
+
+	hr = gdi->lpVtbl->CreateFontFromLOGFONT(gdi, &lf, (IDWriteFont**) &font);
+	if ( hr != S_OK ) {
+		dcfont->dw_is_color_font = -1;
 		apiHErrRet(hr);
+	}
 
 	if ( font->lpVtbl->IsColorFont(font))
 		ok = true;
+	dcfont->dw_is_color_font = ok ? 1 : -1;
 
 	font->lpVtbl->Release(font);
 	return ok;

@@ -39,7 +39,6 @@ Drawable_init( Handle self, HV * profile)
 	my-> set_region       ( self, pget_H ( region));
 	my-> set_rop          ( self, pget_i ( rop));
 	my-> set_rop2         ( self, pget_i ( rop2));
-	my-> set_textColored  ( self, pget_B ( textColored));
 	my-> set_textOpaque   ( self, pget_B ( textOpaque));
 	my-> set_textOutBaseline( self, pget_B ( textOutBaseline));
 	if ( pexist( fillPatternOffset))
@@ -679,11 +678,9 @@ Drawable_rop2( Handle self, Bool set, int rop2)
 }
 
 Bool
-Drawable_textColored( Handle self, Bool set, Bool colored)
+Drawable_is_font_colored( Handle self )
 {
-	if (!set) return apc_gp_get_text_colored( self);
-	apc_gp_set_text_colored( self, colored);
-	return colored;
+	return apc_gp_is_font_colored(self);
 }
 
 Bool

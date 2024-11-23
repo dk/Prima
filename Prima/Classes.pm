@@ -728,7 +728,6 @@ sub profile_default
 		region          => undef,
 		rop             => rop::CopyPut,
 		rop2            => rop::NoOper,
-		textColored     => 0,
 		textOutBaseline => 0,
 		textOpaque      => 0,
 	);

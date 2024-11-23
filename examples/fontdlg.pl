@@ -606,7 +606,6 @@ sub create_info_window
 		itemHeight  => $ih,
 		gridColor   => cl::Back,
 		hScroll     => 1,
-		textColored => 1,
 		onSelectItem => sub {
 			my ( $self, $item, $sel) = @_;
 			if ( defined( my $c = $charmap{$item->[0]} )) {
