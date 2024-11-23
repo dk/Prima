@@ -784,9 +784,9 @@ extern Bool         text_aa_init( Handle self, HFONT font, Bool use_palette);
 extern void         text_aa_begin_render( Handle self, Bool use_palette);
 extern Bool         text_aa_render( Handle self, uint16_t glyph);
 extern Bool         text_aa_end_render( Handle self, int x, int y, NPoint* delta, ABCFLOAT * abc, int advance, int dx, int dy, Bool use_palette);
-extern Bool         text_aa_text_out( Handle self, int x, int y, void * text, int len, Bool wide);
 extern void         text_aa_free_arena(Handle self, Bool for_reuse);
 extern Bool         text_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y, Bool fixed_pitch);
+extern int          text_gp_get_glyphs_width( Handle self, PGlyphsOutRec t, int flags);
 extern void         wchar2char( char * dest, WCHAR * src, int lim);
 extern Bool         yield( Bool wait_for_event );
 

@@ -23,46 +23,6 @@ warn_malloc(ssize_t size)
 	return ret;
 }
 
-static uint32_t*
-sv2uint32( SV * text, unsigned int * size, unsigned int * flags)
-{
-	STRLEN dlen;
-	register char * src;
-	uint32_t *ret;
-
-	src = SvPV(text, dlen);
-	if (prima_is_utf8_sv(text)) {
-		*flags |= toUTF8;
-		*size = prima_utf8_length(src, dlen);
-	} else {
-		*size = dlen;
-	}
-
-	if (!(ret = ( uint32_t*) warn_malloc(sizeof(uint32_t) * (*size))))
-		return NULL;
-
-	if (*flags & toUTF8 ) {
-		uint32_t *dst = ret;
-		while ( dlen > 0 && dst - ret < *size) {
-			UV uv;
-			unsigned int charlen;
-			uv = prima_utf8_uvchr(src, dlen, &charlen);
-			if ( uv > 0x10FFFF ) uv = 0x10FFFF;
-			*(dst++) = uv;
-			if ( charlen == 0 ) break;
-			src  += charlen;
-			dlen -= charlen;
-		}
-		*size = dst - ret;
-	} else {
-		register int i = *size;
-		register uint32_t *dst = ret;
-		while (i-- > 0) *(dst++) = *((unsigned char*) src++);
-	}
-
-	return ret;
-}
-
 /*
 Iterator for individual shaper runs. Each run has same direction
 and its indexes are increasing/decreasing monotonically. The latter is
@@ -631,7 +591,7 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 	}
 
 	/* allocate buffers */
-	if (!(t.text = sv2uint32(text_sv, &t.len, &t.flags)))
+	if (!(t.text = prima_sv2uint32(text_sv, &t.len, &t.flags)))
 		goto EXIT;
 	if ( replace_tabs >= 0 ) {
 		int i;

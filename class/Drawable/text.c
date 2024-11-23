@@ -265,7 +265,7 @@ Drawable_get_text_width( Handle self, SV * text, int flags, int from, int len)
 		if (t.advances)
 			return Drawable_get_glyphs_width(self, &t, flags & toAddOverhangs);
 		dmENTER(0);
-		res = apc_gp_get_glyphs_width( self, &t);
+		res = apc_gp_get_glyphs_width( self, &t, flags);
 		dmLEAVE;
 	} else {
 		SV * ret;
@@ -335,7 +335,6 @@ Drawable_get_glyphs_box( Handle self, PGlyphsOutRec t, Point * pt)
 	SaveFont savefont;
 	FontABC *abc;
 
-	t-> flags = 0;
 	text_out_baseline = ( my-> textOutBaseline == Drawable_textOutBaseline) ?
 		apc_gp_get_text_out_baseline(self) :
 		my-> get_textOutBaseline(self);

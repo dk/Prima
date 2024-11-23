@@ -55,6 +55,51 @@ prima_utf8_uvchr_end(const char * text, const char * end, unsigned int *charlen)
 	return uv;
 }
 
+uint32_t*
+prima_string2uint32( register const char * src, unsigned int dlen, Bool is_utf8, unsigned int * size)
+{
+	uint32_t *ret;
+
+	*size = is_utf8 ? prima_utf8_length(src, dlen) : dlen;
+	if (!(ret = ( uint32_t*) malloc(sizeof(uint32_t) * (*size)))) {
+		warn("Not enough memory: %ld bytes", (unsigned long int)(sizeof(uint32_t) * (*size)));
+		return NULL;
+	}
+
+	if (is_utf8) {
+		uint32_t *dst = ret;
+		while ( dlen > 0 && dst - ret < *size) {
+			UV uv;
+			unsigned int charlen;
+			uv = prima_utf8_uvchr(src, dlen, &charlen);
+			if ( uv > 0x10FFFF ) uv = 0x10FFFF;
+			*(dst++) = uv;
+			if ( charlen == 0 ) break;
+			src  += charlen;
+			dlen -= charlen;
+		}
+		*size = dst - ret;
+	} else {
+		register int i = *size;
+		register uint32_t *dst = ret;
+		while (i-- > 0) *(dst++) = *((unsigned char*) src++);
+	}
+
+	return ret;
+}
+
+uint32_t*
+prima_sv2uint32( SV * text, unsigned int * size, unsigned int * flags)
+{
+	STRLEN dlen;
+	const char * src;
+
+	src = (const char*) SvPV(text, dlen);
+	if (prima_is_utf8_sv(text))
+		*flags |= toUTF8;
+	return prima_string2uint32( src, dlen, *flags & toUTF8, size);
+}
+
 #ifdef __cplusplus
 }
 #endif
