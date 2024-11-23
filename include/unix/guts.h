@@ -1896,7 +1896,7 @@ extern int
 prima_fq_get_text_width( Handle self, const char * text, int len, int flags, Point * overhangs);
 
 extern int
-prima_fq_get_glyphs_width( Handle self, PGlyphsOutRec t, Point * overhangs, int flags);
+prima_fq_get_glyphs_width( Handle self, PGlyphsOutRec t, int flags, Point * overhangs);
 
 extern Point *
 prima_fq_get_text_box( Handle self, const char * text, int len, int flags);
