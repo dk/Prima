@@ -3365,9 +3365,7 @@ FV(Outline)
 FV(Default)
 #define    fvScalableBitmap 0x0003
 FV(ScalableBitmap)
-#define    fvColorOutline   0x0005
-FV(ColorOutline)
-#define    fvMask           0x0007
+#define    fvMask           0x0003
 END_TABLE(fv,UV)
 #undef FV
 
@@ -3978,6 +3976,9 @@ extern Bool
 apc_gp_can_draw_alpha( Handle self);
 
 extern Bool
+apc_gp_is_font_colored( Handle self);
+
+extern Bool
 apc_gp_clear( Handle self, int x1, int y1, int x2, int y2);
 
 extern Bool
@@ -4166,9 +4167,6 @@ extern Point*
 apc_gp_get_text_box( Handle self, const char * text, int len, int flags);
 
 extern Bool
-apc_gp_get_text_colored( Handle self);
-
-extern Bool
 apc_gp_get_text_opaque( Handle self);
 
 #define TS(const_name) CONSTANT(ts,const_name)
@@ -4244,9 +4242,6 @@ apc_gp_set_rop( Handle self, int rop);
 
 extern Bool
 apc_gp_set_rop2( Handle self, int rop);
-
-extern Bool
-apc_gp_set_text_colored( Handle self, Bool colored);
 
 extern Bool
 apc_gp_set_text_matrix( Handle self, Matrix matrix);

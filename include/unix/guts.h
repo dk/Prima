@@ -957,7 +957,6 @@ typedef struct _drawable_sys_data
 		unsigned sizemax_set              : 1;
 		unsigned sync_paint               : 1;
 		unsigned task_listed              : 1;
-		unsigned text_colored             : 1;
 		unsigned title_utf8               : 1;
 		unsigned transparent              : 1;
 		unsigned transparent_busy         : 1;
@@ -1016,7 +1015,7 @@ typedef struct _PaintState
 		XGCValues gcv;
 	} nonpaint;
 	int alpha, fill_mode, n_dashes, rop, rop2;
-	Bool antialias, text_opaque, text_baseline, null_hatch, text_colored;
+	Bool antialias, text_opaque, text_baseline, null_hatch;
 	Point fill_pattern_offset;
 	Handle fill_image;
 	FillPattern fill_pattern;

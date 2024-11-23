@@ -4,8 +4,6 @@
 #include <usp10.h>
 #include "guts.h"
 #include "win32\win32guts.h"
-#include "DeviceBitmap.h"
-#include "Image.h"
 #include "Widget.h"
 
 #ifdef __cplusplus
@@ -504,7 +502,7 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flag
 	HDC ps = sys ps;
 	int bk  = GetBkMode( ps);
 	int opa = is_apt( aptTextOpaque) ? OPAQUE : TRANSPARENT;
-	Bool use_path, want_color = false;
+	Bool use_path;
 
 	int div = 32768L / (var font. maximalWidth ? var font. maximalWidth : 1);
 	if ( div <= 0) div = 1;
@@ -515,12 +513,7 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flag
 	their geometrical limits. */
 	if ( len > div) len = div;
 
-	if ( is_apt( aptTextColored ))
-		want_color = !(
-			( is_apt(aptDeviceBitmap) && ((PDeviceBitmap)self)->type == dbtBitmap) ||
-			( is_apt(aptImage)        && ((PImage)self)-> type == imBW )
-		);
-	if ( want_color || sys alpha < 255 )
+	if ( sys alpha < 255 || apc_gp_is_font_colored(self))
 		return shaped_text_out( self, text, x, y, len, flags);
 
 	if ( flags & toUTF8 ) {
@@ -675,7 +668,7 @@ apc_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 	FontContext fc;
 	float fxx, fyy;
 	NPoint cs = CDrawable(self)->trig_cache(self);
-	Bool want_color = false;
+	Bool want_color;
 
 	select_world_transform(self, true);
 	SHIFT_XY(x,y);
@@ -684,6 +677,7 @@ apc_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 	if ( t->len > 8192 ) t->len = 8192;
 	use_path = GetROP2( sys ps) != R2_COPYPEN;
 	use_alpha = sys alpha < 255;
+	want_color = t->fonts ? true : apc_gp_is_font_colored(self);
 	if ( use_path ) {
 		STYLUS_USE_BRUSH;
 		BeginPath(ps);
@@ -699,12 +693,6 @@ apc_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 	fyy = yy = 0;
 	savelen = t->len;
 	font_context_init(&fc, self, t);
-
-	if ( is_apt( aptTextColored ))
-		want_color = !(
-			( is_apt(aptDeviceBitmap) && ((PDeviceBitmap)self)->type == dbtBitmap) ||
-			( is_apt(aptImage)        && ((PImage)self)-> type == imBW )
-		);
 
 	while (( t-> len = font_context_next(&fc)) > 0 ) {
 		int advance = 0;
@@ -2229,18 +2217,10 @@ apc_gp_get_text_out_baseline( Handle self)
 }
 
 Bool
-apc_gp_get_text_colored( Handle self)
+apc_gp_is_font_colored( Handle self)
 {
 	objCheck false;
-	return is_apt( aptTextColored);
-}
-
-Bool
-apc_gp_set_text_colored( Handle self, Bool colored)
-{
-	objCheck false;
-	apt_assign( aptTextColored, colored);
-	return true;
+	return dwrite_is_font_colored(self, sys dc_font);
 }
 
 Bool

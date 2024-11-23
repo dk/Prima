@@ -961,7 +961,7 @@ sub prf_types
 		linePattern   => ['linePattern'],
 		lineWidth     => ['lineWidth'],
 		rop           => ['rop', 'rop2'],
-		bool          => ['textOutBaseline', 'textOpaque', 'fillMode', 'textColored'],
+		bool          => ['textOutBaseline', 'textOpaque', 'fillMode'],
 		point         => ['translate', 'fillPatternOffset'],
 		palette       => ['palette'],
 		image         => ['region'],

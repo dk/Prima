@@ -56,7 +56,7 @@ sub save_state
 	$self-> {save_state} = {};
 	$self-> {save_state}-> {$_} = $self-> $_() for qw(
 		color backColor fillPattern lineEnd linePattern lineWidth miterLimit
-		rop rop2 textOpaque textColored textOutBaseline font lineJoin fillMode
+		rop rop2 textOpaque textOutBaseline font lineJoin fillMode
 	);
 	$self->{save_state}->{fpType} = $self->{fpType};
 	$self-> {save_state}-> {$_} = [$self-> $_()] for qw(
@@ -70,7 +70,7 @@ sub restore_state
 {
 	my $self = $_[0];
 	for ( qw( color backColor fillPattern lineEnd linePattern lineWidth miterLimit
-			rop rop2 textColored textOpaque textOutBaseline font lineJoin fillMode)) {
+			rop rop2 textOpaque textOutBaseline font lineJoin fillMode)) {
 		$self-> $_( $self-> {save_state}-> {$_});
 	}
 	$self->{fpType} = $self->{save_state}->{fpType};

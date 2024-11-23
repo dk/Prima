@@ -32,7 +32,7 @@ my @props = qw(
 	alpha antialias
 	color backColor fillMode fillPattern lineEnd
 	lineJoin linePattern lineWidth rop rop2 miterLimit
-	textOpaque textOutBaseline textColored
+	textOpaque textOutBaseline 
 );
 
 for my $prop_name (@props) {

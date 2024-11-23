@@ -169,7 +169,6 @@ typedef struct _HandleOptions_ {
 	unsigned aptEnabled              : 1;       // enabled flag
 	unsigned aptTextOpaque           : 1;       // gp text drawing flag
 	unsigned aptTextOutBaseline      : 1;       // gp text drawing flag
-	unsigned aptTextColored          : 1;       // draw color font with colors
 	unsigned aptWinPosDetermined     : 1;       // 0 when size is set, but position is not
 	unsigned aptOnTop                : 1;       // HWND_TOPMOST is set
 	unsigned aptLayered              : 1;       // WS_EX_LAYERED
@@ -377,6 +376,7 @@ typedef struct _DCFont
 	HFONT            hfont;
 	void *           dw_colorface;
 	Bool             dw_checked;
+	int8_t           dw_is_color_font;
 } DCFont, *PDCFont;
 
 #define DCO_PEN           0
@@ -708,7 +708,7 @@ extern PList        dnd_clipboard_get_formats();
 extern Bool         dwrite_font_init(void);
 extern void         dwrite_font_done(void);
 extern void         dwrite_free_face(void *face);
-extern Bool         dwrite_logfont_colored( LOGFONTW *lf );
+extern Bool         dwrite_is_font_colored( Handle self, PDCFont dcfont);
 extern Bool         dwrite_color_text_out(Handle self, PDCFont dc, PGlyphsOutRec t, int x, int y);
 extern void         dpi_change(void);
 extern char *       err_msg( DWORD errId, char * buffer);
