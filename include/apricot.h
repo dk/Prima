@@ -1833,6 +1833,12 @@ list_index_of( PList self, Handle item);
 extern int
 prima_utf8_length( const char * utf8, int length);
 
+extern uint32_t*
+prima_sv2uint32( SV * text, unsigned int * size, unsigned int * flags);
+
+extern uint32_t*
+prima_string2uint32( const char * text, unsigned int dlen, Bool is_utf8, unsigned int * size);
+
 extern Bool
 prima_is_utf8_sv( SV * sv);
 
@@ -4068,7 +4074,7 @@ typedef Bool TextShapeFunc( Handle self, PTextShapeRec rec);
 typedef TextShapeFunc *PTextShapeFunc;
 
 typedef struct {
-	unsigned int len, flags, text_len;
+	unsigned int len, text_len;
 	uint16_t *glyphs, *indexes, *advances;
 	int16_t  *positions;
 	uint16_t *fonts;
@@ -4130,7 +4136,7 @@ extern Point*
 apc_gp_get_glyphs_box( Handle self, PGlyphsOutRec text);
 
 extern int
-apc_gp_get_glyphs_width( Handle self, PGlyphsOutRec text);
+apc_gp_get_glyphs_width( Handle self, PGlyphsOutRec text, int flags);
 
 extern ApiHandle
 apc_gp_get_handle( Handle self);

@@ -826,7 +826,7 @@ apc_gp_get_text_width( Handle self, const char * text, int len, int flags)
 }
 
 int
-apc_gp_get_glyphs_width( Handle self, PGlyphsOutRec t)
+apc_gp_get_glyphs_width( Handle self, PGlyphsOutRec t, int flags)
 {
 	int ret;
 	if ( t->len > 65535 ) t->len = 65535;
@@ -834,18 +834,18 @@ apc_gp_get_glyphs_width( Handle self, PGlyphsOutRec t)
 #ifdef USE_FONTQUERY
 	if ( is_opt(optInFontQuery) ) {
 		if ( X(self)->font)
-			return prima_fq_get_glyphs_width( self, t, NULL);
+			return prima_fq_get_glyphs_width( self, t, flags, NULL);
 		return 0;
 	}
 #endif
 
 #ifdef USE_XFT
 	if ( X(self)-> font-> xft)
-		return prima_xft_get_glyphs_width( self, X(self)-> font, t, NULL);
+		return prima_xft_get_glyphs_width( self, X(self)-> font, t, flags, NULL);
 #endif
 
 	SWAP_BYTES(t->glyphs,t->len);
-	ret = gp_get_text_width( self, (char*) t->glyphs, t->len, toUTF8 );
+	ret = gp_get_text_width( self, (char*) t->glyphs, t->len, flags | toUTF8 );
 	SWAP_BYTES(t->glyphs,t->len);
 	return ret;
 }

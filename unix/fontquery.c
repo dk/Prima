@@ -469,7 +469,7 @@ prima_fq_get_text_width( Handle self, const char * text, int len, int flags, Poi
 }
 
 int
-prima_fq_get_glyphs_width( Handle self, PGlyphsOutRec t, Point * overhangs)
+prima_fq_get_glyphs_width( Handle self, PGlyphsOutRec t, int flags, Point * overhangs)
 {
 	DEFXX;
 	int i, ret = 0;
@@ -486,8 +486,8 @@ prima_fq_get_glyphs_width( Handle self, PGlyphsOutRec t, Point * overhangs)
 			continue;
 		g = fc.current->glyph;
 		ret += FT266_to_short(g->advance.x);
-		if ( (t->flags & toAddOverhangs ) || overhangs) {
-			UPDATE_OVERHANGS(t->len,t->flags)
+		if ( (flags & toAddOverhangs ) || overhangs) {
+			UPDATE_OVERHANGS(t->len,flags)
 		}
 	}
 	return ret;
@@ -505,7 +505,7 @@ Point *
 prima_fq_get_glyphs_box( Handle self, PGlyphsOutRec t)
 {
 	Point ovx;
-	int w = prima_fq_get_glyphs_width(self, t, &ovx);
+	int w = prima_fq_get_glyphs_width(self, t, toAddOverhangs, &ovx);
 	return prima_get_text_box(self, ovx, w);
 }
 

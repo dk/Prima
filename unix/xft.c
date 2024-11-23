@@ -606,7 +606,7 @@ prima_xft_get_text_width(
 }
 
 int
-prima_xft_get_glyphs_width( Handle self, PCachedFont selfxx, PGlyphsOutRec t, Point * overhangs)
+prima_xft_get_glyphs_width( Handle self, PCachedFont selfxx, PGlyphsOutRec t, int flags, Point * overhangs)
 {
 	int i, ret = 0;
 	FontContext fc;
@@ -622,8 +622,8 @@ prima_xft_get_glyphs_width( Handle self, PCachedFont selfxx, PGlyphsOutRec t, Po
 		font_context_next(&fc);
 		XftGlyphExtents( DISP, fc.xft_font, &ft_index, 1, &glyph);
 		ret += glyph. xOff * fc.width_factor + .5;
-		if ( (t->flags & toAddOverhangs ) || overhangs) {
-			UPDATE_OVERHANGS(t->len,t->flags,fc.width_factor)
+		if ( (flags & toAddOverhangs ) || overhangs) {
+			UPDATE_OVERHANGS(t->len,flags,fc.width_factor)
 		}
 	}
 	return ret;
@@ -643,7 +643,7 @@ prima_xft_get_glyphs_box( Handle self, PGlyphsOutRec t)
 {
 	DEFXX;
 	Point ovx;
-	int p = prima_xft_get_glyphs_width(self, XX-> font, t, &ovx);
+	int p = prima_xft_get_glyphs_width(self, XX-> font, t, toAddOverhangs, &ovx);
 	return prima_get_text_box(self, ovx, p);
 }
 
@@ -1234,7 +1234,7 @@ prima_xft_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 		/* emulate rops by blitting the text */
 		int dx;
 		TextBlit tb;
-		dx = prima_xft_get_glyphs_width( self, XX-> font, t, NULL);
+		dx = prima_xft_get_glyphs_width( self, XX-> font, t, toAddOverhangs, NULL);
 		if (!open_text_blit(self, x - baseline.x, y - baseline.y, dx, rop, &tb))
 			goto COPY_PUT;
 		xft_draw_glyphs(self, XX, &xftcolor,
@@ -1251,7 +1251,7 @@ prima_xft_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 		int l;
 		Point ovx;
 		t-> flags |= toAddOverhangs;
-		l = prima_xft_get_glyphs_width( self, XX-> font, t, &ovx);
+		l = prima_xft_get_glyphs_width( self, XX-> font, t, toAddOverhangs, &ovx);
 		overstrike(self, x, y, &ovx, l - ovx.x - ovx.y - 1);
 	}
 	XFLUSH;

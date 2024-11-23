@@ -142,66 +142,98 @@ font_context_next( FontContext * fc )
 	return len;
 }
 
+static void
+draw_underline( Handle self, int x1, int y1, int x2, int y2, int width, int Y, Bool use_alpha, GpPen *gppen)
+{
+	int n_points = 2;
+	NPoint pt[4] = {
+		{0,-Y},
+		{width,-Y},
+		{0,-Y},
+		{width,-Y},
+	};
+
+	if ( is_apt(aptGDIPlus) ) {
+		int lw = var font. underlineThickness;
+		pt[0].y -= lw;
+		pt[1].y -= lw;
+		pt[2].y += lw;
+		pt[3].y += lw;
+		n_points = 4;
+	}
+
+	if ( var font. direction != 0) {
+		int i;
+		NPoint cs = CDrawable(self)->trig_cache(self);
+		for ( i = 0; i < n_points; i++) {
+			double x = pt[i].x * cs.y - pt[i].y * cs.x;
+			double y = pt[i].x * cs.x + pt[i].y * cs.y;
+			pt[i].x = x;
+			pt[i].y = y;
+		}
+	}
+
+	if ( use_alpha || is_apt(aptGDIPlus) ) {
+		prima_matrix_apply2( var current_state.matrix, pt, pt, n_points);
+		if ( is_apt(aptGDIPlus)) {
+			GpPointF p[4] = {
+				{x2 + pt[0].x, y2 - pt[0].y},
+				{x2 + pt[2].x, y2 - pt[2].y},
+				{x2 + pt[1].x, y2 - pt[1].y},
+				{x2 + pt[3].x, y2 - pt[3].y},
+			};
+			STYLUS_USE_GP_BRUSH;
+			if ( !CURRENT_GP_BRUSH ) goto NO_AA;
+			GdipFillPolygon( sys graphics, CURRENT_GP_BRUSH, p, 4, FillModeWinding);
+		} else {
+		NO_AA:
+			GdipDrawLine(sys graphics, gppen, x2 + pt[0].x, y2 - pt[0].y, x2 + pt[1].x, y2 - pt[1].y);
+		}
+	} else {
+		Point ix[2];
+		prima_array_convert( 4, pt, 'd', ix, 'i');
+		MoveToEx( sys ps, x1 + ix[0].x, y1 - ix[0].y, NULL);
+		LineTo( sys ps, x1 + ix[1].x, y1 - ix[1].y);
+	}
+}
+
 /*
 	emulate underscore and strikeout because ExtTextOutW with ETO_PDY underlines each glyph separately .
 	Also, Gdip ignores viewport, specify params in parallel
 */
 static void
-underscore_font( Handle self, int x1, int y1, int x2, int y2, int width, Bool use_alpha)
+text_underscore_font( Handle self, int x1, int y1, int x2, int y2, int width, Bool use_alpha)
 {
-	HDC dc = sys ps;
 	GpPen * gppen = NULL;
-	NPoint cs = CDrawable(self)->trig_cache(self);
 
 	if ( var font. style & (fsUnderlined|fsStruckOut)) {
 		int line_width = 1;
 		COLORREF fg = sys rq_pen.logpen.lopnColor;
 		line_width = var font. underlineThickness;
 		if ( use_alpha ) {
-			gppen = stylus_gp_get_pen(line_width,
-				( sys alpha << 24) |
-				 (fg >> 16) |
-				 (fg & 0xff00) |
-				((fg & 0xff) << 16)
-			);
+			if ( !is_apt(aptGDIPlus))
+				gppen = stylus_gp_get_pen(line_width,
+					( sys alpha << 24) |
+					 (fg >> 16) |
+					 (fg & 0xff00) |
+					((fg & 0xff) << 16)
+				);
 		} else {
-			SelectObject( dc, stylus_get_pen(PS_SOLID, line_width, fg));
+			SelectObject( sys ps, stylus_get_pen(PS_SOLID, line_width, fg));
 			STYLUS_FREE_PEN;
 		}
 	}
 
 	if ( var font. style & fsUnderlined ) {
-		int i, Y = 0;
-		Point pt[2];
-
+		int Y = 0;
 		if ( !is_apt( aptTextOutBaseline))
 			Y -= var font. descent;
 		Y -= var font. underlinePosition;
-
-		pt[0].x = 0;
-		pt[0].y = -Y;
-		pt[1].x = width;
-		pt[1].y = -Y;
-		if ( var font. direction != 0) {
-			for ( i = 0; i < 2; i++) {
-				float x = pt[i].x * cs.y - pt[i].y * cs.x;
-				float y = pt[i].x * cs.x + pt[i].y * cs.y;
-				pt[i].x = x + (( x > 0) ? 0.5 : -0.5);
-				pt[i].y = y + (( y > 0) ? 0.5 : -0.5);
-			}
-		}
-
-		if ( use_alpha ) {
-			GdipDrawLineI(sys graphics, gppen, x2 + pt[0].x, y2 - pt[0].y, x2 + pt[1].x, y2 - pt[1].y);
-		} else {
-			MoveToEx( dc, x1 + pt[0].x, y1 - pt[0].y, NULL);
-			LineTo( dc, x1 + pt[1].x, y1 - pt[1].y);
-		}
+		draw_underline( self, x1, y1, x2, y2, width, Y, use_alpha, gppen);
 	}
 
 	if ( var font. style & fsStruckOut ) {
-		int i, Y = 0;
-		Point pt[2];
+		int Y = 0;
 
 		if ( !is_apt( aptTextOutBaseline))
 			Y -= var font. descent;
@@ -209,26 +241,7 @@ underscore_font( Handle self, int x1, int y1, int x2, int y2, int width, Bool us
 			Y -= sys otmsStrikeoutPosition;
 		else
 			Y -= (var font. ascent - var font. internalLeading) / 3;
-
-		pt[0].x = 0;
-		pt[0].y = -Y;
-		pt[1].x = width;
-		pt[1].y = -Y;
-		if ( var font. direction != 0) {
-			for ( i = 0; i < 2; i++) {
-				float x = pt[i].x * cs.y - pt[i].y * cs.x;
-				float y = pt[i].x * cs.x + pt[i].y * cs.y;
-				pt[i].x = x + (( x > 0) ? 0.5 : -0.5);
-				pt[i].y = y + (( y > 0) ? 0.5 : -0.5);
-			}
-		}
-
-		if ( use_alpha ) {
-			GdipDrawLineI(sys graphics, gppen, x2 + pt[0].x, y2 - pt[0].y, x2 + pt[1].x, y2 - pt[1].y);
-		} else {
-			MoveToEx( dc, x1 + pt[0].x, y1 - pt[0].y, NULL);
-			LineTo( dc, x1 + pt[1].x, y1 - pt[1].y);
-		}
+		draw_underline( self, x1, y1, x2, y2, width, Y, use_alpha, gppen);
 	}
 }
 
@@ -300,18 +313,22 @@ gp_get_polyfont_widths( Handle self, const PGlyphsOutRec t, int flags, ABC * ext
 
 	if ( t->advances ) {
 		int i;
-		ABC abc;
+
 		for ( i = 0; i < t->len; i++)
 			extents->abcB += t->advances[i];
-		GetCharABCWidthsI( sys ps, t->glyphs[0], 1, NULL, &abc);
-		extents->abcA = abc.abcA;
-		if ( t->fonts[0] != t->fonts[t->len - 1] ) {
-			font_context_rewind(&fc, t->len - 1);
-			font_context_next(&fc);
+
+		if ( flags & toAddOverhangs ){
+			ABC abc;
+			GetCharABCWidthsI( sys ps, t->glyphs[0], 1, NULL, &abc);
+			extents->abcA = abc.abcA;
+			if ( t->fonts[0] != t->fonts[t->len - 1] ) {
+				font_context_rewind(&fc, t->len - 1);
+				font_context_next(&fc);
+			}
+			GetCharABCWidthsI( sys ps, t->glyphs[t->len-1], 1, NULL, &abc);
+			extents->abcC = abc.abcC;
+			font_context_done(&fc);
 		}
-		GetCharABCWidthsI( sys ps, t->glyphs[t->len-1], 1, NULL, &abc);
-		extents->abcC = abc.abcC;
-		font_context_done(&fc);
 		return;
 	}
 
@@ -329,12 +346,14 @@ gp_get_polyfont_widths( Handle self, const PGlyphsOutRec t, int flags, ABC * ext
 			local_offset += div;
 			extents-> abcB += sz.cx;
 		}
-		if ( offset == 0 ) {
-			GetCharABCWidthsI( sys ps, t->glyphs[0], 1, NULL, &abc);
-			extents->abcA = abc.abcA;
-		} else if ( fc.stop ) {
-			GetCharABCWidthsI( sys ps, t->glyphs[len-1], 1, NULL, &abc);
-			extents->abcC = abc.abcC;
+		if ( flags & toAddOverhangs ) {
+			if ( offset == 0 ) {
+				GetCharABCWidthsI( sys ps, t->glyphs[0], 1, NULL, &abc);
+				extents->abcA = abc.abcA;
+			} else if ( fc.stop ) {
+				GetCharABCWidthsI( sys ps, t->glyphs[len-1], 1, NULL, &abc);
+				extents->abcC = abc.abcC;
+			}
 		}
 		offset += len;
 	}
@@ -353,16 +372,21 @@ gp_get_text_width( Handle self, const char* text, int len, int flags)
 	return abc.abcB;
 }
 
-static int
-gp_get_glyphs_width( Handle self, PGlyphsOutRec t, int flags)
+int
+text_gp_get_glyphs_width( Handle self, PGlyphsOutRec t, int flags)
 {
 	ABC abc;
+
 	if ( t-> fonts )
 		gp_get_polyfont_widths(self,t,flags,&abc);
 	else
-		gp_get_text_widths( self, (const char*)t->glyphs, t->len, t->flags | toGlyphs, &abc);
-	if ( abc.abcA < 0) abc.abcB -= abc.abcA;
-	if ( abc.abcC < 0) abc.abcB -= abc.abcC;
+		gp_get_text_widths( self, (const char*)t->glyphs, t->len, flags | toGlyphs, &abc);
+
+	if ( flags & toAddOverhangs ) {
+		if ( abc.abcA < 0) abc.abcB -= abc.abcA;
+		if ( abc.abcC < 0) abc.abcB -= abc.abcC;
+	}
+
 	return abc.abcB;
 }
 
@@ -384,7 +408,7 @@ paint_text_background( Handle self, const char * text, int len, int flags)
 		if ( t-> fonts )
 			gp_get_polyfont_widths(self,t,toAddOverhangs,&abc);
 		else
-			gp_get_text_widths( self, (const char*)t->glyphs, t->len, t->flags | toGlyphs | toAddOverhangs, &abc);
+			gp_get_text_widths( self, (const char*)t->glyphs, t->len, toGlyphs | toAddOverhangs, &abc);
 	} else {
 		gp_get_text_widths(self, text, len, flags | toAddOverhangs, &abc);
 	}
@@ -415,6 +439,64 @@ paint_text_background( Handle self, const char * text, int len, int flags)
 	sys alpha_arena_palette = palette;
 }
 
+static Bool
+shaped_text_out( Handle self, const char * text, int x, int y, int len, int flags )
+{
+	int ok = 0, shaper_type;
+	PTextShapeFunc shaper;
+	TextShapeRec t;
+
+#define SZ 256
+	unsigned int size, bytelen;
+	uint16_t storage[SZ*5], *p_storage;
+
+	shaper_type = tsFull;
+	shaper = apc_font_get_text_shaper( self, &shaper_type);
+
+	memset( &t, 0, sizeof(t));
+	size = len * 2;
+	if ( size > SZ ) {
+		if ( !( p_storage = malloc( size * 5 * sizeof(uint16_t))))
+			return false;
+	} else
+		p_storage = storage;
+
+	if ( flags & toUTF8 ) {
+		int x = len;
+		char *p = (char*) text;
+		while ( x-- ) p = (char*)utf8_hop((U8*)p, 1);
+		bytelen = p - text;
+	} else
+		bytelen = len;
+
+	if ( !( t.text = prima_string2uint32( text, bytelen, flags & toUTF8, &bytelen)))
+		goto EXIT;
+
+	t.len          = bytelen;
+	t.n_glyphs_max = size;
+	t.glyphs       = p_storage;
+	t.indexes      = p_storage + size;
+	t.advances     = p_storage + size * 2;
+	t.positions    = (int16_t*) p_storage + size * 3;
+	if (( ok = shaper( self, &t))) {
+		GlyphsOutRec g;
+		memset(&g, 0, sizeof(g));
+		g.len       = t.n_glyphs;
+		g.glyphs    = t.glyphs;
+		g.advances  = t.advances;
+		g.positions = t.positions;
+		ok = apc_gp_glyphs_out( self, &g, x, y);
+	}
+
+EXIT:
+	if ( t.text )
+		free( t.text );
+	if ( p_storage != storage )
+		free(storage);
+#undef SZ
+	return ok;
+}
+
 Bool
 apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flags )
 {objCheck false;{
@@ -422,7 +504,7 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flag
 	HDC ps = sys ps;
 	int bk  = GetBkMode( ps);
 	int opa = is_apt( aptTextOpaque) ? OPAQUE : TRANSPARENT;
-	Bool use_path, use_alpha;
+	Bool use_path, want_color = false;
 
 	int div = 32768L / (var font. maximalWidth ? var font. maximalWidth : 1);
 	if ( div <= 0) div = 1;
@@ -432,6 +514,14 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flag
 	at least can be excused by the fact that all GP spaces have
 	their geometrical limits. */
 	if ( len > div) len = div;
+
+	if ( is_apt( aptTextColored ))
+		want_color = !(
+			( is_apt(aptDeviceBitmap) && ((PDeviceBitmap)self)->type == dbtBitmap) ||
+			( is_apt(aptImage)        && ((PImage)self)-> type == imBW )
+		);
+	if ( want_color || sys alpha < 255 )
+		return shaped_text_out( self, text, x, y, len, flags);
 
 	if ( flags & toUTF8 ) {
 		int mb_len;
@@ -443,34 +533,27 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flag
 	SHIFT_XY(x, y);
 	SetViewportOrgEx( sys ps, x, y, NULL );
 
-	use_alpha = sys alpha < 255;
-	use_path = (GetROP2( sys ps) != R2_COPYPEN) && !use_alpha;
+	use_path = GetROP2( sys ps) != R2_COPYPEN;
 	if ( use_path ) {
 		STYLUS_USE_BRUSH;
 		BeginPath(ps);
-	} else if ( !use_alpha ) {
+	} else {
 		STYLUS_USE_TEXT;
 		if ( opa != bk) SetBkMode( ps, opa);
 	}
 
-	if ( use_alpha ) {
-		if ( is_apt( aptTextOpaque))
-			paint_text_background(self, (char*)text, len, flags & toUTF8);
-		ok = text_aa_text_out( self, 0, 0, (void*)text, len, flags & toUTF8);
-	} else {
-		ok = ( flags & toUTF8 ) ?
-			TextOutW( ps, 0, 0, ( U16*)text, len) :
-			TextOutA( ps, 0, 0, text, len);
-		if ( !ok ) apiErr;
-	}
+	ok = ( flags & toUTF8 ) ?
+		TextOutW( ps, 0, 0, ( U16*)text, len) :
+		TextOutA( ps, 0, 0, text, len);
+	if ( !ok ) apiErr;
 
 	if ( var font. style & (fsUnderlined | fsStruckOut))
-		underscore_font( self, 0, 0, x, y, gp_get_text_width( self, text, len, flags), use_alpha);
+		text_underscore_font( self, 0, 0, x, y, gp_get_text_width( self, text, len, flags), false);
 
 	if ( use_path ) {
 		EndPath(ps);
 		FillPath(ps);
-	} else if ( !use_alpha ) {
+	} else {
 		if ( opa != bk) SetBkMode( ps, bk);
 	}
 
@@ -660,7 +743,7 @@ apc_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 	t->len = savelen;
 
 	if ( var font. style & (fsUnderlined | fsStruckOut))
-		underscore_font( self, 0, yy, x, y + yy, gp_get_glyphs_width( self, t, 0), use_alpha);
+		text_underscore_font( self, 0, yy, x, y + yy, text_gp_get_glyphs_width( self, t, 0), use_alpha);
 
 	if ( use_path ) {
 		EndPath(ps);
@@ -1951,9 +2034,9 @@ apc_gp_get_text_width( Handle self, const char* text, int len, int flags)
 }
 
 int
-apc_gp_get_glyphs_width( Handle self, PGlyphsOutRec t)
+apc_gp_get_glyphs_width( Handle self, PGlyphsOutRec t, int flags)
 {
-	return gp_get_glyphs_width( self, t, t->flags);
+	return text_gp_get_glyphs_width( self, t, flags);
 }
 
 void
@@ -1998,7 +2081,7 @@ apc_gp_get_glyphs_box( Handle self, PGlyphsOutRec t)
 	if ( t-> fonts )
 		gp_get_polyfont_widths(self,t,toAddOverhangs,&abc);
 	else
-		gp_get_text_widths( self, (const char*)t->glyphs, t->len, t->flags | toGlyphs | toAddOverhangs, &abc);
+		gp_get_text_widths( self, (const char*)t->glyphs, t->len, toGlyphs | toAddOverhangs, &abc);
 	gp_get_text_box(self, &abc, pt);
 
 	return pt;

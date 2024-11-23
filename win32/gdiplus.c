@@ -504,34 +504,6 @@ aa_fill_palette(Handle self)
 }
 
 Bool
-text_aa_text_out( Handle self, int x, int y, void * text, int len, Bool wide)
-{
-	int i;
-	NPoint delta = { 0, 0 };
-
-	if ( !(aa_fill_palette(self) && aa_make_arena(self)))
-		return false;
-
-	for ( i = 0; i < len; i++) {
-		ABCFLOAT abc;
-		memset(sys alpha_arena_ptr, 0, sys alpha_arena_size.x * sys alpha_arena_size.y * 4);
-		if ( wide ) {
-			if (!GetCharABCWidthsFloatW( sys ps, ((WCHAR*)text)[i], ((WCHAR*)text)[i], &abc)) apiErrRet;
-		} else {
-			if (!GetCharABCWidthsFloatA( sys ps, ((char *)text)[i], ((char *)text)[i], &abc)) apiErrRet;
-		}
-		if ( wide ) {
-			if (!TextOutW( sys alpha_arena_dc, sys alpha_arena_size.x/2, sys alpha_arena_size.y/2, ((WCHAR*)text) + i, 1)) apiErrRet;
-		} else {
-			if (!TextOutA( sys alpha_arena_dc, sys alpha_arena_size.x/2, sys alpha_arena_size.y/2, ((char *)text) + i, 1)) apiErrRet;
-		}
-		if ( !text_aa_end_render(self, x, y, &delta, &abc, -1, 0, 0, true))
-			return false;
-	}
-	return true;
-}
-
-Bool
 text_aa_init( Handle self, HFONT font, Bool use_palette)
 {
 	HFONT f;
