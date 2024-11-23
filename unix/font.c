@@ -822,10 +822,49 @@ apc_font_get_glyph_bitmap( Handle self, uint16_t index, unsigned int flags, PPoi
 }
 
 Bool
+apc_font_is_colored( Handle self)
+{
+	DEFXX;
+	PCachedFont f = XX->font;
+	warn("%d\n", __LINE__);
+	if (
+		f->has_colors < 0 ||
+		( XT_IS_DBM(XX) && XT_IS_BITMAP(XX)) ||
+		( XT_IS_IMAGE(XX) && ((PImage)self)-> type == imBW )
+	)
+		return false;
+	else if ( f->has_colors > 0 )
+		return true;
+	warn("%d\n", __LINE__);
+
+#ifdef USE_FONTQUERY
+	if ( is_opt(optInFontQuery) ) {
+		return false; /* XXX because colored bitmaps are not supported */
+	}
+#endif
+
+#ifdef USE_XFT
+	warn("%d\n", __LINE__);
+	if ( f->xft ) {
+	warn("%d\n", __LINE__);
+		warn("%d\n", __LINE__);
+		Bool ok = prima_xft_is_font_colored(self);
+	warn("%d\n", __LINE__);
+		f->has_colors = ok ? 1 : -1;
+	warn("%d\n", __LINE__);
+		return ok;
+	}
+#endif
+	warn("%d\n", __LINE__);
+
+	return false;
+}
+
+Bool
 apc_gp_set_text_matrix( Handle self, Matrix matrix)
 {
 	PFont f = & PDrawable(self)->font;
-	if (f->undef.height &&f->undef.size) /* too early */
+	if (f->undef.height && f->undef.size) /* too early */
 		return true;
 	return apc_gp_set_font( self, f);
 }

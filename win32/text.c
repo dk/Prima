@@ -513,7 +513,7 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flag
 	their geometrical limits. */
 	if ( len > div) len = div;
 
-	if ( sys alpha < 255 || apc_gp_is_font_colored(self))
+	if ( sys alpha < 255 || apc_font_is_colored(self))
 		return shaped_text_out( self, text, x, y, len, flags);
 
 	if ( flags & toUTF8 ) {
@@ -677,7 +677,7 @@ apc_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 	if ( t->len > 8192 ) t->len = 8192;
 	use_path = GetROP2( sys ps) != R2_COPYPEN;
 	use_alpha = sys alpha < 255;
-	want_color = t->fonts ? true : apc_gp_is_font_colored(self);
+	want_color = t->fonts ? true : apc_font_is_colored(self);
 	if ( use_path ) {
 		STYLUS_USE_BRUSH;
 		BeginPath(ps);
@@ -2148,7 +2148,7 @@ apc_gp_get_text_out_baseline( Handle self)
 }
 
 Bool
-apc_gp_is_font_colored( Handle self)
+apc_font_is_colored( Handle self)
 {
 	objCheck false;
 	return dwrite_is_font_colored(self, sys dc_font);

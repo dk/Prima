@@ -3976,9 +3976,6 @@ extern Bool
 apc_gp_can_draw_alpha( Handle self);
 
 extern Bool
-apc_gp_is_font_colored( Handle self);
-
-extern Bool
 apc_gp_clear( Handle self, int x1, int y1, int x2, int y2);
 
 extern Bool
@@ -4331,6 +4328,9 @@ apc_font_get_text_shaper( Handle self, int *type);
 
 extern Byte*
 apc_font_get_glyph_bitmap( Handle self, uint16_t index, unsigned int flags, PPoint offset, PPoint size, int *advance);
+
+extern Bool
+apc_font_is_colored( Handle self);
 
 extern PFont
 apc_fonts( Handle self, const char *facename, const char *encoding, int *retCount);
