@@ -826,7 +826,6 @@ apc_font_is_colored( Handle self)
 {
 	DEFXX;
 	PCachedFont f = XX->font;
-	warn("%d\n", __LINE__);
 	if (
 		f->has_colors < 0 ||
 		( XT_IS_DBM(XX) && XT_IS_BITMAP(XX)) ||
@@ -835,7 +834,6 @@ apc_font_is_colored( Handle self)
 		return false;
 	else if ( f->has_colors > 0 )
 		return true;
-	warn("%d\n", __LINE__);
 
 #ifdef USE_FONTQUERY
 	if ( is_opt(optInFontQuery) ) {
@@ -844,18 +842,12 @@ apc_font_is_colored( Handle self)
 #endif
 
 #ifdef USE_XFT
-	warn("%d\n", __LINE__);
 	if ( f->xft ) {
-	warn("%d\n", __LINE__);
-		warn("%d\n", __LINE__);
 		Bool ok = prima_xft_is_font_colored(self);
-	warn("%d\n", __LINE__);
 		f->has_colors = ok ? 1 : -1;
-	warn("%d\n", __LINE__);
 		return ok;
 	}
 #endif
-	warn("%d\n", __LINE__);
 
 	return false;
 }

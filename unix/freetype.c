@@ -389,6 +389,7 @@ prima_ft_is_font_colored( FT_Face face)
         FT_Int a,b,c;
 	FT_ULong l = 0;
 
+	FT_Library_Version(ft_library,&a,&b,&c);
 	if ( a < 2 || ( a == 2 && b < 10 )) /* CPAL/COLR only supported in 2.10 */
 		return false;
 	return

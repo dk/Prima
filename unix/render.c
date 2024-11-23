@@ -32,7 +32,7 @@ typedef struct {
 
 static Pen pen;
 
-#ifdef NEED_X11_EXTENSIONS_XRENDER_H
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
 /* piece of Xrender guts */
 typedef struct _XExtDisplayInfo {
 	struct _XExtDisplayInfo *next;
@@ -62,7 +62,7 @@ prima_init_xrender_subsystem(char * error_buf, Bool disable_argb32)
 
 	if ( !guts. render_extension ) return true;
 
-#ifdef NEED_X11_EXTENSIONS_XRENDER_H
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
 	{ /* snatch error code from xrender guts */
 		XExtDisplayInfo *info = XRenderFindDisplay( DISP);
 		if ( info && info-> codes)
