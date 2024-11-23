@@ -388,6 +388,8 @@ sub set
 	$o-> $w( \%pr);
 }
 
+sub colored { $_[0]->{OWNER}->is_font_colored }
+
 for ( qw( size name width height direction style pitch encoding vector)) {
 	eval <<GENPROC;
    sub $_
