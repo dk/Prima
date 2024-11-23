@@ -1050,31 +1050,84 @@ EXIT:
 	return ok;
 }
 
+static int
+u32_to_glyph( Handle self, uint32_t index )
+{
+	int n;
+	SCRIPT_VISATTR va[2];
+	WORD out = 0, clusters[2];
+	SCRIPT_CACHE * script_cache;
+	WCHAR in[2] = {
+		0xd800 + ((index - 0x10000) >> 10),
+		0xdc00 + ((index - 0x10000) & 0x3ff)
+	};
+	SCRIPT_ANALYSIS a = {
+		SCRIPT_UNDEFINED,
+		0, 0, 0, 0, 0, 0,
+		{0,0,1,0,0,1,1,0,0,0,0}
+	};
+
+	if ( !( script_cache = get_script_cache(self,SCRIPT_UNDEFINED)))
+		return -1;
+	if ( ScriptShape( sys ps, script_cache, in, 2, 1, &a, &out, clusters, va, &n) != S_OK)
+		return -1;
+	return out;
+}
+
 static Bool
 win32_mapper( Handle self, PTextShapeRec t, Bool unicode)
 {
-	int i, len = t->len;
+	int i, len = t->len, n_glyphs = 0;
 	uint32_t *src = t-> text;
 	uint16_t *glyphs = t->glyphs;
 	INT buf[8192];
-	DWORD ret;
+	DWORD ret = 0;
 
 	if ( len > 8192 ) len = 8192;
 
 	if ( unicode ) {
 		WCHAR *dst = (WCHAR*) buf;
-		for ( i = 0; i < t->len; i++)
-			*(dst++) = *(src++);
-		ret = GetGlyphIndicesW( sys ps, (LPCWSTR)buf, t->len, t->glyphs, GGI_MARK_NONEXISTING_GLYPHS);
+		int u = (*src >= 0x10000) ? 1 : 0, l = 0, d = 0;
+		for ( i = 0; i < t->len; i++) {
+			int uu = (*src > 0x10000);
+
+			if ( uu ) {
+				int ix;
+				if ( !u ) {
+					dst = (WCHAR*) buf;
+					ret = GetGlyphIndicesW( sys ps, (LPCWSTR)buf, l, t->glyphs + d, GGI_MARK_NONEXISTING_GLYPHS);
+					if ( ret == GDI_ERROR ) break;
+					n_glyphs += ret;
+					d += ret;
+					l = 0;
+
+				}
+				ix = u32_to_glyph(self, *(src++));
+				t->glyphs[d] = (ix > 0) ? (uint16_t) ix : 0xffff;
+				n_glyphs++;
+				d++;
+			} else {
+				*(dst++) = *(src++);
+				l++;
+			}
+			u = uu;
+		}
+		if ( l > 0 ) {
+			ret = GetGlyphIndicesW( sys ps, (LPCWSTR)buf, l, t->glyphs + d, GGI_MARK_NONEXISTING_GLYPHS);
+			n_glyphs += ret;
+		}
 	} else {
 		char *dst = (char*) buf;
 		for ( i = 0; i < t->len; i++)
 			*(dst++) = *(src++);
 		ret = GetGlyphIndicesA( sys ps, (LPCSTR)buf, t->len, t->glyphs, GGI_MARK_NONEXISTING_GLYPHS);
+		n_glyphs = ret;
+
 	}
 	if ( ret == GDI_ERROR)
 		apiErrRet;
-	t-> n_glyphs = ret;
+
+	t-> n_glyphs = n_glyphs;
 	for ( i = 0; i < t->n_glyphs; i++, glyphs++)
 		if (*glyphs == 0xffff) *glyphs = 0;
 
@@ -1090,6 +1143,7 @@ win32_mapper( Handle self, PTextShapeRec t, Bool unicode)
 
 	return true;
 }
+
 
 static Bool
 win32_byte_mapper( Handle self, PTextShapeRec t)
@@ -1150,7 +1204,32 @@ apc_gp_get_font_abc( Handle self, int first, int last, int flags)
 	if ( flags & toGlyphs ) {
 		if (!GetCharABCWidthsI( sys ps, first, last - first + 1, NULL, f3)) apiErr;
 	} else if ( flags & toUnicode ) {
-		if (!GetCharABCWidthsFloatW( sys ps, first, last, f2)) apiErr;
+		if ( last >= 0x10000 ) {
+			int i = first, d = 0;
+			if ( first < 0x10000 ) {
+				if (!GetCharABCWidthsFloatW( sys ps, first, 0xffff, f2)) apiErr;
+				i = 0x10000;
+				d = 0x10000 - first;
+			}
+			for ( ; i <= last; i++, d++) {
+				ABC abc;
+				int glyph = u32_to_glyph( self, i );
+				if ( glyph < 0 ) {
+					f2[d].abcfA = f2[d].abcfB = f2[d].abcfC = 0;
+					continue;
+				}
+				if (!GetCharABCWidthsI( sys ps, glyph, 1, NULL, &abc)) {
+					f2[d].abcfA = f2[d].abcfB = f2[d].abcfC = 0;
+					apiErr;
+					continue;
+				}
+				f2[d].abcfA = abc.abcA;
+				f2[d].abcfB = abc.abcB;
+				f2[d].abcfC = abc.abcC;
+			}
+		} else {
+			if (!GetCharABCWidthsFloatW( sys ps, first, last, f2)) apiErr;
+		}
 	} else {
 		if (!GetCharABCWidthsFloatA( sys ps, first, last, f2)) apiErr;
 	}
@@ -1294,7 +1373,15 @@ apc_gp_get_font_def( Handle self, int first, int last, int flags)
 		if ( flags & toGlyphs ) {
 			ret = GetGlyphOutlineW(sys ps, i + first, GGO_METRICS | GGO_GLYPH_INDEX, &g, sizeof(g), NULL, &gmat);
 		} else if ( flags & toUnicode ) {
-			ret = GetGlyphOutlineW(sys ps, i + first, GGO_METRICS, &g, sizeof(g), NULL, &gmat);
+			if ( i + first >= 0x10000 ) {
+				int ix = u32_to_glyph(self, i + first);
+				if ( ix < 0 ) {
+					f1[i].a = f1[i].b = f1[i].c = 0;
+					continue;
+				}
+				ret = GetGlyphOutlineW(sys ps, ix, GGO_METRICS | GGO_GLYPH_INDEX, &g, sizeof(g), NULL, &gmat);
+			} else
+				ret = GetGlyphOutlineW(sys ps, i + first, GGO_METRICS, &g, sizeof(g), NULL, &gmat);
 		} else {
 			ret = GetGlyphOutlineA(sys ps, i + first, GGO_METRICS, &g, sizeof(g), NULL, &gmat);
 		}
@@ -1895,25 +1982,7 @@ apc_gp_get_glyph_outline( Handle self, unsigned int index, unsigned int flags, i
 		(( flags & (ggoUnicode | ggoGlyphIndex)) == ggoUnicode) &&
 		index > 0xffff
 	) {
-		int n;
-		SCRIPT_VISATTR va[2];
-		WORD out = 0, clusters[2];
-		SCRIPT_CACHE * script_cache;
-		WCHAR in[2] = {
-			0xd800 + ((index - 0x10000) >> 10),
-			0xdc00 + ((index - 0x10000) & 0x3ff)
-		};
-		SCRIPT_ANALYSIS a = {
-			SCRIPT_UNDEFINED,
-			0, 0, 0, 0, 0, 0,
-			{0,0,1,0,0,1,1,0,0,0,0}
-		};
-
-		if ( !( script_cache = get_script_cache(self,SCRIPT_UNDEFINED)))
-			return -1;
-		if ( ScriptShape( sys ps, script_cache, in, 2, 1, &a, &out, clusters, va, &n) != S_OK)
-			return -1;
-		index = out;
+		index = u32_to_glyph(self, index);
 		flags |= ggoGlyphIndex;
 		flags &= ~ggoUnicode;
 	}
