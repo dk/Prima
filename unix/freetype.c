@@ -393,8 +393,8 @@ prima_ft_is_font_colored( FT_Face face)
 	if ( a < 2 || ( a == 2 && b < 10 )) /* CPAL/COLR only supported in 2.10 */
 		return false;
 	return
-		FT_Load_Sfnt_Table(face, TTAG_COLR, 0, NULL, &l1) &&
-		FT_Load_Sfnt_Table(face, TTAG_CPAL, 0, NULL, &l2)
+		(FT_Load_Sfnt_Table(face, TTAG_COLR, 0, NULL, &l1) == 0) &&
+		(FT_Load_Sfnt_Table(face, TTAG_CPAL, 0, NULL, &l2) == 0)
 		;
 #else
 	return false;
