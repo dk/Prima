@@ -129,9 +129,9 @@ typedef struct PlotStruct PlotStruct;
 typedef void PlotFunc( int x, int y, int xFrom, int yFrom, int xLen, int yLen, PlotStruct *p);
 
 struct PlotStruct {
-	PImage src_image, dst_image;
-	Byte *src, *dst, *mask;
-	unsigned int src_stride, dst_stride, mask_stride;
+	PIcon src_image, dst_image;
+	Byte *src, *src_mask, *dst, *dst_mask;
+	unsigned int src_stride, src_mask_stride, dst_stride, dst_mask_stride;
 	Byte *color;
 	Rect r;
 
@@ -236,7 +236,7 @@ plot_blend( int x, int y, int xFrom, int yFrom, int xLen, int yLen, PlotStruct *
 		i = 0,
 			s = p->src + yFrom * p->src_stride + xFrom,
 			d = p->dst + y * p->dst_stride + x * p->bytes,
-			m = p->use_dst_alpha ? &p->dst_alpha : p->mask + y * p->mask_stride + x
+			m = p->use_dst_alpha ? &p->dst_alpha : p->dst_mask + y * p->dst_mask_stride + x
 			;
 		i < yLen;
 		i++, s += p->src_stride, d += p->dst_stride
@@ -312,7 +312,98 @@ plot_blend( int x, int y, int xFrom, int yFrom, int xLen, int yLen, PlotStruct *
 #undef BLEND
 
 		if ( !p->use_dst_alpha )
-			m += p->mask_stride;
+			m += p->dst_mask_stride;
+	}
+}
+
+static void
+plot_argb( int x, int y, int xFrom, int yFrom, int xLen, int yLen, PlotStruct *p)
+{
+	int i;
+	Byte *s, *a, *d, *m;
+	Bool use_mbuf  = p->blend2 && p->is_icon;
+	Byte buf1[768], buf2[768], buf3[256], sa = p->src_alpha;
+
+	for (
+		i = 0,
+			s = p->src      + yFrom * p->src_stride      + xFrom,
+			a = p->src_mask + yFrom * p->src_mask_stride + xFrom,
+			d = p->dst      + y * p->dst_stride + x * p->bytes,
+			m = p->use_dst_alpha ? &p->dst_alpha : p->dst_mask + y * p->dst_mask_stride + x
+			;
+		i < yLen;
+		i++,
+			s += p->src_stride,
+			a += p->src_mask_stride,
+			d += p->dst_stride
+	) {
+		int pixels = xLen;
+		Bool curr = 0;
+		register Byte *ss = s, *dd = d, *mm = m, *aa = a;
+		while ( pixels > 0 ) {
+			if ( curr == 0 ) {
+				/* skip pixels */
+				while ( pixels > 0 ) {
+					if ( *aa > 0 )
+						goto FLIP;
+					dd += 3;
+					pixels--;
+					ss += 3;
+					aa ++;
+					if ( !p->use_dst_alpha ) mm++;
+				}
+			} else {
+				/* plot pixels */
+#define BLEND \
+	if ( px1 > 0 ) {                                               \
+		p->blend1( buf1, 1, buf2, 1, dd, mm, 0, px1);          \
+		if ( use_mbuf )                                        \
+			p->blend2( mmbuf, 1, mmbuf, 1, mm, mm, 0, px2);\
+		dd += px1;                                             \
+		if ( !p->use_dst_alpha ) mm += px2;                    \
+	}
+				while ( pixels > 0 ) {
+					register Byte
+						*xbuf  = buf1,
+						*abuf  = buf2,
+						*mbuf  = use_mbuf ? buf3 : buf2;
+					Byte
+						*mmbuf = mbuf;
+					int
+						n = (sizeof(buf3) > pixels) ? pixels : (sizeof(buf3)),
+						px1 = 0,
+						px2 = 0;
+					while (n-- > 0) {
+						if ( *aa != 0 ) {
+							register Byte aaa = *aa++;
+							*xbuf++ = *ss++;
+							*xbuf++ = *ss++;
+							*xbuf++ = *ss++;
+							if ( sa < 255 )
+								aaa = aaa * sa / 255;
+							*abuf++ = aaa;
+							*abuf++ = aaa;
+							*abuf++ = aaa;
+							if ( use_mbuf ) *mbuf++ = aaa;
+							px1 += 3;
+							px2 ++;
+							pixels--;
+							n--;
+						} else {
+							BLEND;
+							goto FLIP;
+						}
+					}
+					BLEND;
+				}
+			}
+		FLIP:
+			curr = !curr;
+		}
+#undef BLEND
+
+		if ( !p->use_dst_alpha )
+			m += p->dst_mask_stride;
 	}
 }
 
@@ -361,16 +452,17 @@ rop_white( int rop )
 
 
 Bool
-img_plot_glyph( Handle self, PImage glyph, int x, int y, PImgPaintContext ctx)
+img_plot_glyph( Handle self, PIcon glyph, int x, int y, PImgPaintContext ctx)
 {
-	PImage i = (PImage) self;
+	PIcon i = (PIcon) self;
 	int w, h, rop = ctx->rop;
 	Bool mono = (glyph->type & imBPP) == 1;
+	Bool argb = glyph->type == 24;
 
 	PlotStruct rec = {
 		glyph, i,
-		glyph->data, i->data, NULL,
-		glyph->lineSize, i->lineSize, 0,
+		glyph->data,     NULL, i->data,     NULL,
+		glyph->lineSize, 0,    i->lineSize, 0,
 		ctx->color,
 		{ x, y, x + glyph->w - 1, y + glyph->h - 1 }
 	};
@@ -421,13 +513,24 @@ img_plot_glyph( Handle self, PImage glyph, int x, int y, PImgPaintContext ctx)
 				warn("img_plot_glyph: cannot use antialiased text on 1-bit-mask icons");
 				return false;
 			}
-			rec.mask        = PIcon(self)->mask;
-			rec.mask_stride = PIcon(self)->maskLine;
+			rec.dst_mask        = PIcon(self)->mask;
+			rec.dst_mask_stride = PIcon(self)->maskLine;
 		} else if ( !rec.use_dst_alpha ) {
 			rec.use_dst_alpha = true;
 			rec.dst_alpha = 0xff;
 		}
-		rec.func  = plot_blend;
+
+		if ( argb ) {
+			if ( i->type != imRGB ) {
+				warn("img_plot_glyph: cannot plot color glyphs on a non-color target");
+				return false;
+			}
+			rec.src_mask        = glyph->mask;
+			rec.src_mask_stride = glyph->maskLine;
+			rec.func            = plot_argb;
+		} else
+			rec.func  = plot_blend;
+
 		rec.bpp   = i->type & imBPP;
 		rec.bytes = rec.bpp / 8;
 	} else {

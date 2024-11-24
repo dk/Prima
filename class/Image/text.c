@@ -1,6 +1,6 @@
 #include "apricot.h"
 #include "guts.h"
-#include "Image.h"
+#include "Icon.h"
 #include "Drawable_private.h"
 #include "Image_private.h"
 #include "img_conv.h"
@@ -355,10 +355,21 @@ plot_next_glyph(
 		size.x       >  0      &&
 		size.y       >  0
 	) {
-		Image src_dummy;
-		img_fill_dummy( &src_dummy, size.x, size.y,
-			imGrayScale | ((flags & ggoMonochrome) ? 1 : 8),
+		Icon src_dummy;
+		img_fill_dummy((PImage) &src_dummy, size.x, size.y,
+			(( bpp == 32 ) ? 24 : bpp|imGrayScale),
 			arena, NULL);
+		if ( bpp == 32 ) {
+			src_dummy.mask = arena + LINE_SIZE(size.x, 24) * size.y;
+			src_dummy.maskType = 8;
+			src_dummy.maskLine = LINE_SIZE(size.x, 8);
+			src_dummy.maskSize = src_dummy.maskLine * size.y;
+		} else {
+			src_dummy.mask = NULL;
+			src_dummy.maskType = 0;
+			src_dummy.maskLine = 0;
+			src_dummy.maskSize = 0;
+		}
 		if ( downgrade_glyph ) {
 			register Byte *s = arena;
 			register unsigned int i = src_dummy.dataSize;
@@ -435,6 +446,9 @@ plot_glyphs( Handle self, PGlyphsOutRec t, int x, int y )
 			return ok;
 		}
 	}
+
+	if ( var->type == imRGB && !(flags & ggoMonochrome) && !emulate_mono_alpha)
+		flags |= ggoARGB;
 
 	if ( !apc_gp_get_text_out_baseline( self)) {
 		dy = var-> font. descent;

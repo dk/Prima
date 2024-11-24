@@ -4328,7 +4328,7 @@ extern PTextShapeFunc
 apc_font_get_text_shaper( Handle self, int *type);
 
 extern Byte*
-apc_font_get_glyph_bitmap( Handle self, uint16_t index, unsigned int flags, PPoint offset, PPoint size, int *advance, int *type);
+apc_font_get_glyph_bitmap( Handle self, uint16_t index, unsigned int flags, PPoint offset, PPoint size, int *advance, int *bpp);
 
 extern Bool
 apc_font_is_colored( Handle self);

@@ -803,12 +803,15 @@ apc_gp_get_mapper_ranges(PFont font, int * count, unsigned int * flags)
 }
 
 Byte*
-apc_font_get_glyph_bitmap( Handle self, uint16_t index, unsigned int flags, PPoint offset, PPoint size, int *advance, int *type)
+apc_font_get_glyph_bitmap( Handle self, uint16_t index, unsigned int flags, PPoint offset, PPoint size, int *advance, int *bpp)
 {
+	*bpp = (flags & ggoMonochrome) ? 1 : 8;
+
 #ifdef USE_FONTQUERY
 	if ( is_opt(optInFontQuery) ) {
-		if ( X(self)->font)
+		if ( X(self)->font) {
 			return prima_fq_get_glyph_bitmap(self, index, flags, offset, size, advance);
+		}
 		return NULL;
 	}
 #endif

@@ -2265,7 +2265,7 @@ apc_font_end_query( Handle self )
 }
 
 Byte*
-apc_font_get_glyph_bitmap( Handle self, uint16_t index, unsigned int flags, PPoint offset, PPoint size, int *advance, int *type)
+apc_font_get_glyph_bitmap( Handle self, uint16_t index, unsigned int flags, PPoint offset, PPoint size, int *advance, int *bpp)
 {
 	int gdi_size;
 	Byte * gdi_buf;
@@ -2297,13 +2297,26 @@ apc_font_get_glyph_bitmap( Handle self, uint16_t index, unsigned int flags, PPoi
 	offset-> y =-gm.gmptGlyphOrigin.y;
 	if ( gdi_size == 0 )
 		size-> x = size-> y = 0;
+	if ( advance ) {
+		ABC x;
+		if (GetCharABCWidthsI( sys ps, index, 1, NULL, &x)) {
+			*advance = x.abcA + x.abcB + x.abcC;
+		} else {
+			*advance = gm.gmCellIncX;
+			apiErr;
+		}
+	}
 
 	if (
+		(gdi_size > 0) &&
 		!(flags & ggoMonochrome) &&
 		(flags & ggoARGB) &&
-		apc_font_is_colored
+		apc_font_is_colored(self)
 	) {
-		//dwrite_draw_bitmap( self, index, *size, *offset);
+		if (( gdi_buf = (Byte*) dwrite_draw_bitmap( self, index, *size, *offset)) != NULL) {
+			*bpp = 32;
+			return gdi_buf;
+		}
 	}
 
 	if (( gdi_buf = malloc(gdi_size)) == NULL ) {
@@ -2317,23 +2330,16 @@ apc_font_get_glyph_bitmap( Handle self, uint16_t index, unsigned int flags, PPoi
 		return NULL;
 	}
 
-	if ( advance ) {
-		ABC x;
-		if (GetCharABCWidthsI( sys ps, index, 1, NULL, &x)) {
-			*advance = x.abcA + x.abcB + x.abcC;
-		} else {
-			*advance = gm.gmCellIncX;
-			apiErr;
-		}
-	}
-
-	if ( !( flags & ggoMonochrome)) {
+	if ( flags & ggoMonochrome) {
+		*bpp = 1;
+	} else {
 		register Byte* buf = gdi_buf;
 		register unsigned int bytes = size->y * (( size->x * 8 + 31) / 32) * 4;
 		while (bytes--) {
 			*buf = *buf * 3.984 + .5; /* 255/64 */
 			buf++;
 		}
+		*bpp = 8;
 	}
 
 	return gdi_buf;

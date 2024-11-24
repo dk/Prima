@@ -1,7 +1,7 @@
 #ifndef _IMG_IMG_CONV_H_
 #define _IMG_IMG_CONV_H_
 #include "guts.h"
-#include "Image.h"
+#include "Icon.h"
 #include <sys/types.h>
 #include <limits.h>
 #ifdef HAVE_UNISTD_H
@@ -345,7 +345,7 @@ extern Bool img_find_blend_proc( int rop, BlendFunc ** blend1, BlendFunc ** blen
 extern Bool img_resample_colors( Handle dest, int bpp, PImgPaintContext ctx);
 extern void img_fill_alpha_buf( Byte * dst, Byte * src, int width, int bpp);
 extern void img_multiply_alpha( Byte * src, Byte * alpha, int alpha_step, Byte * dst, int bytes);
-extern Bool img_plot_glyph( Handle self, PImage glyph, int x, int y, PImgPaintContext ctx);
+extern Bool img_plot_glyph( Handle self, PIcon glyph, int x, int y, PImgPaintContext ctx);
 extern Bool img_aafill( Handle self, NPoint *pts, int n_pts, int rule, PImgPaintContext ctx);
 
 typedef struct _NPolyPolyline {

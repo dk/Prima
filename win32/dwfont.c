@@ -498,20 +498,44 @@ dwrite_draw_bitmap( Handle self, uint16_t index, Point size, Point aperture )
 			ExtTextOutW(dc, t->baseline.x, t->baseline.y, ETO_GLYPH_INDEX, NULL, (LPCWSTR) t->g.glyphs, 1, NULL);
 			break;
 		}
-		break;
 	}
 
 	list_delete_all( l, true );
 	plist_destroy( l );
 
-	if ( ( ret = malloc( size.x * size.y * 4 )) != NULL ) {
-		register uint32_t *src = arena, *dst = ret, n = size.x * size.y;
-		while (n--) {
-			*(dst++) = (*src == 0xffffff) ? 0 : (*src | 0xff000000);
-			src++;
+	{
+#define LINE_SIZE(width,type) (((( width ) * (( type ) & imBPP) + 31) / 32) * 4)
+	int dst_stride = LINE_SIZE( size.x, 24 ), mask_stride = LINE_SIZE( size.x, 8);
+#undef LINE_SIZE
+	if ( ( ret = malloc( (dst_stride + mask_stride) * size.y )) != NULL ) {
+		int y;
+		Byte *dst, *mask;
+		register Byte *src;
+
+		for (
+			y = 0, dst = (Byte*) ret, mask = dst + dst_stride * size.y, src = (Byte*) arena;
+			y < size.y;
+			y++, dst += dst_stride, mask += mask_stride
+		) {
+			register unsigned int n = size.x;
+			register Byte *d = dst, *m = mask;
+			while (n--) {
+				if (*src == 0xff) {
+					*(d++) = 0;
+					*(d++) = 0;
+					*(d++) = 0;
+					*(m++) = 0;
+					src += 4;
+				} else {
+					*(d++) = *(src++);
+					*(d++) = *(src++);
+					*(d++) = *(src++);
+					src++;
+					*(m++) = 0xff;
+				}
+			}
 		}
-		memcpy( ret, arena, size.x * size.y * 4);
-	}
+	}}
 
 	SelectObject(dc, save_bitmap);
 	SelectObject(dc, save_font);
