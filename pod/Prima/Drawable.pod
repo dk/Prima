@@ -627,6 +627,13 @@ Is negative.
 
 Pixel width of the underscore line
 
+=item colored
+
+True if the font has COLR/CPAL information and Prima is compiled with its support,
+so that f ex emoji fonts are displayed with full color.
+
+Same as C<Prima::Drawable::is_font_colored>
+
 =back
 
 =head2 Font ABC metrics
@@ -2380,6 +2387,13 @@ treated as a destination, it means that its alpha content will be updated if dra
 alpha bits.
 
 See also: C<can_draw_alpha>.
+
+=item is_font_colored
+
+True if the current font has COLR/CPAL information and Prima is compiled with its support,
+so that f ex emoji fonts are displayed with full color.
+
+Same as C<Prima::Font::colored>
 
 =item render_glyph INDEX, %OPTIONS
 
