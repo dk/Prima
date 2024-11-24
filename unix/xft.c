@@ -1410,19 +1410,20 @@ prima_xft_get_glyph_outline( Handle self, unsigned int index, unsigned int flags
 }
 
 Byte*
-prima_xft_get_glyph_bitmap( Handle self, uint16_t index, unsigned int flags, PPoint offset, PPoint size, int *advance)
+prima_xft_get_glyph_bitmap( Handle self, uint16_t index, unsigned int flags, PPoint offset, PPoint size, int *advance, int *bpp)
 {
 	DEFXX;
 	Byte *ret;
 	FT_Face face;
 	FT_Int32 ft_flags =
 		FT_LOAD_RENDER |
+		(( flags & ggoARGB     )   ? FT_LOAD_COLOR : 0)      |
 		(( flags & ggoUseHints )   ? 0 : FT_LOAD_NO_HINTING) |
 		(( flags & ggoMonochrome ) ? FT_LOAD_MONOCHROME : 0)
 		;
 	if ( !( face = XftLockFace( XX->font->xft)))
 		return NULL;
-	ret = prima_ft_get_glyph_bitmap(face, index, ft_flags, offset, size, advance);
+	ret = prima_ft_get_glyph_bitmap(face, index, ft_flags, offset, size, advance, bpp);
 	XftUnlockFace(XX->font->xft);
 	return ret;
 }

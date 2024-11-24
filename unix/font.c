@@ -809,16 +809,15 @@ apc_font_get_glyph_bitmap( Handle self, uint16_t index, unsigned int flags, PPoi
 
 #ifdef USE_FONTQUERY
 	if ( is_opt(optInFontQuery) ) {
-		if ( X(self)->font) {
-			return prima_fq_get_glyph_bitmap(self, index, flags, offset, size, advance);
-		}
+		if ( X(self)->font)
+			return prima_fq_get_glyph_bitmap(self, index, flags, offset, size, advance, bpp);
 		return NULL;
 	}
 #endif
 
 #ifdef USE_XFT
 	if ( X(self)-> font-> xft)
-		return prima_xft_get_glyph_bitmap(self, index, flags, offset, size, advance);
+		return prima_xft_get_glyph_bitmap(self, index, flags, offset, size, advance, bpp);
 #endif
 
 	return prima_corefont_get_glyph_bitmap(self, index, flags & ggoMonochrome, offset, size, advance);
@@ -840,7 +839,9 @@ apc_font_is_colored( Handle self)
 
 #ifdef USE_FONTQUERY
 	if ( is_opt(optInFontQuery) ) {
-		return false; /* XXX because colored bitmaps are not supported */
+		Bool ok = prima_ft_is_font_colored(X(self)->font->ft_face);
+		f->has_colors = ok ? 1 : -1;
+		return ok;
 	}
 #endif
 

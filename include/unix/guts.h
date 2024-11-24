@@ -1649,7 +1649,7 @@ extern unsigned long *
 prima_xft_mapper_query_ranges(PFont font, int * count, unsigned int * flags);
 
 extern Byte*
-prima_xft_get_glyph_bitmap( Handle self, uint16_t index, unsigned int flags, PPoint offset, PPoint size, int *advance);
+prima_xft_get_glyph_bitmap( Handle self, uint16_t index, unsigned int flags, PPoint offset, PPoint size, int *advance, int *bpp);
 
 extern Bool
 prima_xft_is_font_colored(Handle self);
@@ -1878,7 +1878,7 @@ extern Bool
 prima_fq_set_font( Handle self, PCachedFont kf);
 
 extern Byte*
-prima_fq_get_glyph_bitmap( Handle self, uint16_t index, unsigned int flags, PPoint offset, PPoint size, int *advance);
+prima_fq_get_glyph_bitmap( Handle self, uint16_t index, unsigned int flags, PPoint offset, PPoint size, int *advance, int *bpp);
 
 extern int
 prima_fq_get_glyph_outline( Handle self, unsigned int index, unsigned int flags, int ** buffer);
@@ -1941,7 +1941,7 @@ extern int
 prima_ft_get_glyph_outline( FT_Face face, FT_UInt ft_index, FT_Int32 ft_flags, int ** buffer);
 
 extern Byte*
-prima_ft_get_glyph_bitmap( FT_Face face, FT_UInt index, FT_Int32 flags, PPoint offset, PPoint size, int *advance);
+prima_ft_get_glyph_bitmap( FT_Face face, FT_UInt index, FT_Int32 flags, PPoint offset, PPoint size, int *advance, int *bpp);
 
 extern Bool
 prima_ft_is_font_colored( FT_Face face);

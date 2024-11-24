@@ -240,17 +240,54 @@ prima_ft_get_glyph_outline( FT_Face face, FT_UInt ft_index, FT_Int32 ft_flags, i
 }
 
 Byte*
-prima_ft_get_glyph_bitmap( FT_Face face, FT_UInt index, FT_Int32 flags, PPoint offset, PPoint size, int *advance)
+prima_ft_get_glyph_bitmap( FT_Face face, FT_UInt index, FT_Int32 flags, PPoint offset, PPoint size, int *advance, int *bpp)
 {
 	Byte *ret = NULL;
+	FT_Bitmap *b;
+	int src_stride;
+	Byte *src;
 
-	if ( FT_Load_Glyph (face, index, flags) == 0 ) {
-		FT_Bitmap *b    = &face->glyph->bitmap;
-		int dst_stride  = ((b->width * ((flags & FT_LOAD_MONOCHROME) ? 1 : 8) + 31) / 32) * 4;
-		int src_stride  = abs(b->pitch);
+	if ( FT_Load_Glyph (face, index, flags) != 0 )
+		return NULL;
+
+	if ( !( b = &face->glyph->bitmap))
+		return NULL;
+
+	src        = b->buffer;
+	src_stride = abs(b->pitch);
+
+#define LINE_SIZE(width,type) (((( width ) * (( type ) & imBPP) + 31) / 32) * 4)
+	if ( b-> pixel_mode == FT_PIXEL_MODE_BGRA ) {
+		int y, dst_stride = LINE_SIZE(b->width, 24 ), mask_stride = LINE_SIZE(b->width, 8);
+		if ( ( ret = malloc( (dst_stride + mask_stride) * b->rows )) != NULL ) {
+			Byte *dst = ret, *mask = dst + dst_stride * b->rows;
+			if ( b->pitch > 0 ) {
+				dst += dst_stride * (b->rows - 1);
+				dst_stride = -dst_stride;
+				mask += mask_stride * (b->rows - 1);
+				mask_stride = -mask_stride;
+			}
+
+			for (
+				y = 0;
+				y < b->rows;
+				y++, dst += dst_stride, mask += mask_stride
+			) {
+				register unsigned int n = b->width;
+				register Byte *d = dst, *m = mask;
+				while (n--) {
+					*(d++) = *(src++);
+					*(d++) = *(src++);
+					*(d++) = *(src++);
+					*(m++) = *(src++);
+				}
+			}
+		}
+		*bpp = 32;
+	} else {
+		int dst_stride  = LINE_SIZE(b->width, (flags & FT_LOAD_MONOCHROME) ? 1 : 8);
 		int bytes       = (src_stride > dst_stride) ? dst_stride : src_stride;
-		Byte *src       = b->buffer;
-		if ( b && ( ret = malloc( b->rows * dst_stride ))) {
+		if (( ret = malloc( b->rows * dst_stride )) != NULL) {
 			int i;
 			Byte *dst = ret;
 			if ( b->pitch > 0 ) {
@@ -259,17 +296,22 @@ prima_ft_get_glyph_bitmap( FT_Face face, FT_UInt index, FT_Int32 flags, PPoint o
 			}
 			for ( i = 0; i < b->rows; i++, src += src_stride, dst += dst_stride)
 				memcpy( dst, src, bytes);
+		}
+		*bpp = (flags & FT_LOAD_MONOCHROME) ? 1 : 8;
+	}
 
-			offset->x = face->glyph->bitmap_left;
-			offset->y = face->glyph->bitmap_top - b->rows;
-			size->x   = b->width;
-			size->y   = b->rows;
-			if ( advance ) {
-				FT_Fixed a = face->glyph->linearHoriAdvance;
-				*advance = (a >> 16) + (((a & 0xffff) > 0x7fff) ? 1 : 0);
-			}
+	if ( ret ) {
+		offset->x = face->glyph->bitmap_left;
+		offset->y = face->glyph->bitmap_top - b->rows;
+		size->x   = b->width;
+		size->y   = b->rows;
+		if ( advance ) {
+			FT_Fixed a = face->glyph->linearHoriAdvance;
+			*advance = (a >> 16) + (((a & 0xffff) > 0x7fff) ? 1 : 0);
 		}
 	}
+#undef LINE_SIZE
+
 	return ret;
 }
 
@@ -392,6 +434,7 @@ prima_ft_is_font_colored( FT_Face face)
 	FT_Library_Version(ft_library,&a,&b,&c);
 	if ( a < 2 || ( a == 2 && b < 10 )) /* CPAL/COLR only supported in 2.10 */
 		return false;
+
 	return
 		(FT_Load_Sfnt_Table(face, TTAG_COLR, 0, NULL, &l1) == 0) &&
 		(FT_Load_Sfnt_Table(face, TTAG_CPAL, 0, NULL, &l2) == 0)
