@@ -3999,6 +3999,7 @@ START_TABLE(ggo,UV)
 #define ggoUseHints     0x02
 #define ggoUnicode      0x04
 #define ggoMonochrome   0x08
+#define ggoARGB         0x10
 
 #define ggoMove         0
 GGO(Move)
@@ -4330,7 +4331,7 @@ extern PTextShapeFunc
 apc_font_get_text_shaper( Handle self, int *type);
 
 extern Byte*
-apc_font_get_glyph_bitmap( Handle self, uint16_t index, unsigned int flags, PPoint offset, PPoint size, int *advance);
+apc_font_get_glyph_bitmap( Handle self, uint16_t index, unsigned int flags, PPoint offset, PPoint size, int *advance, int *type);
 
 extern PFont
 apc_fonts( Handle self, const char *facename, const char *encoding, int *retCount);

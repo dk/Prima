@@ -568,7 +568,7 @@ run combiners on these fonts
 
 */
 static void
-fix_combiners_pdx( Handle self, PGlyphsOutRec t, INT *pdx)
+fix_combiners_pdx( PGlyphsOutRec t, INT *pdx)
 {
 	int i;
 	for ( i = 0; i < t->len; ) {
@@ -629,7 +629,7 @@ text_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y, Bool fixed_pitch
 		}
 
 		if ( fixed_pitch )
-			fix_combiners_pdx(self, t, pdx);
+			fix_combiners_pdx(t, pdx);
 		ok = ExtTextOutW(sys ps, x, y, ETO_GLYPH_INDEX | ETO_PDY, NULL, (LPCWSTR) t->glyphs, t->len, pdx);
 		if ( pdx != dx ) free(pdx);
 		#undef SZ
@@ -2265,7 +2265,7 @@ apc_font_end_query( Handle self )
 }
 
 Byte*
-apc_font_get_glyph_bitmap( Handle self, uint16_t index, unsigned int flags, PPoint offset, PPoint size, int *advance)
+apc_font_get_glyph_bitmap( Handle self, uint16_t index, unsigned int flags, PPoint offset, PPoint size, int *advance, int *type)
 {
 	int gdi_size;
 	Byte * gdi_buf;
@@ -2291,6 +2291,21 @@ apc_font_get_glyph_bitmap( Handle self, uint16_t index, unsigned int flags, PPoi
 		;
 	if (( gdi_size = GetGlyphOutlineW(sys ps, index, format, &gm, 0, NULL, &matrix)) < 0 )
 		return NULL;
+	size-> x   = gm.gmBlackBoxX;
+	size-> y   = gm.gmBlackBoxY;
+	offset-> x = gm.gmptGlyphOrigin.x;
+	offset-> y =-gm.gmptGlyphOrigin.y;
+	if ( gdi_size == 0 )
+		size-> x = size-> y = 0;
+
+	if (
+		!(flags & ggoMonochrome) &&
+		(flags & ggoARGB) &&
+		apc_gp_is_font_colored
+	) {
+		//dwrite_draw_bitmap( self, index, *size, *offset);
+	}
+
 	if (( gdi_buf = malloc(gdi_size)) == NULL ) {
 		warn("Not enough memory");
 		return NULL;
@@ -2302,12 +2317,6 @@ apc_font_get_glyph_bitmap( Handle self, uint16_t index, unsigned int flags, PPoi
 		return NULL;
 	}
 
-	size-> x   = gm.gmBlackBoxX;
-	size-> y   = gm.gmBlackBoxY;
-	offset-> x = gm.gmptGlyphOrigin.x;
-	offset-> y =-gm.gmptGlyphOrigin.y;
-	if ( gdi_size == 0 )
-		size-> x = size-> y = 0;
 	if ( advance ) {
 		ABC x;
 		if (GetCharABCWidthsI( sys ps, index, 1, NULL, &x)) {

@@ -710,6 +710,7 @@ extern void         dwrite_font_done(void);
 extern void         dwrite_free_face(void *face);
 extern Bool         dwrite_is_font_colored( Handle self, PDCFont dcfont);
 extern Bool         dwrite_color_text_out(Handle self, PDCFont dc, PGlyphsOutRec t, int x, int y);
+extern uint32_t*    dwrite_draw_bitmap( Handle self, uint16_t index, Point size, Point aperture );
 extern void         dpi_change(void);
 extern char *       err_msg( DWORD errId, char * buffer);
 extern char *       err_msg_gplus( GpStatus errId, char * buffer);

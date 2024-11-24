@@ -1,6 +1,7 @@
 /* DirectWrite-based fonts */
 
 #define INITGUID
+#include "guts.h"
 #include "win32\win32guts.h"
 
 #include <d2d1.h>
@@ -298,12 +299,12 @@ enumerate_colorrun(IDWriteColorGlyphRunEnumerator1 *enumerator, unsigned int see
 }
 
 static Bool
-is_aa_colr( Handle self, PList l)
+is_aa_colr( Handle self, PList l, int alpha)
 {
 	int i;
 	Bool has_no_advances = false, has_colr = false;
 
-	if ( sys alpha == 255 ) return false;
+	if ( alpha == 255 ) return false;
 
 	for ( i = 0; i < l->count; i++) {
 		GlyphColorRec *t = (GlyphColorRec*) l->items[i];
@@ -418,7 +419,7 @@ dwrite_color_text_out(Handle self, PDCFont dc, PGlyphsOutRec t, int x, int y)
 	if ( !l )
 		return false;
 
-	if ( is_aa_colr( self, l ))
+	if ( is_aa_colr( self, l, sys alpha ))
 		draw_aa_colr( self, dc->hfont, l, x, y );
 	else
 		draw_colorglyphs( self, dc->hfont, l );
@@ -427,6 +428,98 @@ dwrite_color_text_out(Handle self, PDCFont dc, PGlyphsOutRec t, int x, int y)
 	plist_destroy( l );
 
 	return true;
+}
+
+uint32_t*
+dwrite_draw_bitmap( Handle self, uint16_t index, Point size, Point aperture )
+{
+	int i;
+	PList l;
+	HDC dc0, dc;
+	GlyphsOutRec t;
+	uint32_t *arena = NULL, *ret = NULL;
+	uint16_t dummy_advance = 42;
+	int16_t dummy_offset[2] = {0,0};
+	HBITMAP bitmap = NULL, save_bitmap = NULL;
+	HFONT save_font;
+	IDWriteColorGlyphRunEnumerator1 *enumerator;
+
+	if ( !dw_ok ) return false;
+
+	memset( &t, 0, sizeof(t));
+	t.len       = 1;
+	t.glyphs    = &index;
+	t.advances  = &dummy_advance;
+	t.positions = dummy_offset;
+	if ( !( enumerator = get_enumerator(self, sys dc_font, &t, aperture.x, size.y + aperture.y)))
+		return NULL;
+
+	l = enumerate_colorrun( enumerator, t.len );
+	enumerator->lpVtbl->Release(enumerator);
+	if ( !l )
+		return NULL;
+
+	if ( !is_aa_colr( self, l, 0 )) {
+		list_delete_all( l, true );
+		plist_destroy( l );
+		return NULL;
+	}
+
+	dc0 = GetDC(NULL);
+	dc  = CreateCompatibleDC(dc0);
+
+	if ( !( bitmap = image_create_argb_dib_section( dc, size.x, size.y, &arena)))
+		goto EXIT;
+	memset( arena, 0xff, size.x * size.y * 4 );
+
+	save_bitmap = SelectObject(dc, bitmap);
+	save_font   = SelectObject(dc, sys dc_font->hfont);
+	SetTextAlign( dc, TA_BASELINE);
+	SetBkMode   ( dc, TRANSPARENT);
+	if ( !prima_matrix_is_identity( var current_state.matrix )) {
+		Matrix *m = &var current_state.matrix;
+		XFORM xf  = {
+			(*m)[0], -((*m)[1]),
+			-((*m)[2]), (*m)[3],
+			0, 0
+		};
+		SetWorldTransform( dc, &xf );
+	}
+
+	for ( i = 0; i < l->count; i++) {
+		GlyphColorRec *t   = (GlyphColorRec*) l->items[i];
+		switch (t-> format) {
+		case 0:
+			SetTextColor( dc, 0);
+			ExtTextOutW(dc, t->baseline.x, t->baseline.y, ETO_GLYPH_INDEX, NULL, (LPCWSTR) t->g.glyphs, 1, NULL);
+			break;
+		case DWRITE_GLYPH_IMAGE_FORMATS_COLR:
+			SetTextColor( dc, t->has_color ? t->colorref : 0);
+			ExtTextOutW(dc, t->baseline.x, t->baseline.y, ETO_GLYPH_INDEX, NULL, (LPCWSTR) t->g.glyphs, 1, NULL);
+			break;
+		}
+		break;
+	}
+
+	list_delete_all( l, true );
+	plist_destroy( l );
+
+	if ( ( ret = malloc( size.x * size.y * 4 )) != NULL ) {
+		register uint32_t *src = arena, *dst = ret, n = size.x * size.y;
+		while (n--) {
+			*(dst++) = (*src == 0xffffff) ? 0 : (*src | 0xff000000);
+			src++;
+		}
+		memcpy( ret, arena, size.x * size.y * 4);
+	}
+
+	SelectObject(dc, save_bitmap);
+	SelectObject(dc, save_font);
+	DeleteObject(bitmap);
+EXIT:
+	DeleteDC(dc);
+	ReleaseDC(NULL, dc0);
+	return ret;
 }
 
 void

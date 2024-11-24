@@ -803,7 +803,7 @@ apc_gp_get_mapper_ranges(PFont font, int * count, unsigned int * flags)
 }
 
 Byte*
-apc_font_get_glyph_bitmap( Handle self, uint16_t index, unsigned int flags, PPoint offset, PPoint size, int *advance)
+apc_font_get_glyph_bitmap( Handle self, uint16_t index, unsigned int flags, PPoint offset, PPoint size, int *advance, int *type)
 {
 #ifdef USE_FONTQUERY
 	if ( is_opt(optInFontQuery) ) {

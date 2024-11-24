@@ -320,7 +320,7 @@ plot_next_glyph(
 	Byte *arena;
 	Point offset, size;
 	Rect glyph;
-	int default_advance = 0;
+	int default_advance = 0, bpp;
 
 	if ( t->fonts )
 		if ( !Drawable_switch_font(self, savefont, t->fonts[i]))
@@ -331,7 +331,8 @@ plot_next_glyph(
 	if ( !( arena = apc_font_get_glyph_bitmap(
 		self, t->glyphs[i], flags,
 		&offset, &size,
-		t->advances ? NULL : &default_advance
+		t->advances ? NULL : &default_advance,
+		&bpp
 	)))
 		return false;
 
