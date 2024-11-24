@@ -1511,12 +1511,6 @@ apc_gp_get_text_opaque( Handle self)
 }
 
 Bool
-apc_gp_get_text_colored( Handle self)
-{
-	return false;
-}
-
-Bool
 apc_gp_get_text_out_baseline( Handle self)
 {
 	return X(self)-> flags. base_line ? true : false;

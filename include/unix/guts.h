@@ -251,6 +251,7 @@ typedef struct CachedFont {
 	XFont        id;
 	PRotatedFont rotated;
 
+	int8_t       has_colors;
 #ifdef USE_FONTQUERY
 	FT_Face      ft_face;
 	FcCharSet   *fc_charset;
@@ -1650,6 +1651,9 @@ prima_xft_mapper_query_ranges(PFont font, int * count, unsigned int * flags);
 extern Byte*
 prima_xft_get_glyph_bitmap( Handle self, uint16_t index, unsigned int flags, PPoint offset, PPoint size, int *advance);
 
+extern Bool
+prima_xft_is_font_colored(Handle self);
+
 #endif
 
 extern Bool
@@ -1938,6 +1942,9 @@ prima_ft_get_glyph_outline( FT_Face face, FT_UInt ft_index, FT_Int32 ft_flags, i
 
 extern Byte*
 prima_ft_get_glyph_bitmap( FT_Face face, FT_UInt index, FT_Int32 flags, PPoint offset, PPoint size, int *advance);
+
+extern Bool
+prima_ft_is_font_colored( FT_Face face);
 
 extern Bool
 prima_ft_text_shaper_harfbuzz( FT_Face face, PTextShapeRec r);

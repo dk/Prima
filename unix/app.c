@@ -64,12 +64,17 @@ x_error_handler( Display *d, XErrorEvent *ev)
 		return 0;
 	}
 
-#ifdef NEED_X11_EXTENSIONS_XRENDER_H
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
 	if ( ev-> request_code == guts. xft_xrender_major_opcode &&
 		ev-> request_code > 127 &&
-		ev-> error_code == BadLength)
-		/* Xrender large polygon request failed */
+		ev-> error_code == BadLength) {
+		/* Xrender large polygon request failed,
+		or colored glyphs over an older X11 server
+		*/
+		if ( guts. xft_disable_large_fonts )
+			return 1;
 		guts. xft_disable_large_fonts = 1;
+	}
 #endif
 
 #ifdef HAVE_X11_EXTENSIONS_XCOMPOSITE_H

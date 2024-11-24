@@ -1427,6 +1427,19 @@ prima_xft_get_glyph_bitmap( Handle self, uint16_t index, unsigned int flags, PPo
 	return ret;
 }
 
+Bool
+prima_xft_is_font_colored( Handle self )
+{
+	DEFXX;
+	Bool ret;
+	FT_Face face;
+	if ( !( face = XftLockFace( XX->font->xft)))
+		return false;
+	ret = prima_ft_is_font_colored(face);
+	XftUnlockFace(XX->font->xft);
+	return ret;
+}
+
 unsigned long *
 prima_xft_mapper_query_ranges(PFont font, int * count, unsigned int * flags)
 {
