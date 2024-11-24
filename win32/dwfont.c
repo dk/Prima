@@ -451,7 +451,7 @@ dwrite_draw_bitmap( Handle self, uint16_t index, Point size, Point aperture )
 	t.glyphs    = &index;
 	t.advances  = &dummy_advance;
 	t.positions = dummy_offset;
-	if ( !( enumerator = get_enumerator(self, sys dc_font, &t, aperture.x, size.y + aperture.y)))
+	if ( !( enumerator = get_enumerator(self, sys dc_font, &t, 0, 0)))
 		return NULL;
 
 	l = enumerate_colorrun( enumerator, t.len );
@@ -476,13 +476,15 @@ dwrite_draw_bitmap( Handle self, uint16_t index, Point size, Point aperture )
 	save_font   = SelectObject(dc, sys dc_font->hfont);
 	SetTextAlign( dc, TA_BASELINE);
 	SetBkMode   ( dc, TRANSPARENT);
-	if ( !prima_matrix_is_identity( var current_state.matrix )) {
+	{
 		Matrix *m = &var current_state.matrix;
 		XFORM xf  = {
-			(*m)[0], -((*m)[1]),
-			-((*m)[2]), (*m)[3],
-			0, 0
+			(*m)[0], -(*m)[1],
+			-(*m)[2], (*m)[3],
+			-aperture.x,
+			(size.y + aperture.y)
 		};
+		SetGraphicsMode( dc, GM_ADVANCED);
 		SetWorldTransform( dc, &xf );
 	}
 
