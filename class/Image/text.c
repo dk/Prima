@@ -323,7 +323,7 @@ plot_next_glyph(
 	int default_advance = 0, bpp;
 
 	if ( t->fonts )
-		if ( !Drawable_switch_font(self, savefont, t->fonts[i]))
+		if ( !my->switch_font(self, savefont, t->fonts[i]))
 			return true;
 
 	if ( downgrade_glyph )
@@ -476,18 +476,18 @@ plot_glyphs( Handle self, PGlyphsOutRec t, int x, int y )
 		Image_color2pixel( self, c, ctx.color);
 	}
 
-	Drawable_save_font( self, &savefont );
+	my->save_font( self, &savefont );
 	for ( i = 0; i < t->len; i++) {
 		if ( !plot_next_glyph(
 			self, t,
 			i, flags, emulate_mono_alpha, &o, &advance, straight, matrix, pos_matrix,
 			&ctx, &savefont
 		)) {
-			Drawable_restore_font( self, &savefont );
+			my->restore_font( self, &savefont );
 			return false;
 		}
 	}
-	Drawable_restore_font( self, &savefont );
+	my->restore_font( self, &savefont );
 
 	if ( var-> font.style & (fsUnderlined|fsStruckOut) )
 		draw_lines( self, advance, matrix, straight, flags & ggoMonochrome, emulate_mono_alpha, color, &ctx, &gp_save);

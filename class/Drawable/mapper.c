@@ -422,7 +422,7 @@ Drawable_switch_font_internal( Handle self, SaveFont *f, uint16_t fid, Bool quic
 		return true;
 
 	if ( fid == 0 ) {
-		Drawable_restore_font( self, f );
+		my->restore_font( self, f );
 		return true;
 	}
 
