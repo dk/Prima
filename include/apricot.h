@@ -523,6 +523,7 @@ typedef struct _PostMsg {
 #define hash_fetch_key     prima_hash_fetch_key
 #define hash_delete        prima_hash_delete
 #define hash_store         prima_hash_store
+#define hash_store_release prima_hash_store_release
 #define hash_count         prima_hash_count
 #define hash_first_that    prima_hash_first_that
 #endif
@@ -548,6 +549,9 @@ prima_hash_delete( PHash self, const void *key, int keyLen, Bool kill);
 
 extern Bool
 prima_hash_store( PHash self, const void *key, int keyLen, void *val);
+
+extern Bool
+prima_hash_store_release( PHash self, const void *key, int keyLen, void *val);
 
 #define prima_hash_count(hash) (HvKEYS(( HV*) hash))
 

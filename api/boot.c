@@ -172,6 +172,9 @@ XS( prima_cleanup)
 	list_delete_all( &prima_guts.static_objects, true);
 	list_destroy( &prima_guts.static_objects);
 	list_destroy( &prima_guts.post_destroys);
+	hash_destroy( prima_guts.cache, true);
+	prima_guts.vmt_hash = NULL;
+	prima_guts.cache = NULL;
 	prima_kill_zombies();
 	if ( prima_guts.init_ok > 2) window_subsystem_done();
 	list_first_that( &prima_guts.static_hashes, (void*)kill_hashes, NULL);
@@ -375,6 +378,7 @@ if (sizeof(s1) != (s2)) { \
 	list_create( &prima_guts.post_destroys,  16, 16);
 	prima_guts.objects   = hash_create();
 	prima_guts.vmt_hash  = hash_create();
+	prima_guts.cache     = hash_create();
 
 	register_constants();
 	register_classes();

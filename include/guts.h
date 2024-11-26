@@ -35,6 +35,7 @@ typedef struct {
 	PAnyObject kill_chain;
 	PAnyObject ghost_chain;
 	Bool       app_is_dead;
+	PHash      cache;
 } PrimaGuts, *PPrimaGuts;
 
 #define P_APPLICATION PApplication(prima_guts.application)
@@ -188,6 +189,39 @@ typedef struct {
 #define IMGDUP_C(d)          (CIcon(d.dup))
 #define IMGDUP_H(d)          d.dup
 #define IMGDUP_CALL(d,f,...) (CIcon(d.dup))->f(d.dup,__VA_ARGS__)
+
+#define MAX_CACHE_KEY_LEN 128
+#pragma pack(1)
+typedef struct
+{
+	int type;
+	Byte data[MAX_CACHE_KEY_LEN];
+} PrimaCacheKey;
+
+typedef struct
+{
+	unsigned int refcnt, size;
+	Byte data[0];
+} PrimaValueKey;
+#pragma pack()
+
+#define prima_cache_lock(v) if (v) v->refcnt++
+#define prima_cache_unlock_only(v) if (v && v->refcnt > 0) v->refcnt--
+
+void
+prima_cache_release( int type, void *key, unsigned int key_size);
+
+PrimaValueKey*
+prima_cache_get( int type, void *key, unsigned int key_size);
+
+void
+prima_cache_set( int type, void *key, unsigned int key_size, void* value, unsigned int value_size);
+
+void
+prima_cache_delete( int type, void *key, unsigned int key_size);
+
+void
+prima_cache_purge( int type, unsigned int max_entries);
 
 #ifdef __cplusplus
 }
