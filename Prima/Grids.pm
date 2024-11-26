@@ -2916,11 +2916,11 @@ C<Prima::GridViewer> is derived from C<Prima::AbstractGridViewer>.
 
 =over
 
-=item allowChangeCellHeight
+=item allowChangeCellHeight INTEGER
 
 Default value: 1
 
-=item allowChangeCellWidth
+=item allowChangeCellWidth INTEGER
 
 Default value: 1
 
