@@ -2922,20 +2922,25 @@ Default value: 1
 
 Default value: 1
 
-=item cell COLUMN, ROW, [ DATA ]
+=item cell COLUMN, ROW, ITEM
 
-Run-time property. Selects the data in the cell with COLUMN and ROW coordinates.
+Run-time property. Run-time property. Populates the cell with 
+COLUMN and ROW coordinates with ITEM
+Example:
+$grid->cell(0,1,'x');
 
-=item cells [ ARRAY ]
+=item cells \@ITEMS
 
-The property accepts or returns all cells as a two-dimensional
-rectangular array or scalars.
+Populates the grid cells with items, filling them row by row.
+Example:
+# this grid has two rows and three columns
+$grid->cells([ [qw(x y z)], [qw(z y x)], ]), 
 
-=item columns INDEX
+=item columns NUMBER
 
 A read-only property; returns the number of columns.
 
-=item rows INDEX
+=item rows NUMBER
 
 A read-only property; returns the number of rows.
 
@@ -2945,51 +2950,83 @@ A read-only property; returns the number of rows.
 
 =over
 
-=item add_column CELLS
+=item add_column @ITEMS
 
-Inserts a one-dimensional array of scalars to the end of columns.
+Accepts an array of strings (or list) representing a single column.
+Appends the column to the end of the existing columns.
+Example:
+add_column('Row 1 Col 3', 'Row 2 Col 3', 'Row 3 Col 3');
 
-=item add_columns CELLS
+=item add_columns \@ITEMS, [\@ITEMS, ...]
 
-Inserts a two-dimensional array of scalars to the end of columns.
+Accepts one or more array references, each representing a single column.
+Appends the columns to the end of the existing columns.
+Example:
+add_columns(['Row 1 Col 3', 'Row 2 Col 3'], ['Row 1 Col 4', 'Row 2 Col 4']);
 
-=item add_row CELLS
+=item add_row @ITEMS
 
-Inserts a one-dimensional array of scalars to the end of rows.
+Accepts an array of strings (or list) representing a single row.
+Appends the row to the end of the existing rows.
+Example:
+add_row('Row 2 Col 1', 'Row 2 Col 2', 'Row 2 Col 3');
 
-=item add_rows CELLS
+=item add_rows \@ITEMS, [\@ITEMS, ...]
 
-Inserts a two-dimensional array of scalars to the end of rows.
+Accepts one or more array references, each representing a single row.
+Appends the rows to the end of the existing rows.
+Example:
+add_rows(['Row 2 Col 1', 'Row 2 Col 2'], ['Row 3 Col 1', 'Row 3 Col 2']);
 
-=item delete_columns OFFSET, LENGTH
+=item delete_columns OFFSET, COUNT
 
-Removes LENGTH columns starting from OFFSET. Negative values
-are accepted.
+Removes COUNT columns starting from OFFSET (= index of the first column to remove). 
+Negative OFFSET values are accepted.
+Example:
+# removes the second column
+delete_columns(1, 1); 
 
-=item delete_rows OFFSET, LENGTH
+=item delete_rows OFFSET, COUNT
 
-Removes LENGTH rows starting from OFFSET. Negative values
-are accepted.
+Removes COUNT rows starting from OFFSET (= index of the first row to remove). 
+Negative OFFSET values are accepted.
+Example:
+# removes the second row
+delete_rows(1, 1); 
 
-=item insert_column OFFSET, CELLS
+=item insert_column OFFSET, @ITEMS
 
-Inserts a one-dimensional array of scalars as column OFFSET.
-Negative values are accepted.
+Inserts an array of strings (or list) representing a single column 
+in column OFFSET. Negative OFFSET values are accepted.
+Example:
+my @ITEMS = qw(a b c);
+# inserts @ITEMS as the first column
+insert_column(0, @ITEMS);
 
-=item insert_columns OFFSET, CELLS
+=item insert_columns OFFSET \@ITEMS, [\@ITEMS, ...]
 
-Inserts a two-dimensional array of scalars in column OFFSET.
-Negative values are accepted.
+Accepts one or more array references, each representing a single column.
+Inserts the columns in column OFFSET. Negative OFFSET values are accepted.
+Example:
+# inserts two columns starting at index 1
+insert_columns(1, ['Row 1 Col 3', 'Row 2 Col 3'], ['Row 1 Col 4', 'Row 2 Col 4']); 
 
-=item insert_row
+=item insert_row OFFSET, @ITEMS
 
-Inserts a one-dimensional array of scalars as row OFFSET.
-Negative values are accepted.
+Inserts an array of strings (or list) representing a single row in row OFFSET.
+Negative OFFSET values are accepted.
+Example:
+my @ITEMS = qw(a b c);
+# inserts @ITEMS as the first row
+insert_row(0, @ITEMS); 
 
-=item insert_rows
+=item insert_rows OFFSET \@ITEMS, [\@ITEMS, ...]
 
-Inserts a two-dimensional array of scalars in row OFFSET.
-Negative values are accepted.
+Accepts one or more array references, each representing a single row.
+Inserts the rows in row OFFSET. Negative OFFSET values are accepted.
+Example:
+# inserts two rows at the beginning (index 0)
+insert_rows(0, ['Row 2 Col 1', 'Row 2 Col 2'], ['Row 3 Col 1', 'Row 3 Col 2']); 
 
 =back
 
