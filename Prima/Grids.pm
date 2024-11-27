@@ -2269,8 +2269,9 @@ sub insert_column
 	my ( $self, $column, @cells) = @_;
 	my $c = $self-> {columns};
 	$column = $c if $column > $c;
+	my $r = $self-> {rows};
 	my $i;
-	my $lim = ( scalar(@cells) < $c) ? scalar(@cells) : $c;
+	my $lim = ( scalar(@cells) < $r) ? scalar(@cells) : $r;
 	for ( $i = 0; $i < $lim; $i++) {
 		$c = $self-> {cells}-> [$i];
 		splice( @$c, $column, 0, $cells[$i]);
