@@ -526,15 +526,10 @@ sub canon_name
 
 sub find_cdeps
 {
-	my ( $cfile, $deps, $included) = @_;
+	my ( $cfile) = @_;
 
-	$deps ||= {};
-	$included ||= {};
-
-	return () if exists $deps->{ $cfile};
-	$deps->{ $cfile} = [];
-	return @{ $alldeps{ $cfile}} if exists $alldeps{ $cfile};
-	$alldeps{ $cfile} = [];
+	return sort keys %{ $alldeps{ $cfile}} if exists $alldeps{ $cfile};
+	$alldeps{ $cfile} = {};
 	return () unless -f $cfile;
 
 	open my $cf, "<", $cfile or die "Cannot open $cfile: $!";
@@ -545,17 +540,11 @@ sub find_cdeps
 		my $i = find_file( $incfile);
 		$incfile = defined($i) ? $i : "include/generic/$incfile";
 		$incfile = canon_name( $incfile);
-		unless ( exists $included->{ $incfile}) {
-			push @{ $alldeps{ $cfile}}, $incfile;
-			push @{ $deps->{ $cfile}}, $incfile;
-			$included->{ $incfile} = 1;
-		}
-		my @subdeps = find_cdeps( $incfile, $deps, $included);
-		push @{ $deps->{ $cfile}}, @subdeps;
-		push @{ $alldeps{ $cfile}}, @subdeps;
+		my @subdeps = find_cdeps( $incfile);
+		$alldeps{ $cfile}->{$_} = 1 for $incfile, @subdeps;
 	}
 	close $cf;
-	return @{ $deps->{ $cfile}};
+	return sort keys %{$alldeps{ $cfile}};
 }
 
 sub cc_command_line
