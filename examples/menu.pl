@@ -138,7 +138,7 @@ sub test_toplevels
 		}];
 		push @menu, [ "-\@t2-$i", $img[$i], sub {}];
 	};
-	TestWindow->new(
+	Prima::Window->new(
 		menuItems => \@menu,
 		size => [ 600, $::application->font->height ],
 		text => 'Toplevel images',
