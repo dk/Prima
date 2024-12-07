@@ -173,13 +173,18 @@ menu_window_delete_downlinks( PMenuSysData XX, PMenuWindow wx)
 }
 
 static int
-get_text_width( PCachedFont font, const char * text, int byte_length, Bool utf8, uint32_t * fc_map8)
+get_text_width( PCachedFont font, const char * text, int byte_length, Bool utf8, uint32_t * fc_map8, Bool for_right_align)
 {
 	int ret = 0;
 	int char_len = utf8 ? utf8_length(( U8*) text, ( U8*) text + byte_length) : byte_length;
 #ifdef USE_XFT
-	if ( font-> xft)
-		return prima_xft_get_text_width( font, text, char_len, utf8 ? toUTF8 : 0, fc_map8, NULL);
+	if ( font-> xft) {
+		int w;
+		Point ovx;
+		w = prima_xft_get_text_width( font, text, char_len, utf8 ? toUTF8 : 0, fc_map8, for_right_align ? &ovx : NULL);
+		if ( for_right_align ) w += ovx.y;
+		return w;
+	}
 #endif
 	if ( utf8) {
 		XChar2b * xc = prima_alloc_utf8_to_wchar( text, char_len);
@@ -249,8 +254,9 @@ text_out( PCachedFont font, const char * text, int length, int x, int y,
 		xftcolor.color.blue  = COLOR_B16(data-> rgb);
 		xftcolor.color.alpha = 0xffff;
 		xftcolor.pixel       = data-> pixel;
-		XftDrawString32(( XftDraw*) data-> xft_drawable, &xftcolor,
-							font-> xft, x, y, ( FcChar32*)text, length);
+		XftDrawString32(
+			( XftDraw*) data-> xft_drawable, &xftcolor,
+			font-> xft, x, y, ( FcChar32*)text, length);
 		return;
 	}
 #endif
@@ -499,9 +505,9 @@ update_menu_window( PMenuSysData XX, PMenuWindow w)
 					}
 				}
 				ix-> width += startx + get_text_width( kf, m-> text, i,
-					m-> flags. utf8_text, fc_map8);
+					m-> flags. utf8_text, fc_map8, false);
 				if ( ntildas)
-					ix-> width -= ntildas * get_text_width( kf, "~", 1, false, fc_map8);
+					ix-> width -= ntildas * get_text_width( kf, "~", 1, false, fc_map8, false);
 			} else if ( create_menu_bitmap(m->bitmap, &ix->bitmap, layered, m->flags.disabled, &w, &h)) {
 				ix-> height += (( h < kf-> font. height) ?  kf-> font. height : h) +
 					MENU_ITEM_GAP * 2;
@@ -518,7 +524,7 @@ update_menu_window( PMenuSysData XX, PMenuWindow w)
 
 			if ( m-> accel && ( l = strlen( m-> accel))) {
 				ix-> accel_width = get_text_width( kf, m-> accel, l,
-					m-> flags. utf8_accel, fc_map8);
+					m-> flags. utf8_accel, fc_map8, true);
 			}
 			if ( ix-> accel_width + ix-> width > x) x = ix-> accel_width + ix-> width;
 		}
@@ -658,7 +664,7 @@ menu_item_size( PMenuSysData XX, PMenuWindow w, int index)
 			while ( index--) m = m-> next;
 			if ( m-> flags. divider) return ret;
 			ret. x = MENU_XOFFSET * 2 + ix-> width;
-			if ( m-> accel) ret. x += MENU_XOFFSET / 2+ ix-> accel_width;
+			if ( m-> accel) ret. x += MENU_XOFFSET / 2 + ix-> accel_width;
 		} else if ( index == w-> last + 1) {
 			ret. x = MENU_XOFFSET * 2 + XX-> guillemots;
 		} else
@@ -961,7 +967,7 @@ DECL_DRAW(text)
 						haveDash = 1;
 						lineEnd = lineStart + 1 +
 							get_text_width( kf, t + i + 1, 1,
-								m-> flags. utf8_text, draw-> fc_map8);
+								m-> flags. utf8_text, draw-> fc_map8, false);
 					}
 					i++;
 				}
