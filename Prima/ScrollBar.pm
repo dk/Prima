@@ -247,27 +247,25 @@ sub on_paint
 		my @rect = @{$self-> { tab}-> { rect}};
 		my $lenx = $self-> { tab}-> { q(length)};
 
-		for ( qw( left right))
+		for my $part ( qw( left right))
 		{
-			if ( defined $self-> { $_}-> {rect})
-			{
-				my @r = @{$self-> {$_}-> {rect}};
-				if ( $skin ne 'flat') {
-					$canvas-> color( $c3d[1]);
-					$v ? ( $canvas-> line( $r[0]-1, $r[1], $r[0]-1, $r[3])):
-						( $canvas-> line( $r[0], $r[3]+1, $r[2], $r[3]+1));
-				}
-				$canvas-> color( $self-> {$_}-> {pressed} ? $clr[0] : $clr[1]);
-				if ( $skin eq 'xp') {
-					$canvas-> backColor( $c3d[0]);
-					$canvas-> rop2(rop::CopyPut);
-					$canvas-> fillPattern([(0xAA,0x55) x 4]);
-					$canvas-> bar( @r);
-					$canvas-> fillPattern(fp::Solid);
-					$canvas-> rop2(rop::NoOper);
-				} else {
-					$canvas-> bar( @r);
-				}
+			my $p = $self->{$part} or next;
+			my @r = @{$p-> {rect}};
+			if ( $skin ne 'flat') {
+				$canvas-> color( $c3d[1]);
+				$v ? ( $canvas-> line( $r[0]-1, $r[1], $r[0]-1, $r[3])):
+					( $canvas-> line( $r[0], $r[3]+1, $r[2], $r[3]+1));
+			}
+			$canvas-> color( $p->{pressed} ? $clr[0] : $clr[1]);
+			if ( $skin eq 'xp') {
+				$canvas-> backColor( $c3d[0]);
+				$canvas-> rop2(rop::CopyPut);
+				$canvas-> fillPattern([(0xAA,0x55) x 4]);
+				$canvas-> bar( @r);
+				$canvas-> fillPattern(fp::Solid);
+				$canvas-> rop2(rop::NoOper);
+			} else {
+				$canvas-> bar( @r);
 			}
 		}
 
@@ -675,11 +673,11 @@ sub reset
 			my @r2 = ( 2, $btx, $maxx - 1, $rect[1] - 1);
 			my @r1 = ( 2, $rect[3], $maxx - 1, $maxy - $btx);
 			$self-> { left}-> {rect}  = ( $r1[ 1] < $r1[ 3]) ? [ @r1] : undef;
-			$self-> { right}-> {rect} = ( $r2[ 1] < $r2[ 3]) ? [ @r2] : undef;
+			$self-> { right}-> {rect} = ( $r2[ 1] <= $r2[ 3]) ? [ @r2] : undef;
 		} else {
 			my @r1 = ( $btx, 1, $rect[ 0] - 1, $maxy - 2);
 			my @r2 = ( $rect[ 2], 1, $maxx - $btx, $maxy - 2);
-			$self-> { left}-> {rect}  = ( $r1[ 0] < $r1[ 2]) ? [ @r1] : undef;
+			$self-> { left}-> {rect}  = ( $r1[ 0] <= $r1[ 2]) ? [ @r1] : undef;
 			$self-> { right}-> {rect} = ( $r2[ 0] < $r2[ 2]) ? [ @r2] : undef;
 		}
 	}
@@ -818,7 +816,7 @@ sub skin
 {
 	return $_[0]->SUPER::skin unless $#_;
 	my $self = shift;
-	$self->SUPER::skin($_[1]);
+	$self->SUPER::skin($_[0]);
 	$self->reset if defined $self->{value};
 	$self->repaint;
 }
