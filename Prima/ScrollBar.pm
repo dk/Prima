@@ -249,7 +249,8 @@ sub on_paint
 
 		for my $part ( qw( left right))
 		{
-			my $p = $self->{$part} or next;
+			my $p = $self->{$part};
+			next unless $p->{rect};
 			my @r = @{$p-> {rect}};
 			if ( $skin ne 'flat') {
 				$canvas-> color( $c3d[1]);
