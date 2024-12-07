@@ -190,10 +190,18 @@ get_text_width( PCachedFont font, const char * text, int byte_length, Bool utf8,
 		XChar2b * xc = prima_alloc_utf8_to_wchar( text, char_len);
 		if ( xc) {
 			ret = XTextWidth16( font-> fs, xc, char_len);
+			if ( for_right_align ) {
+				Point ovx = prima_corefont_get_text_overhangs( font->fs, text, char_len, toUTF8);
+				ret += ovx.y;
+			}
 			free( xc);
 		}
 	} else {
 		ret = XTextWidth( font-> fs, text, byte_length);
+		if ( for_right_align ) {
+			Point ovx = prima_corefont_get_text_overhangs( font->fs, text, char_len, 0);
+			ret += ovx.y;
+		}
 	}
 	return ret;
 }

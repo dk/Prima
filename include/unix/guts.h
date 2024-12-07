@@ -1280,6 +1280,9 @@ prima_corefont_pp2font( char * ppFontNameSize, PFont font);
 extern PCachedFont
 prima_corefont_match(PFont match, Bool by_size, PCachedFont kf);
 
+extern Point
+prima_corefont_get_text_overhangs( XFontStruct *fs, const char *text, int len, int flags);
+
 extern Bool
 prima_corefont_encoding( char * encoding);
 
