@@ -1242,19 +1242,22 @@ sub on_paint
 			$canvas-> line( $x - 0, $y - 2, $x + $s * DefBookmarkX - 4, $y - $s * DefBookmarkX + 2);
 			$canvas-> line( $x + 5, $y - $s * DefBookmarkX - 2, $x + $s * DefBookmarkX - 5, $y - $s * DefBookmarkX - 2);
 
-			my $S = int($s);
+			my $S = int($s + .5);
 			my $dx = $s * DefBookmarkX / 2;
+			my $ds = int(($s - $S) * 4 + .5);
 			my ( $x1, $y1) = ( $x + $dx, $y - $dx);
 			$canvas-> polyline([
-				$x + $s * 4,  $y - $s * DefBookmarkX + $s * 6,
-				$x + $s * 10, $y - $s * DefBookmarkX + $s * 6,
-				$x + $s * 10, $y1 - $s * 8]) if $ar & 1;
+				$x + $S * 4,  $ds + $y - $s * DefBookmarkX + $s * 6,
+				$x + $S * 10, $ds + $y - $s * DefBookmarkX + $s * 6,
+				$x + $S * 10, $ds + $y1 - $s * 8
+			]) if $ar & 1;
 
 			if ( $ar & 2 ) {
-				$canvas-> line( $x1 + $S * 1, $y1 + $S * 4, $x1 + $S * 3, $y1 + $S * 4);
-				$canvas-> line( $x1 + $S * 5, $y1 + $S * 6, $x1 + $S * 5, $y1 + $S * 8);
-				$canvas-> polyline([ $x1 + $S * 3, $y1 + $S * 2, $x1 + $S * 5, $y1 + $S * 2,
-					$x1 + $S * 5, $y1 + $S * 4, $x1 + $S * 7, $y1 + $S * 4, $x1 + $S * 7, $y1 + $S * 6]);
+				$canvas-> matrix->scale($S)->translate($ds + $x1, $ds + $y1);
+				$canvas-> line( 1, 4, 3, 4);
+				$canvas-> line( 5, 6, 5, 8);
+				$canvas-> polyline([ 3, 2, 5, 2, 5, 4, 7, 4, 7, 6 ]);
+				$canvas-> matrix->reset;
 			}
 			$canvas-> color( $c3d[1]);
 			$canvas-> line( $x - 1, $y - 7, $x + $s * DefBookmarkX - 9, $y - $s * DefBookmarkX + 1);
@@ -1264,15 +1267,16 @@ sub on_paint
 				$canvas-> line( $s * DefBorderX + 4, $y - $fh * 1.6 - 1, $x - $s * 6, $y - $fh * 1.6 - 1);
 			}
 			$canvas-> polyline([
-				$x + $s * 4,  $y - $s * DefBookmarkX + $s * 6,
-				$x + $s * 4,  $y1 - $s * 8,
-				$x + $s * 10, $y1 - $s * 8
+				$x + $S * 4,  $ds + $y - $s * DefBookmarkX + $s * 6,
+				$x + $S * 4,  $ds + $y1 - $s * 8,
+				$x + $S * 10, $ds + $y1 - $s * 8
 			]) if $ar & 1;
 			if ( $ar & 2 ) {
-				$canvas-> line( $x1 + $S * 3, $y1 + $S * 2, $x1 + $S * 3, $y1 + $S * 3);
-				$canvas-> line( $x1 + $S * 6, $y1 + $S * 6, $x1 + $S * 7, $y1 + $S * 6);
-				$canvas-> polyline([ $x1 + $S * 1, $y1 + $S * 4, $x1 + $S * 1, $y1 + $S * 6,
-					$x1 + $S * 3, $y1 + $S * 6, $x1 + $S * 3, $y1 + $S * 8, $x1 + $S * 5, $y1 + $S * 8]);
+				$canvas-> matrix->scale($S)->translate($ds + $x1, $ds + $y1);
+				$canvas-> line( 3, 2, 3, 3);
+				$canvas-> line( 6, 6, 7, 6);
+				$canvas-> polyline([ 1, 4, 1, 6, 3, 6, 3, 8, 5, 8]);
+				$canvas-> matrix->reset;
 			}
 			$canvas-> color( cl::Black);
 			$canvas-> line( $x - 1, $y - 2, $x + $s * DefBookmarkX - 4, $y - $s * DefBookmarkX + 1);
