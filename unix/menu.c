@@ -560,7 +560,7 @@ update_menu_window( PMenuSysData XX, PMenuWindow w)
 }
 
 static int
-menu_point2item( PMenuSysData XX, PMenuWindow w, int x, int y, PMenuItemReg * m_ptr)
+menu_point2item( PMenuSysData XX, PMenuWindow w, int x, int y)
 {
 	int l = 0, r = 0, index = 0;
 	PMenuItemReg m;
@@ -586,10 +586,8 @@ menu_point2item( PMenuSysData XX, PMenuWindow w, int x, int y, PMenuItemReg * m_
 					if ( m-> accel) r += MENU_XOFFSET/2 + ix-> accel_width;
 				} else
 					r += MENU_XOFFSET * 2 + XX-> guillemots;
-				if (x >= l && x <= r) {
-					if ( m_ptr) *m_ptr = m;
-					return index;
-				}
+				if (x >= l && x <= r)
+					return m->flags.disabled ? -1 : index;
 				if ( index > w-> last) return -1;
 			}
 			l = r;
@@ -610,10 +608,8 @@ menu_point2item( PMenuSysData XX, PMenuWindow w, int x, int y, PMenuItemReg * m_
 			} else {
 				r += ix-> height;
 			CHECK:
-				if ( y >= l && y <= r) {
-					if ( m_ptr) *m_ptr = m;
-					return index;
-				}
+				if ( y >= l && y <= r)
+					return m->flags.disabled ? -1 : index;
 				if ( index > w-> last) return -1;
 			}
 			l = r;
@@ -1690,7 +1686,7 @@ handle_menu_motion( XEvent *ev, XWindow win, Handle self)
 	if ( guts. currentMenu != self) return;
 
 	w = get_menu_window( self, win);
-	px = menu_point2item( XX, w, ev-> xmotion.x, ev-> xmotion.y, NULL);
+	px = menu_point2item( XX, w, ev-> xmotion.x, ev-> xmotion.y);
 	menu_select_item( self, w, px);
 	m = w-> m;
 	if ( px >= 0) {
@@ -1731,7 +1727,7 @@ handle_menu_button( XEvent *ev, XWindow win, Handle self)
 		prima_end_menu();
 		return;
 	}
-	px = menu_point2item( XX, w, ev-> xbutton. x, ev-> xbutton.y, NULL);
+	px = menu_point2item( XX, w, ev-> xbutton. x, ev-> xbutton.y);
 	if ( px < 0) {
 		if ( XX-> wstatic. w == win)
 			prima_end_menu();
@@ -1929,7 +1925,7 @@ handle_menu_key( XEvent *ev, XWindow win, Handle self)
 			m = w-> m;
 			z = sel;
 			while ( z--) m = m-> next;
-			if ( sel == w-> last + 1 || !m-> flags. divider) {
+			if ( sel == w-> last + 1 || ( !m-> flags. divider && !m-> flags. disabled)) {
 				menu_select_item( self, w, sel);
 				menu_window_delete_downlinks( XX, w);
 				if ( piles) {
