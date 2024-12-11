@@ -2162,6 +2162,7 @@ prima_end_menu(void)
 		free_unix_items( w);
 		free( w);
 		XX-> w = NULL;
+		send_command(guts.currentMenu, cmMenuLeave, NULL);
 	} else {
 		XX-> w-> next = NULL;
 		menu_select_item( guts.currentMenu, XX-> w, -100);
