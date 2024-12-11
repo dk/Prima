@@ -559,6 +559,8 @@ sub update_shape
 	$self->shape($shape);
 }
 
+sub indents {0,0,0,0}
+
 sub on_paint
 {
 	my ($self,$canvas)  = @_;
@@ -589,6 +591,9 @@ sub on_paint
 		$self->paint_classic($canvas, @size, @clr);
 	}
 	$shift += $self-> {pressed} ? 2 : 0;
+	my @indents = $self->indents;
+	my @ofs = ($indents[0], $indents[1]);
+	my @ext = ($size[0] - $indents[2] - $indents[0], $size[1] - $indents[3] - $indents[1]);
 
 	my $capOk = length($self-> text) > 0;
 	my ( $fw, $fh) = $capOk ? $self-> caption_box($canvas) : ( 0, 0);
@@ -645,21 +650,21 @@ sub on_paint
 		my ( $imAtX, $imAtY);
 		if ( $capOk) {
 			if ( $self-> { vertical}) {
-				$imAtX = ( $size[ 0] - $sw) / 2 + $shift;
-				$imAtY = ( $size[ 1] - $fh - $sh) / 3;
-				$textAtX = ( $size[0] - $fw) / 2 + $shift;
-				$textAtY = $size[ 1] - 2 * $imAtY - $fh - $sh - $shift;
-				$imAtY   = $size[ 1] - $imAtY - $sh - $shift;
+				$imAtX   = ($ext[0] - $sw) / 2 + $shift;
+				$imAtY   = ($ext[1] - $fh - $sh) / 3;
+				$textAtX = ($ext[0] - $fw) / 2 + $shift;
+				$textAtY = $ext[1] - 2 * $imAtY - $fh - $sh - $shift;
+				$imAtY   = $ext[1] - $imAtY - $sh - $shift;
 			} else {
-				$imAtX = ( $size[ 0] - $fw - $sw) / 3;
-				$imAtY = ( $size[ 1] - $sh) / 2 - $shift;
+				$imAtX   = ($ext[0] - $fw - $sw) / 3;
+				$imAtY   = ($ext[1] - $sh) / 2 - $shift;
 				$textAtX = 2 * $imAtX + $sw + $shift;
-				$textAtY = ( $size[1] - $fh) / 2 - $shift;
-				$imAtX += $shift;
+				$textAtY = ($ext[1] - $fh) / 2 - $shift;
+				$imAtX  += $shift;
 			}
 		} else {
-			$imAtX = ( $size[0] - $sw) / 2 + $shift;
-			$imAtY = ( $size[1] - $sh) / 2 - $shift;
+			$imAtX = ($ext[0] - $sw) / 2 + $shift;
+			$imAtY = ($ext[1] - $sh) / 2 - $shift;
 		}
 
 		if ( $image && UNIVERSAL::isa($image, 'Prima::Drawable::Metafile')) {
@@ -669,7 +674,7 @@ sub on_paint
 				$useVeil = 0;
 			}
 			$canvas->color($clr[0]);
-			$image->execute($canvas, $imAtX, $imAtY);
+			$image->execute($canvas, $imAtX + $ofs[0], $imAtY + $ofs[1]);
 			goto CAPTION;
 		}
 		if ( $self-> {smoothScaling} && $is != 1.0 ) {
@@ -692,7 +697,7 @@ sub on_paint
 		}
 		$canvas-> put_image_indirect(
 			$image,
-			$imAtX, $imAtY,
+			$imAtX + $ofs[0], $imAtY + $ofs[1],
 			$imgNo * $pw, 0,
 			$sw, $sh,
 			$pw, $ph
@@ -701,14 +706,14 @@ CAPTION:
 		$self-> draw_veil( $canvas, $imAtX, $imAtY, $imAtX + $sw, $imAtY + $sh)
 			if $useVeil;
 	} else {
-		$textAtX = ( $size[0] - $fw) / 2 + $shift;
-		$textAtY = ( $size[1] - $fh) / 2 - $shift;
+		$textAtX = ( $ext[0] - $fw) / 2 + $shift;
+		$textAtY = ( $ext[1] - $fh) / 2 - $shift;
 	}
 	$canvas-> color( $clr[0]);
 	if ($capOk) {
 		$canvas-> font-> style( $canvas-> font-> style  | fs::Bold )
 			if $boldify;
-		$self-> draw_caption( $canvas, $textAtX, $textAtY);
+		$self-> draw_caption( $canvas, $textAtX + $ofs[0], $textAtY + $ofs[1]);
 	}
 	$canvas-> rect_focus( 4, 4, $size[0] - 5, $size[1] - 5 ) if !$capOk && $self-> focused;
 }
@@ -819,6 +824,10 @@ sub checked
 	$_[0]-> repaint;
 	$_[0]-> notify( 'Check', $_[0]-> {checked});
 }
+
+sub toggle       { my $i = $_[0]-> checked; $_[0]-> checked( !$i); return !$i;}
+sub check        { $_[0]-> checked(1)}
+sub uncheck      { $_[0]-> checked(0)}
 
 sub default
 {
@@ -1004,22 +1013,6 @@ sub on_enter
 }
 
 sub auto { ($#_) ? $_[0]-> {auto} = $_[1] : return $_[0]-> {auto}}
-
-sub checked
-{
-	return $_[0]-> {checked} unless $#_;
-	my $old = $_[0]-> {checked};
-	my $new = $_[1] ? 1 : 0;
-	if ( $old != $new) {
-		$_[0]-> {checked} = $new;
-		$_[0]-> repaint;
-		$_[0]-> notify( 'Check', $_[0]-> {checked});
-	}
-}
-
-sub toggle       { my $i = $_[0]-> checked; $_[0]-> checked( !$i); return !$i;}
-sub check        { $_[0]-> checked(1)}
-sub uncheck      { $_[0]-> checked(0)}
 
 my @static_image0_size;
 
@@ -1357,6 +1350,87 @@ sub calc_geom_size
 	return @sz;
 }
 
+package Prima::PopupButton;
+use vars qw(@ISA);
+@ISA = qw(Prima::SpeedButton);
+
+use constant MARGIN   => 26;
+use constant TRIANGLE => 0.2;
+
+sub indents { 0,0,MARGIN * $::application->uiScaling,0 }
+
+sub profile_default
+{
+	my $def = $_[ 0]-> SUPER::profile_default;
+	my $s = $::application->uiScaling;
+	$def->{width} += MARGIN * $s;
+	$def->{checkable} = 1;
+	return $def;
+}
+
+sub calc_geom_size
+{
+	my @sz = $_[0]-> SUPER::calc_geom_size;
+	my $s = $::application->uiScaling;
+	$sz[0] += MARGIN * $s;
+	return @sz;
+}
+
+sub on_mousedown
+{
+	my ( $self, $btn, $mod, $x, $y) = @_;
+	return if $self-> {mouseTransaction} || $self-> {spaceTransaction};
+	return if $btn != mb::Left;
+	$self-> clear_event;
+	$self-> toggle;
+}
+
+sub on_mouseclick
+{
+	my ( $self, $btn, $mod, $x, $y, $dbl) = @_;
+	return unless $dbl;
+	return if $btn != mb::Left;
+	return if $self-> {mouseTransaction} || $self-> {spaceTransaction};
+	$self-> clear_event;
+	$self-> toggle;
+}
+
+sub on_paint
+{
+	my ( $self, $canvas ) = @_;
+	$self->SUPER::on_paint($canvas);
+	$canvas-> color(0);
+	my @i     = $self->indents;
+	my @sz    = $self->size;
+	my $bw    = $self->borderWidth;
+	my $shift = $self->checked ? 1 : 0;
+	my $ui    = $::application->uiScaling;
+	$canvas-> antialias(0);
+	$canvas-> lineWidth(int( $ui + .5));
+	$canvas-> antialias(1);
+	$canvas-> line(
+		$sz[0] - $i[2] + $shift, $bw + 4 - $shift,
+		$sz[0] - $i[2] + $shift, $sz[1] - $bw - 4 - 1 - $shift
+	);
+	$canvas-> matrix
+		-> scale( $ui * MARGIN * TRIANGLE  )
+		-> translate( $sz[0] - $i[2] / 2 + $shift,  $sz[1] / 2 - $shift )
+		;
+	$canvas-> fillpoly( [ 0, -1.3, -1, 0.6, 1, 0.6 ] );
+}
+
+sub on_menuleave
+{
+	my $self = shift;
+	Prima::Utils::alarm(0.1, sub { $self-> uncheck } );
+}
+
+sub on_check
+{
+	my ( $self, $checked ) = @_;
+	$self->popup->popup( 0,0,0,0,$self->size) if $checked;
+}
+
 package Prima::GroupBox;
 use vars qw(@ISA);
 @ISA=qw(Prima::Widget);
@@ -1526,6 +1600,7 @@ The module provides the following classes:
 	*Prima::AbstractButton
 		Prima::Button
 			Prima::SpeedButton
+				Prima::PopupButton
 		*Prima::Cluster
 			Prima::CheckBox
 			Prima::Radio
@@ -1622,6 +1697,14 @@ L<Click> event is called. This works even if the button is out of focus.
 
 =over
 
+=item caption_box [ CANVAS = self ]
+
+Calculates geometrical extensions of the string stored in the L<text> property, in
+pixels.  Returns two integers, the width and the height of the string for the
+font currently selected on the CANVAS.
+
+If CANVAS is undefined, the widget's font is used for the calculations instead.
+
 =item draw_veil CANVAS, X1, Y1, X2, Y2
 
 Draws a rectangular veil shape over the CANVAS in given boundaries.
@@ -1634,13 +1717,10 @@ X, Y coordinates. Underlines an eventual tilde-escaped character and draws the
 text with dimmed colors if the button is disabled. If the button is focused,
 draws a dotted rectangle around the text.
 
-=item caption_box [ CANVAS = self ]
+=item indents
 
-Calculates geometrical extensions of the string stored in the L<text> property, in
-pixels.  Returns two integers, the width and the height of the string for the
-font currently selected on the CANVAS.
-
-If CANVAS is undefined, the widget's font is used for the calculations instead.
+Returns four integers that define the pixel widths of the margins between button exterior and
+interior text and/or image
 
 =back
 
@@ -1856,10 +1936,34 @@ In a special case when L<text> is an empty string, the image is centered.
 
 =back
 
+=head2 Methods
+
+=over
+
+=item check
+
+Alias to C<checked(1)>
+
+=item uncheck
+
+Alias to C<checked(0)>
+
+=item toggle
+
+Reverts the C<checked> state of the button and returns the new state.
+
+=back
+
+
 =head1 Prima::SpeedButton
 
 A convenience class, same as L<Prima::Button> but with default
 squared shape and text property set to an empty string.
+
+=head1 Prima::PopupButton
+
+An extension of C<SpeedButton> that displays a drop-down menu when pressed.
+Uses the C<popupItems> property to popuplate the menu.
 
 =head1 Prima::Cluster
 
@@ -1883,24 +1987,6 @@ when an unchecked radio button in a notebook widget becomes active by turning th
 notebook page.
 
 Although this property is present in the L<Prima::CheckBox> class, it is not used in there.
-
-=back
-
-=head2 Methods
-
-=over
-
-=item check
-
-Alias to C<checked(1)>
-
-=item uncheck
-
-Alias to C<checked(0)>
-
-=item toggle
-
-Reverts the C<checked> state of the button and returns the new state.
 
 =back
 

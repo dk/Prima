@@ -103,14 +103,16 @@ $w-> insert( Button =>
 	},
 );
 
-$w-> insert( SpeedButton =>
+$w-> insert( PopupButton =>
 	origin     => [ 250, 10],
 	image      => $j,
 	glyphs     => 2,
 	text    => 0,
-	checkable  => 1,
 	holdGlyph  => 1,
-	hint       => 'C\'mon, press me!',
+	popupItems => [
+		['File' => sub {}],
+		['Edit' => sub {}],
+	],
 );
 
 
