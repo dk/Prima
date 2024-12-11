@@ -2514,10 +2514,10 @@ apc_popup( Handle self, int x, int y, Rect *anchor)
 		y = anchor-> top - w-> sz. y;
 	else
 		y = 0;
-	if ( anchor-> right + w-> sz.x <= guts. displaySize.x)
-		x = anchor-> right;
-	else if ( w-> sz.x < anchor-> left)
-		x = anchor-> left - w-> sz. x;
+	if ( anchor-> left + w-> sz.x <= guts. displaySize.x)
+		x = anchor-> left;
+	else if ( w-> sz.x < anchor-> right)
+		x = anchor-> right - w-> sz. x;
 	else
 		x = 0;
 	w-> pos. x = x;

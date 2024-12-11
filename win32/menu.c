@@ -665,7 +665,7 @@ apc_popup( Handle self, int x, int y, Rect * anchor)
 
 	guts. popup_active = 1;
 	ret = TrackPopupMenuEx(
-		( HMENU) var handle, TPM_LEFTBUTTON|TPM_LEFTALIGN|TPM_RIGHTBUTTON,
+		( HMENU) var handle, TPM_LEFTBUTTON|TPM_LEFTALIGN|TPM_TOPALIGN|TPM_RIGHTBUTTON,
 		x, y, owner, anchor ? &tpm : NULL);
 	guts. popup_active = 0;
 	return ret;
