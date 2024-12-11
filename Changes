@@ -6,6 +6,7 @@ Revision history for Perl module Prima
  - s/dragable/draggable/g
  - Grouped menu items use a distinct radio style check mark bitmap
  - Support CPAL/COLR colored fonts
+ - Add the PopupButton class
 
 1.74 2024-08-24
  - implement antialiased polygon fill in C, use it in the
