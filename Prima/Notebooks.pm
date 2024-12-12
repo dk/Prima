@@ -39,7 +39,7 @@ sub profile_default
 	my $font = $_[ 0]-> get_default_font;
 	my %prf = (
 		antialias        => 1,
-		colored          => 1,
+		colored          => 0,
 		colorset         => \@warpColors,
 		firstTab         => 0,
 		focusedTab       => 0,
@@ -57,6 +57,15 @@ sub profile_default
 	return $def;
 }
 
+sub profile_check_in
+{
+	my ( $self, $p, $def ) = @_;
+	if (!defined $p->{colored}) {
+		my $skin = $p->{skin} // $def->{skin} // ( $p->{owner} ? $p->{owner}->skin : 'flat');
+		$p->{colored} = $skin eq 'classic';
+	}
+	$self-> SUPER::profile_check_in( $p, $def);
+}
 
 sub init
 {
@@ -464,7 +473,7 @@ sub on_drawtab
 
 	my $flat = $self->skin eq 'flat';
 	my $colorset = $self->{colorset};
-	my $color = ( $self-> {colored} && !$flat && ( $i >= 0)) ?
+	my $color = ( ($self-> {colored} || !$flat) && ( $i >= 0)) ?
 		( $colorset->[ $i % scalar @$colorset]) : $$clr[1];
 	if (($self->{prelight} // '') eq ($i // '')) {
 		$color = $self->fader_prelight_color($color);
@@ -1945,7 +1954,7 @@ bookmark-styled tabs with text identifiers.
 A boolean property, selects whether each tab uses unique color
 ( OS/2 Warp 4 style ), or all tabs are drawn with C<backColor>.
 
-Default value: 1
+Default value: depending on the skin. 0 for the flat skin, 1 for the classic.
 
 =item colorset ARRAY
 
