@@ -104,7 +104,7 @@ $w-> insert( Button =>
 );
 
 $w-> insert( PopupButton =>
-	origin     => [ 250, 10],
+	origin     => [ 230, 10],
 	image      => $j,
 	glyphs     => 2,
 	text    => 0,

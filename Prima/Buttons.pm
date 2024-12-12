@@ -411,17 +411,37 @@ sub check_auto_size
 	}
 }
 
+sub checkable
+{
+	return $_[0]-> {checkable} unless $#_;
+	$_[0]-> checked( 0) unless $_[0]-> {checkable} == $_[1];
+	$_[0]-> {checkable} = $_[1];
+}
+
+sub checked
+{
+	return $_[0]-> {checked} unless $#_;
+	return unless $_[0]-> {checkable};
+	return if $_[0]-> {checked}+0 == $_[1]+0;
+	$_[0]-> {checked} = $_[1];
+	$_[0]-> repaint;
+	$_[0]-> notify( 'Check', $_[0]-> {checked});
+}
+
+sub toggle       { my $i = $_[0]-> checked; $_[0]-> checked( !$i); return !$i;}
+sub check        { $_[0]-> checked(1)}
+sub uncheck      { $_[0]-> checked(0)}
+
 package Prima::Button;
-use vars qw(@ISA);
-@ISA = qw(Prima::AbstractButton);
+use base qw(Prima::AbstractButton);
 
 my %standardGlyphScheme = (
-		glyphs => 4,
-		defaultGlyph  => 0,
-		hiliteGlyph   => 0,
-		disabledGlyph => 1,
-		pressedGlyph  => 2,
-		holdGlyph     => 3,
+	glyphs => 4,
+	defaultGlyph  => 0,
+	hiliteGlyph   => 0,
+	disabledGlyph => 1,
+	pressedGlyph  => 2,
+	holdGlyph     => 3,
 );
 
 sub profile_default
@@ -808,27 +828,6 @@ sub borderWidth
 	$self-> repaint;
 }
 
-sub checkable
-{
-	return $_[0]-> {checkable} unless $#_;
-	$_[0]-> checked( 0) unless $_[0]-> {checkable} == $_[1];
-	$_[0]-> {checkable} = $_[1];
-}
-
-sub checked
-{
-	return $_[0]-> {checked} unless $#_;
-	return unless $_[0]-> { checkable};
-	return if $_[0]-> {checked}+0 == $_[1]+0;
-	$_[0]-> {checked} = $_[1];
-	$_[0]-> repaint;
-	$_[0]-> notify( 'Check', $_[0]-> {checked});
-}
-
-sub toggle       { my $i = $_[0]-> checked; $_[0]-> checked( !$i); return !$i;}
-sub check        { $_[0]-> checked(1)}
-sub uncheck      { $_[0]-> checked(0)}
-
 sub default
 {
 	return $_[0]-> {default} unless $#_;
@@ -941,10 +940,8 @@ sub glyphs
 
 
 package Prima::Cluster;
-use vars qw(@ISA @images);
-@ISA = qw(Prima::AbstractButton);
-
-my @images;
+our @images;
+use base qw(Prima::AbstractButton);
 
 Prima::Application::add_startup_notification( sub {
 	my $i = 0;
@@ -967,6 +964,7 @@ sub profile_default
 		%{$_[ 0]-> SUPER::profile_default},
 		auto           => 1,
 		checked        => 0,
+		checkable      => 1,
 		height         => 36,
 		ownerBackColor => 1,
 	}
@@ -976,11 +974,14 @@ sub init
 {
 	my $self = shift;
 	my %profile = $self-> SUPER::init(@_);
-	$self-> { auto   } = $profile{ auto   };
-	$self-> { checked} = $profile{ checked};
+	$self-> {auto   }   = $profile{ auto   };
+	$self-> {checked}   = $profile{ checked};
+	$self-> {checkable} = 1;
 	$self-> check_auto_size;
 	return %profile;
 }
+
+sub checkable { 1 }
 
 sub on_keydown
 {
@@ -1036,8 +1037,7 @@ sub calc_geom_size
 }
 
 package Prima::CheckBox;
-use vars qw(@ISA);
-@ISA = qw(Prima::Cluster);
+use base qw(Prima::Cluster);
 
 sub profile_default
 {
@@ -1179,8 +1179,8 @@ sub on_paint
 }
 
 package Prima::Radio;
-use vars qw(@ISA @images);
-@ISA = qw(Prima::Cluster);
+our @images;
+use base qw(Prima::Cluster);
 
 sub profile_default
 {
@@ -1330,8 +1330,7 @@ sub checked
 
 
 package Prima::SpeedButton;
-use vars qw(@ISA);
-@ISA = qw(Prima::Button);
+use base qw(Prima::Button);
 
 sub profile_default
 {
@@ -1351,8 +1350,7 @@ sub calc_geom_size
 }
 
 package Prima::PopupButton;
-use vars qw(@ISA);
-@ISA = qw(Prima::SpeedButton);
+use base qw(Prima::SpeedButton);
 
 use constant MARGIN   => 26;
 use constant TRIANGLE => 0.2;
@@ -1432,8 +1430,7 @@ sub on_check
 }
 
 package Prima::GroupBox;
-use vars qw(@ISA);
-@ISA=qw(Prima::Widget);
+use base qw(Prima::Widget);
 
 {
 my %RNT = (
@@ -1672,6 +1669,20 @@ Called whenever the user activates the button.
 
 =over
 
+=item checkable BOOLEAN
+
+Selects if the button toggles the L<checked> state when the user
+presses it.
+
+Default value: 0
+
+=item checked BOOLEAN
+
+Selects whether the button is checked or not. Only actual
+when the L<checkable> property is set. See also L<holdGlyph>.
+
+Default value: 0
+
 =item hotKey CHAR
 
 A key (defined by CHAR) that the button will react to if pressed if the button
@@ -1705,6 +1716,10 @@ font currently selected on the CANVAS.
 
 If CANVAS is undefined, the widget's font is used for the calculations instead.
 
+=item check
+
+Alias to C<checked(1)>
+
 =item draw_veil CANVAS, X1, Y1, X2, Y2
 
 Draws a rectangular veil shape over the CANVAS in given boundaries.
@@ -1721,6 +1736,14 @@ draws a dotted rectangle around the text.
 
 Returns four integers that define the pixel widths of the margins between button exterior and
 interior text and/or image
+
+=item toggle
+
+Reverts the C<checked> state of the button and returns the new state.
+
+=item uncheck
+
+Alias to C<checked(0)>
 
 =back
 
@@ -1772,20 +1795,6 @@ Default value: 1
 Width of the border around the button.
 
 Default value: depends on the skin
-
-=item checkable BOOLEAN
-
-Selects if the button toggles the L<checked> state when the user
-presses it.
-
-Default value: 0
-
-=item checked BOOLEAN
-
-Selects whether the button is checked or not. Only actual
-when the L<checkable> property is set. See also L<holdGlyph>.
-
-Default value: 0
 
 =item default BOOLEAN
 
@@ -1935,25 +1944,6 @@ the image is drawn above the text; left to the text if 0.
 In a special case when L<text> is an empty string, the image is centered.
 
 =back
-
-=head2 Methods
-
-=over
-
-=item check
-
-Alias to C<checked(1)>
-
-=item uncheck
-
-Alias to C<checked(0)>
-
-=item toggle
-
-Reverts the C<checked> state of the button and returns the new state.
-
-=back
-
 
 =head1 Prima::SpeedButton
 
