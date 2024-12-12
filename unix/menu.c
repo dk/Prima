@@ -732,6 +732,7 @@ menu_select_item( Handle self, PMenuWindow w, int index)
 		w-> selected = ( index < 0) ? -100 : index;
 		XClearArea( DISP, w-> w, r.x, r.y, r.width, r.height, true);
 		XX-> paint_pending = true;
+		XSync(DISP, false);
 
 		if (index >= 0) {
 			PMenuItemReg m = w->m;
