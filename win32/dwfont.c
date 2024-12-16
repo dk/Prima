@@ -493,13 +493,14 @@ dwrite_draw_bitmap( Handle self, uint16_t index, Point size, Point aperture )
 		switch (t-> format) {
 		case 0:
 			SetTextColor( dc, 0);
-			ExtTextOutW(dc, t->baseline.x, t->baseline.y, ETO_GLYPH_INDEX, NULL, (LPCWSTR) t->g.glyphs, 1, NULL);
 			break;
 		case DWRITE_GLYPH_IMAGE_FORMATS_COLR:
 			SetTextColor( dc, t->has_color ? t->colorref : 0);
-			ExtTextOutW(dc, t->baseline.x, t->baseline.y, ETO_GLYPH_INDEX, NULL, (LPCWSTR) t->g.glyphs, 1, NULL);
 			break;
+		default:
+			continue;
 		}
+		ExtTextOutW(dc, t->baseline.x, t->baseline.y, ETO_GLYPH_INDEX, NULL, (LPCWSTR) t->g.glyphs, 1, NULL);
 	}
 
 	list_delete_all( l, true );
