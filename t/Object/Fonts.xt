@@ -2,7 +2,7 @@ use strict;
 use warnings;
 use Test::More;
 use Prima::sys::Test qw(noX11);
-use open ':std', ':encoding(utf8)';
+use Encode;
 
 my $x;
 
@@ -17,6 +17,8 @@ sub t
 		encoding => $f->{encoding},
 	});
 
+	my $fname = Encode::encode('utf-8', $f->{name});
+
 	my $ok = 1;
 	for ( qw( height size direction)) {
 	       my $fx = $x-> font-> $_();
@@ -24,12 +26,12 @@ sub t
 	       my $fx2 = $x-> font-> $_();
 	       SKIP: {
 			if ( $fx2 == $fx || $x->font->name ne $f->{name}) {
-				skip "$_ / $f->{name}", 1;
+				skip "$_ / $fname", 1;
 				next;
 			}
 			$x-> font( $_ => $fx);
 			$fx = int( $fx + .5 ) if $^O =~ /win32/i && $_ eq 'size';
-			$ok &= is( $x-> font-> $_(), $fx, "$_ / $f->{name}");
+			$ok &= is( $x-> font-> $_(), $fx, "$_ / $fname");
 	       };
 	}
 
@@ -43,11 +45,11 @@ sub t
 		my $fw2 = $x-> font-> width;
 		SKIP: {
 		    if ( $fw2 == $fw || $x->font->name ne $f->{name}) {
-		        skip "width / $f->{name}", 1;
+		        skip "width / $fname", 1;
 		        next;
 		    }
 		    $x-> font( $_ => $fh, width => $fw, name => $fn );
-		    $ok &= is( $x-> font-> width, $fw, "width by $_ / $f->{name}");
+		    $ok &= is( $x-> font-> width, $fw, "width by $_ / $fname");
 		};
 	}
 
@@ -59,10 +61,10 @@ sub t
 	my $fx2 = $x-> font-> style;
 	SKIP : {
 	    if ( $fx2 == $fx || $x->font->name ne $f->{name}) {
-	        skip "style / $f->{name}", 1;
+	        skip "style / $fname", 1;
 	    }
 	    $x-> font( style => $fx);
-	    is( $x-> font-> style, $fx, "style / $f->{name}");
+	    is( $x-> font-> style, $fx, "style / $fname");
 	};
 
 	# wrapping
@@ -70,8 +72,8 @@ sub t
 		$x-> font-> height( 16);
 		my ($a,$b,$c) = @{$x->get_font_abc(ord('e'),ord('e'))};
 		my $w = $a + $b + $c;
-		skip "text wrap / $f->{name}", 1 if $w <= 1; # some non-latin or symbol font
-		cmp_ok( scalar @{$x-> text_wrap( "eeee eeee eeee eeee eeee", $w * 5)}, '>', 4, "text wrap $f->{name}");
+		skip "text wrap / $fname", 1 if $w <= 1; # some non-latin or symbol font
+		cmp_ok( scalar @{$x-> text_wrap( "eeee eeee eeee eeee eeee", $w * 5)}, '>', 4, "text wrap $fname");
 	}
 
 	return $ok;
