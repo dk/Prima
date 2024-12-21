@@ -507,7 +507,7 @@ win32/clip.c
 win32/cursor.c
 win32/dev.c
 win32/dnd.c
-win32/dwrite.c
+win32/dwfont.c
 win32/files.c
 win32/gdiplus.c
 win32/global.c
