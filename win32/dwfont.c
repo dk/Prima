@@ -25,7 +25,6 @@ extern "C" {
 
 static Bool                    dw_ok       = false;
 
-static ID2D1Factory           *d2d_factory = NULL;
 static IDWriteFactory4        *factory     = NULL;
 static IDWriteFontCollection1 *collection  = NULL;
 static IDWriteGdiInterop      *gdi         = NULL;
@@ -34,10 +33,6 @@ Bool
 dwrite_font_init(void)
 {
 	HRESULT hr;
-
-	hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, (REFIID) &IID_ID2D1Factory, NULL, (void**) &d2d_factory);
-	if ( hr != S_OK )
-		apiHErrRet(hr);
 
 	hr = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, &IID_IDWriteFactory4, (IUnknown**) &factory);
 	if ( hr != S_OK )
@@ -61,9 +56,7 @@ dwrite_font_done(void)
 	if ( gdi        ) gdi        ->lpVtbl->Release(gdi);
 	if ( collection ) collection ->lpVtbl->Release(collection);
 	if ( factory    ) factory    ->lpVtbl->Release(factory);
-	if ( d2d_factory) d2d_factory->lpVtbl->Base.Release((IUnknown*)d2d_factory);
 
-	d2d_factory = NULL;
 	factory     = NULL;
 	collection  = NULL;
 
