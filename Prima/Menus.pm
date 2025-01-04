@@ -94,6 +94,7 @@ sub size
 		my $h = $icon-> height;
 		$h = $asz[1] if $h > $asz[1];
 		$sz[1] = $h if $sz[1] < $h;
+		$icon_width += $em;
 	} else {
 		$icon_width = 2 * $em # space for *
 			if $self->vertical || $self->checked || $self->autoToggle;
@@ -246,7 +247,7 @@ sub draw
 
 	my $lw = 3;
 	if ( my $icon = $self-> icon ) {
-		$self-> draw_bitmap( $owner, $canvas, $colors, $icon, $x + 2, $y + $y_offset, $self->{icon_width}, $h - $y_offset * 2 );
+		$self-> draw_bitmap( $owner, $canvas, $colors, $icon, $x + 2, $y + $y_offset, $self->{icon_width} - $em, $h - $y_offset * 2 );
 	} elsif ( $checked ) {
 		my $font = $canvas->font;
 		my $Dx = $em * 0.25;

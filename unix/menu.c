@@ -470,14 +470,15 @@ update_menu_window( PMenuSysData XX, PMenuWindow w)
 
 	m = w->m;
 	if ( vertical ) {
-		icon_width = MENU_CHECK_XOFFSET;
+		int w = 0;
 		while (m) {
 			if ( m-> icon && PObject( m-> icon)-> stage < csDead) {
 				PImage i = ( PImage) m-> icon;
-				if ( i-> w > icon_width ) icon_width = i-> w;
+				if ( i-> w > w ) w = i-> w;
 			}
 			m = m-> next;
 		}
+		icon_width = MENU_XOFFSET * 2 + w;
 		startx = x = MENU_XOFFSET * 4 + MENU_CHECK_XOFFSET + icon_width;
 	} else {
 		startx = x = icon_width = 0;
