@@ -44,7 +44,7 @@ sub open(*;$*)
 	my $flags;
 	my @layers;
 
-	if ( $mode =~ /^([^:\s]+)(.+)$/ ) {
+	if ( $mode =~ /^([^:\s]+)([:\s].*)$/ ) {
 		$mode = $1;
 		my $binmode = $2;
 		$binmode =~ s/^\s+//;

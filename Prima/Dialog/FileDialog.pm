@@ -1438,7 +1438,7 @@ sub Open_Click
 		}
 		if ( !$self-> {openMode} && !$self-> {noTestFileCreate}) {
 			my $file;
-			if ( open $file, ">>$_") {
+			if ( open $file, ">>", $_) {
 				close $file;
 			} else {
 				Prima::MsgBox::message_box( $self-> text, "Cannot create file $_: $!", mb::OK | mb::Error);
