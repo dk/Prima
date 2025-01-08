@@ -14,20 +14,11 @@ sub insert_buttons
 	my ( $dlg, $buttons, $extras) = @_;
 	my ( $left, $right) = ( 10, 425);
 	my $i;
-	my @bConsts =  (
-		mb::Help, mb::Cancel, mb::Ignore, mb::Retry, mb::Abort, mb::No, mb::Yes, mb::Ok
-	);
-	my @bTexts  = qw(
-		~Help    ~Cancel     ~Ignore     ~Retry     ~Abort     ~No     ~Yes     ~OK
-	);
+	my @bConsts =  ( mb::Ok, mb::Yes, mb::No, mb::Abort, mb::Retry, mb::Ignore, mb::Cancel, mb::Help);
+	my @bTexts  = qw(   ~OK     ~Yes     ~No     ~Abort     ~Retry     ~Ignore     ~Cancel     ~Help);
 	my $helpTopic = defined $$extras{helpTopic} ? $$extras{helpTopic} : 'Prima';
 	my $defButton = defined $$extras{defButton} ? $$extras{defButton} : 0xFF;
-	my $fresh;
-	my $freshFirst;
-
-	my $dir = 0; # set to 1 for reverse direction of buttons
-	@bConsts = reverse @bConsts unless $dir;
-	@bTexts  = reverse @bTexts  unless $dir;
+	my @ret;
 
 	my $btns = 0;
 	for ( $i = 0; $i < scalar @bConsts; $i++) {
@@ -47,28 +38,23 @@ sub insert_buttons
 		);
 
 		$defButton = 0 if $bConsts[$i] & $defButton;
-		$dir ? ( $hpr{right} = $right, $hpr{tabOrder} = 0) : ( $hpr{left} = $left);
+		$hpr{left} = $left;
 
 		if ( $bConsts[$i] == mb::Help) {
 			$hpr{onClick} = sub {
 				$::application-> open_help( $helpTopic);
 			};
-			unless ( $dir) {
-				$hpr{right} = 425;
-				delete $hpr{left};
-			}
+			$hpr{right} = 425;
+			delete $hpr{left};
 		} else {
 			$hpr{modalResult} = $bConsts[$i];
 		}
-		$fresh = $dlg-> insert( Button => %hpr, %epr);
-		$freshFirst = $fresh unless $freshFirst;
-		my $w = $fresh-> width + 10;
+		push @ret, $dlg-> insert( Button => %hpr, %epr);
 		$right -= 106;
 		$left  += 106;
 		last if ++$btns > 3;
 	}
-	$fresh = $freshFirst unless $dir;
-	return $fresh;
+	return @ret;
 }
 
 sub message_box
@@ -119,7 +105,7 @@ sub message_box
 		},
 	);
 
-	my $fresh = insert_buttons( $dlg, $buttons, $extras);
+	my @btns = insert_buttons( $dlg, $buttons, $extras);
 
 	$dlg-> scaleChildren(0);
 
@@ -130,7 +116,7 @@ sub message_box
 			left           => 20,
 			width          => $icon-> width,
 			top            => $dlg-> height - 10,
-			bottom         => $fresh-> height + 20,
+			bottom         => $btns[0]-> height + 20,
 			ownerBackColor => 1,
 			onPaint        => sub {
 				my $self = $_[1];
@@ -152,11 +138,19 @@ sub message_box
 		$extras->{wordWrap} = $lc <= $gl;
 	}
 
+	if ( $extras->{wordWrap} && $extras->{compact} && @btns) {
+		my @sz = $dlg->sizeMin;
+		$sz[0] = $btns[0]->right + 10;
+		$sz[0] += $btns[0]->right if @btns < 2;
+		$dlg->sizeMin(@sz);
+		$dlg->width($sz[0]);
+	}
+
 	my %geom = (
 		left          => $iconRight + 15,
 		right         => $dlg-> width  - 10,
 		top           => $dlg-> height - 10,
-		bottom        => $fresh-> height + 20,
+		bottom        => $btns[0]-> height + 20,
 		growMode      => gm::Client,
 	);
 	my $scroller;
@@ -179,7 +173,7 @@ sub message_box
 	}
 
 	# expand the dialog
-	my $gl = int(( $dlg-> height - 10 - $fresh-> height - 20) / $label-> font-> height);
+	my $gl = int(( $dlg-> height - 10 - $btns[0]-> height - 20) / $label-> font-> height);
 	my $lc = scalar @{ $label-> text_wrap(
 		$text,
 		$label-> width,
@@ -226,7 +220,7 @@ sub input_box
 		text          => $title,
 	);
 
-	my $fresh = insert_buttons( $dlg, $buttons, $extras);
+	insert_buttons( $dlg, $buttons, $extras);
 
 	$dlg-> insert( Label =>
 		origin        => [ 10, 82],
@@ -388,6 +382,14 @@ hash, the following predefined keys tell the dialog methods about certain
 customizations:
 
 =over
+
+=item compact BOOLEAN = 0
+
+If 1, the message box width is shrunken so that there's no empty
+space on to the right. Is ignored if C<wordWrap> is not set, or text
+is too big to fit to the dialog window without scrolling.
+
+Only for message box, not for input box.
 
 =item defButton INTEGER
 
