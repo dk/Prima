@@ -144,6 +144,9 @@ sub message_box
 		$sz[0] += $btns[0]->right if @btns < 2;
 		$dlg->sizeMin(@sz);
 		$dlg->width($sz[0]);
+		if ( ( my $diff = ($sz[0] - $btns[-1]->right - $btns[0]->left) / 2 ) > 0 ) {
+			$_->left( $_->left + $diff ) for @btns;
+		}
 	}
 
 	my %geom = (
@@ -386,10 +389,12 @@ customizations:
 =item compact BOOLEAN = 0
 
 If 1, the message box width is shrunken so that there's no empty
-space on to the right. Is ignored if C<wordWrap> is not set, or text
+space on to the right. Also, in case there is only one button, it is centered.
+
+The option ignored if C<wordWrap> is unset, or the text
 is too big to fit to the dialog window without scrolling.
 
-Only for message box, not for input box.
+Actual only for the message box, not for the input box.
 
 =item defButton INTEGER
 
