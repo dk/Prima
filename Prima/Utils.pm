@@ -88,7 +88,7 @@ sub alarm
 {
 	my ( $timeout, $sub, @params) = @_;
 	return undef unless $::application;
-	my $timer = Prima::Timer-> create(
+	my $timer = $::application->insert( Timer =>
 		name    => $sub,
 		timeout => $timeout,
 		owner   => $::application,
@@ -106,8 +106,9 @@ sub alarm
 sub sleep
 {
 	my $stop;
-	Prima::Utils::alarm( 1000 * shift, sub { $stop++ } );
+	return unless Prima::Utils::alarm( 1000 * shift, sub { $stop++ } );
 	$::application->yield(1) while !$stop;
+	return 1;
 }
 
 sub wait
@@ -264,8 +265,9 @@ the system supports no drive letters ( unix ), C<dt::None> is returned.
 =item sleep SECONDS
 
 Same as perl's native C<sleep> (i.e. C<CORE::sleep>) but with the event loop
-running.  Note that the argument it takes is seconds, for the sake of
-compatibility, while the rest of the toolkit operates in milliseconds.
+running. Returns the success flag. Note that the argument it takes is seconds,
+for the sake of compatibility, while the rest of the toolkit operates in
+milliseconds.
 
 =item username
 
