@@ -103,6 +103,7 @@ sub message_box
 		onExecute     => sub {
 			Prima::Utils::beep( $options) if $options && !$nosound;
 		},
+		%{$extras->{dialog} // {}},
 	);
 
 	my @btns = insert_buttons( $dlg, $buttons, $extras);
@@ -221,6 +222,7 @@ sub input_box
 		scaleChildren => 1,
 		visible       => 0,
 		text          => $title,
+		%{$extras->{dialog} // {}},
 	);
 
 	insert_buttons( $dlg, $buttons, $extras);
@@ -396,29 +398,6 @@ is too big to fit to the dialog window without scrolling.
 
 Actual only for the message box, not for the input box.
 
-=item defButton INTEGER
-
-Selects the default button in the dialog, i.e. the button that reacts on the
-return key. Its value must be to an C<mb::> constant of the desired button. If
-this option is not set, the leftmost button is selected as the default.
-
-=item font FONT
-
-The message boxes use C<Application.get_message_font>, but the C<font> option
-can override that.
-
-=item helpTopic TOPIC
-
-Selects the help TOPIC invoked in the help viewer window if the C<mb::Help>
-button is pressed by the user. If this option is not set, L<Prima> is
-displayed.
-
-=item inputLine HASH
-
-Only for C<input_box>.
-
-Contains the profile hash passed to the input line as creation parameters.
-
 =item buttons HASH
 
 To modify a button, an integer key with the corresponding C<mb::XXX> constant
@@ -438,6 +417,33 @@ the text and behavior of a button, the following construct can be used:
 If it is not desired that the dialog must be closed when the user presses a
 button, its C<::modalResult> property ( see L<Prima::Buttons> ) must be reset
 to 0.
+
+=item defButton INTEGER
+
+Selects the default button in the dialog, i.e. the button that reacts on the
+return key. Its value must be to an C<mb::> constant of the desired button. If
+this option is not set, the leftmost button is selected as the default.
+
+=item dialog HASH
+
+An optional hash override the dialog properties
+
+=item font FONT
+
+The message boxes use C<Application.get_message_font>, but the C<font> option
+can override that.
+
+=item helpTopic TOPIC
+
+Selects the help TOPIC invoked in the help viewer window if the C<mb::Help>
+button is pressed by the user. If this option is not set, L<Prima> is
+displayed.
+
+=item inputLine HASH
+
+Only for C<input_box>.
+
+Contains the profile hash passed to the input line as creation parameters.
 
 =item owner WINDOW
 
