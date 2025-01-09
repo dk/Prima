@@ -140,7 +140,7 @@ sub message_box
 
 	if ( $extras->{wordWrap} && $extras->{compact} && @btns) {
 		my @sz = $dlg->sizeMin;
-		$sz[0] = $btns[0]->right + 10;
+		$sz[0] = $btns[-1]->right + $btns[0]->left;
 		$sz[0] += $btns[0]->right if @btns < 2;
 		$dlg->sizeMin(@sz);
 		$dlg->width($sz[0]);
