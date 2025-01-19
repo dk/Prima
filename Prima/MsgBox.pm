@@ -124,11 +124,15 @@ sub message_box
 				$self-> clear;
 				$self-> put_image(0, ($self->height - $icon->height)/2, $icon);
 			},
+			%{$extras->{icon} // {}},
 		);
 		$iconRight = $iconView-> right;
 	}
 
-	my $label = $dlg-> insert( 'Label' , text => $text );
+	my $label = $dlg-> insert( 'Label' ,
+		text => $text,
+		%{$extras->{label} // {}},
+	);
 	unless ( defined $extras->{wordWrap} ) {
 		# can the text fit in a quarter of the screen?
 		my @as    = map { $_ / 2 } $::application->size;
@@ -232,6 +236,7 @@ sub input_box
 		size          => [ 415, 16],
 		text          => $text,
 		showAccelChar => 1,
+		%{$extras->{label} // {}},
 	);
 
 	my $input = $dlg-> insert( InputLine =>
@@ -239,7 +244,7 @@ sub input_box
 		origin        => [ 10, 56],
 		text          => $string,
 		current       => 1,
-		defined($extras-> {inputLine}) ? %{$extras-> {inputLine}} : (),
+		%{$extras->{input} // {}},
 	);
 
 	my @ret = ( $dlg-> execute, $input-> text);
@@ -317,7 +322,7 @@ in the dialog.
 
 The PROFILE parameter is a hash, that contains customization parameters for the
 buttons and the input line. To access the input line parameters the
-C<inputLine> hash key is used.  See L<Buttons and profiles> for more
+C<input> hash key is used.  See L<Buttons and profiles> for more
 information on BUTTONS and PROFILES.
 
 Returns different results depending on the call context.  In the array
@@ -439,11 +444,21 @@ Selects the help TOPIC invoked in the help viewer window if the C<mb::Help>
 button is pressed by the user. If this option is not set, L<Prima> is
 displayed.
 
-=item inputLine HASH
+=item icon HASH
+
+Only for C<message_box>.
+
+Contains the profile hash passed to the image viewer as creation parameters
+
+=item input HASH
 
 Only for C<input_box>.
 
 Contains the profile hash passed to the input line as creation parameters.
+
+=item label HASH
+
+Contains the profile hash passed to the label as creation parameters.
 
 =item owner WINDOW
 
