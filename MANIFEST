@@ -467,7 +467,7 @@ t/misc/precision.t
 t/misc/syntax.t
 unix/app.c
 unix/clipboard.c
-unix/cocoa.c
+unix/cocoa.mm
 unix/color.c
 unix/corefont.c
 unix/cursor.c

@@ -559,6 +559,8 @@ extern void
 prima_debug( const char *format, ...);
 extern void
 prima_debug2( const char *prefix, const char *format, ...);
+extern void
+prima_if_debug( const char filter, const char *format, ...);
 #define Fdebug if (pguts->debug & DEBUG_FONTS) _debug
 #define Cdebug if (pguts->debug & DEBUG_CLIP) _debug
 #define Edebug if (pguts->debug & DEBUG_EVENT) _debug

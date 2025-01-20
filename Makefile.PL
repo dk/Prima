@@ -59,6 +59,7 @@ use vars qw(
 	%ALL_MAN_INSTALL
 	%MODVERSIONS
 	$PKGCONFIG
+	$C_EXT
 );
 
 use vars qw(
@@ -286,6 +287,7 @@ sub setup_files
 		(grep { not $PASSIVE_CODECS{$_} } <img/*.c>),
 		(grep { !m/xft.c/ || $cmd_options{WITH_XFT} } <$platform/*.c>),
 	);
+	push @c_files, 'unix/cocoa.mm' if $DEFINES{WITH_COCOA};
 	@cls_files  = ( <class/*.cls> );
 	@h_files    = (
 		<include/*.h>,
@@ -475,6 +477,7 @@ sub setup_environment
 		if $^O eq 'cygwin';
 
 	$PKGCONFIG = 'pkg-config';
+	$C_EXT = 'c';
 }
 
 sub qtilde
@@ -644,7 +647,7 @@ sub tempfile
 sub compile
 {
 	my ( $text, $compile_only, @extra) = @_;
-	my $tmpsrc = tempfile( "$TMPDIR/pmts%04d.c");
+	my $tmpsrc = tempfile( "$TMPDIR/pmts%04d.$C_EXT");
 	my $tmpo = tempfile( "$TMPDIR/pmts%04d$Config{_o}");
 	my $tmpexe = tempfile( "$TMPDIR/pmts%04d$Config{_exe}");
 	my @tmpextras = ( $tmpsrc, $tmpsrc);
@@ -1843,16 +1846,18 @@ sub setup_macosx
 		@LIBPATH = grep { !exists $remove{$_} } @LIBPATH;
 		push @LIBPATH, @{ $macos_x11_path // [] };
 	}
-	
+
 	return unless $cmd_options{WITH_COCOA};
-	printlog "Can compile with Cocoa...";
+	local $C_EXT = 'mm';
+	printlog "Can compile with Cocoa and ObjC...";
 	my $old_ldflags = $LDFLAGS;
 
-	$LDFLAGS .= ' -framework Cocoa';
+	$LDFLAGS .= ' -framework Cocoa -framework ScreenCaptureKit';
 	my $ok = compile(<<TEXT);
 #import <ApplicationServices/ApplicationServices.h>
+\@class Foo;
 int main() {
-	printf("%x\\n", (void*)CGColorSpaceCreateDeviceRGB());
+	printf("%p\\n", (void*)CGColorSpaceCreateDeviceRGB());
 	return 0;
 }
 TEXT
@@ -2624,6 +2629,11 @@ sub c_o
 	unless ( $t =~ /$re1\Q$ending\E/ ) {
 		$t =~ s/($re1)/$1 $COUTOFLAG$ending/;
 	}
+	if ( $DEFINES{WITH_COCOA} && $t =~ /($re1)/ ) {
+		my $m = $1;
+		$m =~ s/\.c\b/.mm/g;
+		$t .= "\n$m";
+	}
 	return $t;
 }
 
@@ -2631,6 +2641,9 @@ sub special_targets
 {
 	my $self = shift;
 	my $t = $self->SUPER::special_targets(@_);
+
+	$t =~ s/(\.SUFFIXES\s*\:\s*)/$1 .mm / if $DEFINES{WITH_COCOA};
+
 	$t .= <<RERUN if $binary_prereq and not $cmd_options{AUTOMATED_RUN};
 all ::
 \t\@echo Rebuilding Makefile...
@@ -2692,7 +2705,7 @@ H
         	$dir = 'root directory' unless $dir;
 		printlog "Finding .c dependencies in $dir...\n" unless $dirs{$dir}++;
 
-		my ( $base ) = $cfile =~ m/^(.*?).c$/;
+		my ( $base ) = $cfile =~ m/^(.*?).[cm]$/;
 		my @deps = find_cdeps( $cfile );
 		$t .= <<H
 

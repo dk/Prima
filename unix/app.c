@@ -497,6 +497,7 @@ window_subsystem_init( char * error_buf)
 	return true;
 }
 
+
 void
 prima_debug( const char *format, ...)
 {
@@ -515,6 +516,25 @@ prima_debug2( const char *prefix, const char *format, ...)
 	int i;
 	va_list args;
 	fprintf(stderr, "%s: ", prefix);
+	va_start( args, format);
+	for ( i = 0; i < guts.debug_indent * 3; i++) fprintf( stderr, " ");
+	vfprintf( stderr, format, args);
+	va_end( args);
+	fprintf(stderr, "\n");
+}
+
+void
+prima_if_debug( const char filter, const char *format, ...)
+{
+	int i, f = -1;
+	va_list args;
+
+	switch (filter) {
+	case 'M': f = DEBUG_MISC;
+	}
+
+	if ( pguts->debug != f) return;
+
 	va_start( args, format);
 	for ( i = 0; i < guts.debug_indent * 3; i++) fprintf( stderr, " ");
 	vfprintf( stderr, format, args);

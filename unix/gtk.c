@@ -247,7 +247,7 @@ run_screenshot_app(void)
 	while (1) {
 		int n = read( s, buf, sizeof(int) * 4 );
 		if ( n < sizeof(int) * 4 ) {
-			Mdebug("bad screenshot request");
+			Mdebug("screenshot: bad screenshot request");
 			break;
 		}
 		buf[0] = make_screenshot(buf[0], buf[1], buf[2], buf[3]);
