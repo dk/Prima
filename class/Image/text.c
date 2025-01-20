@@ -398,9 +398,9 @@ plot_next_glyph(
 static Bool
 plot_glyphs( Handle self, PGlyphsOutRec t, int x, int y )
 {
-	unsigned int    i, flags;
+	unsigned int    flags;
 	Point           o;
-	int             dy = 0;
+	int             i, dy = 0;
 	int             advance      = 0;
 	Bool            straight;
 	Matrix          matrix, pos_matrix;
