@@ -230,8 +230,8 @@ typedef struct _RotatedFont {
 	Byte         *arena_bits;
 	unsigned int  lineSize;
 	unsigned long arenaSize;
-	unsigned int  defaultChar1;
-	unsigned int  defaultChar2;
+	int           defaultChar1;
+	int           defaultChar2;
 	Fixed         matrix[4];
 	Fixed         inverse[4];
 	struct        RotatedFont *next;
