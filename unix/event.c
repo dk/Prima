@@ -577,7 +577,9 @@ prima_keysym_to_keycode( KeySym keysym, XKeyEvent *ev, U8 character )
 	case XF86XK_AudioCycleTrack   : keycode = kbAudioCycleTrack;    break;
 	case XF86XK_AudioForward      : keycode = kbAudioForward;       break;
 	case XF86XK_AudioMicMute      : keycode = kbAudioMicMute;       break;
+#ifdef XF86XK_AudioPreset
 	case XF86XK_AudioPreset       : keycode = kbAudioPreset;        break;
+#endif
 	case XF86XK_AudioRandomPlay   : keycode = kbAudioRandomPlay;    break;
 	case XF86XK_AudioRecord       : keycode = kbAudioRecord;        break;
 	case XF86XK_AudioRepeat       : keycode = kbAudioRepeat;        break;
@@ -653,7 +655,9 @@ prima_keysym_to_keycode( KeySym keysym, XKeyEvent *ev, U8 character )
 	case XF86XK_Red               : keycode = kbRed;                break;
 	case XF86XK_Reload            : keycode = kbReload;             break;
 	case XF86XK_Reply             : keycode = kbReply;              break;
+#ifdef XF86XK_RFKill
 	case XF86XK_RFKill            : keycode = kbRFKill;             break;
+#endif
 	case XF86XK_RockerDown        : keycode = kbRockerDown;         break;
 	case XF86XK_RockerEnter       : keycode = kbRockerEnter;        break;
 	case XF86XK_RockerUp          : keycode = kbRockerUp;           break;
@@ -699,7 +703,9 @@ prima_keysym_to_keycode( KeySym keysym, XKeyEvent *ev, U8 character )
 	case XF86XK_WheelButton       : keycode = kbWheelButton;        break;
 	case XF86XK_WLAN              : keycode = kbWLAN;               break;
 	case XF86XK_Word              : keycode = kbWord;               break;
+#ifdef XF86XK_WWAN
 	case XF86XK_WWAN              : keycode = kbWWAN;               break;
+#endif
 	case XF86XK_WWW               : keycode = kbWWW;                break;
 	case XF86XK_Xfer              : keycode = kbXfer;               break;
 	case XF86XK_Yellow            : keycode = kbYellow;             break;
