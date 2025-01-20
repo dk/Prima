@@ -1327,9 +1327,10 @@ find_or_allocate_rotated_font_entry( PCachedFont f, Fixed *fm, Fixed *im, Matrix
 	bzero( r, sizeof( RotatedFont));
 	r-> first1  = f-> fs-> min_byte1;
 	r-> first2  = f-> fs-> min_char_or_byte2;
-	r-> width   = ( f-> fs-> max_char_or_byte2 > 255 ? 255 : f-> fs-> max_char_or_byte2)
+	i = ( f-> fs-> max_char_or_byte2 > 255 ? 255 : f-> fs-> max_char_or_byte2)
 		- r-> first2 + 1;
-	if ( r-> width < 0) r-> width = 0;
+	if ( i < 0) i = 0;
+	r-> width  = i;
 	r-> height = f-> fs-> max_byte1 - f-> fs-> min_byte1 + 1;
 	r-> length = r-> width * r-> height;
 	r-> defaultChar1 = f-> fs-> default_char >> 8;
