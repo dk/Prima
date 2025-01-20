@@ -829,7 +829,9 @@ font_free( PDCFont res, Bool permanent)
 		return;
 	}
 	if ( res-> dw_colorface) {
+#ifdef USE_DIRECT_WRITE
 		dwrite_free_face(res->dw_colorface);
+#endif
 		res->dw_colorface = NULL;
 	}
 	if ( res-> hfont) {

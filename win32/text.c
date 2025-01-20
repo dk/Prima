@@ -697,7 +697,13 @@ apc_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 	while (( t-> len = font_context_next(&fc)) > 0 ) {
 		int advance = 0;
 
-		if ( want_color && dwrite_color_text_out(self, fc.curr_dc, t, xx, yy) ) {
+		if (	want_color &&
+#ifdef USE_DIRECT_WRITE
+			dwrite_color_text_out(self, fc.curr_dc, t, xx, yy)
+#else
+			false
+#endif
+		) {
 			if ( !fc.stop )
 				advance = calc_advance(self, t);
 			ok = true;
@@ -2220,7 +2226,11 @@ Bool
 apc_font_is_colored( Handle self)
 {
 	objCheck false;
+#ifdef USE_DIRECT_WRITE
 	return dwrite_is_font_colored(self, sys dc_font);
+#else
+	return false;
+#endif
 }
 
 Bool
@@ -2307,6 +2317,7 @@ apc_font_get_glyph_bitmap( Handle self, uint16_t index, unsigned int flags, PPoi
 		}
 	}
 
+#ifdef USE_DIRECT_WRITE
 	if (
 		(gdi_size > 0) &&
 		!(flags & ggoMonochrome) &&
@@ -2318,6 +2329,7 @@ apc_font_get_glyph_bitmap( Handle self, uint16_t index, unsigned int flags, PPoi
 			return gdi_buf;
 		}
 	}
+#endif
 
 	if (( gdi_buf = malloc(gdi_size)) == NULL ) {
 		warn("Not enough memory");

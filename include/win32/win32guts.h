@@ -705,12 +705,16 @@ extern Bool         dnd_clipboard_get_data( Handle id, PClipboardDataRec c);
 extern Bool         dnd_clipboard_has_format( Handle id);
 extern Bool         dnd_clipboard_set_data( Handle id, PClipboardDataRec c);
 extern PList        dnd_clipboard_get_formats();
+
+#ifdef USE_DIRECT_WRITE
 extern Bool         dwrite_font_init(void);
 extern void         dwrite_font_done(void);
 extern void         dwrite_free_face(void *face);
 extern Bool         dwrite_is_font_colored( Handle self, PDCFont dcfont);
 extern Bool         dwrite_color_text_out(Handle self, PDCFont dc, PGlyphsOutRec t, int x, int y);
 extern uint32_t*    dwrite_draw_bitmap( Handle self, uint16_t index, Point size, Point aperture );
+#endif
+
 extern void         dpi_change(void);
 extern char *       err_msg( DWORD errId, char * buffer);
 extern char *       err_msg_gplus( GpStatus errId, char * buffer);

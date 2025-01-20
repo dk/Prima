@@ -953,6 +953,35 @@ SET2
 	printlog "$response\n";
 }
 
+sub setup_dwrite
+{
+	printlog "Can compile with DirectWrite ... ";
+	my $response = 'no';
+	my @libs = @LIBS;
+	push @LIBS, qw(d2d1 dwrite);
+	my $rc = compile( <<'DW');
+#define INITGUID
+#include <d2d1.h>
+#include <dwrite.h>
+#include <dwrite_3.h>
+IDWriteFactory4        *a;
+IDWriteFontCollection1 *b;
+IDWriteGdiInterop      *c;
+int main() {
+	DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, &IID_IDWriteFactory4, (IUnknown**) &a);
+	a->lpVtbl->IDWriteFactory3_GetSystemFontCollection( a, 1, &b, 1 );
+	return 0;
+}
+DW
+	if ( $rc ) {
+		$response = 'yes';
+		$DEFINES{USE_DIRECT_WRITE} = 1;
+	} else {
+		@LIBS = @libs;
+	}
+	printlog "$response\n";
+}
+
 sub setup_compiler
 {
 	printlog "Compiler: $compiler_type\n";
@@ -1068,7 +1097,6 @@ MSCVER
 
 	push @LIBS, qw(
 		usp10 gdi32 gdiplus mpr winspool comdlg32 msimg32 ole32 uuid
-		d2d1 dwrite
 	) if $Win32; # add more when appropriate
 	push @LIBPATH, '/usr/lib/w32api' if $cygwin;
 	if ($^O eq 'solaris') {
@@ -1167,7 +1195,10 @@ sub setup_defines
 	}
 	find_inline();
 	find_glibc;
-	find_setjmp if $^O =~ /win32/i;
+	if ($^O =~ /win32/i) {
+		find_setjmp;
+		setup_dwrite;
+	}
 }
 
 sub setup_dl_loadflags

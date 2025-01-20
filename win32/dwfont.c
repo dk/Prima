@@ -1,5 +1,8 @@
 /* DirectWrite-based fonts */
 
+#include "generic/config.h"
+#ifdef USE_DIRECT_WRITE
+
 #define INITGUID
 #include "guts.h"
 #include "win32\win32guts.h"
@@ -550,4 +553,6 @@ dwrite_free_face(void *face)
 
 #ifdef __cplusplus
 }
+#endif
+
 #endif
