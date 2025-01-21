@@ -111,7 +111,10 @@ sub message_box
 	$dlg-> scaleChildren(0);
 
 	my $iconRight = 0;
-	if ( $icon and ($icon = Prima::StdBitmap::icon( $icon))) {
+	if (
+		$icon and
+		($icon = ($extras->{icon} // Prima::StdBitmap::icon( $icon)))
+	) {
 		my $iconView = $dlg-> insert( Widget =>
 			growMode       => gm::GrowHiY,
 			left           => 20,
@@ -123,8 +126,7 @@ sub message_box
 				my $self = $_[1];
 				$self-> clear;
 				$self-> put_image(0, ($self->height - $icon->height)/2, $icon);
-			},
-			%{$extras->{icon} // {}},
+			}
 		);
 		$iconRight = $iconView-> right;
 	}
@@ -444,11 +446,11 @@ Selects the help TOPIC invoked in the help viewer window if the C<mb::Help>
 button is pressed by the user. If this option is not set, L<Prima> is
 displayed.
 
-=item icon HASH
+=item icon IMAGE
 
 Only for C<message_box>.
 
-Contains the profile hash passed to the image viewer as creation parameters
+Contains the icon to display 
 
 =item input HASH
 
