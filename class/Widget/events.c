@@ -3,26 +3,17 @@
 #include "Application.h"
 #include "Popup.h"
 #include "Widget.h"
+#include "Widget_private.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#undef  my
-#define inherited CDrawable
-
 #define enter_method PWidget_vmt selfvmt = ((( PWidget) self)-> self)
+#undef my
 #define my  selfvmt
-#define var (( PWidget) self)
-
 #define evOK ( var-> evStack[ var-> evPtr - 1])
 #define objCheck if ( var-> stage > csNormal) return
-
-extern Bool Widget_size_notify( Handle self, Handle child, const Rect* metrix);
-extern Bool Widget_move_notify( Handle self, Handle child, Point * moveTo);
-extern void Widget_pack_slaves( Handle self);
-extern void Widget_place_slaves( Handle self);
-
 
 static Bool
 dnd_event_wanted(Handle self, PEvent event)
