@@ -144,6 +144,7 @@ typesize(char type)
 	case 's': return sizeof(int16_t);
 	case 'i': return sizeof(int);
 	case 'd': return sizeof(double);
+	case 'H': return sizeof(Handle); /* this type is not exported to perl, is for internal use only */
 	default: croak("Bad type %c", type);
 	}
 }
@@ -239,7 +240,7 @@ prima_read_array( SV * points, char * procName, char type, int div, int min, int
 	if ( count == 0)
 		return NULL;
 
-	{
+	if ( type != 'H') {
 		void * ref;
 		char * pack;
 		if ( prima_array_parse( points, &ref, NULL, &pack )) {
@@ -279,6 +280,8 @@ prima_read_array( SV * points, char * procName, char type, int div, int min, int
 		case 'S':
 			*(((uint16_t*)p) + i) = SvUV( *psv);
 			break;
+		case 'H':
+			*(((Handle*)p) + i) = PTR2UV(*psv);
 		}
 	}
 

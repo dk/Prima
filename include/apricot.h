@@ -2085,7 +2085,9 @@ GT(GrowMode)
 GT(Pack)
 #define gtPlace            2
 GT(Place)
-#define gtMax              2
+#define gtGrid             3
+GT(Grid)
+#define gtMax              3
 GT(Max)
 END_TABLE(gt,UV)
 #undef GT
@@ -2445,7 +2447,7 @@ apc_window_end_modal( Handle self);
 
 typedef struct {
 	/* common geometry fields */
-	Handle         next;           /* dynamically filled linked list of pack slaves */
+	Handle         next;           /* dynamically filled linked list of slaves */
 	Handle         in;             /* 'in' option */
 	/* pack */
 	Point          pad;            /* border padding */

@@ -73,6 +73,7 @@ class/Widget.c
 class/Widget.cls
 class/Widget/events.c
 class/Widget/geometry.c
+class/Widget/grid.c
 class/Widget/taborder.c
 class/Window.c
 class/Window.cls
@@ -185,6 +186,7 @@ include/img.h
 include/img_conv.h
 include/Drawable_private.h
 include/Image_private.h
+include/Widget_private.h
 include/unix/guts.h
 include/unix/queue.h
 include/win32/win32guts.h

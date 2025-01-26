@@ -42,10 +42,9 @@ object Prima::Widget( Prima::Drawable)
 #	growMode:
 	int       growMode;                 # growing flags, see gmGrowXXX
 	Point     virtualSize;              # fictive size not aware of size limits
-#	pack
 	Handle    packSlaves;               # first pack slave in linked list
-#	place
 	Handle    placeSlaves;              # first place slave in linked list
+	void *    gridder;                  # storage for GetGrid
 
 #	properties
 	property  SV *   accelItems;
@@ -137,6 +136,7 @@ object Prima::Widget( Prima::Drawable)
 	static   SV      *fetch_resource( char *className, char *name, char *classRes, char *res, Handle owner, int resType = frString);
 	method   Handle   first();
 	c_only   Handle   first_that( void * actionProc, void * params);
+	public   void     grid();
 	c_only   void     handle_event ( PEvent event);
 	method   void     hide();
 	method   void     hide_cursor();

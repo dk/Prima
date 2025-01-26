@@ -1,21 +1,12 @@
 #include "apricot.h"
 #include "guts.h"
 #include "Widget.h"
+#include "Widget_private.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#undef  my
-#define inherited CDrawable
-#define my  ((( PWidget) self)-> self)
-#define var (( PWidget) self)
-#define his (( PWidget) child)
-
-void Widget_pack_slaves( Handle self);
-void Widget_place_slaves( Handle self);
-Bool Widget_size_notify( Handle self, Handle child, const Rect* metrix);
-Bool Widget_move_notify( Handle self, Handle child, Point * moveTo);
 static void Widget_pack_enter( Handle self);
 static void Widget_pack_leave( Handle self);
 static void Widget_place_enter( Handle self);
@@ -67,6 +58,9 @@ geometry_reset( Handle self, int geometry)
 
 	if ( geometry == gtPlace || geometry < 0)
 		Widget_place_slaves( self);
+
+	if ( geometry == gtGrid || geometry < 0)
+		Widget_grid_slaves( self);
 }
 
 int
@@ -91,6 +85,9 @@ Widget_geometry( Handle self, Bool set, int geometry)
 	case gtPack:
 		Widget_pack_leave( self);
 		break;
+	case gtGrid:
+		Widget_grid_leave( self);
+		break;
 	}
 	var-> geometry = geometry;
 	switch ( var-> geometry) {
@@ -103,6 +100,9 @@ Widget_geometry( Handle self, Bool set, int geometry)
 		break;
 	case gtPack:
 		Widget_pack_enter( self);
+		break;
+	case gtGrid:
+		Widget_grid_enter( self);
 		break;
 	}
 	geometry_reset_all();
@@ -159,11 +159,11 @@ Widget_reset_children_geometry( Handle self)
 {
 	Widget_pack_slaves( self);
 	Widget_place_slaves( self);
+	Widget_grid_slaves( self);
 }
 
-/* checks if Handle in is allowed to be a master for self -
-	used for gt::Pack */
-static Handle
+/* checks if Handle in is allowed to be a master for self */
+Handle
 Widget_check_in( Handle self, Handle in, Bool barf)
 {
 	Handle h = in;
@@ -209,6 +209,8 @@ Widget_check_in( Handle self, Handle in, Bool barf)
 		}
 		h = PWidget( h)-> geomInfo. next;
 	}
+
+	/* XXX check grid slaves */
 
 	/* place to check other chains if needed */
 

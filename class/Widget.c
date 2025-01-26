@@ -4,6 +4,7 @@
 #include "Popup.h"
 #include "Region.h"
 #include "Widget.h"
+#include "Widget_private.h"
 #include "Window.h"
 #include <Widget.inc>
 
@@ -16,14 +17,11 @@ extern "C" {
 #undef  set_hint
 #undef  get_hint
 #undef  my
-#define inherited CDrawable
 #define enter_method PWidget_vmt selfvmt = ((( PWidget) self)-> self)
 #define my  selfvmt
-#define var (( PWidget) self)
 
 typedef Bool ActionProc ( Handle self, Handle item, void * params);
 typedef ActionProc *PActionProc;
-#define his (( PWidget) child)
 
 /* local defines */
 typedef struct _SingleColor
@@ -250,6 +248,8 @@ Widget_update_sys_handle( Handle self, HV * profile)
 void
 Widget_done( Handle self)
 {
+	Widget_grid_destroy(self);
+
 	if ( var-> dndAware != NULL ) {
 		free( var-> dndAware );
 		var-> dndAware = NULL;
