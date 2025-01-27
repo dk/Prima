@@ -111,10 +111,12 @@ sub message_box
 	$dlg-> scaleChildren(0);
 
 	my $iconRight = 0;
-	if (
-		$icon and
-		($icon = ($extras->{icon} // Prima::StdBitmap::icon( $icon)))
-	) {
+	if ( defined $extras->{icon}) {
+		$icon = $extras->{icon};
+	} elsif ( $icon ) {
+		$icon = Prima::StdBitmap::icon( $icon);
+	}
+	if ($icon) {
 		my $iconView = $dlg-> insert( Widget =>
 			growMode       => gm::GrowHiY,
 			left           => 20,
