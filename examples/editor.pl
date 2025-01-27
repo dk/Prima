@@ -371,10 +371,11 @@ sub do_find
 	my $e = $self-> {editor};
 	my $p = $self-> {findData};
 	my @scope;
+	my $success;
 	FIND:{
-		if ( $$p{scope} != fds::Cursor) {
+		if ( !@scope && $$p{scope} != fds::Cursor) {
 			if ( $e-> has_selection) {
-			my @sel = $e-> selection;
+				my @sel = $e-> selection;
 				@scope = ($$p{scope} == fds::Top) ? ($sel[0],$sel[1]) : ($sel[2], $sel[3]);
 			} else {
 				@scope = ($$p{scope} == fds::Top) ? (0,0) : (-1,-1);
@@ -384,7 +385,12 @@ sub do_find
 		}
 		my @n = $e-> find( $$p{findText}, @scope, $$p{replaceText}, $$p{options});
 		if ( !defined $n[0]) {
-			Prima::MsgBox::message("No matches found");
+			Prima::MsgBox::message_box(
+				$self->text,
+				$success ?
+					("All done", mb::Information) :
+					("No matches found", mb::Error)
+			);
 			return;
 		}
 		$e-> cursor(($$p{options} & fdo::BackwardSearch) ? $n[0] : $n[2], $n[1]);
@@ -399,6 +405,7 @@ sub do_find
 				last FIND if $r == mb::Cancel;
 			}
 			$e-> set_line( $n[1], $n[3]);
+			$success = 1;
 			redo FIND if $$p{result} == mb::ChangeAll;
 		}
 	}
