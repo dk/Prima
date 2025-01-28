@@ -305,14 +305,14 @@ GridBboxCommand(Handle self, PList in, PList out)
 		row = column = row2 = column2 = 0;
 		break;
 	case 2:
-		column = column2 = ARGi(2);
-		row    = row2    = ARGi(3);
+		column = column2 = ARGi(0);
+		row    = row2    = ARGi(1);
 		break;
 	case 4:
-		column  = ARGi(2);
-		row     = ARGi(3);
-		column2 = ARGi(4);
-		row2    = ARGi(5);
+		column  = ARGi(0);
+		row     = ARGi(1);
+		column2 = ARGi(2);
+		row2    = ARGi(3);
 		break;
 	default:
 		return false;
@@ -415,8 +415,8 @@ GridForgetRemoveCommand(Handle self, Bool forget, PList in, PList out)
 
 	for (i = 0; i < in->count; i++) {
 		Handle slave = get_slave(self, ARGsv(i));
-		Gridder *slavePtr = GetGrid(slave);
-		if (!slavePtr->masterPtr)
+		Gridder *slavePtr = GetGrid(slave), *masterPtr = slavePtr->masterPtr;
+		if (!masterPtr)
 			continue;
 
 		/*
@@ -435,6 +435,8 @@ GridForgetRemoveCommand(Handle self, Bool forget, PList in, PList out)
 		Unlink(slavePtr);
 		CWidget(slavePtr->window)->hide(slavePtr->window);
 		CWidget(slave)->set_geometry(self, gtGrowMode);
+		SetGridSize(masterPtr);
+		ArrangeGrid(masterPtr);
 	}
 
 	return true;
@@ -1139,8 +1141,6 @@ ArrangeGrid(Gridder *masterPtr)
 	) {
 		Point p = {width,height};
 		CWidget(masterPtr->window)->set_geomSize(masterPtr->window,p);
-		//if ( width > 1 && height > 1 )
-		//	ArrangeGrid(masterPtr);
 		masterPtr->abortPtr = NULL;
 		return;
 	}
@@ -1953,7 +1953,7 @@ DestroyGrid(Handle self)
  *        a profile hash
  *
  *	1.Contrary to the Tk syntax, window names such as 'xe' and 'xy' will be treated as true window names,
- *	not REL_SKIP commands. Only strings such as 'x', 'xx', 'xxx' etc will be.
+ *	not REL_SKIP commands. Only string 'x' will be.
  *
  *	2. s/columnspan/colspan/, hello html
  *
@@ -1962,18 +1962,6 @@ DestroyGrid(Handle self)
  *
  *----------------------------------------------------------------------
  */
-
-static Bool
-only_xes( char *str)
-{
-	int j, l;
-	l = strlen(str);
-	for ( j = 0; j < l; j++) {
-		if ( *(str++) == REL_SKIP ) continue;
-		return 0;
-	}
-	return l > 0;
-}
 
 #define METHOD "Widget::grid_configure_slaves"
 
@@ -2100,7 +2088,7 @@ ConfigureSlaves(Handle self, SV* window, HV *profile)
 		if (*firstStr == REL_HORIZ) {
 			if (
 				i==0 ||
-				only_xes(prevStr) ||
+				(prevStr[0] == REL_SKIP && prevStr[1] == 0) ||
 				(strcmp(prevStr, "^") == 0)
 			)
 			croak("%s: Must specify window before shortcut '-'.", METHOD);
@@ -2128,11 +2116,7 @@ ConfigureSlaves(Handle self, SV* window, HV *profile)
 			 * '^' and 'x' cause us to skip a column.  '-' is processed
 			 * as part of its preceeding slave.
 			 */
-			if ( only_xes(firstStr)) {
-				defaultColumn++;
-				continue;
-			}
-			if (len == 1 && *firstStr == REL_VERT) {
+			if (len == 1 && (*firstStr == REL_VERT || *firstStr == REL_SKIP)) {
 				defaultColumn++;
 				continue;
 			}
@@ -2233,8 +2217,13 @@ ConfigureSlaves(Handle self, SV* window, HV *profile)
 		if (masterPtr->abortPtr != NULL) {
 			*masterPtr->abortPtr = 1;
 		}
-		PWidget(slave)->geometry = gtGrid;
-		ArrangeGrid(masterPtr);
+
+		if ( PWidget(slave)->geometry == gtGrid) {
+			SetGridSize(masterPtr);
+			ArrangeGrid(masterPtr);
+		} else {
+			CWidget(slave)->set_geometry(self, gtGrid);
+		}
 	}
 
 	/* Now look for all the "^"'s. */
@@ -2249,15 +2238,13 @@ ConfigureSlaves(Handle self, SV* window, HV *profile)
 		len = 0;
 		firstStr = SvROK(slaves[i]) ? "" : SvPV( slaves[i], len);
 
-		if ( *firstStr == REL_SKIP ) {
+		if ( len == 1 && *firstStr == REL_SKIP ) {
 			numSkip++;
 		} else if ( len == 1 && *firstStr == REL_VERT) {
 			/* do nothing */
 		} else {
-			if ( !only_xes(firstStr)) {
-				numSkip = 0;
-				lastWindow = get_slave(self, slaves[i]);
-			}
+			numSkip = 0;
+			lastWindow = get_slave(self, slaves[i]);
 			continue;
 		}
 
@@ -2457,6 +2444,7 @@ Widget_grid_enter( Handle self)
 		slavePtr->saved_in = NULL_HANDLE;
 
 	link_slave(slavePtr, GetGrid(slavePtr->saved_in ? slavePtr->saved_in : var->owner));
+	ArrangeGrid(slavePtr->masterPtr);
 }
 
 void
@@ -2478,11 +2466,11 @@ opt2hv( PList in, int start )
 	return profile;
 }
 
-XS( Widget_grid_FROMPERL)
+XS( Widget_grid_action_FROMPERL)
 {
 	dXSARGS;
 	Handle self;
-	char *selector;
+	char *selector = "";
 	int i, ok = false;
 	List in, out;
 
@@ -2505,15 +2493,16 @@ XS( Widget_grid_FROMPERL)
 	if ( strcmp(selector, "bbox") == 0) {
 		ok = GridBboxCommand(self, &in, &out);
 	} else if (
-		(strcmp(selector, "columnconfigure") == 0) ||
+		(strcmp(selector, "colconfigure") == 0) ||
 		(strcmp(selector, "rowconfigure") == 0)
 	) {
 		ok = GridRowColumnConfigureCommand(self, (*selector == 'c') ? COLUMN : ROW, &in, &out);
 	} else if ( strcmp(selector, "configure") == 0) {
-		HV * profile = opt2hv(&in, 1);
-		ConfigureSlaves(self, (SV*)in.items[0], profile);
-		hash_destroy(profile, false);
-		ok = true;
+		if (( ok = ( in.count > 0 ))) {
+			HV * profile = opt2hv(&in, 1);
+			ConfigureSlaves(self, (SV*)in.items[0], profile);
+			hash_destroy(profile, false);
+		}
 	} else if (
 		(strcmp(selector, "forget") == 0) ||
 		(strcmp(selector, "remove") == 0)
@@ -2530,7 +2519,7 @@ XS( Widget_grid_FROMPERL)
 	} else if ( strcmp(selector, "slaves") == 0) {
 		ok = GridSlavesCommand(self, &in, &out);
 	} else {
-		croak("Widget.grid: not such subcommand");
+		croak("Widget.grid_action: not such subcommand");
 	}
 
 	if ( out.count > 0 ) {
@@ -2543,12 +2532,12 @@ XS( Widget_grid_FROMPERL)
 	PUTBACK;
 
 FAIL:
-	if ( !ok ) croak ("Invalid usage of Widget.grid");
+	if ( !ok ) croak ("Invalid usage of Widget.grid_action(%s)", selector);
 	return;
 }
 
-void Widget_grid          ( Handle self) { warn("Invalid call of Widget::grid"); }
-void Widget_grid_REDEFINED( Handle self) { warn("Invalid call of Widget::grid"); }
+void Widget_grid_action          ( Handle self) { warn("Invalid call of Widget::grid_action"); }
+void Widget_grid_action_REDEFINED( Handle self) { warn("Invalid call of Widget::grid_action"); }
 
 
 #ifdef __cplusplus

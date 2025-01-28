@@ -1749,6 +1749,18 @@ sub placeForget { $_[0]-> geometry( gt::Default) if $_[0]-> geometry == gt::Plac
 sub packSlaves { shift-> get_pack_slaves()}
 sub placeSlaves { shift-> get_place_slaves()}
 
+sub gridConfigure    { shift->grid_action(configure    => @_ )}
+sub gridBbox         { shift->grid_action(bbox         => @_ )}
+sub gridInfo         { shift->grid_action(info         => @_ )}
+sub gridLocation     { shift->grid_action(location     => @_ )}
+sub gridColConfigure { shift->grid_action(colconfigure => @_ )}
+sub gridRowConfigure { shift->grid_action(rowconfigure => @_ )}
+sub gridPropagate    { shift->grid_action(propagate    => @_ )}
+sub gridSize         { shift->grid_action(size         => @_ )}
+sub gridSlaves       { shift->grid_action(slaves       => @_ )}
+sub gridForget       { shift->grid_action(forget       => @_ )}
+sub gridRemove       { shift->grid_action(remove       => @_ )}
+
 sub rect_bevel
 {
 	my ( $self, $canvas, $x, $y, $x1, $y1, %opt) = @_;
