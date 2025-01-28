@@ -355,7 +355,8 @@ the stacking order of either the master or the slave.
 
 L<Prima>, L<Prima::Widget>
 
-L<Tk::pack|Tk::pack>
-L<Tk::place|Tk::place>
+L<Prima::Widget::pack|Prima::Widget::pack>
+L<Prima::Widget::place|Prima::Widget::place>
+L<Prima::Widget::grid|Prima::Widget::grid>
 
 =cut

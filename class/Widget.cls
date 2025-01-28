@@ -136,7 +136,7 @@ object Prima::Widget( Prima::Drawable)
 	static   SV      *fetch_resource( char *className, char *name, char *classRes, char *res, Handle owner, int resType = frString);
 	method   Handle   first();
 	c_only   Handle   first_that( void * actionProc, void * params);
-	public   void     grid();
+	public   void     grid_action();
 	c_only   void     handle_event ( PEvent event);
 	method   void     hide();
 	method   void     hide_cursor();
