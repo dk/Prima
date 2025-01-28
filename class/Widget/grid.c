@@ -434,7 +434,7 @@ GridForgetRemoveCommand(Handle self, Bool forget, PList in, PList out)
 		}
 		Unlink(slavePtr);
 		CWidget(slavePtr->window)->hide(slavePtr->window);
-		CWidget(slave)->geometry(self, gtGrowMode);
+		CWidget(slave)->set_geometry(self, gtGrowMode);
 	}
 
 	return true;
@@ -1137,7 +1137,10 @@ ArrangeGrid(Gridder *masterPtr)
 		(width != sz.x || height != sz.y ) &&
 		!(masterPtr->flags & DONT_PROPAGATE)
 	) {
-		ArrangeGrid(masterPtr);
+		Point p = {width,height};
+		CWidget(masterPtr->window)->set_geomSize(masterPtr->window,p);
+		//if ( width > 1 && height > 1 )
+		//	ArrangeGrid(masterPtr);
 		masterPtr->abortPtr = NULL;
 		return;
 	}
@@ -2060,7 +2063,7 @@ ConfigureSlaves(Handle self, SV* window, HV *profile)
 	Gridder *masterPtr;
 	Gridder *slavePtr;
 	Handle slave, parent;
-	int i, j;
+	int i;
 	int width;
 	int defaultColumn = 0;        /* default column number */
 	int defaultColumnSpan = 1;    /* default number of columns */
@@ -2079,13 +2082,13 @@ ConfigureSlaves(Handle self, SV* window, HV *profile)
 	))
 		croak("%s: window is neither an object nor an array of objects", METHOD);
 
-	if (SvTYPE(SvRV(window)) == SVt_PVAV) {
+	if (SvROK(window) && (SvTYPE(SvRV(window)) == SVt_PVAV)) {
 		if ( !( slaves = (SV**) prima_read_array(window, METHOD, 'H', 1, 0, 0, &n_slaves, NULL)))
 			croak("%s: cannot read array of windows, or the array is empty", METHOD);
 	} else {
 		slaves   = malloc(sizeof(SV*));
-		*slaves  = window;
 		n_slaves = 1;
+		*slaves  = window;
 	}
 
 	firstStr = "";
@@ -2117,7 +2120,7 @@ ConfigureSlaves(Handle self, SV* window, HV *profile)
 	 */
 
 	masterPtr = NULL;
-	for (j = 0; j < n_slaves; j++) {
+	for (i = 0; i < n_slaves; i++) {
 		if ( !SvROK(slaves[i])) {
 			firstStr = SvPV( slaves[i], len);
 
@@ -2137,9 +2140,9 @@ ConfigureSlaves(Handle self, SV* window, HV *profile)
 				continue;
 			}
 
-			for (defaultColumnSpan = 1; j + defaultColumnSpan < n_slaves; defaultColumnSpan++) {
+			for (defaultColumnSpan = 1; i + defaultColumnSpan < n_slaves; defaultColumnSpan++) {
 				STRLEN l = 1;
-				char *string = SvROK( slaves[j+defaultColumnSpan] ) ? "" : SvPV(slaves[j + defaultColumnSpan], l);
+				char *string = SvROK( slaves[i+defaultColumnSpan] ) ? "" : SvPV(slaves[i + defaultColumnSpan], l);
 				if ( l != 1 || *string != REL_HORIZ) {
 					break;
 				}
@@ -2230,7 +2233,7 @@ ConfigureSlaves(Handle self, SV* window, HV *profile)
 		if (masterPtr->abortPtr != NULL) {
 			*masterPtr->abortPtr = 1;
 		}
-		CWidget(slave)->geometry = gtGrid;
+		PWidget(slave)->geometry = gtGrid;
 		ArrangeGrid(masterPtr);
 	}
 
@@ -2238,13 +2241,13 @@ ConfigureSlaves(Handle self, SV* window, HV *profile)
 
 	lastWindow = -1;
 	numSkip = 0;
-	for (j = 0; j < n_slaves; j++) {
+	for (i = 0; i < n_slaves; i++) {
 		struct Gridder *otherPtr;
 		int match;                        /* found a match for the ^ */
 		int lastRow, lastColumn;        /* implied end of table */
 
 		len = 0;
-		firstStr = SvROK(slaves[j]) ? "" : SvPV( slaves[j], len);
+		firstStr = SvROK(slaves[i]) ? "" : SvPV( slaves[i], len);
 
 		if ( *firstStr == REL_SKIP ) {
 			numSkip++;
@@ -2253,7 +2256,7 @@ ConfigureSlaves(Handle self, SV* window, HV *profile)
 		} else {
 			if ( !only_xes(firstStr)) {
 				numSkip = 0;
-				lastWindow = get_slave(self, slaves[j]);
+				lastWindow = get_slave(self, slaves[i]);
 			}
 			continue;
 		}
@@ -2263,9 +2266,9 @@ ConfigureSlaves(Handle self, SV* window, HV *profile)
 		}
 
 		/* Count the number of consecutive ^'s starting from this position */
-		for (width = 1; width + j < n_slaves; width++) {
+		for (width = 1; width + i < n_slaves; width++) {
 			len = 0;
-			firstStr = SvROK(slaves[j+width]) ? "" : SvPV( slaves[j+width], len);
+			firstStr = SvROK(slaves[i+width]) ? "" : SvPV( slaves[i+width], len);
 			if (len != 1 || *firstStr != REL_VERT )
 				break;
 		}
@@ -2298,7 +2301,7 @@ ConfigureSlaves(Handle self, SV* window, HV *profile)
 				if (slavePtr->numCols <= width) {
 					slavePtr->numRows++;
 					match++;
-					j += slavePtr->numCols - 1;
+					i += slavePtr->numCols - 1;
 					lastWindow = slavePtr->window;
 					numSkip = 0;
 					break;
@@ -2465,7 +2468,7 @@ Widget_grid_destroy( Handle self)
 static HV*
 opt2hv( PList in, int start )
 {
-	HV *profile = newHV();
+	HV *profile = prima_hash_create();
 	for ( ; start < in->count; start += 2 ) {
 		STRLEN l;
 		char *key = SvPV((SV*) in->items[start], l);
@@ -2507,9 +2510,9 @@ XS( Widget_grid_FROMPERL)
 	) {
 		ok = GridRowColumnConfigureCommand(self, (*selector == 'c') ? COLUMN : ROW, &in, &out);
 	} else if ( strcmp(selector, "configure") == 0) {
-		HV * profile = opt2hv(&in, 3);
-		ConfigureSlaves(self, (SV*)in.items[2], profile);
-		sv_free((SV*) profile);
+		HV * profile = opt2hv(&in, 1);
+		ConfigureSlaves(self, (SV*)in.items[0], profile);
+		hash_destroy(profile, false);
 		ok = true;
 	} else if (
 		(strcmp(selector, "forget") == 0) ||
