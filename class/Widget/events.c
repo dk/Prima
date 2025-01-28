@@ -380,6 +380,7 @@ SIZE_EVENT:;
 	}
 	Widget_pack_slaves( self);
 	Widget_place_slaves( self) ;
+	Widget_grid_slaves( self) ;
 }
 
 static Bool
