@@ -450,7 +450,13 @@ prima_keysym_to_keycode( KeySym keysym, XKeyEvent *ev, U8 character )
 	case XK_Num_Lock:     keycode = kbNumLock;    break;
 	case XK_Scroll_Lock:  keycode = kbScrollLock; break;
 	case XK_Shift_Lock:   keycode = kbShiftLock;  break;
-	case XK_Mode_switch:  keycode = kbModeSwitch; break;
+	case XK_Mode_switch:  keycode =
+#ifdef OPTION_IS_ALT
+		kbModeSwitch
+#else
+		kbAltL
+#endif
+		;break;
 	/* virtual keys with charcode */
 	case XK_BackSpace:    keycode = kbBackspace;  break;
 	case XK_Tab:          keycode = kbTab;        break;

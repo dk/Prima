@@ -129,18 +129,23 @@ $0 - configuration script for Prima
 syntax:
     perl Makefile.PL [options]
 
-options:
+X11 options:
     X11BASE           - path where X11 includes and libraries are installed
-    WITH_XFT          - compile with/without Xft (default 1), X only
+    WITH_XFT          - compile with/without Xft (default 1)
     WITH_FRIBIDI      - compile with/without fribidi (default 1)
-    WITH_FONTCONFIG   - compile with/without fontconfig (default 1), X only
-    WITH_FREETYPE     - compile with/without freetype (default 1), X only
-    WITH_HARFBUZZ     - compile with/without harfbuzz (default 1), X only
-    WITH_ICONV        - compile with/without iconv (default 1), X only
-    WITH_GTK3         - compile with/without GTK3 (default 1), X only
-    WITH_GTK2         - compile with/without GTK2 (default 0), X only
+    WITH_FONTCONFIG   - compile with/without fontconfig (default 1)
+    WITH_FREETYPE     - compile with/without freetype (default 1)
+    WITH_HARFBUZZ     - compile with/without harfbuzz (default 1)
+    WITH_ICONV        - compile with/without iconv (default 1)
+    WITH_GTK3         - compile with/without GTK3 (default 1)
+    WITH_GTK2         - compile with/without GTK2 (default 0)
+
+MacOSX options:
+    WITH_COCOA        - compile with/without Cocoa (default 1)
+    OPTION_IS_ALT     - the Option key is kb::Alt (1 on mac, 0 otherwise)
+
+Generic options:
     WITH_OPENMP       - compile with/without openmp (default 1)
-    WITH_COCOA        - compile with/without Cocoa (default 1), MacOSX only
     WITH_LIBTHAI      - compile with/without libthai (default 1)
     DEBUG             - build with debug information
     VERBOSE           - don't redirect commands to makefile.log
@@ -201,6 +206,7 @@ sub setup_argv
 		WITH_GTK3       => $ENV{PRIMA_WITH_GTK3}        // ($^O !~ /mswin32/i),
 		WITH_OPENMP     => $ENV{PRIMA_WITH_OPENMP}      // 1,
 		WITH_COCOA      => $ENV{PRIMA_WITH_COCOA}       // ($^O eq 'darwin'),
+		OPTION_IS_ALT   => $ENV{OPTION_IS_ALT}          // ($^O eq 'darwin'),
 		WITH_LIBTHAI    => $ENV{PRIMA_WITH_LIBTHAI}     // 1,
 		DEBUG           => $ENV{PRIMA_DEBUG}            // 0,
 		EXTRA_CCFLAGS   => $ENV{PRIMA_EXTRA_CCFLAGS}    // '',
@@ -1199,6 +1205,8 @@ sub setup_defines
 		find_setjmp;
 		setup_dwrite;
 	}
+
+	$DEFINES{OPTION_IS_ALT} = 1 if $cmd_options{OPTION_IS_ALT};
 }
 
 sub setup_dl_loadflags
