@@ -985,6 +985,7 @@ See also L<Prima::Widget/KeyDown>.
 	kb::AltL     kb::AltR     kb::MetaL      kb::MetaR
 	kb::SuperL   kb::SuperR   kb::HyperL     kb::HyperR
 	kb::CapsLock kb::NumLock  kb::ScrollLock kb::ShiftLock
+	kb::ModeSwitch
 
 =item Keys with character code defined
 

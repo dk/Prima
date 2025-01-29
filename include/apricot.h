@@ -993,6 +993,8 @@ KB(NumLock)
 KB(ScrollLock)
 #define kbShiftLock     0x00011000
 KB(ShiftLock)
+#define kbModeSwitch    0x00011100
+KB(ModeSwitch)
 
 /* Virtual keys which have character code at the same time */
 #define kbBackspace     0x00020800

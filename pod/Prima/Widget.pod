@@ -2831,6 +2831,7 @@ aliased, for example, C<kb::PgDn> and C<kb::PageDown> have the same value.
    kb::AltL     kb::AltR     kb::MetaL      kb::MetaR
    kb::SuperL   kb::SuperR   kb::HyperL     kb::HyperR
    kb::CapsLock kb::NumLock  kb::ScrollLock kb::ShiftLock
+   kb::ModeSwitch
 
 =item Keys with character code defined
 
