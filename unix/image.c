@@ -2466,7 +2466,7 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
 	PImage img = PImage( image);
 	PutImageRequest req;
 	PutImageFunc ** dst = NULL;
-	Bool ok;
+	Bool ok, try_xrender;
 	XGCValues gcv;
 	int src;
 
@@ -2490,6 +2490,11 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
 	req.dst_w = req.w;
 	req.dst_h = req.h;
 #endif
+	/* there's some bug in XQuartz that doesn't render well on unbuffered drawables */
+	try_xrender = !(
+		guts.is_darwin && guts.x11_local && XT_IS_WIDGET(XX) &&
+		XX-> udrawable && XX-> udrawable == XX-> gdrawable && !is_opt( optInDrawInfo)
+	);
 
 	src = get_image_src_format(self, image, &rop);
 	if ( src == SRC_LAYERED || src == SRC_ARGB ) {
@@ -2501,7 +2506,7 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
 		warn("cannot guess image type");
 		return false;
 	}
-	if (!(dst = get_image_dst_format(self, image, rop, src, true))) {
+	if (!(dst = get_image_dst_format(self, image, rop, src, try_xrender))) {
 		warn("cannot guess surface type");
 		return false;
 	}
@@ -3238,6 +3243,7 @@ apc_gp_stretch_image( Handle self, Handle image,
 	int dst_w, int dst_h, int src_w, int src_h,
 	int rop, Bool use_matrix)
 {
+	DEFXX;
 	int src;
 	PutImageFunc **dst;
 	PImage img = (PImage) image;
@@ -3276,6 +3282,13 @@ apc_gp_stretch_image( Handle self, Handle image,
 	if ( src_w <= 0 || src_h <= 0) return false;
 
 	if ( !guts.render_extension)
+		goto FALLBACK;
+
+	/* there's some bug in XQuartz that doesn't render well on unbuffered drawables */
+	if (
+		guts.is_darwin && guts.x11_local && XT_IS_WIDGET(XX) &&
+		XX-> udrawable && XX-> udrawable == XX-> gdrawable && !is_opt( optInDrawInfo)
+	)
 		goto FALLBACK;
 
 	src = get_image_src_format(self, image, &rop);
@@ -3335,7 +3348,7 @@ apc_application_get_bitmap( Handle self, Handle image, int x, int y, int xLen, i
 	if ( xLen <= 0 || yLen <= 0) return false;
 
 #ifdef WITH_COCOA
-	if ( guts. use_quartz && prima_cocoa_is_x11_local()) {
+	if ( guts. use_quartz && guts.x11_local) {
 		uint32_t *pixels;
 		if ( PImage(image)->type != imRGB)
 			CImage( image)-> create_empty( image, xLen, yLen, imRGB);

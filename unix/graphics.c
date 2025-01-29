@@ -738,9 +738,7 @@ apc_gp_can_draw_alpha( Handle self)
 	else
 		return
 			guts.render_supports_argb32
-#ifdef WITH_COCOA
-			&& !prima_cocoa_is_x11_local()
-#endif
+			&& (guts.is_darwin && !guts.x11_local)
 		;
 }
 

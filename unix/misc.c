@@ -661,6 +661,11 @@ apc_system_action( const char *s)
 			return NULL;
 		}
 		break;
+	case 'l':
+		if ( strncmp( s, "local_display", strlen("local_display")) == 0) {
+			return guts.x11_local ? duplicate_string("1") : NULL;
+		}
+		break;
 	case 'r':
 		if ( strncmp( s, "resolution", 10) == 0) {
 			int dx, dy;

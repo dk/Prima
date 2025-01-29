@@ -177,6 +177,17 @@ static Bool  do_no_xrender_matrix = false;
 static Bool  do_no_argb32  = false;
 static Bool  do_no_xim     = false;
 
+static int
+is_x11_local(void)
+{
+	struct stat s;
+	char * display_str = getenv("DISPLAY");
+	if ( !display_str ) return false;
+	if ((stat( display_str, &s) < 0) || !S_ISSOCK(s.st_mode))  /* not a socket */
+		return false;
+	return true;
+}
+
 static Bool
 init_x11( char * error_buf )
 {
@@ -282,12 +293,6 @@ init_x11( char * error_buf )
 	(void)x_io_error_handler;
 	XCHECKPOINT;
 	guts.connection = ConnectionNumber( DISP);
-
-	{
-		struct sockaddr name;
-		socklen_t l = sizeof( name);
-		guts. local_connection = getsockname( guts.connection, &name, &l) >= 0 && l == 0;
-	}
 
 #ifdef HAVE_X11_EXTENSIONS_SHAPE_H
 	if ( XShapeQueryExtension( DISP, &guts.shape_event, &guts.shape_error)) {
@@ -450,9 +455,17 @@ init_x11( char * error_buf )
 #ifdef WITH_GTK
 	guts. use_gtk = do_no_gtk ? false : ( prima_gtk_init() != NULL );
 #endif
+	guts.x11_local = is_x11_local();
 #ifdef WITH_COCOA
-	if ( prima_cocoa_is_x11_local())
+	if ( guts.x11_local)
 		guts. use_quartz = !do_no_quartz;
+	guts.is_darwin = true;
+#else
+	{
+		char f[8];
+		apc_application_get_os_info( f, 8, NULL, 0, NULL, 0, NULL, 0);
+		guts.is_darwin = (strcmp(f, "Darwin") == 0);
+	}
 #endif
 	bzero( &guts. cursor_gcv, sizeof( guts. cursor_gcv));
 	guts. cursor_gcv. cap_style = CapButt;

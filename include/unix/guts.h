@@ -708,7 +708,6 @@ typedef struct _UnixGuts
 		long request_length;
 		long extended_request_length;
 	}                            limits;
-	Bool                         local_connection;
 	Cursor                       null_pointer;
 	int                          pointer_invisible_count; /* 0 is visible, > 0 is not, can't be <0 */
 	int                          mouse_buttons;
@@ -839,6 +838,8 @@ typedef struct _UnixGuts
 #define SKIP_GTK_FONT_CAPTION 8
 #define SKIP_GTK_FONT_WIDGET 16
 	int                          skip_gtk_font;
+	Bool                         x11_local;
+	Bool                         is_darwin;
 } UnixGuts;
 
 extern UnixGuts  guts;
@@ -1705,9 +1706,6 @@ prima_cocoa_application_get_bitmap( int x, int y, int xLen, int yLen, int yMax);
 
 extern char *
 prima_cocoa_system_action( char * params);
-
-extern int
-prima_cocoa_is_x11_local(void);
 #endif
 
 typedef struct _ViewProfile {
