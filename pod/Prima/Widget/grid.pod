@@ -1,0 +1,393 @@
+#  Copyright (c) 1996 Sun Microsystems, Inc.
+#  See the file "license.terms" for information on usage and redistribution
+#  of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+#
+#
+
+=head1 NAME
+
+Prima::grid - Geometry manager that arranges widgets in a grid
+
+=head1 SYNOPSIS
+
+  $subwidget = Prima::Widget->new( name => 'SUB');
+
+  $widget-> gridConfigure($subwidget      => ...);
+  $widget-> gridConfigure(SUB             => ...);
+  $widget-> gridConfigure([SUB, $another] => ...);
+
+=head1 DESCRIPTION
+
+The B<grid> family of methods is used to communicate with the grid geometry
+manager that arranges widgets in rows and columns inside of another window,
+called the geometry master (or master window).  The methods can have any of
+several forms, depending on the arguments. See also the L<"DIFFERENCES FROM TK SYNTAX">
+if you are used to either Tcl/Tk or Perl/Tk naming and behavior.
+
+=over 4
+
+=item I<$slave>-E<gt>B<gridConfigure>(I<$slave|[$slave,$slave...]>, I<options>?)
+
+The arguments consist of the one or more references to more slave windows
+followed by pairs of arguments that specify how to manage the slaves.
+The characters B<->,  B<x> and B<^>,
+can be specified instead of a window reference to alter the default
+location of a I<$slave>, as described in L<"RELATIVE PLACEMENT">, below.
+
+If any of the slaves are already managed by the geometry manager
+then any unspecified options for them retain their previous values rather
+than receiving default values.
+
+The following options are supported:
+
+=over 8
+
+=item B<column> => I<n>
+
+Insert the I<$slave> so that it occupies the I<n>th column in the grid.
+Column numbers start with 0.  If this option is not supplied, then the
+I<$slave> is arranged just to the right of previous slave specified on this
+call to B<grid>, or column "0" if it is the first slave.  For each
+B<x> that immediately precedes the I<$slave>, the column position
+is incremented by one.  Thus the B<x> represents a blank column
+for this row in the grid.
+
+=item B<colspan> => I<n>
+
+Insert the slave so that it occupies I<n> columns in the grid.
+The default is one column, unless the window name is followed by a
+B<->, in which case the colspan is incremented once for each immediately
+following B<->.
+
+=item B<in> => I<$other>
+
+Insert the slave(s) in the master
+window given by I<$other>.  The default is the first slave's
+parent window.
+
+=item B<ipadx> => I<amount>
+
+The I<amount> specifies how much horizontal internal padding to
+leave on each side of the slave(s).  This is space is added
+inside the slave(s) border.
+The I<amount> must be a valid screen distance, such as B<2> or B<'.5c'>.
+It defaults to 0.
+
+=item B<ipady> => I<amount>
+
+The I<amount> specifies how much vertical internal padding to
+leave on on the top and bottom of the slave(s).
+This space is added inside the slave(s) border.
+The I<amount>  defaults to 0.
+
+=item B<padx> => I<amount>
+
+The I<amount> specifies how much horizontal external padding to
+leave on each side of the slave(s), in screen units.
+The I<amount> defaults to 0.
+This space is added outside the slave(s) border.
+
+=item B<pady> => I<amount>
+
+The I<amount> specifies how much vertical external padding to
+leave on the top and bottom of the slave(s), in screen units.
+The I<amount> defaults to 0.
+This space is added outside the slave(s) border.
+
+=item B<row> => I<n>
+
+Insert the slave so that it occupies the I<n>th row in the grid.
+Row numbers start with 0.  If this option is not supplied, then the
+slave is arranged on the same row as the previous slave specified on this
+call to B<grid>, or the first unoccupied row if this is the first slave.
+
+=item B<rowspan> => I<n>
+
+Insert the slave so that it occupies I<n> rows in the grid.
+The default is one row.  If the next B<grid> method contains
+B<^> characters instead of I<$slave>s that line up with the columns
+of this I<$slave>, then the B<rowspan> of this I<$slave> is
+extended by one.
+
+=item B<sticky> => I<style>
+
+If a slave's cell is larger than its requested dimensions, this
+option may be used to position (or stretch) the slave within its cell.
+I<Style>  is a string that contains zero or more of the characters
+B<n>, B<s>, B<e> or B<w>.
+The string can optionally contain spaces or
+commas, but they are ignored.  Each letter refers to a side (north, south,
+east, or west) that the slave will "stick" to.  If both B<n> and B<s> (or
+B<e> and B<w>) are specified, the slave will be stretched to fill the entire
+height (or width) of its cavity.  The B<sticky> option subsumes the
+combination of B<anchor> and B<fill> that is used by L<pack|Prima::Widget::pack>.
+The default is B<''>, which causes the slave to be centered in its cavity,
+at its requested size.
+
+=back
+
+=item I<$master>-E<gt>B<gridBbox>(?I<column, row>,? ?I<column2, row2>?)
+
+With no arguments, the bounding box (in pixels) of the grid is returned.  The
+return value consists of 4 integers.  The first two are the pixel offset from
+the master window (x then y) of the top-left corner of the grid, and the second
+two integers are the width and height of the grid, also in pixels.  If a single
+I<column> and I<row> is specified on the command line, then the bounding box
+for that cell is returned, where the top left cell is numbered from zero.  If
+both I<column> and I<row> arguments are specified, then the bounding box
+spanning the rows and columns indicated is returned.
+
+=item I<$master>-E<gt>B<gridColConfigure>(I<index|[index,index,...]>, I<option>=>I<value, ...>?)
+
+Query or set the column properties of the I<index> column of the geometry
+master, I<$master>. Sets the column properties if more than one index is given.
+The valid options are B<minsize>, B<weight> and B<pad>.  If one or more options
+are provided, then I<index> may be given as a list of column indices to which
+the configuration options will operate on.  The B<minsize> option sets the
+minimum size, in screen units, that will be permitted for this column.  The
+B<weight> option (an integer value) sets the relative weight for apportioning
+any extra spaces among columns.  A weight of zero (0) indicates the column will
+not deviate from its requested size.  A column whose weight is two will grow at
+twice the rate as a column of weight one when extra space is allocated to the
+layout.  The B<uniform> integer option,  when  a non-empty  value  is  supplied,
+places  the column in a I<uniform group> with other columns that have the same
+value for B<uniform>.  The  space for columns belonging to a uniform group is
+allocated so that their sizes are always in  strict  proportion  to  their
+B<weight> values.   See  I<THE GRID ALGORITHM> below for further details.  The
+B<pad> option specifies the number of screen units that will be added to the
+largest window contained completely in that column when the grid geometry
+manager requests a size from the containing window.  If only an option is
+specified, with no value, the current value of that option is returned.  If
+only the master window and index is specified, all the current settings are
+returned in an list of "option value" pairs.
+
+=item I<$slave>-E<gt>B<gridForget>?(I<$slave, ...>)?
+
+Removes each of the I<$slave>s from grid for its master and unmaps their
+windows.  The slaves will no longer be managed by the grid geometry manager.
+The configuration options for that window are forgotten, so that if the slave
+is managed once more by the grid geometry manager, the initial default settings
+are used.
+
+=item I<$slave>-E<gt>B<gridInfo>
+
+Returns a list whose elements are the current configuration state of the slave
+given by I<$slave> in the same option-value form that might be specified to
+B<gridConfigure>.  The first two elements of the list are ``B<in>=>I<$master>''
+where I<$master> is the slave's master.
+
+=item I<$master>-E<gt>B<gridLocation>(I<x, y>)
+
+Given  I<x> and I<y> values in screen units relative to the master window, the
+column and row number at that I<x> and I<y> location is returned.  For
+locations that are above or to the left of the grid, B<-1> is returned.
+
+=item I<$master>-E<gt>B<gridPropagate>?(I<boolean>)?
+
+If I<boolean> has a true boolean value such as B<1> or B<on> then propagation
+is enabled for I<$master>, which must be a window name (see L<"GEOMETRY
+PROPAGATION"> below).  If I<boolean> has a false boolean value then propagation
+is disabled for I<$master>.  In either of these cases an empty string is
+returned.  If I<boolean> is omitted then the method returns B<0> or B<1> to
+indicate whether propagation is currently enabled for I<$master>.  Propagation
+is enabled by default.
+
+=item I<$master>-E<gt>B<gridRowConfigure>(I<index|[index,index,...]>?, I<option>=>I<value, ...>?)
+
+Query or set the row properties of the I<index> row of the geometry master,
+I<$master>.  The valid options are B<minsize>, B<weight> and B<pad>.  If one or
+more options are provided, then I<index> may be given as a list of row indeces
+to which the configuration options will operate on.  The B<minsize> option sets
+the minimum size, in screen units, that will be permitted for this row.  The
+B<weight> option (an integer value) sets the relative weight for apportioning
+any extra spaces among rows.  A weight of zero (0) indicates the row will not
+deviate from its requested size.  A row whose weight is two will grow at twice
+the rate as a row of weight one when extra space is allocated to the layout.
+The B<uniform>  option, when a non-empty value is supplied, places the row in a
+I<uniform group> with other rows that have the same  value for B<uniform>.
+The space for rows belonging to a uniform group is allocated so that their
+sizes are always in strict proportion to  their B<weight> values.  See I<THE
+GRID ALGORITHM> below for further details.  The B<pad> option specifies the
+number of screen units that will be added to the largest window contained
+completely in that row when the grid geometry manager requests a size from the
+containing window.  If only an option is specified, with no value, the current
+value of that option is returned.  If only the master window and index is
+specified, all the current settings are returned in an list of "option-value"
+pairs.
+
+=item I<$slave>-E<gt>B<gridRemove>?(I<$slave, ...>)?
+
+Removes each of the I<$slave>s from grid for its master and unmaps their
+windows.  The slaves will no longer be managed by the grid geometry manager.
+However, the configuration options for that window are remembered, so that if
+the slave is managed once more by the grid geometry manager, the previous
+values are retained.
+
+=item I<$master>-E<gt>B<gridSize>
+
+Returns the size of the grid (in columns then rows) for I<$master>.  The size
+is determined either by the I<$slave> occupying the largest row or column, or
+the largest column or row with a B<minsize>, B<weight>, or B<pad> that is
+non-zero.
+
+=item I<$master>-E<gt>B<gridSlaves>?(I<-option>=>I<value>)?
+
+If no options are supplied, a list of all of the slaves in I<$master> are
+returned, most recently manages first.  I<option> can be either B<row> or
+B<column> which causes only the slaves in the row (or column) specified by
+I<value> to be returned.
+
+=back
+
+=head1 RELATIVE PLACEMENT
+
+The B<grid> method contains a limited set of capabilities that permit layouts
+to be created without specifying the row and column information for each slave.
+This permits slaves to be rearranged, added, or removed without the need to
+explicitly specify row and column information.  When no column or row
+information is specified for a I<$slave>, default values are chosen for
+B<column>, B<row>, B<colspan> and B<rowspan> at the time the I<$slave> is
+managed. The values are chosen based upon the current layout of the grid, the
+position of the I<$slave> relative to other I<$slave>s in the same grid method,
+and the presence of the characters B<->, B<^>, and B<^> in B<grid> method where
+I<$slave> names are normally expected.
+
+=over 4
+
+=item B<->
+
+This increases the colspan of the I<$slave> to the left.  Several B<->'s in a
+row will successively increase the colspan. A B<-> may not follow a B<^> or a
+B<x>.
+
+=item B<x>
+
+This leaves an empty column between the I<$slave> on the left and
+the I<$slave> on the right.
+
+Note: since Prima allows for window names as an alternative to window references,
+an option beginning with C<x> does not necessarily triggers this command.
+
+=item B<^>
+
+This extends the B<-rowspan> of the I<$slave> above the B<^>'s
+in the grid.  The number of B<^>'s in a row must match the number of
+columns spanned by the I<$slave> above it.
+
+=back
+
+=head1 THE GRID ALGORITHM
+
+The grid geometry manager lays out its slaves in three steps.  In the first
+step, the minimum size needed to fit all of the slaves is computed, then (if
+propagation is turned on), a request is made of the master window to become
+that size.  In the second step, the requested size is compared against the
+actual size of the master.  If the sizes are different, then space is added to
+or taken away from the layout as needed.  For the final step, each slave is
+positioned in its row(s) and column(s) based on the setting of its I<sticky>
+flag.
+
+To compute the minimum size of a layout, the grid geometry manager first looks
+at all slaves whose colspan and rowspan values are one, and computes the
+nominal size of each row or column to be either the I<minsize> for that row or
+column, or the sum of the I<pad>ding plus the size of the largest slave,
+whichever is greater.  Then the slaves whose rowspans or columnspans are
+greater than one are examined.  If a group of rows or columns need to be
+increased in size in order to accommodate these slaves, then extra space is
+added to each row or column in the group according to its I<weight>.  For each
+group whose weights are all zero, the additional space is apportioned equally.
+
+When multiple rows or columns belong to a uniform group, the space allocated to
+them is always in proportion to their weights. (A weight of zero is considered
+to be 1.)  In other words, a row or column configured with B<weight 1
+uniform> a will have exactly the same size as any other row or column
+configured with B<weight 1 uniform 1>.  A row or column configured with
+B<weight 2 uniform 2> will be exactly twice as large as one that is
+configured with B<weight 1 uniform 2>.
+
+More technically, each row or column in the group will have a size equal to
+I<k*weight> for some constant k.  The constant k is chosen so that no row or
+column becomes smaller than its minimum size.  For example, if all rows or
+columns in a group have the same weight, then each row or column will have the
+same size as the largest row or column in the group.
+
+For masters whose size is larger than the requested layout, the additional
+space is apportioned according to the row and column weights.  If all of the
+weights are zero, the layout is centered within its master.  For masters whose
+size is smaller than the requested layout, space is taken away from columns and
+rows according to their weights.  However, once a column or row shrinks to its
+minsize, its weight is taken to be zero.  If more space needs to be removed
+from a layout than would be permitted, as when all the rows or columns are at
+there minimum sizes, the layout is clipped on the bottom and right.
+
+=head1 GEOMETRY PROPAGATION
+
+The grid geometry manager normally computes how large a master must be to just
+exactly meet the needs of its slaves, and it sets the requested width and
+height of the master to these dimensions.  This causes geometry information to
+propagate up through a window hierarchy to a top-level window so that the
+entire sub-tree sizes itself to fit the needs of the leaf windows.  However,
+the B<gridPropagate> method may be used to turn off propagation for one or more
+masters.  If propagation is disabled then grid will not set the requested width
+and height of the master window.  This may be useful if, for example, you wish
+for a master window to have a fixed size that you specify.
+
+=head1 RESTRICTIONS ON MASTER WINDOWS
+
+The master for each slave must either be the slave's parent (the default) or a
+descendant of the slave's parent.  This restriction is necessary to guarantee
+that the slave can be placed over any part of its master that is visible
+without danger of the slave being clipped by its parent.  In addition, all
+slaves in one call to B<grid> must have the same master.
+
+=head1 STACKING ORDER
+
+If the master for a slave is not its parent then you must make sure that the
+slave is higher in the stacking order than the master.  Otherwise the master
+will obscure the slave and it will appear as if the slave hasn't been managed
+correctly.  The easiest way to make sure the slave is higher than the master is
+to create the master window first:  the most recently created window will be
+highest in the stacking order.
+
+=head1 CREDITS
+
+The B<grid> method is based on ideas taken from the I<GridBag> geometry manager
+written by Doug. Stein, and the B<blt_table> geometry manager, written by
+George Howlett.
+
+=head1 DIFFERENCES FROM TK SYNTAX
+
+=over
+
+=item *
+
+C<columnspan> renamed to C<colspan>
+
+=item *
+
+In C<gridConfigure>, the original syntax allows for more than one window in the list
+of arguments by seeing the difference between window handle and string option. The
+Prima version of C<gridConfigure> also allows referencing slave windows by their names
+(with the same lookup rules affected by C<Component.deepChildLookup>), and thus when one
+needs to supply more than one window, use an arrayref instead:
+
+   $w->gridConfigure([$widget1, 'Widget2'], ...)
+
+=item *
+
+The C<uniform> option is accepting unsigned integers only
+
+=back
+
+=head1 SEE ALSO
+
+L<Prima::Widget::pack|Prima::Widget::pack>
+L<Prima::Widget::place|Prima::Widget::place>
+
+=head1 KEYWORDS
+
+geometry manager, location, grid, cell, propagation, size, pack,
+master, slave
+
+=cut
+
