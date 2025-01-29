@@ -2804,7 +2804,7 @@ sub _search_forward
 		if ( /$match/ ) {
 			$l   = $-[0];
 			$len = $+[0] - $-[0];
-			s/$match/$replace/ if $replace;
+			s/$match/$replace/ if defined $replace;
 			return $l + $x, $y, $len, $substr . $_;
 		}
 		$y++;
@@ -3491,13 +3491,13 @@ as a color reference.
 
 Stops the block selection session.
 
-=item find SEARCH_STRING, [ X = 0, Y = 0, REPLACE_LINE = '', OPTIONS ]
+=item find SEARCH_STRING, [ X = 0, Y = 0, REPLACE_LINE = undef, OPTIONS ]
 
-Tries to find ( and, if REPLACE_LINE is defined, to replace with )
-SEARCH_STRING starting from (X,Y) physical coordinates. OPTIONS is an integer
+Tries to find ( and, if REPLACE_LINE is defined, to replace )
+the SEARCH_STRING starting from the (X,Y) physical coordinates. OPTIONS is an integer
 that is a combination of the C<fdo::> constants; the same constants are used in
-L<Prima::Dialog::FindDialog>, which provides a graphic interface to the find and
-replace facilities of this class.
+L<Prima::Dialog::FindDialog>, which provides standard GUI to the find and
+replace facilities.
 
 Returns X1, Y, X2, NEW_STRING where X1.Y-X2.Y are physical coordinates of
 the string found, and NEW_STRING is the replaced version (if any)
