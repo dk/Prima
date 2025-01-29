@@ -2469,7 +2469,7 @@ Default value: 0
 =item cellIndents X1, Y1, X2, Y2
 
 Marks the marginal rows and columns as 'indent' cells. The indent cells are
-drawn with another color pair ( see L<indentCellColor>, L<indentCellBackColor>
+drawn with another color pair ( see L</indentCellColor>, L</indentCellBackColor>
 ), and cannot be selected and scrolled. X1 and X2 correspond to the number of the
 indent columns, and Y1 and Y2 to the number of the indent rows.
 
@@ -2589,7 +2589,7 @@ Selects the index of the leftmost visible normal cell.
 =item multiSelect BOOLEAN
 
 If 1, the normal cells in an arbitrary rectangular area can be marked
-as selected ( see L<selection> ). If 0, only one cell at a time
+as selected ( see L</selection> ). If 0, only one cell at a time
 can be selected.
 
 Default value: 0
@@ -2925,17 +2925,19 @@ Default value: 1
 
 =item cell COLUMN, ROW, ITEM
 
-Run-time property. Run-time property. Populates the cell with 
+Run-time property. Populates the cell with
 COLUMN and ROW coordinates with ITEM
 Example:
-$grid->cell(0,1,'x');
+
+  $grid->cell(0,1,'x');
 
 =item cells \@ITEMS
 
 Populates the grid cells with items, filling them row by row.
 Example:
-# this grid has two rows and three columns
-$grid->cells([ [qw(x y z)], [qw(z y x)], ]), 
+
+  # this grid has two rows and three columns
+  $grid->cells([ [qw(x y z)], [qw(z y x)], ]),
 
 =item columns NUMBER
 
@@ -2956,78 +2958,88 @@ A read-only property; returns the number of rows.
 Accepts an array of strings (or list) representing a single column.
 Appends the column to the end of the existing columns.
 Example:
-add_column('Row 1 Col 3', 'Row 2 Col 3', 'Row 3 Col 3');
+
+  add_column('Row 1 Col 3', 'Row 2 Col 3', 'Row 3 Col 3');
 
 =item add_columns \@ITEMS, [\@ITEMS, ...]
 
 Accepts one or more array references, each representing a single column.
 Appends the columns to the end of the existing columns.
 Example:
-add_columns(['Row 1 Col 3', 'Row 2 Col 3'], ['Row 1 Col 4', 'Row 2 Col 4']);
+
+  add_columns(['Row 1 Col 3', 'Row 2 Col 3'], ['Row 1 Col 4', 'Row 2 Col 4']);
 
 =item add_row @ITEMS
 
 Accepts an array of strings (or list) representing a single row.
 Appends the row to the end of the existing rows.
 Example:
-add_row('Row 2 Col 1', 'Row 2 Col 2', 'Row 2 Col 3');
+
+  add_row('Row 2 Col 1', 'Row 2 Col 2', 'Row 2 Col 3');
 
 =item add_rows \@ITEMS, [\@ITEMS, ...]
 
 Accepts one or more array references, each representing a single row.
 Appends the rows to the end of the existing rows.
 Example:
-add_rows(['Row 2 Col 1', 'Row 2 Col 2'], ['Row 3 Col 1', 'Row 3 Col 2']);
+
+  add_rows(['Row 2 Col 1', 'Row 2 Col 2'], ['Row 3 Col 1', 'Row 3 Col 2']);
 
 =item delete_columns OFFSET, COUNT
 
 Removes COUNT columns starting from OFFSET (= index of the first column to remove). 
 Negative OFFSET values are accepted.
 Example:
-# removes the second column
-delete_columns(1, 1); 
+
+  # removes the second column
+  delete_columns(1, 1); 
 
 =item delete_rows OFFSET, COUNT
 
 Removes COUNT rows starting from OFFSET (= index of the first row to remove). 
 Negative OFFSET values are accepted.
 Example:
-# removes the second row
-delete_rows(1, 1); 
+
+  # removes the second row
+  delete_rows(1, 1); 
 
 =item insert_column OFFSET, @ITEMS
 
 Inserts an array of strings (or list) representing a single column 
 in column OFFSET. Negative OFFSET values are accepted.
 Example:
-my @ITEMS = qw(a b c);
-# inserts @ITEMS as the first column
-insert_column(0, @ITEMS);
+
+  my @ITEMS = qw(a b c);
+  # inserts @ITEMS as the first column
+  insert_column(0, @ITEMS);
 
 =item insert_columns OFFSET \@ITEMS, [\@ITEMS, ...]
 
 Accepts one or more array references, each representing a single column.
 Inserts the columns in column OFFSET. Negative OFFSET values are accepted.
 Example:
-# inserts two columns starting at index 1
-insert_columns(1, ['Row 1 Col 3', 'Row 2 Col 3'], ['Row 1 Col 4', 'Row 2 Col 4']); 
+
+  # inserts two columns starting at index 1
+  insert_columns(1, ['Row 1 Col 3', 'Row 2 Col 3'], ['Row 1 Col 4', 'Row 2 Col 4']); 
 
 =item insert_row OFFSET, @ITEMS
 
 Inserts an array of strings (or list) representing a single row in row OFFSET.
 Negative OFFSET values are accepted.
 Example:
-my @ITEMS = qw(a b c);
-# inserts @ITEMS as the first row
-insert_row(0, @ITEMS); 
+
+  my @ITEMS = qw(a b c);
+  # inserts @ITEMS as the first row
+  insert_row(0, @ITEMS); 
 
 =item insert_rows OFFSET \@ITEMS, [\@ITEMS, ...]
 
 Accepts one or more array references, each representing a single row.
 Inserts the rows in row OFFSET. Negative OFFSET values are accepted.
 Example:
-# inserts two rows at the beginning (index 0)
-insert_rows(0, ['Row 2 Col 1', 'Row 2 Col 2'], ['Row 3 Col 1', 'Row 3 Col 2']); 
+
+  # inserts two rows at the beginning (index 0)
+  insert_rows(0, ['Row 2 Col 1', 'Row 2 Col 2'], ['Row 3 Col 1', 'Row 3 Col 2']); 
 
 =back
 
