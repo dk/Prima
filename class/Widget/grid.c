@@ -401,8 +401,10 @@ EXIT:
 static Handle
 get_slave( Handle self, SV * window)
 {
+	if ( !window )
+		return self;
 	if ( !SvOK(window))
-		return false;
+		return NULL_HANDLE;
 	return SvROK(window) ?
 		gimme_the_mate(window) :
 		my->bring(self, SvPV_nolen(window), is_opt(optDeepLookup) ? 1000 : 0);
@@ -2050,7 +2052,7 @@ ConfigureSlaves(Handle self, SV* window, HV *profile)
 
 	Gridder *masterPtr;
 	Gridder *slavePtr;
-	Handle slave, parent;
+	Handle slave;
 	int i;
 	int width;
 	int defaultColumn = 0;        /* default column number */
@@ -2060,7 +2062,7 @@ ConfigureSlaves(Handle self, SV* window, HV *profile)
 	STRLEN len;
 	char *firstStr, *prevStr;
 
-	if (!(
+	if (window && !(
 		SvOK(window) && (
 			!SvROK(window) || (
 				(SvTYPE(SvRV(window)) == SVt_PVAV) ||
@@ -2070,7 +2072,7 @@ ConfigureSlaves(Handle self, SV* window, HV *profile)
 	))
 		croak("%s: window is neither an object nor an array of objects", METHOD);
 
-	if (SvROK(window) && (SvTYPE(SvRV(window)) == SVt_PVAV)) {
+	if (window && SvROK(window) && (SvTYPE(SvRV(window)) == SVt_PVAV)) {
 		if ( !( slaves = (SV**) prima_read_array(window, METHOD, 'H', 1, 0, 0, &n_slaves, NULL)))
 			croak("%s: cannot read array of windows, or the array is empty", METHOD);
 	} else {
@@ -2081,10 +2083,10 @@ ConfigureSlaves(Handle self, SV* window, HV *profile)
 
 	firstStr = "";
 	for (i = 0; i < n_slaves; i++) {
-		if ( SvROK( slaves[i]))
+		if ( slaves[i] && SvROK( slaves[i]))
 			continue;
 		prevStr = firstStr;
-		firstStr = SvPV( slaves[i], len);
+		firstStr = slaves[i] ? SvPV( slaves[i], len) : "";
 		if (*firstStr == REL_HORIZ) {
 			if (
 				i==0 ||
@@ -2109,7 +2111,7 @@ ConfigureSlaves(Handle self, SV* window, HV *profile)
 
 	masterPtr = NULL;
 	for (i = 0; i < n_slaves; i++) {
-		if ( !SvROK(slaves[i])) {
+		if ( slaves[i] && !SvROK(slaves[i])) {
 			firstStr = SvPV( slaves[i], len);
 
 			/*
@@ -2135,7 +2137,6 @@ ConfigureSlaves(Handle self, SV* window, HV *profile)
 
 		if (( slave = get_slave(self, slaves[i])) == NULL_HANDLE )
 			croak("%s: cannot locate child widget %s", METHOD, firstStr);
-		Widget_check_in(slave, self, true);
 		slavePtr = GetGrid(slave);
 
 		/*
@@ -2153,6 +2154,8 @@ ConfigureSlaves(Handle self, SV* window, HV *profile)
 		* about keeping track of the old state.
 		*/
 		masterPtr = parse_info( slavePtr, profile );
+		if ( slavePtr->saved_in || slave != self )
+			Widget_check_in(slave, self, true);
 
 		/*
 		* Make sure we have a geometry master.  We look at:
@@ -2164,9 +2167,8 @@ ConfigureSlaves(Handle self, SV* window, HV *profile)
 		if (masterPtr == NULL) {
 			masterPtr = slavePtr->masterPtr;
 		}
-		parent = PWidget(slave)->owner;
 		if (masterPtr == NULL) {
-			masterPtr = GetGrid(parent);
+			masterPtr = GetGrid(PWidget(slave)->owner);
 			InitMasterData(masterPtr);
 		}
 
@@ -2498,8 +2500,11 @@ XS( Widget_grid_action_FROMPERL)
 		ok = GridRowColumnConfigureCommand(self, (*selector == 'c') ? COLUMN : ROW, &in, &out);
 	} else if ( strcmp(selector, "configure") == 0) {
 		if (( ok = ( in.count > 0 ))) {
-			HV * profile = opt2hv(&in, 1);
-			ConfigureSlaves(self, (SV*)in.items[0], profile);
+			HV * profile = opt2hv(&in, in.count % 2);
+			ConfigureSlaves(self, 
+				(in.count % 2) ? (SV*)in.items[0] : NULL,
+				profile
+			);
 			hash_destroy(profile, false);
 		}
 	} else if (
