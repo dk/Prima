@@ -2222,7 +2222,7 @@ ConfigureSlaves(Handle self, SV* window, HV *profile)
 			SetGridSize(masterPtr);
 			ArrangeGrid(masterPtr);
 		} else {
-			CWidget(slave)->set_geometry(self, gtGrid);
+			CWidget(slave)->set_geometry(slave, gtGrid);
 		}
 	}
 
@@ -2444,7 +2444,6 @@ Widget_grid_enter( Handle self)
 		slavePtr->saved_in = NULL_HANDLE;
 
 	link_slave(slavePtr, GetGrid(slavePtr->saved_in ? slavePtr->saved_in : var->owner));
-	ArrangeGrid(slavePtr->masterPtr);
 }
 
 void
