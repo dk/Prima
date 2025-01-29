@@ -2238,7 +2238,8 @@ ConfigureSlaves(Handle self, SV* window, HV *profile)
 		int lastRow, lastColumn;        /* implied end of table */
 
 		len = 0;
-		firstStr = SvROK(slaves[i]) ? "" : SvPV( slaves[i], len);
+		firstStr = (!slaves[i] || SvROK(slaves[i])) ? "" :
+			SvPV( slaves[i], len);
 
 		if ( len == 1 && *firstStr == REL_SKIP ) {
 			numSkip++;
