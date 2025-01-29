@@ -26,9 +26,9 @@ if you are used to either Tcl/Tk or Perl/Tk naming and behavior.
 
 =over 4
 
-=item I<$slave>-E<gt>B<gridConfigure>(I<$slave|[$slave,$slave...]>, I<options>?)
+=item I<$slave>-E<gt>B<gridConfigure>(I<$slave|[$slave,$slave...]>?, I<options>?)
 
-The arguments consist of the one or more references to more slave windows
+The arguments consist of the zero or more references to more slave windows
 followed by pairs of arguments that specify how to manage the slaves.
 The characters B<->,  B<x> and B<^>,
 can be specified instead of a window reference to alter the default
@@ -37,6 +37,8 @@ location of a I<$slave>, as described in L<"RELATIVE PLACEMENT">, below.
 If any of the slaves are already managed by the geometry manager
 then any unspecified options for them retain their previous values rather
 than receiving default values.
+
+If there are no slave windows given, the object itself is configured as a grid slave
 
 The following options are supported:
 
