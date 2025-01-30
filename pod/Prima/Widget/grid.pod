@@ -357,7 +357,7 @@ The B<grid> method is based on ideas taken from the I<GridBag> geometry manager
 written by Doug. Stein, and the B<blt_table> geometry manager, written by
 George Howlett.
 
-=head1 DIFFERENCES FROM TK SYNTAX
+=head1 DIFFERENCES FROM THE TK SYNTAX
 
 =over
 
@@ -378,6 +378,25 @@ needs to supply more than one window, use an arrayref instead:
 =item *
 
 The C<uniform> option is accepting unsigned integers only
+
+=item *
+
+Contrary to Tk's window naming scheme, there is no leading dot in the window names,
+so there's a small conflict in C<gridConfigure> 's option C<x>. That means that
+
+   $slave = $master->insert( Widget => name => 'x' );
+   $master->gridConfigure( x => ... );
+
+will not address the slave widget as one might expect.
+
+=item *
+
+There's no C<grid> method in the Widget class, like in Tk. The original C<grid> method behaves
+exactly like C<gridConfigure>, so when one really needs the compatibility, adding
+
+   *Prima::Widget::grid = \&Prima::Widget::gridConfigure
+
+would be just enough.
 
 =back
 
