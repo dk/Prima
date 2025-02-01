@@ -1687,7 +1687,11 @@ sub insert_text
 	my ( $self, $s, $hilite) = @_;
 	return if !defined($s) or length( $s) == 0;
 	$self-> begin_undo_group;
-	$self-> cancel_block unless $self-> {blockType} == bt::CUA;
+	if ($self-> {blockType} == bt::CUA) {
+		$self-> delete_block;
+	} else {
+		$self-> cancel_block;
+	}
 	my @cs = $self-> cursor;
 	my $px = $self-> visual_to_physical(@cs);
 	my @ln = split( "\n", $s, -1);
