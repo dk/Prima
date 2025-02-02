@@ -302,7 +302,7 @@ sub draw
 	$h -= $y_offset * 2;
 	if ( $self->{accel_width} > 0 ) {
 		my $X = $x + $w - $self->{accel_width} - $em * ( $vertical ? 1.5 : 0.5 );
-		$draw_accel = [ $self->accel, $X, $y ];
+		$draw_accel = [ $self->accel, $X, $y + ( $h - $canvas-> font-> height ) / 2 ];
 		$w -= $self-> {accel_width} + $em * 0.5;
 	}
 
