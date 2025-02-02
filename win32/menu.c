@@ -215,7 +215,7 @@ get_unchecked_bitmap(void)
 }
 
 static HMENU
-add_item( Bool menuType, Handle menu, PMenuItemReg i)
+add_item( Bool menuType, Handle menu, PMenuItemReg i, Bool toplevel)
 {
 	MENUITEMINFOW mii;
 	HMENU m;
@@ -261,7 +261,7 @@ add_item( Bool menuType, Handle menu, PMenuItemReg i)
 		mii.fState  |= ( i-> flags. disabled   ) ? MFS_GRAYED       : 0;
 
 		mii.wID      = i-> id + MENU_ID_AUTOSTART;
-		mii.hSubMenu = add_item( menuType, menu, i-> down);
+		mii.hSubMenu = add_item( menuType, menu, i-> down, false);
 		mii.dwItemData = menu;
 
 		if (!( i-> flags. divider && i-> flags. rightAdjust)) {
@@ -269,7 +269,7 @@ add_item( Bool menuType, Handle menu, PMenuItemReg i)
 				mii. dwTypeData = map_text_accel( i);
 			else if ( i-> bitmap )
 				mii. dwTypeData = (WCHAR*) create_menu_bitmap( i-> bitmap);
-			if ( i-> icon ) {
+			if ( !toplevel && i-> icon ) {
 				BitmapKey key;
 				HBITMAP bitmap = create_menu_bitmap( i-> icon);
 				build_bitmap_key(m, i, &key);
@@ -314,7 +314,7 @@ static Bool
 clear_bitmaps(void * bm, int keyLen, void * key, void * menu)
 {
 	if ( ((BitmapKey*)key)-> menu == ( HMENU) menu)
-		hash_delete( mgr_menu_bitmaps, key, keyLen, true);
+		hash_delete( mgr_menu_bitmaps, key, keyLen, false);
 	return false;
 }
 
@@ -593,7 +593,7 @@ apc_menu_update( Handle self, PMenuItemReg oldBranch, PMenuItemReg newBranch)
 			DestroyMenu( h);
 		}
 		hash_first_that( mgr_menu, clear_menus, ( void *) self, NULL, NULL);
-		var handle = ( Handle) add_item( kind_of( self, CMenu), self, (( PMenu) self)-> tree);
+		var handle = ( Handle) add_item( kind_of( self, CMenu), self, (( PMenu) self)-> tree, true);
 		SetMenu( DHANDLE( var owner), self ? ( HMENU) var handle : NULL);
 		DrawMenuBar( DHANDLE( var owner));
 		if ( apc_window_get_window_state( var owner) == wsNormal)
@@ -604,7 +604,7 @@ apc_menu_update( Handle self, PMenuItemReg oldBranch, PMenuItemReg newBranch)
 			DestroyMenu(( HMENU) var handle);
 		}
 		hash_first_that( mgr_menu, clear_menus, ( void *) self, NULL, NULL);
-		var handle = ( Handle) add_item( kind_of( self, CMenu), self, (( PMenu) self)-> tree);
+		var handle = ( Handle) add_item( kind_of( self, CMenu), self, (( PMenu) self)-> tree, false);
 	}
 	return true;
 }

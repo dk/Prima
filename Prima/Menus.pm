@@ -86,7 +86,7 @@ sub size
 
 	my $em = $self->em;
 	my $icon_width = 0;
-	if ( my $icon = $self-> icon ) {
+	if ( $self->vertical && (my $icon = $self-> icon )) {
 		my @asz = map { $_ / 4 } $::application-> size;
 		$icon_width = $icon-> width;
 		$icon_width = $asz[0] if $icon_width > $asz[0];
@@ -246,7 +246,7 @@ sub draw
 	my ($draw_check, $draw_accel, $draw_submenu, $draw_check_aa, $draw_radio);
 
 	my $lw = 3;
-	if ( my $icon = $self-> icon ) {
+	if ( $vertical && (my $icon = $self-> icon )) {
 		$self-> draw_bitmap( $owner, $canvas, $colors, $icon, $x + 2, $y + $y_offset, $self->{icon_width} - $em, $h - $y_offset * 2 );
 	} elsif ( $checked ) {
 		my $font = $canvas->font;
