@@ -2801,7 +2801,7 @@ sub split_line
 
 sub _search_forward
 {
-	my ($self, $x, $y, $first_line, $substr, $match, $replace) = @_;
+	my ($self, $x, $y, $first_line, $substr, $match, $replace, $y2) = @_;
 	local $_ = $first_line;
 	my ($l, $len) = (0);
 	while ( 1) {
@@ -2812,7 +2812,7 @@ sub _search_forward
 			return $l + $x, $y, $len, $substr . $_;
 		}
 		$y++;
-		return if $y > $self->{maxLine};
+		return if $y > $y2;
 		$_ = $self->get_line($y);
 		$substr = '';
 		$l = $x = 0;
@@ -2821,7 +2821,7 @@ sub _search_forward
 
 sub _search_backward
 {
-	my ($self, $x, $y, $first_line, $substr, $match, $replace) = @_;
+	my ($self, $x, $y, $first_line, $substr, $match, $replace, $y2) = @_;
 	local $_ = $first_line;
 	my ($l,$b,$len);
 	while ( 1) {
@@ -2831,8 +2831,8 @@ sub _search_backward
 		}
 		if ( defined $b ) {
 			$l ||= 0;
-			pos = $l;
-			$l = $_ =~ /$match/;
+			pos($_) = $l;
+			$_ =~ /$match/g;
 			$len = $+[0] - $-[0];
 			$l   = pos($_) - $len;
 			substr($_, $l, $len) = $replace if defined $replace;
@@ -2840,7 +2840,7 @@ sub _search_backward
 			return $l, $y, $len, $_ . $substr;
 		}
 		$y--;
-		return if $y < 0;
+		return if $y < $y2;
 		$_ = $self-> get_line($y);
 		$substr = '';
 	}
@@ -2848,9 +2848,11 @@ sub _search_backward
 
 sub find
 {
-	my ( $self, $line, $x, $y, $replaceLine, $options) = @_;
+	my ( $self, $line, $x, $y, $replaceLine, $options, $x2, $y2) = @_;
 	$x ||= 0;
 	$y ||= 0;
+	$x2 //= -1;
+	$y2 //= -1;
 	$options //= 0;
 	my $maxY = $self-> {maxLine};
 	return if $y > $maxY || $maxY < 0;
@@ -2875,15 +2877,17 @@ sub find
 	return unless $match;
 
 	if ( $options & fdo::BackwardSearch) {
+		return if $y < $y2 || ($y == $y2 && $x < $x2);
 		$subLine = substr( $c, $x, length( $c) - $x);
 		substr( $c, $x, length( $c) - $x) = '';
 		$matcher = \&_search_backward;
 	} else {
+		return if $y > $y2 || ($y == $y2 && $x > $x2);
 		$subLine = substr( $c, 0, $x);
 		substr( $c, 0, $x) = '';
 		$matcher = \&_search_forward;
 	}
-	my ($nX, $nY, $len, $newStr) = $matcher->($self, $x, $y, $c, $subLine, $match, $replaceLine);
+	my ($nX, $nY, $len, $newStr) = $matcher->($self, $x, $y, $c, $subLine, $match, $replaceLine, $y2);
 	return unless defined $nX;
 	my $nX1 = $nX;
 	my $nX2 = $nX + $len;

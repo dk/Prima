@@ -123,25 +123,25 @@ sub profile_default
 		menuItems => [
 			[ '~File' => [
 				[ '~New'        => q(new_window)],
-				[ '~Open...'    => 'F3' => kb::F3, q(open_file)],
-				[ '~Save'       => 'F2' => kb::F2, q(save_file)],
+				[ '~Open...'    => 'Ctrl+O' => '^O', q(open_file)],
+				[ '~Save'       => 'Ctrl+S' => '^S', q(save_file)],
 				[ 'Save ~as...' => q(save_as)],
 				[],
 				['E~xit'        => 'Alt+X' => '@X' => sub {$::application-> close}]
 			]],
 			[ '~Edit' => [
-				['~Cut'   => 'Ctrl+Del'   => kb::NoKey, sub{$_[0]-> {editor}-> cut}],
-				['C~opy'  => 'Ctrl+Ins'   => kb::NoKey, sub{$_[0]-> {editor}-> copy}],
-				['~Paste' => 'Shift+Ins'  => kb::NoKey, sub{$_[0]-> {editor}-> paste}],
+				['~Cut'   => 'Ctrl+X'   => kb::NoKey, sub{$_[0]-> {editor}-> cut}],
+				['C~opy'  => 'Ctrl+C'   => kb::NoKey, sub{$_[0]-> {editor}-> copy}],
+				['~Paste' => 'Ctrl+V'  => kb::NoKey, sub{$_[0]-> {editor}-> paste}],
 				['~Delete' => 'Shift+Del' => kb::NoKey, sub{$_[0]-> {editor}-> delete_block}],
 				['~Select all' => 'Ctrl+A' => '^A' => sub { $_[0]->{editor}->select_all }],
 				[],
 				['~Find...' => 'Esc'      => kb::Esc   , q(find)],
-				['~Replace...'=> 'Ctrl+S' => '^S'      , q(replace)],
-				['Find ~next' => 'Ctrl+L' => '^L'      , q(find_next)],
+				['~Replace...'=> 'Ctrl+R' => '^R'      , q(replace)],
+				['Find ~next' => 'Ctrl+G' => '^G'      , q(find_next)],
 				[],
-				['~Undo' => 'Alt+Backspace' => kb::NoKey   , sub {$_[0]-> {editor}-> undo}],
-				['~Redo' => 'Ctrl+R'        => kb::NoKey   , sub {$_[0]-> {editor}-> redo}],
+				['~Undo' => 'Ctrl+Z' => kb::NoKey, sub {$_[0]-> {editor}-> undo}],
+				['~Redo' => 'Ctrl+Y' => kb::NoKey, sub {$_[0]-> {editor}-> redo}],
 			]],
 			['~Options' => [
 				[ '@syx' => '~Syntax hilite' => sub{ $_[0]-> {editor}-> syntaxHilite( $_[2] )}],
@@ -272,13 +272,12 @@ sub save_file
 	my $self = $_[0];
 	return $self-> save_as if $self-> text eq '.Untitled';
 	my $fn = $self-> text;
-	if ( open FILE, '>'.($self-> {utf8} ? 'utf8' : ''), $fn) {
+	if ( open my $file, '>'.($self-> {utf8} ? 'utf8' : ''), $fn) {
 		my $cap = $self-> {editor}-> text;
 		Encode::_utf8_off($cap) if !$self-> {utf8};
-		my $swr = syswrite(FILE,$cap,length($cap));
-		close FILE;
-		unless (defined $swr && $swr==length($cap)) {
-			undef $cap;
+		my $swr = print $file $cap;
+		close $file;
+		unless ($swr) {
 			unlink $fn;
 			Prima::MsgBox::message_box(
 				$self-> text,
@@ -303,11 +302,11 @@ sub save_as
 	my $ret = 0;
 	if ( defined $fn) {
 	SAVE:while(1) {
-		next SAVE unless open FILE, '>'.($self-> {utf8} ? 'utf8' : ''), $fn;
+		next SAVE unless open my $file, '>'.($self-> {utf8} ? 'utf8' : ''), $fn;
 		my $cap = $self-> {editor}-> text;
 		Encode::_utf8_off($cap) if !$self-> {utf8};
-		my $swr = print FILE $cap;
-		close FILE;
+		my $swr = print $file $cap;
+		close $file;
 		unless ($swr) {
 			undef $cap;
 			unlink $fn;
@@ -370,20 +369,27 @@ sub do_find
 	my $self = $_[0];
 	my $e = $self-> {editor};
 	my $p = $self-> {findData};
-	my @scope;
+	my (@start, @end);
 	my $success;
+	my @sel = $e->has_selection ? $e->selection : ();
 	FIND:{
-		if ( !@scope && $$p{scope} != fds::Cursor) {
-			if ( $e-> has_selection) {
-				my @sel = $e-> selection;
-				@scope = ($$p{scope} == fds::Top) ? ($sel[0],$sel[1]) : ($sel[2], $sel[3]);
+		if ( !@start && $$p{scope} != fds::Cursor) {
+			if ( @sel ) {
+				@start = ($$p{scope} == fds::Top) ? ($sel[0],$sel[1]) : ($sel[2], $sel[3]);
 			} else {
-				@scope = ($$p{scope} == fds::Top) ? (0,0) : (-1,-1);
+				@start = ($$p{scope} == fds::Top) ? (0,0) : (-1,-1);
 			}
 		} else {
-			@scope = $e-> cursor;
+			@start = $e-> cursor;
 		}
-		my @n = $e-> find( $$p{findText}, @scope, $$p{replaceText}, $$p{options});
+		if ( !@end ) {
+			if ( @sel ) {
+				@end = ($$p{scope} == fds::Top) ? ($sel[2],$sel[3]) : ($sel[0], $sel[1]);
+			} else {
+				@end = ($$p{scope} == fds::Top) ? (-1,-1) : (0,0);
+			}
+		}
+		my @n = $e-> find( $$p{findText}, @start, $$p{replaceText}, $$p{options}, @end);
 		if ( !defined $n[0]) {
 			Prima::MsgBox::message_box(
 				$self->text,

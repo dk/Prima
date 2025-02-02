@@ -86,7 +86,6 @@ sub open(*;$*)
 	return $ok;
 
 NATIVE:
-	use Data::Dumper; print STDERR Dumper(	\@_);
 	goto &CORE::open;
 }
 
