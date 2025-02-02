@@ -523,7 +523,7 @@ update_menu_window( PMenuSysData XX, PMenuWindow w)
 				ix-> width  += w + startx;
 			}
 
-			if (  create_menu_bitmap(m->icon, &ix->icon, layered, m->flags.disabled, &w, &h)) {
+			if ( vertical && create_menu_bitmap(m->icon, &ix->icon, layered, m->flags.disabled, &w, &h)) {
 				int    y = h + MENU_ITEM_GAP * 2;
 				if ( ix-> height < y ) ix-> height = y;
 			}
