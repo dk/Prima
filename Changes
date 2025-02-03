@@ -1,5 +1,8 @@
 Revision history for Perl module Prima
 
+1.76 2025-XX-XX
+ - Implement gt::Grid geometry emulating Tk::grid
+
 1.75 2024-12-21
  - FrameSet: rename .arrangement to .vertical, remove .resizeMethod
  - add Date,Time,KeySelector,FrameSet, and CheckList to VB
