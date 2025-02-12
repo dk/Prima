@@ -968,6 +968,12 @@ sub profile_default
 	}
 }
 
+sub profile_check_in
+{
+	my ( $self, $p, $default) = @_;
+	$p->{scheme} = undef if exists $p->{ticks} && ! exists $p->{scheme};
+	$self-> SUPER::profile_check_in( $p, $default);
+}
 
 sub init
 {
@@ -1302,10 +1308,11 @@ sub on_paint
 			$lastval = $val;
 		}
 	};
-	if ( $self->{scheme} == ss::Thermometer || $self->{scheme} == ss::Axis ) {
+	my $scheme = $self->{scheme} // -1;
+	if ( $scheme == ss::Thermometer || $scheme == ss::Axis ) {
 		$check_dashes->(5, 5);
 		$check_dashes->(12, 12);
-	} elsif ( $self->{scheme} == ss::Axis ) {
+	} elsif ( $scheme == ss::Axis ) {
 		$check_dashes->(3, 3);
 	} else {
 		$check_dashes->(12, 12);
