@@ -2,7 +2,7 @@
 #include "guts.h"
 #include "Drawable.h"
 #include "Application.h"
-#include "Drawable_private.h"
+#include "private/Drawable.h"
 
 #ifdef WITH_FRIBIDI
 #include <fribidi/fribidi.h>

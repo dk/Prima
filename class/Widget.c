@@ -4,7 +4,7 @@
 #include "Popup.h"
 #include "Region.h"
 #include "Widget.h"
-#include "Widget_private.h"
+#include "private/Widget.h"
 #include "Window.h"
 #include <Widget.inc>
 

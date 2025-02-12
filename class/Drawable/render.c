@@ -2,7 +2,7 @@
 #include "guts.h"
 #include "img_conv.h"
 #include "Drawable.h"
-#include "Drawable_private.h"
+#include "private/Drawable.h"
 
 #ifdef __cplusplus
 extern "C" {

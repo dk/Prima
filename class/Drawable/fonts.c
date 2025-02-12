@@ -1,6 +1,6 @@
 #include "apricot.h"
 #include "Drawable.h"
-#include "Drawable_private.h"
+#include "private/Drawable.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -84,7 +84,6 @@ use vars qw(
 	@exe_files
 	@cls_files
 	@target_clean
-	%cache_find_files
 	$binary_prereq
 	$compiler_type
 	$compiler_subtype
@@ -298,6 +297,7 @@ sub setup_files
 	@h_files    = (
 		<include/*.h>,
 		<include/generic/*.h>,
+		<include/private/*.h>,
 		<include/$platform/*.h>,
 		map { s[class/][]; "include/generic/$_" } extmap( '.h', @cls_files),
 	);
@@ -494,33 +494,13 @@ sub qtilde
 	return $ENV{HOME} . $path;
 }
 
-sub _find_file
-{
-	my ( $fname, $dir) = @_;
-	my ( $pathname, $found);
-	$pathname = "$dir/$fname";
-	return $pathname if $pathname !~ /\.\./ && -e $pathname;
-	opendir my $dh, $dir or die "Cannot open dir $dir: $!";
-	my @entries =
-		map { "$dir/$_"}
-		grep { !/^blib/ }
-		grep { /^[^.]/ && -d "$dir/$_"}
-		readdir $dh;
-	closedir $dh;
-	foreach my $entry ( @entries) {
-		$pathname = _find_file( $fname, $entry);
-		next unless defined $pathname;
-		return $pathname;
-	}
-	return undef;
-}
-
 sub find_file
 {
 	my ( $fname) = @_;
 	$fname =~ s/\\/\//g;
-	return $cache_find_files{$fname} if exists $cache_find_files{$fname};
-	return $cache_find_files{$fname} = _find_file( $fname, '.');
+	return "include/$fname"         if -f "include/$fname";
+	return "include/generic/$fname" if -f "include/generic/$fname";
+	return undef;
 }
 
 sub canon_name

@@ -126,7 +126,7 @@
 #include <sys/time.h>
 
 #include "../guts.h"
-#include "queue.h"
+#include "unix/queue.h"
 #include "Widget.h"
 #include "Image.h"
 #include "img_conv.h"

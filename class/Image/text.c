@@ -1,8 +1,8 @@
 #include "apricot.h"
 #include "guts.h"
 #include "Icon.h"
-#include "Drawable_private.h"
-#include "Image_private.h"
+#include "private/Drawable.h"
+#include "private/Image.h"
 #include "img_conv.h"
 
 #ifdef __cplusplus

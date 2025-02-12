@@ -3,7 +3,7 @@
 #include "Icon.h"
 #include "Region.h"
 #include <Drawable.inc>
-#include "Drawable_private.h"
+#include "private/Drawable.h"
 
 #ifdef __cplusplus
 extern "C" {

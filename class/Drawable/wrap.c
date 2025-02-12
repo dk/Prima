@@ -1,7 +1,7 @@
 #include "apricot.h"
 #include "guts.h"
 #include "Drawable.h"
-#include "Drawable_private.h"
+#include "private/Drawable.h"
 
 #ifdef WITH_LIBTHAI
 #include <thai/thwchar.h>

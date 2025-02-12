@@ -6,7 +6,7 @@
 #include "apricot.h"
 #include "Region.h"
 #include "Image.h"
-#include "Image_private.h"
+#include "private/Image.h"
 #include "img_conv.h"
 
 #ifdef __cplusplus

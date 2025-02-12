@@ -1,7 +1,7 @@
 #include "apricot.h"
 #include "guts.h"
 #include "Widget.h"
-#include "Widget_private.h"
+#include "private/Widget.h"
 
 #ifdef __cplusplus
 extern "C" {
