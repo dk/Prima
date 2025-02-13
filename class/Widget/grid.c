@@ -1064,8 +1064,8 @@ AdjustForSticky(slavePtr, xPtr, yPtr, widthPtr, heightPtr)
 	if (!(sticky&STICK_WEST)) {
 		*xPtr += (sticky&STICK_EAST) ? diffx : diffx/2;
 	}
-	if (!(sticky&STICK_NORTH)) {
-		*yPtr += (sticky&STICK_SOUTH) ? diffy : diffy/2;
+	if (!(sticky&STICK_SOUTH)) {
+		*yPtr += (sticky&STICK_NORTH) ? diffy : diffy/2;
 	}
 }
 
