@@ -2155,7 +2155,7 @@ ConfigureSlaves(Handle self, SV* window, HV *profile)
 		*/
 		masterPtr = parse_info( slavePtr, profile );
 		if ( slavePtr->saved_in || slave != self )
-			Widget_check_in(slave, self, true);
+			Widget_check_in(slave, self, gtGrid);
 
 		/*
 		* Make sure we have a geometry master.  We look at:
@@ -2544,6 +2544,25 @@ FAIL:
 void Widget_grid_action          ( Handle self) { warn("Invalid call of Widget::grid_action"); }
 void Widget_grid_action_REDEFINED( Handle self) { warn("Invalid call of Widget::grid_action"); }
 
+Bool
+Widget_is_grid_slave( Handle self, Handle slave)
+{
+	Gridder *slavePtr = (Gridder*) var-> gridder;
+	if ( !slavePtr ) return false;
+	for (slavePtr = slavePtr->slavePtr; slavePtr != NULL; slavePtr = slavePtr->nextPtr) {
+		if ( slavePtr-> window == slave )
+			return true;
+	}
+	return false;
+}
+
+Bool
+Widget_has_grid_slaves(Handle self)
+{
+	Gridder *slavePtr = (Gridder*) var-> gridder;
+	if ( !slavePtr ) return false;
+	return slavePtr->slavePtr != NULL;
+}
 
 #ifdef __cplusplus
 }

@@ -12,7 +12,13 @@ extern "C" {
 #define his (( PWidget) child)
 
 extern Handle
-Widget_check_in( Handle self, Handle in, Bool barf);
+Widget_check_in( Handle self, Handle in, int geometry);
+
+extern Bool
+Widget_is_grid_slave( Handle self, Handle slave);
+
+extern Bool
+Widget_has_grid_slaves(Handle self);
 
 extern void
 Widget_grid_slaves( Handle self);

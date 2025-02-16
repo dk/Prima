@@ -164,53 +164,47 @@ Widget_reset_children_geometry( Handle self)
 
 /* checks if Handle in is allowed to be a master for self */
 Handle
-Widget_check_in( Handle self, Handle in, Bool barf)
+Widget_check_in( Handle self, Handle in, int geometry)
 {
 	Handle h = in;
 
+	char * method =
+		(geometry == gtPack) ? "Prima::Widget::pack" :
+		((geometry == gtGrid) ? "Prima::Widget::grid" : "Prima::Widget::place");
+
 	/* check overall validity */
-	if ( !in || !kind_of( in, CWidget)) {
-		if ( barf)
-			croak("%s: invalid 'in': not a widget", "Prima::Widget::pack");
-		else
-			return NULL_HANDLE;
-	}
+	if ( !in || !kind_of( in, CWidget))
+		croak("%s: invalid 'in': not a widget", method);
 
 	/* check direct inheritance */
 	while ( h) {
-		if ( h == self) {
-			if ( barf)
-				croak("%s: invalid 'in': is already a child", "Prima::Widget::pack");
-			else
-				return NULL_HANDLE;
-		}
+		if ( h == self)
+			croak("%s: invalid 'in': is already a child", method);
 		h = PWidget( h)-> owner;
 	}
 
 	/* check slaves chain */
 	h = PWidget( in)-> packSlaves;
 	while ( h) {
-		if ( h == in) {
-			if ( barf)
-				croak("%s: invalid 'in': already a pack slave", "Prima::Widget::pack");
-			else
-				return NULL_HANDLE;
-		}
+		if ( h == in)
+			croak("%s: invalid 'in': already a pack slave", method);
 		h = PWidget( h)-> geomInfo. next;
 	}
 
 	h = PWidget( in)-> placeSlaves;
 	while ( h) {
-		if ( h == in) {
-			if ( barf)
-				croak("%s: invalid 'in': already a place slave", "Prima::Widget::pack");
-			else
-				return NULL_HANDLE;
-		}
+		if ( h == in)
+			croak("%s: invalid 'in': already a place slave", method);
 		h = PWidget( h)-> geomInfo. next;
 	}
 
-	/* XXX check grid slaves */
+	if ( Widget_is_grid_slave(in, self))
+		croak("%s: invalid 'in': already in a grid", method);
+
+	if ( geometry == gtGrid && PWidget(in)->packSlaves)
+		croak("%s: cannot grid into a pack master", method);
+	if ( geometry == gtPack && Widget_has_grid_slaves(in))
+		croak("%s: cannot pack into a grid master", method);
 
 	/* place to check other chains if needed */
 
@@ -713,9 +707,12 @@ Widget_pack_enter( Handle self)
 	}
 	if ( var-> geomInfo. in) {
 		if ( hash_fetch( prima_guts.objects, &var-> geomInfo. in, sizeof(Handle)))
-			var-> geomInfo. in = Widget_check_in( self, var-> geomInfo. in, false);
+			var-> geomInfo. in = Widget_check_in( self, var-> geomInfo. in, gtPack);
 		else
-			var-> geomInfo. in = NULL_HANDLE;
+			croak("%s: bad in", "Prima::Widget::pack");
+	} else {
+		var-> geomInfo. in = NULL_HANDLE;
+		Widget_check_in( self, var-> owner, gtPack);
 	}
 
 	/* store into slaves list */
@@ -949,7 +946,7 @@ Widget_packInfo( Handle self, Bool set, SV * packInfo)
 			SV * sv = pget_sv( in);
 			in = NULL_HANDLE;
 			if ( SvOK( sv))
-				in = Widget_check_in( self, gimme_the_mate( sv), true);
+				in = Widget_check_in( self, gimme_the_mate( sv), gtPlace);
 			set_in = reset_zorder = true;
 		}
 
@@ -1004,9 +1001,12 @@ Widget_place_enter( Handle self)
 	/* see if leftover object references are alive */
 	if ( var-> geomInfo. in) {
 		if ( hash_fetch( prima_guts.objects, &var-> geomInfo. in, sizeof(Handle)))
-			var-> geomInfo. in = Widget_check_in( self, var-> geomInfo. in, false);
+			var-> geomInfo. in = Widget_check_in( self, var-> geomInfo. in, gtPlace);
 		else
-			var-> geomInfo. in = NULL_HANDLE;
+			croak("%s: bad in", "Prima::Widget::place");
+	} else {
+		var-> geomInfo. in = NULL_HANDLE;
+		Widget_check_in( self, var-> owner, gtPlace);
 	}
 
 	/* store into slaves list */
@@ -1301,7 +1301,7 @@ Widget_placeInfo( Handle self, Bool set, SV * placeInfo)
 			SV * sv = pget_sv( in);
 			in = NULL_HANDLE;
 			if ( SvOK(sv))
-				in = Widget_check_in( self, gimme_the_mate( sv), true);
+				in = Widget_check_in( self, gimme_the_mate( sv), gtPlace);
 			set_in = true;
 		}
 
@@ -1342,6 +1342,7 @@ XS( Widget_get_place_slaves_FROMPERL)
 
 void Widget_get_place_slaves          ( Handle self) { warn("Invalid call of Widget::get_place_slaves"); }
 void Widget_get_place_slaves_REDEFINED( Handle self) { warn("Invalid call of Widget::get_place_slaves"); }
+
 
 /*  */
 
