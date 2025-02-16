@@ -105,6 +105,7 @@ examples/f_fill.pl
 examples/gradient.pl
 examples/grid.pl
 examples/grip.pl
+examples/gt_grid.pl
 examples/Hand.gif
 examples/helloworld.pl
 examples/iv.pl
