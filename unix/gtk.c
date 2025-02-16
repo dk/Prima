@@ -317,6 +317,7 @@ prima_gtk_init(void)
 	if ( socketpair(AF_UNIX, SOCK_STREAM, PF_UNSPEC, gtk_screenshot_sockets) == 0) {
 		gtk_screenshot_pid  = fork();
 		if ( gtk_screenshot_pid == 0 ) {
+			(void) setsid();
 			close(gtk_screenshot_sockets[0]);
 			run_screenshot_app();
 			exit(0);
