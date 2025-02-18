@@ -332,10 +332,11 @@ governed by one of the I<managers>, and each manager has its own set of
 properties.  One can select the manager by assigning the C<::geometry> property
 one the of C<gt::XXX> constants. The native ( and the default ) geometry
 manager is the described above grow-mode algorithm ( C<gt::GrowMode>). The
-currently implemented Tk managers are packer ( C<gt::Pack> ) and placer (
-C<gt::Place>).  Each has its own set of options and methods, and their manuals
-are provided separately in L<Prima::Widget::pack> and L<Prima::Widget::place> (
-the manpages are also imported from the Tk ).
+currently implemented Tk managers are grid (C<gt::Grid>), packer ( C<gt::Pack>
+) and placer ( C<gt::Place>).  Each has its own set of options and methods, and
+their manuals are provided separately in L<Prima::Widget::grid>,
+L<Prima::Widget::pack> and L<Prima::Widget::place> ( the manpages are also
+imported from the Tk ).
 
 Another concept that comes along with geometry managers is the 'geometry
 request size'.  It is realized as a two-integer property C<::geomSize>, which
@@ -1282,10 +1283,11 @@ Selects one of the available geometry managers. The corresponding
 integer constants are:
 
    gt::GrowMode, gt::Default - the default grow-mode algorithm
+   gt::Grid                  - Tk grid
    gt::Pack                  - Tk packer
    gt::Place                 - Tk placer
 
-See C<growMode>, L<Prima::Widget::pack>, L<Prima::Widget::place>.
+See C<growMode>, L<Prima::Widget::grid>, L<Prima::Widget::pack>, L<Prima::Widget::place>.
 
 =item growMode MODE
 
@@ -2120,6 +2122,13 @@ See also: C<last>, C<next>, C<prev>
 Alias for C<focused(1)> call
 
 See also: C<defocus>, C<focused>, C<Enter>, C<Leave>
+
+=item gridConfigure, gridBbox, etc
+
+gridConfigure, gridBbox, gridInfo, gridLocation, gridColConfigure,
+gridRowConfigure, gridPropagate, gridSize, gridSlaves, gridForget, gridRemove
+
+See L<Prima::Widget::grid>
 
 =item hide
 

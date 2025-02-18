@@ -24,6 +24,9 @@ called the geometry master (or master window).  The methods can have any of
 several forms, depending on the arguments. See also the L<"DIFFERENCES FROM TK SYNTAX">
 if you are used to either Tcl/Tk or Perl/Tk naming and behavior.
 
+Note that sending grid arguments to C<< Widget->new >> is not supported,
+only explicit method calls like C<< $widget->gridConfigure >> are.
+
 =over 4
 
 =item I<$slave>-E<gt>B<gridConfigure>(I<$slave|[$slave,$slave...]>?, I<options>?)
@@ -396,6 +399,11 @@ exactly like C<gridConfigure>, so when one really needs the compatibility, addin
    *Prima::Widget::grid = \&Prima::Widget::gridConfigure
 
 would be just enough.
+
+=item *
+
+Prima doesn't recognize Tk screen distance units such as I<.5c>, only integers
+are allowed
 
 =back
 
