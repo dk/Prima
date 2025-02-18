@@ -461,7 +461,7 @@ two_ints(int a, int b)
 {
 	AV * av = newAV();
 	av_push(av, newSViv(a));
-	av_push(av, newSViv(b));
+	av_push(av, newSViv(b-a));
 	return newRV_noinc((SV*) av);
 }
 
@@ -484,11 +484,11 @@ GridInfoCommand(Handle self, PList in, PList out)
 	pset_i( rowspan , p-> numRows  );
 	pset_i( ipadx   , p-> iPadX    );
 	pset_i( ipady   , p-> iPadY    );
-	if ( p->padX != p->padLeft )
+	if ( p->padX * 2 != p->padLeft )
 		pset_sv( padx, two_ints(p->padLeft,p->padX) );
 	else
 		pset_i( padx, p-> padX );
-	if ( p->padY != p->padBottom )
+	if ( p->padY * 2 != p->padBottom )
 		pset_sv( pady, two_ints(p->padBottom,p->padY) );
 	else
 		pset_i( pady, p-> padY );
@@ -1973,10 +1973,11 @@ parse_pad_amount(SV *src, int *i1, int *i2)
 	if (SvOK(src) && SvROK(src) && SvTYPE(SvRV(src)) == SVt_PVAV) {
 		int *p = prima_read_array(src, METHOD, 'i', 1, 2, 2, NULL, NULL);
 		*i1 = p[0];
-		*i2 = p[1];
+		*i2 = p[0] + p[1];
 		free(p);
 	} else {
-		*i1 = *i2 = SvIV(src);
+		*i1 = SvIV(src);
+		*i2 = *i1 * 2;
 	}
 }
 

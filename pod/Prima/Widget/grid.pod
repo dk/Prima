@@ -72,8 +72,7 @@ parent window.
 The I<amount> specifies how much horizontal internal padding to
 leave on each side of the slave(s).  This is space is added
 inside the slave(s) border.
-The I<amount> must be a valid screen distance, such as B<2> or B<'.5c'>.
-It defaults to 0.
+The I<amount>  defaults to 0.
 
 =item B<ipady> => I<amount>
 
