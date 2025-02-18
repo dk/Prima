@@ -477,7 +477,7 @@ GridInfoCommand(Handle self, PList in, PList out)
 
 	p = GetGrid(self);
 
-	pset_H( in      , p-> saved_in );
+	pset_H( in      , p-> saved_in ? p-> saved_in : var->owner );
 	pset_i( column  , p-> column   );
 	pset_i( row     , p-> row      );
 	pset_i( colspan , p-> numCols  );
