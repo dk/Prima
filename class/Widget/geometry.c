@@ -198,9 +198,6 @@ Widget_check_in( Handle self, Handle in, int geometry)
 		h = PWidget( h)-> geomInfo. next;
 	}
 
-	if ( Widget_is_grid_slave(in, self))
-		croak("%s: invalid 'in': already in a grid", method);
-
 	if ( geometry == gtGrid && PWidget(in)->packSlaves)
 		croak("%s: cannot grid into a pack master", method);
 	if ( geometry == gtPack && Widget_has_grid_slaves(in))
