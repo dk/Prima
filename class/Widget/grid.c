@@ -202,6 +202,7 @@ typedef struct Gridder {
                                        * for definitions. */
 
 	Handle saved_in;              /* remember eventual in, if not empty, otherwise owner */
+	int lock;                     /* Tk's ConfigureSlaves delays rearrangements, Prima doesn't - but there's locking for it */
 
 	/*
 	 * These fields are used temporarily for layout calculations only.
@@ -1094,6 +1095,9 @@ ArrangeGrid(Gridder *masterPtr)
 	int realWidth, realHeight;        /* actual size layout should take-up */
 	Point sz;
 
+	if (masterPtr->lock > 0)
+		return;
+
 	/*
 	 * If the parent has no slaves anymore, then don't do anything
 	 * at all:  just leave the parent's size as-is.  Otherwise there is
@@ -1676,6 +1680,7 @@ GetGrid(
 	gridPtr->size     = 0;
 
 	gridPtr->saved_in = NULL_HANDLE;
+	gridPtr->lock     = 0;
 
 	var->gridder = gridPtr;
 
@@ -2456,6 +2461,26 @@ Widget_grid_destroy( Handle self)
 	DestroyGrid(self);
 }
 
+static Bool
+grid_lock( Handle self, PList in, PList out)
+{
+	Gridder *gridPtr = (Gridder*) var-> gridder;
+	if ( in-> count == 0 ) {
+		RETi( gridPtr ? gridPtr->lock : 0);
+	} else if ( in-> count == 1 ) {
+		int d = ARGi(0);
+		if ( d > 0 )
+			gridPtr->lock++;
+		else if (d < 0 && gridPtr->lock > 0 ) {
+			gridPtr->lock--;
+			if ( gridPtr->lock == 0 )
+				ArrangeGrid(gridPtr);
+		}
+	} else
+		return false;
+	return true;
+}
+
 static HV*
 opt2hv( PList in, int start )
 {
@@ -2524,6 +2549,8 @@ XS( Widget_grid_action_FROMPERL)
 		ok = GridSizeCommand(self, &in, &out);
 	} else if ( strcmp(selector, "slaves") == 0) {
 		ok = GridSlavesCommand(self, &in, &out);
+	} else if ( strcmp(selector, "lock") == 0) {
+		ok = grid_lock(self, &in, &out);
 	} else {
 		croak("Widget.grid_action: not such subcommand");
 	}

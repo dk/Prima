@@ -2126,7 +2126,8 @@ See also: C<defocus>, C<focused>, C<Enter>, C<Leave>
 =item gridConfigure, gridBbox, etc
 
 gridConfigure, gridBbox, gridInfo, gridLocation, gridColConfigure,
-gridRowConfigure, gridPropagate, gridSize, gridSlaves, gridForget, gridRemove
+gridRowConfigure, gridPropagate, gridSize, gridSlaves, gridForget, gridRemove,
+gridLock, gridUnlock, gridIsLocked
 
 See L<Prima::Widget::grid>
 

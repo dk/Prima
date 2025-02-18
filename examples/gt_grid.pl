@@ -120,6 +120,7 @@ sub set_padx  { $padx  = shift; reconfigure() };
 sub set_pady  { $pady  = shift; reconfigure() };
 
 sub reconfigure {
+    $w->gridLock;
     for my $row (@rows) {
         for my $cell (@$row) {
             $cell->gridConfigure(
@@ -128,6 +129,7 @@ sub reconfigure {
             );
         }
     }
+    $w->gridUnlock;
 }
 
 $w->show;

@@ -1761,6 +1761,10 @@ sub gridSlaves       { shift->grid_action(slaves       => @_ )}
 sub gridForget       { shift->grid_action(forget       => @_ )}
 sub gridRemove       { shift->grid_action(remove       => @_ )}
 
+sub gridLock         { shift->grid_action(lock         => 1 ) }
+sub gridIsLocked     { shift->grid_action('lock')             }
+sub gridUnlock       { shift->grid_action(lock         => -1) }
+
 sub rect_bevel
 {
 	my ( $self, $canvas, $x, $y, $x1, $y1, %opt) = @_;

@@ -186,6 +186,15 @@ Given  I<x> and I<y> values in screen units relative to the master window, the
 column and row number at that I<x> and I<y> location is returned.  For
 locations that are above or to the left of the grid, B<-1> is returned.
 
+=item I<$master>-E<gt>B<gridLock>, B<gridUnlock>, B<gridIsLocked>
+
+Locks, unlocks, and checks the lock status of the grid rearrangement.
+Can be used if many slaves are to be configured at once, to avoid excessive
+window resizing.
+
+If after a C<gridUnlock> call the lock count reaches zero, grid slaves are
+immediately rearranged.
+
 =item I<$master>-E<gt>B<gridPropagate>?(I<boolean>)?
 
 If I<boolean> has a true boolean value such as B<1> or B<on> then propagation
@@ -359,7 +368,7 @@ The B<grid> method is based on ideas taken from the I<GridBag> geometry manager
 written by Doug. Stein, and the B<blt_table> geometry manager, written by
 George Howlett.
 
-=head1 DIFFERENCES FROM THE TK SYNTAX
+=head1 DIFFERENCES FROM THE TK
 
 =over
 
@@ -404,6 +413,13 @@ would be just enough.
 
 Prima doesn't recognize Tk screen distance units such as I<.5c>, only integers
 are allowed
+
+=item *
+
+Tk's grid slave rearrangment algorithm works with a delay, so that calling
+of gridConfigure to one or more slaves has no immediate effect. Prima doesn't
+do that but provides locking functions gridLock/gridUnlock/gridIsLocked to
+explicitly pause this algoritm.
 
 =back
 
