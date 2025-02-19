@@ -514,6 +514,7 @@ dataobject_convert( PDataObjectEntry entry, int format, LPSTGMEDIUM medium)
 		}
 
 		MultiByteToWideChar(CP_UTF8, 0, (LPSTR)entry-> data, entry->size, ptr, ulen);
+		((WCHAR*)ptr)[ulen-1] = 0;
 		GlobalUnlock( medium->hGlobal);
 		break;
 	}
