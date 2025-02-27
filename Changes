@@ -2,6 +2,7 @@ Revision history for Perl module Prima
 
 1.76 2025-XX-XX
  - Implement gt::Grid geometry emulating Tk::grid
+ - 'run Prima' is no more, Prima->run it is now (because `use v5.36` ruins it)
 
 1.75 2024-12-21
  - FrameSet: rename .arrangement to .vertical, remove .resizeMethod
