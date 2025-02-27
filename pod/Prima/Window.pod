@@ -15,7 +15,7 @@ Prima::Window - top-level window management
    my $result = $dialog-> execute;
    $dialog-> destroy;
 
-   run Prima;
+   Prima->run;
 
 =head1 DESCRIPTION
 
@@ -105,7 +105,7 @@ returns after the window is dismissed in one or another way.
 It is special because it runs its own event loop, 
 similar to the
 
-  run Prima;
+  Prima->run;
 
 code. The event flow is not disrupted, but the windows and widgets that do not
 belong to the currently executed, 'modal' window group can not be activated.
@@ -477,7 +477,7 @@ necessary, and the C<Execute> notification is triggered.
 The function is returned after the window is dismissed, or if the
 system-dependent 'exit'-event is triggered by the user ( the latter case makes
 the execution fall through all of the running execute() calls and terminates
-the C<run Prima;> call, exiting gracefully).
+the C<Prima->run;> call, exiting gracefully).
 
 =item execute_shared INSERT_BEFORE = undef
 

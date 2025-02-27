@@ -241,4 +241,4 @@ $w->insert( Widget =>
 add_buttons($w->bring($_), dnd::Copy) for qw(DropText DragText );
 add_buttons($w->bring($_), dnd::Move) for qw(DropImage DragImage);
 
-run Prima;
+Prima->run;

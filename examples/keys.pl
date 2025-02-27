@@ -142,4 +142,4 @@ $w-> insert( Button =>
 	},
 );
 
-run Prima;
+Prima->run;

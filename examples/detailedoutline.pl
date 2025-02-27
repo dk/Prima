@@ -43,4 +43,4 @@ $Outline-> items([
 	] ],
 ]);
 
-run Prima;
+Prima->run;

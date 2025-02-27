@@ -586,7 +586,7 @@ Prima::ImageViewer - image, icon, and bitmap viewer
 		image => Prima::StdBitmap::image(0),
 		zoom  => 2.718,
 	);
-	run Prima;
+	Prima->run;
 
 =for podview <img src="imageviewer.gif">
 

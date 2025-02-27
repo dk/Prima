@@ -42,7 +42,7 @@ Prima::Menu - pull-down and pop-up menu objects
 
     $window-> popupItems( $window-> menuItems);
 
-    run Prima;
+    Prima->run;
 
 =head1 DESCRIPTION
 

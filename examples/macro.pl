@@ -217,4 +217,4 @@ $w-> insert( [ Button =>
 
 update;
 
-run Prima;
+Prima->run;

@@ -320,7 +320,7 @@ my $w = Prima::MainWindow->new(
 
 $w->insert(Timer => onTick => sub { $w->repaint }, timeout => 5 )->start;
 
-run Prima;
+Prima->run;
 
 __DATA__;
 B

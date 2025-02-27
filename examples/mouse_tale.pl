@@ -203,4 +203,4 @@ sub hyphen
 }
 
 typeset;
-run Prima;
+Prima->run;

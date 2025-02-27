@@ -77,4 +77,4 @@ my $il = $w-> insert( InputLine =>
 );
 $il-> select_all;
 
-run Prima;
+Prima->run;

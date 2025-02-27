@@ -467,4 +467,4 @@ my $w = EditorWindow-> new(
 );
 }
 
-run Prima;
+Prima->run;

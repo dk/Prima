@@ -55,4 +55,4 @@ $w->insert('Prima::ProgressBar',
 	color => cl::Blue,
 );
 
-run Prima;
+Prima->run;

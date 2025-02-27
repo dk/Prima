@@ -367,7 +367,7 @@ Prima::Widget::Date - standard date picker widget
 		pack => { fill => 'x', pad => 20 },
 	);
 
-	run Prima;
+	Prima->run;
 
 =for podview <img src="date.gif">
 

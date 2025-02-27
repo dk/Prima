@@ -24,7 +24,7 @@ Prima::File - asynchronous stream I/O
   );
 
   print WRITE "line\n";
-  run Prima;
+  Prima->run;
 
 =head1 DESCRIPTION
 

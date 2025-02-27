@@ -293,7 +293,7 @@ Prima::Widget::Time - standard time input widget
 		pack => { fill => 'x', pad => 20 },
 	);
 
-	run Prima;
+	Prima->run;
 
 =for podview <img src="time.gif">
 

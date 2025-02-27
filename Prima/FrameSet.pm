@@ -724,7 +724,7 @@ Prima::FrameSet - frameset widget
 	        text          => '~Ok',
 	);
 
-	run Prima;
+	Prima->run;
 
 =for podview <img src="frameset.gif">
 

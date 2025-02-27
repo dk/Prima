@@ -341,4 +341,4 @@ $w-> insert( "Label",
 );
 $w-> popupItems( $w-> menuItems);
 
-run Prima;
+Prima->run;

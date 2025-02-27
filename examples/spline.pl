@@ -134,4 +134,4 @@ $w-> insert( Timer =>
 	},
 )-> start;
 
-run Prima;
+Prima->run;

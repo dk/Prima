@@ -32,4 +32,4 @@ $w-> insert( 'Prima::CheckList' =>
 	extendedSelect => 0,
 );
 
-run Prima;
+Prima->run;

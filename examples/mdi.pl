@@ -86,4 +86,4 @@ image => $i,
 pack  => { expand => 1, fill => 'both' },
 );
 
-run Prima;
+Prima->run;

@@ -2390,7 +2390,7 @@ Prima::Grids - grid widgets
 			print $_[0]-> get_cell_text( $_[0]-> focusedCell), " is selected\n";
 		}
 	);
-	run Prima;
+	Prima->run;
 
 =for podview <img src="grid.gif">
 

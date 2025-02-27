@@ -105,5 +105,5 @@ sub launch
 
 Generic::start;
 
-run Prima;
+Prima->run;
 

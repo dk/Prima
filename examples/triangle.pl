@@ -150,4 +150,4 @@ $w-> insert( Button =>
 	autoShaping => 1,
 );
 
-run Prima;
+Prima->run;

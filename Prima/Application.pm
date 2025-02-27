@@ -35,7 +35,7 @@ object. There can be only one instance of the Prima::Application class at a time
 
 	use Prima qw(Application);
 	Prima::MainWindow->new();
-	run Prima;
+	Prima->run;
 
 =head1 USAGE
 
@@ -765,7 +765,7 @@ coordinates. If no toolkit widgets are found, C<undef> is returned.
 
 The main event loop. Called by the
 
-   run Prima;
+   Prima->run;
 
 standard code. Returns when the program is about to terminate, if C<stop> was
 called, or if the exception was signaled. In the latter two cases, the loop can

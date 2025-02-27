@@ -164,4 +164,4 @@ $w->insert( Timer =>
 	timeout => 50,
 	onTick  => \&repaint,
 )->start;
-run Prima;
+Prima->run;

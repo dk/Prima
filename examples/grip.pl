@@ -105,4 +105,4 @@ $w-> insert( ImageViewer =>
 
 print "don't run this by itself, run launch.pl then run grip.pl and some other example. Then 'grip' or 'grap' that other example\n";
 
-run Prima;
+Prima->run;

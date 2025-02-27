@@ -2957,7 +2957,7 @@ Prima::Edit - standard text editor
 		text         => 'Hello $world',
 		syntaxHilite => 1,
 	);
-	run Prima;
+	Prima->run;
 
 =for podview <img src="edit.gif">
 

@@ -30,4 +30,4 @@ my $l = $w->insert( InputLine =>
 	autoSelect  => 0,
 );
 
-run Prima;
+Prima->run;

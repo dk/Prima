@@ -440,6 +440,6 @@ $i-> predefined_toolbars( {
 
 #$ww-> open_dockmanaging; # uncomment this for Customize window popup immediately
 
-run Prima;
+Prima->run;
 
 1;

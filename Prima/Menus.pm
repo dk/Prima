@@ -1478,7 +1478,7 @@ widgets, without any special considerations about system-depended menus.
 		pack  => { fill => 'x', expand => 1},
 		menu  => $w-> accelTable,
 	);
-	run Prima;
+	Prima->run;
 
 =for podview <img src="Prima/menu.gif">
 

@@ -134,4 +134,4 @@ $w-> insert( "ComboBox",
 	pack            => { side => 'left', expand => 1, fill => 'both', padx => 20, pady => 20},
 );
 
-run Prima;
+Prima->run;

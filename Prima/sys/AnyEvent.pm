@@ -75,7 +75,7 @@ Prima::sys::AnyEvent - AnyEvent bridge
    use AnyEvent;
 
    my $ev = AnyEvent->timer(after => 1, cb => sub { print "waited 1 second!\n" });
-   run Prima;
+   Prima->run;
 
 =head1 DESCRIPTION
 

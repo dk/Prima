@@ -504,7 +504,7 @@ use Prima::DetailedList;
 		],
 	);
 	$l-> sort(1);
-	run Prima;
+	Prima->run;
 
 =for podview <img src="detailedlist.gif">
 

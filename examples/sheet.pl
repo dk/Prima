@@ -84,5 +84,5 @@ my $l = $w-> insert( DetailedList =>
 #$h-> recalc_maxwidth;
 #$l-> Header_SizeItem( $h, 0, $h-> { widths}-> [0] - 50, $h-> { widths}-> [0]);
 
-run Prima;
+Prima->run;
 

@@ -1196,7 +1196,7 @@ Prima::InputLine - input line widget
 
 	use Prima qw(InputLine Application);
 	Prima::InputLine-> new( text => 'Hello world!');
-	run Prima;
+	Prima->run;
 
 =for podview <img src="inputline.gif">
 

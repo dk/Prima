@@ -116,4 +116,4 @@ $w-> insert( PopupButton =>
 );
 
 
-run Prima;
+Prima->run;

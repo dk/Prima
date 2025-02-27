@@ -393,7 +393,7 @@ in strange errors.
 It is possible to run things in parallel by calling the event processing
 by hand: instead of entering the main loop with
 
-   run Prima;
+   Prima->run;
 
 one can write
 
@@ -425,7 +425,7 @@ with AnyEvent support:
    use AnyEvent;
 
    my $ev = AnyEvent->timer(after => 1, cb => sub { print "waited 1 second!\n" });
-   run Prima;
+   Prima->run;
 
 this is the preferred, but not the only solution.
 
@@ -451,13 +451,13 @@ You can call C<AnyEvent::detect> to check if the implementation is
 C<'AnyEvent::Impl::POE'> if you want to use Prima's event loop or if it should be
 the event loop implementation you expect such as C<'AnyEvent::Impl::EV'>;
 
-If you use L<POE::Loop::Prima> then you can continue to call C<run Prima> and
+If you use L<POE::Loop::Prima> then you can continue to call C<Prima->run> and
 should not call L<AnyEvent>'s condition variable C<recv> function.
 
 =item *
 
 If you want to use another event library implementation of L<AnyEvent>, you have
-to not call C<run Prima> but instead call L<AnyEvent>'s condition variable
+to not call C<Prima->run> but instead call L<AnyEvent>'s condition variable
 C<recv> function.
 
 See full examples in F<examples/socket_anyevent1.pl>, F<examples/socket_anyevent2.pl>, and
@@ -474,7 +474,7 @@ and returns immediately; when the message arrives, the C<onPostMessage> notifica
    my $w = Prima::MainWindow-> new( onPostMessage => sub { shift; print "@_\n" });
    $w-> post_message(1,2);
    print "3 4 ";
-   run Prima;
+   Prima->run;
 
    output: 3 4 1 2
 
@@ -489,7 +489,7 @@ C<PostMessage> and provides the procedural interface to the same function:
 
    post( sub { print "@_\n" }, 'a');
    print "b";
-   run Prima;
+   Prima->run;
 
    output: ba
 

@@ -114,4 +114,4 @@ $tt-> shape($i);
 $tt-> bring_to_front;
 NOSHAPE:
 
-run Prima;
+Prima->run;

@@ -115,4 +115,4 @@ my $t = $w-> insert( Timer=>
 );
 $t-> start;
 
-run Prima;
+Prima->run;

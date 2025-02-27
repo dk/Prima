@@ -391,6 +391,6 @@ for ( @ARGV) {
 	newwindow( $w, $_, $i);
 }
 
-run Prima;
+Prima->run;
 
 

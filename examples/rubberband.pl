@@ -44,4 +44,4 @@ Prima::MainWindow-> new(
 	},
 );
 
-run Prima;
+Prima->run;

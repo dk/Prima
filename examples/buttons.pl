@@ -131,4 +131,4 @@ $w->insert(
 	name => 'Meta',
 );
 
-run Prima;
+Prima->run;

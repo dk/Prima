@@ -341,7 +341,7 @@ rubberband is erased too.
 		},
 	);
 
-	run Prima;
+	Prima->run;
 
 =head1 API
 

@@ -831,7 +831,7 @@ Prima::PodView - POD browser widget
 	$podview-> read("=head1 NAME\n\nI'm also a pod!\n\n");
 	$podview-> close_read;
 
-	run Prima;
+	Prima->run;
 
 =for podview <img src="podview.gif">
 

@@ -150,7 +150,7 @@ $::application->onDie( sub {
 } );
 
 Prima::Utils::post( sub { die 42 } );
-eval { run Prima; };
+eval { Prima->run; };
 like( $die1, qr/42/, "die ignored");
 like( $die2, qr/43/, "die not ignored");
 isnt($::application, undef, 'app is still alive');

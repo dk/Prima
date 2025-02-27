@@ -107,4 +107,4 @@ $b-> insert( Timer =>
 $w-> pointer( cr::Default);
 $::application-> pointerVisible(1);
 
-run Prima;
+Prima->run;

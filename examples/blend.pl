@@ -231,4 +231,4 @@ $w->Fader->{steps} = 30;
 
 select_rop('SrcOver', 1);
 
-run Prima;
+Prima->run;

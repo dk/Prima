@@ -107,4 +107,4 @@ $pod-> open_read( create_index => 0 );
 $pod-> read($pod_text);
 $pod-> close_read;
 
-run Prima;
+Prima->run;

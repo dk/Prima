@@ -1580,7 +1580,7 @@ Prima::Buttons - buttons, checkboxes, radios
 		image => Prima::StdBitmap::icon(0),
 	);
 
-	run Prima;
+	Prima->run;
 
 =for podview <img src="buttons.gif">
 

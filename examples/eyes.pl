@@ -133,4 +133,4 @@ $x-> insert( Timer =>
 $x-> show;
 $x-> select;
 
-run Prima;
+Prima->run;

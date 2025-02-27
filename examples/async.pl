@@ -71,4 +71,4 @@ $label = $window-> insert( 'Prima::Label' =>
 	text		=> "Reading from a subprocess..\n\n",
 );
 
-run Prima;
+Prima->run;

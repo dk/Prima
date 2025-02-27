@@ -35,4 +35,4 @@ $w-> insert( Timer =>
 	onTick  => sub { $w-> width( $w-> width - 50) },
 )-> start;
 
-run Prima;
+Prima->run;

@@ -88,5 +88,5 @@ post( sub {
 	);
 } );
 
-run Prima;
+Prima->run;
 ok( 1, "Terminated properly");

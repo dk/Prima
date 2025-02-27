@@ -534,7 +534,7 @@ Prima::Calendar - standard calendar widget
 	);
 	$cal-> date_from_time( localtime );
 	$cal-> month( 5);
-	run Prima;
+	Prima->run;
 
 =for podview <img src="calendar.gif">
 

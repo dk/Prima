@@ -85,7 +85,7 @@ my $il = $w-> insert( InputLine =>
 );
 $il-> select_all;
 
-# replace 'run Prima' with the below timer
+# replace 'Prima->run' with the below timer
 my $timer = AnyEvent->timer(after => 0, interval => 1/100, cb => sub {
         $::application->yield;
 });

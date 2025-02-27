@@ -110,7 +110,7 @@ if ( -f $htx) {
 }
 $::application-> open_help( $htx);
 
-run Prima;
+Prima->run;
 
 =pod
 

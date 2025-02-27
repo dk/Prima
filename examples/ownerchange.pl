@@ -87,4 +87,4 @@ $::application-> insert( Timer =>
 	},
 );
 
-run Prima;
+Prima->run;

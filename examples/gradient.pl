@@ -309,4 +309,4 @@ sub breadth()
 	$vertical->checked ? $gradient->width : $gradient->height
 }
 
-run Prima;
+Prima->run;

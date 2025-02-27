@@ -50,5 +50,5 @@ my $subframe = $frame-> insert_to_frame(
 	frameSizes => [qw(33% 33% *)],
 );
 
-run Prima;
+Prima->run;
 

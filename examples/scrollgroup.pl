@@ -24,4 +24,4 @@ $w->packPropagate(1);
 $w->height( $w->height / 2);
 
 
-run Prima;
+Prima->run;

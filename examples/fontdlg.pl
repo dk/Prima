@@ -980,6 +980,6 @@ $w-> insert( Widget =>
 }
 
 run;
-run Prima;
+Prima->run;
 
 

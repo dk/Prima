@@ -65,7 +65,7 @@ $checklist-> button( $list{$_}, 1) for Prima::Themes::list_active;
 
 test();
 
-run Prima;
+Prima->run;
 exit;
 
 sub test

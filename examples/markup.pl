@@ -137,7 +137,7 @@ $tn->insert_to_page(3,'Widget',
 	},
 );
 
-run Prima;
+Prima->run;
 
 =pod
 

@@ -222,5 +222,5 @@ $l = $w-> insert( ListBox =>
 refresh;
 $l-> focus;
 
-run Prima;
+Prima->run;
 

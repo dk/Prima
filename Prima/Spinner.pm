@@ -262,7 +262,7 @@ Prima::Spinner - spinner animation widget
 	growMode  => gm::XCenter
   );
 
-  run Prima;
+  Prima->run;
 
 =for podview <img src="spinner.gif">
 

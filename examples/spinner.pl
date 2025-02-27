@@ -57,5 +57,5 @@ $spinner->insert(
 	current => 1,
 );
 
-run Prima;
+Prima->run;
 

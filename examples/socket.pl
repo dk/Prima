@@ -136,4 +136,4 @@ my $il = $w-> insert( InputLine =>
 $il-> text("Enter URL:");
 $il-> select_all;
 
-run Prima;
+Prima->run;

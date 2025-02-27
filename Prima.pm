@@ -138,7 +138,7 @@ Prima - a Perl graphic toolkit
 		onClick  => sub { $::application-> close },
 	);
 
-	run Prima;
+	Prima->run;
 
 See more screenshots at L<http://prima.eu.org/big-picture>.
 
@@ -209,7 +209,7 @@ shorter by using the following scheme:
 
 Another basic issue is the event loop, which is called by
 
-	run Prima;
+	Prima->run;
 
 code and requires a C<Prima::Application> object to be created beforehand.
 Invoking the C<Prima::Application> standard module is one of the possible ways

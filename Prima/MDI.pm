@@ -1338,7 +1338,7 @@ window class (see L<Prima::DockManager>.
 	my $mdi   = $owner-> insert( 'Prima::MDI');
 	$mdi-> client-> insert( 'Prima::Button' => centered => 1 );
 
-	run Prima;
+	Prima->run;
 
 =for podview <img src="mdi.gif">
 

@@ -86,4 +86,4 @@ my ( $i, $l) = $o-> get_item( 1);
 #$o-> expand_all;
 #$o-> path('e:\Prima');
 
-run Prima;
+Prima->run;

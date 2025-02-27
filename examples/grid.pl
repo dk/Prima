@@ -102,4 +102,4 @@ $g-> cellIndents(1,1,1,1);
 #$g-> delete_columns( 100, 1);
 #$g-> add_column( 100, [0..300] );
 
-run Prima;
+Prima->run;

@@ -119,5 +119,5 @@ $w->insert(
 	textJustify => 1,
 );
 
-run Prima;
+Prima->run;
 

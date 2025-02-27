@@ -337,7 +337,7 @@ actions.
     text   => \ "L<tip://$0/ttt|tip>, L<pod://Prima/|podviewer>, L<http://google.com/|browser>, L<id|custom>",
     onLink => sub { print "$_[2]\n" },
   );
-  run Prima;
+  Prima->run;
 
   =pod
 

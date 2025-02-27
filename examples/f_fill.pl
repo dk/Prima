@@ -75,4 +75,4 @@ my $w = Prima::MainWindow-> new(
 $g1 = $w->new_gradient( palette => [cl::White, cl::Black ] );
 $g2 = $w->new_gradient( palette => [cl::Black, cl::White ] );
 
-run Prima;
+Prima->run;

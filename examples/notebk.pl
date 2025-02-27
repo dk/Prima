@@ -115,4 +115,4 @@ my $w = Bla-> new(
 	]]],
 );
 
-run Prima;
+Prima->run;

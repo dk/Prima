@@ -498,7 +498,7 @@ Prima::Drawable::Markup - allow markup in widgets
     $m->insert( Button => pack => {}, text => M "I<Italic> button" );
     $m->insert( Button => pack => {}, text => \ "Not an Q<I<italic>> button" );
 
-    run Prima;
+    Prima->run;
 
 =for podview <img src="Prima/markup.gif">
 

@@ -37,4 +37,4 @@ $w-> insert( DirectoryListBox =>
 	onChange => sub { print $_[0]-> path."\n"},
 );
 
-run Prima;
+Prima->run;

@@ -118,4 +118,4 @@ $w->insert( Button =>
 	pack => {},
 );
 
-run Prima;
+Prima->run;

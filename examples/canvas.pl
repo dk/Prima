@@ -1922,7 +1922,7 @@ sub insert
 	if ( $obj eq 'Widget') {
 		$profile{widget}-> popupItems( $widget_popup);
 	}
-	$profile{text} = "use Prima qw(Application);\nMainWindow-> new();\nrun Prima;"
+	$profile{text} = "use Prima qw(Application);\nMainWindow-> new();\nPrima->run;"
 		if $obj eq 'Text';
 	$c-> focused_object( $c-> insert_object( "Prima::Canvas::$obj", %profile));
 }
@@ -2133,4 +2133,4 @@ insert( $c, 'Line', origin => [ 200, 200], antialias => 1);
 insert( $c, 'Polygon', origin => [ 150, 150]);
 insert( $c, 'Bitmap', origin => [ 350, 350], backColor => cl::LightGreen, color => cl::Green);
 
-run Prima;
+Prima->run;

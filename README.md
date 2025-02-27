@@ -21,7 +21,7 @@ Example
 		onClick  => sub { $::application-> close },
 	);
 
-	run Prima;
+	Prima->run;
 
 More screenshots at http://prima.eu.org/big-picture/
 
@@ -230,7 +230,7 @@ Typical code starts with
 
 and ends with
 
-    run Prima;
+    Prima->run;
 
 , the event loop. Start with the following code:
 
@@ -245,7 +245,7 @@ and ends with
        onClick  => sub { $::application-> close },
     );
  
-    run Prima;
+    Prima->run;
 
 Alternatively, start the VB program, the toolkit visual builder.
 

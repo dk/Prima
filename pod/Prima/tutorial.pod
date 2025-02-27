@@ -25,7 +25,7 @@ is low; a minimal working 'Hello world' can be written in just three lines of co
 
 	use Prima qw(Application);
 	Prima::MainWindow-> new( text => 'Hello world!');
-	run Prima;
+	Prima->run;
 
 
 =for podview <img src="tutorial/hello1.gif">
@@ -120,7 +120,7 @@ the manipulation of the window properties in the same fashion:
 		backColor => cl::Yellow,
 		size => [ 200, 200],
 	);
-	run Prima;
+	Prima->run;
 
 Note that the C<size> property is a two-integer array, and the color constant
 is registered in the C<cl::> namespace. In Prima, there are many similar two-
@@ -158,7 +158,7 @@ click on the window:
 			message("Aww! You've clicked me right in $x:$y!");
 		},
 	);
-	run Prima;
+	Prima->run;
 
 While an interesting concept, it is not really practical if the only thing
 you want is to catch a click, and this is the part where the standard button
@@ -174,7 +174,7 @@ widget should probably be used instead:
 		growMode => gm::Center,
 		onClick  => sub { message("Hello!") }
 	);
-	run Prima;
+	Prima->run;
 
 =for podview <img src="tutorial/hello6.gif">
 
@@ -265,7 +265,7 @@ like this:
 			]],
 		],
 	);
-	run Prima;
+	Prima->run;
 
 =for podview <img src="tutorial/menu1.gif">
 
@@ -349,7 +349,7 @@ of the text string, an image object is supplied:
 			]],
 		],
 	);
-	run Prima;
+	Prima->run;
 
 =for podview <img src="tutorial/menu3.gif">
 
@@ -382,7 +382,7 @@ overridden:
 		],
 	);
 
-	run Prima;
+	Prima->run;
 
 All actions are called with the menu item identifier passed in as a string
 parameter.

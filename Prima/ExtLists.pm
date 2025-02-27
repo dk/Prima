@@ -223,7 +223,7 @@ Prima::ExtLists - extended functionality for list boxes
 		items  => [1..10],
 		vector => $vec,
 	);
-	run Prima;
+	Prima->run;
 
 =for podview <img src="extlist.gif">
 

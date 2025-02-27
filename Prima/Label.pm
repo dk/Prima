@@ -537,7 +537,7 @@ more.
 		text => '',
 		pack => { fill => 'x', side => 'top', pad => 10 },
 	);
-	run Prima;
+	Prima->run;
 
 =for podview <img src="label.gif">
 

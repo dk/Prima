@@ -128,4 +128,4 @@ $w->insert( Widget =>
 
 redraw;
 
-run Prima;
+Prima->run;

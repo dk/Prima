@@ -381,4 +381,4 @@ my $g = $w-> insert( Periodic =>
 	},
 );
 
-run Prima;
+Prima->run;

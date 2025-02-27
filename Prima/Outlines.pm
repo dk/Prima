@@ -2248,7 +2248,7 @@ Prima::Outlines - tree view widgets
 		],
 	);
 	$outline-> expand_all;
-	run Prima;
+	Prima->run;
 
 =for podview <img src="outline.gif">
 

@@ -760,7 +760,7 @@ Prima::ComboBox - standard combo box widget
 	$combo-> style( cs::DropDownList );
 	print $combo-> text;
 
-	run Prima;
+	Prima->run;
 
 =for podview <img src="combo.gif">
 

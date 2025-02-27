@@ -261,4 +261,4 @@ $mw = Prima::MainWindow->new(
 
 $mw->menu->check($opt{$_}) for qw(ljp lpp);
 
-run Prima;
+Prima->run;

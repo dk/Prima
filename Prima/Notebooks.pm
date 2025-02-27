@@ -1775,7 +1775,7 @@ control with interactive navigation.
 		[ 'Prima::Button', bottom => 150 ],
 	);
 	$nb-> Notebook-> backColor( cl::Green );
-	run Prima;
+	Prima->run;
 
 =for podview <img src="notebook.gif">
 

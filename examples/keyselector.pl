@@ -54,4 +54,4 @@ $w-> insert( 'Prima::KeySelector::MenuEditor' =>
 	menu         => $w-> menu,
 );
 
-run Prima;
+Prima->run;

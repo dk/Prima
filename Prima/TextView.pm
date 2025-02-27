@@ -1325,7 +1325,7 @@ Prima::TextView - rich text browser widget
  # selection:
  $t->paneSize($text_width_px, $font_height_px);
 
- run Prima;
+ Prima->run;
 
 =for podview <img src="textview.gif">
 

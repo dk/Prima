@@ -56,4 +56,4 @@ $w-> insert( "ScrollBar",
 	},
 );
 
-run Prima;
+Prima->run;

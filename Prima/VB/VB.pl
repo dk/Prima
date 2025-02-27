@@ -2195,7 +2195,7 @@ package ${main}Auto;
 
 use Prima::Application;
 ${main}Window-> create;
-run Prima;
+Prima->run;
 
 POSTHEAD
 
@@ -2518,7 +2518,7 @@ $VB::main-> update_menu();
 
 $VB::main-> load_file( $ARGV[0]) if @ARGV && -f $ARGV[0] && -r _;
 
-run Prima;
+Prima->run;
 
 1;
 

@@ -324,4 +324,4 @@ my $w = Prima::MainWindow->new(
 	}
 );
 
-run Prima;
+Prima->run;

@@ -1032,7 +1032,7 @@ mouse.
 			$w-> text( $_[0]-> value);
 		});
 
-	run Prima;
+	Prima->run;
 
 =head1 SEE ALSO
 

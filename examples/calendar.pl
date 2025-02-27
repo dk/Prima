@@ -52,5 +52,5 @@ $cal = $w-> insert( Calendar =>
 
 $w-> menu-> locale-> check if $cal-> useLocale;
 
-run Prima;
+Prima->run;
 

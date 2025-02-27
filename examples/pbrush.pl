@@ -252,4 +252,4 @@ my $w = ImageEdit::EditorWindow-> new(
 	imageSize  => [ 320, 320],
 );
 
-run Prima;
+Prima->run;
