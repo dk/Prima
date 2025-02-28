@@ -130,7 +130,7 @@ sub t2
 	my $orig_text   = $text;
 	my $orig_glyphs = $glyphs . '#';
 	$text   = xtr $text;
-	$glyphs = xtr $glyphs;
+	$glyphs = gmap xtr $glyphs unless ref $glyphs;
 	$text =~ tr
 		[<>=]
 		#[\x{2067}\x{2066}\x{2069}]
@@ -140,7 +140,7 @@ sub t2
 	$z = $w-> text_shape($text, %opt, polyfont => 0);
 	return ok(0, "$name (undefined)") unless defined $z;
 	return ok(0, "$name (unnecessary, retval=0)") unless $z;
-	comp($z->glyphs, gmap $glyphs, "$name (glyphs)", 1, $orig_text);
+	comp($z->glyphs, $glyphs, "$name (glyphs)", 1, $orig_text);
 	if ( defined $indexes ) {
 		comp($z->indexes, $indexes, "$name (indexes)", 0, $_[0]);
 		return;
@@ -414,10 +414,15 @@ sub test_shaping
 		}
 
 		SKIP: {
+			skip("no arabic font", 1) unless find_vector_font("\x{627}");
                 	glyphs "|-/%";
 			skip("arabic shaping is not available", 1) unless glyphs_fully_resolved;
 			t('|/', '/|', 'no arabic ligation');
-			t2('/|', '%', [r(0),2], 'arabic ligation');
+			my $z = $w-> text_shape(xtr('/|'), polyfont => 0);
+			skip("arabic shaping is not available for font ".$w->font->name, 1)
+				unless $z && $z->glyphs && 1 == @{ $z->glyphs };
+			my $lam_alef_isolated = $z->[0]->[0];
+			t2('/|', [$lam_alef_isolated], [r(0),2], 'arabic ligation');
 			if ( $opt{fribidi} ) {
 				t('/-|', '|-/', 'arabic non-ligation');
 				check_proper_bidi();
@@ -524,17 +529,23 @@ sub test_glyphs_wrap
 		$w->font->size(12);
 		glyphs "|/%";
 		skip("arabic glyphs are not available", 1) unless glyphs_fully_resolved;
+
+		# glyph(%) may not necessarily be shape(/|) though
+		$z = $w-> text_shape(xtr('/|'), polyfont => 0);
+		skip("arabic shaping is not available for font ".$w->font->name, 1)
+			unless $z && $z->glyphs && 1 == @{ $z->glyphs };
+		my $lam_alef_isolated = $z->[0]->[0];
+
 		$z = $w-> text_shape(xtr('|/|'), polyfont => 0); # 2 glyphs, | and /|, visually /| is on the left
 		skip("arabic shaping is not available for font ".$w->font->name, 1)
 			unless $z && $z->glyphs && 2 == @{ $z->glyphs };
 		$r = $w-> text_wrap($z, 0, tw::ReturnChunks);
 		is_deeply($r, [0,1 , 1,1], "ligature wrap, chunks");
 		$r = $w-> text_wrap($z, 0, 0);
-		is_deeply($r->[0]->glyphs, [$glyphs{xtr '%'}], 'ligature wrap, left glyphs');
+		is_deeply($r->[0]->glyphs, [$lam_alef_isolated], 'ligature wrap, left glyphs');
 		is_deeply($r->[0]->indexes, [r(1),length('|/|')], 'ligature wrap, left indexes');
 		is_deeply($r->[1]->glyphs, [$glyphs{xtr '|'}], 'ligature wrap, right glyphs');
 		is_deeply($r->[1]->indexes, [r(0),length('|/|')], 'ligature wrap, right indexes');
-
 		$z = $w-> text_wrap_shape(xtr('/|') . "\n" . xtr('/|') . "~p",
 			undef,
 			options => tw::CalcMnemonic|tw::NewLineBreak|tw::CollapseTilde,
