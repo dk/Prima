@@ -1027,13 +1027,13 @@ AdjustOffsets(
  */
 
 static void
-AdjustForSticky(slavePtr, xPtr, yPtr, widthPtr, heightPtr)
-	Gridder *slavePtr;  /* Slave window to arrange in its cavity. */
-	int *xPtr;          /* Pixel location of the left edge of the cavity. */
-	int *yPtr;          /* Pixel location of the top edge of the cavity. */
-	int *widthPtr;      /* Width of the cavity (in pixels). */
-	int *heightPtr;     /* Height of the cavity (in pixels). */
-{
+AdjustForSticky(
+	Gridder *slavePtr,  /* Slave window to arrange in its cavity. */
+	int *xPtr,          /* Pixel location of the left edge of the cavity. */
+	int *yPtr,          /* Pixel location of the top edge of the cavity. */
+	int *widthPtr,      /* Width of the cavity (in pixels). */
+	int *heightPtr      /* Height of the cavity (in pixels). */
+) {
 	int diffx=0;        /* Cavity width - slave width. */
 	int diffy=0;        /* Cavity hight - slave height. */
 	int sticky = slavePtr->sticky;
@@ -2378,8 +2378,7 @@ StickyToString(
  */
 
 static int
-StringToSticky(string)
-	char *string;
+StringToSticky( char *string)
 {
 	int sticky = 0;
 	char c;
