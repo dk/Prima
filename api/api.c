@@ -308,8 +308,13 @@ gimme_the_vmt( const char *className)
 			for ( i = 0; i < patchLength; i++)
 			{
 				proc = hv_fetch( stash, patch[ i]. name, strlen( patch[ i]. name), 0);
-				if (! (( proc == NULL) || ( *proc == NULL) || ( !GvCV(( GV *) *proc))))
-				{
+				if (!(
+					proc == NULL  ||
+					*proc == NULL || !(
+						(SvROK(*proc) && SvTYPE(SvRV(*proc)) == SVt_PVCV) ||
+						GvCV(( GV *) *proc)
+					)
+				)) {
 					addr = ( void **)((( char *)vmt) + ((( char *)( patch[ i]. vmtAddr)) - (( char *)patchWhom)));
 					*addr = patch[ i]. procAddr;
 				}
