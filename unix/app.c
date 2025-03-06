@@ -393,6 +393,7 @@ init_x11( char * error_buf )
 	XCHECKPOINT;
 
 	TAILQ_INIT( &guts.paintq);
+	TAILQ_INIT( &guts.exposeq);
 	TAILQ_INIT( &guts.peventq);
 	TAILQ_INIT( &guts.bitmap_gc_pool);
 	TAILQ_INIT( &guts.screen_gc_pool);

@@ -633,6 +633,7 @@ typedef struct _UnixGuts
 	struct gc_head               argb_gc_pool;
 	GC                                   menugc;
 	TAILQ_HEAD(,_drawable_sys_data)      paintq;
+	TAILQ_HEAD(,_drawable_sys_data)      exposeq;
 	PHash                                ximages;
 	/* Font management */
 	PHash                        font_hash;
@@ -936,6 +937,7 @@ typedef struct _drawable_sys_data
 		unsigned dnd_aware                : 1;
 		unsigned drop_target              : 1;
 		unsigned enabled               	  : 1;
+		unsigned expose_pending           : 1;
 		unsigned exposed                  : 1;
 		unsigned falsely_hidden           : 1;
 		unsigned first_click              : 1;
@@ -973,6 +975,7 @@ typedef struct _drawable_sys_data
 	ImageCache image_cache;
 	Handle preexec_focus;
 	TAILQ_ENTRY(_drawable_sys_data) paintq_link;
+	TAILQ_ENTRY(_drawable_sys_data) exposeq_link;
 	TAILQ_HEAD(,configure_event_pair)    configure_pairs;
 	Byte * palette;
 	int borderIcons;

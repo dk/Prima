@@ -1904,9 +1904,18 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 			XUnionRectWithRegion( &r, XX-> invalid_region, XX-> invalid_region);
 		}
 
-		if ( ev-> xexpose. count == 0 && !XX-> flags. paint_pending) {
-			TAILQ_INSERT_TAIL( &guts.paintq, XX, paintq_link);
-			XX-> flags. paint_pending = true;
+		if ( ev-> xexpose. count == 0 ) {
+			if ( !XX-> flags. paint_pending) {
+				TAILQ_INSERT_TAIL( &guts.paintq, XX, paintq_link);
+				XX-> flags. paint_pending = true;
+			}
+			if ( XX-> flags. expose_pending) {
+				TAILQ_REMOVE( &guts.exposeq, XX, exposeq_link);
+				XX-> flags. expose_pending = false;
+			}
+		} else if ( !XX-> flags. expose_pending) {
+			TAILQ_INSERT_TAIL( &guts.exposeq, XX, exposeq_link);
+			XX-> flags. expose_pending = true;
 		}
 
 		process_transparents(self);
@@ -2184,6 +2193,32 @@ perform_pending_paints( void)
  		XX = next;
         }
 
+	/* horribly broken X11 WMs (looking at you mutter) sometimes send a stream of Expose events with counts going
+	down but never with 0, which leaves some widgets not repainted properly. Here we're protecting from this by 
+	recording those recipients */
+	for ( XX = TAILQ_FIRST( &guts.exposeq); XX != NULL; ) {
+		PDrawableSysData next = TAILQ_NEXT( XX, exposeq_link);
+		if (
+			XX-> flags. expose_pending &&
+			guts. appLock == 0 &&
+			(PWidget( XX->self)-> stage == csNormal)
+		) {
+			XRectangle r;
+			TAILQ_REMOVE( &guts.exposeq, XX, exposeq_link);
+			XX-> flags. expose_pending = false;
+			list_add( &list, (Handle) XX->self);
+			list_add( &list, (Handle) XX);
+			protect_object(XX->self);
+			r.x = r.y = 0;
+			r.width   = XX->size.x;
+			r.height  = XX->size.y;
+			if ( !XX-> invalid_region)
+				XX-> invalid_region = XCreateRegion();
+			XUnionRectWithRegion( &r, XX-> invalid_region, XX-> invalid_region);
+		}
+ 		XX = next;
+	}
+
 	for ( i = 0; i < list.count; i+=2) {
 		Handle self;
 
@@ -2279,6 +2314,7 @@ send_queued_x_events(int careOfApplication)
 	}
 	if (!prima_guts.application && careOfApplication) return events;
 	prima_handle_event( &ev, NULL);
+
 	events++;
 	return events;
 }

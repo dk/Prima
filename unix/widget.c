@@ -291,6 +291,10 @@ apc_widget_create( Handle self, Handle owner, Bool clip_owner, ApiHandle parentH
 			TAILQ_REMOVE( &guts.paintq, XX, paintq_link);
 			XX-> flags. paint_pending = false;
 		}
+		if ( XX-> flags. expose_pending) {
+			TAILQ_REMOVE( &guts.exposeq, XX, exposeq_link);
+			XX-> flags. expose_pending = false;
+		}
 		/* flush configure events */
 		XSync( DISP, false);
 		while ( XCheckIfEvent( DISP, &dummy_ev, (XIfEventProcType)prima_flush_events, (XPointer)self));
@@ -429,6 +433,10 @@ apc_widget_begin_paint( Handle self, Bool inside_on_paint)
 					TAILQ_REMOVE( &guts.paintq, XX, paintq_link);
 					XX-> flags. paint_pending = false;
 				}
+				if ( XX-> flags. expose_pending) {
+					TAILQ_REMOVE( &guts.exposeq, XX, exposeq_link);
+					XX-> flags. expose_pending = false;
+				}
 				XX-> flags. transparent_busy = 0;
 			} else
 				useRPDraw = true;
@@ -541,6 +549,10 @@ apc_widget_destroy( Handle self)
 	if ( XX-> flags. paint_pending) {
 		TAILQ_REMOVE( &guts.paintq, XX, paintq_link);
 		XX-> flags. paint_pending = false;
+	}
+	if ( XX-> flags. expose_pending) {
+		TAILQ_REMOVE( &guts.exposeq, XX, exposeq_link);
+		XX-> flags. expose_pending = false;
 	}
 	if ( XX-> invalid_region) {
 		XDestroyRegion( XX-> invalid_region);
