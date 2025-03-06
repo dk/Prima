@@ -1947,6 +1947,10 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 		handle_immediate_configure_event( self, win, ev);
 		break;
 	case ConfigureNotify:
+		if ( !XX-> flags. expose_pending && !XX->flags.paint_pending) {
+			TAILQ_INSERT_TAIL( &guts.exposeq, XX, exposeq_link);
+			XX-> flags. expose_pending = true;
+		}
 		handle_stackable_configure_event( self, win, ev);
 		break;
 	case PropertyNotify:
