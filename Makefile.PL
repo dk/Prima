@@ -2360,7 +2360,7 @@ sub create_config_pm
 	my ($libs, $libsi) = ('','');
 	if ( $cygwin) {
 		$libs  = maybe_quote("-L$cwd/blib/arch/auto/Prima")." -lPrima";
-		$libsi = maybe_quote("-L$(lib)/auto/Prima").' -lPrima';
+		$libsi = maybe_quote('-L$(lib)/auto/Prima').' -lPrima';
 	} elsif ( $Win32) {
 		$libs  = maybe_quote("$cwd/blib/arch/auto/Prima/${LIB_PREFIX}Prima$LIB_EXT");
 		$libsi = '$(lib)' . "/auto/Prima/${LIB_PREFIX}Prima$LIB_EXT";
