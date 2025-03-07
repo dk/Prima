@@ -39,6 +39,7 @@ sub
 		code => Prima::VB::VBLoader::GO_SUB(''),
 		profile => {
 			centered => 1,
+			designScale => [ 7, 15],
 			name => 'Form1',
 			origin => [ 390, 303],
 			originDontCare => 0,
