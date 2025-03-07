@@ -77,6 +77,9 @@ load_defaults( PImgCodec c)
 #if LIBHEIF_NUMERIC_VERSION >= ((1<<24) | (15<<16) | (0<<8) | 0)
 #define HAS_V1_15_API
 #endif
+#if LIBHEIF_NUMERIC_VERSION >= ((1<<24) | (17<<16) | (0<<8) | 0)
+#define HAS_V1_17_API
+#endif
 
 static int
 get_encoder_descriptors(
@@ -122,6 +125,25 @@ describe_compression(int v, char *shrt)
 	case heif_compression_AV1:
 		compstr = "AV1";
 		break;
+#ifdef HAS_V1_15_API
+	case heif_compression_VVC:
+		compstr = "VVC/H.266";
+		break;
+	case heif_compression_EVC:
+		compstr = "EVC/H.266";
+		break;
+	case heif_compression_JPEG2000:
+		compstr = "JPEG2000";
+		break;
+#endif
+#ifdef HAS_V1_17_API
+	case heif_compression_uncompressed:
+		compstr = "uncompressed";
+		break;
+	case heif_compression_mask:
+		compstr = "mask";
+		break;
+#endif
 	default:
 		if ( strcmp( shrt, "dav1d" ) == 0 )
 			compstr = "AV1";
