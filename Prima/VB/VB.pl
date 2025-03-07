@@ -639,6 +639,12 @@ sub init
 	return %profile;
 }
 
+sub set_default_props
+{
+	my $self = shift;
+	$self->prf_set( designScale => [ $self->font->width, $self->font->height ] );
+}
+
 sub insert_new_control
 {
 	my ( $self, $x, $y, $where, %profile) = @_;
@@ -1699,6 +1705,7 @@ sub new
 	my $self = $_[0];
 	return if $VB::form and !$VB::form-> close;
 	$VB::form = Prima::VB::Form-> create;
+	$VB::form-> set_default_props;
 	$VB::main-> {fmName} = undef;
 	Prima::VB::ObjectInspector::renew_widgets;
 	update_menu();
@@ -2512,6 +2519,7 @@ $VB::inspector = Prima::VB::ObjectInspector-> create(
 $VB::code = '';
 $VB::editor = Prima::VB::CodeEditor-> create() if $VB::main-> {ini}-> {CodeEditorVisible};
 $VB::form = Prima::VB::Form-> create;
+$VB::form-> set_default_props;
 Prima::VB::ObjectInspector::renew_widgets;
 Prima::VB::ObjectInspector::preload() unless $VB::fastLoad;
 $VB::main-> update_menu();
