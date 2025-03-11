@@ -436,8 +436,8 @@ apc_gp_aa_bars( Handle self, int nr, NRect *rr)
 		} else {
 			xt1->left.p1.x  = xt1->left.p2.x  = XDoubleToFixed(x1);
 			xt1->right.p1.x = xt1->right.p2.x = XDoubleToFixed(x2);
-			xt1->top        = xt1->left.p2.y  = xt1->right.p2.y = XDoubleToFixed(y2);
-			xt1->bottom     = xt1->left.p1.y  = xt1->right.p1.y = XDoubleToFixed(y1);
+			xt1->top        = xt1->left.p1.y  = xt1->right.p1.y = XDoubleToFixed(y2);
+			xt1->bottom     = xt1->left.p2.y  = xt1->right.p2.y = XDoubleToFixed(y1);
 			xt1++;
 			nt++;
 		}
