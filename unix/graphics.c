@@ -738,7 +738,7 @@ apc_gp_can_draw_alpha( Handle self)
 	else
 		return
 			guts.render_supports_argb32
-			&& (guts.is_darwin && !guts.x11_local)
+			&& (guts.is_darwin ? !guts.x11_local : 1)
 		;
 }
 
