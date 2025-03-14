@@ -798,7 +798,15 @@ hshow( Handle self)
 	if ( fin. x < 0) fin. x = 0;
 	if ( fin. y + hintSize. y >= s. y) fin. y = pos. y - hintSize. y;
 	if ( fin. y < 0) fin. y = pos. y + size. y + 16;
+	if ( fin. y + hintSize. y >= s. y) fin. y = s. y - hintSize. y;
 	if ( fin. y < 0) fin. y = 0;
+	if (
+		fin. x <= mouse.x && fin.x + hintSize.x >= mouse.x + 32 &&
+		fin. y <= mouse.y && fin.y + hintSize.y >= mouse.y + 32 
+	) {
+		fin. x = mouse.x + 32;
+		fin. y = mouse.y - 32 - hintSize.y;
+	}
 
 	hintWidget-> set_origin( var->  hintWidget, fin);
 	hintWidget-> show( var->  hintWidget);
