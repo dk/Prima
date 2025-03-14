@@ -215,10 +215,12 @@ sub on_mousemove
 		($r  < 0) ? () : $self->id2rectangles( $r  ),
 	) {
 		my @rc = @$rc;
+		my @xy = ($x,$y,$x+1,$y+1);
 		$owner-> notify(qw(LinkAdjustRect), $self, \@rc);
+		$owner-> notify(qw(LinkAdjustRect), $self, \@xy);
 		$owner-> invalidate_rect(@rc[0..3]);
 		@around = $owner->client_to_screen(@rc[0..3])
-			if $rc[0] <= $x && $rc[1] <= $y && $rc[2] > $x && $rc[3] > $y;
+			if $rc[0] <= $xy[0] && $rc[1] <= $xy[1] && $rc[2] > $xy[0] && $rc[3] > $xy[1];
 	}
 
 	if ( $r >= 0 ) {
@@ -232,6 +234,7 @@ sub on_mousemove
 	NO_HINT:
 		$owner->hint('');
 		$owner->showHint(0);
+		$::application->set_hint_action($owner, 0, 0, -1,-1,-1,-1);
 	}
 }
 

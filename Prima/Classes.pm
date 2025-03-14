@@ -2360,7 +2360,21 @@ sub profile_default
 	return $def;
 }
 
-sub max_extents { map { $_ / 2 } $::application->size }
+sub max_extents
+{
+	shift;
+	my @pos = @_ || $::application-> pointerPos;
+	my @sz = $::application->size;
+	for my $r ( @{$::application->get_monitor_rects} ) {
+		next unless
+			$r->[0] <= $pos[0] && $r->[2] > $pos[0] &&
+			$r->[1] <= $pos[1] && $r->[3] > $pos[1]
+		;
+		@sz = ( $r->[2] - $r->[0], $r->[3] - $r->[1] );
+		last;
+	}
+	return map { $_ / 2 } @sz;
+}
 
 sub on_change
 {

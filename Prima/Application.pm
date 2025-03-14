@@ -116,6 +116,8 @@ Prima::Application internally manages all of the hint functionality.  The hint w
 itself, however, can be replaced before the application object is created, using
 the C<::hintClass> create-only property.
 
+Also see: L<set_hint_action>
+
 =item Printer
 
 The result of the L<get_printer> method points to an automatically created printer
@@ -798,6 +800,16 @@ the file with POD content and 'section' is the topic inside the manpage.
 Alternatively can handle the syntax in the form of C< file://path|section >
 where C<path> is the file with the pod content and C<section> is an optional
 pod section within the file.
+
+=item set_hint_action WIDGET, SHOW, IS_MOUSE_EVENT, @AROUND
+
+Special method to execute an immediate show or hide action on the hint widget,
+without waiting for either timeout or mouse moved by the user. The boolean SHOW
+flag signals whether the hint should be hdden or shown, IS_MOUSE_EVENT signals
+if Prima should also start the internal timer that pops up a hint if it was
+previously invisible.  The special @AROUND rect is a 4-integer array that
+signals that the hint should be positioned in an adjacent fashion next to one
+of the rect sides.
 
 =item stop
 

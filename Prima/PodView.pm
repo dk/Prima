@@ -181,8 +181,12 @@ sub on_link
 sub on_linkpreview
 {
 	my ( $self, $link_handler, $url) = @_;
-	$$url = '';
-	$self->clear_event;
+	if ( $$url =~ /^([^|]+)$/) {
+		$$url = "pod://$1";
+	} else {
+		$$url = '';
+		$self->clear_event;
+	}
 }
 
 sub on_linkadjustrect
@@ -191,6 +195,7 @@ sub on_linkadjustrect
 	my ($dx, $dy) = $self->point2screen(0,0);
 	$$rc[$_] = $dx + $$rc[$_] for 0,2;
 	$$rc[$_] = $dy - $$rc[$_] for 1,3;
+	@$rc[1,3] = @$rc[3,1];
 	$self->clear_event;
 }
 
