@@ -1311,6 +1311,8 @@ sub notification_types { return \%RNT; }
 	hiliteColor       => cl::HiliteText,
 	hint              => '',
 	hintVisible       => 0,
+	hintBackColor     => 0xffff80,
+	hintColor         => cl::Black,
 	layered           => 0,
 	light3DColor      => cl::Light3DColor,
 	left              => 100,
@@ -1318,6 +1320,8 @@ sub notification_types { return \%RNT; }
 	ownerBackColor    => 0,
 	ownerFont         => 1,
 	ownerHint         => 1,
+	ownerHintColor    => 1,
+	ownerHintBackColor=> 1,
 	ownerShowHint     => 1,
 	ownerSkin         => 1,
 	ownerPalette      => 1,
@@ -2487,14 +2491,15 @@ sub profile_default
 		ownerColor     => 0,
 		ownerBackColor => 0,
 		ownerFont      => 0,
+		ownerHint      => 0,
+		ownerHintColor => 0,
+		ownerHintBackColor => 0,
 		ownerShowHint  => 0,
 		ownerSkin      => 0,
 		ownerPalette   => 0,
 		showHint       => 1,
 		skin           => 'flat',
 		hintClass      => 'Prima::HintWidget',
-		hintColor      => cl::Black,
-		hintBackColor  => 0xffff80,
 		hintPause      => 800,
 		hintFont       => Prima::Widget::get_default_font,
 		modalHorizon   => 1,
@@ -2516,13 +2521,10 @@ sub profile_check_in
 	$p->{textDirection} //= $self->lang_is_rtl($p->{language} // $default->{language});
 	$GUI_EXCEPTION = delete $p->{guiException} if exists $p->{guiException};
 	$self-> SUPER::profile_check_in( $p, $default);
-	delete $p-> { printerModule};
-	delete $p-> { owner};
-	delete $p-> { ownerColor};
-	delete $p-> { ownerBackColor};
-	delete $p-> { ownerFont};
-	delete $p-> { ownerShowHint};
-	delete $p-> { ownerPalette};
+	delete @{$p}{qw(
+		printerModule owner ownerColor ownerBackColor ownerFont ownerHint
+		ownerHintColor ownerHintBackColor ownerShowHint ownerPalette)
+	};
 }
 
 sub add_startup_notification

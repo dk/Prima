@@ -6,7 +6,7 @@
 #define POLLUTE_NAME_SPACE 1
 #endif
 
-#define PRIMA_CORE_VERSION 2025021801
+#define PRIMA_CORE_VERSION 2025031501
 
 #define PRIMA_VERSION_BOOTCHECK \
 	if(apc_get_core_version()!=PRIMA_CORE_VERSION) \
@@ -2003,6 +2003,8 @@ typedef struct _ObjectOptions_ {
 	unsigned optOwnerColor          : 1;
 	unsigned optOwnerFont           : 1;
 	unsigned optOwnerHint           : 1;
+	unsigned optOwnerHintColor      : 1;
+	unsigned optOwnerHintBackColor  : 1;
 	unsigned optOwnerShowHint       : 1;
 	unsigned optOwnerSkin           : 1;
 	unsigned optOwnerPalette        : 1;

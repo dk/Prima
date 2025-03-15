@@ -18,6 +18,8 @@ object Prima::Widget( Prima::Drawable)
 	char   *  dndAware;                 # NULL for no, "1" for all formats, other for selected
 	char   *  helpContext;              # help context string
 	SV     *  hint;                     # hint tag text
+	Color     hintBackColor;
+	Color     hintColor;
 	int       lockCount;                # lock count
 	Font      popupFont;                # font for popup menu
 	ColorSet  popupColor;               # colors for popup menu
@@ -31,7 +33,7 @@ object Prima::Widget( Prima::Drawable)
 	int       tabOrder;                 # tab ordering number
 	SV     *  text;                     # caption text
 	int       widgetClass;              # predefined system class
-	List      widgets;		       # list of child widgets
+	List      widgets;		    # list of child widgets
 	Handle *  enum_lists;               # list of currently running enumerators
 
 # 	geometry managers data
@@ -75,6 +77,8 @@ object Prima::Widget( Prima::Drawable)
 	property  Bool   focused;
 	property  SV *   helpContext;
 	property  int    hintVisible;
+	property  Color  hintColor;
+	property  Color  hintBackColor;
 	property  int    left;
 	property  Bool   layered;
 	property  Handle popup;
@@ -83,6 +87,8 @@ object Prima::Widget( Prima::Drawable)
 	property  Bool   ownerColor;
 	property  Bool   ownerFont;
 	property  Bool   ownerHint;
+	property  Bool   ownerHintBackColor;
+	property  Bool   ownerHintColor;
 	property  Bool   ownerShowHint;
 	property  Bool   ownerSkin;
 	property  Bool   ownerPalette;

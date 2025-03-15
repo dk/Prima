@@ -100,6 +100,8 @@ sub profile_default
 		topicView     => 0,
 		textDirection => $::application->textDirection,
 		justify       => 1,
+		hintColor     => cl::Fore,
+		hintBackColor => cl::Back,
 	);
 	@$def{keys %prf} = values %prf;
 	return $def;

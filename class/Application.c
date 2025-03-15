@@ -788,6 +788,8 @@ hshow( Handle self)
 	}
 
 	hintWidget-> set_text( var->  hintWidget, text);
+	hintWidget-> set_color( var-> hintWidget, PWidget(var-> hintUnder)-> hintColor);
+	hintWidget-> set_backColor( var-> hintWidget, PWidget(var-> hintUnder)-> hintBackColor);
 	hintSize = hintWidget-> get_size( var->  hintWidget);
 
 	fin. x = mouse. x - 16;
@@ -891,6 +893,7 @@ Application_set_hint_action( Handle self, Handle view, Bool show, Bool byMouse, 
 	}
 }
 
+/*
 Color
 Application_hintColor( Handle self, Bool set, Color hintColor)
 {
@@ -906,6 +909,7 @@ Application_hintBackColor( Handle self, Bool set, Color hintBackColor)
 		return CWidget( var->  hintWidget)-> get_backColor( var-> hintWidget);
 	return CWidget( var->  hintWidget)-> set_backColor( var->  hintWidget, hintBackColor);
 }
+*/
 
 int
 Application_hintPause( Handle self, Bool set, int hintPause)

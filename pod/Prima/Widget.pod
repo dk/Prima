@@ -1415,6 +1415,18 @@ TEXT can also be a C<Prima::Drawable::Markup> object
 
 See also: C<hintVisible>, C<showHint>, C<ownerHint>, C<ownerShowHint>
 
+=item hintBackColor COLOR
+
+The hint back color for the widget
+
+See also: C<ownerHintBackColor>
+
+=item hintColor COLOR
+
+The hint color for the widget
+
+See also: C<ownerHintColor>
+
 =item hintVisible BOOLEAN
 
 Returns the hint visibility status when called in the get-form.  When called in
@@ -1482,6 +1494,20 @@ If 1, the hint is synchronized with the owner's.
 Automatically resets to 0 if the C<::hint> property is set explicitly.
 
 See also: C<hint>, C<showHint>, C<hintVisible>, C<ownerShowHint>
+
+=item ownerHintBackColor BOOLEAN
+
+If 1, the hint color is synchronized with the owner's.
+Automatically resets to 0 if the C<::hintBackColor> property is set explicitly.
+
+See also: C<hintBackColor>
+
+=item ownerHintColor BOOLEAN
+
+If 1, the hint color is synchronized with the owner's.
+Automatically resets to 0 if the C<::hintColor> property is set explicitly.
+
+See also: C<hintColor>
 
 =item ownerShowHint BOOLEAN
 

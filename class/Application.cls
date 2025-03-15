@@ -18,8 +18,6 @@ object Prima::Application( Prima::Widget)
 	property  Handle icon;
 	property  Bool   insertMode;
 	property  int    growMode;
-	property  Color  hintColor;
-	property  Color  hintBackColor;
 	property  int    hintPause;
 	property  Bool   layered;
 	property  Bool   modalHorizon;

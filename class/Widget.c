@@ -66,6 +66,8 @@ Widget_init( Handle self, HV * profile)
 	opt_assign( optOwnerColor    , pget_B( ownerColor));
 	opt_assign( optOwnerFont     , pget_B( ownerFont));
 	opt_assign( optOwnerHint     , pget_B( ownerHint));
+	opt_assign( optOwnerHintBackColor, pget_B( ownerHintBackColor));
+	opt_assign( optOwnerHintColor, pget_B( ownerHintColor));
 	opt_assign( optOwnerShowHint , pget_B( ownerShowHint));
 	opt_assign( optOwnerSkin     , pget_B( ownerSkin));
 	opt_assign( optOwnerPalette  , pget_B( ownerPalette));
@@ -126,6 +128,9 @@ Widget_init( Handle self, HV * profile)
 		my-> set_popupItems( self, sv);
 	if ( SvOK( sv = pget_sv( accelItems)))
 		my-> set_accelItems( self, sv);
+
+	my-> set_hintColor( self, pget_i( hintColor ));
+	my-> set_hintBackColor( self, pget_i( hintBackColor ));
 
 	/* size, position, enabling, visibility etc. runtime */
 	{
@@ -744,6 +749,14 @@ Widget_set( Handle self, HV * profile)
 				my-> set_hint( self, CWidget( postOwner)-> get_hint( postOwner));
 				opt_set( optOwnerHint);
 			}
+			if ( is_opt( optOwnerHintBackColor)) {
+				my-> set_hintBackColor( self, CWidget( postOwner)-> get_hintBackColor( postOwner));
+				opt_set( optOwnerHintBackColor);
+			}
+			if ( is_opt( optOwnerHintColor)) {
+				my-> set_hintColor( self, CWidget( postOwner)-> get_hintColor( postOwner));
+				opt_set( optOwnerHintColor);
+			}
 			if ( is_opt( optOwnerFont)) {
 				my-> set_font ( self, CWidget( postOwner)-> get_font( postOwner));
 				opt_set( optOwnerFont);
@@ -1321,6 +1334,26 @@ hint_notify ( Handle self, Handle child, SV * hint)
 	return false;
 }
 
+static Bool
+hintbackcolor_notify ( Handle self, Handle child, Color * c)
+{
+	if ( his-> options. optOwnerHintBackColor) {
+		his-> self-> set_hintBackColor( child, *c);
+		his-> options. optOwnerHintBackColor = 1;
+	}
+	return false;
+}
+
+static Bool
+hintcolor_notify ( Handle self, Handle child, Color * c)
+{
+	if ( his-> options. optOwnerHintColor) {
+		his-> self-> set_hintColor( child, *c);
+		his-> options. optOwnerHintColor = 1;
+	}
+	return false;
+}
+
 Bool
 prima_single_color_notify ( Handle self, Handle child, void * color)
 {
@@ -1729,6 +1762,48 @@ Widget_set_hint( Handle self, SV *hint)
 	opt_clear( optOwnerHint);
 }
 
+Color
+Widget_hintBackColor( Handle self, Bool set, Color c)
+{
+	enter_method;
+	if ( !set)
+		return var-> hintBackColor;
+	if ( var-> stage > csFrozen) return 0;
+	my-> first_that( self, (void*)hintbackcolor_notify, (void*)&c);
+	var-> hintBackColor = c;
+	if (
+		prima_guts.application && P_APPLICATION-> hintVisible &&
+		P_APPLICATION-> hintUnder == self
+	) {
+		Handle hintWidget = P_APPLICATION-> hintWidget;
+		if ( hintWidget)
+			CWidget(hintWidget)-> set_backColor( hintWidget, c);
+	}
+	opt_clear( optOwnerHintBackColor);
+	return 0;
+}
+
+Color
+Widget_hintColor( Handle self, Bool set, Color c)
+{
+	enter_method;
+	if ( !set)
+		return var-> hintColor;
+	if ( var-> stage > csFrozen) return 0;
+	my-> first_that( self, (void*)hintcolor_notify, (void*)&c);
+	var-> hintColor = c;
+	if (
+		prima_guts.application && P_APPLICATION-> hintVisible &&
+		P_APPLICATION-> hintUnder == self
+	) {
+		Handle hintWidget = P_APPLICATION-> hintWidget;
+		if ( hintWidget)
+			CWidget(hintWidget)-> set_color( hintWidget, c);
+	}
+	opt_clear( optOwnerHintColor);
+	return 0;
+}
+
 Bool
 Widget_layered( Handle self, Bool set, Bool layered)
 {
@@ -1823,6 +1898,36 @@ Widget_ownerHint( Handle self, Bool set, Bool ownerHint )
 	{
 		my-> set_hint( self, ((( PWidget) var-> owner)-> self)-> get_hint ( var-> owner));
 		opt_set( optOwnerHint);
+	}
+	return false;
+}
+
+Bool
+Widget_ownerHintBackColor( Handle self, Bool set, Bool ownerHintBackColor )
+{
+	enter_method;
+	if ( !set)
+		return is_opt( optOwnerHintBackColor);
+	opt_assign( optOwnerHintBackColor, ownerHintBackColor);
+	if ( is_opt( optOwnerHintBackColor) && var-> owner)
+	{
+		my-> set_hintBackColor( self, ((( PWidget) var-> owner)-> self)-> get_hintBackColor ( var-> owner));
+		opt_set( optOwnerHintBackColor);
+	}
+	return false;
+}
+
+Bool
+Widget_ownerHintColor( Handle self, Bool set, Bool ownerHintColor )
+{
+	enter_method;
+	if ( !set)
+		return is_opt( optOwnerHintColor);
+	opt_assign( optOwnerHintColor, ownerHintColor);
+	if ( is_opt( optOwnerHintColor) && var-> owner)
+	{
+		my-> set_hintColor( self, ((( PWidget) var-> owner)-> self)-> get_hintColor ( var-> owner));
+		opt_set( optOwnerHintColor);
 	}
 	return false;
 }

@@ -290,14 +290,6 @@ Specifies the class of the widget used as the hint label.
 
 Default value: Prima::HintWidget
 
-=item hintColor COLOR
-
-The alias to the foreground color property of the hint label widget.
-
-=item hintBackColor COLOR
-
-The alias to the background color property of the hint label widget.
-
 =item hintFont %FONT
 
 The alias to the font property of the hint label widget.
