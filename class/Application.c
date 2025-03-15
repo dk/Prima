@@ -893,24 +893,6 @@ Application_set_hint_action( Handle self, Handle view, Bool show, Bool byMouse, 
 	}
 }
 
-/*
-Color
-Application_hintColor( Handle self, Bool set, Color hintColor)
-{
-	if ( !set)
-		return CWidget( var-> hintWidget)-> get_color( var->  hintWidget);
-	return CWidget( var->  hintWidget)-> set_color( var->  hintWidget, hintColor);
-}
-
-Color
-Application_hintBackColor( Handle self, Bool set, Color hintBackColor)
-{
-	if ( !set)
-		return CWidget( var->  hintWidget)-> get_backColor( var-> hintWidget);
-	return CWidget( var->  hintWidget)-> set_backColor( var->  hintWidget, hintBackColor);
-}
-*/
-
 int
 Application_hintPause( Handle self, Bool set, int hintPause)
 {
