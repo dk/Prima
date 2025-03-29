@@ -23,6 +23,7 @@ use File::Find;
 use File::Path;
 use File::Basename;
 use File::Copy;
+use Text::ParseWords qw(shellwords);
 
 use vars qw(
 	$ARGV_STR
@@ -1363,9 +1364,7 @@ sub pkgconfig
 	$MODVERSIONS{$package} = $modversion;
 	printlog "$modversion\n";
 
-	my %h;
-
-	%h = map { $_ => 1 } @INCPATH;
+	my %h = map { $_ => 1 } @INCPATH;
 	my $inc  = `$PKGCONFIG --cflags-only-I $package`;
 	if ( $? != 0 ) { # package has error?
 		printlog "misconfigured\n";
@@ -1373,7 +1372,7 @@ sub pkgconfig
 	}
 	chomp $inc;
 	$inc =~ s/\-I//g;
-	for ( split " ", $inc ) {
+	for ( shellwords $inc ) {
 		push @INCPATH, $_ unless $h{$_};
 	}
 
@@ -1385,7 +1384,7 @@ sub pkgconfig
 	}
 	chomp $libs;
 	$libs =~ s/\-l//g;
-	for ( split " ", $libs ) {
+	for ( shellwords $libs ) {
 		push @LIBS, $_ unless $h{$_};
 	}
 
@@ -1397,7 +1396,7 @@ sub pkgconfig
 	}
 	chomp $libpath;
 	$libpath =~ s/\-[LR]//g;
-	for ( split " ", $libpath ) {
+	for ( shellwords $libpath ) {
 		push @LIBPATH, $_ unless $h{$_};
 	}
 
@@ -2265,7 +2264,7 @@ sub create_codecs_c
 	print $fh <<CONTENT;
 /*
   This file was automatically generated.
-  Do not edit, you'll loose your changes anyway.
+  Do not edit, you'll lose your changes anyway.
 */
 
 #include "img.h"
@@ -2343,7 +2342,7 @@ sub create_config_pm
 	$ip[0] = '$(lib)' . "/Prima/CORE";
 	$ip[1] = '$(lib)' . "/Prima/CORE/generic";
 	my $ippi = join(',', map {"\'$_\'"} @ip);
-	my $inci = join(' ', map maybe_quote("-I$_"), @ip);
+	my $inci = join(' ', (map qq{"-I$_"}, @ip[0,1]), map maybe_quote("-I$_"), @ip[2..$#ip]);
 
 	# libs
 	my @libpath = @LIBPATH;
@@ -2373,7 +2372,7 @@ sub create_config_pm
 	open my $fh, ">", "Prima/Config.pm" or die "cannot open Prima/Config.pm:$!\n";
 	print $fh <<CONFIG;
 # This file was automatically generated.
-# Do not edit, you'll loose your changes anyway.
+# Do not edit, you'll lose your changes anyway.
 package Prima::Config;
 use strict;
 use warnings;
@@ -2870,14 +2869,14 @@ WriteMakefile(
 	PREREQ_PM         => \%PREREQ,
 	OBJECT            => "@o_files",
 	INC               =>
-		join(' ', map { "-I$_" } @INCPATH ).
+		join(' ', map qq{"-I$_"}, @INCPATH ).
 		' ' . $cmd_options{EXTRA_CCFLAGS},
 	LIBS              => [
 		$cmd_options{EXTRA_LDFLAGS} . ' ' .
 		$LDFLAGS . ' ' .
 		':nosearch ' .
-		join(' ', map { "-L$_" } @LIBPATH) . ' ' .
-		join(' ', map { "-l$_" } @LIBS),
+		join(' ', map qq{"-L$_"}, @LIBPATH) . ' ' .
+		join(' ', map "-l$_", @LIBS),
 	],
 	LICENSE           => 'FREEBSD',
 	EXE_FILES         => \@exe_files,
