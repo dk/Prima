@@ -14,6 +14,10 @@ word,dword is read individually.
 #include "img.h"
 #include "Image.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 static char * bmpext[] = {
 	"bmp", "vga", "bga",
 	"rle", "dib", "rl4",
