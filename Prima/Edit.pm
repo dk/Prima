@@ -2859,9 +2859,11 @@ sub find
 
 	$line = '('.quotemeta( $line).')' unless $options & fdo::RegularExpression;
 	$y = $maxY if $y < 0;
+	$y2 = $maxY if $y2 < 0;
 	my $c = $self-> get_line( $y);
 	my ( $subLine, $re, $re2, $matcher );
 	$x = length( $c) if $x < 0;
+	$x2 = length( $self->get_line($y2)) if $x2 < 0;
 
 	$re  .= '\\b' if $options & fdo::WordsOnly;
 	$re  .= $line;

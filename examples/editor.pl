@@ -384,9 +384,9 @@ sub do_find
 		}
 		if ( !@end ) {
 			if ( @sel ) {
-				@end = ($$p{scope} == fds::Top) ? ($sel[2],$sel[3]) : ($sel[0], $sel[1]);
+				@end = ($$p{scope} == fds::Bottom) ? ($sel[0],$sel[1]) : ($sel[2], $sel[3]);
 			} else {
-				@end = ($$p{scope} == fds::Top) ? (-1,-1) : (0,0);
+				@end = ($$p{scope} == fds::Bottom) ? (0,0) : (-1,-1);
 			}
 		}
 		my @n = $e-> find( $$p{findText}, @start, $$p{replaceText}, $$p{options}, @end);
