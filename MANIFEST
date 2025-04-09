@@ -157,6 +157,7 @@ img/aafill.c
 img/bar.c
 img/codec_bmp.c
 img/codec_jpeg.c
+img/codec_jxl.c
 img/codec_heif.c
 img/codec_png.c
 img/codec_tiff.c

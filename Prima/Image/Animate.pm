@@ -40,6 +40,8 @@ sub detect_animation
 		return 'GIF';
 	} elsif ($c->{name} =~ /^(WebP|PNG)$/) {
 		return $c->{name};
+	} elsif ($c->{name} eq 'JPEG-XL') {
+		return 'JXL';
 	} else {
 		return undef;
 	}
@@ -176,7 +178,7 @@ sub reset
 	delete @{$self}{qw(canvas bgColor saveCanvas
 		saveMask image info
 		screenWidth screenHeight
-		loopCount changedRect 
+		loopCount changedRect
 		)};
 
 	my $ix;
@@ -205,6 +207,7 @@ sub load_next_image
 	return unless $self->{loader};
 	$self->{warning} = undef;
 	my ( $i, $err ) = $self->{loader}->next;
+
 	unless ($i) {
 		$self->{warning} = $err;
 		$self->{loader}->reload;
@@ -246,7 +249,7 @@ sub advance_frame
 		$self->{image} = $oimg;
 		$self->{info} = $oinfo;
 	}
- 
+
 	my $info = $self->{info} = $self-> get_extras;
 	$self-> fixup_rect( $info, $self-> {image});
 
@@ -650,6 +653,71 @@ sub total
 	my $total = $self->SUPER::total;
 	$total-- if $self->{skip_default_frame};
 	return $total;
+}
+
+package Prima::Image::Animate::JXL;
+use base 'Prima::Image::Animate';
+
+sub new
+{
+	my ( $class, %opt ) = @_;
+
+	# rop::SrcCopy works only with 8-bit alpha
+	for (@{ $opt{images} // [] }) {
+		$_->maskType(im::bpp8) if $_->isa('Prima::Icon');
+	}
+
+	return $class->SUPER::new(%opt);
+}
+
+sub load_next_image
+{
+	my $i = shift->SUPER::load_next_image;
+	if ($i && $i->isa('Prima::Icon')) {
+		$i->maskType(im::bpp8);
+		$i->premultiply_alpha;
+	}
+	return $i;
+}
+
+sub get_extras
+{
+	my $self = shift;
+	my $e  = $self->SUPER::get_extras;
+	$e-> {screenHeight} ||= $self->{image}-> height;
+	$e-> {screenWidth}  ||= $self->{image}-> width;
+	$e-> {$_} ||= 0 for qw(
+		tps_numerator tps_denominator top left
+	);
+	$e->{loopCount} = $e->{num_loops};
+
+	return $e;
+}
+
+sub next
+{
+	my $self = shift;
+	my $info = $self->{info} or return;
+	return 0 if $self->{suspended};
+	return unless $self->advance_frame;
+
+	return {
+		delay  => $info->{tps_numerator} ? ($info-> {tps_denominator} / $info->{tps_numerator}) : 0.05,
+		left   => 0,
+		bottom => 0,
+		right  => $self->{image}->width  - 1,
+		height => $self->{image}->height - 1,
+	};
+}
+
+sub icon  { shift->{image}->dup }
+sub image { shift->{image}->image }
+
+sub draw
+{
+	my ( $self, $canvas, $x, $y) = @_;
+	my $i = $self->{image} or return;
+	$canvas-> put_image( $x, $y, $i, $i->isa('Prima::Icon') ? rop::Blend : rop::CopyPut);
 }
 
 1;

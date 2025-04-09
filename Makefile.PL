@@ -2054,6 +2054,8 @@ sub setup_codecs
 				$found = 1 if pkgconfig('libjpeg');
 			} elsif ( $codec eq 'png') {
 				$found = 1 if pkgconfig('libpng');
+			} elsif ( $codec eq 'jxl') {
+				$found = 1 if pkgconfig('libjxl');
 			} elsif ( $codec eq 'tiff') {
 				$found = 1 if pkgconfig('libtiff-5') || pkgconfig('libtiff-4');
 			} elsif ( $codec eq 'Xpm') {

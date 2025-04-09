@@ -1012,6 +1012,21 @@ sub read_jpeg
 	}
 }
 
+sub read_jxl
+{
+	my ($class, $i, %opt) = @_;
+
+	my $data;
+	return (undef, "no jxl exif data") unless
+		($i->codec // '') eq 'JXL' and
+		exists $i->{extras}->{boxes} and
+		$data = $i->{extras}->{boxes}->{Exif} and
+		$data =~ /^\x{00}\x{00}/;
+		;
+
+	return parse_datum( $class, 'Exif'.substr($data,2), %opt);
+}
+
 sub parse_datum
 {
 	my ( $class, $data, %opt ) = @_;
@@ -1043,6 +1058,8 @@ sub read_extras
 	my $c = $i->codec // '';
 	if ( $c eq 'JPEG') {
 		return $class->read_jpeg($i, %opt);
+	} elsif ( $c eq 'JXL') {
+		return $class->read_jxl($i, %opt);
 	} else {
 		return (undef, "not supported");
 	}
@@ -1141,8 +1158,7 @@ Prima::Image::Exif - manipulate Exif records
 =head1 DESCRIPTION
 
 The module allows to parse and create Exif records. The records
-could be read from JPEG files, and stored in these using the
-extra appdata hash field.
+could be read from JPEG and JXL files, and prepared to be stored there.
 
 =head1 SYNOPSIS
 
