@@ -399,6 +399,7 @@ sub do_find
 			);
 			return;
 		}
+		my $nx = $n[0] + length($p->{replaceText});
 		$e-> cursor(($$p{options} & fdo::BackwardSearch) ? $n[0] : $n[2], $n[1]);
 		$_ = $e-> physical_to_visual($_,$n[1]) for @n[0,2];
 		$e-> selection( $n[0], $n[1], $n[2], $n[1]);
@@ -411,6 +412,7 @@ sub do_find
 				last FIND if $r == mb::Cancel;
 			}
 			$e-> set_line( $n[1], $n[3]);
+			$e-> cursorX($nx) unless $$p{options} & fdo::BackwardSearch;
 			$success = 1;
 			redo FIND if $$p{result} == mb::ChangeAll;
 		}
