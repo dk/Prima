@@ -113,7 +113,7 @@ load_defaults( PImgCodec c)
 }
 
 #define SIGSIZE 12
-#define BUFSIZE 1024
+#define BUFSIZE 16384
 
 typedef struct _LoadRec {
 	unsigned int bytes_read;
@@ -266,11 +266,11 @@ callback(void *opaque, size_t x, size_t y, size_t num_pixels, const void *pixels
 	LoadRec *l              = (LoadRec*) opaque;
 	PImgLoadFileInstance fi = l->fi;
 	PIcon i                 = (PIcon) fi-> object;
-	register Byte *dst      = i->data + i->lineSize * ( i->h - y - 1 );
+	register Byte *dst      = i->data + i->lineSize * ( i->h - y - 1 ) + (i->type & imBPP) / 8 * x;
 
 	if ( l->has_alpha && l->is_icon ) {
 		register Byte *src  = (Byte*) pixels;
-		register Byte *mask = i->mask + i->maskLine * (i->h - y - 1 );
+		register Byte *mask = i->mask + i->maskLine * (i->h - y - 1 ) + x;
 		while ( num_pixels-- ) {
 			*(dst++)  = *(src++);
 			*(dst++)  = *(src++);
