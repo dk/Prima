@@ -689,7 +689,7 @@ init_encoder(SaveRec *s, PImgSaveFileInstance fi)
 	JxlColorEncoding color_encoding;
 
 	if ( pexist(use_container) && pget_B(use_container))
-		JxlEncoderUseContainer(encoder, JXL_TRUE);
+		JxlEncoderUseContainer(s->enc, JXL_TRUE);
 
 	JxlEncoderInitBasicInfo(&basic_info);
 	basic_info.xsize                 = i->w;
