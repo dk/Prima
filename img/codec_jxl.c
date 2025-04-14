@@ -1,6 +1,7 @@
 #include "img.h"
 #include "Icon.h"
 #include <jxl/version.h>
+#include <jxl/encode.h>
 #include <jxl/decode.h>
 
 #if JPEGXL_MAJOR_VERSION > 0 || JPEGXL_MINOR_VERSION > 6
@@ -31,8 +32,6 @@ static char * loadOutput[] = {
 	"relative_to_max_display",
 	"linear_below",
 	"uses_original_profile",
-	"have_preview",
-	"have_animation",
 	"orientation",
 	"num_color_channels",
 	"num_extra_channels",
@@ -44,7 +43,7 @@ static char * loadOutput[] = {
 	"intrinsic_xsize",
 	"intrinsic_ysize",
 
-	"boxes",
+	"exif",
 
 	/* animation */
 	"tps_numerator",
@@ -87,7 +86,7 @@ static ImgCodecInfo codec_info = {
 	"",		      /* module */
 	"",		      /* package */
 	IMG_LOAD_FROM_FILE | IMG_LOAD_MULTIFRAME | IMG_LOAD_FROM_STREAM |
-	/* XXX IMG_SAVE_TO_FILE   | IMG_SAVE_MULTIFRAME | IMG_SAVE_TO_STREAM, */ 0,
+	IMG_SAVE_TO_FILE   | IMG_SAVE_MULTIFRAME | IMG_SAVE_TO_STREAM,
 	jxlbpp,		      /* save types */
 	loadOutput,
 	mime
@@ -215,7 +214,7 @@ handle_basic_info( LoadRec *l, PImgLoadFileInstance fi)
 		outc("cannot get basic info");
 	l->got_basic_info = true;
 
-	if ((l-> has_alpha = b->alpha_bits) > 0 )
+	if ((l-> has_alpha = b->alpha_bits) > 0 || b->num_color_channels == 3)
 		l->type = imRGB;
 	else if ( b->exponent_bits_per_sample > 0 )
 		l->type = imFloat;
@@ -243,13 +242,11 @@ handle_basic_info( LoadRec *l, PImgLoadFileInstance fi)
 		pset_i( intrinsic_ysize,          b-> intrinsic_ysize          );
 
 		if ( b->have_preview ) {
-			pset_i( have_preview,             b-> have_preview             );
 			pset_i( preview_xsize,            b-> preview.xsize            );
 			pset_i( preview_ysize,            b-> preview.ysize            );
 		}
 
 		if ( b->have_animation ) {
-			pset_i( have_animation,           b-> have_animation           );
 			pset_i( tps_numerator,            b-> animation.tps_numerator  );
 			pset_i( tps_denominator,          b-> animation.tps_denominator);
 			pset_i( num_loops,                b-> animation.num_loops      );
@@ -277,6 +274,11 @@ callback(void *opaque, size_t x, size_t y, size_t num_pixels, const void *pixels
 			*(dst++)  = *(src++);
 			*(mask++) = *(src++);
 		}
+	} else if ( i->type == imShort ) {
+		register uint16_t *s = (uint16_t*) pixels;
+		register  int16_t *d = ( int16_t*) dst;
+		while ( num_pixels-- )
+			*(d++) = (int16_t)((long)(*(s++)) + INT16_MIN);
 	} else
 		memcpy( dst, pixels, (i->type & imBPP) * num_pixels / 8 );
 }
@@ -286,6 +288,7 @@ handle_new_frame( LoadRec *l, PImgLoadFileInstance fi)
 {
 	JxlFrameHeader h;
 	HV * profile = fi-> frameProperties;
+	int type;
 
 	l->current_frame++;
 	if ( l->current_frame != fi->frame ) {
@@ -299,12 +302,13 @@ handle_new_frame( LoadRec *l, PImgLoadFileInstance fi)
 	l->frame_construction_pending = true;
 
 	l->is_icon = kind_of( fi-> object, CIcon);
+	type = l->is_icon ? imRGB : l->type;
 	if ( fi-> noImageData) {
 		pset_i( width,  l->basic_info.xsize);
 		pset_i( height, l->basic_info.ysize);
-		CImage(fi-> object)-> create_empty( fi-> object, 1, 1, l->type);
+		CImage(fi-> object)-> create_empty( fi-> object, 1, 1, type);
 	} else {
-		CImage(fi-> object)-> create_empty( fi-> object, l->basic_info.xsize, l->basic_info.ysize, l->type);
+		CImage(fi-> object)-> create_empty( fi-> object, l->basic_info.xsize, l->basic_info.ysize, type);
 	}
 
 	if ( l->has_alpha && l->is_icon ) {
@@ -315,7 +319,7 @@ handle_new_frame( LoadRec *l, PImgLoadFileInstance fi)
 
 	if ( !fi-> noImageData) {
 		JxlPixelFormat f;
-		switch (l->type) {
+		switch (type) {
 		case imRGB:
 			f.num_channels = 3;
 			if ( l->has_alpha && l->is_icon)
@@ -389,6 +393,7 @@ handle_new_frame( LoadRec *l, PImgLoadFileInstance fi)
 	return true;
 }
 
+/* handle Exif only, skip all other boxes */
 static Bool
 handle_box( LoadRec *l, PImgLoadFileInstance fi, Bool new_box, Bool final)
 {
@@ -419,6 +424,7 @@ handle_box( LoadRec *l, PImgLoadFileInstance fi, Bool new_box, Bool final)
 		box = l->curr_box;
 
 	if ( l->box_pending ) {
+		dPROFILE;
 		size_t n;
 		HV * profile;
 		SV * content;
@@ -426,27 +432,16 @@ handle_box( LoadRec *l, PImgLoadFileInstance fi, Bool new_box, Bool final)
 		n = JxlDecoderReleaseBoxBuffer(l->dec);
 		l->box_pending = false;
 
-		profile = fi->fileProperties;
-		if ( pexist(boxes)) {
-			dPROFILE;
-			SV * boxes = pget_sv(boxes);
-			profile = (HV*) SvRV(boxes);
-		} else {
-			HV * boxes = newHV();
-			pset_sv(boxes, newRV_noinc((SV*)boxes));
-			profile = boxes;
-		}
-
-		if ( hv_exists(profile, box, strlen(box))) {
-			SV **content;
-			STRLEN d = BUFSIZE - n;
-			content = hv_fetch(profile, box, strlen(box), 0);
-			if ( !content )
-				outc("internal error");
-			sv_catpvn(*content, (char*) l->box, d);
-		} else {
-			content = newSVpv((char*) l->box, BUFSIZE - n);
-			hv_store(profile, box, strlen(box), content, 0);
+		if ( strcmp(box, "Exif") == 0) {
+			profile = fi->fileProperties;
+			if ( pexist(exif)) {
+				STRLEN d = BUFSIZE - n;
+				content = pget_sv(exif);
+				sv_catpvn(content, (char*) l->box, d);
+			} else {
+				content = newSVpv((char*) l->box, BUFSIZE - n);
+				pset_sv(exif, content);
+			}
 		}
 
 	} else if ( !new_box )
@@ -492,6 +487,16 @@ debug_status(int x)
 #endif
 
 static Bool
+potentially_incomplete( LoadRec *l, PImgLoadFileInstance fi)
+{
+	JxlDecoderFlushImage(l->dec);
+	l-> frame_construction_pending = false;
+	fi-> wasTruncated = 1;
+	DEBUG("jxl: leave on incomplete image\n");
+	return !fi->noIncomplete;
+}
+
+static Bool
 load( PImgCodec instance, PImgLoadFileInstance fi)
 {
 	LoadRec * l = ( LoadRec *) fi-> instance;
@@ -527,7 +532,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 		l->current_frame = -1;
 		l->frame_construction_pending = false;
 		l->rewound       = 1;
-	DEBUG("jxl: rewind\n");
+		DEBUG("jxl: rewind\n");
 	}
 
 	while ( !l->eof || l->bytes_read > 0 ) {
@@ -537,6 +542,8 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 		if ( l->bytes_read < BUFSIZE) {
 			n = l->eof ? 0 : req_read(fi->req, BUFSIZE - l->bytes_read, l->buf + l->bytes_read);
 			if ( n < 0 || ( n == 0 && l->bytes_read == 0 )) {
+				if ( l->frame_construction_pending )
+					return potentially_incomplete(l,fi);
 				DEBUG("jxl: leave on eof\n");
 				return false;
 			}
@@ -617,13 +624,8 @@ AGAIN:
 		}
 	}
 
-	if ( l->frame_construction_pending ) {
-		JxlDecoderFlushImage(l->dec);
-		l-> frame_construction_pending = false;
-		fi-> wasTruncated = 1;
-		DEBUG("jxl: leave on incomplete image\n");
-		return !fi->noIncomplete;
-	}
+	if ( l->frame_construction_pending )
+		return potentially_incomplete(l,fi);
 
 	outc("decoder error");
 }
@@ -641,29 +643,264 @@ static HV *
 save_defaults( PImgCodec c)
 {
 	HV * profile = newHV();
+	pset_i( alpha_premultiplied , 1);
+	pset_i( duration            , 1);
+	pset_i( use_container       , 0);
 	return profile;
 }
+
+typedef struct _SaveRec {
+	Bool                     icon;
+	Bool                     first_frame;
+	int                      type_expected;
+	Point                    size_expected;
+	JxlEncoder              *enc;
+	JxlEncoderFrameSettings* frame_settings;
+} SaveRec;
 
 static void *
 open_save( PImgCodec instance, PImgSaveFileInstance fi)
 {
-	return (void*)0;
+	SaveRec * s;
+
+	if ( !( s = malloc( sizeof( SaveRec))))
+		return NULL;
+
+	memset( s, 0, sizeof( SaveRec));
+
+	if (!(s->enc = JxlEncoderCreate(NULL))) {
+		free(s);
+		return NULL;
+	}
+	s->frame_settings = JxlEncoderFrameSettingsCreate(s->enc, NULL);
+	s->first_frame = true;
+
+	return s;
+}
+
+static Bool
+init_encoder(SaveRec *s, PImgSaveFileInstance fi)
+{
+	dPROFILE;
+	HV *profile = fi->extras;
+	PIcon i = (PIcon) fi->object;
+	Bool is_gray = true;
+	JxlBasicInfo basic_info;
+	JxlColorEncoding color_encoding;
+
+	if ( pexist(use_container) && pget_B(use_container))
+		JxlEncoderUseContainer(encoder, JXL_TRUE);
+
+	JxlEncoderInitBasicInfo(&basic_info);
+	basic_info.xsize                 = i->w;
+	basic_info.ysize                 = i->h;
+	basic_info.num_extra_channels    = 0;
+	basic_info.num_color_channels    = 1;
+	basic_info.bits_per_sample       = 8;
+	basic_info.uses_original_profile = JXL_TRUE;
+	basic_info.have_animation        = fi->n_frames > 1;
+
+	s->icon            = kind_of( fi-> object, CIcon);
+	s->type_expected   = i->type;
+	s->size_expected.x = i->w;
+	s->size_expected.y = i->h;
+
+	if ( s->icon ) {
+		is_gray = false;
+		basic_info.alpha_bits         = 8;
+		basic_info.num_color_channels = 3;
+		basic_info.num_extra_channels = 1;
+	} else switch (i->type) {
+		case imRGB:
+			is_gray = false;
+			basic_info.num_color_channels = 3;
+			break;
+		case imByte:
+			break;
+		case imShort:
+			basic_info.bits_per_sample = 16;
+			break;
+		case imFloat:
+			basic_info.bits_per_sample = sizeof(float) * 8;
+			basic_info.exponent_bits_per_sample = 8;
+			break;
+		default:
+			outc("cannot encode this type");
+	}
+	JxlEncoderSetBasicInfo(s->enc, &basic_info);
+
+	if ( i->type == imFloat )
+		JxlColorEncodingSetToLinearSRGB(&color_encoding, true);
+	else
+		JxlColorEncodingSetToSRGB(&color_encoding, is_gray);
+	JxlEncoderSetColorEncoding(s->enc, &color_encoding);
+
+	return true;
+}
+
+static Bool
+process_output( SaveRec *s, PImgSaveFileInstance fi)
+{
+	while ( 1 ) {
+		Byte buffer[BUFSIZE], *next_out = buffer;
+		size_t avail_out = BUFSIZE;
+		switch ( JxlEncoderProcessOutput(s->enc, &next_out, &avail_out)) {
+		case JXL_ENC_SUCCESS:
+			if ( req_write(fi->req, next_out - buffer, buffer) != next_out - buffer)
+				outc("write error");
+			return true;
+		case JXL_ENC_NEED_MORE_OUTPUT:
+			if ( req_write(fi->req, next_out - buffer, buffer) != next_out - buffer)
+				outc("write error");
+			continue;
+		default:
+			outc("frame output error");
+		}
+	}
+	return false;
+}
+
+static Bool
+process_frame( SaveRec *s, PImgSaveFileInstance fi)
+{
+	dPROFILE;
+	HV * profile = fi-> extras;
+	JxlEncoderStatus es;
+	PIcon i     = PIcon(fi->object);
+	JxlPixelFormat pixel_format = {
+		.num_channels = 1,
+		.data_type    = JXL_TYPE_UINT8,
+		.endianness   = JXL_NATIVE_ENDIAN,
+		.align        = i->lineSize
+	};
+
+	if ( s->type_expected != i->type )
+		outc("Images must be of the same type");
+	if ( s->size_expected.x != i->w || s->size_expected.y != i->h )
+		outc("Images must be of the same size");
+	if ( s->icon && !kind_of(fi->object, CIcon))
+		outc("All images must be icons");
+
+	if ( s->icon ) {
+		pixel_format.num_channels = 3;
+	} else switch (i->type) {
+		case imRGB:
+			pixel_format.num_channels = 3;
+			break;
+		case imByte:
+			break;
+		case imShort:
+			pixel_format.data_type = JXL_TYPE_UINT16;
+			break;
+		case imFloat:
+			pixel_format.data_type = JXL_TYPE_FLOAT;
+			if (
+				(i->self->stats((Handle)i, 0, isRangeLo, 0) < 0.0) ||
+				(i->self->stats((Handle)i, 0, isRangeHi, 0) > 1.0)
+			)
+				outc("nominal range for float images must be (0,1)");
+			break;
+		default:
+			outc("cannot encode this type");
+	}
+
+	if (fi->n_frames > 1) {
+		JxlFrameHeader ff = {
+			.duration    = 1,
+			.timecode    = 0,
+			.name_length = 0,
+			.is_last     = ( fi->frame == fi->n_frames - 1)
+		};
+		if ( pexist(duration))
+			ff.duration = pget_i(duration);
+		JxlEncoderSetFrameHeader(s->frame_settings, &ff);
+	}
+
+	if ( i->type == imShort) {
+		Byte *dup;
+		unsigned int n = i->dataSize / 2;
+		register int16_t  *src;
+		register uint16_t *dst;
+
+		if ( !( dup = malloc(i->dataSize)))
+			outcm(i->dataSize);
+		src = (int16_t*)  i->data;
+		dst = (uint16_t*) dup;
+		while (n--)
+			*(dst++) = (uint16_t)((long)(*(src++)) - INT16_MIN);
+		es = JxlEncoderAddImageFrame(s->frame_settings, &pixel_format, dup, i->dataSize);
+		free(dup);
+	} else {
+		es = JxlEncoderAddImageFrame(s->frame_settings, &pixel_format, i->data, i->dataSize);
+	}
+	if ( es != JXL_ENC_SUCCESS)
+		outc("frame encode error");
+
+	if ( s->icon ) {
+		Byte *mask8 = NULL;
+		JxlExtraChannelInfo c = {
+			.type                = JXL_CHANNEL_ALPHA,
+			.bits_per_sample     = 8,
+			.name_length         = 0,
+			.alpha_premultiplied = 1
+		};
+		JxlPixelFormat p = {
+			.num_channels        = 1,
+			.data_type           = JXL_TYPE_UINT8,
+			.endianness          = JXL_NATIVE_ENDIAN,
+			.align               = ((i->w * 8 + 31) / 32) * 4
+		};
+
+		if (pexist(alpha_premultiplied))
+			c.alpha_premultiplied = pget_B(alpha_premultiplied);
+
+		if ( JxlEncoderSetExtraChannelInfo(s->enc, 0, &c) != JXL_ENC_SUCCESS)
+			outc("alpha encode error");
+		if ( i->maskType == 1 ) {
+			if ( !( mask8 = i->self->convert_mask((Handle)i, 8)))
+				outc("not enough memory");
+		}
+		es = JxlEncoderSetExtraChannelBuffer(
+			s->frame_settings, &p,
+			mask8 ? mask8 : i->mask, p.align * i->h, 0
+		);
+		if ( mask8 ) free(mask8);
+		if ( es != JXL_ENC_SUCCESS)
+			outc("alpha frame encode error");
+	}
+
+	return true;
 }
 
 static Bool
 save( PImgCodec instance, PImgSaveFileInstance fi)
 {
-//	dPROFILE;
-//	HV * profile = fi-> extras;
-//	PIcon i = ( PIcon) fi-> object;
-//	Bool icon = kind_of( fi-> object, CIcon);
+	SaveRec * s = ( SaveRec *) fi-> instance;
 
-	return false;
+	if ( s->first_frame ) {
+		if ( !init_encoder(s,fi))
+			return false;
+		s->first_frame = false;
+	}
+
+	if ( !process_frame(s,fi))
+		return false;
+
+	if ( fi->frame == fi->n_frames - 1 ) {
+		JxlEncoderCloseInput(s->enc);
+		if ( !process_output(s,fi))
+			return false;
+	}
+
+	return true;
 }
 
 static void
 close_save( PImgCodec instance, PImgSaveFileInstance fi)
 {
+	SaveRec * s = ( SaveRec *) fi-> instance;
+	JxlEncoderDestroy(s->enc);
+	free( s);
 }
 
 void

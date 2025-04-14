@@ -1003,13 +1003,29 @@ static int
 find_best_type(int type, PImgCodec c)
 {
 	int *k = c-> info-> saveTypes;
-	int max = *k & imBPP, best = *k, supported = false;
-	int flags = type & imCategory, bestflags = *k & imCategory, bestmatch;
+	int max, best, supported = false, want_color;
+	int flags = type & imCategory, bestflags, bestmatch;
 #define dBITS(a) int i = 0x80, match = ( flags & (a)) >> 8
 #define CALCBITS(x) { \
 	x = 0;\
 	while ( i >>= 1 ) if ( match & i ) x++; \
 }
+
+	want_color = ((type & imCategory) == imColor);
+	if (want_color) {
+		int *kk = k;
+		while (*kk) {
+			if (( *kk & imCategory) == imColor) {
+				k = kk;
+				break;
+			}
+			kk++;
+		}
+	}
+	max       = *k & imBPP;
+	best      = *k;
+	bestflags = *k & imCategory;
+
 	{
 		dBITS( bestflags );
 		CALCBITS( bestmatch )
@@ -1018,6 +1034,10 @@ find_best_type(int type, PImgCodec c)
 		if (type == *k) {
 			supported = true;
 			break;
+		}
+		if ( want_color && (( *k & imCategory) != imColor)) {
+			k++;
+			continue;
 		}
 		if ( max < ( *k & imBPP)) {
 			dBITS( bestflags = ( *k & imCategory));
@@ -1213,13 +1233,17 @@ apc_img_save( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq, H
 			pset_i( codecID, codecID );
 	}
 
-	if ( !( fi = apc_img_open_save( fileName, is_utf8, n_frames, ioreq, profile, error)))
+	if ( !( fi = apc_img_open_save( fileName, is_utf8, n_frames, ioreq, profile, error))) {
+		err = true;
 		goto EXIT_NOW;
+	}
 
 	/* saving */
 	for ( i = 0; i < n_frames; i++) {
-		if ( !apc_img_save_next_frame( frameMap[i], fi, NULL, error ))
+		if ( !apc_img_save_next_frame( frameMap[i], fi, NULL, error )) {
+			err = true;
 			goto EXIT_NOW;
+		}
 		ret++;
 	}
 

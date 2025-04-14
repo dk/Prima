@@ -812,6 +812,9 @@ Icon_combine( Handle self, Handle xorMask, Handle andMask)
 
 	if ( killAM) Object_destroy( andMask);
 
+	if ( maskType == imbpp8 && var->type != imRGB )
+		my->set_type(self, imRGB);
+
 	my-> update_change( self);
 }
 

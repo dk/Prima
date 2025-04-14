@@ -1019,8 +1019,8 @@ sub read_jxl
 	my $data;
 	return (undef, "no jxl exif data") unless
 		($i->codec // '') eq 'JXL' and
-		exists $i->{extras}->{boxes} and
-		$data = $i->{extras}->{boxes}->{Exif} and
+		exists $i->{extras}->{exif} and
+		$data = $i->{extras}->{exif} and
 		$data =~ /^\x{00}\x{00}/;
 		;
 
