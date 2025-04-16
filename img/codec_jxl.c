@@ -99,7 +99,7 @@ load_defaults( PImgCodec c)
 	HV * profile = newHV();
 	pset_i( coalescing,               1);
 	pset_f( desired_intensity_target, 0);
-	pset_i( skip_reorientation,       0);
+	pset_i( keep_reorientation,       0);
 	pset_i( unpremul_alpha,           0);
 	return profile;
 }
@@ -493,8 +493,8 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 
 		if ( pexist(desired_intensity_target))
 			JxlDecoderSetDesiredIntensityTarget(l->dec, pget_f(desired_intensity_target));
-		if (pexist(skip_reorientation))
-			JxlDecoderSetKeepOrientation(l->dec, pget_B(skip_reorientation));
+		if (pexist(keep_reorientation))
+			JxlDecoderSetKeepOrientation(l->dec, pget_B(keep_reorientation));
 		if (pexist(unpremul_alpha))
 			JxlDecoderSetUnpremultiplyAlpha(l->dec, pget_B(unpremul_alpha));
 		JxlDecoderSetDecompressBoxes(l->dec, true);

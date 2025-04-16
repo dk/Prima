@@ -1447,7 +1447,7 @@ Requests that the decoder perform tone mapping to the peak display luminance.
 
 See C<JxlDecoderSetDesiredIntensityTarget>
 
-=item skip_reorientation
+=item keep_reorientation
 
 Enables or disables preserving of as-in-bitstream pixeldata orientation. Some
 images are encoded with an Orientation tag indicating that the decoder must
@@ -1462,12 +1462,12 @@ of the returned pixel data.
 
 If 1: the decoder will skip applying the transformation from the orientation
 setting, returning the image in the as-in-bitstream pixeldata orientation. This
-may be faster to decode since the decoder doesn’t have to apply the
+may be faster to decode since the decoder doesn't have to apply the
 transformation, but can cause wrong display of the image if the orientation tag
 is not correctly taken into account by the user.
 
 By default, this option is disabled, and the returned pixel data is re-oriented
-according to the image’s Orientation setting.
+according to the image's Orientation setting.
 
 See C<JxlDecoderSetKeepOrientation>
 
