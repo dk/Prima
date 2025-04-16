@@ -702,11 +702,14 @@ sub next
 	return unless $self->advance_frame;
 
 	return {
-		delay  => $info->{tps_numerator} ? ($info-> {tps_denominator} / $info->{tps_numerator}) : 0.05,
 		left   => 0,
 		bottom => 0,
 		right  => $self->{image}->width  - 1,
 		height => $self->{image}->height - 1,
+		delay  =>
+			($info->{duration} ? $info->{duration} / 1000 : undef ) //
+			($info->{tps_numerator} ? ($info-> {tps_denominator} / $info->{tps_numerator}) : undef) //
+			0.05,
 	};
 }
 

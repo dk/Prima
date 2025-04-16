@@ -114,6 +114,7 @@ libraries:
    libtiff  - tiff images
    libwebp,libwebpdemux,libwebpmux  - WebP images
    libheif  - Heif images
+   libjxl   - JPEG-XL images
 
 Strawberry perl and Cygwin come with most of them, so on these installations Prima just
 compiles without any trouble. For other perl builds, use one of the C<Prima::codecs::>

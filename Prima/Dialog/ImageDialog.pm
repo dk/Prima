@@ -352,6 +352,7 @@ sub update_conversion
 	my $j = 0;
 	for ( @st) {
 		return if $_ == $t;
+		next if $_ & (im::RealNumber|im::ComplexNumber|im::TrigComplexNumber); # not by default, at least
 		$max = $j if ( $st[$max] & im::BPP) < ( $_ & im::BPP);
 		$j++;
 	}
@@ -360,6 +361,10 @@ sub update_conversion
 		$x = '24-bit' if $x == 16777216;
 		$x .= ' gray' if $_ & im::GrayScale;
 		$x .= ' colors';
+		$x = 'float' if $_ == im::Float;
+		$x = 'double' if $_ == im::Double;
+		$x = 'complex' if $_ == im::Complex;
+		$x = 'double complex' if $_ == im::DComplex;
 		$_ = $x;
 	}
 

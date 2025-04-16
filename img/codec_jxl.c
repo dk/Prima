@@ -1,4 +1,5 @@
 #include "img.h"
+#include "img_conv.h"
 #include "Icon.h"
 #include <jxl/version.h>
 #include <jxl/encode.h>
@@ -25,18 +26,12 @@ static char * jxlfeat[] = {
 static char * loadOutput[] = {
 	/* basic */
 	"have_container",
-	"bits_per_sample",
-	"exponent_bits_per_sample",
 	"intensity_target",
 	"min_nits",
 	"relative_to_max_display",
 	"linear_below",
 	"uses_original_profile",
 	"orientation",
-	"num_color_channels",
-	"num_extra_channels",
-	"alpha_bits",
-	"alpha_exponent_bits",
 	"alpha_premultiplied",
 	"preview_xsize",
 	"preview_ysize",
@@ -55,7 +50,6 @@ static char * loadOutput[] = {
 	"duration",
 	"timecode",
 	"name",
-	"is_last",
 
 	/* for layer */
 	"crop_x0",
@@ -83,8 +77,8 @@ static ImgCodecInfo codec_info = {
 	"JPEG-XL Image",      /* file type */
 	"JXL",		      /* short type */
 	jxlfeat,	      /* features  */
-	"",		      /* module */
-	"",		      /* package */
+	"Prima::Image::jxl",  /* module     */
+	"Prima::Image::jxl",  /* package    */
 	IMG_LOAD_FROM_FILE | IMG_LOAD_MULTIFRAME | IMG_LOAD_FROM_STREAM |
 	IMG_SAVE_TO_FILE   | IMG_SAVE_MULTIFRAME | IMG_SAVE_TO_STREAM,
 	jxlbpp,		      /* save types */
@@ -107,7 +101,6 @@ load_defaults( PImgCodec c)
 	pset_f( desired_intensity_target, 0);
 	pset_i( skip_reorientation,       0);
 	pset_i( unpremul_alpha,           0);
-	pset_i( render_spotcolors,        1);
 	return profile;
 }
 
@@ -225,18 +218,12 @@ handle_basic_info( LoadRec *l, PImgLoadFileInstance fi)
 
 	if ( fi->loadExtras) {
 		pset_i( have_container,           b-> have_container           );
-		pset_i( bits_per_sample,          b-> bits_per_sample          );
-		pset_i( exponent_bits_per_sample, b-> exponent_bits_per_sample );
 		pset_f( intensity_target,         b-> intensity_target         );
 		pset_f( min_nits,                 b-> min_nits                 );
 		pset_i( relative_to_max_display,  b-> relative_to_max_display  );
 		pset_f( linear_below,             b-> linear_below             );
 		pset_i( uses_original_profile,    b-> uses_original_profile    );
 		pset_i( orientation,              b-> orientation              );
-		pset_i( num_color_channels,       b-> num_color_channels       );
-		pset_i( num_extra_channels,       b-> num_extra_channels       );
-		pset_i( alpha_bits,               b-> alpha_bits               );
-		pset_i( alpha_exponent_bits,      b-> alpha_exponent_bits      );
 		pset_i( alpha_premultiplied,      b-> alpha_premultiplied      );
 		pset_i( intrinsic_xsize,          b-> intrinsic_xsize          );
 		pset_i( intrinsic_ysize,          b-> intrinsic_ysize          );
@@ -266,14 +253,9 @@ callback(void *opaque, size_t x, size_t y, size_t num_pixels, const void *pixels
 	register Byte *dst      = i->data + i->lineSize * ( i->h - y - 1 ) + (i->type & imBPP) / 8 * x;
 
 	if ( l->has_alpha && l->is_icon ) {
-		register Byte *src  = (Byte*) pixels;
-		register Byte *mask = i->mask + i->maskLine * (i->h - y - 1 ) + x;
-		while ( num_pixels-- ) {
-			*(dst++)  = *(src++);
-			*(dst++)  = *(src++);
-			*(dst++)  = *(src++);
-			*(mask++) = *(src++);
-		}
+		bc_rgba_bgr_a((Byte*) pixels,  dst, i->mask + i->maskLine * (i->h - y - 1 ) + x, i->w);
+	} else if ( i->type == imRGB) {
+		bc_rgb_bgr(pixels, dst, i->w);
 	} else if ( i->type == imShort ) {
 		register uint16_t *s = (uint16_t*) pixels;
 		register  int16_t *d = ( int16_t*) dst;
@@ -351,7 +333,6 @@ handle_new_frame( LoadRec *l, PImgLoadFileInstance fi)
 		fi->loadExtras &&
 		(JxlDecoderGetFrameHeader(l->dec, &h) == JXL_DEC_SUCCESS)
 	) {
-		pset_i( is_last,  h.is_last );
 		if ( l->basic_info.have_animation) {
 			pset_i( duration, h.duration );
 			if ( l->basic_info.animation.have_timecodes)
@@ -516,8 +497,6 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 			JxlDecoderSetKeepOrientation(l->dec, pget_B(skip_reorientation));
 		if (pexist(unpremul_alpha))
 			JxlDecoderSetUnpremultiplyAlpha(l->dec, pget_B(unpremul_alpha));
-		if (pexist(render_spotcolors))
-			JxlDecoderSetRenderSpotcolors(l->dec, pget_B(render_spotcolors));
 		JxlDecoderSetDecompressBoxes(l->dec, true);
 	}
 
@@ -643,9 +622,13 @@ static HV *
 save_defaults( PImgCodec c)
 {
 	HV * profile = newHV();
-	pset_i( alpha_premultiplied , 1);
-	pset_i( duration            , 1);
-	pset_i( use_container       , 0);
+	pset_i ( alpha_premultiplied , 1);
+	pset_i ( duration            , 1);
+	pset_i ( effort              , 7);
+	pset_sv( exif         , NULL_SV);
+	pset_f ( frame_distance      , 1.0);
+	pset_i ( lossless            , 0);
+	pset_i ( use_container       , 0);
 	return profile;
 }
 
@@ -727,13 +710,28 @@ init_encoder(SaveRec *s, PImgSaveFileInstance fi)
 		default:
 			outc("cannot encode this type");
 	}
-	JxlEncoderSetBasicInfo(s->enc, &basic_info);
+	if ( JxlEncoderSetBasicInfo(s->enc, &basic_info) != JXL_ENC_SUCCESS)
+		outc("encoder error");
 
 	if ( i->type == imFloat )
 		JxlColorEncodingSetToLinearSRGB(&color_encoding, true);
 	else
 		JxlColorEncodingSetToSRGB(&color_encoding, is_gray);
-	JxlEncoderSetColorEncoding(s->enc, &color_encoding);
+	if ( JxlEncoderSetColorEncoding(s->enc, &color_encoding) != JXL_ENC_SUCCESS)
+		outc("encoder error");
+
+	if (pexist(exif)) {
+		SV * content = pget_sv(exif);
+		if ( SvOK(content)) {
+			STRLEN l;
+			char * c;
+			c = SvPV(content, l);
+			JxlEncoderUseBoxes(s->enc);
+			if ( JxlEncoderAddBox( s->enc, "Exif", (uint8_t*)c, l, JXL_FALSE) != JXL_ENC_SUCCESS)
+				outc("exif encode error");
+			JxlEncoderCloseBoxes(s->enc);
+		}
+	}
 
 	return true;
 }
@@ -761,25 +759,19 @@ process_output( SaveRec *s, PImgSaveFileInstance fi)
 }
 
 static Bool
-process_frame( SaveRec *s, PImgSaveFileInstance fi)
+save_bits( PIcon i, SaveRec *s, PImgSaveFileInstance fi )
 {
-	dPROFILE;
-	HV * profile = fi-> extras;
+	int n;
 	JxlEncoderStatus es;
-	PIcon i     = PIcon(fi->object);
+	Byte *dup = NULL;
+	Byte *src = i->data + i->lineSize * (i->h - 1), *dst;
+
 	JxlPixelFormat pixel_format = {
 		.num_channels = 1,
 		.data_type    = JXL_TYPE_UINT8,
 		.endianness   = JXL_NATIVE_ENDIAN,
 		.align        = i->lineSize
 	};
-
-	if ( s->type_expected != i->type )
-		outc("Images must be of the same type");
-	if ( s->size_expected.x != i->w || s->size_expected.y != i->h )
-		outc("Images must be of the same size");
-	if ( s->icon && !kind_of(fi->object, CIcon))
-		outc("All images must be icons");
 
 	if ( s->icon ) {
 		pixel_format.num_channels = 3;
@@ -804,6 +796,106 @@ process_frame( SaveRec *s, PImgSaveFileInstance fi)
 			outc("cannot encode this type");
 	}
 
+	if ( !( dup = dst = malloc(i->dataSize)))
+		outcm(i->dataSize);
+
+	for (n = 0; n < i->h; n++, src -= i->lineSize, dst += i->lineSize) {
+		switch ( i->type ) {
+		case imShort: {
+			unsigned int a = i->lineSize / 2;
+			register int16_t  *s = ( int16_t*) src;
+			register uint16_t *d = (uint16_t*) dst;
+			while (a--)
+				*(d++) = (uint16_t)((long)(*(s++)) - INT16_MIN);
+			break;
+		}
+		case imRGB:
+			bc_rgb_bgr(src, dst, i->w);
+			break;
+		default:
+			memcpy(dst, src, i->lineSize);
+		}
+	}
+
+	es = JxlEncoderAddImageFrame(s->frame_settings, &pixel_format, dup, i->dataSize);
+	free( dup );
+
+	if ( es != JXL_ENC_SUCCESS)
+		outc("frame encode error");
+
+	return true;
+}
+
+static Bool
+save_alpha( PIcon i, SaveRec *s, PImgSaveFileInstance fi)
+{
+	dPROFILE;
+	int n;
+	RGBColor palette[2];
+	HV * profile = fi-> extras;
+	Byte *mask8  = NULL;
+	JxlEncoderStatus es;
+	Byte *src = i->mask + i->maskLine * (i->h - 1), *dst;
+
+	JxlExtraChannelInfo c = {
+		.type                = JXL_CHANNEL_ALPHA,
+		.bits_per_sample     = 8,
+		.name_length         = 0,
+		.alpha_premultiplied = 1
+	};
+	JxlPixelFormat p = {
+		.num_channels        = 1,
+		.data_type           = JXL_TYPE_UINT8,
+		.endianness          = JXL_NATIVE_ENDIAN,
+		.align               = ((i->w * 8 + 31) / 32) * 4
+	};
+
+	if (pexist(alpha_premultiplied))
+		c.alpha_premultiplied = pget_B(alpha_premultiplied);
+
+	if ( JxlEncoderSetExtraChannelInfo(s->enc, 0, &c) != JXL_ENC_SUCCESS)
+		outc("alpha encode error");
+
+	if ( !( mask8 = dst = malloc(i->h * p.align)))
+		outc("not enough memory");
+	if ( i->maskType == 1 ) {
+		memset( &palette[0], 0xff, sizeof(RGBColor));
+		memset( &palette[1], 0x00, sizeof(RGBColor));
+	}
+
+	for (n = 0; n < i->h; n++, src -= i->maskLine, dst += p.align) {
+		if ( i->maskType == 1 )
+			bc_mono_graybyte( src, dst, i-> w, palette);
+		else
+			memcpy(dst, src, i->maskLine);
+	}
+
+	es = JxlEncoderSetExtraChannelBuffer(
+		s->frame_settings, &p,
+		mask8, p.align * i->h, 0
+	);
+	free(mask8);
+	if ( es != JXL_ENC_SUCCESS)
+		outc("alpha frame encode error");
+
+	return true;
+}
+
+
+static Bool
+process_frame( SaveRec *s, PImgSaveFileInstance fi)
+{
+	dPROFILE;
+	HV * profile = fi-> extras;
+	PIcon i     = PIcon(fi->object);
+
+	if ( s->type_expected != i->type )
+		outc("images must be of the same type");
+	if ( s->size_expected.x != i->w || s->size_expected.y != i->h )
+		outc("images must be of the same size");
+	if ( s->icon && !kind_of(fi->object, CIcon))
+		outc("all images must be icons");
+
 	if (fi->n_frames > 1) {
 		JxlFrameHeader ff = {
 			.duration    = 1,
@@ -816,58 +908,26 @@ process_frame( SaveRec *s, PImgSaveFileInstance fi)
 		JxlEncoderSetFrameHeader(s->frame_settings, &ff);
 	}
 
-	if ( i->type == imShort) {
-		Byte *dup;
-		unsigned int n = i->dataSize / 2;
-		register int16_t  *src;
-		register uint16_t *dst;
-
-		if ( !( dup = malloc(i->dataSize)))
-			outcm(i->dataSize);
-		src = (int16_t*)  i->data;
-		dst = (uint16_t*) dup;
-		while (n--)
-			*(dst++) = (uint16_t)((long)(*(src++)) - INT16_MIN);
-		es = JxlEncoderAddImageFrame(s->frame_settings, &pixel_format, dup, i->dataSize);
-		free(dup);
-	} else {
-		es = JxlEncoderAddImageFrame(s->frame_settings, &pixel_format, i->data, i->dataSize);
+	if (pexist(lossless))
+		JxlEncoderSetFrameLossless(s->frame_settings, pget_B(lossless));
+	if (pexist(frame_distance)) {
+		float i = pget_f(frame_distance);
+		if ( i < 0.0 || i > 25.0 )
+			outc("valid frame_distance values are between 0 and 25");
+		JxlEncoderSetFrameDistance(s->frame_settings, i);
 	}
-	if ( es != JXL_ENC_SUCCESS)
-		outc("frame encode error");
-
-	if ( s->icon ) {
-		Byte *mask8 = NULL;
-		JxlExtraChannelInfo c = {
-			.type                = JXL_CHANNEL_ALPHA,
-			.bits_per_sample     = 8,
-			.name_length         = 0,
-			.alpha_premultiplied = 1
-		};
-		JxlPixelFormat p = {
-			.num_channels        = 1,
-			.data_type           = JXL_TYPE_UINT8,
-			.endianness          = JXL_NATIVE_ENDIAN,
-			.align               = ((i->w * 8 + 31) / 32) * 4
-		};
-
-		if (pexist(alpha_premultiplied))
-			c.alpha_premultiplied = pget_B(alpha_premultiplied);
-
-		if ( JxlEncoderSetExtraChannelInfo(s->enc, 0, &c) != JXL_ENC_SUCCESS)
-			outc("alpha encode error");
-		if ( i->maskType == 1 ) {
-			if ( !( mask8 = i->self->convert_mask((Handle)i, 8)))
-				outc("not enough memory");
-		}
-		es = JxlEncoderSetExtraChannelBuffer(
-			s->frame_settings, &p,
-			mask8 ? mask8 : i->mask, p.align * i->h, 0
-		);
-		if ( mask8 ) free(mask8);
-		if ( es != JXL_ENC_SUCCESS)
-			outc("alpha frame encode error");
+	if (pexist(effort)) {
+		int i = pget_i(effort);
+		if ( i < 1 || i > 10 )
+			outc("valid effort values are between 1 and 10");
+		JxlEncoderFrameSettingsSetOption(s->frame_settings, JXL_ENC_FRAME_SETTING_EFFORT, i);
 	}
+
+	if ( !save_bits(i, s, fi))
+		return false;
+
+	if ( s->icon && !save_alpha(i, s, fi))
+		return false;
 
 	return true;
 }

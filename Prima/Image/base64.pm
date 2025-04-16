@@ -49,14 +49,14 @@ sub save
 		my @want;
 		if ( $i->isa('Prima::Icon')) {
 			if ( (($i-> type & im::BPP) > 8) || ($i-> maskType > 1)) {
-				@want = qw(png webp gif);
+				@want = qw(png webp jxl gif);
 			} else {
-				@want = qw(gif png webp);
+				@want = qw(gif png webp jxl);
 			}
 		} elsif (( $i-> type & im::BPP ) > 8) {
-			@want = qw(png webp tiff heif bmp gif xpm);
+			@want = qw(png webp tiff heif jxl bmp gif xpm);
 		} else {
-			@want = qw(gif png webp tiff bmp xpm);
+			@want = qw(gif png webp tiff jxl bmp xpm);
 		}
 
 		unless ( keys %codecs ) {

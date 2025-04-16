@@ -172,6 +172,17 @@ with the package syntax, an existing image object is required:
 Since no frames are required to load, an empty array is returned
 on success and an array with one undefined value on failure.
 
+=head2 Empty image container
+
+Some formats supports files that don't contain any images but may contain
+additional information. In this case, C<load> won't signal an error if
+the C<loadAll> flag is set, but the typical multiframe loading code such as
+
+   my @i = Prima::Image->load($file, loadAll => 1);
+   die $@ unless $i[-1];
+
+would unnecessarily cause an exception.
+
 =head2 Using Prima::Image descendants
 
 If Prima needs to create a storage object, it uses by default either the class
@@ -1406,6 +1417,172 @@ An array of hashes with keys I<type>, I<content_type>, and I<content>.
 =item thumbnail_of INDEX
 
 Sets this image as the thumbnail of the INDEXth top-level frame
+
+=back
+
+=head2 JXL codec
+
+The majority of options listed below are described in the libjxl documentation.
+See more at L<https://libjxl.readthedocs.io/en/latest/api.html> .
+
+=head3 Load input
+
+=over
+
+=item coalescing
+
+Enables or disables coalescing of zero-duration frames. By default, frames are
+returned with coalescing enabled, i.e. all frames have the image dimensions,
+and are blended if needed. When coalescing is disabled, frames can have
+arbitrary dimensions, a non-zero crop offset, and blending is not performed.
+For display, coalescing is recommended. For loading a multi-layer still image
+as separate layers (as opposed to the merged image), coalescing has to be
+disabled.
+
+See C<JxlDecoderSetCoalescing>
+
+=item desired_intensity_target
+
+Requests that the decoder perform tone mapping to the peak display luminance.
+
+See C<JxlDecoderSetDesiredIntensityTarget>
+
+=item skip_reorientation
+
+Enables or disables preserving of as-in-bitstream pixeldata orientation. Some
+images are encoded with an Orientation tag indicating that the decoder must
+perform a rotation and/or mirroring to the encoded image data.
+
+If 0 (the default): the decoder will apply the transformation from the
+orientation setting, hence rendering the image according to its specified
+intent. When producing an image, the decoder will always set the
+orientation field to non-rotated/non-mirrored (matching the returned pixel data) and
+also align xsize and ysize so that they correspond to the width and the height
+of the returned pixel data.
+
+If 1: the decoder will skip applying the transformation from the orientation
+setting, returning the image in the as-in-bitstream pixeldata orientation. This
+may be faster to decode since the decoder doesn’t have to apply the
+transformation, but can cause wrong display of the image if the orientation tag
+is not correctly taken into account by the user.
+
+By default, this option is disabled, and the returned pixel data is re-oriented
+according to the image’s Orientation setting.
+
+See C<JxlDecoderSetKeepOrientation>
+
+=item unpremul_alpha
+
+Enables or disables preserving of associated alpha channels. If unpremul_alpha
+is false then for associated alpha channel, the pixel data is
+returned with premultiplied colors. If it is set to true, the colors will
+be unpremultiplied based on the alpha channel. This function has no effect if
+the image does not have an associated alpha channel.
+
+By default, this option is disabled, and the returned pixel data “as is”.
+
+See C<JxlDecoderSetUnpremultiplyAlpha>
+
+=back
+
+=head3 Load output
+
+=over
+
+=item exif
+
+Exif data for the whole image
+
+=item JxlBasicInfo fields
+
+These fields describe the whole image
+
+	have_container
+	intensity_target
+	min_nits
+	relative_to_max_display
+	linear_below
+	uses_original_profile
+	orientation
+	alpha_premultiplied
+	preview_xsize
+	preview_ysize
+	intrinsic_xsize
+	intrinsic_ysize
+
+=item JxlAnimationHeader fields
+
+These fields anbd below describe individual frames
+
+	tps_numerator
+	tps_denominator
+	num_loops
+	have_timecodes
+
+=item JxlFrameHeader fields
+
+	duration
+	timecode
+	name
+
+	crop_x0
+	crop_y0
+
+=item JxlBlendInfo fields
+
+	blend_mode
+	blend_source
+	blend_alpha
+	blend_clamp
+
+=back
+
+=head3 Save input
+
+=over
+
+=item alpha_premultiplied
+
+Whether alpha channel uses premultiplied alpha
+
+=item duration
+
+Frame duration in milliseconds
+
+=item effort
+
+Sets encoder effort/speed level without affecting decoding speed. Valid values
+are, from faster to slower speed: 1:lightning 2:thunder 3:falcon 4:cheetah
+5:hare 6:wombat 7:squirrel 8:kitten 9:tortoise 10:glacier. Default: squirrel
+(7).
+
+=item exif
+
+The raw Exif binary data
+
+=item frame_distance
+
+Sets the distance level for lossy compression: target max butteraugli distance,
+lower = higher quality.  Range: 0 .. 25. 0.0 = mathematically lossless
+(however, use the "lossless" setting instead to use true lossless, as setting
+distance to 0 alone is not the only requirement).  1.0 = visually lossless.
+Recommended range: 0.5 .. 3.0.  Default value: 1.0.
+
+=item lossless
+
+Enables lossless encoding.  This is not an option like the others on itself,
+but rather while enabled it overrides a set of existing options (such as
+distance, modular mode and color transform) that enables bit-for-bit lossless
+encoding.  When disabled, those options are not overridden, but since those
+options could still have been manually set to a combination that operates
+losslessly, using this function with lossless set to false does not guarantee
+lossy encoding, though the default set of options is lossy.
+
+=item use_container
+
+Forces the encoder to use the box-based container format (BMFF) even when not
+necessary.  When the C<exif> data is submitted, the encoder will automatically
+also use the container format
 
 =back
 

@@ -1,0 +1,118 @@
+# VBForm version file=1.2 builder=0.2
+# [preload] 
+sub
+{
+	return (
+	'Form1' => {
+		class   => 'Prima::Window',
+		module  => 'Prima::Classes',
+		parent => 1,
+		code => Prima::VB::VBLoader::GO_SUB(''),
+		profile => {
+			borderIcons => bi::SystemMenu | bi::TitleBar,
+			borderStyle => bs::Dialog,
+			centered => 1,
+			name => 'Form1',
+			origin => [ 1571, 606],
+			originDontCare => 0,
+			size => [ 300, 169],
+			sizeDontCare => 0,
+			text => 'JXL filter',
+	}},
+	'FrameDistance' => {
+		class   => 'Prima::SpinEdit',
+		module  => 'Prima::Sliders',
+		profile => {
+			hint => 'Sets the distance level for lossy compression: target max butteraugli distance, lower = higher quality. 
+Range: 0 .. 25. 0.0 = mathematically lossless (however, use the "Lossless" check box instead to use true lossless, as setting distance to 0 alone is not the only requirement).
+1.0 = visually lossless.
+Recommended range: 0.5 .. 3.0.
+Default value: 1.0.
+',
+			max => 25,
+			min => 0,
+			name => 'FrameDistance',
+			origin => [ 16, 116],
+			owner => 'Form1',
+			size => [ 146, 21],
+			value => 1,
+	}},
+	'Label2' => {
+		class   => 'Prima::Label',
+		module  => 'Prima::Label',
+		siblings => [qw(focusLink)],
+		profile => {
+			focusLink => 'FrameDistance',
+			name => 'Label2',
+			origin => [ 16, 140],
+			owner => 'Form1',
+			size => [ 146, 24],
+			text => '~Frame distance',
+	}},
+	'Effort' => {
+		class   => 'Prima::SpinEdit',
+		module  => 'Prima::Sliders',
+		profile => {
+			hint => 'Sets encoder effort/speed level.
+Valid values are, from faster to slower speed: 
+1:lightning 2:thunder 3:falcon 4:cheetah 5:hare 6:wombat 7:squirrel 8:kitten 9:tortoise 10:glacier.
+Default: squirrel (7). ',
+			max => 10,
+			min => 1,
+			name => 'Effort',
+			origin => [ 16, 60],
+			owner => 'Form1',
+			size => [ 146, 21],
+			value => 7,
+	}},
+	'Label4' => {
+		class   => 'Prima::Label',
+		module  => 'Prima::Label',
+		siblings => [qw(focusLink)],
+		profile => {
+			focusLink => 'Effort',
+			name => 'Label4',
+			origin => [ 16, 84],
+			owner => 'Form1',
+			size => [ 146, 24],
+			text => '~Effort',
+	}},
+	'OK' => {
+		class   => 'Prima::Button',
+		module  => 'Prima::Buttons',
+		profile => {
+			default => 1,
+			modalResult => '1',
+			name => 'OK',
+			origin => [ 72, 12],
+			owner => 'Form1',
+			size => [ 96, 36],
+			text => '~OK',
+	}},
+	'Cancel' => {
+		class   => 'Prima::Button',
+		module  => 'Prima::Buttons',
+		profile => {
+			modalResult => '4',
+			name => 'Cancel',
+			origin => [ 188, 12],
+			owner => 'Form1',
+			size => [ 96, 36],
+			text => 'Cancel',
+	}},
+	'Lossless' => {
+		class   => 'Prima::CheckBox',
+		module  => 'Prima::Buttons',
+		profile => {
+			hint => 'Enables lossless encoding.
+This is not an option like the others on itself, but rather while enabled it overrides a set of existing options (such as distance, modular mode and color transform) that enables bit-for-bit lossless encoding.
+When disabled, those options are not overridden, but since those options could still have been manually set to a combination that operates losslessly, using this function with lossless set to false does not guarantee lossy encoding, though the default set of options is lossy.
+',
+			name => 'Lossless',
+			origin => [ 180, 112],
+			owner => 'Form1',
+			size => [ 100, 36],
+			text => '~Lossless',
+	}},
+	);
+}

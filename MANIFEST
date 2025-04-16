@@ -333,6 +333,8 @@ Prima/Image/Exif.pm
 Prima/Image/heif.fm
 Prima/Image/heif.pm
 Prima/Image/jpeg.pm
+Prima/Image/jxl.fm
+Prima/Image/jxl.pm
 Prima/Image/Loader.pm
 Prima/Image/png.pm
 Prima/Image/tiff.fm
