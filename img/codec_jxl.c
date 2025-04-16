@@ -253,9 +253,9 @@ callback(void *opaque, size_t x, size_t y, size_t num_pixels, const void *pixels
 	register Byte *dst      = i->data + i->lineSize * ( i->h - y - 1 ) + (i->type & imBPP) / 8 * x;
 
 	if ( l->has_alpha && l->is_icon ) {
-		bc_rgba_bgr_a((Byte*) pixels,  dst, i->mask + i->maskLine * (i->h - y - 1 ) + x, i->w);
+		bc_rgba_bgr_a((Byte*) pixels,  dst, i->mask + i->maskLine * (i->h - y - 1 ) + x, num_pixels);
 	} else if ( i->type == imRGB) {
-		bc_rgb_bgr(pixels, dst, i->w);
+		bc_rgb_bgr(pixels, dst, num_pixels);
 	} else if ( i->type == imShort ) {
 		register uint16_t *s = (uint16_t*) pixels;
 		register  int16_t *d = ( int16_t*) dst;
