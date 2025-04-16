@@ -1020,11 +1020,17 @@ sub read_jxl
 	return (undef, "no jxl exif data") unless
 		($i->codec // '') eq 'JXL' and
 		exists $i->{extras}->{exif} and
-		$data = $i->{extras}->{exif} and
-		$data =~ /^\x{00}\x{00}/;
-		;
+		$data = $i->{extras}->{exif};
 
-	return parse_datum( $class, 'Exif'.substr($data,2), %opt);
+	if ( $data =~ /^.{4}Exif/) {
+		$data = substr($data,4);
+	} elsif ( $data =~ /^\x{00}\x{00}/ ) {
+		$data = 'Exif'.substr($data,2);
+	} else {
+		return (undef, "no jxl exif data");
+	}
+
+	return parse_datum( $class, $data, %opt);
 }
 
 sub parse_datum
@@ -1112,6 +1118,19 @@ sub write_jpeg
 	return 1;
 }
 
+sub write_jxl
+{
+	my ($class, $i, $data) = @_;
+
+	return undef, "jpeg-xl is not supported" unless $i->codec('JXL');
+
+	my ($compiled, $error) = $class->compile($data);
+	return (undef, $error) if !defined $compiled;
+	$compiled = substr($compiled,4);
+	$i->{extras}->{exif} = $compiled;
+	return 1;
+}
+
 sub supported_ifds { qw(image photo gpsinfo) }
 
 sub revtags
@@ -1142,6 +1161,8 @@ sub write_extras
 
 	if ( $c eq 'JPEG' ) {
 		return $class->write_jpeg($i, $data);
+	} elsif ( $c eq 'JXL') {
+		return $class->write_jxl($i, $data);
 	} else {
 		return (undef, "not supported");
 	}
