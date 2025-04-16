@@ -1447,7 +1447,7 @@ Requests that the decoder perform tone mapping to the peak display luminance.
 
 See C<JxlDecoderSetDesiredIntensityTarget>
 
-=item keep_reorientation
+=item keep_orientation
 
 Enables or disables preserving of as-in-bitstream pixeldata orientation. Some
 images are encoded with an Orientation tag indicating that the decoder must
