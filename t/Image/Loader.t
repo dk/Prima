@@ -114,6 +114,8 @@ sub test_multiframe_codec
 			diag($_) for @{ $info->{featuresSupported} // [] };
 			skip("HEIF cannot both load and save with the same codec", 1);
 		}
+	} elsif ( $name eq 'JXL') {
+		$saveopts{lossless} = 1;
 	}
 
 	my $buf1 = '';
