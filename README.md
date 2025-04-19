@@ -31,8 +31,9 @@ Installation
 Debian/Ubuntu
 -------------
 
-  apt-get install libgtk-3-dev libgif-dev libjpeg-dev libtiff-dev libxpm-dev
-      libwebp-dev libfribidi-dev libharfbuzz-dev libthai-dev libheif-dev libfreetype-dev
+  apt-get install libgtk-3-dev libgif-dev libjpeg-dev libtiff-dev libxpm-dev \
+      libwebp-dev libfribidi-dev libharfbuzz-dev libthai-dev libheif-dev libfreetype-dev \
+      libjxl-dev
 
 FreeBSD
 -------
@@ -47,13 +48,14 @@ OpenSUSE
   zypper install gtk3-devel giflib-devel libjpeg-devel libtiff-devel
       libXpm-devel libXrandr-devel libXcomposite-devel libXcursor-devel
       libfribidi-devel libwebp-devel libharfbuzz-devel libthai-devel
-      libheif-devel libfreetype-dev
+      libheif-devel libfreetype-devel libjxl-devel
 
 
 Solaris
 -------
 
-Download and install Oracle Developer Studio as the vendor-provided perl is compiled with cc, not gcc
+Download and install Oracle Developer Studio as the vendor-provided perl is
+compiled with cc, not gcc
 
 Cygwin
 ------
@@ -79,6 +81,10 @@ Install these:
    - http://prima.eu.org/download/libthai-0.1.29-win64.zip
    - http://prima.eu.org/download/libheif-1.17.6-win64.zip
    - http://prima.eu.org/download/libwebp-1.0.2-win64.zip
+
+And optionally
+
+   - http://prima.eu.org/download/libjxl-0.11.1-win64.zip
 
 Win32-ActiveState
 -----------------

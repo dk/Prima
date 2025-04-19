@@ -565,7 +565,7 @@ AGAIN:
 			if ( !handle_box(l, fi, false, false))
 				return false;
 			break;
-		default:
+		default:;
 		}
 
 		/* so checking if the input is stalled only/maybe after handling these states */
@@ -599,7 +599,7 @@ AGAIN:
 				return true;
 			}
 			break;
-		default:
+		default:;
 		}
 	}
 
