@@ -1243,13 +1243,19 @@ handle_widget_wm_paint(dWM_HANDLER)
 	if (
 		( var self->get_locked(self) > 0) || /* or WM_PAINT bashing occurs */
 		is_apt( aptLayered ) ||
-		( opt_InPaint && !is_apt(aptWM_PAINT) ) ||
-		( var stage != csNormal)
+		( opt_InPaint && !is_apt(aptWM_PAINT) )
 	) {
 		PAINTSTRUCT ps;
 		BeginPaint(win, &ps);
 		EndPaint(win, &ps);
 		return 1;
+	}
+
+	if ( var stage != csNormal) { /* let it be handled later */
+		PAINTSTRUCT ps;
+		BeginPaint(win, &ps);
+		EndPaint(win, &ps);
+		return 0;
 	}
 
 	return 0;
