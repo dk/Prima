@@ -77,11 +77,13 @@ sub mk_index
 sub mk_offset
 {
 	my $n = shift;
-	if (-32768 <= $n && $n < 32767) {
-		return chr(28).chr(($n >> 8) & 0xff).chr($n & 0xff);
-	} else {
-		return chr(29).chr(($n >> 24) & 0xff).chr(($n >> 16) & 0xff).chr(($n >> 8) & 0xff).chr($n & 0xff);
-	}
+	return
+		chr(29).
+		chr(($n >> 24) & 0xff).
+		chr(($n >> 16) & 0xff).
+		chr(($n >>  8) & 0xff).
+		chr($n & 0xff)
+		;
 }
 
 
@@ -157,29 +159,15 @@ sub evacuate_next_subfont
 	my $strings_str = mk_index(@strings);
 	my $subr_str    = pack('n', 0);
 
-	# the offsets are affected by the encoded header length, but
-	# the header itself contains references to the offsets, that
-	# in turn may change the header length. So make several shots at it
-	$offsets{charstrings} = 100;
-	$offsets{charset}     = 500;
-	$offsets{private}     = 2500;
-
+	$offsets{charstrings} = 0;
+	$offsets{charset}     = 0;
+	$offsets{private}     = 0;
 	my $dict_str = mk_header(\@const_data, \%offsets, length($private_str));
-	my $safeguard = 10;
-	while ( $safeguard-- ) {
-		$offsets{charset}     = length($header) + length($dict_str) + length($strings_str) + length($subr_str);
-		$offsets{charstrings} = $offsets{charset}     + length($charset_str);
-		$offsets{private}     = $offsets{charstrings} + $charstrings_len;
-		my $real_dict_str = mk_header(\@const_data, \%offsets, length($private_str));
-		my $length_match  = length($real_dict_str) == length($dict_str);
-		$dict_str = $real_dict_str;
-		last if $length_match;
-	}
-	if ( $safeguard <= 0 ) {
-		warn "panic: cannot encode font $fn as CFF";
-		return;
-	}
 
+	$offsets{charset}     = length($header) + length($dict_str) + length($strings_str) + length($subr_str);
+	$offsets{charstrings} = $offsets{charset}     + length($charset_str);
+	$offsets{private}     = $offsets{charstrings} + $charstrings_len;
+	$dict_str = mk_header(\@const_data, \%offsets, length($private_str));
 
 	$ret_content = join('', $header, $dict_str, $strings_str, $subr_str, $charset_str);
 	$ret_content .= mk_index(endchar, map {$_->[3]} @glyphs);
