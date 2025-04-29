@@ -1095,9 +1095,9 @@ sub paint_flat_background
 {
 	my ( undef, $path, $height ) = @_;
 	my $s = $::application->uiScaling;
-	$path-> round_rect(
-		1,       ( $height - $s*14) / 2,
-		$s * 15, ( $height + $s*14) / 2,
+	$path-> round_rect( map { int($_ + .5) - .5 }
+		1 + 1,       ( $height - $s*14) / 2 + 1,
+		$s * 15 - 1, ( $height + $s*14) / 2 - 1,
 		$s * 7
 	);
 	return $s * 15;
