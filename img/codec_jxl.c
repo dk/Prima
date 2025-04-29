@@ -152,14 +152,14 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
 
 	pos = req_tell(fi->req);
 	if ( req_read(fi->req, SIGSIZE, buf) != SIGSIZE )
-		return false;
+		return NULL;
 
 	switch ( JxlSignatureCheck( buf, SIGSIZE )) {
 	case JXL_SIG_CODESTREAM:
 	case JXL_SIG_CONTAINER:
 		break;
 	default:
-		return false;
+		return NULL;
 	}
 
 	fi-> stop = true;
