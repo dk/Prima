@@ -946,11 +946,11 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 	if ( !process_frame(s,fi))
 		return false;
 
-	if ( fi->frame == fi->n_frames - 1 ) {
+	if ( fi->frame == fi->n_frames - 1 )
 		JxlEncoderCloseInput(s->enc);
-		if ( !process_output(s,fi))
-			return false;
-	}
+
+	if ( !process_output(s,fi))
+		return false;
 
 	return true;
 }
