@@ -169,8 +169,11 @@ init( PImgCodecInfo * info, void * param)
 	{
 		struct heif_encoder_descriptor *enc[1024];
 		int i, n;
+		struct heif_context* ctx;
 
-		n = get_encoder_descriptors(NULL, heif_compression_undefined, NULL,
+		ctx = heif_context_alloc();
+
+		n = get_encoder_descriptors(ctx, heif_compression_undefined, NULL,
 			(const struct heif_encoder_descriptor**) enc, 1024);
 		for ( i = 0; i < n; i++) {
 			char buf[2048], *compstr;
@@ -220,6 +223,7 @@ init( PImgCodecInfo * info, void * param)
 				prima_hash_store(encoders, shrt, strlen(shrt), (void*)v);
 			}
 		}
+		heif_context_free(ctx);
 		if ( n > 0 )
 			codec_info.IOFlags |= IMG_SAVE_TO_FILE | IMG_SAVE_TO_STREAM | IMG_SAVE_MULTIFRAME;
 	}
