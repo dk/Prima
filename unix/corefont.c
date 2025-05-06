@@ -911,6 +911,7 @@ AGAIN:
 	s = hash_fetch( xfontCache, name, strlen( name));
 
 	if ( !s) {
+		XCHECKPOINT;
 		s = XLoadQueryFont( DISP, name);
 		XCHECKPOINT;
 		if ( !s) {
@@ -1087,6 +1088,7 @@ AGAIN:
 		}
 		of-> flags. sloppy = false;
 	}
+	XCHECKPOINT;
 
 	if ( !kf )
 		return true;
@@ -1294,6 +1296,7 @@ AGAIN:
 		}
 	}
 
+	XCHECKPOINT;
 	if (!detail_font_info( info + index, match, kf, by_size)) {
 		Fdebug("font: bad match, try again");
 		goto AGAIN;
