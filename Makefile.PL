@@ -23,6 +23,7 @@ use File::Find;
 use File::Path;
 use File::Basename;
 use File::Copy;
+use Text::ParseWords qw(shellwords);
 
 use vars qw(
 	$ARGV_STR
@@ -1363,9 +1364,7 @@ sub pkgconfig
 	$MODVERSIONS{$package} = $modversion;
 	printlog "$modversion\n";
 
-	my %h;
-
-	%h = map { $_ => 1 } @INCPATH;
+	my %h = map { $_ => 1 } @INCPATH;
 	my $inc  = `$PKGCONFIG --cflags-only-I $package`;
 	if ( $? != 0 ) { # package has error?
 		printlog "misconfigured\n";
@@ -1373,7 +1372,7 @@ sub pkgconfig
 	}
 	chomp $inc;
 	$inc =~ s/\-I//g;
-	for ( split " ", $inc ) {
+	for ( shellwords $inc ) {
 		push @INCPATH, $_ unless $h{$_};
 	}
 
@@ -1385,7 +1384,7 @@ sub pkgconfig
 	}
 	chomp $libs;
 	$libs =~ s/\-l//g;
-	for ( split " ", $libs ) {
+	for ( shellwords $libs ) {
 		push @LIBS, $_ unless $h{$_};
 	}
 
@@ -1397,7 +1396,7 @@ sub pkgconfig
 	}
 	chomp $libpath;
 	$libpath =~ s/\-[LR]//g;
-	for ( split " ", $libpath ) {
+	for ( shellwords $libpath ) {
 		push @LIBPATH, $_ unless $h{$_};
 	}
 
@@ -2340,10 +2339,13 @@ sub create_config_pm
 	$ip[1] = "$cwd${ifs}include${ifs}generic";
 	my $ipp = join(',', map {"\'$_\'"} @ip);
 	my $inc    = join(' ', map maybe_quote("-I$_"), @ip);
-	$ip[0] = '$(lib)' . "/Prima/CORE";
-	$ip[1] = '$(lib)' . "/Prima/CORE/generic";
+	$ip[0] = '$(lib)/Prima/CORE';
+	$ip[1] = '$(lib)/Prima/CORE/generic';
 	my $ippi = join(',', map {"\'$_\'"} @ip);
-	my $inci = join(' ', map maybe_quote("-I$_"), @ip);
+	my $inci = join(' ',
+		(map qq{"-I$_"}, @ip[0,1]),
+		(map maybe_quote("-I$_"), @ip[2..$#ip])
+	);
 
 	# libs
 	my @libpath = @LIBPATH;
@@ -2876,7 +2878,7 @@ WriteMakefile(
 		$cmd_options{EXTRA_LDFLAGS} . ' ' .
 		$LDFLAGS . ' ' .
 		':nosearch ' .
-		join(' ', map { "-L$_" } @LIBPATH) . ' ' .
+		join(' ', map { maybe_quote("-L$_") } @LIBPATH) . ' ' .
 		join(' ', map { "-l$_" } @LIBS),
 	],
 	LICENSE           => 'FREEBSD',
