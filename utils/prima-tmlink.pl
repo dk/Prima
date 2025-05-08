@@ -96,7 +96,7 @@ my $fName = defined $incFile ? $incFile : '.Untitled.tml';
 
 print $f <<HEAD;
 /* This file was automatically generated.
-   Do not edit, you'll loose your changes anyway.
+   Do not edit, you'll lose your changes anyway.
    file: $fName   */
 HEAD
 

@@ -2264,7 +2264,7 @@ sub create_codecs_c
 	print $fh <<CONTENT;
 /*
   This file was automatically generated.
-  Do not edit, you'll loose your changes anyway.
+  Do not edit, you'll lose your changes anyway.
 */
 
 #include "img.h"
@@ -2375,7 +2375,7 @@ sub create_config_pm
 	open my $fh, ">", "Prima/Config.pm" or die "cannot open Prima/Config.pm:$!\n";
 	print $fh <<CONFIG;
 # This file was automatically generated.
-# Do not edit, you'll loose your changes anyway.
+# Do not edit, you'll lose your changes anyway.
 package Prima::Config;
 use strict;
 use warnings;
