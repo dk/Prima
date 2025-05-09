@@ -1,8 +1,8 @@
 #include "unix/guts.h"
 
 #ifdef WITH_HARFBUZZ
-#include <harfbuzz/hb.h>
-#include <harfbuzz/hb-ft.h>
+#include <hb.h>
+#include <hb-ft.h>
 #endif
 
 #ifdef USE_FONTQUERY

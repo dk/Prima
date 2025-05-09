@@ -66,7 +66,7 @@
 #endif
 
 #ifdef WITH_FRIBIDI
-#include <fribidi/fribidi.h>
+#include <fribidi.h>
 #define ANALYSIS FriBidiLevel
 #else
 #define ANALYSIS Byte

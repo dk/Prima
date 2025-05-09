@@ -57,8 +57,8 @@ TO DO
 #endif
 
 #ifdef WITH_HARFBUZZ
-#include <harfbuzz/hb.h>
-#include <harfbuzz/hb-ft.h>
+#include <hb.h>
+#include <hb-ft.h>
 #endif
 
 #define MY_MATRIX (PDrawable(self)->current_state.matrix)

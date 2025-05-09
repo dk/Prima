@@ -201,7 +201,7 @@ sub setup_argv
 		WITH_HARFBUZZ   => $ENV{PRIMA_WITH_HARFBUZZ}    // ($^O !~ /mswin32/i),
 		WITH_FONTCONFIG => $ENV{PRIMA_WITH_FONTCONFIG}  // ($^O !~ /mswin32/i),
 		WITH_FREETYPE   => $ENV{PRIMA_WITH_FREETYPE}    // ($^O !~ /mswin32/i),
-		WITH_FRIBIDI    => $ENV{PRIMA_WITH_FRIBIDI}     // ($^O !~ /mswin32/i),
+		WITH_FRIBIDI    => $ENV{PRIMA_WITH_FRIBIDI}     // 1,
 		WITH_ICONV      => $ENV{PRIMA_WITH_ICONV}       // ($^O !~ /mswin32/i),
 		WITH_GTK2       => $ENV{PRIMA_WITH_GTK2}        // 0,
 		WITH_GTK3       => $ENV{PRIMA_WITH_GTK3}        // ($^O !~ /mswin32/i),
@@ -1387,9 +1387,6 @@ sub pkgconfig
 		return 0;
 	}
 	chomp $inc;
-	if ($package =~ /^(fribidi|harfbuzz)$/ && $inc =~ /homebrew/ && $MacOSX) {
-		$inc =~ s[/$package($|\s)][ ]; # seems to be a packaging bug
-	}
 	$inc =~ s/\-I//g;
 	for ( shellwords $inc ) {
 		push @INCPATH, $_ unless $h{$_};

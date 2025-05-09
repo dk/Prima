@@ -5,7 +5,7 @@
 #include "private/Drawable.h"
 
 #ifdef WITH_FRIBIDI
-#include <fribidi/fribidi.h>
+#include <fribidi.h>
 #endif
 
 #ifdef __cplusplus
