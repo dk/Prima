@@ -142,6 +142,7 @@ X11 options:
 
 MacOSX options:
     WITH_COCOA        - compile with/without Cocoa (default 1)
+    WITH_HOMEBREW     - default 1, but disable if OpenGL is needed
     OPTION_IS_ALT     - the Option key is kb::Alt (1 on mac, 0 otherwise)
 
 Generic options:
@@ -206,6 +207,7 @@ sub setup_argv
 		WITH_GTK3       => $ENV{PRIMA_WITH_GTK3}        // ($^O !~ /mswin32/i),
 		WITH_OPENMP     => $ENV{PRIMA_WITH_OPENMP}      // 1,
 		WITH_COCOA      => $ENV{PRIMA_WITH_COCOA}       // ($^O eq 'darwin'),
+		WITH_HOMEBREW   => $ENV{PRIMA_WITH_HOMEBREW}    // ($^O eq 'darwin'),
 		OPTION_IS_ALT   => $ENV{OPTION_IS_ALT}          // ($^O eq 'darwin'),
 		WITH_LIBTHAI    => $ENV{PRIMA_WITH_LIBTHAI}     // 1,
 		DEBUG           => $ENV{PRIMA_DEBUG}            // 0,
@@ -1090,7 +1092,7 @@ MSCVER
 		push @LIBPATH, '/opt/csw/lib';
 	}
 
-	if ( $MacOSX ) {
+	if ( $MacOSX && $cmd_options{WITH_HOMEBREW}) {
 		push @INCPATH, '/opt/homebrew/include';
 		push @LIBPATH, '/opt/homebrew/lib', '/opt/homebrew/opt/libiconv/lib';
 	}
@@ -1324,10 +1326,11 @@ MIXED
 		}
 	}
 
-	# it is mac's broken XQuartz setup?
 	my $xquartz_pkgconfig_path = '/opt/X11/lib/pkgconfig';
 	if ( $MacOSX && !exists $ENV{PKG_CONFIG_PATH} && -d $xquartz_pkgconfig_path) {
 		printlog "trying PKG_CONFIG_PATH=$xquartz_pkgconfig_path... ";
+
+		# it is mac's broken XQuartz setup?
 		my $add_path;
 		null_output;
 		if ( system "$PKGCONFIG --exists x11" ) {
@@ -1335,8 +1338,21 @@ MIXED
 			$add_path = 1 unless system "$PKGCONFIG --exists x11";
 		}
 		restore_output;
+		my @x11 = qw(
+			/opt/X11/lib
+			/opt/X11/share
+		);
+		my @hb = qw(
+			/usr/local/lib
+			/opt/homebrew/lib
+		);
 		if ($add_path) {
-			$ENV{PKG_CONFIG_PATH} = "/usr/local/lib/pkgconfig:$xquartz_pkgconfig_path";
+			$ENV{PKG_CONFIG_LIBDIR} = '';
+			$ENV{PKG_CONFIG_PATH} = join ':', map { "$_/pkgconfig" } @hb, @x11;
+			$macos_broken_setup = 1;
+		} elsif ( !$cmd_options{WITH_HOMEBREW}) {
+			$ENV{PKG_CONFIG_LIBDIR} = '';
+			$ENV{PKG_CONFIG_PATH} = join ':', map { "$_/pkgconfig" } @x11, @hb;
 			$macos_broken_setup = 1;
 		}
 	}
@@ -1371,6 +1387,9 @@ sub pkgconfig
 		return 0;
 	}
 	chomp $inc;
+	if ($package =~ /^(fribidi|harfbuzz)$/ && $inc =~ /homebrew/ && $MacOSX) {
+		$inc =~ s[/$package($|\s)][ ]; # seems to be a packaging bug
+	}
 	$inc =~ s/\-I//g;
 	for ( shellwords $inc ) {
 		push @INCPATH, $_ unless $h{$_};
@@ -1729,6 +1748,15 @@ NO_HARFBUZZ
 
 sub setup_gtk
 {
+	if ( $MacOSX && !$cmd_options{WITH_HOMEBREW}) {
+		$END .= <<NO_GTK;
+
+** Warning: without homebrew, Prima is compiled on XCode X11 libraries, that
+are incompatible with homebrew X11 libraries. GTK is disabled.
+
+NO_GTK
+		return;
+	}
 	my $use_gtk3 = $cmd_options{WITH_GTK3};
 	my $use_gtk2 = $cmd_options{WITH_GTK2};
 	$cmd_options{WITH_GTK3} = 0;

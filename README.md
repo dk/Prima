@@ -123,6 +123,13 @@ You'll need homebrew, XQuartz, and a set of extra libraries.
   brew install libiconv libxcomposite libxrandr libxcursor libxft fribidi fontconfig
      freetype giflib gtk+3 harfbuzz jpeg libpng libtiff webp libxpm libheif
 
+Note: if you plan on using Prima::OpenGL, compile Prima with WITH\_HOMEBREW=0 .
+This is because OpenGL uses native MacOSX GL, which can only be used with X11
+libraries from /opt/X11/lib, while homebrew only seems to support mesa.
+However this also disables (known) homebrew libraries that already exist in
+/opt/X11/lib, and would cause coredumps if used together. Also, some libraries
+that ship without a pkg-config file will not be found.
+
 Note: if Prima crashes in libxft, do this: remove libxft and install custom-built xorg libraries, either very minimal
 
   brew install dk/x11/xorg-macros dk/x11/libxft
