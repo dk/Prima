@@ -386,7 +386,7 @@ handle_box( LoadRec *l, PImgLoadFileInstance fi, Bool new_box, Bool final)
 
 	if ( new_box ) {
 		int i;
-		size_t s;
+		uint64_t s;
 		JxlBoxType box_type;
 		if ( JxlDecoderGetBoxType(l->dec, box_type, JXL_TRUE) != JXL_DEC_SUCCESS)
 			return false;
