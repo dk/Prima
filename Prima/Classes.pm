@@ -422,7 +422,7 @@ sub _debug
 {
 	my $f = shift;
 	my $noprint = shift;
-	my $r = sprintf "%d.%s [%dx%d]",
+	my $r = sprintf "%g.%s [%dx%d]",
 		@{$f}{qw(size name width height)};
 	$r .= " thin"   if $f->{style} & fs::Thin;
 	$r .= " bold"   if $f->{style} & fs::Bold;
