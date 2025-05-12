@@ -334,16 +334,13 @@ sub walk
 	$commands[ $opnames{$_} & 0xffff ] = $commands{$_} for grep { exists $opnames{$_} } keys %commands;
 	my $ret;
 
-	my ( $text_offset, $f_taint, $font, $c_taint, $paint_state, %save_properties, $f_touched, $c_touched );
+	my ( $text_offset, $f_taint, $font, $c_taint, $paint_state, %save_properties, $gp_context, $want_gp_context );
 
 	# save paint state
 	if ( $trace & TRACE_PAINT_STATE ) {
 		$paint_state = $canvas-> get_paint_state;
-		if ($paint_state) {
-			$save_properties{set_font} = $canvas->get_font if $trace & TRACE_FONTS;
-			if ($trace & TRACE_COLORS) {
-				$save_properties{$_} = $canvas->$_() for qw(color backColor textOpaque);
-			}
+		if ( $paint_state ){
+			$want_gp_context = 1;
 		} else {
 			$canvas-> begin_paint_info;
 		}
@@ -371,14 +368,20 @@ sub walk
 			next unless $$block[$i + T_LEN] > 0;
 
 			if (( $trace & TRACE_FONTS) && ($trace & TRACE_REALIZE) && !$f_taint) {
+				if ( $want_gp_context) {
+					$canvas->graphic_context_push unless $gp_context;
+					$gp_context = 1;
+				}
 				$realize->($state, REALIZE_FONTS);
-				$f_taint   = 1;
-				$f_touched = 1;
+				$f_taint    = 1;
 			}
 			if (( $trace & TRACE_COLORS) && ($trace & TRACE_REALIZE) && !$c_taint) {
+				if ( $want_gp_context) {
+					$canvas->graphic_context_push unless $gp_context;
+					$gp_context = 1;
+				}
 				$realize->($state, REALIZE_COLORS);
 				$c_taint   = 1;
-				$c_touched = 1;
 			}
 			$ret = $sub->(
 				@opcode,
@@ -413,9 +416,12 @@ sub walk
 			if (($trace & TRACE_FONTS) && ($trace & TRACE_REALIZE)) {
 				if ( $f & X_DIMENSION_FONT_HEIGHT) {
 					unless ( $f_taint) {
+						if ( $want_gp_context) {
+							$canvas->graphic_context_push unless $gp_context;
+							$gp_context = 1;
+						}
 						$realize->($state, REALIZE_FONTS);
-						$f_taint   = 1;
-						$f_touched = 1;
+						$f_taint    = 1;
 					}
 					$font //= $canvas-> get_font;
 					$x *= $font-> {height};
@@ -437,14 +443,24 @@ sub walk
 			next;
 		} elsif (( $cmd == OP_CODE) && ($trace & TRACE_PENS) && ($trace & TRACE_REALIZE)) {
 			unless ( $f_taint) {
-				$realize->($state, REALIZE_FONTS) if $trace & TRACE_FONTS;
-				$f_taint   = 1;
-				$f_touched = 1;
+				if ($trace & TRACE_FONTS) {
+					if ( $want_gp_context) {
+						$canvas->graphic_context_push unless $gp_context;
+						$gp_context = 1;
+					}
+					$realize->($state, REALIZE_FONTS);
+				}
+				$f_taint  = 1;
 			}
 			unless ( $c_taint) {
-				$realize->($state, REALIZE_COLORS) if $trace & TRACE_COLORS;
-				$c_taint   = 1;
-				$c_touched = 1;
+				if ($trace & TRACE_COLORS) {
+					if ( $want_gp_context) {
+						$canvas->graphic_context_push unless $gp_context;
+						$gp_context = 1;
+					}
+					$realize->($state, REALIZE_COLORS);
+				}
+				$c_taint  = 1;
 			}
 		} elsif (( $cmd == OP_MARK) & ( $trace & TRACE_UPDATE_MARK)) {
 			$$block[ $i + MARK_X] = $$position[0];
@@ -462,9 +478,7 @@ sub walk
 	# restore paint state
 	if ( $trace & TRACE_PAINT_STATE ) {
 		if ( $paint_state ) {
-			delete @save_properties{qw(color backColor)} unless $c_touched;
-			delete @save_properties{qw(font)}            unless $f_touched;
-			$canvas->$_( $save_properties{$_} ) for keys %save_properties;
+			$canvas->graphic_context_pop if $gp_context;
 		} else {
 			$canvas->end_paint_info;
 		}
@@ -530,8 +544,10 @@ sub block_wrap
 		pointer => \$ptr,
 		canvas  => $canvas,
 		state   => $state,
-		trace   => TRACE_REALIZE_PENS,
-		realize => sub { $canvas->font(realize_fonts($subopt{fontmap}, $_[0])) if $_[1] & REALIZE_FONTS },
+		trace   => TRACE_REALIZE_PENS | TRACE_PAINT_STATE,
+		realize => sub {
+			$canvas->font(realize_fonts($subopt{fontmap}, $_[0])) if $_[1] & REALIZE_FONTS;
+		},
 		text    => sub {
 			my ( $ofs, $tlen ) = @_;
 			my $state_key = join('.', @$state[BLK_FONT_ID .. BLK_FONT_STYLE]);
