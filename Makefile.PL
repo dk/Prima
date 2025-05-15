@@ -2498,6 +2498,7 @@ use vars qw(%Config %Config_inst);
 	dl_load_flags         => $DL_LOAD_FLAGS,
 	optimize              => '$OPTIMIZE',
 	openmp                => '$cc_openmp',
+	homebrew              => $cmd_options{WITH_HOMEBREW},
 
 	inc                   => '$inc',
 	define                => '',
