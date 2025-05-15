@@ -1419,6 +1419,49 @@ sub pkgconfig
 	return 1;
 }
 
+sub homebrew_nopkgconfig
+{
+	my $package = shift;
+	my $root = '/opt/homebrew';
+
+	printlog "Checking for $package using homebrew directory structure...";
+
+	goto FAIL unless -d $root;
+	$root .= "/Cellar/$package";
+	goto FAIL unless -d $root;
+
+	my @dirs = sort { $b cmp $a } grep { -d $_ } <$root/*>;
+	goto FAIL unless @dirs;
+	$root = $dirs[0];
+	goto FAIL unless
+		-d "$root/include" &&
+		-d "$root/lib"     &&
+		(<$root/include/*.h>)
+		;
+
+	my @libs = grep {
+		s[.*\/][];
+		s[^lib][];
+		s[\.dylib$][];
+		!m/\d/
+	} <$root/lib/*.dylib>;
+	goto FAIL unless @libs;
+
+	$MODVERSIONS{$package} = $dirs[0];
+	$MODVERSIONS{$package} =~ s[.*\/][];
+	printlog($MODVERSIONS{$package} . "\n");
+
+	push @INCPATH, "$root/include";
+	push @LIBPATH, "$root/lib";
+	push @LIBS, @libs;
+
+	return 1;
+
+FAIL:
+	printlog("no\n");
+	return;
+}
+
 sub setup_X11
 {
 	if ($use_pkgconfig) {
@@ -1637,6 +1680,9 @@ sub setup_xft
 This happened because broken setup was detected where both harfbuzz and libXft
 depend on freetype2, but one on /opt/X11 and another in /usr/local.
 This _WILL_ result in coredumps.
+BROKEN_PATH_SETUP
+
+				$END .= <<BROKEN_PATH_SETUP if $cmd_options{WITH_HOMEBREW};
 
 To resolve the issue install libXft that uses the recent freetype2, with
 
@@ -2085,7 +2131,13 @@ sub setup_codecs
 			} elsif ( $codec eq 'Xpm') {
 				$found = 1 if pkgconfig('xpm');
 			} # gif and jpeg -- I've never seen yet these libs shipped with .pc file, so don't check them so far
-
+			elsif ( $MacOSX && !$cmd_options{WITH_HOMEBREW}) {
+				# there's no generic path adding on this configuration, so make a horrible hack 
+				# specifically for this:
+				if ( $codec eq 'gif') {
+					$found = 1 if homebrew_nopkgconfig('giflib');
+				}
+			}
 			if ( $found ) {
 				push( @ACTIVE_CODECS, $codec);
 				next;
