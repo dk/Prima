@@ -2446,6 +2446,7 @@ sub create_config_pm
 	}
 
 	my $cc_openmp = $cmd_options{WITH_OPENMP} ? $CC_OPENMP : '';
+	my $homebrew  = ($cmd_options{WITH_HOMEBREW} =~ /^\d+$/) ? $cmd_options{WITH_HOMEBREW} : 'undef',
 
 	open my $fh, ">", "Prima/Config.pm" or die "cannot open Prima/Config.pm:$!\n";
 	print $fh <<CONFIG;
@@ -2496,7 +2497,7 @@ use vars qw(%Config %Config_inst);
 	dl_load_flags         => $DL_LOAD_FLAGS,
 	optimize              => '$OPTIMIZE',
 	openmp                => '$cc_openmp',
-	homebrew              => $cmd_options{WITH_HOMEBREW},
+	homebrew              => $homebrew,
 
 	inc                   => '$inc',
 	define                => '',
