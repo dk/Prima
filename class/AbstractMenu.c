@@ -979,6 +979,21 @@ AbstractMenu_checked( Handle self, Bool set, char * varName, Bool checked)
 	}
 	return checked;
 }
+SV*
+AbstractMenu_context( Handle self, Bool set, char * varName, SV* context)
+{
+	PMenuItemReg m;
+	if ( var-> stage > csFrozen) return 0;
+	m = find_menuitem( self, varName, true);
+	if ( m == NULL) return 0;
+	if ( !set) return m-> context ? newSVsv(m->context) : NULL_SV;
+	m-> context = (context && SvOK(context)) ? newSVsv(context) : NULL;
+	notify( self, "<ssUS", "Change", "context",
+		m->variable ? m-> variable      : varName,
+		m->variable ? m-> flags.utf8_variable : 0,
+		m->context ? m->context : NULL_SV);
+	return m->context;
+}
 
 int
 AbstractMenu_group( Handle self, Bool set, char * varName, int group)

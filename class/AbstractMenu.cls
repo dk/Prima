@@ -6,6 +6,7 @@ object Prima::AbstractMenu ( Prima::Component)
 	property SV   * action ( char * varName);
 	property Bool   autoToggle( char * varName);
 	property Bool   checked( char * varName);
+	property SV   * context( char * varName);
 	property Handle icon   ( char * varName);
 	property int    group  ( char * varName);
 	property SV   * hint   ( char * varName);

@@ -318,8 +318,7 @@ three to six items in the array. One can set the left-aligned text string for
 the item, the right-aligned text string for the display of the hotkey, if any,
 the definition of the hotkey itself, and the action to be taken if the user has
 pressed either the menu item or the hotkey combination. Also, as in the
-previous cases, an explicit menu item ID can be set, and also an arbitrary data scalar,
-for the generic needs of the programmer.
+previous cases, an explicit menu item ID can be set, along with extra options
 
 Here are the combinations of scalars in an array that are allowed for defining
 a text menu item:
@@ -330,7 +329,7 @@ Four items - [ text, hotkey text, hotkey, action ]
 
 Five items - [ ID, text, hotkey text, hotkey, action ]
 
-Six items - [ ID, text, hotkey text, hotkey, action, data ]
+Six items - [ ID, text, hotkey text, hotkey, action, options ]
 
 The image menu items are fully analogous to the text items, except that instead
 of the text string, an image object is supplied:

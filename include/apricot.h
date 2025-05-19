@@ -6,7 +6,7 @@
 #define POLLUTE_NAME_SPACE 1
 #endif
 
-#define PRIMA_CORE_VERSION 2025031501
+#define PRIMA_CORE_VERSION 2025051901
 
 #define PRIMA_VERSION_BOOTCHECK \
 	if(apc_get_core_version()!=PRIMA_CORE_VERSION) \
@@ -2876,6 +2876,7 @@ typedef struct _MenuItemReg {   /* Menu item registration record */
 	SV *   hint;                 /* hint if not NULL */
 	Handle icon;                 /* custom checked bitmap */
 	int    group;                /* radio group */
+	SV *   context;              /* custom scalar */
 	SV *   onPaint;              /* callbacks */
 	SV *   onMeasure;
 	struct _MenuItemReg* down;   /* pointer to submenu */

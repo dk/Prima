@@ -235,6 +235,21 @@ The toolkit reserves the following keys for internal use:
 
 =over
 
+=item context SCALAR
+
+A single scalar for free generic use, f ex like this:
+
+    [
+        menu
+        ...
+        sub {
+           my ( $self, $item ) = @_;
+           my $my_scalar = $self->menu->context($item);
+        }
+        ...
+        { context => $my_scalar },
+    ]
+
 =item group INTEGER
 
 Same as the C<group> property.
@@ -312,17 +327,17 @@ combination is treated differently:
 
 =over
 
-=item six - [ NAME, TEXT/IMAGE, ACCEL, KEY, ACTION/SUBMENU, DATA ]
+=item six - [ NAME, TEXT/IMAGE, ACCEL, KEY, ACTION/SUBMENU, OPTIONS ]
 
 A six-scalar array is a fully qualified text-item description.
 All fields correspond to the described above scalars.
 
 =item five [ NAME, TEXT/IMAGE, ACCEL, KEY, ACTION/SUBMENU ]
 
-Same as the six-scalar syntax, but without the DATA field.
-If DATA is skipped then it is set to C<undef>.
+Same as the six-scalar syntax, but without the OPTIONS field.
+If OPTIONS is skipped then it is set to C<undef>.
 
-=item four [ TEXT/IMAGE, ACCEL, KEY, ACTION/SUBMENU ] or [ NAME, TEXT/IMAGE, ACTION/SUBMENU, DATA ]
+=item four [ TEXT/IMAGE, ACCEL, KEY, ACTION/SUBMENU ] or [ NAME, TEXT/IMAGE, ACTION/SUBMENU, OPTIONS ]
 
 One of the two definitions, depending on whether the last item is a hashref or not.
 
@@ -330,9 +345,9 @@ If the last item is not a hashref, then treated the same as the five-scalar
 syntax, but without the NAME field.  When NAME is skipped it is assigned to a
 unique string within the menu object.
 
-Otherwise same as the three-scalar syntax plus the DATA hashref.
+Otherwise same as the three-scalar syntax plus the OPTIONS hashref.
 
-=item three [ NAME, TEXT/IMAGE, ACTION/SUBMENU ] or [ TEXT/IMAGE, ACTION/SUBMENU, DATA ]
+=item three [ NAME, TEXT/IMAGE, ACTION/SUBMENU ] or [ TEXT/IMAGE, ACTION/SUBMENU, OPTIONS ]
 
 One of the two definitions, depending on whether the last item is a hashref or not.
 
@@ -341,16 +356,16 @@ syntax, but without the ACCEL and the KEY fields.  KEY is C<kb::NoKey> by
 default, so no keyboard combination is bound to the item. The default ACCEL value
 is an empty string.
 
-Otherwise the same as the two-scalar syntax plus DATA hashref.
+Otherwise the same as the two-scalar syntax plus OPTIONS hashref.
 
-=item two [ TEXT/IMAGE, ACTION/SUBMENU ] or [ NAME, DATA ]
+=item two [ TEXT/IMAGE, ACTION/SUBMENU ] or [ NAME, OPTIONS ]
 
 One of the two definitions, depending on whether the last item is a hashref or not.
 
 If the last item is not a hashref, then treated the same as the three-scalar
 syntax, but without the NAME field.
 
-Otherwise treated as the menu items with the data reference. Useful for custom
+Otherwise treated as the menu items with the options reference. Useful for custom
 menu items that need at least the C<'?'> flag in the NAME.
 
 =item one and zero [ NAME ]
@@ -399,7 +414,7 @@ reader is advised to run the example and learn the menu mechanics.
 
 As briefly mentioned above, all menu items can be accessed using the following
 properties:  C<::accel>, C<::text>, C<::image>, C<::checked>, C<::enabled>,
-C<::action>, C<::data>.  These, plus some other methods can be also called in an
+C<::action>, C<::options>.  These, plus some other methods can be also called in an
 alternative way, resembling name-based component calls of L<Prima::Object>. For
 example, the call
 
@@ -516,9 +531,9 @@ usage with the sub-menu items is possible, although discouraged.
 
 NAME is the name of the menu item.
 
-=item data NAME, HASH / Prima::MenuItem::data HASH
+=item context NAME, SCALAR / Prima::MenuItem::context SCALAR
 
-Manages the user data hash.  NAME is the name of the menu item.
+Manages the user context scalar.  NAME is the name of the menu item.
 
 =item enabled NAME, BOOLEAN / Prima::MenuItem::enabled BOOLEAN
 
@@ -557,7 +572,7 @@ structure, with the syntax described in L<Menu items>.
 The C<::items> property is an ultimate tool for reading and writing the menu
 items tree, but often it is too powerful, so there exist several easier-to-use
 properties C<::accel>, C<::text>, C<::image>, C<::checked>, C<::enabled>,
-C<::action>, C<::data>, that can access menu items individually.
+C<::action>, C<::options> that can access menu items individually.
 
 =item key NAME, KEY / Prima::MenuItem::key KEY
 
@@ -567,6 +582,10 @@ call always returns integers. The set-mode calls, however, accept
 the literal key format - strings such as '^C' or 'F5'.
 
 NAME is the name of the menu item; KEY is an integer value.
+
+=item options NAME, HASH / Prima::MenuItem::options HASH
+
+Manages the options hash.  NAME is the name of the menu item.
 
 =item selected BOOLEAN
 
