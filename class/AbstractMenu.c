@@ -159,7 +159,7 @@ parse_options( HV * profile, PMenuItemReg r)
 	}
 
 	if ( pexist( group ))
-		r-> group = pget_i(group)
+		r-> group = pget_i(group);
 
 	if ( pexist( context )) {
 		r-> context = pget_sv(context);
