@@ -111,6 +111,8 @@ AbstractMenu_dispose_menu( Handle self, void * menu)
 		sv_free( m-> code);
 	if ( m-> hint)
 		sv_free( m-> hint);
+	if ( m-> context)
+		sv_free( m-> context);
 	if ( m-> onMeasure)
 		sv_free( m-> onMeasure);
 	if ( m-> onPaint)
@@ -157,7 +159,12 @@ parse_options( HV * profile, PMenuItemReg r)
 	}
 
 	if ( pexist( group ))
-		r-> group = pget_i(group);
+		r-> group = pget_i(group)
+
+	if ( pexist( context )) {
+		r-> context = pget_sv(context);
+		r-> context = newSVsv(r->context);
+	}
 
 	if ( pexist( hint )) {
 		r-> hint = pget_sv(hint);
@@ -534,6 +541,7 @@ new_options( PMenuItemReg m )
 		m->group     == 0           &&
 		m->icon      == NULL_HANDLE &&
 		m->hint      == NULL        &&
+		m->context   == NULL        &&
 		m->onPaint   == NULL        &&
 		m->onMeasure == NULL
 	)
@@ -543,6 +551,7 @@ new_options( PMenuItemReg m )
 	if ( m->group > 0 ) pset_i ( group,     m->group    );
 	if ( m->icon      ) pset_H ( icon,      m->icon     );
 	if ( m->hint      ) pset_sv( hint,      m->hint     );
+	if ( m->context   ) pset_sv( context,   m->context  );
 	if ( m->onMeasure ) pset_sv( onMeasure, m->onMeasure);
 	if ( m->onPaint   ) pset_sv( onPaint,   m->onPaint  );
 
@@ -1141,6 +1150,8 @@ AbstractMenu_options( Handle self, Bool set, char * varName, SV * options)
 		unregister_image(m->icon);
 	if ( n.hint != m->hint && m->hint )
 		sv_free(m->hint);
+	if ( n.context != m->context && m->context )
+		sv_free(m->context);
 	if ( n.onPaint != m->onPaint && m->onPaint )
 		sv_free(m->onPaint);
 	if ( n.onMeasure != m->onMeasure && m->onMeasure )
