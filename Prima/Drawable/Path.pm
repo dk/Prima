@@ -336,9 +336,10 @@ sub lines
 	my $p = $#_ ? [@_] : $_[0];
 	@$p % 4 and Carp::croak('bad parameters to lines');
 	for ( my $i = 0; $i < @$p; $i += 4 ) {
-		$self->moveto(@$p[ $i .. $i + 1 ]);
+		$self->open;
 		$self->cmd( line   => [ @$p[ $i .. $i + 3 ] ] );
 	}
+	$self->open;
 }
 
 sub rectangle
