@@ -58,6 +58,9 @@ Drawable_clear_font_abc_caches( Handle self);
 PFontABC
 Drawable_call_get_font_abc( Handle self, unsigned int from, unsigned int to, int flags);
 
+int*
+Drawable_call_get_glyph_descents( Handle self, unsigned int from, unsigned int to);
+
 int
 Drawable_check_length( int from, int len, int real_len );
 
@@ -96,6 +99,12 @@ Drawable_read_line_ends(SV *lineEnd, DrawablePaintState *state);
 
 void
 Drawable_line_end_refcnt( DrawablePaintState *gs, int delta);
+
+int
+Drawable_resolve_line_end_index( DrawablePaintState *gs, int index);
+
+NRect
+Drawable_line_end_box( DrawablePaintState *gs, int index);
 
 #ifdef __cplusplus
 }

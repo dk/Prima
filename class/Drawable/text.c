@@ -393,7 +393,7 @@ Drawable_get_text_box( Handle self, SV * text, int from, int len )
 		GlyphsOutRec t;
 		dmCHECK(NULL_SV);
 		if (!Drawable_read_glyphs(&t, text, 0, "Drawable::get_text_box"))
-			return false;
+			return newRV_noinc(( SV *) newAV());
 		if (( len = Drawable_check_length(from,len,t.len)) == 0)
 			return newRV_noinc(( SV *) newAV());
 		Drawable_hop_glyphs(&t, from, len);

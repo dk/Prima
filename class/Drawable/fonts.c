@@ -17,6 +17,13 @@ Drawable_clear_font_abc_caches( Handle self)
 		plist_destroy( u);
 		var-> font_abc_glyphs = NULL;
 	}
+	if (( u = var-> font_def_glyphs)) {
+		int i;
+		for ( i = 0; i < u-> count; i += 2)
+			free(( void*) u-> items[ i + 1]);
+		plist_destroy( u);
+		var-> font_def_glyphs = NULL;
+	}
 	if (( u = var-> font_abc_unicode)) {
 		int i;
 		for ( i = 0; i < u-> count; i += 2)

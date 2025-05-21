@@ -387,6 +387,68 @@ Drawable_lineEndIndex( Handle self, Bool set, int index, SV *lineEnd)
 	return NULL_SV;
 }
 
+int
+Drawable_resolve_line_end_index( DrawablePaintState *gs, int index)
+{
+	int le = gs->line_end[index].type;
+	while ( le == leDefault ) {
+		switch ( index ) {
+		case leiLineTail:
+			le = leRound;
+			break;
+		case leiLineHead:
+		case leiArrowTail:
+			index = leiLineTail;
+			le = gs->line_end[index].type;
+			break;
+		case leiArrowHead:
+			index = leiLineHead;
+			le = gs->line_end[index].type;
+			break;
+		default:;
+		}
+	}
+	return index;
+}
+
+NRect
+Drawable_line_end_box( DrawablePaintState *gs, int index)
+{
+	NRect r = {0,0,0,0};
+	LineEnd *le = gs->line_end + index;
+
+	switch ( le->type ) {
+	case leRound:
+	case leSquare:
+		r.left = r.bottom = r.right = r.top = 0.5;
+		break;
+	case leCustom: {
+		int k;
+		PPath p = le->path;
+		for ( k = 0; k < p->n_commands; k++) {
+			int l;
+			PPathCommand pc = p->commands[k];
+			double *pts = pc->args;
+			for ( l = 0; l < pc->n_args; l++) {
+				if ( *pts < r.left )
+					r.left = *pts;
+				if ( *pts > r.right )
+					r.right = *pts;
+				pts++;
+				if ( *pts < r.bottom )
+					r.bottom = *pts;
+				if ( *pts > r.top )
+					r.top = *pts;
+				pts++;
+			}
+		}
+		break;
+	}
+	default:;
+	}
+
+	return r;
+}
 
 #ifdef __cplusplus
 }

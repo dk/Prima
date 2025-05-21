@@ -26,6 +26,18 @@ find_abc_in_list_cache( PList p, int base )
 	return NULL;
 }
 
+static int*
+find_descents( Handle self, int base )
+{
+	int i;
+	PList p = var-> font_def_glyphs;
+	if ( !p ) return NULL;
+	for ( i = 0; i < p-> count; i += 2)
+		if (( unsigned int) p-> items[ i] == base)
+			return ( int*) p-> items[i + 1];
+	return NULL;
+}
+
 static Bool
 fill_abc_list_cache( PList * cache, int base, PFontABC abc)
 {
@@ -36,6 +48,18 @@ fill_abc_list_cache( PList * cache, int base, PFontABC abc)
 		return false;
 	list_add( p, ( Handle) base);
 	list_add( p, ( Handle) abc);
+	return true;
+}
+
+static Bool
+fill_descents_list_cache( Handle self, int base, int *descents)
+{
+	if ( var->font_def_glyphs == NULL )
+		var->font_def_glyphs = plist_create( 8, 8);
+	if ( var->font_def_glyphs == NULL )
+		return false;
+	list_add( var->font_def_glyphs, ( Handle) base);
+	list_add( var->font_def_glyphs, ( Handle) descents);
 	return true;
 }
 
@@ -88,6 +112,57 @@ call_get_font_abc_base( Handle self, unsigned int base, int flags)
 {
 	return Drawable_call_get_font_abc( self, base * 256, base * 256 + 255, flags);
 }
+
+int*
+Drawable_call_get_glyph_descents( Handle self, unsigned int from, unsigned int to)
+{
+	int i, len = to - from + 1;
+	int *descents;
+	PFontABC abc;
+
+	/* query ABC information */
+	if ( !self) {
+		abc = apc_gp_get_font_def( self, from, to, toGlyphs);
+		if ( !abc) return NULL;
+	} else if ( my-> get_font_abc == Drawable_get_font_abc) {
+		dmARGS;
+		dmCHECK(NULL);
+		dmENTER(NULL);
+		abc = apc_gp_get_font_def( self, from, to, toGlyphs);
+		dmLEAVE;
+		if ( !abc) return NULL;
+	} else {
+		SV * sv;
+		if ( !( abc = malloc(len * sizeof( FontABC)))) return NULL;
+		sv = my-> get_font_def( self, from, to, toGlyphs);
+		if ( SvOK( sv) && SvROK( sv) && SvTYPE( SvRV( sv)) == SVt_PVAV) {
+			AV * av = ( AV*) SvRV( sv);
+			int i, j = 0, n = av_len( av) + 1;
+			if ( n > len * 3) n = len * 3;
+			n = ( n / 3) * 3;
+			if ( n < len) memset( abc, 0, len * sizeof( FontABC));
+			for ( i = 0; i < n; i += 3) {
+				SV ** holder = av_fetch( av, i, 0);
+				if ( holder) abc[j].a = ( float) SvNV( *holder);
+				j++;
+			}
+		} else
+			memset( abc, 0, len * sizeof( FontABC));
+		sv_free( sv);
+	}
+
+	if (!( descents = malloc(sizeof(int) * len))) {
+		free(abc);
+		return NULL;
+	}
+
+	for ( i = 0; i < len; i++)
+		descents[i] = abc[i].a;
+	free(abc);
+
+	return descents;
+}
+
 
 static PFontABC
 query_abc_range( Handle self, TextWrapRec * t, unsigned int base)
@@ -180,18 +255,40 @@ fill_font_ranges( Handle self )
 }
 
 static PFontABC
-query_abc_range_glyphs( Handle self, GlyphWrapRec * t, unsigned int base)
+query_abc_range_glyphs( Handle self, GlyphWrapRec * t, unsigned int base, int ** descents)
 {
-	PFontABC abc;
+	PFontABC abc = NULL;
+	int *descents_ptr;
+	Bool do_abc = true, do_descents = descents != NULL;
 
-	if ( 
-		*(t-> cache) && 
+	if ( do_descents ) *descents = NULL;
+
+	if (
+		*(t-> cache) &&
 		(( abc = find_abc_in_list_cache( *(t->cache), base)) != NULL)
-	)
-		return abc;
+	) {
+		if ( do_descents) {
+			if ((descents_ptr = find_descents( self, base)) != NULL) {
+				*descents = descents_ptr;
+				return abc;
+			} else
+				do_abc = false;
+		} else
+			return abc;
+	} else if ( do_descents && ((descents_ptr = find_descents( self, base)) != NULL)) {
+		*descents = descents_ptr;
+		do_descents = false;
+	}
 
-	if ( !( abc = call_get_font_abc_base(self, base, toGlyphs)))
+	if ( do_abc && !( abc = call_get_font_abc_base(self, base, toGlyphs)))
 		return NULL;
+
+	if ( do_descents && !( descents_ptr = Drawable_call_get_glyph_descents( self, base * 256, base * 256 + 255))) {
+		if ( do_abc ) free(abc);
+		*descents = NULL;
+		return NULL;
+	}
+
 	if ( t->fonts) {
 		/* different fonts case */
 		Byte * fa;
@@ -242,7 +339,8 @@ query_abc_range_glyphs( Handle self, GlyphWrapRec * t, unsigned int base)
 		}
 
 		for ( i = 0; i < t->n_glyphs; i++) {
-			PFontABC abc2;
+			PFontABC abc2 = NULL;
+			int *descents2 = NULL;
 			uint16_t fid = t->fonts[i];
 			uint32_t uv;
 			if ( used_fonts[fid >> 3] & ( 1 << (fid & 7)))
@@ -258,7 +356,9 @@ query_abc_range_glyphs( Handle self, GlyphWrapRec * t, unsigned int base)
 			if ( pfe-> vectors.count <= page )
 				continue;
 
-			if ( !( abc2 = Drawable_call_get_font_abc( self, from, to, toGlyphs)))
+			if ( do_abc && !( abc2 = Drawable_call_get_font_abc( self, from, to, toGlyphs)))
+				continue;
+			if ( do_descents && !( descents2 = Drawable_call_get_glyph_descents( self, from, to)))
 				continue;
 
 			fa = (Byte *) pfe-> vectors.items[ page ];
@@ -268,18 +368,36 @@ query_abc_range_glyphs( Handle self, GlyphWrapRec * t, unsigned int base)
 				if (( fa[bit >> 3] & (1 << (bit & 7))) == 0) continue;
 				if ((filled_entries[(uv - from) >> 3] & (1 << ((uv - from) & 7))) != 0) continue;
 				filled_entries[(uv - from) >> 3] |= 1 << ((uv - from) & 7);
-				abc[uv - from] = abc2[uv - from];
+				if (do_abc)
+					abc[uv - from] = abc2[uv - from];
+				if (do_descents)
+					descents_ptr[uv - from] = descents2[uv - from];
 			}
 
-			free(abc2);
+			if (do_abc)
+				free(abc2);
+			if (do_descents)
+				free(descents2);
 		}
 		my->restore_font( self, &savefont );
 	}
 NO_FONT_ABC:
 
-	if ( !fill_abc_list_cache(t->cache, base, abc)) {
+	if ( do_abc && !fill_abc_list_cache(t->cache, base, abc)) {
 		free( abc);
+		if ( do_descents ) {
+			free(descents_ptr);
+			*descents = NULL;
+		}
 		return NULL;
+	}
+
+	if ( do_descents) {
+		if (!fill_descents_list_cache(self, base, descents_ptr)) {
+			free(descents_ptr);
+			descents_ptr = NULL;
+		}
+		*descents = descents_ptr;
 	}
 
 	return abc;
@@ -644,7 +762,7 @@ wrap_load_glyphs_abc(uint32_t uv, WrapRec * w, Handle self, GlyphWrapRec *g)
 	if ( uv / 256 == w-> base)
 		return true;
 	w-> base = uv / 256;
-	if ( !(labc = query_abc_range_glyphs( self, g, w->base)))
+	if ( !(labc = query_abc_range_glyphs( self, g, w->base, NULL)))
 		return false;
 	if ( g-> advances )
 		precalc_ac_buffer(labc, w->abcs);
@@ -1295,6 +1413,159 @@ Drawable_text_wrap( Handle self, SV * text, int width, int options, int tabInden
 		dmLEAVE;
 		return ret;
 	}
+}
+
+static NPoint*
+render_underline(Handle self, GlyphsOutRec *t, int * n_points)
+{
+	dmARGS;
+	int i, base;
+	FontABC *abc = NULL, last_abc = {0,0,0};
+	int *descents = NULL;
+	GlyphWrapRec w;
+	SaveFont savefont;
+	Bool ok = true;
+	int x, y, breakout;
+	Bool text_out_baseline, line_is_on;
+	NPoint c, *ret;
+	float half_widths[2];
+
+	if ( var-> font. direction != 0)
+		c = my->trig_cache(self);
+	else
+		c.x = c.y = 0;
+
+	text_out_baseline = ( my-> textOutBaseline == Drawable_textOutBaseline) ?
+		apc_gp_get_text_out_baseline(self) :
+		my-> get_textOutBaseline(self);
+
+	x = 0;
+	y = text_out_baseline ? 0 : var->font.descent;
+
+	{
+		int ut = (var->font.underlineThickness <= 0) ?
+			1 :
+			var->font.underlineThickness;
+		int up = (var->font.underlinePosition < 0) ?
+			-var->font.underlinePosition :
+			(var->font.descent - ut/2 - 1);
+
+		breakout = var->font.descent - up + ut;
+		y -= up;
+
+		for (i = 0; i < 2; i++) {
+			NRect box;
+			int j;
+			j = ( i == 0 ) ? leiArrowTail : leiArrowHead;
+			j   = Drawable_resolve_line_end_index(&var->current_state, j);
+			box = Drawable_line_end_box( &var->current_state, j);
+			half_widths[i] = box.right;
+		}
+
+		half_widths[1] *= -1.0;
+	}
+
+
+	*n_points = 0;
+	dmCHECK(NULL);
+	dmENTER(NULL);
+	if (( ret = malloc(sizeof(NPoint) * 2 * t->len)) == NULL) {
+		dmLEAVE;
+		return NULL;
+	}
+
+	if ( t->fonts ) {
+		my->save_font(self, &savefont);
+		my->switch_font( self, &savefont, t->fonts[0]);
+	}
+
+	line_is_on = false;
+	base = 257;
+	glyph_init_wrap_rec( self, 0, 0, 0, t, &w);
+
+#define ADD_POINT(hw) {                                        \
+	float xx = x;                                          \
+	float this_a = ( abc[o].a < 0 ) ? -abc[o].a   : 0;     \
+	float last_c = (last_abc.c < 0) ? -last_abc.c : 0;     \
+	xx -= this_a + last_c;                                 \
+	xx += half_widths[hw];                                 \
+	ret[ *n_points    ].x = xx;                            \
+	ret[ (*n_points)++].y = y;                             \
+}
+
+	for ( i = 0; i < t->len; i++) {
+		int o = t->glyphs[i] & 0xff;
+		if ( base != (t->glyphs[i] >> 8)) {
+			base = t->glyphs[i] >> 8;
+			abc = query_abc_range_glyphs( self, &w, base, &descents);
+			if (abc == NULL || descents == NULL) {
+				ok = false;
+				break;
+			}
+		}
+
+		if ( descents[o] > breakout ) {
+			if ( !line_is_on ) {
+				/* start the line */
+				ADD_POINT(0)
+				line_is_on = true;
+			}
+		} else {
+			if ( line_is_on ) {
+				/* stop the line */
+				ADD_POINT(1)
+				line_is_on = false;
+			}
+		}
+
+		x += t->advances ? t->advances[i] : (abc[o].a + abc[o].b + abc[o].c);
+		last_abc = abc[o];
+	}
+
+	if ((( *n_points ) % 2) == 1 ) {
+		int o = t->glyphs[t->len - 1] & 0xff;
+		ADD_POINT(1)
+	}
+
+	if ( t->fonts )
+		my->restore_font(self, &savefont);
+	dmLEAVE;
+
+	if ( var-> font. direction != 0) {
+		NPoint *p = ret;
+		for ( i = 0; i < *n_points; i++, p++) {
+			NPoint n = *p;
+			p->x = n.x * c.y - n.y * c.x;
+			p->y = n.x * c.x + n.y * c.y;
+		}
+	}
+
+	if ( !ok ) {
+		free(ret);
+		ret = NULL;
+		*n_points = 0;
+	}
+
+	return ret;
+}
+
+SV *
+Drawable_render_underline(Handle self, SV * glyphs)
+{
+	AV * av;
+	NPoint *np, *npi;
+	int i, n_points;
+	GlyphsOutRec t;
+	if (!Drawable_read_glyphs(&t, glyphs, 0, "Drawable::render_underline"))
+		return NULL_SV;
+	np = render_underline(self, &t, &n_points);
+	av = newAV();
+	for ( i = 0, npi = np; i < n_points; i++, npi++) {
+		av_push(av, newSVnv(npi->x));
+		av_push(av, newSVnv(npi->y));
+	}
+	free(np);
+	return newRV_noinc(( SV *) av);
 }
 
 #ifdef __cplusplus

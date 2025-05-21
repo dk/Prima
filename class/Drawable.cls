@@ -76,6 +76,7 @@ object Prima::Drawable ( Prima::Component)
 	static SV *  render_polyline( SV * obj, SV * points, HV * profile);
 	import Handle render_pattern( SV * obj, SV * pattern, HV * profile);
 	static SV *  render_spline( SV * obj, SV * points, HV * profile);
+	method SV *  render_underline(SV * glyphs);
 	method Bool  graphic_context_push();
 	method Bool  graphic_context_pop();
 
@@ -99,6 +100,7 @@ object Prima::Drawable ( Prima::Component)
 	PFontABC font_abc_ascii;
 	PList    font_abc_unicode;
 	PList    font_abc_glyphs;
+	PList    font_def_glyphs;
 	unsigned long * font_abc_glyphs_ranges;
 	int             font_abc_glyphs_n_ranges;
 
