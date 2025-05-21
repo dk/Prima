@@ -1416,7 +1416,7 @@ Drawable_text_wrap( Handle self, SV * text, int width, int options, int tabInden
 }
 
 static NPoint*
-render_underline(Handle self, GlyphsOutRec *t, int * n_points)
+render_underline(Handle self, int x, int y, GlyphsOutRec *t, int * n_points)
 {
 	dmARGS;
 	int i, base;
@@ -1425,8 +1425,8 @@ render_underline(Handle self, GlyphsOutRec *t, int * n_points)
 	GlyphWrapRec w;
 	SaveFont savefont;
 	Bool ok = true;
-	int x, y, breakout;
-	Bool text_out_baseline, line_is_on;
+	int breakout;
+	Bool line_is_on;
 	NPoint c, *ret;
 	float half_widths[2];
 
@@ -1435,14 +1435,10 @@ render_underline(Handle self, GlyphsOutRec *t, int * n_points)
 	else
 		c.x = c.y = 0;
 
-	text_out_baseline = ( my-> textOutBaseline == Drawable_textOutBaseline) ?
-		apc_gp_get_text_out_baseline(self) :
-		my-> get_textOutBaseline(self);
 
-	x = 0;
-	y = text_out_baseline ? 0 : var->font.descent;
 
 	{
+		Bool text_out_baseline;
 		int ut = (var->font.underlineThickness <= 0) ?
 			1 :
 			var->font.underlineThickness;
@@ -1453,18 +1449,23 @@ render_underline(Handle self, GlyphsOutRec *t, int * n_points)
 		breakout = var->font.descent - up + ut;
 		y -= up;
 
+		text_out_baseline = ( my-> textOutBaseline == Drawable_textOutBaseline) ?
+			apc_gp_get_text_out_baseline(self) :
+			my-> get_textOutBaseline(self);
+		if ( !text_out_baseline )
+			y += var->font.descent;
+
 		for (i = 0; i < 2; i++) {
 			NRect box;
 			int j;
 			j = ( i == 0 ) ? leiArrowTail : leiArrowHead;
 			j   = Drawable_resolve_line_end_index(&var->current_state, j);
 			box = Drawable_line_end_box( &var->current_state, j);
-			half_widths[i] = box.right;
+			half_widths[i] = box.right * ut;
 		}
 
 		half_widths[1] *= -1.0;
 	}
-
 
 	*n_points = 0;
 	dmCHECK(NULL);
@@ -1522,14 +1523,30 @@ render_underline(Handle self, GlyphsOutRec *t, int * n_points)
 		last_abc = abc[o];
 	}
 
+	if ( t->fonts )
+		my->restore_font(self, &savefont);
+	dmLEAVE;
+
+	if ( !ok ) {
+		free(ret);
+		ret = NULL;
+		*n_points = 0;
+	}
+
 	if ((( *n_points ) % 2) == 1 ) {
 		int o = t->glyphs[t->len - 1] & 0xff;
 		ADD_POINT(1)
 	}
 
-	if ( t->fonts )
-		my->restore_font(self, &savefont);
-	dmLEAVE;
+	{
+		NPoint *p = ret;
+		for ( i = 0; i < *n_points; i++, p += 2)
+			if ( p[0].x > p[1].x ) {
+				NPoint s = *p;
+				*p = p[1];
+				p[1] = s;
+			}
+	}
 
 	if ( var-> font. direction != 0) {
 		NPoint *p = ret;
@@ -1540,17 +1557,11 @@ render_underline(Handle self, GlyphsOutRec *t, int * n_points)
 		}
 	}
 
-	if ( !ok ) {
-		free(ret);
-		ret = NULL;
-		*n_points = 0;
-	}
-
 	return ret;
 }
 
 SV *
-Drawable_render_underline(Handle self, SV * glyphs)
+Drawable_render_underline(Handle self, SV * glyphs, int x, int y)
 {
 	AV * av;
 	NPoint *np, *npi;
@@ -1558,11 +1569,19 @@ Drawable_render_underline(Handle self, SV * glyphs)
 	GlyphsOutRec t;
 	if (!Drawable_read_glyphs(&t, glyphs, 0, "Drawable::render_underline"))
 		return NULL_SV;
-	np = render_underline(self, &t, &n_points);
+	np = render_underline(self, x, y, &t, &n_points);
 	av = newAV();
 	for ( i = 0, npi = np; i < n_points; i++, npi++) {
-		av_push(av, newSVnv(npi->x));
-		av_push(av, newSVnv(npi->y));
+		if ( var-> antialias ) {
+			av_push(av, newSVnv(npi->x));
+			av_push(av, newSVnv(npi->y));
+		} else {
+			int z;
+			z = (npi->x > 0) ? (npi->x + .5) : (npi->x - 0.5);
+			av_push(av, newSViv(z));
+			z = (npi->y > 0) ? (npi->y + .5) : (npi->y - 0.5);
+			av_push(av, newSViv(z));
+		}
 	}
 	free(np);
 	return newRV_noinc(( SV *) av);

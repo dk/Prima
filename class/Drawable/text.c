@@ -52,6 +52,9 @@ Drawable_read_glyphs( PGlyphsOutRec t, SV * text, Bool indexes_required, const c
 	AV* av;
 	SV ** holder;
 
+	if ( !SvROK(text) || SvTYPE(SvRV(text)) != SVt_PVAV)
+		return false;
+
 	bzero(t, sizeof(GlyphsOutRec));
 	/* assuming caller checked for SvTYPE( SvRV( text)) == SVt_PVAV */
 

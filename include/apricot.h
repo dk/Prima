@@ -1965,6 +1965,8 @@ DT(QueryLinesDrawn)
 DT(NoWordWrap)
 #define dtWordWrap                 0x00000
 DT(WordWrap)
+#define dtUnderlined               0x08000
+DT(Underlined)
 #define dtDefault                  (dtNewLineBreak|dtWordBreak|dtExpandTabs|dtUseExternalLeading)
 DT(Default)
 

@@ -353,18 +353,9 @@ Drawable_lineEndIndex( Handle self, Bool set, int index, SV *lineEnd)
 	index &= ~leiOnly;
 	if ( index > leiMax )
 		return NULL_SV;
-	/*
-		leDefault is special, depending on the index:
-		0 (line tail) cannot be leDefault, because others may reference it
-		1 (line head) if leDefault, same as 0
-		2 (arrow tail) if leDefault, same as 0
-		3 (arrow head) if leDefault, same as 1, which if is also leDefault, then same as 0
-	*/
 	if (!set) {
-		if ( only ) {
-			while ( index != leiHeadsAndTails && GS.line_end[index].type == leDefault)
-				index = (index == leiArrowHead) ? leiHeads : leiHeadsAndTails;
-		}
+		if ( only )
+			index = Drawable_resolve_line_end_index( &GS, index);
 		return produce_line_end(self, index);
 	} else if ( only && index == leiHeadsAndTails  ) {
 		int i;
@@ -387,27 +378,18 @@ Drawable_lineEndIndex( Handle self, Bool set, int index, SV *lineEnd)
 	return NULL_SV;
 }
 
+/*
+	leDefault is special, depending on the index:
+	0 (line tail) cannot be leDefault, because others may reference it
+	1 (line head) if leDefault, same as 0
+	2 (arrow tail) if leDefault, same as 0
+	3 (arrow head) if leDefault, same as 1, which if is also leDefault, then same as 0
+*/
 int
 Drawable_resolve_line_end_index( DrawablePaintState *gs, int index)
 {
-	int le = gs->line_end[index].type;
-	while ( le == leDefault ) {
-		switch ( index ) {
-		case leiLineTail:
-			le = leRound;
-			break;
-		case leiLineHead:
-		case leiArrowTail:
-			index = leiLineTail;
-			le = gs->line_end[index].type;
-			break;
-		case leiArrowHead:
-			index = leiLineHead;
-			le = gs->line_end[index].type;
-			break;
-		default:;
-		}
-	}
+	while ( index != leiHeadsAndTails && gs->line_end[index].type == leDefault)
+		index = (index == leiArrowHead) ? leiHeads : leiHeadsAndTails;
 	return index;
 }
 

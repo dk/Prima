@@ -163,7 +163,7 @@ sub draw_text
 
 	return 0 if $w <= 0 || $h <= 0;
 
-	my $twFlags = tw::ReturnLines |
+	my $twFlags = tw::ReturnLines | tw::ReturnGlyphs |
 		(( $flags & dt::DrawMnemonic  ) ? ( tw::CalcMnemonic | tw::CollapseTilde) : 0) |
 		(( $flags & dt::DrawSingleChar) ? 0 : tw::BreakSingle ) |
 		(( $flags & dt::NewLineBreak  ) ? tw::NewLineBreak : 0) |
@@ -174,7 +174,8 @@ sub draw_text
 
 	my @lines = @{$canvas-> text_wrap_shape( $string,
 		( $flags & dt::NoWordWrap) ? undef : $w,
-		options => $twFlags, tabs => $tabIndent
+		options => $twFlags, tabs => $tabIndent,
+		(( $flags & dt::Underlined) ? ( skip_if_simple => 0 ) : ()),
 	)};
 
 	my $tildes;
@@ -219,18 +220,30 @@ sub draw_text
 
 	my ( $starty, $align) = ( $y, $flags & 0x3);
 
-	for ( @lines) {
+	my $need_gc;
+	if ( $flags & (dt::DrawMnemonic|dt::Underlined)) {
+		if ( $canvas->graphic_context_push ) {
+			my $lw = $canvas->font->underlineThickness;
+			$lw = 1.0 if $lw < 1.0;
+			$canvas->lineWidth($lw);
+			$need_gc = 1;
+		}
+	}
+
+	for my $l ( @lines) {
 		last unless $linesToDraw--;
 		my $xx;
 		if ( $align == dt::Left) {
 			$xx = $x;
 		} elsif ( $align == dt::Center) {
-			$xx = $x + int(( $w - $canvas-> get_text_width( $_)) / 2);
+			$xx = $x + int(( $w - $canvas-> get_text_width( $l)) / 2);
 		} else {
-			$xx = $x2 - $canvas-> get_text_width( $_);
+			$xx = $x2 - $canvas-> get_text_width( $l);
 		}
 		$y -= $fh;
-		$canvas-> text_out( $_, $xx, $y);
+		$canvas-> text_out( $l, $xx, $y);
+		$canvas-> draw_underline($l, $xx, $y)
+			if $flags & dt::Underlined;
 	}
 
 	if (( $flags & dt::DrawMnemonic) and ( defined $tildes-> {tildeLine})) {
@@ -242,23 +255,39 @@ sub draw_text
 			$xx = $x2 - $canvas-> get_text_width( $lines[ $tl]);
 		}
 		$tl++;
-		my $lw = $canvas->font->height / 20;
-		$lw = 1.0 if $lw < 1.0;
-		if ( $canvas->graphic_context_push ) {
-			$canvas->lineWidth($lw);
-			$canvas->linePattern(lp::Solid);
-			$canvas->lineEnd(le::Square);
-			$canvas-> line(
-				$xx + $tildes-> {tildeStart}, $starty - $fh * $tl,
-				$xx + $tildes-> {tildeEnd}  , $starty - $fh * $tl
-			);
-			$canvas->graphic_context_pop;
-		}
+		$canvas->linePattern(lp::Solid);
+		$canvas->lineEnd(le::Square);
+		$canvas-> line(
+			$xx + $tildes-> {tildeStart}, $starty - $fh * $tl,
+			$xx + $tildes-> {tildeEnd}  , $starty - $fh * $tl
+		);
 	}
+
+	$canvas->graphic_context_pop if $need_gc;
 
 	$canvas-> clipRect( @clipSave) if $flags & dt::UseClip;
 
 	return $retVal;
+}
+
+sub draw_underline
+{
+	my ( $canvas, $string, $x, $y, %opt) = @_;
+
+	$string = $canvas->text_shape($string, %opt, skip_if_simple => 0)
+		unless ref $string;
+
+	my $r = $canvas->render_underline($string, $x, $y);
+	if ( $r ) {
+		$canvas->lines($r);
+	} elsif ( $r = $canvas->get_text_box($string)) {
+		$canvas->line(
+			$r->[2] + $x,
+			$r->[3] + $y,
+			$r->[6] + $x,
+			$r->[7] + $y,
+		);
+	}
 }
 
 sub prelight_color
@@ -512,7 +541,7 @@ sub text_wrap_shape
 		$shaped = $self-> text_shape( $text, %opt );
 	}
 	return $self->text_wrap( $text, $width // -1, $opt & ~tw::ReturnGlyphs, delete($opt{tabs}) // 8) unless $shaped;
-	my $ret    = $self-> text_wrap( $text, $width // -1, $opt, delete($opt{tabs}) // 8, 0, -1, $shaped);
+	my $ret = $self-> text_wrap( $text, $width // -1, $opt, delete($opt{tabs}) // 8, 0, -1, $shaped);
 
 	if (( my $justify = delete $opt{justify} ) && $ret && @$ret ) {
 		if (
