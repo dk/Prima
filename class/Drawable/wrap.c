@@ -16,30 +16,20 @@
 extern "C" {
 #endif
 
-static PFontABC
-find_abc_in_list_cache( PList p, int base )
+static void*
+find_in_cache( PList p, int base )
 {
 	int i;
+	if ( p == NULL )
+		return NULL;
 	for ( i = 0; i < p-> count; i += 2)
 		if (( unsigned int) p-> items[ i] == base)
-			return ( PFontABC) p-> items[i + 1];
-	return NULL;
-}
-
-static int*
-find_descents( Handle self, int base )
-{
-	int i;
-	PList p = var-> font_def_glyphs;
-	if ( !p ) return NULL;
-	for ( i = 0; i < p-> count; i += 2)
-		if (( unsigned int) p-> items[ i] == base)
-			return ( int*) p-> items[i + 1];
+			return ( void*) p-> items[i + 1];
 	return NULL;
 }
 
 static Bool
-fill_abc_list_cache( PList * cache, int base, PFontABC abc)
+fill_cache( PList * cache, int base, void *entry)
 {
 	PList p;
 	if ( *cache == NULL )
@@ -47,19 +37,7 @@ fill_abc_list_cache( PList * cache, int base, PFontABC abc)
 	if (( p = *cache) == NULL)
 		return false;
 	list_add( p, ( Handle) base);
-	list_add( p, ( Handle) abc);
-	return true;
-}
-
-static Bool
-fill_descents_list_cache( Handle self, int base, int *descents)
-{
-	if ( var->font_def_glyphs == NULL )
-		var->font_def_glyphs = plist_create( 8, 8);
-	if ( var->font_def_glyphs == NULL )
-		return false;
-	list_add( var->font_def_glyphs, ( Handle) base);
-	list_add( var->font_def_glyphs, ( Handle) descents);
+	list_add( p, ( Handle) entry);
 	return true;
 }
 
@@ -105,12 +83,6 @@ Drawable_call_get_font_abc( Handle self, unsigned int from, unsigned int to, int
 	}
 
 	return abc;
-}
-
-static PFontABC
-call_get_font_abc_base( Handle self, unsigned int base, int flags)
-{
-	return Drawable_call_get_font_abc( self, base * 256, base * 256 + 255, flags);
 }
 
 int*
@@ -163,26 +135,25 @@ Drawable_call_get_glyph_descents( Handle self, unsigned int from, unsigned int t
 	return descents;
 }
 
-
 static PFontABC
 query_abc_range( Handle self, TextWrapRec * t, unsigned int base)
 {
 	PFontABC abc;
 
 	if ( t-> utf8_text) {
-		if ( 
-			*(t-> unicode) && 
-			(( abc = find_abc_in_list_cache( *(t->unicode), base)) != NULL)
+		if (
+			t->unicode &&
+			(( abc = (PFontABC) find_in_cache( *(t->unicode), base)) != NULL)
 		)
 			return abc;
 	} else if (*( t-> ascii))
 		return *(t-> ascii);
 
-	if ( !( abc = call_get_font_abc_base(self, base, t-> utf8_text ? toUTF8 : 0)))
+	if ( !( abc = Drawable_call_get_font_abc( self, base * 256, base * 256 + 255, t-> utf8_text ? toUTF8 : 0)))
 		return NULL;
 
 	if ( t-> utf8_text) {
-		if ( !fill_abc_list_cache(t->unicode, base, abc)) {
+		if ( !fill_cache(t->unicode, base, abc)) {
 			free( abc);
 			return NULL;
 		}
@@ -218,190 +189,49 @@ precalc_ac_buffer( PFontABC src, PFontABC dest)
 	return true;
 }
 
-static Bool
-fill_font_ranges( Handle self )
-{
-	if ( Drawable_get_font_ranges == my->get_font_ranges ) {
-		dmCHECK(false);
-		if ( !var-> font_abc_glyphs_ranges ) {
-			if ( !( var-> font_abc_glyphs_ranges = apc_gp_get_font_ranges(self, &var->font_abc_glyphs_n_ranges)))
-				return false;
-		}
-	} else {
-		SV * sv;
-		void * array;
-		Bool do_free;
-		sv = my-> get_font_ranges( self);
-		array = prima_read_array( sv, "get_font_ranges", 'i', 1, -1, -1, &var->font_abc_glyphs_n_ranges, &do_free);
-		if ( !array ) {
-			sv_free(sv);
-			return false;
-		}
-		if ( do_free ) {
-			var-> font_abc_glyphs_ranges = array;
-		} else {
-			int size = var->font_abc_glyphs_n_ranges * sizeof(int);
-			if ( !( var-> font_abc_glyphs_ranges = malloc(size))) {
-				warn("Not enough memory");
-				sv_free(sv);
-				return false;
-			}
-			memcpy( var-> font_abc_glyphs_ranges, array, size );
-			free(array);
-		}
-		sv_free(sv);
-	}
-	return true;
-}
+#define FIDGID2BASE(fid,gid) (((fid) << 8) + ((gid) >> 8))
+#define GID2OFFSET(gid)      ((gid) & 0xff)
+#define BASE_FROM(base)      ((base & 0xff) * 256)
+#define BASE_TO(base)        (BASE_FROM(base) + 255)
 
 static PFontABC
-query_abc_range_glyphs( Handle self, GlyphWrapRec * t, unsigned int base, int ** descents)
+query_abc_glyph_range( Handle self, int base)
 {
-	PFontABC abc = NULL;
-	int *descents_ptr;
-	Bool do_abc = true, do_descents = descents != NULL;
+	PFontABC abcs = NULL;
 
-	if ( do_descents ) *descents = NULL;
-
-	if (
-		*(t-> cache) &&
-		(( abc = find_abc_in_list_cache( *(t->cache), base)) != NULL)
-	) {
-		if ( do_descents) {
-			if ((descents_ptr = find_descents( self, base)) != NULL) {
-				*descents = descents_ptr;
-				return abc;
-			} else
-				do_abc = false;
-		} else
-			return abc;
-	} else if ( do_descents && ((descents_ptr = find_descents( self, base)) != NULL)) {
-		*descents = descents_ptr;
-		do_descents = false;
-	}
-
-	if ( do_abc && !( abc = call_get_font_abc_base(self, base, toGlyphs)))
-		return NULL;
-
-	if ( do_descents && !( descents_ptr = Drawable_call_get_glyph_descents( self, base * 256, base * 256 + 255))) {
-		if ( do_abc ) free(abc);
-		*descents = NULL;
-		return NULL;
-	}
-
-	if ( t->fonts) {
-		/* different fonts case */
-		Byte * fa;
-		PassiveFontEntry *pfe;
-		int i;
-		uint32_t from, to;
-		unsigned int page;
-		char * key;
-		SaveFont savefont;
-		Byte used_fonts[MAX_CHARACTERS / 8], filled_entries[256 / 8];
-
-		from = base * 256;
-		to   = from + 255;
-		page = from >> FONTMAPPER_VECTOR_BASE;
-		bzero(used_fonts, sizeof(used_fonts));
-		bzero(filled_entries, sizeof(filled_entries));
-		used_fonts[0] = 0x01; /* fid = 0 */
-		key = Drawable_font_key(var->font.name, var->font.style);
-		i = PTR2IV(hash_fetch(font_substitutions, key, strlen(key)));
-		my->save_font(self, &savefont);
-		if ( i > 0 ) {
-			/* copy ranges from subst table */
-			pfe = PASSIVE_FONT(i);
-			if ( !pfe-> ranges_queried )
-				Drawable_query_ranges(pfe);
-			if ( pfe-> vectors.count <= page ) goto NO_FONT_ABC; /* should be there, or some error */
-			/* page covers the 256 range in whole */
-			fa = (Byte *) pfe-> vectors.items[ page ];
-			if ( fa ) {
-				i = from & FONTMAPPER_VECTOR_MASK;
-				memcpy( filled_entries, fa + i, 256 / 8);
-			}
-		} else {
-			/* query the range and fill the cache */
-			unsigned long * ranges;
-			if ( !fill_font_ranges(self))
-				goto NO_FONT_ABC;
-			ranges = var-> font_abc_glyphs_ranges;
-			for ( i = 0; i < var->font_abc_glyphs_n_ranges; i += 2, ranges += 2 ) {
-				int j;
-				if ( ranges[0] > to || ranges[1] < from )
-					continue;
-				for ( j = ranges[0]; j <= ranges[1]; j++) {
-					if ( j >= from && j <= to )
-						filled_entries[(j - from) >> 3] |= 1 << ((j - from) & 7);
-				}
-			}
+	abcs = (PFontABC) find_in_cache( var->font_abc_glyphs, base);
+	if ( abcs == NULL) {
+		abcs = Drawable_call_get_font_abc( self, BASE_FROM(base), BASE_TO(base), toGlyphs);
+		if ( abcs == NULL)
+			return NULL;
+		if ( !fill_cache(&(var->font_abc_glyphs), base, abcs)) {
+			free(abcs);
+			return NULL;
 		}
-
-		for ( i = 0; i < t->n_glyphs; i++) {
-			PFontABC abc2 = NULL;
-			int *descents2 = NULL;
-			uint16_t fid = t->fonts[i];
-			uint32_t uv;
-			if ( used_fonts[fid >> 3] & ( 1 << (fid & 7)))
-				continue;
-			used_fonts[fid >> 3] |= 1 << (fid & 7);
-
-			pfe = PASSIVE_FONT(fid);
-			if ( !my->switch_font(self, &savefont, fid))
-				continue;
-
-			if ( !pfe-> ranges_queried )
-				Drawable_query_ranges(pfe);
-			if ( pfe-> vectors.count <= page )
-				continue;
-
-			if ( do_abc && !( abc2 = Drawable_call_get_font_abc( self, from, to, toGlyphs)))
-				continue;
-			if ( do_descents && !( descents2 = Drawable_call_get_glyph_descents( self, from, to)))
-				continue;
-
-			fa = (Byte *) pfe-> vectors.items[ page ];
-			if ( !fa ) continue;
-			for ( uv = from; uv <= to; uv++) {
-				unsigned int bit = uv & FONTMAPPER_VECTOR_MASK;
-				if (( fa[bit >> 3] & (1 << (bit & 7))) == 0) continue;
-				if ((filled_entries[(uv - from) >> 3] & (1 << ((uv - from) & 7))) != 0) continue;
-				filled_entries[(uv - from) >> 3] |= 1 << ((uv - from) & 7);
-				if (do_abc)
-					abc[uv - from] = abc2[uv - from];
-				if (do_descents)
-					descents_ptr[uv - from] = descents2[uv - from];
-			}
-
-			if (do_abc)
-				free(abc2);
-			if (do_descents)
-				free(descents2);
-		}
-		my->restore_font( self, &savefont );
-	}
-NO_FONT_ABC:
-
-	if ( do_abc && !fill_abc_list_cache(t->cache, base, abc)) {
-		free( abc);
-		if ( do_descents ) {
-			free(descents_ptr);
-			*descents = NULL;
-		}
-		return NULL;
 	}
 
-	if ( do_descents) {
-		if (!fill_descents_list_cache(self, base, descents_ptr)) {
-			free(descents_ptr);
-			descents_ptr = NULL;
-		}
-		*descents = descents_ptr;
-	}
-
-	return abc;
+	return abcs;
 }
+
+static int*
+query_descent_range( Handle self, int base)
+{
+	int* ret;
+
+	ret = (int*) find_in_cache( var->glyph_descents, base);
+	if ( ret == NULL) {
+		ret = Drawable_call_get_glyph_descents( self, BASE_FROM(base), BASE_TO(base));
+		if ( ret == NULL)
+			return NULL;
+		if ( !fill_cache(&(var->glyph_descents), base, ret)) {
+			free(ret);
+			return NULL;
+		}
+	}
+
+	return ret;
+}
+
 
 static int
 find_tilde_position( TextWrapRec * t )
@@ -650,6 +480,7 @@ textout2sv(Handle self, int * c, TextWrapRec * t)
 }
 
 typedef struct {
+	uint16_t fid;
 	int * storage;
 	unsigned int bufsize, base, options;
 	int width, limit, utf8_limit;
@@ -756,13 +587,15 @@ wrap_add_entry( WrapRec * w, TextWrapRec * tw, GlyphWrapRec * gw, int end, int u
 	w.curr.utf8_p += utflen
 
 static Bool
-wrap_load_glyphs_abc(uint32_t uv, WrapRec * w, Handle self, GlyphWrapRec *g)
+wrap_load_glyphs_abc(Handle self, uint16_t fid, uint16_t gid, WrapRec * w, GlyphWrapRec *g)
 {
 	PFontABC labc;
-	if ( uv / 256 == w-> base)
+	int base = FIDGID2BASE(fid,gid);
+	if ( base == w-> base)
 		return true;
-	w-> base = uv / 256;
-	if ( !(labc = query_abc_range_glyphs( self, g, w->base, NULL)))
+	my->switch_font( self, &g->savefont, fid);
+	w-> base = base;
+	if ( !(labc = query_abc_glyph_range( self, w->base)))
 		return false;
 	if ( g-> advances )
 		precalc_ac_buffer(labc, w->abcs);
@@ -813,7 +646,6 @@ glyph_init_wrap_rec( Handle self, int width, int options, int offset, GlyphsOutR
 	t->width     = width;
 	t->text_len  = g->text_len;
 	t->options   = options;
-	t->cache     = &var-> font_abc_glyphs;
 	t->count     = 0;
 }
 
@@ -991,8 +823,8 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * tw, GlyphWrapRec * gw, uint16_
 	if ( !wrap_add_entry( &wr, tw, gw, wr.curr.ptr, wr.curr.utf8_##ptr))  \
 		return wr.storage
 
-#define LOAD_ABC(x) \
-	if ( !wrap_load_glyphs_abc(x, &wr, self, gw)) \
+#define LOAD_ABC(fid,gid) \
+	if ( !wrap_load_glyphs_abc(self, fid, gid, &wr, gw)) \
 		return wr.storage
 
 #define RETURN_EMPTY if (1) {             \
@@ -1005,7 +837,7 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * tw, GlyphWrapRec * gw, uint16_
 		float dw, c;
 		unsigned int j, nc, ng, wmul = 1;
 		unsigned int len = 1;
-		uint32_t uv, uv0, last_uv = 0;
+		uint32_t uv, uv0, last_uv = 0, last_fid = 0;
 		uint16_t index;
 
 		wr.prev = wr.curr;
@@ -1112,10 +944,11 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * tw, GlyphWrapRec * gw, uint16_
 		if ( gw ) {
 			for ( j = 0, uv = uv0 = 0; j < ng; j++) {
 				last_uv = uv;
+				if ( gw->fonts ) last_fid = gw->fonts[index + j];
 				uv = gw->glyphs[index + j];
 				if ( j == 0 ) uv0 = uv;
 				if (!gw-> advances || reassign_w) /* do not query ABC unnecessarily if advances are there */
-					LOAD_ABC(last_uv);
+					LOAD_ABC(last_fid, last_uv);
 				dw += (gw->advances ? gw->advances[index + j] : wr.widths[uv & 0xff]) * wmul;
 				if ( j == nc - 1 && !gw-> advances)
 					c = wr.abcs[uv & 0xff].c;
@@ -1171,7 +1004,7 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * tw, GlyphWrapRec * gw, uint16_
 			The effect can be seen when selecting with mouse chinese text in podview in Prima/Drawable/Glyphs -
 			when each glyph is queried, it might take several seconds for each redraw.
 			*/
-			LOAD_ABC(last_uv);
+			LOAD_ABC(last_fid, last_uv);
 			if ( w + wr.abcs[last_uv & 0xff].c > wr.width ) /* ... and it is */
 				wr.curr = wr.prev;
 		}
@@ -1295,7 +1128,9 @@ glyphs_wrap( Handle self, SV * text, int width, int options, int from, int len)
 		warn("Drawable::text_wrap(glyphs) does not accept tw::ExpandTabs,tw::CollapseTilde,tw::CalcMnemonic,tw::CalcTabs,tw::WordBreak");
 
 	dmENTER(NULL_SV);
+	my->save_font(self, &t.savefont);
 	c = my->do_text_wrap( self, NULL, &t, NULL);
+	my->restore_font(self, &t.savefont);
 	dmLEAVE;
 
 	if (( t. options & twReturnFirstLineLength) == twReturnFirstLineLength)
@@ -1360,7 +1195,9 @@ string_glyphs_wrap( Handle self, SV * text, int width, int options, int tabInden
 		}
 	}
 
+	my->save_font(self, &gw.savefont);
 	c = my->do_text_wrap( self, &tw, &gw, log2vis + from);
+	my->restore_font(self, &gw.savefont);
 	dmLEAVE;
 	tw.t_pos += from;
 
@@ -1422,20 +1259,17 @@ render_underline(Handle self, int x, int y, GlyphsOutRec *t, int * n_points)
 	int i, base;
 	FontABC *abc = NULL, last_abc = {0,0,0};
 	int *descents = NULL;
-	GlyphWrapRec w;
-	SaveFont savefont;
 	Bool ok = true;
 	int breakout;
 	Bool line_is_on;
 	NPoint c, *ret;
 	float half_widths[2];
+	SaveFont savefont;
 
 	if ( var-> font. direction != 0)
 		c = my->trig_cache(self);
 	else
 		c.x = c.y = 0;
-
-
 
 	{
 		Bool text_out_baseline;
@@ -1475,14 +1309,8 @@ render_underline(Handle self, int x, int y, GlyphsOutRec *t, int * n_points)
 		return NULL;
 	}
 
-	if ( t->fonts ) {
-		my->save_font(self, &savefont);
-		my->switch_font( self, &savefont, t->fonts[0]);
-	}
-
 	line_is_on = false;
-	base = 257;
-	glyph_init_wrap_rec( self, 0, 0, 0, t, &w);
+	base = -1;
 
 #define ADD_POINT(hw) {                                        \
 	float xx = x;                                          \
@@ -1494,11 +1322,17 @@ render_underline(Handle self, int x, int y, GlyphsOutRec *t, int * n_points)
 	ret[ (*n_points)++].y = y;                             \
 }
 
+	if ( t-> fonts )
+		my->save_font(self, &savefont);
 	for ( i = 0; i < t->len; i++) {
-		int o = t->glyphs[i] & 0xff;
-		if ( base != (t->glyphs[i] >> 8)) {
-			base = t->glyphs[i] >> 8;
-			abc = query_abc_range_glyphs( self, &w, base, &descents);
+		int o = GID2OFFSET(t->glyphs[i]);
+		int b = FIDGID2BASE(t->fonts ? t->fonts[i] : 0, t->glyphs[i]);
+		if ( base != b) {
+			base = b;
+			if ( t->fonts )
+				my-> switch_font(self, &savefont, t->fonts[i]);
+			abc      = query_abc_glyph_range( self, base);
+			descents = query_descent_range  ( self, base);
 			if (abc == NULL || descents == NULL) {
 				ok = false;
 				break;
@@ -1521,8 +1355,7 @@ render_underline(Handle self, int x, int y, GlyphsOutRec *t, int * n_points)
 		x += abc[o].a + abc[o].b + abc[o].c;
 		last_abc = abc[o];
 	}
-
-	if ( t->fonts )
+	if ( t-> fonts )
 		my->restore_font(self, &savefont);
 	dmLEAVE;
 

@@ -3845,6 +3845,12 @@ typedef struct _TextWrapRec {
 } TextWrapRec, *PTextWrapRec;
 
 typedef struct {
+	Font     font;
+	Bool     restore;
+	uint16_t last_fid;
+} SaveFont;
+
+typedef struct {
 	uint16_t * glyphs;   /* glyphset to be wrapped */
 	uint16_t * indexes;  /* for visual ordering; also, won't break within a cluster */
 	uint16_t * advances;
@@ -3856,14 +3862,8 @@ typedef struct {
 	int        width;    /* width to wrap with */
 	int        options;  /* twXXX constants */
 	int        count;    /* count of lines returned */
-	PList    * cache;
+	SaveFont   savefont;
 } GlyphWrapRec;
-
-typedef struct {
-	Font     font;
-	Bool     restore;
-	uint16_t last_fid;
-} SaveFont;
 
 /* regions */
 
