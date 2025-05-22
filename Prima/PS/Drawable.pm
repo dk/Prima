@@ -172,7 +172,7 @@ sub fillPatternOffset
 sub lineTail  { shift->line_properties( lineTail  => @_ ); }
 sub lineHead  { shift->line_properties( lineHead  => @_ ); }
 sub arrowTail { shift->line_properties( arrowTail => @_ ); }
-sub arrowHead { shift->line_properties( arrewHead => @_ ); }
+sub arrowHead { shift->line_properties( arrowHead => @_ ); }
 
 sub update_custom_line
 {
@@ -495,8 +495,10 @@ sub set_font
 	%$font = ( %$f1000, direction => $font->{direction} );
 	# When querying glyph extensions, remember to scale to the
 	# difference between PS and Prima models, ie without and with the internal leading
-	$font->{$_}   = int( $f1000->{$_} * $self->{font_scale} + .5)
-		for qw(ascent height internalLeading externalLeading width maximalWidth);
+	$font->{$_}   = int( $f1000->{$_} * $self->{font_scale} + .5) for qw(
+		ascent height internalLeading externalLeading width maximalWidth
+		underlineThickness underlinePosition
+	);
 	$font->{size} = int( $f1000->{size} * $ratio + .5);
 	$font->{descent}    = $font->{height} - $font->{ascent};
 
@@ -666,6 +668,22 @@ sub text_shape
 }
 
 sub render_glyph {}
+
+sub render_underline
+{
+	my ( $self, $text, $x, $y ) = @_;
+	$x //= 0;
+	$y //= 0;
+	my $canvas = $self-> glyph_canvas;
+	$canvas->set( map { $_ => $self->$_() } qw(
+		antialias textOutBaseline lineEnd
+	));
+	my $scale = $self->{font_scale} * $self->{font_x_scale};
+	my $ret   = $canvas->render_underline($text, $x, $y);
+	$_ *= $scale for @$ret;
+	$canvas->textOutBaseline(1);
+	return $ret;
+}
 
 # primitive emulation
 
