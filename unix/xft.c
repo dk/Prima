@@ -491,10 +491,6 @@ prima_xft_match( Font *font, Matrix matrix, Bool by_size, PCachedFont cf)
 			XFTdebug("set height: %d", font->height);
 		}
 		font-> maximalWidth = xf-> max_advance_width;
-		/* XXX FT_Face reports very strange values */
-		font->underlinePosition  = -xf-> descent;
-		font->underlineThickness = (font->height > 16) ? font->height / 16 : 1;
-
 		{
 			FT_Face f;
 			if ( ( f = XftLockFace(xf)) != NULL) {

@@ -114,9 +114,6 @@ fill_synthetic_fields( FT_Face f, PFont font, Bool by_size)
 	prima_ft_detail_tt_font( f, font, mul );
 
 	font->xDeviceRes      = font->yDeviceRes = 72;
-	/* XXX FT_Face reports very strange values */
-	font->underlinePosition  = -font-> descent;
-	font->underlineThickness = (font->height > 16) ? font->height / 16 : 1;
 }
 
 void
@@ -424,9 +421,9 @@ prima_fq_get_font_def( Handle self, int firstChar, int lastChar, int flags)
 		if ( FT_Load_Glyph( ft_face, ft_index, FT_LOAD_IGNORE_TRANSFORM | FT_LOAD_NO_BITMAP))
 			continue;
 		g = ft_face->glyph;
-		abc[i].a = X(self)->font->font.descent - FT266_to_short(g->metrics.height) + g->bitmap_top;
+		abc[i].a = PDrawable(self)->font.descent - FT266_to_short(g->metrics.height) + g->bitmap_top;
 		abc[i].b = FT266_to_short(g->metrics.height);
-		abc[i].c = X(self)->font->font.ascent - g->bitmap_top;
+		abc[i].c = PDrawable(self)->font.ascent - g->bitmap_top;
 	}
 
 	return abc;

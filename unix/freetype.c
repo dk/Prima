@@ -422,6 +422,14 @@ prima_ft_detail_tt_font( FT_Face face, PFont font, float mul)
 	}
 	if ( font->width <= 0 )
 		font->width = 1;
+
+	if ( face->underline_position != 0 && face->underline_position != 0) {
+		font->underlinePosition  = -face->underline_position * mul + .5;
+		font->underlineThickness = face->underline_thickness * mul + .5;
+	} else {
+		font->underlinePosition  = -font-> descent;
+		font->underlineThickness = (font->height > 16) ? font->height / 16 : 1;
+	}
 }
 
 Bool
