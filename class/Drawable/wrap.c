@@ -1518,8 +1518,7 @@ render_underline(Handle self, int x, int y, GlyphsOutRec *t, int * n_points)
 				line_is_on = false;
 			}
 		}
-
-		x += t->advances ? t->advances[i] : (abc[o].a + abc[o].b + abc[o].c);
+		x += abc[o].a + abc[o].b + abc[o].c;
 		last_abc = abc[o];
 	}
 
