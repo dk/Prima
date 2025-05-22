@@ -86,8 +86,8 @@ sub pixel2point
 	my @res;
 	for ( $i = 0; $i < scalar @_; $i+=2) {
 		my ( $x, $y) = @_[$i,$i+1];
-		push @res, int( $x * 7227 / $self-> {resolution}-> [0] + 0.5) / 100;
-		push @res, int( $y * 7227 / $self-> {resolution}-> [1] + 0.5) / 100 if defined $y;
+		push @res, $x * 72.0 / $self-> {resolution}-> [0];
+		push @res, $y * 72.0 / $self-> {resolution}-> [1] if defined $y;
 	}
 	return @res;
 }
