@@ -1339,7 +1339,7 @@ render_underline(Handle self, int x, int y, GlyphsOutRec *t, int * n_points)
 			}
 		}
 
-		if ( descents[o] > breakout ) {
+		if ( descents[o] >= breakout ) {
 			if ( !line_is_on ) {
 				/* start the line */
 				ADD_POINT(0)

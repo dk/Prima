@@ -57,6 +57,7 @@ options:
        --lang=default
        --pitch=default|variable|fixed
        --ascii           poor man's block characters
+       --underline       use render_underline
 
 USAGE
 	exit 1;
@@ -67,6 +68,7 @@ GetOptions(\%opt,
 	"direction=i",
 	"ascii",
 	"box",
+	"underline",
 	"polyfont=i",
 	"rtl=s",
 	"lang=s",
@@ -155,6 +157,7 @@ $i->backColor(0xffffff) if $opt{box};
 $i->clear;
 $i->backColor(0x0) if $opt{box};
 $i->text_out($text, -$xmin, -$ymin);
+$i->draw_underline($text, -$xmin, -$ymin) if $opt{underline};
 $i->type(im::Byte);
 my ($w,$h) = $i->size;
 
