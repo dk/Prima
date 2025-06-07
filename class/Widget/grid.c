@@ -1977,9 +1977,13 @@ parse_pad_amount(SV *src, int *i1, int *i2)
 {
 	if (SvOK(src) && SvROK(src) && SvTYPE(SvRV(src)) == SVt_PVAV) {
 		int *p = prima_read_array(src, METHOD, 'i', 1, 2, 2, NULL, NULL);
-		*i1 = p[0];
-		*i2 = p[0] + p[1];
-		free(p);
+		if ( p ) {
+			*i1 = p[0];
+			*i2 = p[0] + p[1];
+			free(p);
+		} else {
+			*i1 = *i2 = 0;
+		}
 	} else {
 		*i1 = SvIV(src);
 		*i2 = *i1 * 2;
