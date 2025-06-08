@@ -107,7 +107,7 @@ sub reverse
 
 	if ( my $advances = $self->[ADVANCES] ) {
 		push @svs, Prima::array->new('S');
-		push @{ $svs[-1] }, reverse @{ $self->[ADVANCES] };
+		push @{ $svs[-1] }, reverse @$advances;
 
 		push @svs, Prima::array->new('s');
 		my $positions = $self->[POSITIONS];
@@ -118,9 +118,9 @@ sub reverse
 		push @svs, undef, undef;
 	}
 
-	if ( my $advances = $self->[FONTS] ) {
+	if ( my $fonts = $self->[FONTS] ) {
 		push @svs, Prima::array->new('S');
-		push @{ $svs[-1] }, reverse @{ $self->[FONTS] };
+		push @{ $svs[-1] }, reverse @$fonts;
 	} else {
 		push @svs, undef;
 	}

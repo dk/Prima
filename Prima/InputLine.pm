@@ -960,7 +960,7 @@ sub set_first_char
 		( $self-> {alignment} != ta::Left) &&
 		( $self-> {glyphs}-> get_width($self) <= $self-> width - $self-> {borderWidth} * 2 - 2);
 	my $ofc = $self-> {firstChar};
-	if ( $pos > 0 && $self-> textDirection ) {
+	if ( $pos > 0 ) {
 		my $back = $self-> fit_clusters_back;
 		$pos = $self->{n_clusters} - $back if $back + $pos > $self->{n_clusters};
 	}
