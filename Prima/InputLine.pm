@@ -296,33 +296,27 @@ sub find_word_offset
 {
 	my ( $self, $offset, $right, $caplen, $delta) = @_;
 
-	my $orgd = $delta;
-	if ( $offset + $delta > 0 && $offset + $delta < $caplen)
-	{
-		my $w = $self-> {wordDelimiters};
-		if ( $right )
-		{
-			if ($w !~ quotemeta($self->char_at($offset)))
-			{
-				$delta++ while (($w !~ quotemeta( $self->char_at( $offset + $delta) // '')) &&
-					( $offset + $delta < $caplen));
-			}
-			if ( $offset + $delta < $caplen)
-			{
-				$delta++ while (( $w =~ quotemeta( $self->char_at( $offset + $delta) // '')) &&
-					( $offset + $delta < $caplen));
-			}
-		} else {
-			if ( $w =~ quotemeta( $self->char_at( $offset - 1)))
-			{
-				$delta-- while (( $w =~ quotemeta( $self->char_at( $offset + $delta - 1) // '')) &&
-					( $offset + $delta > 0));
-			}
-			if ( $offset + $delta > 0)
-			{
-				$delta-- while (( $w !~ quotemeta( $self->char_at( $offset + $delta - 1) // '')) &&
-					( $offset + $delta > 0));
-			}
+	return $delta unless $offset + $delta > 0 && $offset + $delta < $caplen;
+
+	my $w = $self-> {wordDelimiters};
+
+	if ( $right ) {
+		if ($w !~ quotemeta($self->char_at($offset))) {
+			$delta++ while (($w !~ quotemeta( $self->char_at( $offset + $delta) // '')) &&
+				( $offset + $delta < $caplen));
+		}
+		if ( $offset + $delta < $caplen) {
+			$delta++ while (( $w =~ quotemeta( $self->char_at( $offset + $delta) // '')) &&
+				( $offset + $delta < $caplen));
+		}
+	} else {
+		if ( $w =~ quotemeta( $self->char_at( $offset - 1))) {
+			$delta-- while (( $w =~ quotemeta( $self->char_at( $offset + $delta - 1) // '')) &&
+				( $offset + $delta > 0));
+		}
+		if ( $offset + $delta > 0) {
+			$delta-- while (( $w !~ quotemeta( $self->char_at( $offset + $delta - 1) // '')) &&
+				( $offset + $delta > 0));
 		}
 	}
 
@@ -720,6 +714,26 @@ sub on_mousedown
 	}
 }
 
+sub find_word_selection_offset
+{
+	my ( $self, $offset, $right) = @_;
+
+	my $caplen = $self-> {n_clusters};
+	my ($delta, $incr, $shift) = $right ? (1,1,0) : (0,-1,1);
+	return $delta if $offset + $delta < 0 || $offset + $delta >= $caplen;
+
+	my $w = $self-> {wordDelimiters};
+	my $match = ($w =~ quotemeta($self->char_at($offset))) ? 1 : 0;
+	while ( 1 ) {
+		my $at = $offset + $delta - $shift;
+		last if $at < 0 || $at >= $caplen;
+		my $next = ($w =~ quotemeta($self->char_at($at))) ? 1 : 0;
+		last if $next != $match;
+		$delta += $incr;
+	}
+	return $delta;
+}
+
 sub on_mouseclick
 {
 	my ( $self, $btn, $mod, $x, $y, $nth) = @_;
@@ -732,9 +746,8 @@ sub on_mouseclick
 	return $self-> select_all if $nth == 3;
 
 	my $offset = $self-> x2offset( $x);
-	my $caplen = $self-> {n_clusters};
-	my $l      = $self->find_word_offset($offset, 0, $caplen, -1);
-	my $r      = $self->find_word_offset($offset, 1, $caplen, 1);
+	my $l      = $self->find_word_selection_offset($offset, 0);
+	my $r      = $self->find_word_selection_offset($offset, 1);
 	$self-> selection( $offset + $l, $offset + $r );
 }
 
