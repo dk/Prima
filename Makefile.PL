@@ -1416,6 +1416,10 @@ sub pkgconfig
 		push @LIBPATH, $_ unless $h{$_};
 	}
 
+	my $other = `$PKGCONFIG --libs-only-other $package`;
+	chomp $other;
+	$LDFLAGS .= " $other" if length $other;
+
 	return 1;
 }
 
@@ -1493,6 +1497,7 @@ sub setup_X11
 	}
 	my $incpath = find_header( "X11/Xlib.h",
 		"/usr/X11R6/include",
+		"/usr/X11R7/include",
 		"/usr/X11/include",
 		"/usr/X/include",
 		"/usr/openwin/include",
@@ -1519,6 +1524,7 @@ sub setup_X11
 	my @libpath = ( "X11", '',
 		(defined($cmd_options{X11BASE}) ? "$cmd_options{X11BASE}/lib" : ()),
 		"/usr/X11R6/lib",
+		"/usr/X11R7/lib",
 		"/usr/X11/lib",
 		"/usr/X/lib",
 		"/usr/openwin/lib",

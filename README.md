@@ -39,8 +39,14 @@ FreeBSD
 -------
 
   pkg install gtk3 fribidi harfbuzz libxpm libthai pkgconf tiff webp \
-	giflib libheif freetype2 libheif Xrandr libXcomposite libXcursor \
+	giflib freetype2 libheif Xrandr libXcomposite libXcursor \
 	libXft fontconfig
+
+NetBSD
+------
+
+  pkgin install harfbuzz freetype2 png libthai jpeg tiff libheif libXft libXcursor
+	giflib pkg-config fribidi libjxl libwebp
 
 OpenSUSE
 --------
