@@ -847,7 +847,7 @@ extern UnixGuts  guts;
 extern UnixGuts* pguts;
 
 #define XCHECKPOINT						\
-	{							\
+	if ( DISP ) {							\
 		pguts-> ri[ pguts-> ri_head]. line = __LINE__;			\
 		pguts-> ri[ pguts-> ri_head]. file = __FILE__;			\
 		pguts-> ri[ pguts-> ri_head]. request = NextRequest(DISP);	\
