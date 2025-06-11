@@ -724,6 +724,66 @@ sub fill
 	return $ok;
 }
 
+sub fill_gradient
+{
+	my ( $self, %opt ) = @_;
+	return unless my $c = $self->{canvas};
+
+	my ($method, @xopt);
+	my $filler = delete $opt{type} // 'horizontal';
+	if ( $filler eq 'horizontal') {
+		$method = 'bar';
+		push @xopt, 0;
+	} elsif ( $filler eq 'vertical') {
+		$method = 'bar';
+		push @xopt, 1;
+	} elsif ( $filler eq 'circular') {
+		$method = 'ellipse';
+	} elsif ( $filler eq 'radial') {
+		$method = 'sector';
+	} else {
+		Carp::carp("unknown filler type: $filler");
+		return;
+	}
+
+	my $fm       = delete $opt{fill} // (fm::Winding | fm::Overlay);
+	my $gradient = $c->new_gradient(%opt);
+
+	$c->graphic_context( sub {
+		my $m = $c->get_matrix;
+		my $rgn = $c->region;
+		$c->antialias(0);
+		for my $p ( $self->points ) {
+			next if 4 > @$p;
+			$p = $c->render_polyline($p, matrix => $m, integer => 1);
+			my $r = Prima::Region->new( polygon => $p, fillMode => $fm);
+			$rgn ? $rgn->combine($r, rgnop::Union) : ($rgn = $r);
+		}
+		$c->region( $rgn );
+		$c->matrix->identity;
+
+		if ( $method eq 'bar') {
+			$gradient->bar( $rgn->rect, @xopt );
+		} elsif ( $method eq 'ellipse') {
+			my @box = $rgn->box;
+			my $d = int(sqrt( $box[2]*$box[2] + $box[3]*$box[3] ) + .5);
+			$gradient->ellipse(
+				$box[0] + $box[2] / 2,
+				$box[1] + $box[3] / 2,
+				$d, $d
+			);
+		} elsif ( $method eq 'sector') {
+			my @box = $rgn->box;
+			my $d = int(sqrt( $box[2]*$box[2] + $box[3]*$box[3] ) + .5);
+			$gradient->sector(
+				$box[0] + $box[2] / 2,
+				$box[1] + $box[3] / 2,
+				$d, $d, 0, 360
+			);
+		}
+	} );
+}
+
 sub fill_stroke
 {
 	my ( $self, $fillMode ) = @_;
@@ -1631,6 +1691,26 @@ Returns the current transform matrix (CTM) after running all commands
 
 Paints a filled shape over the path. If C<fillMode> is set, it is used instead of the one
 selected on the canvas.
+
+=item fill_gradient %OPTIONS
+
+Applies the path as a region, then calls a gradient filler on it.
+
+Recognizes the following options:
+
+=over
+
+=item type = horizontal
+
+One of: vertical, horizontal, circular, radial
+
+=item fill = fm::Overlay | fm::Winding
+
+The fillMode, if any
+
+=back
+
+Other options are passed as is to the C<new_gradient> method; see L<Prima::Drawable::Gradient> for their description
 
 =item fill_stroke fillMode=undef
 

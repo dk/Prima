@@ -262,8 +262,8 @@ sub draw_weapon
 	$canvas->graphic_context( sub {
 		$canvas->antialias(1);
 		$canvas->matrix->scale( $scale )->translate( $left, $top );
-		$canvas->color((0xcccccc & $shade) | 0x222222);
-		$canvas->new_path->spline([90, 0, 40, 80, 0, 190])->spline([0, 200, 50, 90, 100, 0])->fill;
+		$canvas->new_path->spline([90, 0, 40, 80, 0, 190])->spline([0, 200, 50, 90, 100, 0])->
+			fill_gradient( palette => [0,$shade], filler => 'vertical' );
 		$canvas->color((0x444444 & $shade) | 0x222222);
 		$canvas->new_path->spline([100, 0, 50, 90, 0, 200])->spline([5, 190, 55, 90, 105, 0])->fill;
 	});
