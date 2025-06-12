@@ -755,8 +755,7 @@ sub fill_gradient
 		$c->antialias(0);
 		for my $p ( $self->points ) {
 			next if 4 > @$p;
-			$p = $c->render_polyline($p, matrix => $m, integer => 1);
-			my $r = Prima::Region->new( polygon => $p, fillMode => $fm);
+			my $r = Prima::Region->new( polygon => $p, fillMode => $fm, matrix => $m);
 			$rgn ? $rgn->combine($r, rgnop::Union) : ($rgn = $r);
 		}
 		$c->region( $rgn );

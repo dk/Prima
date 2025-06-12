@@ -44,7 +44,7 @@ rgn_rect( HV * profile, Bool is_box, unsigned int * n_boxes )
 }
 
 static PRegionRec
-rgn_polygon( HV * profile )
+rgn_polygon( HV * profile, double * matrix )
 {
 	dPROFILE;
 	Bool do_free;
@@ -52,12 +52,30 @@ rgn_polygon( HV * profile )
 	PRegionRec rgn;
 	Point *points;
 
-	if (( points = (Point*) prima_read_array(
-		pget_sv(polygon), "Region::polygon", 'i',
-		2, 2, -1,
-		&count, &do_free)
-	) == NULL)
-		return NULL;
+	if ( matrix ) {
+		NPoint *npoints;
+		if (( npoints = (NPoint*) prima_read_array(
+			pget_sv(polygon), "Region::polygon", 'd',
+			2, 2, -1,
+			&count, &do_free)
+		) == NULL)
+			return NULL;
+
+		if ( (points = malloc( count * sizeof(Point))) == NULL ) {
+			if ( do_free ) free( npoints );
+			return NULL;
+		}
+		prima_matrix_apply2_to_int( matrix, npoints, points, count );
+		if ( do_free ) free( npoints );
+		do_free = true;
+	} else {
+		if (( points = (Point*) prima_read_array(
+			pget_sv(polygon), "Region::polygon", 'i',
+			2, 2, -1,
+			&count, &do_free)
+		) == NULL)
+			return NULL;
+	}
 
 	fill_mode = pexist(fillMode) ? pget_i(fillMode) : (fmOverlay | fmWinding);
 
@@ -96,10 +114,18 @@ rgn_image( HV * profile )
 void
 Region_init( Handle self, HV * profile)
 {
+	dPROFILE;
 	Bool ok;
 	RegionRec r, *pr = &r;
+	double *matrix = NULL;
 
 	inherited-> init( self, profile);
+
+	if ( pexist(matrix))
+		matrix = (double*) prima_read_array(
+			pget_sv(matrix),
+			"Region.create.matrix", 'd', 1, 6, 6, NULL, NULL
+		);
 
 	r.flags = 0;
 	if ( pexist(rect)) {
@@ -107,12 +133,21 @@ Region_init( Handle self, HV * profile)
 	} else if (pexist(box)) {
 		r.boxes = rgn_rect(profile, 1, &r.n_boxes);
 	} else if (pexist(polygon)) {
-		pr = rgn_polygon(profile);
+		pr = rgn_polygon(profile, matrix);
+		if ( matrix ) {
+			free(matrix);
+			matrix = NULL;
+		}
 	} else if (pexist(image)) {
 		pr = rgn_image(profile);
 	} else {
 		r.n_boxes = 0;
 		r.boxes   = NULL;
+	}
+
+	if ( matrix ) {
+		prima_matrix_apply2_int_to_int( matrix, (Point*) pr->boxes, (Point*) pr->boxes, pr->n_boxes * 2);
+		free(matrix);
 	}
 
 	ok = apc_region_create(self, pr);

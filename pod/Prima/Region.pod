@@ -53,6 +53,12 @@ the optional fillMode ( see L<Drawable/fillMode> ).
 Creates a region from a 1-bit image. If the image contains no pixels that are
 set to 1, the resulting region is created as an empty region.
 
+=item matrix => [A,B,C,D,X,Y]
+
+Applies the matrix to the input.
+Since the regions are not subject to transformations applied via C<Drawable.region>, this
+helper option can be useful for generic transformations.
+
 =back
 
 =item bitmap with_offset => 0, type => dbt::Bitmap
