@@ -750,21 +750,17 @@ sub fill_gradient
 	my $gradient = $c->new_gradient(%opt);
 
 	$c->graphic_context( sub {
-		my $m = $c->get_matrix;
-		my $rgn = $c->region;
-		$c->antialias(0);
-		for my $p ( $self->points ) {
-			next if 4 > @$p;
-			my $r = Prima::Region->new( polygon => $p, fillMode => $fm, matrix => $m);
-			$rgn ? $rgn->combine($r, rgnop::Union) : ($rgn = $r);
-		}
-		$c->region( $rgn );
+		my $m    = $c->get_matrix;
+		my $rgn1 = $c->region;
+		my $rgn2 = Prima::Region->new( polygons => scalar($self->points), fillMode => $fm, matrix => $m);
+		$c->region( $rgn1 ? $rgn1->combine( $rgn2, rgnop::Union ) : $rgn2 );
 		$c->matrix->identity;
 
+		$c->antialias(0);
 		if ( $method eq 'bar') {
-			$gradient->bar( $rgn->rect, @xopt );
+			$gradient->bar( $rgn2->rect, @xopt );
 		} elsif ( $method eq 'ellipse') {
-			my @box = $rgn->box;
+			my @box = $rgn2->box;
 			my $d = int(sqrt( $box[2]*$box[2] + $box[3]*$box[3] ) + .5);
 			$gradient->ellipse(
 				$box[0] + $box[2] / 2,
@@ -772,7 +768,7 @@ sub fill_gradient
 				$d, $d
 			);
 		} elsif ( $method eq 'sector') {
-			my @box = $rgn->box;
+			my @box = $rgn2->box;
 			my $d = int(sqrt( $box[2]*$box[2] + $box[3]*$box[3] ) + .5);
 			$gradient->sector(
 				$box[0] + $box[2] / 2,
@@ -1440,13 +1436,9 @@ sub clip
 
 sub region
 {
-	my ($self, $mode, $rgnop) = @_;
-	my $reg;
+	my ($self, $mode) = @_;
 	$mode //= fm::Winding | fm::Overlay;
-	$rgnop //= rgnop::Union;
-	$reg ? $reg->combine($_, $rgnop) : ($reg = $_)
-		for map { Prima::Region->new( polygon => $_, fillMode => $mode) } $self->points;
-	return $reg // Prima::Region->new;
+	return Prima::Region->new( polygons => scalar($self->points), fillMode => $mode);
 }
 
 sub _debug_commands
@@ -1730,11 +1722,10 @@ points used to render the lines.
 Runs all accumulated commands, returns rendered set of points suitable
 for the C<Prima::Drawable::polyline> and C<Prima::Drawable::fillpoly> methods.
 
-=item region MODE=fm::Winding|fm::Overlay, RGNOP=rgnop::Union
+=item region MODE=fm::Winding|fm::Overlay
 
 Creates a region object from the path. If MODE is set, applies fill mode (see
-L<Prima::Drawable/fillMode> for more); if RGNOP is set, applies region set
-operation (see L<Prima::Region/combine>).
+L<Prima::Drawable/fillMode> for more)
 
 =item stroke
 

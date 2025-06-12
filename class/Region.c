@@ -44,18 +44,17 @@ rgn_rect( HV * profile, Bool is_box, unsigned int * n_boxes )
 }
 
 static PRegionRec
-rgn_polygon( HV * profile, double * matrix )
+rgn_polygon( SV * polygon, int fill_mode, double * matrix )
 {
-	dPROFILE;
 	Bool do_free;
-	int count, fill_mode;
+	int count;
 	PRegionRec rgn;
 	Point *points;
 
 	if ( matrix ) {
 		NPoint *npoints;
 		if (( npoints = (NPoint*) prima_read_array(
-			pget_sv(polygon), "Region::polygon", 'd',
+			polygon, "Region::polygon", 'd',
 			2, 2, -1,
 			&count, &do_free)
 		) == NULL)
@@ -70,19 +69,52 @@ rgn_polygon( HV * profile, double * matrix )
 		do_free = true;
 	} else {
 		if (( points = (Point*) prima_read_array(
-			pget_sv(polygon), "Region::polygon", 'i',
+			polygon, "Region::polygon", 'i',
 			2, 2, -1,
 			&count, &do_free)
 		) == NULL)
 			return NULL;
 	}
 
-	fill_mode = pexist(fillMode) ? pget_i(fillMode) : (fmOverlay | fmWinding);
-
 	rgn = img_region_polygon( points, count, fill_mode );
 	if ( do_free ) free( points );
 
 	return rgn;
+}
+
+static PRegionRec
+rgn_polygons( SV * polygons, int fill_mode, double * matrix )
+{
+	AV *av;
+	int i, len;
+	PRegionRec ret = NULL;
+
+	if ( !polygons || !SvOK(polygons) || !SvROK(polygons) || SvTYPE(SvRV(polygons)) != SVt_PVAV)
+		return NULL;
+
+	av = (AV*) SvRV(polygons);
+	len = av_len(av);
+	for ( i = 0; i <= len; i ++ ) {
+		SV ** psv;
+		PRegionRec rgn;
+
+		if (( psv = av_fetch( av, i, 0 )) == NULL )
+			continue;
+
+		if (( rgn = rgn_polygon(*psv, fill_mode, matrix)) != NULL) {
+			if ( ret != NULL ) {
+				PRegionRec rgn2;
+				if (( rgn2 = img_region_combine( ret, rgn, rgnopUnion )) != NULL) {
+					free(ret);
+					ret = rgn2;
+				}
+				free(rgn);
+			} else
+				ret = rgn;
+		}
+	}
+
+	return ret;
 }
 
 static PRegionRec
@@ -115,7 +147,7 @@ void
 Region_init( Handle self, HV * profile)
 {
 	dPROFILE;
-	Bool ok;
+	Bool ok, apply_matrix = true;
 	RegionRec r, *pr = &r;
 	double *matrix = NULL;
 
@@ -127,26 +159,29 @@ Region_init( Handle self, HV * profile)
 			"Region.create.matrix", 'd', 1, 6, 6, NULL, NULL
 		);
 
-	r.flags = 0;
+	r.flags   = 0;
+	r.n_boxes = 0;
+	r.boxes   = NULL;
+
 	if ( pexist(rect)) {
 		r.boxes = rgn_rect(profile, 0, &r.n_boxes);
 	} else if (pexist(box)) {
 		r.boxes = rgn_rect(profile, 1, &r.n_boxes);
 	} else if (pexist(polygon)) {
-		pr = rgn_polygon(profile, matrix);
-		if ( matrix ) {
-			free(matrix);
-			matrix = NULL;
-		}
+		int fill_mode = pexist(fillMode) ? pget_i(fillMode) : (fmOverlay|fmWinding);
+		pr = rgn_polygon( pget_sv(polygon), fill_mode, matrix);
+		apply_matrix = false;
+	} else if (pexist(polygons)) {
+		int fill_mode = pexist(fillMode) ? pget_i(fillMode) : (fmOverlay|fmWinding);
+		pr = rgn_polygons( pget_sv(polygons), fill_mode, matrix);
+		apply_matrix = false;
 	} else if (pexist(image)) {
 		pr = rgn_image(profile);
-	} else {
-		r.n_boxes = 0;
-		r.boxes   = NULL;
 	}
 
 	if ( matrix ) {
-		prima_matrix_apply2_int_to_int( matrix, (Point*) pr->boxes, (Point*) pr->boxes, pr->n_boxes * 2);
+		if ( apply_matrix )
+			prima_matrix_apply2_int_to_int( matrix, (Point*) pr->boxes, (Point*) pr->boxes, pr->n_boxes * 2);
 		free(matrix);
 	}
 
