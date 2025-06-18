@@ -1867,6 +1867,7 @@ sub on_stringify
 package Prima::DirectoryOutline;
 use vars qw(@ISA);
 @ISA = qw(Prima::OutlineViewer);
+use Prima::sys::FS;
 
 # node[0]:
 #  0 : node text
@@ -2067,19 +2068,20 @@ sub get_directory_tree
 	$self-> {files}     = \@fs1;
 	$self-> {filesStat} = \@fs2;
 	my @d;
+	my $_path = ($path eq '/') ? '' : $path;
 	if ( $self-> {showDotDirs}) {
 		@d   = grep { $_ ne '.' && $_ ne '..' } $self-> files( 'dir');
-		push @d, grep { -d "$path/$_" } $self-> files( 'lnk');
+		push @d, grep { _d "$_path/$_" } $self-> files( 'lnk');
 	} else {
 		@d = grep { !/\./ } $self-> files( 'dir');
-		push @d, grep { !/\./ && -d "$path/$_" } $self-> files( 'lnk');
+		push @d, grep { !/\./ && _d "$_path/$_" } $self-> files( 'lnk');
 	}
 	@d = sort @d;
 	my $ind = 0;
 	my @lb;
 	for (@d)  {
-		my $pathp = "$path/$_";
-		@fs = Prima::Utils::getdir( "$path/$_");
+		my $pathp = "$_path/$_";
+		@fs = Prima::Utils::getdir( "$_path/$_");
 		@fs1 = ();
 		@fs2 = ();
 		for ( $i = 0; $i < scalar @fs; $i += 2) {
@@ -2091,10 +2093,10 @@ sub get_directory_tree
 		my @dd;
 		if ( $self-> {showDotDirs}) {
 			@dd   = grep { $_ ne '.' && $_ ne '..' } $self-> files( 'dir');
-			push @dd, grep { -d "$pathp/$_" } $self-> files( 'lnk');
+			push @dd, grep { _d "$pathp/$_" } $self-> files( 'lnk');
 		} else {
 			@dd = grep { !/\./ } $self-> files( 'dir');
-			push @dd, grep { !/\./ && -d "$pathp/$_" } $self-> files( 'lnk');
+			push @dd, grep { !/\./ && _d "$pathp/$_" } $self-> files( 'lnk');
 		}
 		push @lb, [[ $_, $path . ( $path eq '/' ? '' : '/')], scalar @dd ? [] : undef, 0];
 	}
@@ -2138,9 +2140,9 @@ sub path
 	unless ( scalar( stat $p)) {
 		$p = "";
 	} else {
-		$p = eval { Cwd::abs_path($p) };
+		$p = abs_path($p);
 		$p = "." if $@;
-		$p = "" unless -d $p;
+		$p = "" unless _d $p;
 		$p = '' if !$self-> {showDotDirs} && $p =~ /\./;
 		$p .= '/' unless $p =~ m{[/\\]$};
 	}
