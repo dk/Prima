@@ -269,6 +269,7 @@ sub transform
 	my $self   = shift;
 	my ($ref, $points) = $#_ ? (0, [@_]) : (1, $_[0]);
 	my $ret = Prima::Drawable->render_polyline( $points, matrix => $self );
+	@$self = @$ret;
 	return $ref ? $ret : @$ret;
 }
 
@@ -280,6 +281,7 @@ sub inverse_transform
 		if $self->[4] != 0.0 || $self->[5] != 0.0;
 	my @inverse_matrix = ( $self->[3], -$self->[1], -$self->[2], $self->[0], 0, 0 );
 	my $ret = Prima::Drawable->render_polyline( $points, matrix => \@inverse_matrix);
+	@$self = @$ret;
 	return $ref ? $ret : @$ret;
 }
 
@@ -822,7 +824,10 @@ sub graphic_context
 	my $self = shift;
 	my $cb   = pop;
 	return unless $self->graphic_context_push;
-	$self->set(@_);
+	my %p = @_;
+	$self->add_region(delete $p{region}) if exists $p{region};
+	$self->matrix->transform( delete $p{matrix} ) if exists $p{matrix};
+	$self->set(%p);
 	my $ok = $cb->();
 	return unless $self->graphic_context_pop;
 	return $ok;

@@ -2134,6 +2134,11 @@ Context used: color, backColor, font, rop, textOpaque, textOutBaseline
 
 =over 4
 
+=item add_region REGION [RGNOP = rgnop::Intersect]
+
+Combines the existing drawable region with REGION using RGNOP logical operation.
+Useful when both drawable region and REGION can be C<undef>.
+
 =item begin_paint
 
 Enters the enabled ( active paint ) state and returns the success flag; if failed,
@@ -2370,6 +2375,9 @@ A shortcut method that saves the graphic context, applies changes in %GC, calls 
 and finally restores the context. F ex:
 
    $self->graphic_context( fillPattern => fp::Solid, sub { $self-> bar(..) } );
+
+Treats keys C<region> and C<matrix> in a special manner: doesn't replace the existing properties
+but combines them.
 
 =item graphic_context_pop
 

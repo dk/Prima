@@ -73,10 +73,12 @@ test( rop => rop::NotSrcXor, rop::AndPut);
 test( rop2 => rop::NotSrcXor, rop::AndPut);
 
 is_deeply( $d->get_matrix, [1,0,0,1,0,0], 'default.matrix');
+$d->set_matrix([1,0,0,2,0,0]);
 $d->graphic_context( matrix => [1..6], sub {
-	is_deeply( $d->get_matrix, [1..6], 'in.matrix');
+	is_deeply( $d->get_matrix, [1,4,3,8,5,12], 'in.matrix');
 });
-is_deeply( $d->get_matrix, [1,0,0,1,0,0], 'out.matrix');
+is_deeply( $d->get_matrix, [1,0,0,2,0,0], 'out.matrix');
+$d->set_matrix([1,0,0,1,0,0]);
 
 $d-> translate( 2, 1);
 $d-> graphic_context( translate =>[1, 2], sub {

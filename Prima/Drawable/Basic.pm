@@ -720,6 +720,45 @@ sub render_pattern
 	return $target;
 }
 
+sub add_region
+{
+	my ( $self, $region, $rgnop ) = @_;
+	$rgnop //= rgnop::Intersect;
+
+	if ( $rgnop == rgnop::Copy ) {
+		$self->region($region);
+		return $region;
+	} elsif ( !$region ) {
+		if ( $rgnop == rgnop::Union || $rgnop == rgnop::Diff ) {
+			return undef;
+		} elsif ( $rgnop == rgnop::Intersect ) {
+			$self->region(undef);
+			return undef;
+		} elsif ( my $r = $self->region ) {
+			my $r2 = Prima::Region->create( box => [0,0,$self->size] );
+			$r->combine($r2, $rgnop);
+			$self->region($r);
+			return $r;
+		} else {
+			return undef;
+		}
+	} elsif ( my $r = $self->region ) {
+		$r->combine($region, $rgnop);
+		$self->region($r);
+		return $r;
+	} elsif ( $rgnop == rgnop::Union) {
+		return undef;
+	} elsif ( $rgnop == rgnop::Intersect) {
+		$self->region($region);
+		return $region;
+	} else {
+		my $r = Prima::Region->create( box => [0,0,$self->size] );
+		$r->combine($region, $rgnop);
+		$self->region($r);
+		return $r;
+	}
+}
+
 1;
 
 =head1 NAME

@@ -750,17 +750,15 @@ sub fill_gradient
 	my $gradient = $c->new_gradient(%opt);
 
 	$c->graphic_context( sub {
-		my $m    = $c->get_matrix;
-		my $rgn1 = $c->region;
-		my $rgn2 = Prima::Region->new( polygons => scalar($self->points), fillMode => $fm, matrix => $m);
-		$c->region( $rgn1 ? $rgn1->combine( $rgn2, rgnop::Union ) : $rgn2 );
+		my $rgn = Prima::Region->new( polygons => scalar($self->points), fillMode => $fm, matrix => $c->get_matrix);
+		$c->add_region( $rgn );
 		$c->matrix->identity;
 
 		$c->antialias(0);
 		if ( $method eq 'bar') {
-			$gradient->bar( $rgn2->rect, @xopt );
+			$gradient->bar( $rgn->rect, @xopt );
 		} elsif ( $method eq 'ellipse') {
-			my @box = $rgn2->box;
+			my @box = $rgn->box;
 			my $d = int(sqrt( $box[2]*$box[2] + $box[3]*$box[3] ) + .5);
 			$gradient->ellipse(
 				$box[0] + $box[2] / 2,
@@ -768,7 +766,7 @@ sub fill_gradient
 				$d, $d
 			);
 		} elsif ( $method eq 'sector') {
-			my @box = $rgn2->box;
+			my @box = $rgn->box;
 			my $d = int(sqrt( $box[2]*$box[2] + $box[3]*$box[3] ) + .5);
 			$gradient->sector(
 				$box[0] + $box[2] / 2,
