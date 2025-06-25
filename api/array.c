@@ -516,6 +516,58 @@ FAIL:
 	XSRETURN_EMPTY;
 }
 
+XS(Prima_array_PUSH_FROMPERL)
+{
+	dXSARGS;
+	void *ref;
+	char * letter;
+	size_t ix, length;
+	SV ** ssv;
+	AV * av;
+	if ( items < 1)
+		croak ("Invalid usage of ::PUSH");
+
+	if ( !array_parse_nomagic( ST(0), &ref, &length, &letter)) {
+		warn("invalid array passed to %s", "Prima::array::PUSH");
+		goto BAILOUT;
+	}
+
+
+	av = (AV *) SvRV(ST(0));
+	ssv = av_fetch( av, 0, 0);
+	if ( ssv == NULL ) croak("panic: corrupted array");
+	SvGROW(*ssv, (length + items - 1) * typesize(*letter));
+	SvCUR_set(*ssv, (length + items - 1) * typesize(*letter));
+	SvPOK_only(*ssv);
+	ref = SvPVX(*ssv);
+
+	for ( ix = 1; ix < items; ix++, length++) {
+		switch (*letter) {
+		case 'i':
+			((int*)(ref))[length] = SvIV( ST(ix) );
+			break;
+		case 's':
+			((int16_t*)(ref))[length] = SvIV( ST(ix) );
+			break;
+		case 'S':
+			((uint16_t*)(ref))[length] = SvIV( ST(ix) );
+			break;
+		case 'd':
+			((double*)(ref))[length] = SvNV( ST(ix) );
+			break;
+		default:
+			warn("invalid array passed to %s", "Prima::array::PUSH");
+			goto BAILOUT;
+		}
+	}
+
+BAILOUT:
+	SPAGAIN;
+	SP -= items;
+	XPUSHs( sv_2mortal( newSViv( length )));
+	PUTBACK;
+}
+
 
 #ifdef __cplusplus
 }

@@ -74,6 +74,7 @@ XS(Prima_array_deduplicate_FROMPERL);
 XS(Prima_array_multiply_FROMPERL);
 XS(Prima_array_FETCH_FROMPERL);
 XS(Prima_array_STORE_FROMPERL);
+XS(Prima_array_PUSH_FROMPERL);
 
 extern PRGBColor prima_read_palette( int * palSize, SV * palette);
 extern Bool prima_read_point( SV *rvav, int * pt, int number, char * error);

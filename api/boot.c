@@ -310,6 +310,7 @@ register_xsubs( void)
 	newXS( "Prima::array::multiply", Prima_array_multiply_FROMPERL, "Prima::array");
 	newXS( "Prima::array::FETCH", Prima_array_FETCH_FROMPERL, "Prima::array");
 	newXS( "Prima::array::STORE", Prima_array_STORE_FROMPERL, "Prima::array");
+	newXS( "Prima::array::PUSH", Prima_array_PUSH_FROMPERL, "Prima::array");
 	newXS( "Prima::Component::event_hook", Component_event_hook_FROMPERL, "Prima::Component");
 	newXS( "Prima::message", Prima_message_FROMPERL, "Prima");
 	newXS( "Prima::dl_export", Prima_dl_export, "Prima");

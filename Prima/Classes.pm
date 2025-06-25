@@ -103,7 +103,7 @@ sub STORESIZE {
 		(CORE::substr( $_[0]->[REF], $_[1] * $_[0]->[SIZE] ) = '' )
 }
 sub DELETE    { warn "This array does not implement delete functionality" }
-sub PUSH      { $_[0]->[REF] .= pack( $_[0]->[PACK] . '*', @_[1..$#_] ) if $#_ }
+#sub PUSH      { $_[0]->[REF] .= pack( $_[0]->[PACK] . '*', @_[1..$#_] ) if $#_ }
 sub POP       { length($_[0]->[REF]) ? unpack( $_[0]->[PACK], CORE::substr( $_[0]->[REF], -$_[0]->[SIZE], $_[0]->[SIZE], '' )) : undef }
 sub SHIFT     { length($_[0]->[REF]) ? unpack( $_[0]->[PACK], CORE::substr( $_[0]->[REF], 0, $_[0]->[SIZE], '' )) : undef }
 sub UNSHIFT   { CORE::substr( $_[0]->[REF], 0, 0, pack( $_[0]->[PACK] . '*', @_[1..$#_] )) if $#_ }
