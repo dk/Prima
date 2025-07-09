@@ -183,17 +183,14 @@ sub rspline
 	$self-> rcmd( spline => $p, \%opt );
 }
 
-sub glyph
+sub _outline2path
 {
-	my ($self, $ix, %opt) = @_;
-	return unless $self->{canvas};
-	my $outline = $self->{canvas}->render_glyph( $ix, %opt );
-	return unless $outline;
-	my $size = scalar(@$outline);
+	my ( $self, $fill, $outline ) = @_;
+
 	my @p;
-	my $fill = delete $opt{fill};
 	my @anchor;
 	my $do_anchor;
+	my $size = scalar(@$outline);
 	for ( my $i = 0; $i < $size; ) {
 		my $cmd = $outline->[$i++];
 		my $pts = $outline->[$i++] * 2;
@@ -211,6 +208,8 @@ sub glyph
 		} elsif ( $cmd == ggo::Cubic ) {
 			$self->spline([ @p, @pts ], degree => 3 );
 			$do_anchor = 1;
+		} else {
+			next;
 		}
 		@p = @pts[-2,-1];
 	}
@@ -218,9 +217,51 @@ sub glyph
 	$self->close;
 }
 
+sub glyph
+{
+	my ($self, $ix, %opt) = @_;
+	return unless $self->{canvas};
+	my $outline = $self->{canvas}->render_glyph( $ix, %opt );
+	return unless $outline;
+
+	my $fill = delete $opt{fill};
+
+	if ( !$opt{color} ) {
+		$self->_outline2path($fill, $outline);
+		return $self;
+	}
+
+	my @ret   = ( $self->{canvas}->new_path );
+	my $size  = scalar(@$outline);
+	my ($i,$start);
+	for ( $i = $start = 0; $i < $size; ) {
+		my $cmd = $outline->[$i++];
+		my $pts = $outline->[$i++] * 2;
+		if ( $cmd != ggo::SetColor ) {
+			$i += $pts;
+			next;
+		}
+		if ( $start < $i - 2 ) {
+			my @sub_outline = @$outline[ $start .. $i - 3 ];
+			$ret[-1]->_outline2path( $fill, \@sub_outline);
+		}
+		push @ret, $outline->[$i], $self->{canvas}->new_path
+			unless @ret > 1 && $outline->[$i] == $ret[-2];
+		$i += $pts;
+		$start = $i;
+	}
+	if ( $start != $i ) {
+		my @sub_outline = @$outline[ $start .. $#$outline ];
+		$ret[-1]->_outline2path( $fill, \@sub_outline);
+	}
+
+	return @ret;
+}
+
 sub text
 {
 	my ($self, $text, %opt) = @_;
+	return if $opt{color};
 	return unless my $c = $self->{canvas};
 	my $state = $c->get_paint_state;
 	unless ($state) {

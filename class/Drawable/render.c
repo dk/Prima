@@ -1185,6 +1185,7 @@ Drawable_render_glyph( Handle self, int index, HV * profile)
 	if ( pexist(glyph)   && pget_B(glyph))   flags |= ggoGlyphIndex;
 	if ( pexist(hints)   && !pget_B(hints))  flags &= ~ggoUseHints;
 	if ( pexist(unicode) && pget_B(unicode)) flags |= ggoUnicode;
+	if ( pexist(color)   && pget_B(color))   flags |= ggoARGB;
 	count = apc_gp_get_glyph_outline( self, index, flags, &buffer);
 	hv_clear(profile); /* old gencls bork */
 	dmLEAVE;

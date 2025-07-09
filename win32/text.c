@@ -1169,14 +1169,11 @@ EXIT:
 static int
 u32_to_glyph( Handle self, uint32_t index )
 {
-	int n;
+	int nc, n;
 	SCRIPT_VISATTR va[2];
 	WORD out = 0, clusters[2];
 	SCRIPT_CACHE * script_cache;
-	WCHAR in[2] = {
-		0xd800 + ((index - 0x10000) >> 10),
-		0xdc00 + ((index - 0x10000) & 0x3ff)
-	};
+	WCHAR in[2];
 	SCRIPT_ANALYSIS a = {
 		SCRIPT_UNDEFINED,
 		0, 0, 0, 0, 0, 0,
@@ -1185,8 +1182,19 @@ u32_to_glyph( Handle self, uint32_t index )
 
 	if ( !( script_cache = get_script_cache(self,SCRIPT_UNDEFINED)))
 		return -1;
-	if ( ScriptShape( sys ps, script_cache, in, 2, 1, &a, &out, clusters, va, &n) != S_OK)
+
+	if ( index >= 0x10000 ) {
+		nc = 2;
+		in[0] = 0xd800 + ((index - 0x10000) >> 10);
+		in[1] = 0xdc00 + ((index - 0x10000) & 0x3ff);
+	} else {
+		nc = 1;
+		in[0] = index;
+	}
+
+	if ( ScriptShape( sys ps, script_cache, in, nc, 1, &a, &out, clusters, va, &n) != S_OK)
 		return -1;
+
 	return out;
 }
 
@@ -2094,14 +2102,23 @@ apc_gp_get_glyph_outline( Handle self, unsigned int index, unsigned int flags, i
 	memset(&matrix, 0, sizeof(matrix));
 	matrix.eM11.value = matrix.eM22.value = 1;
 
-	if (
-		(( flags & (ggoUnicode | ggoGlyphIndex)) == ggoUnicode) &&
-		index > 0xffff
-	) {
+	if ( ( flags & (ggoUnicode | ggoGlyphIndex)) == ggoUnicode) {
 		index = u32_to_glyph(self, index);
 		flags |= ggoGlyphIndex;
 		flags &= ~ggoUnicode;
 	}
+
+#ifdef USE_DIRECT_WRITE
+	if (
+		(flags & ggoARGB) &&
+		apc_font_is_colored(self)
+	) {
+		int n = dwrite_get_outline( self, index, flags & ~ggoARGB, buffer);
+		if ( n >= 0 )
+			return n;
+	}
+#endif
+
 
 	format = GGO_NATIVE;
 	if ( flags & ggoGlyphIndex )       format |= GGO_GLYPH_INDEX;

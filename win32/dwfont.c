@@ -551,6 +551,106 @@ dwrite_free_face(void *face)
 	((IDWriteFontFace*)face)->lpVtbl->Release((IDWriteFontFace*)face);
 }
 
+static Bool
+push( int ** buffer, int *ret, int *size, int n, int *cmds)
+{
+	if ( *size < *ret + n) {
+		int *b, sz = *size;
+		while ( sz < *ret + n ) sz *= 2;
+		if ( !( b = realloc(*buffer, sizeof(int) * sz)))
+			return false;
+		*buffer = b;
+		*size = sz;
+	}
+
+	memcpy(*buffer + *ret, cmds, n * sizeof(int));
+	*ret += n;
+
+	return true;
+}
+
+int
+dwrite_get_outline( Handle self, uint16_t index, int flags, int ** buffer)
+{
+	int i, ret, size;
+	PList l;
+	GlyphsOutRec t;
+	uint16_t dummy_advance = 42;
+	int16_t dummy_offset[2] = {0,0};
+	IDWriteColorGlyphRunEnumerator1 *enumerator;
+
+	if ( !dw_ok ) return -1;
+
+	memset( &t, 0, sizeof(t));
+	t.len       = 1;
+	t.glyphs    = &index;
+	t.advances  = &dummy_advance;
+	t.positions = dummy_offset;
+	if ( !( enumerator = get_enumerator(self, sys dc_font, &t, 0, 0)))
+		return -1;
+
+	l = enumerate_colorrun( enumerator, t.len );
+	enumerator->lpVtbl->Release(enumerator);
+	if ( !l )
+		return -1;
+
+	ret = 0;
+	size = 16;
+	*buffer = NULL;
+
+	if ( !is_aa_colr( self, l, 0 ))
+		goto FAIL;
+
+	if ( !( *buffer = malloc(sizeof(int) * size)))
+		goto FAIL;
+
+#undef PUSH
+#define PUSH(c,a,b) {                                     \
+	int cmd[4] = {c,1,a,b};                           \
+	if (!push(buffer, &ret, &size, 4, cmd)) goto FAIL;\
+}
+
+	for ( i = 0; i < l->count; i++) {
+		GlyphColorRec *t   = (GlyphColorRec*) l->items[i];
+		switch (t-> format) {
+		case 0:
+			PUSH(ggoSetColor,0,0);
+			break;
+		case DWRITE_GLYPH_IMAGE_FORMATS_COLR:
+			PUSH(ggoSetColor, t->has_color ? (
+				((t->colorref & 0x0000ff) << 16) |
+				 (t->colorref & 0x00ff00)        |
+				((t->colorref & 0xff0000) >> 16)
+			) : 0, 0);
+			break;
+		default:
+			continue;
+		}
+		PUSH(ggoMove, t->baseline.x * 64, t->baseline.y * 64);
+
+		{
+			int n, *buf;
+			n = apc_gp_get_glyph_outline( self, t->g.glyphs[0], flags | ggoGlyphIndex, &buf);
+			if ( n < 0 ) goto FAIL;
+			n = push(buffer, &ret, &size, n, buf);
+			free(buf);
+			if ( !n ) goto FAIL;
+		}
+#undef PUSH
+	}
+
+	list_delete_all( l, true );
+	plist_destroy( l );
+	return ret;
+
+FAIL:
+	if ( *buffer ) free( *buffer );
+	*buffer = NULL;
+	list_delete_all( l, true );
+	plist_destroy( l );
+	return -1;
+}
+
 #ifdef __cplusplus
 }
 #endif

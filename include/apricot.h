@@ -4019,6 +4019,8 @@ GGO(Line)
 GGO(Conic)
 #define ggoCubic        3
 GGO(Cubic)
+#define ggoSetColor     4
+GGO(SetColor)
 END_TABLE(ggo,UV)
 #undef GGO
 

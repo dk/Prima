@@ -581,6 +581,37 @@ sub create_info_window
 		},
 	);
 
+	my $colr = $ww-> insert( Widget =>
+		text => ' ',
+		font => \%wf,
+		size => \@gsize,
+		origin => [ $ww-> width - $gsize[0] - 10, $ww-> height - $gsize[1] * 2 - 10 ],
+		growMode => gm::GrowLoX|gm::GrowLoY,
+		name    => 'COLR',
+		onPaint => sub {
+			my $self = shift;
+			$self->rop2(rop::CopyPut);
+			$self->fillPattern(fp::WideDot);
+			$self->bar(0,0,$self->size);
+			$self->fillPattern(fp::Solid);
+			my $faces = $self->{faces} or return;
+			my $d = $self->font->height + 10;
+			my $D = $self->font->descent;
+			my $n = (1 + @$faces) / 2;
+			$self->matrix->X(( $self->width - $self->get_text_width($self->text)) / 2 );
+			my $o = 0;
+			for ( my $i = 0; $i < @$faces; $i++) {
+				my $p = $faces->[$i];
+				if ( ref($p)) {
+					$self->matrix->Y( $D + $o++ * $d );
+					$p->fill;
+				} else {
+					$self->color($p);
+				}
+			}
+		}
+	);
+
 
 	my @ranges = ([]);
 	for ( @{$w-> Example-> get_font_ranges}) {
@@ -618,6 +649,24 @@ sub create_info_window
 				$self-> hintVisible(1);
 				$glyph->text(chr($c));
 				$glyph->repaint;
+
+				if ( $colr->is_font_colored ) {
+					$colr->begin_paint_info;
+					my @faces = $colr->new_path->glyph( $c, unicode => 1, color => 1);
+					$colr->end_paint_info;
+					goto HIDE unless @faces;
+					$colr->{faces} = \@faces;
+					my $n = (1 + @faces) / 2;
+					my $top = $colr->top;
+					$colr->text(chr($c));
+					$colr->set( top => $top, bottom => $top - ($colr->font->height + 10) * $n );
+					$colr->show;
+					$colr->repaint;
+				} else {
+				HIDE:
+					undef $colr->{faces};
+					$colr->hide;
+				}
 			}
 		},
 		onDrawItem => sub {
