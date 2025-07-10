@@ -829,6 +829,9 @@ apc_font_is_colored( Handle self)
 {
 	DEFXX;
 	PCachedFont f = XX->font;
+
+	if ( !f )
+		return false;
 	if (
 		f->has_colors < 0 ||
 		( XT_IS_DBM(XX) && XT_IS_BITMAP(XX)) ||
