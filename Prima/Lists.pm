@@ -1306,7 +1306,7 @@ sub set_top_item
 			$self-> scroll(
 				-( $dt / $self-> {rows}) * $iw, 0,
 				clipRect => \@a
-			);
+			) if $self->{rows} > 0;
 		} else {
 			if ($self->{columns} > 0 && abs($dt) % $self->{columns}) {
 				$a[2] -= $self->{xedge} if $self->{integralWidth};
@@ -1332,7 +1332,7 @@ sub set_top_item
 			$self-> scroll(
 				0, ( $dt / $self-> {columns}) * $ih,
 				clipRect => \@a
-			);
+			) if $self->{columns} > 0;
 		}
 	} else {
 		$a[1] += $self-> {yedge}
