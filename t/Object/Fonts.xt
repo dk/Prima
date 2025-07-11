@@ -87,6 +87,9 @@ my $bad_guys = qr/(
 
 $x = Prima::Image->new;
 my @fonts;
+my $F = $x->fonts;
+plan skip_all => "No fontconfig fonts" unless @$F;
+
 for my $f ( @{$x->fonts} ) {
 	next if $f->{name} =~ /$bad_guys/;
 	next unless $f->{name} =~ /$filter/;
