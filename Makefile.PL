@@ -942,9 +942,48 @@ SET2
 	printlog "$response\n";
 }
 
+sub setup_gdiplus
+{
+	if ( $Win32 ) {
+		printlog "Checking if can compile with GDI+... ";
+		my $gdip = compile(<<'MSCVER');
+#include <windows.h>
+#ifdef _MSC_VER
+#undef __inline__
+#define __inline__ inline
+#undef __extension__
+#define __extension__
+#endif
+#include <gdiplus/gdiplus.h>
+int main() {
+	ULONG_PTR t;
+	GdiplusStartupInput id = { 1, NULL, 0, 0 };
+	GdiplusStartup(&t, &id, NULL);
+	return 0;
+}
+MSCVER
+		unless ( length $gdip ) {
+			printlog "no\n";
+			print <<GDIP;
+
+** Error: Cannot complile with GDI+. If your compiler is MSVC, then it can only
+compile GDI+ headers in C++ mode. Grab a copy of the headers adapted for C at
+
+   http://prima.eu.org/download/gdiplus.zip,
+
+and unpack it in the include catalog so that the headers are in 
+./include/gdiplus/*.h
+
+GDIP
+			exit 255;
+		}
+		printlog "yes\n";
+	}
+}
+
 sub setup_dwrite
 {
-	printlog "Can compile with DirectWrite ... ";
+	printlog "Checking if can compile with DirectWrite ... ";
 	my $response = 'no';
 	my @libs = @LIBS;
 	push @LIBS, qw(d2d1 dwrite);
@@ -1096,42 +1135,6 @@ MSCVER
 		push @INCPATH, '/opt/homebrew/include';
 		push @LIBPATH, '/opt/homebrew/lib', '/opt/homebrew/opt/libiconv/lib';
 	}
-
-	if ( $Win32 ) {
-		printlog "Checking if can compile with GDI+... ";
-		my $gdip = compile(<<'MSCVER');
-#include <windows.h>
-#ifdef _MSC_VER
-#undef __inline__
-#define __inline__ inline
-#undef __extension__
-#define __extension__
-#endif
-#include <gdiplus/gdiplus.h>
-int main() {
-	ULONG_PTR t;
-	GdiplusStartupInput id = { 1, NULL, 0, 0 };
-	GdiplusStartup(&t, &id, NULL);
-	return 0;
-}
-MSCVER
-		unless ( length $gdip ) {
-			printlog "no\n";
-			print <<GDIP;
-
-** Error: Cannot complile with GDI+. If your compiler is MSVC, then it can only
-compile GDI+ headers in C++ mode. Grab a copy of the headers adapted for C at
-
-   http://prima.eu.org/download/gdiplus.zip,
-
-and unpack it in the include catalog so that the headers are in 
-./include/gdiplus/*.h
-
-GDIP
-			exit 255;
-		}
-		printlog "yes\n";
-	}
 }
 
 sub setup_defines
@@ -1186,6 +1189,7 @@ sub setup_defines
 	find_glibc;
 	if ($^O =~ /win32/i) {
 		find_setjmp;
+		setup_gdiplus;
 		setup_dwrite;
 	}
 
