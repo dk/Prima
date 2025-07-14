@@ -2396,12 +2396,12 @@ alpha bits.
 
 See also: C<can_draw_alpha>.
 
-=item is_font_colored
+=item font_has_color
 
 True if the current font has COLR/CPAL information and Prima is compiled with its support,
 so that f ex emoji fonts are displayed with full color.
 
-Same as C<Prima::Font::colored>
+Same as C<Prima::Font::has_color>
 
 =item render_glyph INDEX, %OPTIONS
 

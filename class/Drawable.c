@@ -678,9 +678,9 @@ Drawable_rop2( Handle self, Bool set, int rop2)
 }
 
 Bool
-Drawable_is_font_colored( Handle self )
+Drawable_font_has_color( Handle self )
 {
-	return apc_font_is_colored(self);
+	return apc_font_has_color(self);
 }
 
 Bool

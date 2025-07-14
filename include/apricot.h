@@ -4346,7 +4346,7 @@ extern Byte*
 apc_font_get_glyph_bitmap( Handle self, uint16_t index, unsigned int flags, PPoint offset, PPoint size, int *advance, int *bpp);
 
 extern Bool
-apc_font_is_colored( Handle self);
+apc_font_has_color( Handle self);
 
 extern PFont
 apc_fonts( Handle self, const char *facename, const char *encoding, int *retCount);

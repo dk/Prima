@@ -38,6 +38,7 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include FT_OUTLINE_H
+#include FT_COLOR_H
 #endif
 #if defined(WITH_FONTCONFIG)
 #include <fontconfig/fontconfig.h>
@@ -1661,7 +1662,7 @@ extern Byte*
 prima_xft_get_glyph_bitmap( Handle self, uint16_t index, unsigned int flags, PPoint offset, PPoint size, int *advance, int *bpp);
 
 extern Bool
-prima_xft_is_font_colored(Handle self);
+prima_xft_font_has_color(Handle self);
 
 #endif
 
@@ -1950,7 +1951,7 @@ extern Byte*
 prima_ft_get_glyph_bitmap( FT_Face face, FT_UInt index, FT_Int32 flags, PPoint offset, PPoint size, int *advance, int *bpp);
 
 extern Bool
-prima_ft_is_font_colored( FT_Face face);
+prima_ft_font_has_color( FT_Face face);
 
 extern Bool
 prima_ft_text_shaper_harfbuzz( FT_Face face, PTextShapeRec r);

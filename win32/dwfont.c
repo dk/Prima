@@ -67,7 +67,7 @@ dwrite_font_done(void)
 }
 
 Bool
-dwrite_is_font_colored( Handle self, PDCFont dcfont)
+dwrite_font_has_color( Handle self, PDCFont dcfont)
 {
 	HRESULT hr;
 	LOGFONTW lf;

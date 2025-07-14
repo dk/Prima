@@ -69,7 +69,7 @@ object Prima::Drawable ( Prima::Component)
 	method Color get_nearest_color( Color color);
 	method int   get_paint_state();
 	method SV *  get_physical_palette();
-	method Bool  is_font_colored();
+	method Bool  font_has_color();
 	method int   get_text_width( SV * text, int flags = 0, int from = 0, int len = -1);
 	method SV *  get_text_box( SV * text, int from = 0, int len = -1);
 	method SV *  render_glyph( int index, HV * profile);

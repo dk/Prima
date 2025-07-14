@@ -513,7 +513,7 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flag
 	their geometrical limits. */
 	if ( len > div) len = div;
 
-	if ( sys alpha < 255 || apc_font_is_colored(self))
+	if ( sys alpha < 255 || apc_font_has_color(self))
 		return shaped_text_out( self, text, x, y, len, flags);
 
 	if ( flags & toUTF8 ) {
@@ -677,7 +677,7 @@ apc_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 	if ( t->len > 8192 ) t->len = 8192;
 	use_path = GetROP2( sys ps) != R2_COPYPEN;
 	use_alpha = sys alpha < 255;
-	want_color = t->fonts ? true : apc_font_is_colored(self);
+	want_color = t->fonts ? true : apc_font_has_color(self);
 	if ( use_path ) {
 		STYLUS_USE_BRUSH;
 		BeginPath(ps);
@@ -2111,7 +2111,7 @@ apc_gp_get_glyph_outline( Handle self, unsigned int index, unsigned int flags, i
 #ifdef USE_DIRECT_WRITE
 	if (
 		(flags & ggoARGB) &&
-		apc_font_is_colored(self)
+		apc_font_has_color(self)
 	) {
 		int n = dwrite_get_outline( self, index, flags & ~ggoARGB, buffer);
 		if ( n >= 0 )
@@ -2240,11 +2240,11 @@ apc_gp_get_text_out_baseline( Handle self)
 }
 
 Bool
-apc_font_is_colored( Handle self)
+apc_font_has_color( Handle self)
 {
 	objCheck false;
 #ifdef USE_DIRECT_WRITE
-	return dwrite_is_font_colored(self, sys dc_font);
+	return dwrite_font_has_color(self, sys dc_font);
 #else
 	return false;
 #endif
@@ -2339,7 +2339,7 @@ apc_font_get_glyph_bitmap( Handle self, uint16_t index, unsigned int flags, PPoi
 		(gdi_size > 0) &&
 		!(flags & ggoMonochrome) &&
 		(flags & ggoARGB) &&
-		apc_font_is_colored(self)
+		apc_font_has_color(self)
 	) {
 		if (( gdi_buf = (Byte*) dwrite_draw_bitmap( self, index, *size, *offset)) != NULL) {
 			*bpp = 32;

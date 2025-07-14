@@ -825,7 +825,7 @@ apc_font_get_glyph_bitmap( Handle self, uint16_t index, unsigned int flags, PPoi
 }
 
 Bool
-apc_font_is_colored( Handle self)
+apc_font_has_color( Handle self)
 {
 	DEFXX;
 	PCachedFont f = XX->font;
@@ -843,7 +843,7 @@ apc_font_is_colored( Handle self)
 
 #ifdef USE_FONTQUERY
 	if ( is_opt(optInFontQuery) ) {
-		Bool ok = prima_ft_is_font_colored(X(self)->font->ft_face);
+		Bool ok = prima_ft_font_has_color(X(self)->font->ft_face);
 		f->has_colors = ok ? 1 : -1;
 		return ok;
 	}
@@ -851,7 +851,7 @@ apc_font_is_colored( Handle self)
 
 #ifdef USE_XFT
 	if ( f->xft ) {
-		Bool ok = prima_xft_is_font_colored(self);
+		Bool ok = prima_xft_font_has_color(self);
 		f->has_colors = ok ? 1 : -1;
 		return ok;
 	}

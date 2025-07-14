@@ -650,7 +650,7 @@ sub create_info_window
 				$glyph->text(chr($c));
 				$glyph->repaint;
 
-				if ( $colr->is_font_colored ) {
+				if ( $colr->font_has_color ) {
 					$colr->begin_paint_info;
 					my @faces = $colr->new_path->glyph( $c, unicode => 1, color => 1);
 					$colr->end_paint_info;
