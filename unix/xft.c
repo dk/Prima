@@ -1398,7 +1398,7 @@ prima_xft_get_glyph_outline( Handle self, unsigned int index, unsigned int flags
 	c = ((flags & (ggoUnicode|ggoGlyphIndex)) || index <= 128) ? index : XX-> fc_map8[index - 128];
 	ft_index = (flags & ggoGlyphIndex) ? c : XftCharIndex( DISP, XX->font->xft, c);
 
-	ret = prima_ft_get_glyph_outline( ft_face, ft_index, ft_flags, buffer);
+	ret = prima_ft_get_glyph_outline( ft_face, ft_index, ft_flags, flags & ggoARGB, buffer);
 
 	XftUnlockFace(XX->font->xft);
 

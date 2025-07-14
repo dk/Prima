@@ -4,6 +4,7 @@ Revision history for Perl module Prima
  - Hint colors can be set for each widget individually
  - Add JXL support
  - Add MenuItem.context for generic use
+ - render_glyph supports color fonts
 
 1.76 2025-03-12
  - Implement gt::Grid geometry emulating Tk::grid

@@ -1580,6 +1580,11 @@ L<Prima::Drawable/renger_glyph>, except the C<fill> option.
 Note that filled glyphs require C<fillMode> without the C<fm::Overlay> bit set,
 and also the C<fill> option set to generate proper shapes with holes.
 
+If the C<color> is option added, reports an array of scalars where each is
+either a new path object, or an integer scalar thet sets the 24-bit RGB color
+for the subsequent path(s) to be painted with. If the integer scalar is -1 that
+means to use the current color.
+
 =item line, rline @POINTS
 
 Adds a polyline to the path

@@ -606,7 +606,7 @@ sub create_info_window
 					$self->matrix->Y( $D + $o++ * $d );
 					$p->fill;
 				} else {
-					$self->color($p);
+					$self->color(($p < 0) ? 0 : $p);
 				}
 			}
 		}
@@ -650,8 +650,10 @@ sub create_info_window
 				$glyph->text(chr($c));
 				$glyph->repaint;
 
-				if ( $colr->font_has_color ) {
-					$colr->begin_paint_info;
+				$colr->begin_paint_info;
+				my $has_color = $colr->font_has_color;
+				$colr->end_paint_info;
+				if ( $has_color ) {
 					my @faces = $colr->new_path->glyph( $c, unicode => 1, color => 1);
 					$colr->end_paint_info;
 					goto HIDE unless @faces;

@@ -518,7 +518,7 @@ prima_fq_get_glyph_outline( Handle self, unsigned int index, unsigned int flags,
 	c = ((flags & (ggoUnicode|ggoGlyphIndex)) || index <= 128) ? index : XX-> fc_map8[index - 128];
 	ft_index = (flags & ggoGlyphIndex) ? c : FcFreeTypeCharIndex(XX->font->ft_face, c);
 
-	return prima_ft_get_glyph_outline( XX->font->ft_face, ft_index, ft_flags, buffer);
+	return prima_ft_get_glyph_outline( XX->font->ft_face, ft_index, ft_flags, flags & ggoARGB, buffer);
 }
 
 Byte*

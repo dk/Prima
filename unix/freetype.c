@@ -218,7 +218,7 @@ ftoutline_cubic(const FT_Vector* control1, const FT_Vector* control2, const FT_V
 }
 
 int
-prima_ft_get_glyph_outline( FT_Face face, FT_UInt ft_index, FT_Int32 ft_flags, int ** buffer)
+prima_ft_get_glyph_outline( FT_Face face, FT_UInt ft_index, FT_Int32 ft_flags, Bool want_color, int ** buffer)
 {
 	FT_Outline_Funcs funcs = {
 		ftoutline_move,
@@ -229,11 +229,38 @@ prima_ft_get_glyph_outline( FT_Face face, FT_UInt ft_index, FT_Int32 ft_flags, i
 	};
 	OutlineStorage storage = { 0, 0, -1, NULL };
 
+#ifdef FT_HAS_COLOR
+	if (want_color && FT_HAS_COLOR(face)) {
+		FT_Color *palette = NULL;
+		FT_UInt glyph, color;
+		FT_LayerIterator i = { 0, 0, NULL };
+
+		FT_Palette_Select( face, 0, &palette );
+		while ( FT_Get_Color_Glyph_Layer( face, ft_index, &glyph, &color, &i)) {
+			if (
+				(FT_Load_Glyph (face, glyph, ft_flags) == 0) &&
+				(face->glyph->format == FT_GLYPH_FORMAT_OUTLINE)
+			) {
+				FT_Vector layer_color; /* it's signed long, should hold 24-bit signed RGB fine */
+				layer_color.x = ( color == 0xFFFF || palette == NULL ) ? -1 : (
+					( palette[color].red   << 16)|
+					( palette[color].green << 8)|
+					( palette[color].blue  )
+				);
+				store_command(&storage, ggoSetColor, &layer_color, NULL, NULL);
+				FT_Outline_Decompose( &face->glyph->outline, &funcs, (void*)&storage);
+			}
+		}
+		*buffer = storage.buffer;
+		return storage.count;
+	}
+#endif
+
 	if (
 		(FT_Load_Glyph (face, ft_index, ft_flags) == 0) &&
 		(face->glyph->format == FT_GLYPH_FORMAT_OUTLINE)
 	)
-  		FT_Outline_Decompose( &face->glyph->outline, &funcs, (void*)&storage);
+		FT_Outline_Decompose( &face->glyph->outline, &funcs, (void*)&storage);
 
 	*buffer = storage.buffer;
 	return storage.count;

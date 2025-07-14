@@ -747,6 +747,7 @@ See L<Prima::Drawable/weight>
 	ggo::Line
 	ggo::Conic
 	ggo::Cubic
+	ggo::SetColor
 
 See also L<Prima::Drawable/render_glyph>
 

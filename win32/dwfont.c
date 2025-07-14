@@ -614,14 +614,14 @@ dwrite_get_outline( Handle self, uint16_t index, int flags, int ** buffer)
 		GlyphColorRec *t   = (GlyphColorRec*) l->items[i];
 		switch (t-> format) {
 		case 0:
-			PUSH(ggoSetColor,0,0);
+			PUSH(ggoSetColor,-1,0);
 			break;
 		case DWRITE_GLYPH_IMAGE_FORMATS_COLR:
 			PUSH(ggoSetColor, t->has_color ? (
 				((t->colorref & 0x0000ff) << 16) |
 				 (t->colorref & 0x00ff00)        |
 				((t->colorref & 0xff0000) >> 16)
-			) : 0, 0);
+			) : -1, 0);
 			break;
 		default:
 			continue;

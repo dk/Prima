@@ -1945,7 +1945,7 @@ Bool
 prima_ft_combining_supported( FT_Face face );
 
 extern int
-prima_ft_get_glyph_outline( FT_Face face, FT_UInt ft_index, FT_Int32 ft_flags, int ** buffer);
+prima_ft_get_glyph_outline( FT_Face face, FT_UInt ft_index, FT_Int32 ft_flags, Bool want_color, int ** buffer);
 
 extern Byte*
 prima_ft_get_glyph_bitmap( FT_Face face, FT_UInt index, FT_Int32 flags, PPoint offset, PPoint size, int *advance, int *bpp);

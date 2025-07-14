@@ -2414,6 +2414,14 @@ The following options are recognized:
 
 =over
 
+=item color BOOL
+
+If set and the glyph has color information, reports also the color information
+of individual layers with the C<ggo::SetColor> command. In this case, the
+command is followed by 2 integers, where only the first is used to set the
+foreground color as a 24-bit RGB value. The value of -1 means to use the
+current foreground color.
+
 =item glyph BOOL
 
 If set, INDEX is treated as the glyph index rather than the character index.
@@ -2433,10 +2441,11 @@ The default value is false.
 
 The C<ggo::> commands are:
 
-	ggo::Move  - move point
-	ggo::Line  - plot line
-	ggo::Conic - plot 2-degree spline
-	ggo::Cubic - plot 3-degree spline
+	ggo::Move     - move point
+	ggo::Line     - plot line
+	ggo::Conic    - plot 2-degree spline
+	ggo::Cubic    - plot 3-degree spline
+	ggo::SetColor - set foreground color
 
 =item render_pattern IMAGE|ICON|ARRAY|INDEX, %OPTIONS
 
