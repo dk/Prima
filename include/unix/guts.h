@@ -38,7 +38,9 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include FT_OUTLINE_H
+#ifdef FT_COLOR_H
 #include FT_COLOR_H
+#endif
 #endif
 #if defined(WITH_FONTCONFIG)
 #include <fontconfig/fontconfig.h>
