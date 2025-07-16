@@ -45,7 +45,6 @@ use vars qw(
 	@INCPATH
 	@LIBPATH
 	%DEFINES
-	%PREREQ
 	%PASSIVE_CODECS
 	@ACTIVE_CODECS
 	$DL_LOAD_FLAGS
@@ -85,7 +84,6 @@ use vars qw(
 	@exe_files
 	@cls_files
 	@target_clean
-	$binary_prereq
 	$compiler_type
 	$compiler_subtype
 	$compiler_version
@@ -2060,26 +2058,6 @@ exception_charged
 
 sub setup_codecs
 {
-	# see if Prima::codecs:: is installed
-	my ( $prereq, $have_binary_prereq);
-	$prereq = 'win32' if $Win32 and not $cygwin;
-	$prereq = 'win64' if $Win64 and not $cygwin;
-	if ( $prereq) {
-		printlog "Checking for Prima::codecs::$prereq... ";
-		eval "use Prima::codecs::$prereq;";
-		unless ( $@) {
-			printlog "yes\n";
-			$have_binary_prereq++;
-			my $f = $INC{"Prima/codecs/$prereq.pm"};
-			$f =~ s/.pm$//;
-			push @LIBPATH, "$f/lib";
-			push @INCPATH, "$f/include";
-
-		} else {
-			printlog "no\n";
-		}
-	}
-
 	# finding image codecs
 	my %libs = map { $_ => 1 } @LIBS;
 	my @codecs;
@@ -2274,8 +2252,6 @@ VER
 	}
 
 	unless ( @ACTIVE_CODECS) {
-		$binary_prereq = $prereq;
-		$PREREQ{"Prima::codecs::$prereq"} = 0;
 		$END .= <<NOCODECS;
 
 ** No image codecs found.
@@ -2285,20 +2261,6 @@ able to work with graphic files. Please follow the
 instructions in README file.
 
 NOCODECS
-		$END .= <<BROKEN_CODECS if $have_binary_prereq;
-
-** Prima::codecs::$binary_prereq is found in
-$Config{installsitearch}, but is broken. Please reinstall it.
-
-BROKEN_CODECS
-		$END .= <<NOCODECS_BIN if $binary_prereq;
-
-If you are under CPAN shell and are asked to install
-Prima::codecs::$binary_prereq dependency, do so. Otherwise,
-install it manually.
-
-NOCODECS_BIN
-
 		$END .= <<NOCODECS_CYGWIN if $cygwin;
 
 Install these libraries and re-run Makefile.PL
@@ -2754,14 +2716,6 @@ sub special_targets
 
 	$t =~ s/(\.SUFFIXES\s*\:\s*)/$1 .mm / if $DEFINES{WITH_COCOA};
 
-	$t .= <<RERUN if $binary_prereq and not $cmd_options{AUTOMATED_RUN};
-all ::
-\t\@echo Rebuilding Makefile...
-\t\@\$(RM_F) Makefile
-\t\@$^X Makefile.PL $ARGV_STR AUTOMATED_RUN=1
-\t\@$Config{make}
-
-RERUN
 	return $t;
 }
 
@@ -2956,7 +2910,6 @@ WriteMakefile(
 	PM                => MY::orderedhash->tie(\%ALL_PM_INSTALL),
 	OPTIMIZE          => $OPTIMIZE,
 	LDDLFLAGS         => $passthru_options{LDDLFLAGS},
-	PREREQ_PM         => \%PREREQ,
 	OBJECT            => "@o_files",
 	INC               =>
 		join(' ', map { "-I$_" } @INCPATH ).

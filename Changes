@@ -5,6 +5,7 @@ Revision history for Perl module Prima
  - Add JXL support
  - Add MenuItem.context for generic use
  - render_glyph supports color fonts
+ - remove support for Prima::codecs::win32/64
 
 1.76 2025-03-12
  - Implement gt::Grid geometry emulating Tk::grid

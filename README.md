@@ -87,9 +87,6 @@ Install these:
    - http://prima.eu.org/download/libthai-0.1.29-win64.zip
    - http://prima.eu.org/download/libheif-1.17.6-win64.zip
    - http://prima.eu.org/download/libwebp-1.0.2-win64.zip
-
-And optionally
-
    - http://prima.eu.org/download/libjxl-0.11.1-win64.zip
 
 Win32-ActiveState
@@ -98,18 +95,6 @@ Win32-ActiveState
 ActiveState currently doesn't support local compilations.
 The official answer is here: https://community.activestate.com/t/how-to-install-gcc-and-or-mingw/10993/2 .
 Consider migrating to Strawberry Perl.
-
-Win32-other
------------
-
-For the older distributions or custom Perl builds, CPAN contains binary
-distributions that can be installed just for this purpose:
-
- - http://search.cpan.org/~karasik/Prima-codecs-win32/
- - http://search.cpan.org/~karasik/Prima-codecs-win64/
-
-it should work for all MSVC and GCC compilers and
-native, cygwin, and mingw/strawberry perl runtimes.
 
 MacOSX
 ------
@@ -127,7 +112,7 @@ You'll need homebrew, XQuartz, and a set of extra libraries.
 - install support libraries:
 
   brew install libiconv libxcomposite libxrandr libxcursor libxft fribidi fontconfig
-     freetype giflib gtk+3 harfbuzz jpeg libpng libtiff webp libxpm libheif
+     freetype giflib gtk+3 harfbuzz jpeg libpng libtiff webp libxpm libheif jpeg-xl
 
 Note: if you plan on using Prima::OpenGL, compile Prima with WITH\_HOMEBREW=0 .
 This is because OpenGL uses native MacOSX GL, which can only be used with X11
@@ -168,6 +153,10 @@ libraries can be compiled on all platforms:
    - libtiff
    - libwebp,libwebpdemux,libwebpmux
    - libheif
+   - libjxl
+
+And optionally
+
 
 (libheif is not widespread yet. See Prima/Image/heif.pm for details)
 

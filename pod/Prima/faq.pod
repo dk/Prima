@@ -117,9 +117,7 @@ libraries:
    libjxl   - JPEG-XL images
 
 Strawberry perl and Cygwin come with most of them, so on these installations Prima just
-compiles without any trouble. For other perl builds, use one of the C<Prima::codecs::>
-modules that contain the needed include and lib files. If you are installing Prima
-with CPAN, that gets done automatically.
+compiles without any trouble.
 
 =head2 img/codec_XXX.c compile error
 
