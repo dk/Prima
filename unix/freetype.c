@@ -229,7 +229,7 @@ prima_ft_get_glyph_outline( FT_Face face, FT_UInt ft_index, FT_Int32 ft_flags, B
 	};
 	OutlineStorage storage = { 0, 0, -1, NULL };
 
-#ifdef FT_HAS_COLOR
+#ifdef FT_COLOR_H
 	if (want_color && FT_HAS_COLOR(face)) {
 		FT_Color *palette = NULL;
 		FT_UInt glyph, color;
