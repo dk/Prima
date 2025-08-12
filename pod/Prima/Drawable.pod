@@ -1680,6 +1680,19 @@ of glyphs. In the latter case some wrapping options are not applicable.
 If TEXT is a character string, the %OPT hash is fed to a C<text_shape> call
 internally.
 
+=for podview <img src="puppies.gif" cut=1 title="Custom text underline">
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/puppies.gif"><!--
+
+Something like this:
+
+    puppies
+     -  ---
+
+=for html -->
+
+=for podview </cut>
+
 Context used: color, backColor, font, lineWidth, lineEnd, linePattern
 
 See also: C<render_underline>
