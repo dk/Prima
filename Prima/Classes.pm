@@ -79,7 +79,6 @@ sub append
 
 sub clone
 {
-	Carp::confess() unless ref $_[0];
 	my $self = tied @{$_[0]};
 	my ( $buf, $size, $pack ) = @$self;
 	return __PACKAGE__->new($pack, $buf);
