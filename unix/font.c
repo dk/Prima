@@ -502,7 +502,6 @@ match_font( PFontKey fk, PFont font, Matrix matrix)
 	default:
 		return NULL;
 	}
-	XCHECKPOINT;
 
 	if ( !cf2 ) {
 		free(cf);
