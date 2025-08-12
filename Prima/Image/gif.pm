@@ -82,7 +82,7 @@ sub init
 }
 
 
-sub transparent
+sub is_transparent
 {
 	my $self = $_[0];
 	$self-> Transparent-> checked( $_[1]);
@@ -92,7 +92,7 @@ sub transparent
 sub Transparent_Check
 {
 	my ( $self, $tr) = @_;
-	$self-> transparent( $tr-> checked);
+	$self-> is_transparent( $tr-> checked);
 }
 
 sub on_change
@@ -102,7 +102,7 @@ sub on_change
 	return unless $image;
 	$self-> Interlaced-> checked( exists( $image-> {extras}-> {interlaced}) ?
 		$image-> {extras}-> {interlaced} : $codec-> {saveInput}-> {interlaced});
-	$self-> transparent( $image-> {extras}-> {transparentColorIndex} ? 1 : 0);
+	$self-> is_transparent( $image-> {extras}-> {transparentColorIndex} ? 1 : 0);
 	$self-> TC-> image( $image);
 	$self-> TC-> index( exists( $image-> {extras}-> {transparentColorIndex}) ?
 		$image-> {extras}-> {transparentColorIndex} : 0);
