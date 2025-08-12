@@ -1,11 +1,16 @@
 Revision history for Perl module Prima
 
-1.77 2025-XX-XX
+1.77 2025-08-12
  - Hint colors can be set for each widget individually
- - Add JXL support
+ - Add JXL image support
  - Add MenuItem.context for generic use
- - render_glyph supports color fonts
  - remove support for Prima::codecs::win32/64
+ - Drawable.render_glyph, Drawable.Path.glyph, and examples/fontdlg.pl support color fonts
+ - fixes for MacOSX with homebrew
+ - Implement Drawable.Path.fill_gradient
+ - Implement Drawable .render_underline and .draw_underline
+ - Implement Drawable.add_region
+ - Pod viewer can show content preview in Pod links
 
 1.76 2025-03-12
  - Implement gt::Grid geometry emulating Tk::grid
