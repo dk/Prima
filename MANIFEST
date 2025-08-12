@@ -95,6 +95,7 @@ examples/dock.pl
 examples/drivecombo.pl
 examples/edit.pl
 examples/editor.pl
+examples/emoji.pl
 examples/exif.pl
 examples/extlist.pl
 examples/eyes.pl
