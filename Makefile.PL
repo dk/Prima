@@ -2114,7 +2114,7 @@ sub setup_codecs
 				$found = 1 if pkgconfig('libjxl');
 			} elsif ( $codec eq 'tiff') {
 				$found = 1 if pkgconfig('libtiff-5') || pkgconfig('libtiff-4');
-				# homebrew's tiff needs zlib that has .pc laying in some cryptic location, so just hack this intead
+				# homebrew's tiff needs zlib that has .pc lying in some cryptic location, so just hack this intead
 				$found = 1 if $MacOSX && !$cmd_options{WITH_HOMEBREW} && homebrew_nopkgconfig('libtiff');
 			} elsif ( $codec eq 'Xpm') {
 				$found = 1 if pkgconfig('xpm');

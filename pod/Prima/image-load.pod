@@ -174,7 +174,7 @@ on success and an array with one undefined value on failure.
 
 =head2 Empty image container
 
-Some formats supports files that don't contain any images but may contain
+Some formats support files that don't contain any images but may contain
 additional information. In this case, C<load> won't signal an error if
 the C<loadAll> flag is set, but the typical multiframe loading code such as
 

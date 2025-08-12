@@ -1668,6 +1668,22 @@ The FLAGS is a combination of the following constants:
 
 Context used: color, backColor, font, rop, textOpaque, textOutBaseline
 
+=item draw_underline TEXT, X, Y, %OPT
+
+Given a text string, draws the dashed line that underlines the TEXT in such a
+way so that the glyphs with descent parts, such as g,p,j,etc, will not be
+crossed by the line.
+
+TEXT is either a character string or a C<Prima::Drawable::Glyphs> object
+returned from C<text_shape>, or a C<< Prima::Drawable::Glyphs->glyphs >> string
+of glyphs. In the latter case some wrapping options are not applicable.
+If TEXT is a character string, the %OPT hash is fed to a C<text_shape> call
+internally.
+
+Context used: color, backColor, font, lineWidth, lineEnd, linePattern
+
+See also: C<render_underline>
+
 =item ellipse X, Y, DIAMETER_X, DIAMETER_Y
 
 Plots an ellipse with the center in X, Y, and DIAMETER_X and DIAMETER_Y axes.
@@ -1840,7 +1856,7 @@ No context is used.
 =item rect_solid X1, Y1, X2, Y2, BORDER_WIDTH, FOREGROUND
 
 Draws a rectangle with outline color FOREGROUND and BORDER_WIDTH pixels.  If
-FOREGROUND is undefined, a current color is used. BORDER_WIDTH is 1 pixel if
+FOREGROUND is undefined, the current color is used. BORDER_WIDTH is 1 pixel if
 omitted.
 
 Contrary to a call to C<rectangle()> with line width greater than 1, never
@@ -2403,6 +2419,12 @@ so that f ex emoji fonts are displayed with full color.
 
 Same as C<Prima::Font::has_color>
 
+=item prelight_color COLOR, [ COEFFICIENT = 1.05 ]
+
+Given a COLOR value, returns another color that visually can be regraded as its
+highlighted version. The amount of light (or dark, depending on the color), can
+be specified by the COEFFICIENT.
+
 =item render_glyph INDEX, %OPTIONS
 
 Returns a representation of a glyph as an outline. The outline is an integer
@@ -2492,21 +2514,22 @@ Performs calculations on the POLYLINE, defined by OPTIONS. The following options
 
 If set, renders a 8-bit grayscale image with antialiased filled polygon.
 The polygon is automatically adjusted so its lower and left boundaries
-and on the resulting image's lower and left boundaries. Also the image
+are on the resulting image's lower and left boundaries. Also the image
 size corresponds to the polygon size.
 
 The filling mode can be specificed with the C<mode> option, or the current
-C<fillMode> will be used. Note the the option only accepts the C<fm::Winding>
+C<fillMode> will be used. Note that the option only accepts the C<fm::Winding>
 and C<fm::Alternate> constants, and ignores C<fm::Overlay>.
 
 Return three scalars: first two are the X and Y polygon offsets, and
-the first is the image itself.
+the third is the image itself.
 
 =item box BOOLEAN
 
-If set, instead of polyline vertices, calculates the box extents of the polyline
-(either original or after the matrix transform, depending on whether the C<matrix> option was supplied or not),
-and returns 4 numerics for left, bottom, width, and height of the box enclosure.
+If set, instead of polyline vertices, calculates the box extents of the
+polyline (either original or after the matrix transform, depending on whether
+the C<matrix> option was supplied or not), and returns 4 numerics for left,
+bottom, width, and height of the box enclosure.
 
 =item integer BOOLEAN
 
@@ -2556,6 +2579,21 @@ Renders B-spline curve from a set of VERTICES to a polyline with given options.
 
 The method is internally used by C<spline> and C<fill_spline>, and is provided
 for cases when these are insufficient. See the description of options in L</spline>.
+
+=item render_underline \@GLYPHS, X, Y
+
+Given a text string as a set of @GLYPHS, builds a set of numerical values that
+can be used to represent the dashed line that would underline the string in
+such a way so that the glyphs with descent parts, such as g,p,j,etc, will not
+be crossed by the line.
+
+GLYPHS is either a C<Prima::Drawable::Glyphs> object returned from
+C<text_shape>, or a C<< Prima::Drawable::Glyphs->glyphs >> string of glyphs.
+
+The returned array consists of pairs of X,Y-coordinates, where the first
+coordinate marks the beginning, and the second the end of an individual dash.
+
+See also: C<draw_underline>
 
 =item reset_matrix
 
@@ -2699,6 +2737,14 @@ The escaped character.
 =back
 
 Context used: font
+
+=item text_split_lines TEXT
+
+A convenience wrapper for splitting TEXT into lines separated by newlines.
+TEXT can be a character string, in which case this method is equivalent to a
+C< split "\n", $TEXT > call. Or a reference to an object, such as f.ex.
+C<Prima::Drawable::Block>, where the object uses its own algorithm to split
+itself.
 
 =item text_wrap_shape TEXT, WIDTH = -1, %OPTIONS
 
