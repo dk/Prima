@@ -11,6 +11,7 @@ Revision history for Perl module Prima
  - Implement Drawable .render_underline and .draw_underline
  - Implement Drawable.add_region
  - Pod viewer can show content preview in Pod links
+ - add examples/emoji.pl
 
 1.76 2025-03-12
  - Implement gt::Grid geometry emulating Tk::grid
