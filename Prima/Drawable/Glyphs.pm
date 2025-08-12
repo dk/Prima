@@ -189,7 +189,10 @@ sub right_overhang { [shift->overhangs(@_)]->[1] }
 sub clone
 {
 	my $self = shift;
-	my @svs = map { defined($_) ? Prima::array::clone($_) : undef } @$self;
+	my @svs = map {
+		(defined($_) && (ref($_) eq 'ARRAY')) ?
+		Prima::array::clone($_) :
+		undef } @$self;
 	return __PACKAGE__->new(@svs);
 }
 
