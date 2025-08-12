@@ -247,6 +247,7 @@ prima_ft_get_glyph_outline( FT_Face face, FT_UInt ft_index, FT_Int32 ft_flags, B
 					( palette[color].green << 8)|
 					( palette[color].blue  )
 				);
+				layer_color.y = 0;
 				store_command(&storage, ggoSetColor, &layer_color, NULL, NULL);
 				FT_Outline_Decompose( &face->glyph->outline, &funcs, (void*)&storage);
 			}
