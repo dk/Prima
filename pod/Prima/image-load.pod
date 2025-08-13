@@ -1479,7 +1479,7 @@ returned with premultiplied colors. If it is set to true, the colors will
 be unpremultiplied based on the alpha channel. This function has no effect if
 the image does not have an associated alpha channel.
 
-By default, this option is disabled, and the returned pixel data “as is”.
+By default, this option is disabled, and the returned pixel data "as is".
 
 See C<JxlDecoderSetUnpremultiplyAlpha>
 
