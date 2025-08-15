@@ -2319,11 +2319,11 @@ Stores width in pixels of the INDEXth item into the REF
 scalar reference. This notification must be called
 from within the C<begin_paint_info/end_paint_info> block.
 
-=item SelectItem INDEX, FLAG
+=item SelectItem \@INDICES, FLAG
 
-Called when an item changes its selection state.
-INDEX is the index of the item, FLAG is its new selection
-state: 1 if it is selected, 0 if it is not.
+Called when an item changes its selection state.  INDICES is the indexes of the
+items selected or deselected, FLAG is its new selection state: 1 if the items
+are selected, 0 otherwise.
 
 =item Stringify INDEX, TEXT_REF
 
