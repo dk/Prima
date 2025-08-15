@@ -9,6 +9,10 @@ use strict;
 use warnings;
 use Prima qw(Application Lists);
 
+# try to use perl5.8 glyph names
+eval "use charnames qw(:full);";
+my $use_charnames = $@ ? 0 : 1;
+
 my $font;
 if ( @ARGV ) {
 	$font = $ARGV[0];
@@ -74,6 +78,11 @@ $w->insert( AbstractListViewer =>
 		my $tx = sprintf("%x", $glyphs[$index] );
 		$canvas-> text_out( $tx, $x1 + ( $x2 - $x1 - $canvas->get_text_width($tx)) / 2, $y1);
 		$canvas-> set( color => $cs[0], backColor => $cs[1]) if $focused || $prelight;
+	},
+	onSelectItem => sub {
+		return unless $use_charnames;
+		my $x = charnames::viacode($glyphs[$_[1]->[0]]);
+		$w->text($x) if defined $x;
 	},
 )->count(scalar @glyphs);
 
