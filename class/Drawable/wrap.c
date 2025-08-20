@@ -1260,11 +1260,15 @@ render_underline(Handle self, int x, int y, GlyphsOutRec *t, int * n_points)
 	FontABC *abc = NULL, last_abc = {0,0,0};
 	int *descents = NULL;
 	Bool ok = true;
-	int breakout;
+	int breakout, x0, y0;
 	Bool line_is_on;
 	NPoint c, *ret;
 	float half_widths[2];
 	SaveFont savefont;
+
+	x0 = x;
+	y0 = y;
+	x = y = 0;
 
 	if ( var-> font. direction != 0)
 		c = my->trig_cache(self);
@@ -1384,8 +1388,14 @@ render_underline(Handle self, int x, int y, GlyphsOutRec *t, int * n_points)
 		NPoint *p = ret;
 		for ( i = 0; i < *n_points; i++, p++) {
 			NPoint n = *p;
-			p->x = n.x * c.y - n.y * c.x;
-			p->y = n.x * c.x + n.y * c.y;
+			p->x = n.x * c.y - n.y * c.x + x0;
+			p->y = n.x * c.x + n.y * c.y + y0;
+		}
+	} else {
+		NPoint *p = ret;
+		for ( i = 0; i < *n_points; i++, p++) {
+			p-> x += x0;
+			p-> y += y0;
 		}
 	}
 
