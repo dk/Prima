@@ -282,7 +282,6 @@ sub draw_underline
 	$canvas->lineWidth($lw1) if $lw0 != $lw1;
 	my $r = $canvas->render_underline($string, $x, $y);
 	if ( $r ) {
-		print "LINES @$r\n";
 		$canvas->lines($r);
 	} elsif ( $r = $canvas->get_text_box($string)) {
 		$canvas->line(
