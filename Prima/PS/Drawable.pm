@@ -646,6 +646,10 @@ sub text_wrap
 		$res = $gc->text_wrap($text, $width * $x, @rest);
 		$s->[ Prima::Drawable::Glyphs::ADVANCES()  ] = $save[0];
 		$s->[ Prima::Drawable::Glyphs::POSITIONS() ] = $save[1];
+		for ( @{ $res // [] } ) {
+			Prima::array::multiply( $_->advances, $self->{font_scale});
+			Prima::array::multiply( $_->positions, $self->{font_scale});
+		}
 	} else {
 		$res = $gc->text_wrap($text, $width * $x, @rest);
 	}
@@ -679,8 +683,14 @@ sub render_underline
 		antialias textOutBaseline lineEnd
 	));
 	my $scale = $self->{font_scale} * $self->{font_x_scale};
-	my $ret   = $canvas->render_underline($text, $x, $y);
-	$_ *= $scale for @$ret;
+	my $ret   = $canvas->render_underline($text, 0, 0);
+	for ( my $i = 0; $i < @$ret; $i += 2 ) {
+		my $ax = $x + $ret->[$i]   * $scale;
+		my $ay = $y + $ret->[$i+1] * $scale;
+		$ret->[$i] = $ax;
+		$ret->[$i+1] = $ay;
+
+	}
 	$canvas->textOutBaseline(1);
 	return $ret;
 }

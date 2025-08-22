@@ -157,6 +157,7 @@ $i->backColor(0xffffff) if $opt{box};
 $i->clear;
 $i->backColor(0x0) if $opt{box};
 $i->text_out($text, -$xmin, -$ymin);
+$i->lineWidth( $i->font->underlineThickness );
 $i->draw_underline($text, -$xmin, -$ymin) if $opt{underline};
 $i->type(im::Byte);
 my ($w,$h) = $i->size;

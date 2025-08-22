@@ -340,6 +340,7 @@ Drawable_lineEnd( Handle self, Bool set, SV *lineEnd)
 	if ( !Drawable_read_line_ends( lineEnd, &GS ))
 		return NULL_SV;
 	Drawable_line_end_refcnt( &GS, +1);
+	Drawable_clear_descent_crossing_caches(self);
 
 	return NULL_SV;
 }
@@ -374,6 +375,7 @@ Drawable_lineEndIndex( Handle self, Bool set, int index, SV *lineEnd)
 	if ( !read_line_end( lineEnd, &GS, index ))
 		return NULL_SV;
 	line_end_refcnt( &GS, index, +1);
+	Drawable_clear_descent_crossing_caches(self);
 
 	return NULL_SV;
 }

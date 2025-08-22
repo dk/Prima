@@ -35,8 +35,11 @@ Drawable_clear_font_abc_caches( Handle self)
 		free( var-> font_abc_ascii);
 		var-> font_abc_ascii = NULL;
 	}
+	if ( var->underline_info ) {
+		free(var->underline_info);
+		var->underline_info = NULL;
+	}
 }
-
 
 Font *
 Drawable_font_match( char * dummy, Font * source, Font * dest, Bool pick)

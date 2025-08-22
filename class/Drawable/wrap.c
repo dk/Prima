@@ -23,8 +23,8 @@
 extern "C" {
 #endif
 
-static void*
-find_in_cache( PList p, int base )
+void*
+Drawable_find_in_cache( PList p, int base )
 {
 	int i;
 	if ( p == NULL )
@@ -35,8 +35,8 @@ find_in_cache( PList p, int base )
 	return NULL;
 }
 
-static Bool
-fill_cache( PList * cache, int base, void *entry)
+Bool
+Drawable_fill_cache( PList * cache, int base, void *entry)
 {
 	PList p;
 	if ( *cache == NULL )
@@ -92,231 +92,6 @@ Drawable_call_get_font_abc( Handle self, unsigned int from, unsigned int to, int
 	return abc;
 }
 
-/*
-Fill the 2-int array meaning:
-
-(-1,-1) - glyph doesn't intersect the descent line
-(A,B)   - glyph intersects the line from A to B
-
-*/
-
-static Bool
-check_intersections( Point a, Point b, int y0, int y1, int *x_margins)
-{
-	int i;
-
-	DEBUG("? %d.%d - %d.%d x (%d %d)\n", a.x, a.y, b.x, b.y, y0, y1); 
-	if ( a.y > b.y ) {
-		Point s = a;
-		a = b;
-		b = s;
-	}
-
-	if ( a.y > y1 || b.y < y0 ) {
-		return false;
-	} else if ( a.y >= y0 && b.y <= y1 ) {
-		int min = ( a.x < b.x ) ? a.x : b.x;
-		int max = ( a.x < b.x ) ? b.x : a.x;
-
-		for ( i = 0; i < ((min == max) ? 1 : 2); i++) {
-			int x = (i == 0) ? min : max;
-			if ( x < 0 ) x = 0;
-			if ( x_margins[1] >= 0 ) {
-				if ( x_margins[0] < 0 || x_margins[0] > x)
-					x_margins[0] = x;
-				if ( x_margins[1] < x)
-					x_margins[1] = x;
-			} else if ( x_margins[0] < 0 )
-				x_margins[0] = x_margins[1] = x;
-		}
-		DEBUG("x> %d %d\n", x_margins[0], x_margins[1]);
-
-		/* mark whole line */
-		//x_margins[0] = 0;
-		//x_margins[1] = -1;
-		return false;
-	}
-
-	for ( i = 0; i < ((y0 == y1) ? 1 : 2); i++) {
-		int y = (i == 0) ? y0 : y1;
-
-		if ( a.y < y && b.y >= y ) {
-			int x = a.x + (y - a.y) * (b.x - a.x) / (b.y - a.y);
-			if ( x < 0 ) x = 0;
-			if ( x_margins[1] >= 0 ) {
-				if ( x_margins[0] < 0 || x_margins[0] > x)
-					x_margins[0] = x;
-				if ( x_margins[1] < x)
-					x_margins[1] = x;
-			} else if ( x_margins[0] < 0 )
-				x_margins[0] = x_margins[1] = x;
-		}
-	}
-	DEBUG("y> %d %d\n", x_margins[0], x_margins[1]);
-	return false;
-}
-
-int*
-Drawable_call_get_glyph_descents( Handle self, unsigned int from, unsigned int to)
-{
-	dmARGS;
-	int i, j, breakout, len = to - from + 1, extra_margin;
-	int *descents, y0, y1;
-	PFontABC abc;
-	Bool want_dm_leave = false;
-
-	/* query ABC information */
-	if ( !self) {
-		abc = apc_gp_get_font_def( self, from, to, toGlyphs);
-		if ( !abc) return NULL;
-	} else if ( my-> get_font_abc == Drawable_get_font_abc) {
-		dmCHECK(NULL);
-		dmENTER(NULL);
-		abc = apc_gp_get_font_def( self, from, to, toGlyphs);
-		if ( !abc) {
-			dmLEAVE;
-			return NULL;
-		}
-		want_dm_leave = true;
-	} else {
-		SV * sv;
-		if ( !( abc = malloc(len * sizeof( FontABC)))) return NULL;
-		sv = my-> get_font_def( self, from, to, toGlyphs);
-		if ( SvOK( sv) && SvROK( sv) && SvTYPE( SvRV( sv)) == SVt_PVAV) {
-			AV * av = ( AV*) SvRV( sv);
-			int i, j = 0, n = av_len( av) + 1;
-			if ( n > len * 3) n = len * 3;
-			n = ( n / 3) * 3;
-			if ( n < len) memset( abc, 0, len * sizeof( FontABC));
-			for ( i = 0; i < n; i += 3) {
-				SV ** holder = av_fetch( av, i, 0);
-				if ( holder) abc[j].a = ( float) SvNV( *holder);
-				j++;
-			}
-		} else
-			memset( abc, 0, len * sizeof( FontABC));
-		sv_free( sv);
-	}
-
-
-	{
-		int ut = (var->font.underlineThickness <= 0) ?
-			1 :
-			var->font.underlineThickness;
-		int up = (var->font.underlinePosition < 0) ?
-			var->font.underlinePosition :
-			-(var->font.descent - ut/2 - 1);
-		breakout = var->font.descent + up + ut;
-
-		extra_margin = ( ut > 2 ) ? ut / 2 : 1;
-		y0 = up - extra_margin;
-		y1 = up + extra_margin + ut - 1;
-
-		if ( y0 >= 0 ) y0 = -1;
-		if ( y1 >= 0 ) y1 = -1;
-		DEBUG("d=%d up=%d ut=%d b=%d/ y=%d %d\n", var->font.descent, up, ut, breakout, y0, y1);
-	}
-
-
-	if (!( descents = malloc(sizeof(int) * len * 2))) {
-		free(abc);
-		if ( want_dm_leave ) dmLEAVE;
-		return NULL;
-	}
-	for ( i = j = 0; i < len; i++, j += 2)
-		descents[j] = descents[j + 1] = -1;
-
-	/* query glyph outlines, check intersections with the underline */
-	for ( i = j = 0; i < len; i++, j += 2) {
-		DEBUG("GLY %d a=%g\n", i, abc[i].a);
-		if ( abc[i].a >= breakout )
-			continue;
-
-		if ( !self || my-> render_glyph == Drawable_render_glyph) {
-			int k, count, *buffer = NULL, *p;
-			Point anchor = {0,0}, curr_point = {0,0}, next_point;
-			Bool close_shape = false, got_anchor = false, got_curr_point = false;
-			count = apc_gp_get_glyph_outline( self, from + i, ggoGlyphIndex, &buffer);
-
-			if ( count < 0 || !buffer) {
-				descents[j] = 0;
-				continue;
-			}
-
-#define POINT(x) ((x) / 64.0 + .5)
-			for ( k = 0, p = buffer; k < count;) {
-				int cmd      = *(p++);
-				int n_subcmd = *(p++);
-				int *p_sub, sub;
-				k += n_subcmd * 2 + 2;
-				DEBUG("cmd %d\n", n_subcmd);
-				switch ( cmd ) {
-				case ggoMove:
-					anchor.x    = POINT(p[0]);
-					anchor.y    = POINT(p[1]);
-					if ( got_curr_point && check_intersections( curr_point, anchor, y0, y1, descents + j))
-						goto STOP;
-					close_shape = false;
-					got_anchor  = true;
-					break;
-				case ggoLine:
-				case ggoConic:
-				case ggoCubic:
-					next_point.x = POINT(p[0]);
-					next_point.y = POINT(p[1]);
-					if ( got_curr_point )
-						if ( check_intersections( curr_point, next_point, y0, y1, descents + j))
-							goto STOP;
-					for ( sub = 1, p_sub = p + 1; sub < n_subcmd; sub++) {
-						curr_point   = next_point;
-						next_point.x = POINT(*(p_sub++));
-						next_point.y = POINT(*(p_sub++));
-						if ( check_intersections( curr_point, next_point, y0, y1, descents + j))
-							goto STOP;
-					}
-					break;
-				default:
-					p += n_subcmd * 2;
-					continue;
-				}
-
-				p += n_subcmd * 2;
-				curr_point.x   = POINT(p[-2]);
-				curr_point.y   = POINT(p[-1]);
-				got_curr_point = true;
-				close_shape    = true;
-			}
-#undef POINT
-
-			if ( close_shape && got_anchor )
-				check_intersections( curr_point, anchor, y0, y1, descents + j);
-
-		STOP:
-			DEBUG("%d => %d %d\n", i, descents[j], descents[j+1]);
-			if ( buffer )
-				free(buffer);
-		} else {
-			croak("unimplemented");
-		}
-	}
-
-	free(abc);
-
-	/* if not the whole glyph, extend the X parts by half of the line thickness */
-	for ( i = j = 0; i < len; i++, j += 2) {
-		if ( descents[j] >= 0 && descents[j+1] >= 0) {
-			descents[j]   -= extra_margin;
-			if ( descents[j] < 0 )
-				descents[j] = 0;
-
-			descents[j+1] += extra_margin;
-		}
-	}
-
-	if ( want_dm_leave ) dmLEAVE;
-	return descents;
-}
-
 static PFontABC
 query_abc_range( Handle self, TextWrapRec * t, unsigned int base)
 {
@@ -325,7 +100,7 @@ query_abc_range( Handle self, TextWrapRec * t, unsigned int base)
 	if ( t-> utf8_text) {
 		if (
 			t->unicode &&
-			(( abc = (PFontABC) find_in_cache( *(t->unicode), base)) != NULL)
+			(( abc = (PFontABC) Drawable_find_in_cache( *(t->unicode), base)) != NULL)
 		)
 			return abc;
 	} else if (*( t-> ascii))
@@ -335,7 +110,7 @@ query_abc_range( Handle self, TextWrapRec * t, unsigned int base)
 		return NULL;
 
 	if ( t-> utf8_text) {
-		if ( !fill_cache(t->unicode, base, abc)) {
+		if ( !Drawable_fill_cache(t->unicode, base, abc)) {
 			free( abc);
 			return NULL;
 		}
@@ -371,47 +146,23 @@ precalc_ac_buffer( PFontABC src, PFontABC dest)
 	return true;
 }
 
-#define FIDGID2BASE(fid,gid) (((fid) << 8) + ((gid) >> 8))
-#define GID2OFFSET(gid)      ((gid) & 0xff)
-#define BASE_FROM(base)      ((base & 0xff) * 256)
-#define BASE_TO(base)        (BASE_FROM(base) + 255)
-
-static PFontABC
-query_abc_glyph_range( Handle self, int base)
+PFontABC
+Drawable_query_abc_glyph_range( Handle self, int base)
 {
 	PFontABC abcs = NULL;
 
-	abcs = (PFontABC) find_in_cache( var->font_abc_glyphs, base);
+	abcs = (PFontABC) Drawable_find_in_cache( var->font_abc_glyphs, base);
 	if ( abcs == NULL) {
 		abcs = Drawable_call_get_font_abc( self, BASE_FROM(base), BASE_TO(base), toGlyphs);
 		if ( abcs == NULL)
 			return NULL;
-		if ( !fill_cache(&(var->font_abc_glyphs), base, abcs)) {
+		if ( !Drawable_fill_cache(&(var->font_abc_glyphs), base, abcs)) {
 			free(abcs);
 			return NULL;
 		}
 	}
 
 	return abcs;
-}
-
-static int*
-query_descent_range( Handle self, int base)
-{
-	int* ret;
-
-	ret = (int*) find_in_cache( var->glyph_descents, base);
-	if ( ret == NULL) {
-		ret = Drawable_call_get_glyph_descents( self, BASE_FROM(base), BASE_TO(base));
-		if ( ret == NULL)
-			return NULL;
-		if ( !fill_cache(&(var->glyph_descents), base, ret)) {
-			free(ret);
-			return NULL;
-		}
-	}
-
-	return ret;
 }
 
 
@@ -714,9 +465,7 @@ wrap_add_entry( WrapRec * w, TextWrapRec * tw, GlyphWrapRec * gw, int end, int u
 			return false;
 		w->storage = n;
 	}
-#ifdef _DEBUG
-	printf("add %d - %d\n", w-> curr. utf8_start, end);
-#endif
+	DEBUG("add %d - %d\n", w-> curr. utf8_start, end);
 
 	if (
 		tw && 
@@ -777,7 +526,7 @@ wrap_load_glyphs_abc(Handle self, uint16_t fid, uint16_t gid, WrapRec * w, Glyph
 		return true;
 	my->switch_font( self, &g->savefont, fid);
 	w-> base = base;
-	if ( !(labc = query_abc_glyph_range( self, w->base)))
+	if ( !(labc = Drawable_query_abc_glyph_range( self, w->base)))
 		return false;
 	if ( g-> advances )
 		precalc_ac_buffer(labc, w->abcs);
@@ -1019,7 +768,7 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * tw, GlyphWrapRec * gw, uint16_
 		float dw, c;
 		unsigned int j, nc, ng, wmul = 1;
 		unsigned int len = 1;
-		uint32_t uv, uv0, last_uv = 0, last_fid = 0;
+		uint32_t uv, uv0 = 0, last_uv = 0, last_fid = 0;
 		uint16_t index;
 
 		wr.prev = wr.curr;
@@ -1165,9 +914,7 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * tw, GlyphWrapRec * gw, uint16_
 			wrap_step_ptr(wr, 1, 1);
 		}
 
-#ifdef _DEBUG
-		printf("i:%d/%d nc:%d ng:%d w:%f dw:%f c:%f index:%d uv:%x\n",  wr.curr.p, wr.curr.utf8_p, nc, ng, w, dw, c, index, uv0);
-#endif
+		DEBUG("i:%d/%d nc:%d ng:%d w:%f dw:%f c:%f index:%d uv:%x\n",  wr.curr.p, wr.curr.utf8_p, nc, ng, w, dw, c, index, uv0);
 		if ( !wr.do_width_break || (w + dw + c <= wr.width)) {
 			w += dw;
 			continue;
@@ -1432,240 +1179,6 @@ Drawable_text_wrap( Handle self, SV * text, int width, int options, int tabInden
 		dmLEAVE;
 		return ret;
 	}
-}
-
-static NPoint*
-render_underline(Handle self, int x, int y, GlyphsOutRec *t, int * n_points)
-{
-	dmARGS;
-	int x0, y0, i, base;
-	FontABC *abc = NULL, last_abc = {0,0,0};
-	int *descents = NULL, ut;
-	Bool ok = true;
-	Bool line_is_on;
-	NPoint c, *ret;
-	float half_widths[2];
-	SaveFont savefont;
-
-	x0 = x;
-	y0 = y;
-	x = y = 0;
-
-	if ( var-> font. direction != 0)
-		c = my->trig_cache(self);
-	else
-		c.x = c.y = 0;
-
-	{
-		Bool text_out_baseline;
-		ut = (var->font.underlineThickness <= 0) ?
-			1 :
-			var->font.underlineThickness;
-		int up = (var->font.underlinePosition < 0) ?
-			-var->font.underlinePosition :
-			(var->font.descent - 1);
-		y -= up + ((ut > 1) ? (ut / 2) : 0);
-
-		text_out_baseline = ( my-> textOutBaseline == Drawable_textOutBaseline) ?
-			apc_gp_get_text_out_baseline(self) :
-			my-> get_textOutBaseline(self);
-		if ( !text_out_baseline )
-			y += var->font.descent;
-
-		if ( ut > 1 ) {
-			for (i = 0; i < 2; i++) {
-				NRect box;
-				int j;
-				j = ( i == 0 ) ? leiArrowTail : leiArrowHead;
-				j   = Drawable_resolve_line_end_index(&var->current_state, j);
-				box = Drawable_line_end_box( &var->current_state, j);
-				half_widths[i] = box.right * ut;
-			}
-
-			half_widths[1] *= -1.0;
-		} else
-			half_widths[0] = half_widths[1] = 0.0;
-	}
-
-	*n_points = 0;
-	dmCHECK(NULL);
-	dmENTER(NULL);
-	if (( ret = malloc(sizeof(NPoint) * 6 * t->len)) == NULL) {
-		dmLEAVE;
-		return NULL;
-	}
-
-	line_is_on = false;
-	base = -1;
-
-#define ADD_POINT(hw) {                                        \
-	float xx = x - hw;                                     \
-	float this_a = ( abc[o].a < 0 ) ? -abc[o].a   : 0;     \
-	float last_c = (last_abc.c < 0) ? -last_abc.c : 0;     \
-	DEBUG("x %g/%d a %g c %g hw %g = %g\n", xx, hw, this_a, last_c, half_widths[hw], half_widths[hw]+xx);\
-	xx -= this_a + last_c;                                 \
-	xx += half_widths[hw];                                 \
-	ret[ *n_points    ].x = xx;                            \
-	ret[ (*n_points)++].y = y;                             \
-}
-#define LAST_X ret[(*n_points) - 1].x
-#define CHECK_POINT                                            \
-	if ( *n_points > 1 && LAST_X - ret[(*n_points)-2].x <= ut ) { \
-		DEBUG("skip\n");\
-		*n_points -= 2;\
-	}
-
-	if ( t-> fonts )
-		my->save_font(self, &savefont);
-	for ( i = 0; i < t->len; i++) {
-		int o = GID2OFFSET(t->glyphs[i]), from, to;
-		int b = FIDGID2BASE(t->fonts ? t->fonts[i] : 0, t->glyphs[i]);
-		if ( base != b) {
-			base = b;
-			if ( t->fonts )
-				my-> switch_font(self, &savefont, t->fonts[i]);
-			abc      = query_abc_glyph_range( self, base);
-			descents = query_descent_range  ( self, base);
-			if (abc == NULL || descents == NULL) {
-				ok = false;
-				break;
-			}
-		}
-
-		from = descents[o * 2];
-		to   = descents[o * 2 + 1];
-		DEBUG("C %d (%g %g %g = %g) => %d %d\n", t->glyphs[i], abc[o].a, abc[o].b, abc[o].c, abc[o].a+abc[o].b+abc[o].c, from, to);
-
-		if ( from < 0 ) {
-			if ( !line_is_on ) {
-				/* start the line */
-				ADD_POINT(0)
-				CHECK_POINT;
-				line_is_on = true;
-			}
-			/* else continue the existing line */
-		} else if ( from == 0 ) {
-			/* line wanted after a skip */
-			if ( line_is_on ) {
-				ADD_POINT(1)
-				CHECK_POINT;
-				DEBUG("a0: %g\n", LAST_X);
-			} else
-				line_is_on = true;
-			ADD_POINT(0)
-			LAST_X += to + 1;
-			DEBUG("b: %g\n", LAST_X);
-			CHECK_POINT;
-		} else if ( to + 1 >= abc[o].a + abc[o].b + abc[o].c ) {
-			/* line wanted but not until the end */
-			if ( line_is_on ) {
-				line_is_on = false;
-			} else {
-				ADD_POINT(0)
-				DEBUG("d0: %g\n", LAST_X);
-				CHECK_POINT;
-			}
-			ADD_POINT(1)
-			LAST_X += from - 1;
-			CHECK_POINT;
-			DEBUG("d1: %g\n", LAST_X);
-		} else {
-			/* glyph descent breaks the line */
-			if ( !line_is_on ) {
-				ADD_POINT(0)
-				DEBUG("f0: %g\n", LAST_X);
-				CHECK_POINT;
-				line_is_on = true;
-			}
-
-			ADD_POINT(1);
-			LAST_X += from - 1;
-			DEBUG("f1: %g\n", LAST_X);
-			CHECK_POINT;
-
-			ADD_POINT(0)
-			LAST_X += to + 1;
-			DEBUG("f2: %g\n", LAST_X);
-			CHECK_POINT;
-		}
-
-		x += abc[o].a + abc[o].b + abc[o].c;
-		last_abc = abc[o];
-	}
-	if ( t-> fonts )
-		my->restore_font(self, &savefont);
-	dmLEAVE;
-
-	if ( !ok ) {
-		free(ret);
-		ret = NULL;
-		*n_points = 0;
-	}
-
-	if ((( *n_points ) % 2) == 1 ) {
-		int o = t->glyphs[t->len - 1] & 0xff;
-		DEBUG("FINO\n");
-		ADD_POINT(1)
-		CHECK_POINT;
-	}
-
-#undef ADD_POINT
-#undef LAST_X
-#undef CHECK_POINT
-
-	{
-		NPoint *p = ret;
-		for ( i = 0; i < *n_points; i++, p += 2)
-			if ( p[0].x > p[1].x ) {
-				NPoint s = *p;
-				*p = p[1];
-				p[1] = s;
-			}
-	}
-
-	if ( var-> font. direction != 0) {
-		NPoint *p = ret;
-		for ( i = 0; i < *n_points; i++, p++) {
-			NPoint n = *p;
-			p->x = n.x * c.y - n.y * c.x + x0;
-			p->y = n.x * c.x + n.y * c.y + y0;
-		}
-	} else {
-		NPoint *p = ret;
-		for ( i = 0; i < *n_points; i++, p++) {
-			p-> x += x0;
-			p-> y += y0;
-		}
-	}
-
-	return ret;
-}
-
-SV *
-Drawable_render_underline(Handle self, SV * glyphs, int x, int y)
-{
-	AV * av;
-	NPoint *np, *npi;
-	int i, n_points;
-	GlyphsOutRec t;
-	if (!Drawable_read_glyphs(&t, glyphs, 0, "Drawable::render_underline"))
-		return NULL_SV;
-	np = render_underline(self, x, y, &t, &n_points);
-	av = newAV();
-	for ( i = 0, npi = np; i < n_points; i++, npi++) {
-		if ( var-> antialias ) {
-			av_push(av, newSVnv(npi->x));
-			av_push(av, newSVnv(npi->y));
-		} else {
-			int z;
-			z = (npi->x > 0) ? (npi->x + .5) : (npi->x - 0.5);
-			av_push(av, newSViv(z));
-			z = (npi->y > 0) ? (npi->y + .5) : (npi->y - 0.5);
-			av_push(av, newSViv(z));
-		}
-	}
-	free(np);
-	return newRV_noinc(( SV *) av);
 }
 
 #ifdef __cplusplus

@@ -514,7 +514,7 @@ sub parse_struc
 			$structure = $type;
 			$tok = getid;
 		} else {
-			error "Invalid filed type $type in structure $id"
+			error "Invalid field type $type in structure $id"
 				if ( $type eq 'HV') or ( $type eq 'SV');
 		}
 		push ( @types, $structure);
@@ -551,9 +551,19 @@ sub parse_struc
 			}
 			push ( @defs, $def);
 		} else {
-			expect(';');
+			my $d = gettok;
+			if ( $d eq '[') {
+				my $dim = gettok;
+				error "Invalid array $id dimension '$dim'" if $dim <= 0;
+				expect(']');
+				expect(';');
+				$ids[-1] .= "[$dim]";
+			} elsif ( $d eq ';') {
+			} else {
+				error "End of field definition expected, got '$d' instead";
+			}
 		}
-	}
+	 }
 	error "Structure $id defined as empty" unless scalar @ids;
 
 	if ( $redef) {

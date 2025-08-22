@@ -538,6 +538,8 @@ Drawable_lineWidth( Handle self, Bool set, double lineWidth)
 {
 	if (!set) return GS.line_width;
 	if ( lineWidth < 0.0 ) lineWidth = 0.0;
+	if ( GS.line_width != lineWidth)
+		Drawable_clear_descent_crossing_caches(self);
 	return GS.line_width = lineWidth;
 }
 

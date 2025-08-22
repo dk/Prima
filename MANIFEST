@@ -42,6 +42,7 @@ class/Drawable/primitives.c
 class/Drawable/render.c
 class/Drawable/text.c
 class/Drawable/shape.c
+class/Drawable/underline.c
 class/Drawable/wrap.c
 class/Drawable.cls
 class/File.c

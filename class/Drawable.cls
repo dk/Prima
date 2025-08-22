@@ -1,5 +1,14 @@
 use Types;
 
+local @UnderlineInfo
+{
+	int y[2];
+	double half_widths[2];
+	int thickness;
+	int position;
+	int extra_margin;
+}
+
 object Prima::Drawable ( Prima::Component)
 {
 	Font         font;
@@ -101,6 +110,7 @@ object Prima::Drawable ( Prima::Component)
 	PList    font_abc_unicode;
 	PList    font_abc_glyphs;
 	PList    glyph_descents;
+	UnderlineInfo *underline_info;
 
 	# misc stuff
 	NPoint   trig_cache;

@@ -52,8 +52,26 @@ extern PHash font_substitutions;
 #define N_STYLES   (1 + STYLE_MASK)
 extern int   font_mapper_default_id[N_STYLES];
 
+#define FIDGID2BASE(fid,gid) (((fid) << 8) + ((gid) >> 8))
+#define GID2OFFSET(gid)      ((gid) & 0xff)
+#define BASE_FROM(base)      ((base & 0xff) * 256)
+#define BASE_TO(base)        (BASE_FROM(base) + 255)
+#define BASE_RANGE           256
+
+void*
+Drawable_find_in_cache( PList p, int base );
+
+Bool
+Drawable_fill_cache( PList * cache, int base, void *entry);
+
 void
 Drawable_clear_font_abc_caches( Handle self);
+
+void
+Drawable_clear_descent_crossing_caches( Handle self);
+
+PFontABC
+Drawable_query_abc_glyph_range( Handle self, int base);
 
 PFontABC
 Drawable_call_get_font_abc( Handle self, unsigned int from, unsigned int to, int flags);
