@@ -177,8 +177,8 @@ Drawable_clear_descent_crossing_caches( Handle self)
 	}
 }
 
-int*
-Drawable_call_get_glyph_descents( Handle self, unsigned int from, unsigned int to)
+static int*
+call_get_glyph_descents( Handle self, unsigned int from, unsigned int to)
 {
 	dmARGS;
 	int i, j, breakout, len = to - from + 1;
@@ -267,7 +267,7 @@ query_descent_range( Handle self, int base)
 
 	ret = (int*) Drawable_find_in_cache( var->glyph_descents, base);
 	if ( ret == NULL) {
-		ret = Drawable_call_get_glyph_descents( self, BASE_FROM(base), BASE_TO(base));
+		ret = call_get_glyph_descents( self, BASE_FROM(base), BASE_TO(base));
 		if ( ret == NULL)
 			return NULL;
 		if ( !Drawable_fill_cache(&(var->glyph_descents), base, ret)) {
