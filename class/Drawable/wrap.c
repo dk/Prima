@@ -85,24 +85,92 @@ Drawable_call_get_font_abc( Handle self, unsigned int from, unsigned int to, int
 	return abc;
 }
 
+/*
+Fill the 2-int array meaning:
+
+(-1,-1) - glyph doesn't intersect the descent line
+(0,-1)  - glyph intersects the line wholly XXX
+(A,B)   - glyph intersects the line from A to B
+
+*/
+
+static Bool
+check_intersections( Point a, Point b, int y0, int y1, int *x_margins)
+{
+	int i;
+	warn("? %d.%d - %d.%d x (%d %d)\n", a.x, a.y, b.x, b.y, y0, y1);
+	if ( a.y > b.y ) {
+		Point s = a;
+		a = b;
+		b = s;
+	}
+
+	if ( a.y > y1 || b.y < y0 ) {
+		return false;
+	} else if ( a.y >= y0 && b.y <= y1 ) {
+		int min = ( a.x < b.x ) ? a.x : b.x;
+		int max = ( a.x < b.x ) ? b.x : a.x;
+
+		for ( i = 0; i < ((min == max) ? 1 : 2); i++) {
+			int x = (i == 0) ? min : max;
+			if ( x < 0 ) x = 0;
+			if ( x_margins[1] >= 0 ) {
+				if ( x_margins[0] < 0 || x_margins[0] > x)
+					x_margins[0] = x;
+				if ( x_margins[1] < x)
+					x_margins[1] = x;
+			} else if ( x_margins[0] < 0 )
+				x_margins[0] = x_margins[1] = x;
+		}
+		warn("x> %d %d\n", x_margins[0], x_margins[1]);
+
+		/* mark whole line */
+		//x_margins[0] = 0;
+		//x_margins[1] = -1;
+		return false;
+	}
+
+	for ( i = 0; i < ((y0 == y1) ? 1 : 2); i++) {
+		int y = (i == 0) ? y0 : y1;
+
+		if ( a.y < y && b.y >= y ) {
+			int x = a.x + (y - a.y) * (b.x - a.x) / (b.y - a.y);
+			if ( x < 0 ) x = 0;
+			if ( x_margins[1] >= 0 ) {
+				if ( x_margins[0] < 0 || x_margins[0] > x)
+					x_margins[0] = x;
+				if ( x_margins[1] < x)
+					x_margins[1] = x;
+			} else if ( x_margins[0] < 0 )
+				x_margins[0] = x_margins[1] = x;
+		}
+	}
+	warn("y> %d %d\n", x_margins[0], x_margins[1]);
+	return false;
+}
+
 int*
 Drawable_call_get_glyph_descents( Handle self, unsigned int from, unsigned int to)
 {
-	int i, len = to - from + 1;
-	int *descents;
+	dmARGS;
+	int i, j, breakout, len = to - from + 1, extra_margin;
+	int *descents, y0, y1;
 	PFontABC abc;
+	Bool want_dm_leave = false;
 
 	/* query ABC information */
 	if ( !self) {
 		abc = apc_gp_get_font_def( self, from, to, toGlyphs);
 		if ( !abc) return NULL;
 	} else if ( my-> get_font_abc == Drawable_get_font_abc) {
-		dmARGS;
 		dmCHECK(NULL);
 		dmENTER(NULL);
 		abc = apc_gp_get_font_def( self, from, to, toGlyphs);
-		dmLEAVE;
-		if ( !abc) return NULL;
+		if ( !abc) {
+			dmLEAVE;
+			return NULL;
+		}
+		want_dm_leave = true;
 	} else {
 		SV * sv;
 		if ( !( abc = malloc(len * sizeof( FontABC)))) return NULL;
@@ -123,15 +191,122 @@ Drawable_call_get_glyph_descents( Handle self, unsigned int from, unsigned int t
 		sv_free( sv);
 	}
 
-	if (!( descents = malloc(sizeof(int) * len))) {
-		free(abc);
-		return NULL;
+
+	{
+		int ut = (var->font.underlineThickness <= 0) ?
+			1 :
+			var->font.underlineThickness;
+		int up = (var->font.underlinePosition < 0) ?
+			var->font.underlinePosition :
+			-(var->font.descent - ut/2 - 1);
+		breakout = var->font.descent + up + ut;
+
+		extra_margin = ( ut > 2 ) ? ut / 2 : 1;
+		y0 = up - extra_margin;
+		y1 = up + extra_margin + ut - 1;
+
+		if ( y0 >= 0 ) y0 = -1;
+		if ( y1 >= 0 ) y1 = -1;
+		warn("d=%d up=%d ut=%d b=%d/ y=%d %d\n", var->font.descent, up, ut, breakout, y0, y1);
 	}
 
-	for ( i = 0; i < len; i++)
-		descents[i] = abc[i].a;
+
+	if (!( descents = malloc(sizeof(int) * len * 2))) {
+		free(abc);
+		if ( want_dm_leave ) dmLEAVE;
+		return NULL;
+	}
+	for ( i = j = 0; i < len; i++, j += 2)
+		descents[j] = descents[j + 1] = -1;
+
+	/* query glyph outlines, check intersections with the underline */
+	for ( i = j = 0; i < len; i++, j += 2) {
+		warn("GLY %d a=%g\n", i, abc[i].a);
+		if ( abc[i].a >= breakout )
+			continue;
+
+		if ( !self || my-> render_glyph == Drawable_render_glyph) {
+			int k, count, *buffer = NULL, *p;
+			Point anchor = {0,0}, curr_point = {0,0}, next_point;
+			Bool close_shape = false, got_anchor = false, got_curr_point = false;
+			count = apc_gp_get_glyph_outline( self, from + i, ggoGlyphIndex, &buffer);
+
+			if ( count < 0 || !buffer) {
+				descents[j] = 0;
+				continue;
+			}
+
+#define POINT(x) ((x) / 64.0 + .5)
+			for ( k = 0, p = buffer; k < count;) {
+				int cmd      = *(p++);
+				int n_subcmd = *(p++);
+				int *p_sub, sub;
+				k += n_subcmd * 2 + 2;
+				warn("cmd %d\n", n_subcmd);
+				switch ( cmd ) {
+				case ggoMove:
+					anchor.x    = POINT(p[0]);
+					anchor.y    = POINT(p[1]);
+					if ( got_curr_point && check_intersections( curr_point, anchor, y0, y1, descents + j))
+						goto STOP;
+					close_shape = false;
+					got_anchor  = true;
+					break;
+				case ggoLine:
+				case ggoConic:
+				case ggoCubic:
+					next_point.x = POINT(p[0]);
+					next_point.y = POINT(p[1]);
+					if ( got_curr_point )
+						if ( check_intersections( curr_point, next_point, y0, y1, descents + j))
+							goto STOP;
+					for ( sub = 1, p_sub = p + 1; sub < n_subcmd; sub++) {
+						curr_point   = next_point;
+						next_point.x = POINT(*(p_sub++));
+						next_point.y = POINT(*(p_sub++));
+						if ( check_intersections( curr_point, next_point, y0, y1, descents + j))
+							goto STOP;
+					}
+					break;
+				default:
+					p += n_subcmd * 2;
+					continue;
+				}
+
+				p += n_subcmd * 2;
+				curr_point.x   = POINT(p[-2]);
+				curr_point.y   = POINT(p[-1]);
+				got_curr_point = true;
+				close_shape    = true;
+			}
+#undef POINT
+
+			if ( close_shape && got_anchor )
+				check_intersections( curr_point, anchor, y0, y1, descents + j);
+
+		STOP:
+			warn("%d => %d %d\n", i, descents[j], descents[j+1]);
+			if ( buffer )
+				free(buffer);
+		} else {
+			croak("unimplemented");
+		}
+	}
+
 	free(abc);
 
+	/* if not the whole glyph, extend the X parts by half of the line thickness */
+	for ( i = j = 0; i < len; i++, j += 2) {
+		if ( descents[j] >= 0 && descents[j+1] >= 0) {
+			descents[j]   -= extra_margin;
+			if ( descents[j] < 0 )
+				descents[j] = 0;
+
+			descents[j+1] += extra_margin;
+		}
+	}
+
+	if ( want_dm_leave ) dmLEAVE;
 	return descents;
 }
 
@@ -1256,11 +1431,10 @@ static NPoint*
 render_underline(Handle self, int x, int y, GlyphsOutRec *t, int * n_points)
 {
 	dmARGS;
-	int i, base;
+	int x0, y0, i, base;
 	FontABC *abc = NULL, last_abc = {0,0,0};
-	int *descents = NULL;
+	int *descents = NULL, ut;
 	Bool ok = true;
-	int breakout, x0, y0;
 	Bool line_is_on;
 	NPoint c, *ret;
 	float half_widths[2];
@@ -1277,15 +1451,13 @@ render_underline(Handle self, int x, int y, GlyphsOutRec *t, int * n_points)
 
 	{
 		Bool text_out_baseline;
-		int ut = (var->font.underlineThickness <= 0) ?
+		ut = (var->font.underlineThickness <= 0) ?
 			1 :
 			var->font.underlineThickness;
 		int up = (var->font.underlinePosition < 0) ?
 			-var->font.underlinePosition :
-			(var->font.descent - ut/2 - 1);
-
-		breakout = var->font.descent - up + ut;
-		y -= up;
+			(var->font.descent - 1);
+		y -= up + ((ut > 1) ? (ut / 2) : 0);
 
 		text_out_baseline = ( my-> textOutBaseline == Drawable_textOutBaseline) ?
 			apc_gp_get_text_out_baseline(self) :
@@ -1293,22 +1465,25 @@ render_underline(Handle self, int x, int y, GlyphsOutRec *t, int * n_points)
 		if ( !text_out_baseline )
 			y += var->font.descent;
 
-		for (i = 0; i < 2; i++) {
-			NRect box;
-			int j;
-			j = ( i == 0 ) ? leiArrowTail : leiArrowHead;
-			j   = Drawable_resolve_line_end_index(&var->current_state, j);
-			box = Drawable_line_end_box( &var->current_state, j);
-			half_widths[i] = box.right * ut;
-		}
+		if ( ut > 1 ) {
+			for (i = 0; i < 2; i++) {
+				NRect box;
+				int j;
+				j = ( i == 0 ) ? leiArrowTail : leiArrowHead;
+				j   = Drawable_resolve_line_end_index(&var->current_state, j);
+				box = Drawable_line_end_box( &var->current_state, j);
+				half_widths[i] = box.right * ut;
+			}
 
-		half_widths[1] *= -1.0;
+			half_widths[1] *= -1.0;
+		} else
+			half_widths[0] = half_widths[1] = 0.0;
 	}
 
 	*n_points = 0;
 	dmCHECK(NULL);
 	dmENTER(NULL);
-	if (( ret = malloc(sizeof(NPoint) * 2 * t->len)) == NULL) {
+	if (( ret = malloc(sizeof(NPoint) * 6 * t->len)) == NULL) {
 		dmLEAVE;
 		return NULL;
 	}
@@ -1317,19 +1492,26 @@ render_underline(Handle self, int x, int y, GlyphsOutRec *t, int * n_points)
 	base = -1;
 
 #define ADD_POINT(hw) {                                        \
-	float xx = x;                                          \
+	float xx = x - hw;                                     \
 	float this_a = ( abc[o].a < 0 ) ? -abc[o].a   : 0;     \
 	float last_c = (last_abc.c < 0) ? -last_abc.c : 0;     \
+	warn("x %g/%d a %g c %g hw %g = %g\n", xx, hw, this_a, last_c, half_widths[hw], half_widths[hw]+xx);\
 	xx -= this_a + last_c;                                 \
 	xx += half_widths[hw];                                 \
 	ret[ *n_points    ].x = xx;                            \
 	ret[ (*n_points)++].y = y;                             \
 }
+#define LAST_X ret[(*n_points) - 1].x
+#define CHECK_POINT                                            \
+	if ( *n_points > 1 && LAST_X - ret[(*n_points)-2].x <= ut ) { \
+		warn("skipsie!\n");\
+		*n_points -= 2;\
+	}
 
 	if ( t-> fonts )
 		my->save_font(self, &savefont);
 	for ( i = 0; i < t->len; i++) {
-		int o = GID2OFFSET(t->glyphs[i]);
+		int o = GID2OFFSET(t->glyphs[i]), from, to;
 		int b = FIDGID2BASE(t->fonts ? t->fonts[i] : 0, t->glyphs[i]);
 		if ( base != b) {
 			base = b;
@@ -1343,19 +1525,70 @@ render_underline(Handle self, int x, int y, GlyphsOutRec *t, int * n_points)
 			}
 		}
 
-		if ( descents[o] >= breakout ) {
+		from = descents[o * 2];
+		to   = descents[o * 2 + 1];
+		warn("C %d (%g %g %g = %g) => %d %d\n", t->glyphs[i], abc[o].a, abc[o].b, abc[o].c, abc[o].a+abc[o].b+abc[o].c, from, to);
+
+		if ( from < 0 ) {
 			if ( !line_is_on ) {
 				/* start the line */
 				ADD_POINT(0)
+				CHECK_POINT;
 				line_is_on = true;
 			}
-		} else {
+			/* else continue the existing line */
+		} else if ( to < 0 ) {
 			if ( line_is_on ) {
 				/* stop the line */
 				ADD_POINT(1)
+				CHECK_POINT;
 				line_is_on = false;
 			}
+			/* else continue skipping line */
+		} else if ( from == 0 ) {
+			/* line wanted after a skip */
+			if ( line_is_on ) {
+				ADD_POINT(1)
+				CHECK_POINT;
+				warn("a0: %g\n", LAST_X);
+			} else
+				line_is_on = true;
+			ADD_POINT(0)
+			LAST_X += to + 1;
+			warn("b: %g\n", LAST_X);
+			CHECK_POINT;
+		} else if ( to + 1 >= abc[o].a + abc[o].b + abc[o].c ) {
+			/* line wanted but not until the end */
+			if ( line_is_on ) {
+				line_is_on = false;
+			} else {
+				ADD_POINT(0)
+				warn("d0: %g\n", LAST_X);
+				CHECK_POINT;
+			}
+			ADD_POINT(1)
+			LAST_X += from - 1;
+			CHECK_POINT;
+			warn("d1: %g\n", LAST_X);
+		} else {
+			if ( !line_is_on ) {
+				ADD_POINT(0)
+				warn("f0: %g\n", LAST_X);
+				CHECK_POINT;
+				line_is_on = true;
+			}
+
+			ADD_POINT(1);
+			LAST_X += from - 1;
+			warn("f1: %g\n", LAST_X);
+			CHECK_POINT;
+
+			ADD_POINT(0)
+			LAST_X += to + 1;
+			warn("f2: %g\n", LAST_X);
+			CHECK_POINT;
 		}
+
 		x += abc[o].a + abc[o].b + abc[o].c;
 		last_abc = abc[o];
 	}
@@ -1371,8 +1604,14 @@ render_underline(Handle self, int x, int y, GlyphsOutRec *t, int * n_points)
 
 	if ((( *n_points ) % 2) == 1 ) {
 		int o = t->glyphs[t->len - 1] & 0xff;
+		warn("FINO\n");
 		ADD_POINT(1)
+		CHECK_POINT;
 	}
+
+#undef ADD_POINT
+#undef LAST_X
+#undef CHECK_POINT
 
 	{
 		NPoint *p = ret;

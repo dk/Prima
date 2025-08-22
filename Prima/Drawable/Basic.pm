@@ -277,8 +277,12 @@ sub draw_underline
 	$string = $canvas->text_shape($string, %opt, skip_if_simple => 0)
 		unless ref $string;
 
+	my $lw0 = $canvas->lineWidth;
+	my $lw1 = $canvas->font->underlineThickness;
+	$canvas->lineWidth($lw1) if $lw0 != $lw1;
 	my $r = $canvas->render_underline($string, $x, $y);
 	if ( $r ) {
+		print "LINES @$r\n";
 		$canvas->lines($r);
 	} elsif ( $r = $canvas->get_text_box($string)) {
 		$canvas->line(
@@ -288,6 +292,7 @@ sub draw_underline
 			$r->[7] + $y,
 		);
 	}
+	$canvas->lineWidth($lw0) if $lw0 != $lw1;
 }
 
 sub prelight_color
