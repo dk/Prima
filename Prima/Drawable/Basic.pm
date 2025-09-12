@@ -279,7 +279,7 @@ sub draw_underline
 
 	my $r = $canvas->render_underline($string, $x, $y);
 	if ( $r ) {
-		$canvas->lines($r);
+		$canvas->lines($r) if @$r;
 	} elsif ( $r = $canvas->get_text_box($string)) {
 		$canvas->line(
 			$r->[2] + $x,
