@@ -1830,7 +1830,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 				((ev-> type >= LASTEvent) ? "?" : xevdefs[ev-> type]),
 				self ? PWidget(self)-> name : "(NULL)");
 
-	if (!self)
+	if (!self || self == prima_guts.application)
 		return;
 	if ( XT_IS_MENU(X(self))) {
 		prima_handle_menu_event( ev, win, self);
