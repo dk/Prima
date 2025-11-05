@@ -117,8 +117,8 @@ get_pixels( int xLen, int yLen, CGImageRef cimg)
 		kCGImageAlphaNoneSkipLast)))
 		goto FAIL;
 	CGContextDrawImage(context, CGRectMake(0, 0, xLen, yLen), cimg);
+	CGContextRelease(context);
 	CGColorSpaceRelease(colorspace);
-	CFRelease(cimg);
 	return pixels;
 FAIL:
 	if (pixels)     free(pixels);
