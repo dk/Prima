@@ -122,6 +122,7 @@ get_pixels( int xLen, int yLen, CGImageRef cimg)
 	return pixels;
 FAIL:
 	if (pixels)     free(pixels);
+	if (context)    CGContextRelease(context);
   	if (colorspace) CGColorSpaceRelease(colorspace);
 	return NULL;
 }
