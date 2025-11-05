@@ -8,7 +8,7 @@ sub get_fullscreen_image
 {
 	my $self = shift;
 	goto FALLBACK unless $^O eq 'darwin';
-	goto FALLBACK unless $self->sys_action("xquartz.local_display");
+	goto FALLBACK unless $self->sys_action("local_display");
 	my $real_screen_height = $self->sys_action("xquartz.screen_height");
 	goto FALLBACK unless $real_screen_height;
 
