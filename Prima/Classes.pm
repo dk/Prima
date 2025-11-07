@@ -2370,8 +2370,8 @@ sub profile_default
 sub max_extents
 {
 	shift;
-	my @pos = @_ || $::application-> pointerPos;
-	my @sz = $::application->size;
+	my @pos = @_ ? @_ : $::application-> pointerPos;
+	my @sz  = $::application->size;
 	for my $r ( @{$::application->get_monitor_rects} ) {
 		next unless
 			$r->[0] <= $pos[0] && $r->[2] > $pos[0] &&
@@ -2405,6 +2405,60 @@ sub on_change
 	$sz[0] += $self->font->width * 2;
 	$sz[1] += $self->font->height;
 	$self-> size(@sz);
+}
+
+sub on_hint
+{
+	my ( $self, $widget, @around) = @_;
+
+	my (@pos, @size);
+	if ( 4 == (grep { $_ == -1 } @around)) {
+		@size = $widget->size;
+		@pos  = $widget->client_to_screen(0,0);
+	} else {
+		@pos = @around[0,1];
+		$size[0] = $around[2] - $pos[0];
+		$size[1] = $around[3] - $pos[1];
+	}
+
+	$self->set(
+		text      => $widget->hint,
+		color     => $widget->hintColor,
+		backColor => $widget->hintBackColor,
+	);
+
+	my @psize   = map { $::application->get_system_value($_) } (
+		sv::XPointer, sv::YPointer
+	);
+	my @mouse   = $::application->pointerPos;
+	my @monitor = $::application->point_to_monitor(@mouse);
+	my @hsize   = $self->size;
+	my @fin     = ($mouse[0] - $psize[0]/2, $pos[1] - $hsize[1] - 1);
+	$fin[1] = $mouse[1] - $hsize[1] - $psize[1]
+		if $fin[1] > $mouse[1] - $hsize[1] - $psize[1];
+	$fin[0] = $pos[0] - $hsize[0]
+		if $fin[0] + $hsize[0] > $monitor[2];
+	$fin[0] = $monitor[0]
+		if $fin[0] < $monitor[0];
+	$fin[1] = $pos[1] - $hsize[1]
+		if $fin[1] + $hsize[1] >= $monitor[3];
+	$fin[1] = $pos[1] + $size[1] + $psize[1]/2
+		if $fin[1] < $monitor[1];
+	$fin[1] = $monitor[2] - $hsize[1]
+		if $fin[1] + $hsize[1] >= $monitor[3];
+	$fin[1] = $monitor[1]
+		if $fin[1] < $monitor[1];
+	if (
+		$fin[0] <= $mouse[0] && $fin[0] + $hsize[0] >= $mouse[0] + $psize[0] &&
+		$fin[1] <= $mouse[1] && $fin[1] + $hsize[1] >= $mouse[1] + $psize[1]
+	) {
+		$fin[0] = $mouse[0] + $psize[0];
+		$fin[1] = $mouse[1] - $psize[1] - $hsize[1];
+	}
+
+	$self->origin(@fin);
+	$self->show;
+	$self->bring_to_front;
 }
 
 sub on_paint
@@ -2644,6 +2698,20 @@ sub open_help
 	return unless length $link;
 	return unless $self-> help_init;
 	return $self-> {HelpClass}-> open($link);
+}
+
+sub point_to_monitor
+{
+	shift;
+	my @pos = @_ ? @_ : $::application-> pointerPos;
+	for my $r ( @{$::application->get_monitor_rects} ) {
+		next unless
+			$r->[0] <= $pos[0] && $r->[2] > $pos[0] &&
+			$r->[1] <= $pos[1] && $r->[3] > $pos[1]
+		;
+		return @$r;
+	}
+	return (0,0,$::application->size);
 }
 
 sub on_die

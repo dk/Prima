@@ -762,57 +762,11 @@ Application_get_scroll_rate( Handle self)
 static void
 hshow( Handle self)
 {
-	PWidget_vmt hintUnder = CWidget( var->  hintUnder);
-	SV * text = hintUnder-> get_hint( var->  hintUnder);
-	Point size;
-	Point s = my-> get_size( self);
-	Point fin = {0,0};
-	Point pos = fin;
-	Point mouse = my-> get_pointerPos( self);
-	Point hintSize;
-	PWidget_vmt hintWidget = CWidget( var->  hintWidget);
-
-	if (
-		var-> hintAround.left   == -1 &&
-		var-> hintAround.bottom == -1 &&
-		var-> hintAround.right  == -1 &&
-		var-> hintAround.top    == -1
-	) {
-		size = hintUnder-> get_size( var->  hintUnder);
-		apc_widget_map_points( var-> hintUnder, true, 1, &pos);
-	} else {
-		pos.x  = var->hintAround.left;
-		pos.y  = var->hintAround.bottom;
-		size.x = var->hintAround.right - pos.x;
-		size.y = var->hintAround.top   - pos.y;
-	}
-
-	hintWidget-> set_text( var->  hintWidget, text);
-	hintWidget-> set_color( var-> hintWidget, PWidget(var-> hintUnder)-> hintColor);
-	hintWidget-> set_backColor( var-> hintWidget, PWidget(var-> hintUnder)-> hintBackColor);
-	hintSize = hintWidget-> get_size( var->  hintWidget);
-
-	fin. x = mouse. x - 16;
-	fin. y = pos. y - hintSize. y - 1;
-	if ( fin. y > mouse. y - hintSize. y - 32) fin. y = mouse. y - hintSize. y - 32;
-
-	if ( fin. x + hintSize. x >= s. x) fin. x = pos. x - hintSize. x;
-	if ( fin. x < 0) fin. x = 0;
-	if ( fin. y + hintSize. y >= s. y) fin. y = pos. y - hintSize. y;
-	if ( fin. y < 0) fin. y = pos. y + size. y + 16;
-	if ( fin. y + hintSize. y >= s. y) fin. y = s. y - hintSize. y;
-	if ( fin. y < 0) fin. y = 0;
-	if (
-		fin. x <= mouse.x && fin.x + hintSize.x >= mouse.x + 32 &&
-		fin. y <= mouse.y && fin.y + hintSize.y >= mouse.y + 32 
-	) {
-		fin. x = mouse.x + 32;
-		fin. y = mouse.y - 32 - hintSize.y;
-	}
-
-	hintWidget-> set_origin( var->  hintWidget, fin);
-	hintWidget-> show( var->  hintWidget);
-	hintWidget-> bring_to_front( var->  hintWidget);
+	CWidget(var->hintWidget)->notify(
+		var->hintWidget,
+		"sHR", "Hint",
+		var->hintUnder, var->hintAround
+	);
 }
 
 void
