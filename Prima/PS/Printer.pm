@@ -1,3 +1,5 @@
+package Prima::PS::Printer::Common;
+
 use strict;
 use warnings;
 use Prima;
@@ -7,10 +9,8 @@ use Prima::PS::PostScript;
 use Prima::PS::PDF;
 use Prima::PS::TempFile;
 use Prima::PS::Setup;
-use Prima::MsgBox;
-
-package Prima::PS::Printer::Common;
 use Prima::sys::FS;
+use Prima::MsgBox;
 
 our $unix = Prima::Application-> get_system_info-> {apc} == apc::Unix;
 
@@ -104,7 +104,7 @@ sub _begin_doc
 			my $h = IO::Handle-> new;
 			unless ( open $h, ">", $f) {
 				undef $h;
-				message("Error opening $f:$!");
+				Prima::MsgBox::message("Error opening $f:$!");
 				goto AGAIN;
 			}
 			binmode $h;
@@ -130,7 +130,7 @@ sub _begin_doc
 	} elsif ( $self-> {data}-> {spoolerType} eq 'cmd' && $self->{data}->{spoolerData} =~ /\$/) {
 		my $f = Prima::PS::TempFile->new(unlink => 0, warn => !$self->{gui});
 		unless ( defined $f ) {
-			message("Error creating temporary file: $!") if $self-> {gui};
+			Prima::MsgBox::message("Error creating temporary file: $!") if $self-> {gui};
 			return 0;
 		}
 		$self-> {spoolTmpFile} = $f;
@@ -205,7 +205,7 @@ sub show_msg
 		close $f;
 	}
 
-	message($msg);
+	Prima::MsgBox::message($msg);
 }
 
 sub _spool
