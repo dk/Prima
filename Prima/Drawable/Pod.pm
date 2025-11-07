@@ -585,7 +585,7 @@ sub add_formatted
 		$self-> add($text,pod::STYLE_CODE,0);
 		$self-> add_new_line;
 	} elsif ( $format eq 'podview') {
-		while ( $text =~ m/<\s*([^<>]*)\s*>(.*)/gcs) {
+		while ( $text =~ m/<\s*([^<>]*)\s*>([^<]*)/gcs) {
 			my $cmd = $1;
 			my $rest = $2;
 			if ( lc($cmd) eq 'cut') {
