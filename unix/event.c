@@ -1665,10 +1665,12 @@ handle_stackable_configure_event( Handle self, XWindow win, XEvent *ev)
 			XX-> ackSize. y = ev-> xconfigure. height;
 		}
 	} else {
-		XX-> ackOrigin. x = ev-> xconfigure. x;
-		XX-> ackOrigin. y = X(X(self)-> owner)-> ackSize. y - ev-> xconfigure. height - ev-> xconfigure. y;
-		XX-> ackSize. x   = ev-> xconfigure. width;
-		XX-> ackSize. y   = ev-> xconfigure. height;
+		if ( X(self)->owner) {
+			XX-> ackOrigin. x = ev-> xconfigure. x;
+			XX-> ackOrigin. y = X(X(self)-> owner)-> ackSize. y - ev-> xconfigure. height - ev-> xconfigure. y;
+			XX-> ackSize. x   = ev-> xconfigure. width;
+			XX-> ackSize. y   = ev-> xconfigure. height;
+		}
 		XX-> flags. configured = 1;
 	}
 }
@@ -1830,7 +1832,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 				((ev-> type >= LASTEvent) ? "?" : xevdefs[ev-> type]),
 				self ? PWidget(self)-> name : "(NULL)");
 
-	if (!self || self == prima_guts.application)
+	if (!self)
 		return;
 	if ( XT_IS_MENU(X(self))) {
 		prima_handle_menu_event( ev, win, self);
