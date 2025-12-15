@@ -1759,17 +1759,21 @@ Prima::Dialog::FileDialog - File system-related widgets and dialogs
 			['All' => '*']
 		]
 	);
-	print $open-> fileName, " is to be opened\n" if $open-> execute;
 
-	# save file
-	my $save = Prima::Dialog::SaveDialog-> new(
-		fileName => $open-> fileName,
-	);
-	print $save-> fileName, " is to be saved\n" if $save-> execute;
+	if ($open-> execute) {
+		print $open-> fileName, " is to be opened\n";
 
-	# open several files
-	$open-> multiSelect(1);
-	print $open-> fileName, " are to be opened\n" if $open-> execute;
+		# save file
+		my $save = Prima::Dialog::SaveDialog-> new(
+			fileName => $open-> fileName,
+		);
+		if ($save-> execute) {
+			print $save-> fileName, " is to be saved\n";
+			# open several files
+			$open-> multiSelect(1);
+			print $open-> fileName, " are to be opened\n" if $open-> execute;
+		}
+	}
 
 =for podview <img src="filedlg.gif">
 
@@ -1933,6 +1937,8 @@ Selects the index in the L<filter> array, which is the currently selected file t
 =item multiSelect BOOLEAN
 
 Selects whether the user can select several ( 1 ) or one ( 0 ) file.
+
+Default value: 0
 
 See also: L<fileName>.
 
