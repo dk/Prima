@@ -454,9 +454,10 @@ Prima::Dialog::FontDialog - standard font dialog
 
 	use Prima qw(Application Dialog::FontDialog);
 	my $f = Prima::Dialog::FontDialog-> new;
-	return unless $f-> execute == mb::OK;
-	$f = $f-> logFont;
-	print "$_:$f->{$_}\n" for sort keys %$f;
+	if ( $f-> execute == mb::OK ) {
+		$f = $f-> logFont;
+		print "$_:$f->{$_}\n" for sort keys %$f;
+	}
 
 =for podview <img src="fontdlg.gif">
 
