@@ -854,6 +854,11 @@ See L<Prima::image-load> for details and L<Prima::Image::Loader> for more functi
 
 Note: when loading from streams on win32, mind the C<binmode>.
 
+=item load_binary SCALAR, %OPTIONS
+
+Load an image from binary data in SCALAR. Returns image reference(s) on
+success, or C<undef> on failure; also C<$@> is set in this case.
+
 =item load_stream BASE64_STRING, %OPTIONS
 
 Decodes BASE64_STRING and tries to load an image from it.  Returns image
@@ -937,6 +942,12 @@ See L<Prima::image-load> for details and
 L<Prima::Image::Loader/Prima::Image::Saver> for more functionality.
 
 Note: when saving to streams on win32, mind the C<binmode>.
+
+=item save_binary %OPTIONS
+
+Saves the image into a scalar. C<%OPTIONS> must contain either C<format>
+or C<codecID>. Returns the scalar with the encoded image or undef, and C<$@> 
+filled with the error string.
 
 =item save_stream BASE64_STRING, %OPTIONS
 

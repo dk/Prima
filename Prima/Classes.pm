@@ -1004,6 +1004,34 @@ sub save_stream
 	return $ok;
 }
 
+sub load_binary
+{
+	my ($class, $scalar) = (shift, shift);
+	my $f;
+	unless (open $f, '>', \ $scalar) {
+		$@ = "$!";
+		return undef;
+	}
+	return $class->load( $f, @_ );
+}
+
+sub save_binary
+{
+	my ($i, %param) = @_;
+	my $scalar = '';
+	my $f;
+	unless ( defined $param{codecID} or defined $param{format}) {
+		$@ = "No codec specified";
+		return undef;
+	}
+	unless (open $f, '>', \ $scalar) {
+		$@ = "$!";
+		return undef;
+	}
+	my $ok = $i->save($f, %param);
+	return $ok ? $scalar : undef;
+}
+
 sub has_codec
 {
 	my $what = $_[1];

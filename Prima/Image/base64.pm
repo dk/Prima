@@ -45,7 +45,7 @@ sub save
 
 	$param{codecID} //= $i->{extras}->{codecID};
 
-	unless ( $param{format} || $param{codecID}) {
+	unless ( defined $param{format} or defined $param{codecID}) {
 		my @want;
 		if ( $i->isa('Prima::Icon')) {
 			if ( (($i-> type & im::BPP) > 8) || ($i-> maskType > 1)) {
