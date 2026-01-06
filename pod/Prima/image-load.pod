@@ -338,20 +338,24 @@ Save requests also can be performed with the package syntax:
 
 =head2 Saving to a stream
 
-Saving to a stream requires the explicit C<codecID> integer value to be
-supplied. When the image is loaded with C<loadExtras>, this field is always
+Saving to a stream requires the explicit file format to be specified.  This can
+be done by either supplying a C<codecID> integer that both identifies the file
+format and the codec that would preform the encoding operation, or a C<format>
+string, that should match file extension of the desired file format.
+
+When the image is loaded with C<loadExtras>, the C<codecID> field is always
 present on the image object and is the integer that selects the image file
 format.
 
-   my ($png_id) =
-      map  { $_-> {codecID} }
-      grep { $_-> {fileShortType} =~ /^png$/i }
-      @{ Prima::Image-> codecs };
-   die "No png codec installed" unless $png_id;
-
+   my $png = Prima::Image->has_codec('png') or die "No png codec installed";
    open FILE, ">", "a.png" or die "Cannot save:$!";
    binmode FILE;
-   $image-> save( \*FILE, codecID => $png_id)
+   $image-> save( \*FILE, codecID => $png->{codecID})
+      or die "Cannot save:$@";
+
+or alternatively,
+
+   $image-> save( \*FILE, format => 'png')
       or die "Cannot save:$@";
 
 =head2 Multiframe saving

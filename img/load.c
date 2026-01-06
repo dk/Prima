@@ -218,7 +218,7 @@ codec_matches_extension( PImgCodec c, char *fileName)
 	while ( c-> info-> fileExtensions[ j]) {
 		char * ext = c-> info-> fileExtensions[ j];
 		int extLen = strlen( ext);
-		if ( extLen < fileNameLen && stricmp( fileName + fileNameLen - extLen, ext) == 0)
+		if ( extLen <= fileNameLen && stricmp( fileName + fileNameLen - extLen, ext) == 0)
 			return true;
 		j++;
 	}
@@ -912,13 +912,24 @@ apc_img_open_save( char * fileName, Bool is_utf8, int n_frames, PImgIORequest io
 
 	/* checking 'codecID', if available */
 	{
-		SV * c = NULL;
+		SV * svc = NULL;
 		if ( pexist( codecID))
-			c = pget_sv( codecID);
-		if ( c && SvOK( c)) { /* accept undef */
-			codecID = SvIV( c);
+			svc = pget_sv( codecID);
+		if ( svc && SvOK( svc)) { /* accept undef */
+			codecID = SvIV( svc);
 			if ( codecID < 0)
 				codecID = imgCodecs. count - codecID;
+		} else if ( pexist(format)) {
+			int i;
+			char * format = pget_c(format);
+			for ( i = 0; i < imgCodecs. count; i++) {
+				if ( disabled[ i]) continue;
+				c = ( PImgCodec ) ( imgCodecs. items[ i]);
+				if ( !codec_matches_extension( c, format))
+					continue;
+				codecID = i;
+				break;
+			}
 		}
 	}
 
