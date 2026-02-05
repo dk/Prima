@@ -1059,7 +1059,7 @@ sub paint_classic
 		$imNo = $self-> { pressed} ? 1 : 0;
 	};
 	my $xStart;
-	$image = $images[ $imNo];
+	$image = $Prima::Cluster::images[ $imNo];
 	my @c3d  = ( $self-> light3DColor, $self-> dark3DColor);
 
 	if ( $image) {
@@ -1179,7 +1179,6 @@ sub on_paint
 }
 
 package Prima::Radio;
-our @images;
 use base qw(Prima::Cluster);
 
 sub profile_default
@@ -1200,7 +1199,7 @@ sub paint_classic
 	};
 
 	my $xStart;
-	$image = $images[ $imNo];
+	$image = $Prima::Cluster::images[ $imNo];
 	if ( $image) {
 		$canvas-> put_image( 0, ( $h - $image-> height) / 2, $image);
 		$xStart = $image-> width;
@@ -1244,6 +1243,7 @@ sub paint_classic
 			$canvas-> fillpoly( [ $s*6, $y+$s*8, $s*8, $y+$s*10, $s*10, $y+$s*8, $s*8, $y+$s*6]);
 		}
 	}
+	return $xStart;
 }
 
 sub paint_flat
