@@ -99,6 +99,7 @@ sub open_browser
 	my ( $self, $url, $btn, $mod ) = @_;
 
 	if ( Prima::Application-> get_system_info-> {apc} == apc::Win32) {
+		$url =~ s/([&^|<>()])/^$1/g;
 		open UNIQUE_FILE_HANDLE_NEVER_TO_BE_CLOSED, "|start $url";
 		close UNIQUE_FILE_HANDLE_NEVER_TO_BE_CLOSED if 0;
 	} elsif ( $^O eq 'darwin') {
