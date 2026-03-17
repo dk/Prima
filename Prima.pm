@@ -318,6 +318,8 @@ manuals can be found in the following files:
 
 L<Prima::tutorial> - introductory tutorial
 
+L<https://reiniermaliepaard.nl/prima> - Mastering Perl Prima by Reinier Maliepaard
+
 =item Core toolkit classes
 
 L<Prima::Object> - basic object concepts, properties, events

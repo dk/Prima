@@ -271,6 +271,8 @@ Online documentation at MetaCPAN: https://metacpan.org/dist/Prima/view/Prima.pm
 
 Printable documentation: http://prima.eu.org/download/Prima.pdf
 
+Mastering Perl Prima by Reinier Maliepaard: https://reiniermaliepaard.nl/prima
+
 
 Copyright
 =========
