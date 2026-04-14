@@ -1793,6 +1793,7 @@ sub push_widgets
 	my @return;
 	my %dep;
 	my $i;
+	my $uniq_name = 0;
 
 	for ( $i = 0; $i < scalar @seq; $i+= 2) {
 		$dep{$seq[$i]} = $seq[$i + 1];
@@ -1820,6 +1821,7 @@ sub push_widgets
 				module        => $dep{$_}-> {module},
 				extras        => $dep{$_}-> {extras},
 				creationOrder => $i / 2,
+				name          => '__uniq'.$uniq_name++,
 			);
 			push ( @return, $c);
 			if ( exists $dep{$_}-> {profile}-> {origin}) {
