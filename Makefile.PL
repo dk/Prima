@@ -2284,6 +2284,9 @@ LIBHEIF
 		$END .= <<LIBWEBP if $Win32 and not $cygwin and grep {/webp/} @warn_codecs;
 Get libwebp binary from http://prima.eu.org/download/libwebp-1.0.2-win64.zip
 LIBWEBP
+		$END .= <<LIBJXL if $Win32 and not $cygwin and grep {/jxl/} @warn_codecs;
+Get libwebp binary from http://prima.eu.org/download/libjxl-0.11.1-win64.zip
+LIBJXL
 	}
 	push @ACTIVE_CODECS, @builtin_codecs;
 }
