@@ -323,12 +323,10 @@ apc_application_get_indents( Handle self)
 Point
 apc_application_get_size( Handle self)
 {
-	RECT  r;
-	Point ret = {0,0};
-	objCheck ret;
-	GetWindowRect( HWND_DESKTOP, &r);
-	ret. x = r. right;
-	ret. y = r. bottom;
+	Point ret = {
+		GetSystemMetrics(SM_CXVIRTUALSCREEN),
+		GetSystemMetrics(SM_CYVIRTUALSCREEN)
+	};
 	return ret;
 }
 
