@@ -487,6 +487,12 @@ init_x11( char * error_buf )
 	if ( !do_no_xim )
 		prima_xim_init();
 
+	{
+		XRectangle r = {0,0,16384,16384};
+		guts.full_region = XCreateRegion();
+		XUnionRectWithRegion(&r, guts.full_region, guts.full_region);
+	}
+
 	if ( do_sync) XSynchronize( DISP, true);
 	return true;
 }
@@ -756,6 +762,9 @@ window_subsystem_done( void)
 		prima_font_cleanup_subsystem();
 		return;
 	}
+
+	XDestroyRegion(guts.full_region);
+	guts.full_region = NULL;
 
 	if ( guts.use_xim )
 		prima_xim_done();

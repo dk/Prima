@@ -844,6 +844,8 @@ typedef struct _UnixGuts
 	int                          skip_gtk_font;
 	Bool                         x11_local;
 	Bool                         is_darwin;
+
+	Region                       full_region;
 } UnixGuts;
 
 extern UnixGuts  guts;

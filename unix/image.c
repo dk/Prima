@@ -2459,6 +2459,13 @@ get_image_dst_format( Handle self, Handle image, int rop, int src_type, Bool use
 	return NULL;
 }
 
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+#define SWAP_XRENDER_REGION(image, enable) if ( X(image)->argb_picture && X(image)->current_region ) \
+	XRenderSetPictureClipRegion(DISP, X(image)->argb_picture, enable ? guts.full_region : X(image)->current_region)
+#else
+#define SWAP_XRENDER_REGION(image, enable) (void)0
+#endif
+
 Bool
 apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom, int xLen, int yLen, int rop)
 {
@@ -2527,7 +2534,9 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
 	req.old_rop = gcv.function;
 	req.rop     = (src == SRC_LAYERED || src == SRC_ARGB) ? rop : prima_rop_map( rop);
 
+	SWAP_XRENDER_REGION(image, true);
 	ok = (*dst[src])(self, image, &req);
+	SWAP_XRENDER_REGION(image, false);
 
 	if ( gcv.function != req. old_rop)
 		XSetFunction( DISP, XX->gc, gcv. function);
@@ -3176,6 +3185,7 @@ apc_gp_stretch_image_xrender( Handle self, Handle image, PutImageFunc* func,
 {
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
 	DEFXX;
+	Bool ok;
 	int dx, dy;
 	Matrix m1;
 	XTransform xt;
@@ -3231,7 +3241,10 @@ apc_gp_stretch_image_xrender( Handle self, Handle image, PutImageFunc* func,
 	req.dst_x += dst_x;
 	req.dst_y += dst_y;
 	req.dst_y  = XX->size.y - req.dst_y - req.dst_h;
-	return func(self, image, &req);
+	SWAP_XRENDER_REGION(image, true);
+	ok = func(self, image, &req);
+	SWAP_XRENDER_REGION(image, false);
+	return ok;
 #else
 	return false;
 #endif
