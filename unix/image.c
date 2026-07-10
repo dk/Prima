@@ -2297,8 +2297,10 @@ img_render_picture_on_pixmap( Handle self, Handle image, PutImageRequest * req, 
 		but for now it is only scaled matrices
 		*/
 		if ( req-> scaling_only ) {
-			req-> ofs_x = req-> src_x / XFixedToDouble(req-> transform-> matrix[0][0]);
-			req-> ofs_y = req-> src_y / XFixedToDouble(req-> transform-> matrix[1][1]);
+			if ( req-> transform ) {
+				req-> ofs_x = req-> src_x / XFixedToDouble(req-> transform-> matrix[0][0]);
+				req-> ofs_y = req-> src_y / XFixedToDouble(req-> transform-> matrix[1][1]);
+			}
 			goto QUICK;
 		}
 
@@ -2496,6 +2498,7 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
 	req.dst_w = req.w;
 	req.dst_h = req.h;
+	req.scaling_only = true;
 #endif
 	/* there's some bug in XQuartz that doesn't render well on unbuffered drawables */
 	try_xrender = !(
@@ -2592,6 +2595,7 @@ apc_image_begin_paint( Handle self)
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
 		req.dst_w = req.w;
 		req.dst_h = req.h;
+		req.scaling_only = true;
 #endif
 		req.rop = layered ? ropCopyPut : GXcopy;
 		req.old_rop = XX-> gcv. function;
