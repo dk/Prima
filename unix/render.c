@@ -367,6 +367,7 @@ apc_gp_aa_bars( Handle self, int nr, NRect *rr)
 	int nt = 0, nx = 0;
 	Byte *arena;
 	Bool may_use_rects, may_use_traps;
+	warn("AA\n");
 
 	if ( PObject( self)-> options. optInDrawInfo) return false;
 	if ( !XF_IN_PAINT(XX)) return false;
@@ -835,6 +836,7 @@ my_XRenderCompositeDoublePoly (Display		    *dpy,
     int		    i, ok = 0, nedges, ntraps;
     XFixed	    x, y, prevx = 0, prevy = 0, firstx = 0, firsty = 0;
     XFixed	    top = 0, bottom = 0;	/* GCCism */
+    printf("MOO %d %d %d\n", op, PictOpOver, PictOpSrc);
 
     edges = (Edge *) malloc (npoints * sizeof (Edge) +
 			      ((npoints * npoints + 1) * sizeof (XTrapezoid)));

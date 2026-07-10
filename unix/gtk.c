@@ -444,7 +444,7 @@ prima_gtk_init(void)
 				f-> style |= fsItalic;
 			strcpy( f->encoding, "Default" );
 			f-> undef. width = f-> undef. height = f-> undef. pitch = f-> undef. vector = 1;
-			apc_font_pick( f, NULL );
+			apc_font_pick( NULL_HANDLE, f, NULL );
 #define DEBUG_FONT(font) f->height,f->width,f->size,f->name,f->encoding
 			Fdebug("gtk-font (%s): %d.[w=%d,s=%g].%s.%s", s->name, DEBUG_FONT(f));
 #undef DEBUG_FONT
