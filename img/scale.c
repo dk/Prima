@@ -960,7 +960,11 @@ stretch_filtered( int type, Byte * old_data, int old_w, int old_h, Byte * new_da
 	}
 	flw = LINE_SIZE( fw, type);
 
-	if ( !( filter_data = malloc( flw * fh ))) {
+	if ( flw > 0 && (size_t)fh > (size_t)-1 / (size_t)flw ) {
+		snprintf(error, 255, "not enough memory: overflow");
+		return false;
+	}
+	if ( !( filter_data = malloc( (size_t)flw * (size_t)fh ))) {
 		snprintf(error, 255, "not enough memory: %d bytes", flw * fh);
 		return false;
 	}
