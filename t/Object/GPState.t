@@ -287,12 +287,10 @@ for my $aa ( 0, 1) {
 	isnt($bits1,$bits2,"gc.bits.region1".$xaa);
 	$d->clipRect(0,0,$d->size);
 	$d->clear;
-	warn $d->antialias;
 	$d->graphic_context( region => Prima::Region->new( rect =>[2,2,5,5] ), sub {
 		$d->bar(0,0,7,7);
 		$bits1 = bits;
 	});
-     warn $bits1;
 	$d->bar(0,0,7,7);
 	$bits2 = bits;
 	isnt($bits1,$bits2,"gc.bits.region2".$xaa);
