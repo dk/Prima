@@ -239,6 +239,26 @@ sub on_mousemove
 	}
 }
 
+sub get_underline_coordinates
+{
+	my ($self, $owner) = @_;
+	return [] if $self->{last_link_pointer} < 0;
+
+	my @ret;
+	for my $rc ( $self->id2rectangles( $self->{last_link_pointer}->[0] )) {
+		my @rc = @$rc;
+		if ( $owner ) {
+			$owner-> notify(qw(LinkAdjustRect), $self, \@rc);
+			$rc[4] = $rc[1] < $rc[3] ? $rc[1] : $rc[3];
+		} else {
+			$rc[4] = $rc[1] > $rc[3] ? $rc[1] : $rc[3];
+		}
+		push @ret, @rc[0,4,2,4];
+	}
+
+	return \@ret;
+}
+
 sub on_paint
 {
 	my ( $self, $owner, $canvas ) = @_;
@@ -253,13 +273,7 @@ sub on_paint
 
 		my $tip = ($self->references->[$self->{last_link_pointer}->[0]] // '') =~ /^tip:/;
 		$canvas-> linePattern($tip ? lp::ShortDash : lp::Solid);
-
-		for my $rc ( $self->id2rectangles( $self->{last_link_pointer}->[0] )) {
-			my @rc = @$rc;
-			$owner-> notify(qw(LinkAdjustRect), $self, \@rc);
-			$rc[4] = $rc[1] < $rc[3] ? $rc[1] : $rc[3];
-			$canvas-> line( @rc[0,4,2,4]);
-		}
+		$canvas-> lines($self->get_underline_coordinates($owner));
 	});
 }
 
@@ -457,6 +471,13 @@ link rectangles. Return new LINK_ID.
 =item clear_positions
 
 Clears the content of C<rectangles>
+
+=item get_underline_coordinates [$WIDGET]
+
+Returns coordinates of the underlines for areas that are currently targetes for underline highlighting.
+
+If $WIDGET is not set, the coordinates are exactly as in the C<rectangles> properties, while if it is,
+then the coordinates are converted to the physical coordinates relative to the widget.
 
 =item id2rectangles ID
 

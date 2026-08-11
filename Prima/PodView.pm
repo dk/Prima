@@ -156,7 +156,57 @@ sub on_paint
 {
 	my ( $self, $canvas ) = @_;
 	$self-> SUPER::on_paint($canvas);
-	$self-> {link_handler}-> on_paint( $self, $canvas);
+
+	my $link   = $self->link_handler;
+	my $uc     = $link->get_underline_coordinates or return;
+	my $ymap   = $self->{ymap};
+	my $blocks = $self->{blocks};
+	my @blocks;
+	my @delta = $self->point2screen(0,0);
+	my @lines;
+	for ( my $i = 0; $i < @$uc; $i += 4) {
+		my ($X1,$Y,$X2) = @$uc[$i..$i+2];
+		next unless defined (my $yblocks = $ymap->[int($Y / Prima::TextView::YMAX)]);
+
+		my $right_joiner;
+		for my $blkid (@$yblocks) {
+			my $b = $blocks->[$blkid];
+			next unless $b->[tb::BLK_Y] + $b->[tb::BLK_HEIGHT] == $Y;
+			my @pos = ($b->[tb::BLK_X],0);
+			tb::walk( $b,
+				textPtr      => $self->{text},
+				trace        => tb::TRACE_POSITION | tb::TRACE_TEXT,
+				canvas       => $canvas,
+				position     => \@pos,
+				text         => sub {
+					my ( $ofs, $len, $wid, $txt ) = @_;
+					return if $pos[0] >= $X2 or $pos[0] + $wid <= $X1;
+					my ($x, $y) = ($delta[0] + $pos[0], $delta[1] - $Y);
+					$txt = $canvas->text_shape($txt);
+
+					my $left_joiner = $right_joiner;
+					undef $right_joiner;
+					if ( my $r = $canvas->render_underline($txt, 0, 0)) {
+						for (my $j = 0; $j < $#$r; $j +=4 ) {
+							push @lines,
+								$$r[$j]   + $x, $y,
+								$$r[$j+2] + $x, $y;
+						}
+					} else {
+						push @lines, $x, $y, $x + $wid, $y;
+					}
+					$right_joiner = $lines[-2];
+					$lines[-4] = $left_joiner if $left_joiner and $lines[-4] > $left_joiner;
+				},
+			);
+		}
+	}
+
+	$canvas-> color( $link->color );
+	$canvas-> antialias(0);
+	$canvas-> lineWidth(1);
+	$canvas-> translate(0,0);
+	$canvas-> lines(\@lines);
 }
 
 sub on_size
