@@ -284,29 +284,51 @@ query_descent_range( Handle self, int base)
 #define GUIF_HALFWIDTH 4
 
 static UnderlineInfo*
-get_underline_info( Handle self, unsigned int flags, int underlineThickness, int underlinePosition, float halfWidth )
+get_underline_info( Handle self, UnderlineInfo *request)
 {
 	UnderlineInfo *u;
 
-	if ( (flags == 0) && var->underline_info)
-		return var->underline_info;
+	if ( request && var->underline_info ) {
+		if (
+			request->flags == var->underline_info->flags &&
+			(( request->flags & GUIF_THICKNESS) ?
+				(request->thickness == var->underline_info->thickness) :
+				1) &&
+			(( request->flags & GUIF_POSITION)  ?
+				(request->position  == var->underline_info->position ) :
+				1) &&
+			(( request->flags & GUIF_HALFWIDTH) ? (
+				request->half_widths[0] == var->underline_info->half_widths[0] &&
+				request->half_widths[1] == var->underline_info->half_widths[1]
+				) : 1)
+		)
+			return var->underline_info;
+		else
+			Drawable_clear_descent_crossing_caches( self);
+	}
 
-	if ( (flags == 0) && ( var->underline_info = malloc(sizeof(UnderlineInfo))))
+	if ((var->underline_info = malloc(sizeof(UnderlineInfo))))
 		u = var->underline_info;
 	else
 		u = &UnderlineInfo_buffer;
+	bzero( u, sizeof(UnderlineInfo));
 
-	u->thickness = (flags & GUIF_THICKNESS) ? underlineThickness :
+	if ( request ) u->flags = request->flags;
+
+	u->thickness = (u->flags & GUIF_THICKNESS) ? request->thickness :
 		((var->font.underlineThickness <= 0) ?
 			1 :
 			var->font.underlineThickness);
 
-	u->position = (flags & GUIF_POSITION) ? -underlinePosition :
+	u->position = (u->flags & GUIF_POSITION) ? -request->position :
 		((var->font.underlinePosition < 0) ?
 			-var->font.underlinePosition :
 			(var->font.descent - 1));
 
-	if ( flags & GUIF_HALFWIDTH) {
+	if ( u->flags & GUIF_HALFWIDTH) {
+		u->half_widths[0] = request->half_widths[0];
+		u->half_widths[1] = request->half_widths[1];
+	} else {
 		if ( u->thickness > 1 ) {
 			int i,j;
 			for (i = 0; i < 2; i++) {
@@ -319,8 +341,7 @@ get_underline_info( Handle self, unsigned int flags, int underlineThickness, int
 			u->half_widths[1] *= -1.0;
 		} else
 			u->half_widths[0] = u->half_widths[1] = 0.0;
-	} else
-		u->half_widths[0] = u->half_widths[1] = halfWidth;
+	}
 
 	u->extra_margin = ( u->thickness > 2 ) ? u->thickness / 2 : 1;
 
@@ -340,7 +361,7 @@ render_underline(
 	Handle self,
 	int x, int y,
 	GlyphsOutRec *t, int * n_points,
-	unsigned int flags, int underlineThickness, int underlinePosition, float halfWidth
+	UnderlineInfo *request
 ) {
 	dmARGS;
 	int x0, y0, i, base;
@@ -369,7 +390,7 @@ render_underline(
 		if ( !text_out_baseline )
 			y += var->font.descent;
 
-		underline = get_underline_info(self, flags, underlineThickness, underlinePosition, halfWidth);
+		underline = get_underline_info(self, request);
 		y -= underline->position + ((underline->thickness > 1) ? (underline->thickness / 2) : 0);
 	}
 
@@ -534,30 +555,33 @@ Drawable_render_underline(Handle self, SV * glyphs, HV * profile)
 	NPoint *np, *npi;
 	int i, n_points;
 	GlyphsOutRec t;
-	unsigned int flags = 0;
-	int x, y, underlineThickness = 1, underlinePosition = 0;
-	float halfWidth = 0.0;
+	int x, y;
+	UnderlineInfo request;
 
 	if (!Drawable_read_glyphs(&t, glyphs, 0, "Drawable::render_underline"))
 		return NULL_SV;
 
 	x = pexist(x) ? pget_i(x) : 0;
 	y = pexist(y) ? pget_i(y) : 0;
+	bzero(&request, sizeof(request));
+
 	if ( pexist(thickness)) {
-		underlineThickness = pget_i(thickness);
-		if (underlineThickness > 0 )
-			flags |= GUIF_THICKNESS;
+		int thickness = pget_i(thickness);
+		if (thickness > 0 ) {
+			request.flags |= GUIF_THICKNESS;
+			request.thickness = thickness;
+		}
 	}
 	if ( pexist(position)) {
-		underlinePosition = pget_i(position);
-		flags |= GUIF_POSITION;
+		request.flags |= GUIF_POSITION;
+		request.position = pget_i(position);
 	}
 	if ( pexist(bevel)) {
-		halfWidth = pget_f(bevel);
-		flags |= GUIF_HALFWIDTH;
+		request.flags |= GUIF_HALFWIDTH;
+		request.half_widths[0] = request.half_widths[1] = pget_f(bevel);
 	}
 
-	np = render_underline(self, x, y, &t, &n_points, flags, underlineThickness, underlinePosition, halfWidth);
+	np = render_underline(self, x, y, &t, &n_points, &request);
 	av = newAV();
 	for ( i = 0, npi = np; i < n_points; i++, npi++) {
 		if ( var-> antialias ) {

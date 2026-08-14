@@ -2,6 +2,7 @@ use Types;
 
 local @UnderlineInfo
 {
+	int flags;
 	int y[2];
 	double half_widths[2];
 	int thickness;
