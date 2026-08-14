@@ -279,39 +279,48 @@ query_descent_range( Handle self, int base)
 	return ret;
 }
 
+#define GUIF_THICKNESS 1
+#define GUIF_POSITION  2
+#define GUIF_HALFWIDTH 4
+
 static UnderlineInfo*
-get_underline_info( Handle self)
+get_underline_info( Handle self, unsigned int flags, int underlineThickness, int underlinePosition, float halfWidth )
 {
 	UnderlineInfo *u;
 
-	if ( var->underline_info)
+	if ( (flags == 0) && var->underline_info)
 		return var->underline_info;
 
-	if ( ( var->underline_info = malloc(sizeof(UnderlineInfo))))
+	if ( (flags == 0) && ( var->underline_info = malloc(sizeof(UnderlineInfo))))
 		u = var->underline_info;
 	else
 		u = &UnderlineInfo_buffer;
 
-	u->thickness = (var->font.underlineThickness <= 0) ?
-		1 :
-		var->font.underlineThickness;
+	u->thickness = (flags & GUIF_THICKNESS) ? underlineThickness :
+		((var->font.underlineThickness <= 0) ?
+			1 :
+			var->font.underlineThickness);
 
-	u->position = (var->font.underlinePosition < 0) ?
-		-var->font.underlinePosition :
-		(var->font.descent - 1);
+	u->position = (flags & GUIF_POSITION) ? -underlinePosition :
+		((var->font.underlinePosition < 0) ?
+			-var->font.underlinePosition :
+			(var->font.descent - 1));
 
-	if ( u->thickness > 1 ) {
-		int i,j;
-		for (i = 0; i < 2; i++) {
-			NRect box;
-			j = ( i == 0 ) ? leiArrowTail : leiArrowHead;
-			j   = Drawable_resolve_line_end_index(&var->current_state, j);
-			box = Drawable_line_end_box( &var->current_state, j);
-			u->half_widths[i] = box.right * u->thickness;
-		}
-		u->half_widths[1] *= -1.0;
+	if ( flags & GUIF_HALFWIDTH) {
+		if ( u->thickness > 1 ) {
+			int i,j;
+			for (i = 0; i < 2; i++) {
+				NRect box;
+				j = ( i == 0 ) ? leiArrowTail : leiArrowHead;
+				j   = Drawable_resolve_line_end_index(&var->current_state, j);
+				box = Drawable_line_end_box( &var->current_state, j);
+				u->half_widths[i] = box.right * u->thickness;
+			}
+			u->half_widths[1] *= -1.0;
+		} else
+			u->half_widths[0] = u->half_widths[1] = 0.0;
 	} else
-		u->half_widths[0] = u->half_widths[1] = 0.0;
+		u->half_widths[0] = u->half_widths[1] = halfWidth;
 
 	u->extra_margin = ( u->thickness > 2 ) ? u->thickness / 2 : 1;
 
@@ -327,8 +336,12 @@ get_underline_info( Handle self)
 }
 
 static NPoint*
-render_underline(Handle self, int x, int y, GlyphsOutRec *t, int * n_points)
-{
+render_underline(
+	Handle self,
+	int x, int y,
+	GlyphsOutRec *t, int * n_points,
+	unsigned int flags, int underlineThickness, int underlinePosition, float halfWidth
+) {
 	dmARGS;
 	int x0, y0, i, base;
 	FontABC *abc = NULL, last_abc = {0,0,0};
@@ -356,7 +369,7 @@ render_underline(Handle self, int x, int y, GlyphsOutRec *t, int * n_points)
 		if ( !text_out_baseline )
 			y += var->font.descent;
 
-		underline = get_underline_info(self);
+		underline = get_underline_info(self, flags, underlineThickness, underlinePosition, halfWidth);
 		y -= underline->position + ((underline->thickness > 1) ? (underline->thickness / 2) : 0);
 	}
 
@@ -514,15 +527,37 @@ render_underline(Handle self, int x, int y, GlyphsOutRec *t, int * n_points)
 }
 
 SV *
-Drawable_render_underline(Handle self, SV * glyphs, int x, int y)
+Drawable_render_underline(Handle self, SV * glyphs, HV * profile)
 {
+	dPROFILE;
 	AV * av;
 	NPoint *np, *npi;
 	int i, n_points;
 	GlyphsOutRec t;
+	unsigned int flags = 0;
+	int x, y, underlineThickness = 1, underlinePosition = 0;
+	float halfWidth = 0.0;
+
 	if (!Drawable_read_glyphs(&t, glyphs, 0, "Drawable::render_underline"))
 		return NULL_SV;
-	np = render_underline(self, x, y, &t, &n_points);
+
+	x = pexist(x) ? pget_i(x) : 0;
+	y = pexist(y) ? pget_i(y) : 0;
+	if ( pexist(thickness)) {
+		underlineThickness = pget_i(thickness);
+		if (underlineThickness > 0 )
+			flags |= GUIF_THICKNESS;
+	}
+	if ( pexist(position)) {
+		underlinePosition = pget_i(position);
+		flags |= GUIF_POSITION;
+	}
+	if ( pexist(bevel)) {
+		halfWidth = pget_f(bevel);
+		flags |= GUIF_HALFWIDTH;
+	}
+
+	np = render_underline(self, x, y, &t, &n_points, flags, underlineThickness, underlinePosition, halfWidth);
 	av = newAV();
 	for ( i = 0, npi = np; i < n_points; i++, npi++) {
 		if ( var-> antialias ) {
@@ -537,6 +572,7 @@ Drawable_render_underline(Handle self, SV * glyphs, int x, int y)
 		}
 	}
 	free(np);
+	hv_clear(profile); /* old gencls bork */
 	return newRV_noinc(( SV *) av);
 }
 

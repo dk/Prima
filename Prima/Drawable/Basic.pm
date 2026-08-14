@@ -277,7 +277,7 @@ sub draw_underline
 	$string = $canvas->text_shape($string, %opt, skip_if_simple => 0)
 		unless ref $string;
 
-	my $r = $canvas->render_underline($string, $x, $y);
+	my $r = $canvas->render_underline($string, x => $x, y => $y, %opt);
 	if ( $r ) {
 		$canvas->lines($r) if @$r;
 	} elsif ( $r = $canvas->get_text_box($string)) {

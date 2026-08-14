@@ -305,7 +305,7 @@ sub add_positions_from_blocks
 					$rect[1] = $$b[ tb::BLK_Y];
 				} else {
 					$rect[2] = $pos[0];
-					$rect[3] = $$b[ tb::BLK_Y] + $$b[ tb::BLK_HEIGHT];
+					$rect[3] = $$b[ tb::BLK_Y] + $$b[ tb::BLK_HEIGHT] + $$b[ tb::BLK_APERTURE_Y ];
 					push @$rects, [@rect, $linkId++];
 				}
 			},
@@ -313,7 +313,7 @@ sub add_positions_from_blocks
 
 		if ( $linkState) {
 			$rect[2] = $pos[0];
-			$rect[3] = $$b[ tb::BLK_Y] + $$b[ tb::BLK_HEIGHT];
+			$rect[3] = $$b[ tb::BLK_Y] + $$b[ tb::BLK_HEIGHT] + $$b[ tb::BLK_APERTURE_Y];
 			push @$rects, [@rect, $linkId];
 		}
 	}

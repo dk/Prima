@@ -683,7 +683,7 @@ sub render_underline
 		antialias textOutBaseline lineEnd
 	));
 	my $scale = $self->{font_scale} * $self->{font_x_scale};
-	my $ret   = $canvas->render_underline($text, 0, 0);
+	my $ret   = $canvas->render_underline($text);
 	for ( my $i = 0; $i < @$ret; $i += 2 ) {
 		my $ax = $x + $ret->[$i]   * $scale;
 		my $ay = $y + $ret->[$i+1] * $scale;

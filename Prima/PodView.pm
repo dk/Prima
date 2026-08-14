@@ -171,7 +171,7 @@ sub on_paint
 		my $right_joiner;
 		for my $blkid (@$yblocks) {
 			my $b = $blocks->[$blkid];
-			next unless $b->[tb::BLK_Y] + $b->[tb::BLK_HEIGHT] == $Y;
+			next unless $b->[tb::BLK_Y] + $b->[tb::BLK_HEIGHT] + $b->[tb::BLK_APERTURE_Y] == $Y;
 			my @pos = ($b->[tb::BLK_X],0);
 			tb::walk( $b,
 				textPtr      => $self->{text},
@@ -181,17 +181,13 @@ sub on_paint
 				text         => sub {
 					my ( $ofs, $len, $wid, $txt ) = @_;
 					return if $pos[0] >= $X2 or $pos[0] + $wid <= $X1;
-					my ($x, $y) = ($delta[0] + $pos[0], $delta[1] - $Y);
+					my ($x, $y) = ($delta[0] + $pos[0], $delta[1] - $Y + $b->[tb::BLK_APERTURE_Y]);
 					$txt = $canvas->text_shape($txt);
 
 					my $left_joiner = $right_joiner;
 					undef $right_joiner;
-					if ( my $r = $canvas->render_underline($txt, 0, 0)) {
-						for (my $j = 0; $j < $#$r; $j +=4 ) {
-							push @lines,
-								$$r[$j]   + $x, $y,
-								$$r[$j+2] + $x, $y;
-						}
+					if ( my $r = $canvas->render_underline($txt, x => $x, y => $y, xthickness => 1, position => -1)) {
+						push @lines, @$r;
 					} else {
 						push @lines, $x, $y, $x + $wid, $y;
 					}
@@ -202,9 +198,12 @@ sub on_paint
 		}
 	}
 
+	return unless @lines;
+
 	$canvas-> color( $link->color );
-	$canvas-> antialias(0);
-	$canvas-> lineWidth(1);
+	$canvas-> antialias($canvas->font->underlineThickness > 1);
+	$canvas-> lineWidth($canvas->font->underlineThickness);
+	$canvas-> lineEnd(le::Round);
 	$canvas-> translate(0,0);
 	$canvas-> lines(\@lines);
 }

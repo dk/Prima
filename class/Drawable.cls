@@ -85,7 +85,7 @@ object Prima::Drawable ( Prima::Component)
 	static SV *  render_polyline( SV * obj, SV * points, HV * profile);
 	import Handle render_pattern( SV * obj, SV * pattern, HV * profile);
 	static SV *  render_spline( SV * obj, SV * points, HV * profile);
-	method SV *  render_underline(SV * glyphs, int x = 0, int y = 0);
+	method SV *  render_underline(SV * glyphs, HV * profile);
 	method Bool  graphic_context_push();
 	method Bool  graphic_context_pop();
 
