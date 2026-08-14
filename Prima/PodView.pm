@@ -186,7 +186,7 @@ sub on_paint
 
 					my $left_joiner = $right_joiner;
 					undef $right_joiner;
-					if ( my $r = $canvas->render_underline($txt, x => $x, y => $y, xthickness => 1, position => -1)) {
+					if ( my $r = $canvas->render_underline($txt, x => $x, y => $y, thickness => 1)) {
 						push @lines, @$r;
 					} else {
 						push @lines, $x, $y, $x + $wid, $y;
