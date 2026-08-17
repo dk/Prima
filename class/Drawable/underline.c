@@ -107,7 +107,7 @@ fill_glyph_intersection_info(Handle self, unsigned int index, int *descents, Und
 		int n_subcmd = *(p++);
 		int *p_sub, sub;
 		k += n_subcmd * 2 + 2;
-		DEBUG("cmd %d\n", n_subcmd);
+		DEBUG("cmd %d %d\n", cmd, n_subcmd);
 		switch ( cmd ) {
 		case ggoMove:
 			anchor.x    = POINT(p[0]);
@@ -124,7 +124,7 @@ fill_glyph_intersection_info(Handle self, unsigned int index, int *descents, Und
 			next_point.y = POINT(p[1]);
 			if ( got_curr_point )
 				check_intersections( curr_point, next_point, u->y[0], u->y[1], descents);
-			for ( sub = 1, p_sub = p + 1; sub < n_subcmd; sub++) {
+			for ( sub = 1, p_sub = p + 2; sub < n_subcmd; sub++) {
 				curr_point   = next_point;
 				next_point.x = POINT(*(p_sub++));
 				next_point.y = POINT(*(p_sub++));
@@ -542,6 +542,7 @@ render_underline(
 				p-> y += y0;
 			}
 		}
+		DEBUG("\n");
 	}
 
 	return ret;
