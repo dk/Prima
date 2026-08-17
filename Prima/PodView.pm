@@ -181,12 +181,12 @@ sub on_paint
 				text         => sub {
 					my ( $ofs, $len, $wid, $txt ) = @_;
 					return if $pos[0] >= $X2 or $pos[0] + $wid <= $X1;
-					my ($x, $y) = ($delta[0] + $pos[0], $delta[1] - $Y + $b->[tb::BLK_APERTURE_Y]);
+					my ($x, $y) = ($delta[0] + $pos[0], $delta[1] - $Y + $b->[tb::BLK_APERTURE_Y] + 1);
 					$txt = $canvas->text_shape($txt);
 
 					my $left_joiner = $right_joiner;
 					undef $right_joiner;
-					if ( my $r = $canvas->render_underline($txt, x => $x, y => $y, thickness => 1)) {
+					if ( my $r = $canvas->render_underline($txt, x => $x, y => $y)) {
 						push @lines, @$r;
 					} else {
 						push @lines, $x, $y, $x + $wid, $y;
