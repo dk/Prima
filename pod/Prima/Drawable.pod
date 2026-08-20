@@ -2559,6 +2559,8 @@ If supplied, performs matrix transformation on each polyline vertex:
 
 and returns the new polyline
 
+Note: for speed, Prima::array->new_cmatrix can be used.
+
 =item mode fm::Windings | fm::Alternate
 
 See C<aafill> above.

@@ -316,6 +316,7 @@ Prima/Drawable/Path.pm
 Prima/Drawable/Pod.pm
 Prima/Drawable/Subcanvas.pm
 Prima/Drawable/TextBlock.pm
+Prima/Drawable/Wave.pm
 Prima/Dialog/ColorDialog.pm
 Prima/Dialog/FileDialog.pm
 Prima/Dialog/FindDialog.pm

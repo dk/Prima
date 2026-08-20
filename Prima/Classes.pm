@@ -40,6 +40,7 @@ sub new_short  { shift->new('s', @_) }
 sub new_ushort { shift->new('S', @_) }
 sub new_int    { shift->new('i', @_) }
 sub new_double { shift->new('d', @_) }
+sub new_cmatrix{ shift->new('d', pack('d6', @_ )) }
 
 use constant REF  => 0;
 use constant SIZE => 1;

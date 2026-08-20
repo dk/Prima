@@ -278,15 +278,36 @@ sub draw_underline
 		unless ref $string;
 
 	my $r = $canvas->render_underline($string, x => $x, y => $y, %opt);
-	if ( $r ) {
-		$canvas->lines($r) if @$r;
-	} elsif ( $r = $canvas->get_text_box($string)) {
-		$canvas->line(
-			$r->[2] + $x,
-			$r->[3] + $y,
-			$r->[6] + $x,
-			$r->[7] + $y,
-		);
+
+	my $effect = $opt{effect} // 'line';
+
+	unless ( $r ) {
+		if ( $r = $canvas->get_text_box($string)) {
+			my $up = $canvas->font->underlinePosition;
+			$r = [
+				$r->[2] + $x,
+				$r->[3] + $y - $up,
+				$r->[6] + $x,
+				$r->[7] + $y - $up,
+			];
+		}
+	}
+	return unless $r && @$r;
+
+	if ( $effect eq 'line') {
+		$canvas->lines($r);
+	} else {
+		require Prima::Drawable::Wave;
+		my $up = abs($canvas->font->underlinePosition);
+		$up = 0 if $up < 0;
+		my $amplitude = $up / 2;
+		$amplitude = 2 if $amplitude < 2;
+		for ( my $i = 0; $i < @$r; $i+=4) {
+			my @v = @$r[$i..$i+3];
+			$v[$_] -= $up for 1,3;
+			my $p = Prima::Drawable::Wave::line($effect, \@v, $amplitude, undef, $amplitude);
+			$canvas->polyline($p);
+		}
 	}
 }
 
