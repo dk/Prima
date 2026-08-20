@@ -464,6 +464,8 @@ L<Prima::Drawable::Subcanvas> - paint a hierarchy of widgets to any drawable
 
 L<Prima::Drawable::TextBlock> - rich text representation
 
+L<Prima::Drawable::Wave> - wavy lines
+
 =item Visual Builder
 
 L<VB> - Visual Builder for the Prima toolkit

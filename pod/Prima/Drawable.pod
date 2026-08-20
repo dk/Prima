@@ -1693,6 +1693,10 @@ Something like this:
 
 =for podview </cut>
 
+Line plotting C<$OPT{effect}> can be either C<line> (default), or one of
+the effects defined by the L<Prima::Drawable::Wave> plotter. See there for more
+details.
+
 Context used: color, backColor, font, lineWidth, lineEnd, linePattern
 
 See also: C<render_underline>

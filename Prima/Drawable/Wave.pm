@@ -18,13 +18,9 @@ sub check
 	return ($amplitude, $wavelength);
 }
 
-sub square
+sub process
 {
-	my ($vertices, $amplitude, $wavelength) = @_;
-
-	($amplitude, $wavelength) = check($vertices, $amplitude, $wavelength);
-	my $half_wave  = $wavelength / 2;
-	my $quart_wave = $wavelength / 4;
+	my ($vertices, $amplitude, $wavelength, $cb) = @_;
 
 	my $points = Prima::array->new_double;
 	push @$points, @$vertices[0,1];
@@ -46,107 +42,96 @@ sub square
 		);
 
 		# process full waves
-		my $full_waves = int($length / $wavelength);
-
 		push @$points, $x0, $y0;
+		my $pp = $cb->($length);
+		$pp = Prima::Drawable->render_polyline($pp, matrix => $matrix) if $pp;
+		Prima::array::append($points, $pp) if $pp;
+	}
+
+	Prima::array::deduplicate($points, 2, 4);
+
+	return $points;
+}
+
+sub square
+{
+	my ( $vertices, $amplitude, $wavelength) = @_;
+	($amplitude, $wavelength) = check($vertices, $amplitude, $wavelength);
+	my $half_wave  = $wavelength / 2;
+	my $quart_wave = $wavelength / 4;
+
+	return process( $vertices, $wavelength, $amplitude, sub {
+		my ($length) = @_;
+		my @ret;
+
+		# body
+		my $full_waves = int($length / $wavelength);
 		for my $wave (0 .. $full_waves - 1) {
 			my $s = $wave * $wavelength;
-			Prima::array::append($points, Prima::Drawable->render_polyline([
+			push @ret,
 				$s              , +$amplitude,
 				$s + $half_wave , +$amplitude,
 				$s + $half_wave , -$amplitude,
 				$s + $wavelength, -$amplitude,
-			], matrix => $matrix));
+			;
 		}
 
-		# any quarter-waves left?
-		my @ptail;
+		# tail
 		my $ofs  = $wavelength * $full_waves;
 		my $tail = $length - $ofs;
 		if ( $tail > $quart_wave ) {
 			$tail -= $quart_wave;
-			push @ptail, $ofs              , +$amplitude;
+			push @ret, $ofs              , +$amplitude;
 		}
 		if ( $tail > $quart_wave ) {
 			$tail -= $quart_wave;
-			push @ptail, $ofs + $half_wave , +$amplitude;
+			push @ret, $ofs + $half_wave , +$amplitude;
 		}
 		if ( $tail > $quart_wave ) {
-			push @ptail, $ofs + $half_wave , -$amplitude;
+			push @ret, $ofs + $half_wave , -$amplitude;
 		}
 
-		Prima::array::append($points, Prima::Drawable->render_polyline(\@ptail, matrix => $matrix))
-			if @ptail;
-	}
-
-	Prima::array::deduplicate($points, 2, 4);
-
-	return $points;
+		return \@ret;
+	});
 }
 
 sub triangle
 {
-	my ($vertices, $amplitude, $wavelength) = @_;
-
+	my ( $vertices, $amplitude, $wavelength) = @_;
 	($amplitude, $wavelength) = check($vertices, $amplitude, $wavelength);
 	my $half_wave  = $wavelength / 2;
 	my $quart_wave = $wavelength / 4;
+	return process( $vertices, $wavelength, $amplitude, sub {
+		my ($length) = @_;
+		my @ret;
 
-	my $points = Prima::array->new_double;
-	push @$points, @$vertices[0,1];
-
-	# process baselines
-	for (my $v = 0; $v < @$vertices - 2; $v += 2) {
-		my ($x0,$y0,$x1,$y1) = @$vertices[$v..$v+3];
-
-		my $dx = $x1 - $x0;
-		my $dy = $y1 - $y0;
-		my $length = sqrt($dx * $dx + $dy * $dy) or next;
-
-		my $tx = $dx / $length;
-		my $ty = $dy / $length;
-		my $matrix = Prima::array->new_cmatrix(
-			$tx,  $ty,
-			-$ty, $tx,
-			$x0,  $y0
-		);
-
-		# process full waves
+		# body
 		my $full_waves = int($length / $wavelength);
-
-		push @$points, $x0, $y0;
 		for my $wave (0 .. $full_waves - 1) {
 			my $s = $wave * $wavelength;
-			Prima::array::append($points, Prima::Drawable->render_polyline([
-				$s + $quart_wave , +$amplitude,
-				$s + $half_wave + $quart_wave, -$amplitude,
-			], matrix => $matrix));
+			push @ret,
+				$s + $quart_wave, +$amplitude,
+				$s + $half_wave + $quart_wave, -$amplitude;
 		}
 
-		# any quarter-waves left?
-		my @ptail;
+		# tail
 		my $ofs  = $wavelength * $full_waves;
 		my $tail = $length - $ofs;
 		if ( $tail > $quart_wave ) {
 			$tail -= $quart_wave;
-			push @ptail, $ofs + $quart_wave , +$amplitude;
+			push @ret, $ofs + $quart_wave , +$amplitude;
 		}
 		if ( $tail > $half_wave) {
-			push @ptail, $ofs + $half_wave + $quart_wave, -$amplitude;
+			push @ret, $ofs + $half_wave + $quart_wave, -$amplitude;
 		} elsif ( $tail > $quart_wave ) {
-			push @ptail, $ofs + $half_wave , 0;
+			push @ret, $ofs + $half_wave , 0;
 		}
 
-		Prima::array::append($points, Prima::Drawable->render_polyline(\@ptail, matrix => $matrix))
-			if @ptail;
-	}
-
-	Prima::array::deduplicate($points, 2, 4);
-
-	return $points;
+		return \@ret;
+	});
 }
 
-sub wave
+sub spline
 {
 	my ($vertices, $amplitude, $wavelength, $precision) = @_;
 	return Prima::Drawable->render_spline(
@@ -160,8 +145,8 @@ sub line
 	my ( $effect, $vertices, @opt ) = @_;
 	if ( $effect eq 'square') {
 		return square($vertices, @opt);
-	} elsif ( $effect eq 'wave') {
-		return wave($vertices, @opt);
+	} elsif ( $effect eq 'spline') {
+		return spline($vertices, @opt);
 	} elsif ( $effect eq 'triangle') {
 		return triangle($vertices, @opt);
 	} else {
@@ -181,7 +166,7 @@ sub underline
 	my $amplitude = $up / 2;
 	$amplitude = 2 if $amplitude < 2;
 
-	my $effect = $opt{effect} // 'wave';
+	my $effect = $opt{effect} // 'spline';
 	my $p = line($effect, \@p, $amplitude, undef, $opt{precision});
 	$canvas->polyline($p);
 }
@@ -198,11 +183,62 @@ Prima::Drawable::Wave - plot wavy lines
 
 =head1 DESCRIPTION
 
-.
+Collection of routines for generating and plotting wavy lines.
+Can render triangle, square, and spline effects.
 
 =head1 SYNOPSIS
 
-  use Prima qw(Application Drawable::Wave);
+  use Prima::Drawable::Wave;
+
+  $canvas->antialias(1);
+  my $points = Prima::Drawable::Wave::square(
+     [20, 100, 100, 60, 180, 120, 270, 80],
+     4, 20,
+  );
+  $canvas->lineWidth(.5);
+  $canvas->spline( $canvas-> render_spline($points) );
+
+  $canvas->font->size(20);
+  $canvas->text_out('Hello world', 70, 80);
+  $canvas->lineWidth($canvas->font->underlineThickness);
+  $canvas->alpha(128);
+  Prima::Drawable::Wave::underline($canvas, 'Hello world', 70, 80, effect => 'triangle');
+
+=for podview <img src="Prima/wave.gif">
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/wave.gif">
+
+=head1 API
+
+=head2 underline CANVAS, TEXT, X, Y, %OPT
+
+Given TEXT, draws a way line in the X and Y coordinates.
+Uses C<$OPT{effect}> or C<'wave'> as the line effect, and C<$OPT{precision}> for eventual spline precision.
+
+Can only draw a single wavy underline; check L<Prima::Drawable/draw_underline>
+for wavy effects with smart underline that respect font glyphs that cross the
+descent line.
+
+=head2 line EFFECT, VERTICES, AMPLITUDE, WAVENELNGTH, @OPTIONS
+
+Converts VERTICES to another set of vertices for generation of a wavy line.
+The result can directly be passed to the C<Prima::Drawable::polyline> method.
+
+Optional AMPLITUDE and WAVENELNGTH manage the effect settings.
+
+Eventual C<@OPTIONS> are passed to the effect function, see below.
+
+=head2 square VERTICES, AMPLITUDE, WAVENELNGTH
+
+Creates a square wave line
+
+=head2 triangle VERTICES, AMPLITUDE, WAVENELNGTH
+
+Creates a triangle wave line
+
+=head2 spline VERTICES, AMPLITUDE, WAVENELNGTH, PRECISION
+
+Creates a spline wave line
 
 =head1 AUTHOR
 
