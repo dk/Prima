@@ -1258,6 +1258,8 @@ apc_widget_destroy( Handle self)
 	if ( sys class_name == WC_FRAME)
 		guts. top_windows--;
 
+	if ( is_apt(aptLayered))
+		DestroyWindow((HWND) var handle);
 	if ( !DestroyWindow( HANDLE)) apiErrRet;
 	return true;
 }
