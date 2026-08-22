@@ -23,7 +23,7 @@ create_gdip_surface(Handle self)
 {
 	HRGN rgn;
 
-	SetViewportOrgEx( sys ps, 0, 0, NULL );
+	select_world_transform(self, false);
 
 	/* force null region as it lingers in GDI+ space somehow */
 	rgn = CreateRectRgn(0,0,0,0);
