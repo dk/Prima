@@ -1255,11 +1255,11 @@ apc_widget_destroy( Handle self)
 	if ( self == guts.drag_target) guts.drag_target = NULL_HANDLE;
 	if ( var handle == NULL_HANDLE) return true;
 
-	if ( sys class_name == WC_FRAME)
+	if ( sys class_name == WC_FRAME) {
 		guts. top_windows--;
-
-	if ( is_apt(aptLayered))
-		DestroyWindow((HWND) var handle);
+		if ( is_apt(aptLayered))
+			DestroyWindow((HWND) var handle);
+	}
 	if ( !DestroyWindow( HANDLE)) apiErrRet;
 	return true;
 }
