@@ -1,6 +1,6 @@
 Revision history for Perl module Prima
 
-1.78 202X-XX-XX
+1.78 2026-08-22
  - render_underline produces better quality underlines
    -- PodView uses smart underlines
  - Image load_binary and save_binary operate on a scalar
