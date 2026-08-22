@@ -272,7 +272,7 @@ insert_box( PRegionScanlineIterator i, unsigned int where, unsigned int who)
 	if ( where == i->head ) {
 		i->list[who  * 2    ] = i->null_index; /* prev */
 		i->list[who  * 2 + 1] = i->head;       /* next */
-		i->head                = who;
+		i->list[where * 2   ] = i->head = who;
 	} else if ( where == i->null_index ) {
 		unsigned int w = i->head;
 		while (1) {
