@@ -305,7 +305,7 @@ sub draw_underline
 		for ( my $i = 0; $i < @$r; $i+=4) {
 			my @v = @$r[$i..$i+3];
 			$v[$_] -= $up for 1,3;
-			my $p = Prima::Drawable::Wave::line($effect, \@v, $amplitude, undef, $amplitude);
+			my $p = Prima::Drawable::Wave::polyline($effect, \@v, $amplitude, undef, $amplitude);
 			$canvas->polyline($p);
 		}
 	}

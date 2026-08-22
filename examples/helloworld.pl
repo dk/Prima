@@ -26,7 +26,11 @@ my $w = Prima::MainWindow->new(
 		$canvas-> clear;
 		$canvas->matrix->translate(100, 100)->rotate(10);
 		$canvas->stretch_image(100, 100, 300, 300, $p);
-		$canvas-> text_shape_out( $self-> text, 0, 0);
+		$canvas-> text_out( $self-> text, 0, 0);
+		$canvas-> antialias(1);
+		$canvas-> lineWidth(1);
+		$canvas-> color(cl::Green);
+		$canvas-> draw_underline( $self-> text, 0, 0, effect => 'triangle');
 	},
 );
 

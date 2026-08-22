@@ -140,7 +140,7 @@ sub spline
 	);
 }
 
-sub line
+sub polyline
 {
 	my ( $effect, $vertices, @opt ) = @_;
 	if ( $effect eq 'square') {
@@ -167,7 +167,7 @@ sub underline
 	$amplitude = 2 if $amplitude < 2;
 
 	my $effect = $opt{effect} // 'spline';
-	my $p = line($effect, \@p, $amplitude, undef, $opt{precision});
+	my $p = polyline($effect, \@p, $amplitude, undef, $opt{precision});
 	$canvas->polyline($p);
 }
 
@@ -219,7 +219,7 @@ Can only draw a single wavy underline; check L<Prima::Drawable/draw_underline>
 for wavy effects with smart underline that respect font glyphs that cross the
 descent line.
 
-=head2 line EFFECT, VERTICES, AMPLITUDE, WAVENELNGTH, @OPTIONS
+=head2 polyline EFFECT, VERTICES, AMPLITUDE, WAVENELNGTH, @OPTIONS
 
 Converts VERTICES to another set of vertices for generation of a wavy line.
 The result can directly be passed to the C<Prima::Drawable::polyline> method.
