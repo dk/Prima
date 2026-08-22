@@ -35,7 +35,7 @@ if ( $build) {
 	for ( <F>) {
 		$begin = 1 if !$begin && m/Tutorials/;
 		next unless $begin;
-		if (  m/L\<([^<]*)\>/) {
+		if (  m/L\<(?!http)([^<]*)\>/) {
 			push @bs, [ 0, $1];
 		} elsif ( m/^=item\s*(.*)/) {
 			if ( $1 eq '*') {
