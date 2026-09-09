@@ -330,10 +330,10 @@ path is fully convertible.
 Under unix, reading entries from the environment or the file system is
 opportunistic: if a text string (file name, environment entry) is a valid utf8
 string, then it is treated and reported as one. Mostly because the .UTF-8
-locales are default and found everywhere. Note that Prima ignores C< $ENV{LANG}
-> here. This is a bit problematic on Perls under 5.22 as these don't provide
-> means to check for the utf8 string validity, so every string will be slapped
-> a utf8 bit on here -- beware.
+locales are default and found everywhere. Note that Prima ignores C<$ENV{LANG}>
+here. This is a bit problematic on Perls under 5.22 as these don't provide
+means to check for the utf8 string validity, so every string will be slapped a
+utf8 bit on here -- beware.
 
 =item *
 
