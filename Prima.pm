@@ -587,7 +587,7 @@ standard Prima documentation viewer C<podview> ( see File/Run/prima-class ).
 Copyright 1997-2003 The Protein Laboratory, University of Copenhagen. All
 rights reserved.
 
-Copyright 2004-2025 Dmitry Karasik. All rights reserved.
+Copyright 2004-2026 Dmitry Karasik. All rights reserved.
 
 This program is distributed under the BSD License.
 
