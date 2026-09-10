@@ -336,21 +336,11 @@ L<Prima::image-load> - image subsystem and file operations
 
 L<Prima::Widget> - window management
 
-=over 2
-
-=item *
-
 L<Prima::Widget::grid> - Tk::grid geometry manager
-
-=item *
 
 L<Prima::Widget::pack> - Tk::pack geometry manager
 
-=item *
-
 L<Prima::Widget::place> - Tk::place geometry manager
-
-=back
 
 L<Prima::Window> - top-level window management
 
