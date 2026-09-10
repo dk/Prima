@@ -6,7 +6,7 @@
 
 =head1 NAME
 
-Prima::grid - Geometry manager that arranges widgets in a grid
+Prima::Widget::grid - Geometry manager that arranges widgets in a grid
 
 =head1 SYNOPSIS
 
