@@ -572,6 +572,10 @@ L<Prima::sys::XQuartz> - MacOSX/XQuartz facilities
 
 L<Prima::sys::FS> - unicode-aware core file functions
 
+L<Prima::sys::AnyEvent> - AnyEvent bridge
+
+L<Prima::sys::Test> - GUI test tools
+
 =item Class information
 
 The Prima manual pages often provide information for more than one Prima class.
