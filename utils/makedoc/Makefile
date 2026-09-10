@@ -21,3 +21,6 @@ view: Prima.dvi
 
 pdfview: Prima.pdf
 	acroread Prima.pdf
+
+upload: Prima.pdf
+	scp Prima.pdf prima.eu.org:www/download
