@@ -456,7 +456,7 @@ should not call L<AnyEvent>'s condition variable C<recv> function.
 =item *
 
 If you want to use another event library implementation of L<AnyEvent>, you have
-to not call C<Prima->run> but instead call L<AnyEvent>'s condition variable
+to not call C<< Prima->run >> but instead call L<AnyEvent>'s condition variable
 C<recv> function.
 
 See full examples in F<examples/socket_anyevent1.pl>, F<examples/socket_anyevent2.pl>, and
