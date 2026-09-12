@@ -6,7 +6,7 @@ require Exporter;
 use Symbol ();
 use Scalar::Util qw(readonly);
 use Encode;
-use Fcntl qw(O_RDONLY O_WRONLY O_RDWR O_CREAT O_TRUNC O_APPEND);
+use Fcntl qw(O_RDONLY O_WRONLY O_RDWR O_CREAT O_TRUNC O_APPEND O_BINARY);
 use Prima;
 use Prima::Utils qw(
 	chdir chmod closedir getcwd link mkdir open_dir open_file
@@ -18,15 +18,15 @@ use Prima::Utils qw(
 use vars qw(@ISA @EXPORT @EXPORT_OK);
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(
-	chdir chmod getcwd link mkdir open opendir readdir closedir 
+	chdir chmod getcwd link mkdir open opendir readdir closedir
 	rename rmdir unlink utime
 	getenv setenv abs_path stat lstat access getdir
-	seekdir telldir rewinddir glob
+	seekdir telldir rewinddir glob traverse copy
 	_r _w _x _o _R _W _X _O _e _z _s _f _d _l _p _S _b _c _t _u _g _k _M _A _C
 );
 @EXPORT = @EXPORT_OK;
 
-sub open(*;$*)
+sub open(*;$@)
 {
 	my ( $handle, @p ) = @_;
 	goto NATIVE unless @p;
@@ -190,7 +190,7 @@ sub __f($$) {
 
 sub _l ($) {
 	no strict 'refs';
-	my @p = Prima::Utils::stat($_[1], 1);
+	my @p = Prima::Utils::stat($_[0], 1);
 	return undef unless scalar @p;
 	return undef unless ${'Fcntl::'}{S_IFLNK};
 	my $c = Fcntl->can('S_IFLNK')->();
@@ -264,6 +264,97 @@ sub abs_path
 	return $realpath;
 }
 
+sub traverse(&$;@)
+{
+	my ( $cb, $dir, %opt )  = @_;
+
+	$opt{follow} //= 1;
+	$opt{chdir}  //= 1;
+	$opt{warn}   //= 1;
+
+	unless (_d $dir) {
+		warn "$dir: not a directory\n" if $opt{warn};
+		return -1;
+	}
+
+	my ($savepath, $root);
+	$savepath = Prima::Utils::getcwd() if $opt{chdir};
+
+	my $chdir = sub {
+		if ( $opt{chdir} ) {
+			my $d = shift;
+			unless (Prima::Utils::chdir($d)) {
+				warn "Cannot change directory to $d\n" if $opt{warn};
+				goto BAILOUT;
+			}
+		}
+	};
+	$chdir->($dir);
+
+	$root = Prima::Utils::getcwd() if $opt{chdir};
+
+	my @queue = ([$dir, '.', '.']);
+	while ( my $q = shift @queue ) {
+		my ( $d, $p, $f ) = @$q;
+		my $fn = ($f eq '.') ? $d : "$d/$f";
+		if ( _l($fn) and !$opt{follow} ) {
+			#
+		} elsif ( _d $fn ) {
+			my $dh = open_dir($fn);
+			if ( !$dh) {
+				warn "Cannot opendir($d:$!)\n" if $opt{warn};
+				continue;
+			}
+			my $subpath = ($f eq '.') ? $f : "$p/$f";
+			push @queue, map { [$fn, $subpath, $_] } grep { !m/^(\.|\.\.)$/ } Prima::sys::FS::readdir($dh);
+			Prima::sys::FS::closedir($dh);
+		}
+
+		my $stop;
+		$chdir->($d);
+		$cb->(
+			abs_path  => "$root/$d",
+			directory => $d,
+			path      => $p,
+			name      => $f,
+			fullname  => $fn,
+			stop      => sub { $stop++ },
+		);
+		$chdir->($root);
+		return 0 if $stop;
+	}
+
+	$chdir->($savepath);
+	return 1;
+
+BAILOUT:
+	return -1;
+}
+
+sub copy($$)
+{
+	my ( $src, $dst ) = @_;
+
+	return "No such file: $src" unless _f $src;
+	$dst .= ( $src =~ m{.*([\/].*)$/} ) ? $1 : "/$src" if _d $dst;
+
+	my ($s, $d);
+	return "Cannot open $src: $!" unless Prima::sys::FS::open( $s, "<", $src, 'bytes');
+	return "Cannot open $src: $!" unless Prima::sys::FS::open( $d, ">", $dst, 'bytes');
+
+	while (1) {
+		my $f = '';
+		my $n = sysread( $s, $f, 16384 );
+		return "Error reading $src: $!" if !defined $n;
+		last if $n == 0;
+
+		my $w = syswrite( $d, $f, $n );
+		return "Error writing to $dst: $!" if !defined $w or $w != $n;
+	}
+
+	return;
+}
+
 1;
 
 =pod
@@ -317,6 +408,10 @@ The functions that are implemented in the module itself:
 
 Same as C<Cwd::abs_path>.
 
+=item copy SRC, DST
+
+Copies a file, returns undef as a success or an error string otherwise
+
 =item glob PATTERN
 
 More or less same as C<CORE::glob> or C<File::Glob::glob>.
@@ -324,6 +419,15 @@ More or less same as C<CORE::glob> or C<File::Glob::glob>.
 =item lstat PATH
 
 Same as C<CORE::lstat>
+
+=item traverse &CALLBACK(%CONTENT), DIRECTORY, [ %OPTIONS ]
+
+Traverses DIRECTORY, calls &CALLBACK for each entry where %CONTENT has the following entries:
+directory, name, fullname, path, abs_path, stop. The C<stop> is a function to be called to stop the traversal.
+
+%OPTIONS: follow = 1, chdir = 1, warn = 1.
+
+Return 1 for success, 0 if was stopped, -1 for failure.
 
 =back
 
