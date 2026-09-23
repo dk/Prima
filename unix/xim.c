@@ -16,7 +16,7 @@ prima_xim_init(void)
 	if (
 		( guts.xic_buffer = malloc( guts.xic_bufsize = 256 )) != NULL
 	) {
-		char *loc = setlocale(LC_CTYPE, NULL);
+		char *loc = duplicate_string(setlocale(LC_CTYPE, NULL));
 		setlocale(LC_CTYPE, "");
 		XSetLocaleModifiers("");
 		guts.xim = XOpenIM(DISP, NULL, NULL, NULL);
@@ -25,6 +25,7 @@ prima_xim_init(void)
 			guts.use_xim = true;
 		}
 		setlocale(LC_CTYPE, loc);
+		if (loc) free(loc);
 	}
 }
 
