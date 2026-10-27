@@ -516,6 +516,13 @@ apc_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 #ifdef USE_XFT
 	if ( XX-> font-> xft)
 		return prima_xft_glyphs_out( self, t, x, y);
+	else if ( guts.use_xft ) {
+		Bool ok;
+		ENTER_WRAP_XFT_GLYPHING;
+		ok = XX->font->xft ? prima_xft_glyphs_out( self, t, x, y) : false;
+		LEAVE_WRAP_XFT_GLYPHING;
+		return ok;
+	}
 #endif
 
 	SWAP_BYTES(t->glyphs,t->len);
@@ -553,11 +560,6 @@ prima_text_shaper_core_text( Handle self, PTextShapeRec r)
         int i;
 	uint16_t *glyphs;
 	uint32_t *text;
-
-#ifdef USE_XFT
-	if ( X(self)-> font-> xft)
-		return prima_xft_text_shaper_bytes(self, r);
-#endif
 
         for ( i = 0, glyphs = r->glyphs, text = r->text; i < r->len; i++) {
                 uint32_t c = *(text++);
@@ -603,7 +605,7 @@ apc_font_get_text_shaper( Handle self, int * type)
 #endif
 
 #ifdef USE_XFT
-	if ( X(self)-> font && X(self)-> font-> xft) {
+	if ( guts. use_xft ) {
 		int t = *type;
 #ifdef WITH_HARFBUZZ
 		if ( guts. use_harfbuzz && *type == tsFull )
@@ -739,6 +741,13 @@ apc_gp_get_font_abc( Handle self, int firstChar, int lastChar, int flags)
 #ifdef USE_XFT
 		if ( XX-> font-> xft)
 			return prima_xft_get_font_abc( self, firstChar, lastChar, flags);
+		else if ( guts.use_xft && (flags & toGlyphs) ) {
+			PFontABC ret;
+			ENTER_WRAP_XFT_GLYPHING;
+			ret = XX->font->xft ? prima_xft_get_font_abc( self, firstChar, lastChar, flags) : NULL;
+			LEAVE_WRAP_XFT_GLYPHING;
+			return ret;
+		}
 #endif
 
 		abc = prima_corefont_xfont2abc( XX-> font-> fs, firstChar, lastChar);
@@ -750,6 +759,7 @@ apc_gp_get_font_abc( Handle self, int firstChar, int lastChar, int flags)
 PFontABC
 apc_gp_get_font_def( Handle self, int firstChar, int lastChar, int flags)
 {
+	DEFXX;
 	PFontABC abc;
 
 #ifdef USE_FONTQUERY
@@ -761,9 +771,15 @@ apc_gp_get_font_def( Handle self, int firstChar, int lastChar, int flags)
 #endif
 
 #ifdef USE_XFT
-	DEFXX;
 	if ( XX-> font-> xft)
 		return prima_xft_get_font_def( self, firstChar, lastChar, flags);
+	else if ( guts.use_xft && (flags & toGlyphs) ) {
+		PFontABC ret;
+		ENTER_WRAP_XFT_GLYPHING;
+		ret = XX->font->xft ? prima_xft_get_font_def( self, firstChar, lastChar, flags) : NULL;
+		LEAVE_WRAP_XFT_GLYPHING;
+		return ret;
+	}
 #endif
 
 	abc = prima_corefont_xfont2def( self, firstChar, lastChar);
@@ -818,20 +834,28 @@ apc_gp_get_text_width( Handle self, const char * text, int len, int flags)
 int
 apc_gp_get_glyphs_width( Handle self, PGlyphsOutRec t, int flags)
 {
+	DEFXX;
 	int ret;
 	if ( t->len > 65535 ) t->len = 65535;
 
 #ifdef USE_FONTQUERY
 	if ( is_opt(optInFontQuery) ) {
-		if ( X(self)->font)
+		if ( XX->font)
 			return prima_fq_get_glyphs_width( self, t, flags, NULL);
 		return 0;
 	}
 #endif
 
 #ifdef USE_XFT
-	if ( X(self)-> font-> xft)
-		return prima_xft_get_glyphs_width( self, X(self)-> font, t, flags, NULL);
+	if ( XX-> font-> xft)
+		return prima_xft_get_glyphs_width( self, XX-> font, t, flags, NULL);
+	else if ( guts.use_xft ) {
+		int ret;
+		ENTER_WRAP_XFT_GLYPHING;
+		ret = XX->font->xft ? prima_xft_get_glyphs_width( self, XX->font, t, flags, NULL) : 0;
+		LEAVE_WRAP_XFT_GLYPHING;
+		return ret;
+	}
 #endif
 
 	SWAP_BYTES(t->glyphs,t->len);
@@ -901,20 +925,27 @@ apc_gp_get_text_box( Handle self, const char * text, int len, int flags)
 Point *
 apc_gp_get_glyphs_box( Handle self, PGlyphsOutRec t)
 {
+	DEFXX;
 	Point * ret;
 	if ( t->len > 65535 ) t->len = 65535;
 
 #ifdef USE_FONTQUERY
 	if ( is_opt(optInFontQuery) ) {
-		if ( X(self)->font)
+		if ( XX->font)
 			return prima_fq_get_glyphs_box( self, t);
 		return NULL;
 	}
 #endif
 
 #ifdef USE_XFT
-	if ( X(self)-> font-> xft)
+	if ( XX-> font-> xft)
 		return prima_xft_get_glyphs_box( self, t);
+	else if ( guts.use_xft ) {
+		ENTER_WRAP_XFT_GLYPHING;
+		ret = XX->font->xft ? prima_xft_get_glyphs_box( self, t) : NULL;
+		LEAVE_WRAP_XFT_GLYPHING;
+		return ret;
+	}
 #endif
 
 	SWAP_BYTES(t->glyphs,t->len);

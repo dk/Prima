@@ -381,8 +381,8 @@ prima_xft_match( Font *font, Matrix matrix, Bool by_size, PCachedFont cf)
 	}
 
 
-	/* check name match */
-	{
+	/* check core name match */
+	if ( guts.xft_priority < 2 ) {
 		FcChar8 * s = NULL;
 		FcPatternGetString( match, FC_FAMILY, 0, &s);
 		if ( !s || strcmp(( const char*) s, requested_font.name) != 0) {
@@ -1473,10 +1473,15 @@ prima_xft_text_shaper( Handle self, PTextShapeRec r, uint32_t * map8)
 	uint32_t *text;
 	XftFont *font = X(self)->font->xft_base;
 
-	if ( !X(self)-> font-> xft)
-		return prima_text_shaper_core_text(self, r);
+	if ( !X(self)-> font-> xft) {
+		Bool ok;
+		ENTER_WRAP_XFT_GLYPHING;
+		ok = X(self)->font->xft ? prima_xft_text_shaper( self, r, map8) : false;
+		LEAVE_WRAP_XFT_GLYPHING;
+		return ok;
+	}
 
-        for ( 
+        for (
 		i = 0, glyphs = r->glyphs, text = r->text;
 		i < r->len; 
 		i++
@@ -1524,11 +1529,16 @@ prima_xft_text_shaper_harfbuzz( Handle self, PTextShapeRec r)
 	Bool ok;
 	FT_Face face;
 
-	if ( !X(self)-> font-> xft)
-		return prima_text_shaper_core_text(self, r);
+	if ( !X(self)-> font-> xft) {
+		Bool ok;
+		ENTER_WRAP_XFT_GLYPHING;
+		ok = X(self)->font->xft ? prima_xft_text_shaper_harfbuzz( self, r) : false;
+		LEAVE_WRAP_XFT_GLYPHING;
+		return ok;
+	}
 
 	if ( !( face = XftLockFace( XX->font->xft)))
-		return -1;
+		return false;
 	ok = prima_ft_text_shaper_harfbuzz(face, r);
 	XftUnlockFace(XX->font->xft);
 

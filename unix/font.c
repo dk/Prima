@@ -53,11 +53,12 @@ prima_font_init_x11( char * error_buf)
 	if ( !prima_corefont_init(error_buf))
 		return false;
 
-	guts. xft_priority     = do_xft_priority;
-
 	(void) do_xft;
 #ifdef USE_XFT
-	if ( do_xft) prima_xft_init();
+	if ( do_xft) {
+		guts. xft_priority = do_xft_priority ? 1 : 0;
+		prima_xft_init();
+	}
 #endif
 
 	prima_corefont_pp2font( "fixed", NULL);
@@ -81,7 +82,7 @@ prima_font_init_x11( char * error_buf)
 			default, so here we pick such a font that contains the user-specified
 			encoding, and has more or less reasonable metrics.
 		*/
-		if ( guts. locale[0] && (strcmp( guts. locale, guts. default_font. encoding) != 0)) {
+		if ( !guts.xft_priority && guts. locale[0] && (strcmp( guts. locale, guts. default_font. encoding) != 0)) {
 			prima_corefont_pick_default_font_with_encoding();
 		}
 	}

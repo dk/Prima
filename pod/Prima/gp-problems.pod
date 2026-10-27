@@ -184,6 +184,13 @@ Font change notification is not provided. (X11)
 
 Raster fonts cannot be synthesized (partly X11)
 
+X11 supports both corefonts and xft/fontconfig fonts. When both are present,
+glyphing and shaping operation would only use the latter, to the point that
+widgets being assigned an explicit corefont, will silently revert to a
+fontconfig font if glyphing and shaping is used. When there is no xft support,
+minimal basic glyphing and shaping is allowed, for the sake of the code
+compatibility.
+
 =back
 
 =head2 Raster operations ( ROPs)

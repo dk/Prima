@@ -729,7 +729,7 @@ typedef struct _UnixGuts
 	int                          shared_image_completion_event;
 	Bool                         xshmattach_failed;
 	int                          use_xft;
-	Bool                         xft_priority;
+	int                          xft_priority;
 	Bool                         xft_disable_large_fonts;
 	int                          xft_xrender_major_opcode;
 	Bool                         randr_extension;
@@ -1581,6 +1581,34 @@ prima_XDestroyImage( XImage * x);
 typedef int (*XIfEventProcType)(Display*,XEvent*,XPointer);
 
 #endif
+
+/* xft functions expect some xft font to be current, but the x11/xft layer doesn't
+guarantee that this would happen at all -- a current font can be x11, yet
+shaping can only work over xft, and thus PGlyphsOutRec always points to the xft fonts.
+
+So instead of rewriting the xft backend and make it even more fragile for these
+cases, just make sure that these very rare cases are wrapped in xft font
+
+This is why when xft is present, glyphing and shaping never fall back to core fonts
+
+*/
+#define ENTER_WRAP_XFT_GLYPHING   \
+	PCachedFont cf;           \
+	int save_priority = guts.xft_priority;\
+	Font save = PDrawable(self)->font, target = save; \
+	target.undef.name   = 1;    \
+	target.undef.size   = 1;    \
+	target.undef.width  = 1;    \
+	target.undef.vector = 1;    \
+	guts.xft_priority   = 2;    \
+	cf = prima_font_pick( &target, NULL, NULL, FONTKEY_XFT);\
+	if ( cf ) {               \
+		Fdebug("xf: upgrading %g.%s to %g.%s (%x)", save.size, save.name, target.size, target.name, cf->xft);\
+		apc_gp_set_font(self, &target );\
+	} else Fdebug("xf: default font is pickable");
+#define LEAVE_WRAP_XFT_GLYPHING   \
+	guts.xft_priority = save_priority;\
+	if ( cf ) apc_gp_set_font(self, &save);
 
 #ifdef USE_XFT
 
